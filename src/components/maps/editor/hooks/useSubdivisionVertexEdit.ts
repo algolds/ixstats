@@ -24,7 +24,10 @@ import {
   calculateOverlapGeoJson,
   EMPTY_FC,
   getFeatureCoords,
+  snapToLayerFeatures,
+  snapGeometryToBackgroundLayers,
 } from "../utils/map-helpers";
+import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 
 interface UseSubdivisionVertexEditProps {
   map: MapLibreMap | null;
@@ -34,6 +37,8 @@ interface UseSubdivisionVertexEditProps {
   features: EditorFeature[];
   countryGeometry: Polygon | MultiPolygon | null;
   onGeometryUpdate?: (featureId: string, geometry: object) => void;
+  worldMapLayers?: MapLayerData[];
+  editorVisibleLayers?: Set<string>;
 }
 
 export function useSubdivisionVertexEdit({
@@ -44,6 +49,8 @@ export function useSubdivisionVertexEdit({
   features,
   countryGeometry,
   onGeometryUpdate,
+  worldMapLayers,
+  editorVisibleLayers,
 }: UseSubdivisionVertexEditProps) {
   const [isVertexEditing, setIsVertexEditing] = useState(false);
   const vertexEditRef = useRef<{
@@ -168,6 +175,11 @@ export function useSubdivisionVertexEdit({
     const { geometry: sanitized } = sanitizeRegionShape(geo, border);
     geo = sanitized;
 
+    // Snap to visible background layers first
+    if (worldMapLayers && editorVisibleLayers) {
+      geo = snapGeometryToBackgroundLayers(geo as Polygon | MultiPolygon, worldMapLayers, editorVisibleLayers, 0.015);
+    }
+
     const { geometry: clipped } = clipGeometryToBorder(geo, border);
     geo = clipped as Polygon | MultiPolygon;
 
@@ -181,7 +193,7 @@ export function useSubdivisionVertexEdit({
       }
     }
     if (neighborGeometries.length > 0) {
-      geo = snapToNeighborBorders(geo, neighborGeometries, border, 0.02);
+      geo = snapToNeighborBorders(geo, neighborGeometries, border, 0.015);
     }
 
     const nearestRing = findNearestBorderRing(geo, border);
@@ -190,14 +202,14 @@ export function useSubdivisionVertexEdit({
       borderEdges.push([nearestRing[i]!, nearestRing[i + 1]!]);
     }
 
-    const snapped = snapGeometryToBorder(geo, borderEdges, nearestRing, 2.0);
+    const snapped = snapGeometryToBorder(geo, borderEdges, nearestRing, 0.015);
     state.currentGeometry = snapped as Polygon | MultiPolygon;
     updateVertexEditVis();
 
     if (onGeometryUpdateRef.current) {
       onGeometryUpdateRef.current(state.featureId, state.currentGeometry);
     }
-  }, [updateVertexEditVis]);
+  }, [updateVertexEditVis, worldMapLayers, editorVisibleLayers]);
 
   const handleSave = useCallback(() => {
     const state = vertexEditRef.current;
@@ -261,7 +273,7 @@ export function useSubdivisionVertexEdit({
         for (let i = 0; i < nearestRing.length - 1; i++) {
           edges.push([nearestRing[i]!, nearestRing[i + 1]!]);
         }
-        geo = snapGeometryToBorder(geo, edges, nearestRing, 2.0) as Polygon | MultiPolygon;
+        geo = snapGeometryToBorder(geo, edges, nearestRing, 0.015) as Polygon | MultiPolygon;
       }
 
       vertexEditRef.current = {
@@ -334,6 +346,11 @@ export function useSubdivisionVertexEdit({
       if (!draggingRef.current || !vertexEditRef.current) return;
       const lngLat = e.lngLat;
       let target: Position = [lngLat.lng, lngLat.lat];
+
+      // Snap to visible background layers first
+      if (worldMapLayers && editorVisibleLayers) {
+        target = snapToLayerFeatures(target as [number, number], worldMapLayers, editorVisibleLayers, 0.015);
+      }
 
       const border = countryGeometryRef.current;
       if (border) {
@@ -500,6 +517,11 @@ export function useSubdivisionVertexEdit({
       ]);
       let target: Position = [lngLat.lng, lngLat.lat];
 
+      // Snap to visible background layers first
+      if (worldMapLayers && editorVisibleLayers) {
+        target = snapToLayerFeatures(target as [number, number], worldMapLayers, editorVisibleLayers, 0.015);
+      }
+
       const border = countryGeometryRef.current;
       if (border) {
         target = clampToGeometry(target, border);
@@ -564,7 +586,7 @@ export function useSubdivisionVertexEdit({
       canvas.removeEventListener("touchmove", onTouchMove);
       canvas.removeEventListener("touchend", onTouchEnd);
     };
-  }, [map, isLoaded, updateVertexEditVis]);
+  }, [map, isLoaded, updateVertexEditVis, worldMapLayers, editorVisibleLayers]);
 
   // 3. Keyboard delete listener
   useEffect(() => {

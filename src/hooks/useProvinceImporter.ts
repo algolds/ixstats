@@ -55,7 +55,7 @@ export function useProvinceImporter(countryId: string) {
   const [referencePoints, setReferencePoints] = useState<ReferencePoint[]>([]);
   const [transform, setTransform] = useState<AffineMatrix | null>(null);
   const [manualTransform, setManualTransform] = useState<ManualTransform>(DEFAULT_MANUAL_TRANSFORM);
-  const [snapTolerance, setSnapTolerance] = useState(1.0);
+  const [snapTolerance, setSnapTolerance] = useState(0.02);
   const [simplifyTolerance, setSimplifyTolerance] = useState(0.005);
   const [validationReport, setValidationReport] = useState<TopologyReport | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -429,7 +429,7 @@ export function useProvinceImporter(countryId: string) {
     setReferencePoints([]);
     setTransform(null);
     setManualTransform(DEFAULT_MANUAL_TRANSFORM);
-    setSnapTolerance(1.0);
+    setSnapTolerance(0.02);
     setSimplifyTolerance(0.005);
     setValidationReport(null);
     setIsProcessing(false);

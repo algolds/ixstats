@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, BookOpen, MessageCircle } from "lucide-react";
+import { Globe } from "lucide-react";
 import type { MessageFolder } from "~/types/messages";
 import type { ResolvedIdentity } from "~/types/messages";
 
@@ -28,46 +28,36 @@ export function resolveIdentity(
   folder: MessageFolder,
   userProfile?: UserProfile | null,
   ixnayId?: IxnayIdData | null,
-  conversationSource?: string
+  conversationSource?: string,
+  conversationType?: string
 ): ResolvedIdentity {
-  switch (folder) {
-    case "diplomatic":
-      return {
-        displayName: userProfile?.country?.name ?? displayName,
-        avatar: userProfile?.country?.flag ?? avatarUrl,
-        badgeIcon: Globe,
-        badgeColor: "text-amber-500",
-        sourceLabel: "Diplomatic",
-      };
+  const source = conversationSource || (folder as string);
 
-    case "discussions":
-      if (conversationSource === "wiki" && ixnayId?.wikiUsername) {
-        return {
-          displayName: ixnayId.wikiUsername,
-          avatar: null,
-          badgeIcon: BookOpen,
-          badgeColor: "text-purple-500",
-          sourceLabel: "Wiki",
-        };
-      }
-      if (conversationSource === "forum" && ixnayId?.forumUsername) {
-        return {
-          displayName: ixnayId.forumUsername,
-          avatar: avatarUrl,
-          badgeIcon: MessageCircle,
-          badgeColor: "text-orange-500",
-          sourceLabel: "Forum",
-        };
-      }
-      return { displayName, avatar: avatarUrl, sourceLabel: "Discussion" };
-
-    case "groups":
-    case "personal":
-    case "inbox":
-    case "system":
-    default:
-      return { displayName, avatar: avatarUrl };
+  if (source === "diplomatic" || conversationType === "diplomatic") {
+    return {
+      displayName: userProfile?.country?.name ?? displayName,
+      avatar: userProfile?.country?.flag ?? avatarUrl,
+      badgeIcon: Globe,
+      badgeColor: "text-amber-500",
+      sourceLabel: "Diplomatic",
+    };
   }
+
+  if (source === "wiki") {
+    return {
+      displayName: ixnayId?.wikiUsername ?? displayName,
+      avatar: null,
+    };
+  }
+
+  if (source === "forum") {
+    return {
+      displayName: ixnayId?.forumUsername ?? displayName,
+      avatar: avatarUrl,
+    };
+  }
+
+  return { displayName, avatar: avatarUrl };
 }
 
 interface MessagesIdentityBadgeProps {

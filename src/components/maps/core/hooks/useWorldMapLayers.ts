@@ -10,6 +10,7 @@ import {
   MAP_SYMBOL_FONTS,
   getProjectionSpec,
   DEMOTED_COUNTRY_NAMES,
+  MAP_LAYER_TYPES,
 } from "~/lib/map-config";
 import { getMinArea, filterByArea, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
@@ -350,59 +351,71 @@ export function useWorldMapLayers({
             }
           }
         }
-
-        if (map.getLayer("country-name-labels") && layer.type === "country_labels") {
-          map.setLayoutProperty(
-            "country-name-labels",
-            "visibility",
-            layer.visible ? "visible" : "none"
-          );
-        }
       } catch (err) {
         console.error("[useWorldMapLayers] Failed to add layer", layer.type, err);
       }
+    }
 
-      // Update visibilities/opacity
+    // Update visibilities/opacity for all layers in MAP_LAYER_TYPES
+    for (const type of MAP_LAYER_TYPES) {
+      const activeLayer = layers.find((l) => l.type === type);
+      const isVisible = activeLayer ? activeLayer.visible : false;
+      const fillLayerId = `fill-${type}`;
+      const strokeLayerId = `stroke-${type}`;
+      const config = LAYER_CONFIGS[type];
+      if (!config) continue;
+
       const fillLayer = map.getLayer(fillLayerId);
       if (fillLayer) {
-        if (layer.type === "political") {
+        if (type === "political") {
           map.setPaintProperty(
             fillLayerId,
             "fill-opacity",
-            layer.visible
+            isVisible
               ? ["case", ["boolean", ["feature-state", "hover"], false], 0.6, config.fillOpacity]
               : 0
           );
-        } else if (layer.type === "altitudes") {
-          const politicalVisible = sortedLayers.some((l) => l.type === "political" && l.visible);
+        } else if (type === "altitudes") {
+          const politicalVisible = layers.some((l) => l.type === "political" && l.visible);
           map.setPaintProperty(
             fillLayerId,
             "fill-opacity",
-            layer.visible ? (politicalVisible ? config.fillOpacity : 1.0) : 0
+            isVisible ? (politicalVisible ? config.fillOpacity : 1.0) : 0
           );
         } else if (config.type === "line") {
-          map.setPaintProperty(fillLayerId, "line-opacity", layer.visible ? 0.7 : 0);
+          map.setPaintProperty(fillLayerId, "line-opacity", isVisible ? 0.7 : 0);
         } else {
-          map.setPaintProperty(fillLayerId, "fill-opacity", layer.visible ? config.fillOpacity : 0);
+          map.setPaintProperty(fillLayerId, "fill-opacity", isVisible ? config.fillOpacity : 0);
         }
-      }
-      const strokeLayer = map.getLayer(strokeLayerId);
-      if (strokeLayer) {
-        map.setPaintProperty(strokeLayerId, "line-opacity", layer.visible ? 0.8 : 0);
       }
 
-      if (layer.type === "political") {
+      const strokeLayer = map.getLayer(strokeLayerId);
+      if (strokeLayer) {
+        map.setPaintProperty(strokeLayerId, "line-opacity", isVisible ? 0.8 : 0);
+      }
+
+      if (type === "political") {
         if (map.getLayer("sovereignty-border")) {
-          map.setPaintProperty("sovereignty-border", "line-opacity", layer.visible ? 0.7 : 0);
+          map.setPaintProperty("sovereignty-border", "line-opacity", isVisible ? 0.7 : 0);
         }
         if (map.getLayer("sovereignty-labels")) {
-          map.setPaintProperty("sovereignty-labels", "text-opacity", layer.visible ? 1 : 0);
+          map.setPaintProperty("sovereignty-labels", "text-opacity", isVisible ? 1 : 0);
         }
         if (map.getLayer("country-name-labels")) {
           map.setPaintProperty(
             "country-name-labels",
             "text-opacity",
-            layer.visible ? (COUNTRY_LABEL_OPACITY as unknown as number) : 0
+            isVisible ? (COUNTRY_LABEL_OPACITY as unknown as number) : 0
+          );
+        }
+      }
+
+      if (type === "country_labels") {
+        if (map.getLayer("country-name-labels")) {
+          map.setLayoutProperty(
+            "country-name-labels",
+            "visibility",
+            isVisible ? "visible" : "none"
           );
         }
       }

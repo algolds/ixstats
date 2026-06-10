@@ -3,6 +3,7 @@
 import { Search, Plus } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 import { MESSAGE_FOLDERS } from "./MessagesFolderNav";
 import { MessagesConversationCard } from "./MessagesConversationCard";
 import type { ThinkShareConversation } from "~/types/thinkshare";
@@ -18,6 +19,9 @@ interface MessagesConversationPanelProps {
   onSelectConversation: (id: string) => void;
   currentUserId: string;
   onNewConversation: () => void;
+  onOpenGroupsDirectory?: () => void;
+  settings?: any;
+  mutedConversations?: string[];
 }
 
 export function MessagesConversationPanel({
@@ -30,13 +34,28 @@ export function MessagesConversationPanel({
   onSelectConversation,
   currentUserId,
   onNewConversation,
+  onOpenGroupsDirectory,
+  settings,
+  mutedConversations = [],
 }: MessagesConversationPanelProps) {
   const folderConfig = MESSAGE_FOLDERS.find((f) => f.id === activeFolder);
+
+  // Folder-specific dynamic color accents for the search header background
+  const folderBgs: Record<MessageFolder, string> = {
+    conversations: "bg-emerald-500/10",
+    system: "bg-rose-500/10",
+    groups: "bg-blue-500/10",
+  };
+  const currentBg = folderBgs[activeFolder] || "bg-emerald-500/10";
 
   // Filter conversations by search query
   const filtered = searchQuery.trim()
     ? conversations.filter((c) => {
-        const name = c.otherParticipants[0]?.account?.displayName ?? c.name ?? "";
+        const otherParticipant = c.otherParticipants[0];
+        const name =
+          settings?.displayNamePreference === "account" && otherParticipant?.account?.username
+            ? `@${otherParticipant.account.username}`
+            : (otherParticipant?.account?.displayName ?? c.name ?? "");
         return name.toLowerCase().includes(searchQuery.toLowerCase());
       })
     : conversations;
@@ -44,25 +63,14 @@ export function MessagesConversationPanel({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-border/50 shrink-0 border-b p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-foreground text-sm font-semibold">
-            {folderConfig?.title ?? "Messages"}
-          </h2>
-          {activeFolder === "personal" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0"
-              onClick={onNewConversation}
-              title="New conversation"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+      <div
+        className={cn(
+          "relative z-10 flex shrink-0 items-center gap-2 border-b border-white/5 p-3",
+          currentBg
+        )}
+      >
+        <div className="relative flex-1">
+          <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search conversations..."
             value={searchQuery}
@@ -70,6 +78,17 @@ export function MessagesConversationPanel({
             className="h-8 pl-8 text-xs"
           />
         </div>
+        {activeFolder === "conversations" && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white"
+            onClick={onNewConversation}
+            title="New conversation"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Conversation list */}
@@ -90,7 +109,7 @@ export function MessagesConversationPanel({
                 ? "Try a different search term"
                 : (folderConfig?.emptyDescription ?? "")}
             </p>
-            {activeFolder === "personal" && !searchQuery.trim() && (
+            {activeFolder === "conversations" && !searchQuery.trim() && (
               <Button
                 size="sm"
                 className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
@@ -102,7 +121,7 @@ export function MessagesConversationPanel({
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-2">
             {filtered.map((conversation) => (
               <MessagesConversationCard
                 key={conversation.id}
@@ -111,6 +130,8 @@ export function MessagesConversationPanel({
                 onClick={() => onSelectConversation(conversation.id)}
                 currentUserId={currentUserId}
                 activeFolder={activeFolder}
+                settings={settings}
+                isMuted={mutedConversations.includes(conversation.id)}
               />
             ))}
           </div>

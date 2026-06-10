@@ -1,8 +1,11 @@
 import { Suspense } from "react";
+import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
 
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
   title: "Messages - IxStats",
-  description: "ThinkShare unified messaging across all IxStats systems",
+  description: "Unified messaging",
 };
 
 export default function MessagesLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +17,11 @@ export default function MessagesLayout({ children }: { children: React.ReactNode
         </div>
       }
     >
-      {children}
+      <div className="relative min-h-screen">
+        <DashboardSidebarLayout disableCollapse={true}>
+          {children}
+        </DashboardSidebarLayout>
+      </div>
     </Suspense>
   );
 }

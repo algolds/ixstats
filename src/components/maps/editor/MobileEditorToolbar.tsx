@@ -25,7 +25,6 @@ const TOOLS: { mode: EditorMode; icon: typeof MapPin; label: string; color: stri
   { mode: "add-city", icon: MapPin, label: "City", color: "bg-blue-500" },
   { mode: "add-subdivision", icon: Hexagon, label: "Region", color: "bg-purple-500" },
   { mode: "add-poi", icon: Landmark, label: "POI", color: "bg-amber-500" },
-  { mode: "import-provinces", icon: FileUp, label: "Import", color: "bg-indigo-500" },
 ];
 
 export function MobileEditorToolbar({

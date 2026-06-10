@@ -15,6 +15,7 @@ import {
   Pencil,
   Scissors,
   Merge,
+  CloudSun,
 } from "lucide-react";
 
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
@@ -34,6 +35,7 @@ import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
 import { BorderEditorToolbar } from "~/components/maps/editor/BorderEditorToolbar";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 
 import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapEditorOverlayState";
 import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
@@ -42,6 +44,7 @@ import { SovereigntyPanel } from "~/components/maps/editor/components/Sovereignt
 import { PropertiesPanelContent } from "~/components/maps/editor/components/PropertiesPanelContent";
 import { RegionHoverTooltip } from "~/components/maps/editor/components/RegionHoverTooltip";
 import { EditorDialogs } from "~/components/maps/editor/components/EditorDialogs";
+import { MapEditorWelcomeModal } from "~/components/maps/editor/components/MapEditorWelcomeModal";
 import { EditorContextMenuWrapper } from "~/components/maps/editor/components/EditorContextMenuWrapper";
 import {
   EditorLoadingScreen,
@@ -103,6 +106,7 @@ export default function MapEditorOverlay({
   const [leftSplitRatio, setLeftSplitRatio] = useState(0.5);
   const [rightSplitRatio, setRightSplitRatio] = useState(0.5);
   const [bottomSplitRatio, setBottomSplitRatio] = useState(0.5);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const leftSidebarRef = useRef<HTMLDivElement>(null);
   const rightSidebarRef = useRef<HTMLDivElement>(null);
@@ -231,6 +235,13 @@ export default function MapEditorOverlay({
           locked: false,
         },
         {
+          id: "climate",
+          name: "Climate Zones",
+          icon: CloudSun,
+          visible: editorVisibleLayers.has("climate"),
+          locked: true,
+        },
+        {
           id: "regions",
           name: "Regions",
           icon: Hexagon,
@@ -280,6 +291,10 @@ export default function MapEditorOverlay({
         },
       ]}
       onToggleVisibility={(id) => {
+        if (id === "climate") {
+          toggleEditorLayer("climate");
+          return;
+        }
         setLayerStates((prev) => ({
           ...prev,
           [id]: {
@@ -289,6 +304,7 @@ export default function MapEditorOverlay({
         }));
       }}
       onToggleLock={(id) => {
+        if (id === "climate") return;
         setLayerStates((prev) => ({
           ...prev,
           [id]: {
@@ -307,6 +323,13 @@ export default function MapEditorOverlay({
         }));
       }}
       featureCounts={featureCounts}
+      features={editor.allFeatures}
+      selectedFeature={editor.selectedFeature}
+      onSelectFeature={handleSelectFeature}
+      onEditFeature={handleEditFeature}
+      onDeleteFeature={handleDeleteFeature}
+      selectedIds={editor.selectedIds}
+      onToggleSelect={editor.toggleSelectId}
     />
   );
 
@@ -355,23 +378,8 @@ export default function MapEditorOverlay({
             }
           />
         }
-        layersContent={!isWorldMode ? renderLayersElement() : undefined}
+        layersContent={renderLayersElement()}
         propertiesContent={renderRightPanelContent()}
-        importWizardContent={
-          editor.mode === "import-provinces" ? (
-            <ProvinceImportWizard
-              importer={importer}
-              onComplete={() => {
-                editor.setMode("view");
-                editor.refetchFeatures();
-              }}
-              onCancel={() => {
-                importer.reset();
-                editor.setMode("view");
-              }}
-            />
-          ) : undefined
-        }
         isStacked={isStacked}
       />
     );
@@ -404,6 +412,7 @@ export default function MapEditorOverlay({
         recalculateGeo={recalculateGeo}
         simplifyAll={simplifyAll}
         handleRequestExit={handleRequestExit}
+        onShowHelp={() => setShowWelcomeModal(true)}
       />
 
       {/* Photoshop-style context bar */}
@@ -639,8 +648,8 @@ export default function MapEditorOverlay({
                   onMapClick={editor.handleMapClick}
                   onDrawComplete={editor.handleDrawComplete}
                   onFeatureSelect={handleSelectFeature}
-                  onGeometryUpdate={editor.updateSubdivisionGeometry}
                   worldMapLayers={worldMapLayers}
+                  editorVisibleLayers={editorVisibleLayers}
                   showGrid={showGrid}
                   paintColors={paintColors}
                   routeWaypoints={editor.routeWaypoints}
@@ -989,8 +998,41 @@ export default function MapEditorOverlay({
       {/* Keyboard Shortcut Sheet */}
       {showShortcuts && <KeyboardShortcutSheet onClose={() => setShowShortcuts(false)} />}
 
+      {/* Province Import Wizard Dialog */}
+      {editor.mode === "import-provinces" && (
+        <Dialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              importer.reset();
+              editor.setMode("view");
+            }
+          }}
+        >
+          <DialogContent className="max-w-2xl p-0 overflow-hidden bg-card border border-border rounded-xl shadow-2xl max-h-[85vh] flex flex-col h-[580px]">
+            <ProvinceImportWizard
+              importer={importer}
+              onComplete={() => {
+                editor.setMode("view");
+                editor.refetchFeatures();
+              }}
+              onCancel={() => {
+                importer.reset();
+                editor.setMode("view");
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Editor Dialogs */}
       <EditorDialogs {...state} onExit={onExit} />
+
+      {/* Onboarding Welcome Modal */}
+      <MapEditorWelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+      />
     </div>
   );
 }

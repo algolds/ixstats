@@ -1,8 +1,7 @@
-"use client";
-
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import RichTextEditor, { type RichTextEditorRef } from "~/components/thinkpages/RichTextEditor";
-import { Reply, X } from "lucide-react";
+import { Reply, X, BookmarkPlus } from "lucide-react";
+import { MessagesStashAttachmentModal } from "./MessagesStashAttachmentModal";
 
 interface ReplyMessage {
   id: string;
@@ -28,6 +27,17 @@ export function MessagesInputBar({
   onCancelReply,
 }: MessagesInputBarProps) {
   const editorRef = useRef<RichTextEditorRef>(null);
+  const [isStashModalOpen, setIsStashModalOpen] = useState(false);
+
+  const handleAttachStashItem = (item: { title: string; url: string }) => {
+    if (editorRef.current) {
+      const current = editorRef.current.getContent();
+      // Embed an inline link with icons/badge styling
+      const linkHtml = `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-semibold underline">📚 Stash: ${item.title}</a>`;
+      editorRef.current.setContent(current + (current.trim() ? " " : "") + linkHtml);
+      editorRef.current.focus();
+    }
+  };
 
   return (
     <div className="border-border/50 bg-background/60 shrink-0 border-t p-3">
@@ -50,17 +60,37 @@ export function MessagesInputBar({
           </button>
         </div>
       )}
-      <RichTextEditor
-        ref={editorRef}
-        placeholder="Type a message..."
-        onSubmit={onSendMessage}
-        onTyping={onTyping}
-        disabled={isSending}
-        minHeight={44}
-        maxHeight={120}
-        showToolbar={true}
-        submitButtonText="Send"
-        className="w-full"
+
+      <div className="flex items-end gap-2">
+        <button
+          type="button"
+          onClick={() => setIsStashModalOpen(true)}
+          className="mb-1 flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 shadow-sm backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
+          title="Attach Lore Stash Link"
+        >
+          <BookmarkPlus className="h-4.5 w-4.5 text-indigo-400" />
+        </button>
+
+        <div className="min-w-0 flex-1">
+          <RichTextEditor
+            ref={editorRef}
+            placeholder="Type a message..."
+            onSubmit={onSendMessage}
+            onTyping={onTyping}
+            disabled={isSending}
+            minHeight={44}
+            maxHeight={120}
+            showToolbar={true}
+            submitButtonText="Send"
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      <MessagesStashAttachmentModal
+        isOpen={isStashModalOpen}
+        onClose={() => setIsStashModalOpen(false)}
+        onAttachItem={handleAttachStashItem}
       />
     </div>
   );

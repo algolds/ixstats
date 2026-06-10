@@ -1,7 +1,8 @@
 // @ts-nocheck
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
-import type { Geometry, Position, Feature } from "geojson";
+import type { Geometry, Position, Feature, Polygon, MultiPolygon } from "geojson";
 import { intersect, featureCollection } from "@turf/turf";
+import { getAllRings, rebuildGeometry, projectPointToSegment, distanceDeg } from "~/lib/border-editor";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
@@ -155,4 +156,115 @@ export function haversineDistance(coord1: [number, number], coord2: [number, num
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+/**
+ * Snap a coordinate point to visible background features (rivers, lakes, elevation contour, climate zones).
+ */
+export function snapToLayerFeatures(
+  point: [number, number],
+  worldMapLayers: any[] | undefined,
+  visibleLayers: Set<string>,
+  tolerance: number = 0.015
+): [number, number] {
+  if (!worldMapLayers) return point;
+
+  let bestDist = Infinity;
+  let bestProj: [number, number] = point;
+
+  const targetLayerTypes = ["rivers", "lakes", "altitudes", "climate"];
+
+  for (const layerType of targetLayerTypes) {
+    if (!visibleLayers.has(layerType)) continue;
+
+    const layer = worldMapLayers.find((l) => l.type === layerType);
+    if (!layer || !layer.data || !layer.data.features) continue;
+
+    for (const feature of layer.data.features) {
+      const geom = feature.geometry;
+      if (!geom) continue;
+
+      if (geom.type === "LineString") {
+        const coords = geom.coordinates;
+        for (let i = 0; i < coords.length - 1; i++) {
+          const proj = projectPointToSegment(point, coords[i] as Position, coords[i + 1] as Position);
+          const d = distanceDeg(point, proj);
+          if (d < bestDist && d <= tolerance) {
+            bestDist = d;
+            bestProj = proj as [number, number];
+          }
+        }
+      } else if (geom.type === "MultiLineString") {
+        for (const line of geom.coordinates) {
+          for (let i = 0; i < line.length - 1; i++) {
+            const proj = projectPointToSegment(point, line[i] as Position, line[i + 1] as Position);
+            const d = distanceDeg(point, proj);
+            if (d < bestDist && d <= tolerance) {
+              bestDist = d;
+              bestProj = proj as [number, number];
+            }
+          }
+        }
+      } else if (geom.type === "Polygon") {
+        for (const ring of geom.coordinates) {
+          for (let i = 0; i < ring.length - 1; i++) {
+            const proj = projectPointToSegment(point, ring[i] as Position, ring[i + 1] as Position);
+            const d = distanceDeg(point, proj);
+            if (d < bestDist && d <= tolerance) {
+              bestDist = d;
+              bestProj = proj as [number, number];
+            }
+          }
+        }
+      } else if (geom.type === "MultiPolygon") {
+        for (const poly of geom.coordinates) {
+          for (const ring of poly) {
+            for (let i = 0; i < ring.length - 1; i++) {
+              const proj = projectPointToSegment(point, ring[i] as Position, ring[i + 1] as Position);
+              const d = distanceDeg(point, proj);
+              if (d < bestDist && d <= tolerance) {
+                bestDist = d;
+                bestProj = proj as [number, number];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return bestDist <= tolerance ? bestProj : point;
+}
+
+/**
+ * Snap all rings/vertices of a polygon geometry to visible background layers.
+ */
+export function snapGeometryToBackgroundLayers(
+  geometry: Polygon | MultiPolygon,
+  worldMapLayers: any[] | undefined,
+  visibleLayers: Set<string>,
+  tolerance: number = 0.015
+): Polygon | MultiPolygon {
+  if (!worldMapLayers || !visibleLayers || visibleLayers.size === 0) return geometry;
+
+  const rings = getAllRings(geometry);
+  const newRings: Position[][] = [];
+
+  for (const ring of rings) {
+    const newRing: Position[] = [];
+    for (const pt of ring) {
+      const snapped = snapToLayerFeatures(pt as [number, number], worldMapLayers, visibleLayers, tolerance);
+      newRing.push(snapped);
+    }
+    if (newRing.length > 0) {
+      const first = newRing[0]!;
+      const last = newRing[newRing.length - 1]!;
+      if (first[0] !== last[0] || first[1] !== last[1]) {
+        newRing.push([...first] as Position);
+      }
+    }
+    newRings.push(newRing);
+  }
+
+  return rebuildGeometry(geometry, newRings);
 }

@@ -164,19 +164,19 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Location indicator */}
       {!isEdit && !hasLocation && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
           {mode === "add-subdivision"
             ? "Draw a polygon on the map to define the region boundary"
             : "Click on the map to set the location"}
         </div>
       )}
       {pendingCoordinates && isPointMode && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
           Location: {pendingCoordinates[1].toFixed(3)}&deg;, {pendingCoordinates[0].toFixed(3)}&deg;
         </div>
       )}
       {pendingGeometry && mode === "add-subdivision" && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
           Region polygon drawn
         </div>
       )}
@@ -185,12 +185,12 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
       {pendingCoordinates && isPointMode && (
         <div className="flex flex-wrap gap-1.5">
           {isPendingPointInfoLoading && (
-            <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px]">
+            <span className="bg-muted/40 border border-border/30 text-muted-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px]">
               <Loader2 className="h-2.5 w-2.5 animate-spin" /> Terrain...
             </span>
           )}
           {pendingPointInfo?.elevation?.zoneName && (
-            <span className="bg-muted text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
+            <span className="bg-muted/40 border border-border/30 text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
               {pendingPointInfo.elevation.color && (
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-sm"
@@ -206,7 +206,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
             </span>
           )}
           {pendingPointInfo?.climate?.climateName && (
-            <span className="bg-muted text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
+            <span className="bg-muted/40 border border-border/30 text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
               {pendingPointInfo.climate.color && (
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-sm"
@@ -277,7 +277,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
       {/* Success flash with fade-in animation */}
       {lastSavedAt && !error && (
         <div
-          className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700"
+          className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400"
           style={{ animation: "featureSavedFadeIn 300ms ease" }}
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -287,7 +287,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Error message */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">
           {error.message}
         </div>
       )}

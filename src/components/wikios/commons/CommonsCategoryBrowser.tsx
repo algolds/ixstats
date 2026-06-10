@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { ChevronRight, ChevronDown, Folder, Search } from "lucide-react";
 import { api } from "~/trpc/react";
 
@@ -96,16 +96,78 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
   },
 ];
 
-const LOCAL_CATEGORY_GROUPS: CategoryGroup[] = [
+const THEMATIC_GROUPS = [
   {
-    label: "Core Media",
-    categories: ["Flags", "Maps", "Images"],
+    label: "Government & Royalty",
+    keywords: ["government", "royal", "crown", "throne", "coronation", "flag", "heraldry", "coat of arm", "monarch", "emblem", "sovereign", "capit"],
   },
   {
-    label: "Society & Culture",
-    categories: ["Coats of arms", "Buildings", "Churches", "Castles", "Military"],
+    label: "Architecture & Places",
+    keywords: ["architecture", "building", "castle", "bridge", "wall", "house", "palace", "cathedral", "monument", "ruins", "fortification", "landmark"],
+  },
+  {
+    label: "Military & Warfare",
+    keywords: ["military", "uniform", "battle", "ship", "navy", "weapon", "sword", "armour", "war", "army", "soldier"],
+  },
+  {
+    label: "People & Culture",
+    keywords: ["people", "costume", "clothing", "ceremony", "sculpture", "painting", "portrait", "culture", "ethnography", "art", "music"],
+  },
+  {
+    label: "Geography & Nature",
+    keywords: ["geography", "map", "landscape", "mountain", "river", "lake", "sea", "ocean", "island", "forest", "terrain", "topo", "region", "border"],
+  },
+  {
+    label: "Economy & Trade",
+    keywords: ["economy", "market", "banknote", "money", "coin", "trade", "agriculture", "industry", "business", "company"],
+  },
+  {
+    label: "Religion",
+    keywords: ["religion", "church", "mosque", "temple", "monastery", "religious", "cathedral", "belief", "deity"],
   },
 ];
+
+const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: number }>) => {
+  const mapped = THEMATIC_GROUPS.map((g) => ({
+    label: g.label,
+    categories: [] as string[],
+    counts: {} as Record<string, number>,
+  }));
+
+  const generalGroup = {
+    label: "General & Misc",
+    categories: [] as string[],
+    counts: {} as Record<string, number>,
+  };
+
+  for (const cat of categoriesList) {
+    const name = cat.name;
+    const lower = name.toLowerCase();
+
+    let matched = false;
+    for (const group of THEMATIC_GROUPS) {
+      if (group.keywords.some((kw) => lower.includes(kw))) {
+        const target = mapped.find((m) => m.label === group.label)!;
+        target.categories.push(name);
+        target.counts[name] = cat.fileCount;
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      generalGroup.categories.push(name);
+      generalGroup.counts[name] = cat.fileCount;
+    }
+  }
+
+  const activeGroups = mapped.filter((g) => g.categories.length > 0);
+  if (generalGroup.categories.length > 0) {
+    activeGroups.push(generalGroup);
+  }
+
+  return activeGroups;
+};
 
 interface CommonsCategoryBrowserProps {
   activeCategories: string[];
@@ -117,7 +179,6 @@ interface CommonsCategoryBrowserProps {
 
 // Flatten all categories for the batch info query (max 20 per call)
 const ALL_CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.categories);
-const ALL_LOCAL_CATEGORIES = LOCAL_CATEGORY_GROUPS.flatMap((g) => g.categories);
 
 export function CommonsCategoryBrowser({
   activeCategories,
@@ -127,15 +188,31 @@ export function CommonsCategoryBrowser({
   wiki = "commons",
 }: CommonsCategoryBrowserProps) {
   const isCommons = wiki === "commons";
-  const groups = isCommons ? CATEGORY_GROUPS : LOCAL_CATEGORY_GROUPS;
-  const allCats = isCommons ? ALL_CATEGORIES : ALL_LOCAL_CATEGORIES;
+
+  const { data: localDynamicCats } = api.wiki.getCategories.useQuery(
+    { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+    { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
+  );
+
+  const groups = useMemo(() => {
+    if (isCommons) {
+      return CATEGORY_GROUPS.map((g) => ({
+        label: g.label,
+        categories: g.categories,
+        counts: {} as Record<string, number>,
+      }));
+    }
+    return mapLocalCategories(localDynamicCats || []);
+  }, [isCommons, localDynamicCats]);
+
+  const allCats = useMemo(() => {
+    return groups.flatMap((g) => g.categories);
+  }, [groups]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
-    () => ({ [groups[0]!.label]: true }) // First group open by default
-  );
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -145,9 +222,11 @@ export function CommonsCategoryBrowser({
     []
   );
 
-  // Reset expansion states when wiki source changes
+  // Reset expansion states when wiki source changes or groups load
   useEffect(() => {
-    setExpandedGroups({ [groups[0]!.label]: true });
+    if (groups && groups.length > 0) {
+      setExpandedGroups({ [groups[0]!.label]: true });
+    }
     setExpanded({});
   }, [wiki, groups]);
 
@@ -307,12 +386,7 @@ function CategoryGroupSection({
     { enabled: isCommons && isGroupOpen, staleTime: 30 * 60 * 1000 }
   );
 
-  const { data: localGroupCounts } = api.wiki.getCategoryTotalCounts.useQuery(
-    { categories: group.categories, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
-    { enabled: !isCommons && isGroupOpen, staleTime: 30 * 60 * 1000 }
-  );
-
-  const groupCounts = isCommons ? commonsGroupCounts : localGroupCounts;
+  const groupCounts = isCommons ? commonsGroupCounts : (group.counts || {});
 
   return (
     <div className="wikios-commons-group">

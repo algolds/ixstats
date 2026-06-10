@@ -177,6 +177,7 @@ const MessageFolderSchema = z.enum([
   "discussions",
   "groups",
   "system",
+  "conversations",
 ]);
 
 const MessageSourceSchema = z.enum([
@@ -227,6 +228,9 @@ export const messagesRouter = createTRPCRouter({
       }
 
       switch (folder) {
+        case "conversations":
+          baseWhere.source = { not: "system" };
+          break;
         case "inbox":
           break;
         case "personal":
@@ -443,6 +447,7 @@ export const messagesRouter = createTRPCRouter({
         discussions: 0,
         groups: 0,
         system: 0,
+        conversations: 0,
       };
 
       for (const { conv, count } of unreadResults) {
@@ -463,6 +468,9 @@ export const messagesRouter = createTRPCRouter({
 
         counts[folder]! += count;
         counts.inbox! += count;
+        if (folder !== "system") {
+          counts.conversations! += count;
+        }
       }
 
       return counts;
@@ -807,6 +815,185 @@ export const messagesRouter = createTRPCRouter({
     }),
 
   /**
+   * Leave a conversation (marks participant as inactive).
+   */
+  leaveConversation: protectedProcedure
+    .input(
+      z.object({
+        conversationId: z.string(),
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.userId !== ctx.auth.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only leave conversations on behalf of yourself",
+        });
+      }
+
+      // Check if participant exists
+      const participant = await ctx.db.conversationParticipant.findUnique({
+        where: {
+          conversationId_userId: {
+            conversationId: input.conversationId,
+            userId: input.userId,
+          },
+        },
+      });
+
+      if (!participant || !participant.isActive) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "You are not an active participant in this conversation",
+        });
+      }
+
+      // Update participant to inactive
+      await ctx.db.conversationParticipant.update({
+        where: {
+          conversationId_userId: {
+            conversationId: input.conversationId,
+            userId: input.userId,
+          },
+        },
+        data: {
+          isActive: false,
+          leftAt: new Date(),
+        },
+      });
+
+      // Get user names for the system message
+      const userMap = await batchResolveUsers([ctx.auth.userId], ctx.db);
+      const callerName = userMap.get(ctx.auth.userId)?.displayName ?? "Someone";
+
+      // Add system message
+      await ctx.db.thinkshareMessage.create({
+        data: {
+          conversationId: input.conversationId,
+          userId: "system",
+          content: `${callerName} left the conversation`,
+          isSystem: true,
+          messageType: "system",
+        },
+      });
+
+      // Update last activity
+      await ctx.db.thinkshareConversation.update({
+        where: { id: input.conversationId },
+        data: { lastActivity: new Date() },
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Add a participant to a conversation.
+   */
+  addParticipant: protectedProcedure
+    .input(
+      z.object({
+        conversationId: z.string(),
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 1. Verify caller is a participant in the conversation
+      const callerParticipant = await ctx.db.conversationParticipant.findUnique({
+        where: {
+          conversationId_userId: {
+            conversationId: input.conversationId,
+            userId: ctx.auth.userId,
+          },
+        },
+      });
+
+      if (!callerParticipant || !callerParticipant.isActive) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You must be an active participant to add others",
+        });
+      }
+
+      // 2. Get target conversation details
+      const conversation = await ctx.db.thinkshareConversation.findUnique({
+        where: { id: input.conversationId },
+      });
+
+      if (!conversation || !conversation.isActive) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Conversation not found",
+        });
+      }
+
+      // 3. Upsert participant
+      const existingParticipant = await ctx.db.conversationParticipant.findUnique({
+        where: {
+          conversationId_userId: {
+            conversationId: input.conversationId,
+            userId: input.userId,
+          },
+        },
+      });
+
+      if (existingParticipant?.isActive) {
+        return { success: true, alreadyParticipant: true };
+      }
+
+      if (existingParticipant) {
+        await ctx.db.conversationParticipant.update({
+          where: { id: existingParticipant.id },
+          data: {
+            isActive: true,
+            joinedAt: new Date(),
+            leftAt: null,
+          },
+        });
+      } else {
+        await ctx.db.conversationParticipant.create({
+          data: {
+            conversationId: input.conversationId,
+            userId: input.userId,
+            isActive: true,
+            role: "participant",
+          },
+        });
+      }
+
+      // If it was a direct conversation and is now becoming a multi-user group chat, we should upgrade the conversation type to "group"
+      if (conversation.type === "direct") {
+        await ctx.db.thinkshareConversation.update({
+          where: { id: input.conversationId },
+          data: { type: "group" },
+        });
+      }
+
+      // 4. Create system message
+      const userMap = await batchResolveUsers([ctx.auth.userId, input.userId], ctx.db);
+      const callerName = userMap.get(ctx.auth.userId)?.displayName ?? "Someone";
+      const targetName = userMap.get(input.userId)?.displayName ?? "Someone";
+
+      await ctx.db.thinkshareMessage.create({
+        data: {
+          conversationId: input.conversationId,
+          userId: "system",
+          content: `${callerName} added ${targetName} to the conversation`,
+          isSystem: true,
+          messageType: "system",
+        },
+      });
+
+      // Update last activity
+      await ctx.db.thinkshareConversation.update({
+        where: { id: input.conversationId },
+        data: { lastActivity: new Date() },
+      });
+
+      return { success: true };
+    }),
+
+  /**
    * Mark messages as read.
    */
   markMessagesAsRead: protectedProcedure
@@ -889,6 +1076,46 @@ export const messagesRouter = createTRPCRouter({
           content: "[deleted]",
         },
       });
+      return { success: true };
+    }),
+
+  /**
+   * Clear all system notifications for a user.
+   */
+  clearAllSystemNotifications: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const conversations = await ctx.db.thinkshareConversation.findMany({
+        where: {
+          participants: {
+            some: { userId: input.userId, isActive: true },
+          },
+          isActive: true,
+          OR: [
+            { source: "system" },
+            {
+              messages: { some: { isSystem: true } },
+            },
+          ],
+        },
+        select: { id: true },
+      });
+
+      const convIds = conversations.map((c) => c.id);
+
+      if (convIds.length > 0) {
+        await ctx.db.thinkshareMessage.updateMany({
+          where: {
+            conversationId: { in: convIds },
+            deletedAt: null,
+          },
+          data: {
+            deletedAt: new Date(),
+            content: "[deleted]",
+          },
+        });
+      }
+
       return { success: true };
     }),
 

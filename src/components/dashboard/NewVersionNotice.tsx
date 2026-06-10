@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { X, Sparkles } from "lucide-react";
+import { X } from "lucide-react";
+import { MdBrowserUpdated } from "react-icons/md";
 import { APP_VERSION, BUILD_VERSION } from "~/lib/buildVersion";
 
 const STORAGE_KEY = "ixstats:version-seen";
@@ -32,7 +33,7 @@ export function NewVersionNotice() {
       className="glass-surface glass-refraction flex items-center justify-between gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
     >
       <div className="flex items-center gap-2.5">
-        <Sparkles className="h-4 w-4 shrink-0 text-blue-400" />
+        <MdBrowserUpdated className="h-4 w-4 shrink-0 text-blue-400" />
         <p className="text-foreground text-xs font-medium">
           IxStats has been updated to <span className="text-blue-400">v{APP_VERSION}</span>{" "}
           <span className="text-muted-foreground font-mono text-[10px]">({BUILD_VERSION})</span>.

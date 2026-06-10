@@ -63,7 +63,12 @@ export function CommonsResultsGrid({
               <TextureOverlay texture="paperGrain" opacity={0.05} className="mix-blend-overlay" />
               <TextureOverlay texture="dots" opacity={0.03} className="mix-blend-overlay" />
               <div className="wikios-commons-card-thumb">
-                <img src={img.thumbUrl} alt={cleanTitle} loading="lazy" />
+                <img
+                  src={img.thumbUrl}
+                  alt={cleanTitle}
+                  loading="lazy"
+                  onContextMenu={(e) => e.preventDefault()}
+                />
                 <div className="wikios-commons-card-overlay">
                   <ZoomIn className="h-5 w-5" />
                 </div>

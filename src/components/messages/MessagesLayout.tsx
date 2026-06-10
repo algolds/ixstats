@@ -2,41 +2,48 @@
 
 import type { ReactNode } from "react";
 import { cn } from "~/lib/utils";
+import { CutoutCard, cutoutCardSurfaceClassName } from "~/components/ui/cutout-card";
 
 interface MessagesLayoutProps {
-  folderNav: ReactNode;
   conversationPanel: ReactNode;
   chatPanel: ReactNode;
-  folderNavExpanded: boolean;
+  isSidebarCollapsed: boolean;
 }
 
 export function MessagesLayout({
-  folderNav,
   conversationPanel,
   chatPanel,
-  folderNavExpanded,
+  isSidebarCollapsed,
 }: MessagesLayoutProps) {
   return (
-    <div className="border-border flex h-[calc(100vh-4rem)] rounded-xl border shadow-sm">
-      {/* Column 1: Folder nav rail / sidebar — overflow-visible so tooltips escape */}
-      <div
+    <div className="relative grid h-[calc(100vh-8.5rem)] min-h-[500px] grid-cols-1 gap-5 lg:grid-cols-3">
+      {/* Column 1: Conversation list panel (1/3 width on large screens) */}
+      <CutoutCard
         className={cn(
-          "border-border/50 bg-background/95 relative z-20 shrink-0 overflow-visible rounded-l-xl border-r transition-[width] duration-200 ease-in-out",
-          folderNavExpanded ? "w-48" : "w-14"
+          cutoutCardSurfaceClassName,
+          "relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-xl transition-all duration-300 lg:col-span-1",
+          isSidebarCollapsed ? "hidden" : "flex"
         )}
+        trackPointerHover={false}
+        texture="paperGrain"
+        textureOpacity={0.08}
       >
-        {folderNav}
-      </div>
-
-      {/* Column 2: Conversation list panel — no backdrop-filter to avoid blurring nav tooltips */}
-      <div className="border-border/50 bg-background/90 z-10 w-80 shrink-0 overflow-hidden border-r xl:w-96">
         {conversationPanel}
-      </div>
+      </CutoutCard>
 
-      {/* Column 3: Chat panel */}
-      <div className="bg-background/80 min-w-0 flex-1 overflow-hidden rounded-r-xl backdrop-blur-sm">
+      {/* Column 2: Chat panel (2/3 width on large screens) */}
+      <CutoutCard
+        className={cn(
+          cutoutCardSurfaceClassName,
+          "relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-xl transition-all duration-300",
+          isSidebarCollapsed ? "col-span-full lg:col-span-3" : "hidden lg:col-span-2 lg:flex"
+        )}
+        trackPointerHover={false}
+        texture="diagonal"
+        textureOpacity={0.06}
+      >
         {chatPanel}
-      </div>
+      </CutoutCard>
     </div>
   );
 }

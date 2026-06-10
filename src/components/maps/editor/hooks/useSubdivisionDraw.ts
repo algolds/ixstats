@@ -5,7 +5,8 @@ import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { snapToBorderEdge } from "~/lib/border-editor";
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
-import { getGeoJSONSource, calculateOverlapGeoJson, EMPTY_FC } from "../utils/map-helpers";
+import { getGeoJSONSource, calculateOverlapGeoJson, EMPTY_FC, snapToLayerFeatures } from "../utils/map-helpers";
+import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 
 interface UseSubdivisionDrawProps {
   map: MapLibreMap | null;
@@ -14,6 +15,8 @@ interface UseSubdivisionDrawProps {
   features: EditorFeature[];
   countryGeometry: Polygon | MultiPolygon | null;
   onDrawComplete: (geometry: object) => void;
+  worldMapLayers?: MapLayerData[];
+  editorVisibleLayers?: Set<string>;
 }
 
 export function useSubdivisionDraw({
@@ -23,6 +26,8 @@ export function useSubdivisionDraw({
   features,
   countryGeometry,
   onDrawComplete,
+  worldMapLayers,
+  editorVisibleLayers,
 }: UseSubdivisionDrawProps) {
   const drawVerticesRef = useRef<[number, number][]>([]);
   const [drawVertices, setDrawVertices] = useState<[number, number][]>([]);
@@ -126,6 +131,12 @@ export function useSubdivisionDraw({
       if (mode !== "add-subdivision") return;
 
       let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+      // Snap to visible background layers first
+      if (worldMapLayers && editorVisibleLayers) {
+        clickPoint = snapToLayerFeatures(clickPoint, worldMapLayers, editorVisibleLayers, 0.015);
+      }
+
       const border = countryGeometry;
       if (border) {
         clickPoint = snapToBorderEdge(clickPoint, border, 0.015);
@@ -164,10 +175,11 @@ export function useSubdivisionDraw({
     map.on("dblclick", onDblClick);
 
     return () => {
+      map.on("click", onClick);
       map.off("click", onClick);
       map.off("dblclick", onDblClick);
     };
-  }, [map, isLoaded, mode, features, countryGeometry, saveDraw, updateDrawVisualization]);
+  }, [map, isLoaded, mode, features, countryGeometry, saveDraw, updateDrawVisualization, worldMapLayers, editorVisibleLayers]);
 
   // Keyboard undo listener (Backspace/Delete/Ctrl+Z)
   useEffect(() => {

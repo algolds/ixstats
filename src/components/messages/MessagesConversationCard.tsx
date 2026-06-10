@@ -3,9 +3,8 @@
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
-import { Users } from "lucide-react";
+import { Users, BellOff } from "lucide-react";
 import { cn } from "~/lib/utils";
-import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
 import { resolveIdentity, MessagesIdentityBadge } from "./MessagesIdentityBadge";
 
@@ -24,11 +23,13 @@ function formatRelativeTime(date: Date | string): string {
 }
 
 interface MessagesConversationCardProps {
-  conversation: ThinkShareConversation;
+  conversation: any;
   isSelected: boolean;
   onClick: () => void;
   currentUserId: string;
   activeFolder: MessageFolder;
+  settings?: any;
+  isMuted?: boolean;
 }
 
 export const MessagesConversationCard = React.memo(function MessagesConversationCard({
@@ -37,15 +38,53 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
   onClick,
   currentUserId,
   activeFolder,
+  settings,
+  isMuted = false,
 }: MessagesConversationCardProps) {
   const otherParticipant = conversation.otherParticipants[0];
   const lastMessage = conversation.lastMessage;
   const hasUnread = conversation.unreadCount > 0;
 
+  const typeTag = React.useMemo(() => {
+    if (conversation.source === "diplomatic" || conversation.conversationType === "diplomatic") {
+      return {
+        label: "Diplomatic",
+        classes: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      };
+    }
+    if (conversation.type === "group" || conversation.source === "thinktank") {
+      return {
+        label: "Group",
+        classes: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+      };
+    }
+    if (conversation.source === "wiki") {
+      return {
+        label: "Wiki",
+        classes: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      };
+    }
+    return {
+      label: "Personal",
+      classes: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    };
+  }, [conversation]);
+
   // Resolve identity based on folder context
-  const participantName = otherParticipant?.account?.displayName ?? conversation.name ?? "Unknown";
+  const participantName =
+    settings?.displayNamePreference === "account" && otherParticipant?.account?.username
+      ? `@${otherParticipant.account.username}`
+      : (otherParticipant?.account?.displayName ?? conversation.name ?? "Unknown");
   const participantAvatar = otherParticipant?.account?.profileImageUrl ?? null;
-  const identity = resolveIdentity(participantName, participantAvatar, activeFolder);
+  const identity = resolveIdentity(
+    participantName,
+    participantAvatar,
+    activeFolder,
+    null,
+    null,
+    conversation.source,
+    conversation.conversationType
+  );
 
   const initials = identity.displayName
     .split(" ")
@@ -56,15 +95,29 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
 
   const isSelfMessage = otherParticipant?.accountId === currentUserId;
 
+  const leftBorderClass = React.useMemo(() => {
+    if (conversation.source === "diplomatic" || conversation.conversationType === "diplomatic") {
+      return "border-l-2 border-l-amber-500";
+    }
+    if (conversation.type === "group" || conversation.source === "thinktank") {
+      return "border-l-2 border-l-indigo-500";
+    }
+    if (conversation.source === "wiki") {
+      return "border-l-2 border-l-purple-500";
+    }
+    return "border-l-2 border-l-emerald-500";
+  }, [conversation]);
+
   return (
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+        "relative flex w-full cursor-pointer items-start gap-3 overflow-hidden rounded-xl border px-3 py-2.5 text-left transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-black/10",
+        leftBorderClass,
         isSelected
-          ? "bg-primary/10 border-primary/20 border"
-          : "hover:bg-muted/50 border border-transparent",
-        hasUnread && !isSelected && "bg-muted/30"
+          ? "border-indigo-500/40 bg-indigo-600/20 shadow-indigo-950/20"
+          : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.06]",
+        hasUnread && !isSelected && "bg-white/[0.04]"
       )}
     >
       {/* Avatar */}
@@ -110,8 +163,17 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
                   : identity.displayName}
             </span>
             <MessagesIdentityBadge identity={identity} />
+            <span
+              className={cn(
+                "shrink-0 rounded border px-1.5 py-0.5 text-[8px] font-bold",
+                typeTag.classes
+              )}
+            >
+              {typeTag.label}
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
+            {isMuted && <BellOff className="h-3 w-3 shrink-0 text-slate-400" />}
             {lastMessage && (
               <span className="text-muted-foreground text-[11px]">
                 {formatRelativeTime(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp)}
@@ -120,7 +182,12 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             {hasUnread && (
               <Badge
                 variant="secondary"
-                className="bg-primary text-primary-foreground h-5 min-w-[20px] px-1.5 text-[10px]"
+                className={cn(
+                  "h-5 min-w-[20px] px-1.5 text-[10px] transition-colors",
+                  isMuted
+                    ? "border-none bg-slate-700 text-slate-300 hover:bg-slate-700"
+                    : "bg-primary text-primary-foreground"
+                )}
               >
                 {conversation.unreadCount}
               </Badge>

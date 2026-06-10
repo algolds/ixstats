@@ -545,7 +545,7 @@ function coordsEqual(a: Position, b: Position): boolean {
   return Math.abs(a[0]! - b[0]!) < 1e-10 && Math.abs(a[1]! - b[1]!) < 1e-10;
 }
 
-function distanceDeg(a: Position, b: Position): number {
+export function distanceDeg(a: Position, b: Position): number {
   const dx = a[0]! - b[0]!;
   const dy = a[1]! - b[1]!;
   return Math.sqrt(dx * dx + dy * dy);
@@ -560,7 +560,7 @@ function shoelaceArea(ring: Position[]): number {
 }
 
 /** Project a point onto a line segment, returning the closest point on the segment. */
-function projectPointToSegment(p: Position, a: Position, b: Position): Position {
+export function projectPointToSegment(p: Position, a: Position, b: Position): Position {
   const dx = b[0]! - a[0]!;
   const dy = b[1]! - a[1]!;
   const lenSq = dx * dx + dy * dy;

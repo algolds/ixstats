@@ -15,8 +15,12 @@ import {
   Sparkles,
   Train,
   RefreshCw,
+  Settings,
+  FileUp,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 interface EditorHeaderProps {
   countryInfo: { name: string } | null | undefined;
@@ -37,6 +41,7 @@ interface EditorHeaderProps {
   recalculateGeo: any;
   simplifyAll: any;
   handleRequestExit: () => void;
+  onShowHelp?: () => void;
 }
 
 export function EditorHeader({
@@ -58,8 +63,10 @@ export function EditorHeader({
   recalculateGeo,
   simplifyAll,
   handleRequestExit,
+  onShowHelp,
 }: EditorHeaderProps) {
   const isForgeActive = isWorldMode ? activeEditorMode === "forge" : forgeMode;
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   return (
     <div className="border-border bg-card/95 z-20 flex h-10 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md">
@@ -137,32 +144,149 @@ export function EditorHeader({
 
       <div className="bg-border h-4 w-px" />
 
-      {/* Map controls in header — grid, center */}
-      <div className="ml-1 flex items-center gap-0.5">
-        <button
-          onClick={() => setShowGrid((v) => !v)}
-          className={cn(
-            "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-            showGrid
-              ? "bg-primary/15 text-primary"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      {/* Map controls in header — grid, center, settings */}
+      <div className="ml-1 flex items-center gap-1.5">
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => setShowGrid((v) => !v)}
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+              showGrid
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
+            title="Toggle Grid (G)"
+          >
+            <Grid3X3 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => {
+              const geo = editor.countryGeo;
+              if (geo?.centroid) {
+                mapRef.current?.flyTo(geo.centroid.lng, geo.centroid.lat, 5);
+              }
+            }}
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+            title="Center on Country"
+          >
+            <Crosshair className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="bg-border h-4 w-px" />
+
+        {/* Rivers/elevation layer toggles + Settings popover */}
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <div className="flex items-center gap-0.5 mr-0.5">
+              <button
+                onClick={() => toggleEditorLayer("rivers")}
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+                  editorVisibleLayers.has("rivers")
+                    ? "bg-blue-500/15 text-blue-500"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+                title="Rivers"
+              >
+                <Droplets className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => toggleEditorLayer("altitudes")}
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+                  editorVisibleLayers.has("altitudes")
+                    ? "bg-amber-500/15 text-amber-500"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+                title="Altitude/Elevation"
+              >
+                <MountainIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
           )}
-          title="Toggle Grid (G)"
-        >
-          <Grid3X3 className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={() => {
-            const geo = editor.countryGeo;
-            if (geo?.centroid) {
-              mapRef.current?.flyTo(geo.centroid.lng, geo.centroid.lat, 5);
-            }
-          }}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
-          title="Center on Country"
-        >
-          <Crosshair className="h-3.5 w-3.5" />
-        </button>
+
+          {/* Help & Guide Button */}
+          {onShowHelp && (
+            <button
+              onClick={onShowHelp}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              title="Map Editor Guide & Onboarding"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* Settings Popover */}
+          <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <PopoverTrigger
+              className={cn(
+                "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+                isSettingsOpen
+                  ? "bg-primary/15 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              )}
+              title="Map Editor Settings"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </PopoverTrigger>
+            <PopoverContent
+              className="glass-none bg-popover border-border text-foreground w-64 p-3 shadow-md z-[100] rounded-md border"
+              align="end"
+            >
+              <div className="flex flex-col gap-3">
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+                  Map Editor Settings
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  {/* Import Provinces */}
+                  <button
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      editor.setMode("import-provinces");
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors text-left"
+                    title="Import provinces from external GeoJSON"
+                  >
+                    <FileUp className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                    <span className="font-medium">Import Provinces</span>
+                  </button>
+
+                  {/* Simplify All */}
+                  {editor.allFeatures.some((f: any) => f.type === "subdivision") && (
+                    <button
+                      onClick={async () => {
+                        setIsSettingsOpen(false);
+                        if (!activeCountryId) return;
+                        try {
+                          const result = await simplifyAll.mutateAsync({
+                            countryId: activeCountryId,
+                            targetVerticesPerProvince: 100,
+                          });
+                          alert(
+                            `Simplified ${result.updated}/${result.total} regions\n` +
+                              `Vertices: ${result.verticesBefore.toLocaleString()} → ${result.verticesAfter.toLocaleString()} (${result.reduction}% reduction)`
+                          );
+                        } catch (e) {
+                          alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                        }
+                      }}
+                      disabled={simplifyAll.isPending || !activeCountryId}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 transition-colors text-left"
+                      title="Simplify all regions — reduce vertices while preserving shape"
+                    >
+                      <Minimize2 className={cn("h-3.5 w-3.5 text-violet-500 shrink-0", simplifyAll.isPending && "animate-pulse")} />
+                      <span className="font-medium">
+                        {simplifyAll.isPending ? "Simplifying..." : "Simplify All Regions"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* Bulk delete — shown when multi-select has items */}
@@ -178,35 +302,6 @@ export function EditorHeader({
         </button>
       )}
 
-      {/* Simplify All Regions — available to all users with regions */}
-      {editor.allFeatures.some((f: any) => f.type === "subdivision") && (
-        <div className="mr-1">
-          <button
-            onClick={async () => {
-              if (!activeCountryId) return;
-              try {
-                const result = await simplifyAll.mutateAsync({
-                  countryId: activeCountryId,
-                  targetVerticesPerProvince: 100,
-                });
-                alert(
-                  `Simplified ${result.updated}/${result.total} regions\n` +
-                    `Vertices: ${result.verticesBefore.toLocaleString()} → ${result.verticesAfter.toLocaleString()} (${result.reduction}% reduction)`
-                );
-              } catch (e) {
-                alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
-              }
-            }}
-            disabled={simplifyAll.isPending || !activeCountryId}
-            className="flex items-center gap-1 rounded-md bg-violet-500/10 px-2 py-1 text-[11px] font-medium text-violet-600 hover:bg-violet-500/20 disabled:opacity-50 dark:text-violet-400"
-            title="Simplify all regions — reduce vertices while preserving shape"
-          >
-            <Minimize2 className={cn("h-3 w-3", simplifyAll.isPending && "animate-pulse")} />
-            {simplifyAll.isPending ? "Simplifying..." : "Simplify All"}
-          </button>
-        </div>
-      )}
-
       {/* Admin: Forge Mode toggle + actions */}
       {isAdmin && (
         <div
@@ -215,34 +310,6 @@ export function EditorHeader({
             "flex items-center gap-1.5"
           )}
         >
-          {/* Rivers/elevation icons */}
-          <button
-            onClick={() => toggleEditorLayer("rivers")}
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-              editorVisibleLayers.has("rivers")
-                ? "bg-blue-500/15 text-blue-500"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            )}
-            title="Rivers"
-          >
-            <Droplets className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => toggleEditorLayer("altitudes")}
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
-              editorVisibleLayers.has("altitudes")
-                ? "bg-amber-500/15 text-amber-500"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            )}
-            title="Altitude/Elevation"
-          >
-            <MountainIcon className="h-3.5 w-3.5" />
-          </button>
-
-          <div className="bg-border mx-0.5 h-4 w-px" />
-
           <button
             onClick={() => {
               if (isWorldMode) {

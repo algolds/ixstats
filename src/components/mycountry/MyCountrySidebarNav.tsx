@@ -158,7 +158,7 @@ export function MyCountrySidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     const mobileLogoClass =
-      "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer text-muted-foreground";
+      "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-muted-foreground hover:bg-transparent";
 
     const mobileLogoContent = (
       <>
@@ -279,7 +279,7 @@ export function MyCountrySidebarNav({
       "flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-xs font-medium mb-1.5 border-b border-white/5 text-muted-foreground";
 
     const logoLinkClass =
-      "relative flex items-center gap-2 cursor-pointer py-1 text-muted-foreground";
+      "relative flex items-center gap-2 cursor-pointer py-1 text-muted-foreground hover:text-muted-foreground hover:bg-transparent";
 
     const logoLinkContent = (
       <>
@@ -399,7 +399,7 @@ export function MyCountrySidebarNav({
 
   /* ── Desktop: icon rail with tooltip labels ── */
   const logoRailClass =
-    "group/logo relative flex h-9 w-9 items-center justify-center rounded-lg border-b border-white/5 pb-1.5 mb-1.5 outline-none cursor-pointer text-muted-foreground/80";
+    "group/logo relative flex h-9 w-9 items-center justify-center rounded-lg border-b border-white/5 pb-1.5 mb-1.5 outline-none cursor-pointer text-muted-foreground/80 hover:text-muted-foreground/80 hover:bg-transparent";
 
   const logoRailContent = (
     <>

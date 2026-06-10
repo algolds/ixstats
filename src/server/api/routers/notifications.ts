@@ -5,6 +5,7 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   publicProcedure,
+  protectedProcedure,
   adminProcedure,
   lightMutationProcedure,
 } from "~/server/api/trpc";
@@ -595,13 +596,21 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Get user notification preferences
-  getPreferences: publicProcedure
+  getPreferences: protectedProcedure
     .input(
       z.object({
         userId: z.string(),
       })
     )
     .query(async ({ ctx, input }) => {
+      // Security Check: Enforce user can only fetch their own preferences
+      if (input.userId !== ctx.auth?.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Unauthorized: Cannot access other user preferences",
+        });
+      }
+
       const preferences = await ctx.db.userPreferences.findUnique({
         where: { userId: input.userId },
       });
@@ -642,6 +651,14 @@ export const notificationsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { userId, ...data } = input;
+
+      // Security Check: Enforce user can only modify their own preferences
+      if (userId !== ctx.auth?.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Unauthorized: Cannot modify preferences for another user",
+        });
+      }
 
       // Ensure at least one field is being updated
       if (Object.keys(data).length === 0) {

@@ -358,7 +358,7 @@ export function useMapEditorOverlayState({
     panelB: { placement: "left" | "right" | "bottom"; tabs: TabId[]; collapsed: boolean };
   }>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("ixworld-editor-panels-config-v2");
+      const stored = localStorage.getItem("ixworld-editor-panels-config-v3");
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -371,7 +371,7 @@ export function useMapEditorOverlayState({
     return {
       panelA: {
         placement: "left",
-        tabs: isWorldMode ? ["linkages", "sovereignty", "features"] : ["layers", "features"],
+        tabs: isWorldMode ? ["linkages", "sovereignty", "layers"] : ["layers"],
         collapsed: false,
       },
       panelB: {
@@ -384,7 +384,7 @@ export function useMapEditorOverlayState({
 
   // Save config to local storage on change
   useEffect(() => {
-    localStorage.setItem("ixworld-editor-panels-config-v2", JSON.stringify(panelConfigs));
+    localStorage.setItem("ixworld-editor-panels-config-v3", JSON.stringify(panelConfigs));
   }, [panelConfigs]);
 
   // Sync tab requirements on mode shift
@@ -397,12 +397,16 @@ export function useMapEditorOverlayState({
       };
 
       if (isWorldMode) {
-        if (next.panelA.tabs.includes("layers")) {
-          next.panelA.tabs = next.panelA.tabs.filter((t) => t !== "layers");
+        const oldLenA = next.panelA.tabs.length;
+        const oldLenB = next.panelB.tabs.length;
+        next.panelA.tabs = next.panelA.tabs.filter((t) => t !== "features");
+        next.panelB.tabs = next.panelB.tabs.filter((t) => t !== "features");
+        if (next.panelA.tabs.length !== oldLenA || next.panelB.tabs.length !== oldLenB) {
           changed = true;
         }
-        if (next.panelB.tabs.includes("layers")) {
-          next.panelB.tabs = next.panelB.tabs.filter((t) => t !== "layers");
+
+        if (!next.panelA.tabs.includes("layers") && !next.panelB.tabs.includes("layers")) {
+          next.panelA.tabs.push("layers");
           changed = true;
         }
         if (!next.panelA.tabs.includes("linkages") && !next.panelB.tabs.includes("linkages")) {
@@ -416,8 +420,8 @@ export function useMapEditorOverlayState({
       } else {
         const oldLenA = next.panelA.tabs.length;
         const oldLenB = next.panelB.tabs.length;
-        next.panelA.tabs = next.panelA.tabs.filter((t) => t !== "linkages" && t !== "sovereignty");
-        next.panelB.tabs = next.panelB.tabs.filter((t) => t !== "linkages" && t !== "sovereignty");
+        next.panelA.tabs = next.panelA.tabs.filter((t) => t !== "linkages" && t !== "sovereignty" && t !== "features");
+        next.panelB.tabs = next.panelB.tabs.filter((t) => t !== "linkages" && t !== "sovereignty" && t !== "features");
         if (next.panelA.tabs.length !== oldLenA || next.panelB.tabs.length !== oldLenB) {
           changed = true;
         }

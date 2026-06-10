@@ -304,6 +304,64 @@ export const wikiRouter = createTRPCRouter({
     }),
 
   /**
+   * Get dynamic list of categories containing files.
+   * Direct MySQL for ixwiki, HTTP API for iiwiki.
+   */
+  getCategories: cachedPublicProcedure
+    .input(
+      z.object({
+        wiki: wikiSourceSchema,
+        limit: z.number().int().min(1).max(500).default(500),
+      })
+    )
+    .query(async ({ input }) => {
+      const isIiwiki = input.wiki === "iiwiki";
+
+      if (!isIiwiki) {
+        try {
+          const { getIxWikiPool } = await import("~/lib/wiki-bridge");
+          const pool = getIxWikiPool();
+          const [rows] = await pool.query<any[]>(`
+            SELECT cat_title AS name, cat_files AS fileCount
+            FROM category
+            WHERE cat_files > 0
+            ORDER BY cat_files DESC
+            LIMIT ?
+          `, [input.limit]);
+          return (rows as any[]).map((r) => ({
+            name: String(r.name).replace(/_/g, " "),
+            fileCount: Number(r.fileCount),
+          }));
+        } catch (err) {
+          console.error("[wikiRouter] Failed to fetch ixwiki categories from DB:", err);
+          return [];
+        }
+      } else {
+        try {
+          const url = `https://iiwiki.com/api.php?action=query&list=allcategories&aclimit=${input.limit}&acmin=1&acprop=size&format=json&origin=*`;
+          const res = await fetch(url, {
+            headers: {
+              "User-Agent": "IxStats-Builder",
+              "Api-User-Agent": "IxStats-Builder",
+            },
+          });
+          if (!res.ok) return [];
+          const data = (await res.json()) as any;
+          const categories = data?.query?.allcategories ?? [];
+          return categories
+            .filter((c: any) => c.files > 0)
+            .map((c: any) => ({
+              name: String(c["*"] || c.title).replace(/_/g, " "),
+              fileCount: Number(c.files || 0),
+            }));
+        } catch (err) {
+          console.error("[wikiRouter] Failed to fetch iiwiki categories from API:", err);
+          return [];
+        }
+      }
+    }),
+
+  /**
    * Download a wiki file's content as base64 — server-side proxy to avoid CORS.
    * Reads directly from /ixwiki/shared/images/ when possible (same server, instant).
    */

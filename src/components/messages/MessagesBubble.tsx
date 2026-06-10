@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
+import type { MessagesSettings } from "./MessagesFolderNav";
 
 interface MessageAccount {
   id: string;
@@ -45,6 +46,8 @@ interface MessagesBubbleProps {
   isConsecutive: boolean;
   onReply: (message: Message) => void;
   actions: MessageActions;
+  settings?: MessagesSettings;
+  searchQuery?: string;
 }
 
 const QUICK_REACTIONS = ["❤️", "👍", "👎", "😂", "😮", "😢", "😡"];
@@ -85,6 +88,8 @@ export const MessagesBubble = React.memo(function MessagesBubble({
   isConsecutive,
   onReply,
   actions,
+  settings,
+  searchQuery,
 }: MessagesBubbleProps) {
   const [showReactions, setShowReactions] = useState(false);
 
@@ -104,28 +109,64 @@ export const MessagesBubble = React.memo(function MessagesBubble({
       ? Math.min(MAX_BUBBLE_WIDTH, shrinkwrappedWidth + BUBBLE_PADDING_X)
       : undefined;
 
-  if (!account) return null;
+  const getDisplayName = (acc: { username?: string; displayName: string }) => {
+    return settings?.displayNamePreference === "account" && acc.username
+      ? `@${acc.username}`
+      : acc.displayName;
+  };
 
-  const initials = (account.displayName ?? "?")
+  const resolvedDisplayName = account ? getDisplayName(account) : "";
+
+  const initials = (resolvedDisplayName ?? "?")
+    .replace(/^@/, "")
     .split(" ")
     .map((n) => n[0])
     .join("")
     .substring(0, 2);
 
+  // Highlight matching search text
+  const highlightedContent = useMemo(() => {
+    const content = message.content;
+    if (!searchQuery?.trim()) return content;
+
+    const escapedQuery = searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const parts = content.split(/(<[^>]+>)/g);
+    const highlightedParts = parts.map((part) => {
+      if (part.startsWith("<") && part.endsWith(">")) {
+        return part;
+      }
+      const regex = new RegExp(`(${escapedQuery})`, "gi");
+      return part.replace(
+        regex,
+        '<mark class="bg-yellow-500/40 text-slate-100 rounded-sm px-0.5">$1</mark>'
+      );
+    });
+
+    return highlightedParts.join("");
+  }, [message.content, searchQuery]);
+
+  if (!account) return null;
+
   return (
     <div
       className={cn(
-        "group relative flex gap-2 px-4 py-0.5 transition-colors",
+        "group relative flex transition-colors",
+        settings?.compactMode ? "gap-1.5 px-2 py-px" : "gap-2 px-4 py-0.5",
         isOwn ? "flex-row-reverse" : "flex-row",
-        !isConsecutive && "mt-3 pt-1"
+        !isConsecutive && (settings?.compactMode ? "mt-1 pt-0.5" : "mt-3 pt-1")
       )}
     >
       {/* Avatar column */}
-      <div className={cn("w-8 shrink-0", isOwn && "hidden")}>
+      <div className={cn(settings?.compactMode ? "w-6" : "w-8", "shrink-0", isOwn && "hidden")}>
         {!isConsecutive && (
-          <Avatar className="h-8 w-8">
+          <Avatar className={settings?.compactMode ? "h-6 w-6" : "h-8 w-8"}>
             <AvatarImage src={account.profileImageUrl ?? undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-[10px] font-semibold text-white">
+            <AvatarFallback
+              className={cn(
+                "bg-gradient-to-br from-emerald-500 to-teal-600 font-semibold text-white",
+                settings?.compactMode ? "text-[8px]" : "text-[10px]"
+              )}
+            >
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -137,7 +178,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
         {!isConsecutive && !isOwn && (
           <div className="mb-1 ml-1 flex items-baseline gap-2">
             <span className="text-foreground/70 text-[11px] font-semibold">
-              {account.displayName}
+              {resolvedDisplayName}
             </span>
           </div>
         )}
@@ -152,7 +193,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             >
               <Reply className="h-2.5 w-2.5 shrink-0" />
               <span className="max-w-[150px] truncate font-medium">
-                {message.replyTo.account?.displayName}:{" "}
+                {message.replyTo.account ? getDisplayName(message.replyTo.account) : "Unknown"}:{" "}
                 {message.replyTo.content.replace(/<[^>]*>/g, "").substring(0, 30)}
               </span>
             </div>
@@ -160,10 +201,13 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
           <div
             className={cn(
-              "overflow-hidden rounded-2xl px-3 py-2 text-sm leading-relaxed break-words shadow-sm",
+              "overflow-hidden break-words shadow-sm",
+              settings?.compactMode
+                ? "rounded-xl px-2 py-1 text-xs leading-normal"
+                : "rounded-2xl px-3 py-2 text-sm leading-relaxed",
               isOwn
-                ? "bg-primary text-primary-foreground rounded-br-sm"
-                : "bg-muted text-foreground rounded-bl-sm",
+                ? "rounded-br-sm bg-blue-600 text-white"
+                : "rounded-bl-sm border border-white/5 bg-white/10 text-slate-100",
               message.replyTo && "rounded-t-none"
             )}
             style={{
@@ -171,7 +215,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               ...(bubbleWidth ? { width: bubbleWidth } : {}),
             }}
           >
-            <div className="[&>p]:mb-0" dangerouslySetInnerHTML={{ __html: message.content }} />
+            <div className="[&>p]:mb-0" dangerouslySetInnerHTML={{ __html: highlightedContent }} />
 
             <div
               className={cn(
@@ -183,7 +227,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             >
               <span>{formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}</span>
               {message.editedAt && <span>(edited)</span>}
-              {isOwn && message.readReceipts && (
+              {isOwn && message.readReceipts && (!settings || settings.showReadReceipts) && (
                 <span>
                   {message.readReceipts.length > 0 ? (
                     <CheckCheck className="h-2.5 w-2.5" />

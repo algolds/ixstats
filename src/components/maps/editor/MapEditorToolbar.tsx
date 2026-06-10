@@ -54,7 +54,6 @@ const TOOLS: ToolDef[] = [
   { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
   { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 1 },
   { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 1 },
-  { mode: "import-provinces", icon: FileUp, label: "Import", shortcut: "I", group: 2 },
   { mode: "paint", icon: Paintbrush, label: "Paint", shortcut: "B", group: 3 },
 ];
 

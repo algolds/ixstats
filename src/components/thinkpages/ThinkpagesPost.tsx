@@ -60,12 +60,14 @@ import { PostActions } from "./primitives/PostActions";
 import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { LiveDataCard } from "./LiveDataCard";
 import {
   formatThinkpagesContentForDisplay,
   extractHashtags,
   extractMentions,
 } from "~/lib/text-formatter";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 
@@ -106,6 +108,7 @@ interface ThinkpagesPostProps {
   onAccountClick?: (accountId: string) => void;
   compact?: boolean;
   showThread?: boolean;
+  isHero?: boolean;
 }
 
 function RelativeTimestamp({ timestamp }: { timestamp: Date | string | number }) {
@@ -240,8 +243,10 @@ const ThinkpagesPostComponent = ({
   onAccountClick,
   compact = false,
   showThread = false,
+  isHero = false,
 }: ThinkpagesPostProps) => {
   const notify = useNotify();
+  const utils = api.useUtils();
   const blurbMeta = parseBlurbMeta(post);
 
   const { user: currentUserData } = usePermissions();
@@ -354,6 +359,10 @@ const ThinkpagesPostComponent = ({
   }, [post.repostOf?.content, repostImageUrls]);
 
   const [showReplies, setShowReplies] = useState(false);
+  const threadQuery = api.thinkpages.getPost.useQuery(
+    { postId: post.id },
+    { enabled: showReplies && showThread }
+  );
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -398,11 +407,54 @@ const ThinkpagesPostComponent = ({
 
   const addReactionMutation = api.thinkpages.addReaction.useMutation();
   const removeReactionMutation = api.thinkpages.removeReaction.useMutation();
-  const createPostMutation = api.thinkpages.createPost.useMutation();
-  const updatePostMutation = api.thinkpages.updatePost.useMutation();
-  const deletePostMutation = api.thinkpages.deletePost.useMutation();
-  const pinPostMutation = api.thinkpages.pinPost.useMutation();
-  const bookmarkPostMutation = api.thinkpages.bookmarkPost.useMutation();
+  const createPostMutation = api.thinkpages.createPost.useMutation({
+    onSuccess: () => {
+      void utils.thinkpages.getFeed.invalidate();
+      if (post.account?.clerkUserId) {
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+      }
+      void utils.thinkpages.getPost.invalidate({ postId: post.id });
+    },
+  });
+  const updatePostMutation = api.thinkpages.updatePost.useMutation({
+    onSuccess: () => {
+      void utils.thinkpages.getFeed.invalidate();
+      if (post.account?.clerkUserId) {
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+      }
+      void utils.thinkpages.getPost.invalidate({ postId: post.id });
+    },
+  });
+  const deletePostMutation = api.thinkpages.deletePost.useMutation({
+    onSuccess: () => {
+      void utils.thinkpages.getFeed.invalidate();
+      if (post.account?.clerkUserId) {
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+      }
+      if (post.parentPostId) {
+        void utils.thinkpages.getPost.invalidate({ postId: post.parentPostId });
+      }
+      void utils.thinkpages.getPost.invalidate({ postId: post.id });
+    },
+  });
+  const pinPostMutation = api.thinkpages.pinPost.useMutation({
+    onSuccess: () => {
+      void utils.thinkpages.getFeed.invalidate();
+      if (post.account?.clerkUserId) {
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+      }
+      void utils.thinkpages.getPost.invalidate({ postId: post.id });
+    },
+  });
+  const bookmarkPostMutation = api.thinkpages.bookmarkPost.useMutation({
+    onSuccess: () => {
+      void utils.thinkpages.getFeed.invalidate();
+      if (post.account?.clerkUserId) {
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+      }
+      void utils.thinkpages.getPost.invalidate({ postId: post.id });
+    },
+  });
   const flagPostMutation = api.thinkpages.flagPost.useMutation();
 
   const handlePin = useCallback(async () => {
@@ -536,6 +588,344 @@ const ThinkpagesPostComponent = ({
       notify.error(error.message || "Failed to post reply");
     }
   }, [createPostMutation, replyText, currentUserAccountId, post.id]);
+
+  if (isHero) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-xl shadow-xl space-y-4"
+      >
+        {/* Header section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => onAccountClick?.(post.account.id)} className="shrink-0 transition-transform hover:scale-105">
+              <Avatar className="h-12 w-12 border border-white/10">
+                <AvatarImage src={proxyDiscordUrl(post.account.profileImageUrl)} />
+                <AvatarFallback
+                  className={`font-semibold text-sm ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+                >
+                  {post.account.displayName
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => onAccountClick?.(post.account.id)}
+                  className="font-bold text-slate-100 hover:underline text-base leading-snug"
+                >
+                  {post.account.displayName}
+                </button>
+                {post.account.verified && (
+                  <span className="inline-flex h-4 w-4 items-center justify-center text-sm" title="Verified">✅</span>
+                )}
+                {post.account.country && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[11px] font-medium text-slate-300">
+                    {post.account.country.flag && (
+                      <img
+                        src={normalizeFlagUrl(post.account.country.flag)}
+                        alt=""
+                        className="h-2.5 w-3.5 rounded-sm object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    {post.account.country.name}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-slate-400 text-sm">@{post.account.username}</span>
+                <span className="text-slate-600 text-xs">·</span>
+                <div
+                  className={cn(
+                    "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase",
+                    ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"
+                  )}
+                >
+                  {React.createElement(
+                    ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS] || Users,
+                    { className: "h-2.5 w-2.5" }
+                  )}
+                  <span>{post.account.accountType}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* More options dropdown menu */}
+          <div className="relative">
+            <DropdownMenu open={showMoreOptions} onOpenChange={setShowMoreOptions}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-200">
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 border-white/10 bg-slate-900/90 backdrop-blur-xl">
+                {canEdit && (
+                  <DropdownMenuItem onClick={handleEdit} className="text-slate-200 hover:bg-white/10">
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Edit Post</span>
+                  </DropdownMenuItem>
+                )}
+                {currentUserAccountId && (
+                  <>
+                    <DropdownMenuItem onClick={handlePin} className="text-slate-200 hover:bg-white/10">
+                      <Pin className="mr-2 h-4 w-4" />
+                      <span>{post.pinned ? "Unpin Post" : "Pin Post"}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBookmark} className="text-slate-200 hover:bg-white/10">
+                      <Bookmark className="mr-2 h-4 w-4" />
+                      <span>Bookmark Post</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {currentUserAccountId && !isOwnPost && (
+                  <DropdownMenuItem onClick={handleFlag} className="text-red-400 hover:bg-red-500/20 hover:text-red-300">
+                    <Flag className="mr-2 h-4 w-4" />
+                    <span>Report Post</span>
+                  </DropdownMenuItem>
+                )}
+                {canDelete && (
+                  <>
+                    <DropdownMenuSeparator className="bg-white/10" />
+                    <DropdownMenuItem onClick={handleDelete} className="text-red-500 hover:bg-red-500/20 hover:text-red-400 font-medium">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete Post</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Content body */}
+        <div className="text-[20px] leading-relaxed font-normal text-slate-100 whitespace-pre-wrap mt-2 select-text">
+          <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanPostContent)} />
+        </div>
+
+        {/* Media attachments */}
+        {mediaAttachments && mediaAttachments.length > 0 && (
+          <div
+            className={cn(
+              "border border-white/10 mt-3 overflow-hidden rounded-2xl shadow-lg bg-black/20",
+              mediaAttachments.length === 1 && "max-w-full",
+              mediaAttachments.length > 1 && "grid grid-cols-2 gap-1.5"
+            )}
+          >
+            {mediaAttachments.map((media: any, index: number) => {
+              const isSingle = mediaAttachments.length === 1;
+              return (
+                <div
+                  key={media.id || index}
+                  className={cn(
+                    "relative flex items-center justify-center overflow-hidden bg-neutral-950/40",
+                    isSingle && "aspect-[16/10] max-h-[420px] w-full",
+                    mediaAttachments.length === 2 && "aspect-square",
+                    mediaAttachments.length === 3 && index === 0 ? "col-span-2 aspect-[16/10]" : "aspect-square",
+                    mediaAttachments.length === 4 && "aspect-square"
+                  )}
+                >
+                  <motion.img
+                    layoutId={`post-${post.id}-${media.id || index}`}
+                    src={proxyDiscordUrl(media.url)}
+                    alt={media.filename || `Image ${index + 1}`}
+                    className="h-full w-full cursor-pointer object-cover"
+                    whileHover={{ scale: 1.015, opacity: 0.98 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxMedia({
+                        url: media.url,
+                        id: `post-${post.id}-${media.id || index}`,
+                      });
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Embedded Visualizations */}
+        {visualizations && visualizations.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {visualizations.map((viz: any, index: number) => (
+              <PostVisualizationRenderer
+                key={viz.id || index}
+                viz={viz}
+                countryId={post.account.countryId || post.account.country?.id || ""}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Inline Link Previews */}
+        {(() => {
+          const content = post.content ?? "";
+          const matchedLink = (() => {
+            const wikiMatch = content.match(/(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i);
+            if (wikiMatch) return wikiMatch[0];
+            const forumMatch = content.match(/(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i);
+            if (forumMatch) return forumMatch[0];
+            return null;
+          })();
+          if (matchedLink) {
+            return <PostInlineLinkPreview url={matchedLink} />;
+          }
+          return null;
+        })()}
+
+        {/* Hashtags */}
+        {post.hashtags && post.hashtags.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {post.hashtags.map((hashtag: string, index: number) => (
+              <button key={index} className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline">
+                #{hashtag}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Timestamp Row (Absolute formatted) */}
+        <div className="text-slate-400 text-sm py-1">
+          {new Date(post.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+          {" · "}
+          {new Date(post.timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+          {" · ixTime"}
+        </div>
+
+        {/* Status Counters Row (Likes, Reposts, Replies) */}
+        <div className="flex gap-4 border-t border-b border-white/5 py-3 text-sm font-medium text-slate-300">
+          <div>
+            <span className="text-slate-100 font-bold">{post.likeCount || 0}</span>
+            <span className="text-slate-400 font-normal ml-1">Likes</span>
+          </div>
+          <div>
+            <span className="text-slate-100 font-bold">{post.repostCount || 0}</span>
+            <span className="text-slate-400 font-normal ml-1">Reposts</span>
+          </div>
+          <div>
+            <span className="text-slate-100 font-bold">{post.replyCount || 0}</span>
+            <span className="text-slate-400 font-normal ml-1">Replies</span>
+          </div>
+        </div>
+
+        {/* Action Buttons Row */}
+        <div className="py-1">
+          <PostActions
+            postId={post.id}
+            currentUserAccountId={currentUserAccountId}
+            post={post}
+            accounts={accounts}
+            countryId={countryId}
+            isOwner={isOwner}
+            onAccountSelect={onAccountSelect}
+            onAccountSettings={onAccountSettings}
+            onCreateAccount={onCreateAccount}
+            isLiked={post.reactions?.some(
+              (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
+            )}
+            isReposted={
+              post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false
+            }
+            likeCount={post.likeCount}
+            repostCount={post.repostCount}
+            replyCount={post.replyCount}
+            reactions={post.reactions || []}
+            reactionCounts={(() => {
+              try {
+                if (typeof post.reactionCounts === "string") {
+                  return JSON.parse(post.reactionCounts);
+                }
+                return post.reactionCounts || {};
+              } catch (error) {
+                return {};
+              }
+            })()}
+            onLike={onLike}
+            onRepost={onRepost}
+            onReply={onReply}
+            onShare={onShare}
+            showCounts={false}
+            size="lg"
+            className="w-full justify-around"
+          />
+        </div>
+
+        {/* Modals & Dialogs (Delete confirmation, Flag/Report popup) */}
+        {showDeleteConfirm && (
+          <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <DialogContent className="border-white/10 bg-slate-950 text-slate-100">
+              <h3 className="text-lg font-bold">Delete Post</h3>
+              <p className="text-sm text-slate-400">Are you sure you want to permanently delete this post? This action cannot be undone.</p>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+                <Button variant="destructive" onClick={handleConfirmDelete} disabled={deletePostMutation.isPending}>
+                  {deletePostMutation.isPending ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {showFlagDialog && (
+          <Dialog open={showFlagDialog} onOpenChange={setShowFlagDialog}>
+            <DialogContent className="border-white/10 bg-slate-950 text-slate-100">
+              <h3 className="text-lg font-bold">Report Post</h3>
+              <Textarea
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                placeholder="Why are you flagging this post?"
+                className="mt-2 min-h-[100px] border-white/10 bg-slate-900"
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setShowFlagDialog(false)}>Cancel</Button>
+                <Button variant="destructive" onClick={handleSubmitFlag} disabled={!flagReason.trim() || flagPostMutation.isPending}>
+                  {flagPostMutation.isPending ? "Reporting..." : "Report"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Image Lightbox Portal */}
+        {lightboxMedia &&
+          typeof window !== "undefined" &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/95 backdrop-blur-md"
+              onClick={() => setLightboxMedia(null)}
+            >
+              <button
+                className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+                onClick={() => setLightboxMedia(null)}
+              >
+                <X className="h-6 w-6" />
+              </button>
+              <motion.img
+                layoutId={lightboxMedia.id}
+                src={proxyDiscordUrl(lightboxMedia.url)}
+                alt="Enlarged view"
+                className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>,
+            document.body
+          )}
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -1176,6 +1566,47 @@ const ThinkpagesPostComponent = ({
             </button>
           )}
 
+          {showThread && showReplies && (
+            <div className="mt-3 space-y-3 pl-4 border-l-2 border-white/10 dark:border-white/10 ml-5 relative">
+              {threadQuery.isLoading ? (
+                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+                  <span>Loading replies...</span>
+                </div>
+              ) : threadQuery.error ? (
+                <div className="text-xs text-red-500 py-1">
+                  Failed to load replies.
+                </div>
+              ) : threadQuery.data?.replies && threadQuery.data.replies.length > 0 ? (
+                threadQuery.data.replies.map((reply: any) => (
+                  <ThinkpagesPost
+                    key={reply.id}
+                    post={reply}
+                    currentUserAccountId={currentUserAccountId}
+                    accounts={accounts}
+                    countryId={countryId}
+                    isOwner={isOwner}
+                    onAccountSelect={onAccountSelect}
+                    onAccountSettings={onAccountSettings}
+                    onCreateAccount={onCreateAccount}
+                    onLike={onLike}
+                    onRepost={onRepost}
+                    onReply={onReply}
+                    onShare={onShare}
+                    onReaction={onReaction}
+                    onAccountClick={onAccountClick}
+                    compact={true}
+                    showThread={false}
+                  />
+                ))
+              ) : (
+                <div className="text-xs text-muted-foreground py-1">
+                  No replies yet.
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Delete Confirmation Dialog */}
           <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
             <DialogContent
@@ -1356,7 +1787,8 @@ export const ThinkpagesPost = React.memo(ThinkpagesPostComponent, (prevProps, ne
     prevProps.post.updatedAt === nextProps.post.updatedAt &&
     JSON.stringify(prevProps.post.reactionCounts) ===
       JSON.stringify(nextProps.post.reactionCounts) &&
-    prevProps.post._count?.replies === nextProps.post._count?.replies
+    prevProps.post._count?.replies === nextProps.post._count?.replies &&
+    prevProps.isHero === nextProps.isHero
   );
 });
 
@@ -1384,588 +1816,7 @@ interface PostVisualizationRendererProps {
 }
 
 function PostVisualizationRenderer({ viz, countryId }: PostVisualizationRendererProps) {
-  const { type, title } = viz;
-
-  // Query only what is needed based on visualization type
-  const economicQuery = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId },
-    {
-      enabled:
-        !!countryId &&
-        (type === "gdp_growth" ||
-          type === "demographics" ||
-          type === "budget_debt" ||
-          type === "economic_chart" ||
-          type === "labor_market"),
-      staleTime: 5 * 60_000,
-    }
-  );
-
-  const historyQuery = api.historical.getCountryHistory.useQuery(
-    { countryId, limit: 10 },
-    {
-      enabled: !!countryId && type === "economic_chart",
-      staleTime: 5 * 60_000,
-    }
-  );
-
-  const diplomaticQuery = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    {
-      enabled: !!countryId && type === "diplomatic_map",
-      staleTime: 5 * 60_000,
-    }
-  );
-
-  const tradeQuery = api.countries.getTradeData.useQuery(
-    { countryId },
-    {
-      enabled: !!countryId && type === "trade_flow",
-      staleTime: 5 * 60_000,
-    }
-  );
-
-  const vitalityQuery = api.countries.getActivityRingsData.useQuery(
-    { countryId },
-    {
-      enabled: !!countryId && type === "national_vitality",
-      staleTime: 5 * 60_000,
-    }
-  );
-
-  const isLoading =
-    economicQuery.isLoading ||
-    historyQuery.isLoading ||
-    diplomaticQuery.isLoading ||
-    tradeQuery.isLoading ||
-    vitalityQuery.isLoading;
-
-  if (isLoading) {
-    return (
-      <div className="flex h-24 w-full items-center justify-center rounded-xl border border-white/5 bg-white/[0.02]">
-        <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
-      </div>
-    );
-  }
-
-  // Format Helper for large values
-  const formatMoney = (val: number) => {
-    if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
-    return `$${val.toLocaleString()}`;
-  };
-
-  // 1. GDP Growth Trajectory
-  if (type === "economic_chart") {
-    let rawHistory = historyQuery.data || [];
-    if (rawHistory.length === 0 && economicQuery.data?.historical) {
-      rawHistory = economicQuery.data.historical.map((h: any) => ({
-        ixTimeTimestamp: new Date(h.year, 0, 1),
-        totalGdp: h.gdp,
-        population: h.population,
-      }));
-    }
-
-    if (rawHistory.length === 0) {
-      return (
-        <div className="text-muted-foreground rounded-xl border border-white/10 bg-white/5 p-3.5 text-center text-xs">
-          No historical GDP data available
-        </div>
-      );
-    }
-
-    const maxGdp = Math.max(...rawHistory.map((h: any) => h.totalGdp || 0));
-
-    return (
-      <Card className="glass-hierarchy-child border-blue-500/10 bg-blue-500/[0.02] p-3.5">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <TrendingUp className="h-3.5 w-3.5 text-green-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">Historical Trajectory</span>
-        </div>
-        <div className="mt-2 space-y-1.5">
-          {rawHistory.slice(-4).map((h: any, idx: number) => {
-            const yearStr = h.ixTimeTimestamp
-              ? new Date(h.ixTimeTimestamp).getFullYear().toString()
-              : `Y${idx + 1}`;
-            const gdpVal = h.totalGdp || 0;
-            const pct = maxGdp > 0 ? (gdpVal / maxGdp) * 100 : 0;
-            return (
-              <div key={idx} className="flex items-center gap-3 text-xs">
-                <span className="text-muted-foreground w-10 text-left">{yearStr}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="w-16 text-right font-medium text-white">
-                  {formatMoney(gdpVal)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-    );
-  }
-
-  // 2. Diplomatic Relations Map
-  if (type === "diplomatic_map") {
-    const relations = diplomaticQuery.data || [];
-    if (relations.length === 0) {
-      return (
-        <Card className="glass-hierarchy-child text-muted-foreground border-blue-500/10 bg-blue-500/[0.02] p-3.5 text-center text-xs">
-          No active diplomatic relationships
-        </Card>
-      );
-    }
-
-    return (
-      <Card className="glass-hierarchy-child border-purple-500/10 bg-purple-500/[0.02] p-3.5">
-        <div className="mb-2.5 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Globe className="h-3.5 w-3.5 text-purple-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">{relations.length} Connections</span>
-        </div>
-        <div className="grid gap-2">
-          {relations.slice(0, 3).map((rel: any) => {
-            const relType = rel.relationship?.toLowerCase() || "neutral";
-            const colorMap: Record<string, string> = {
-              alliance: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-              trade: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-              tension: "text-red-400 bg-red-500/10 border-red-500/20",
-              neutral: "text-neutral-400 bg-neutral-500/10 border-neutral-500/20",
-            };
-            return (
-              <div
-                key={rel.id}
-                className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs"
-              >
-                <div className="flex items-center gap-2">
-                  {rel.targetCountryFlag ? (
-                    <img
-                      src={rel.targetCountryFlag}
-                      alt=""
-                      className="h-4 w-6 rounded-sm border border-white/10 object-cover shadow-xs"
-                    />
-                  ) : (
-                    <div className="flex h-4 w-6 items-center justify-center rounded-sm bg-white/10 text-[8px]">
-                      {rel.targetCountryName?.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="max-w-[120px] truncate font-medium text-white">
-                    {rel.targetCountryName}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className={`px-1.5 py-0 text-[9px] font-bold tracking-wider uppercase ${colorMap[relType] || colorMap.neutral}`}
-                  >
-                    {rel.relationship || "Neutral"}
-                  </Badge>
-                  <div className="flex w-16 items-center gap-1.5">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
-                      <div
-                        className="h-full bg-purple-500"
-                        style={{ width: `${rel.strength || 50}%` }}
-                      />
-                    </div>
-                    <span className="text-muted-foreground w-6 text-right text-[10px] font-medium">
-                      {rel.strength || 50}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-    );
-  }
-
-  // 3. Trade Flow Analysis
-  if (type === "trade_flow") {
-    const trade = tradeQuery.data;
-    if (!trade) {
-      return (
-        <Card className="glass-hierarchy-child text-muted-foreground border-orange-500/10 bg-orange-500/[0.02] p-3.5 text-center text-xs">
-          No trade statistics available
-        </Card>
-      );
-    }
-
-    const exportsPct = trade.totalVolume > 0 ? (trade.exports / trade.totalVolume) * 100 : 50;
-    const importsPct = trade.totalVolume > 0 ? (trade.imports / trade.totalVolume) * 100 : 50;
-
-    return (
-      <Card className="glass-hierarchy-child border-orange-500/10 bg-orange-500/[0.02] p-3.5">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <BarChart3 className="h-3.5 w-3.5 text-orange-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">Trade Flows</span>
-        </div>
-        <div className="mb-2.5 grid grid-cols-3 gap-3">
-          <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 text-center">
-            <div className="text-muted-foreground text-[10px]">Total Volume</div>
-            <div className="mt-0.5 text-xs font-bold text-white">
-              {formatMoney(trade.totalVolume)}
-            </div>
-          </div>
-          <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 text-center">
-            <div className="text-muted-foreground text-[10px]">Exports</div>
-            <div className="mt-0.5 text-xs font-bold text-emerald-400">
-              {formatMoney(trade.exports)}
-            </div>
-          </div>
-          <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 text-center">
-            <div className="text-muted-foreground text-[10px]">Imports</div>
-            <div className="mt-0.5 text-xs font-bold text-red-400">
-              {formatMoney(trade.imports)}
-            </div>
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <div className="text-muted-foreground flex justify-between text-[10px]">
-            <span>Exports ({exportsPct.toFixed(0)}%)</span>
-            <span>Imports ({importsPct.toFixed(0)}%)</span>
-          </div>
-          <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/5">
-            <div className="h-full bg-emerald-500" style={{ width: `${exportsPct}%` }} />
-            <div className="h-full bg-red-500" style={{ width: `${importsPct}%` }} />
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // 4. Economic Performance Overview (GDP stats)
-  if (type === "gdp_growth") {
-    const econ = economicQuery.data;
-    if (!econ) {
-      return (
-        <Card className="glass-hierarchy-child text-muted-foreground border-emerald-500/10 bg-emerald-500/[0.02] p-3.5 text-center text-xs">
-          No economic metrics available
-        </Card>
-      );
-    }
-
-    const growthRate = econ.calculatedStats?.gdpGrowth || 0;
-    const gdpVal = econ.currentTotalGdp || econ.gdp || 0;
-    const gdppcVal = econ.currentGdpPerCapita || econ.gdpPerCapita || 0;
-
-    return (
-      <Card className="glass-hierarchy-child border-emerald-500/10 bg-emerald-500/[0.02] p-3.5">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">Key Metrics</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Total GDP</div>
-            <div className="mt-0.5 text-sm font-bold text-white">{formatMoney(gdpVal)}</div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">GDP Per Capita</div>
-            <div className="mt-0.5 text-sm font-bold text-white">
-              ${Math.round(gdppcVal).toLocaleString()}
-            </div>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div>
-              <div className="text-muted-foreground text-[10px]">Annual Growth</div>
-              <div
-                className={cn(
-                  "mt-0.5 text-sm font-bold",
-                  growthRate >= 0 ? "text-emerald-400" : "text-red-400"
-                )}
-              >
-                {growthRate >= 0 ? "+" : ""}
-                {(growthRate * 100).toFixed(1)}%
-              </div>
-            </div>
-            {growthRate >= 0 ? (
-              <ArrowUpRight className="h-5 w-5 shrink-0 text-emerald-400" />
-            ) : (
-              <ArrowDownRight className="h-5 w-5 shrink-0 text-red-400" />
-            )}
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Economic Tier</div>
-            <Badge
-              variant="secondary"
-              className="mt-1 border border-emerald-500/20 bg-emerald-500/10 text-[9px] font-bold tracking-wider text-emerald-400 uppercase"
-            >
-              {econ.economicTier || "Developed"}
-            </Badge>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // 5. Demographics Profile
-  if (type === "demographics") {
-    const econ = economicQuery.data;
-    if (!econ) {
-      return (
-        <Card className="glass-hierarchy-child text-muted-foreground border-green-500/10 bg-green-500/[0.02] p-3.5 text-center text-xs">
-          No demographics statistics available
-        </Card>
-      );
-    }
-
-    const urbanPct = econ.urbanPopulationPercent || 65;
-    const ruralPct = econ.ruralPopulationPercent || 35;
-    const popVal = econ.currentPopulation || econ.population || 0;
-
-    return (
-      <Card className="glass-hierarchy-child border-green-500/10 bg-green-500/[0.02] p-3.5">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Users className="h-3.5 w-3.5 text-green-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">Demographics</span>
-        </div>
-        <div className="mb-2.5 grid grid-cols-2 gap-2.5">
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Population</div>
-            <div className="mt-0.5 text-sm font-bold text-white">{popVal.toLocaleString()}</div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Life Expectancy</div>
-            <div className="mt-0.5 text-sm font-bold text-white">
-              {econ.lifeExpectancy || 78} Years
-            </div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Literacy Rate</div>
-            <div className="mt-0.5 text-sm font-bold text-white">{econ.literacyRate || 99}%</div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Pop Tier</div>
-            <Badge
-              variant="secondary"
-              className="mt-1 border border-green-500/20 bg-green-500/10 text-[9px] font-bold tracking-wider text-green-400 uppercase"
-            >
-              {econ.populationTier || "Medium"}
-            </Badge>
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <div className="text-muted-foreground flex justify-between text-[10px]">
-            <span>Urban ({urbanPct.toFixed(0)}%)</span>
-            <span>Rural ({ruralPct.toFixed(0)}%)</span>
-          </div>
-          <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/5">
-            <div className="h-full bg-green-500" style={{ width: `${urbanPct}%` }} />
-            <div className="h-full bg-emerald-700" style={{ width: `${ruralPct}%` }} />
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // 6. Fiscal Budget & Debt
-  if (type === "budget_debt") {
-    const econ = economicQuery.data;
-    if (!econ) {
-      return (
-        <Card className="glass-hierarchy-child text-muted-foreground border-amber-500/10 bg-amber-500/[0.02] p-3.5 text-center text-xs">
-          No fiscal budget statistics available
-        </Card>
-      );
-    }
-
-    const taxGdp = econ.taxRevenueGDPPercent || 25;
-    const spendGdp = econ.governmentBudgetGDPPercent || 28;
-    const debtGdp = econ.totalDebtGDPRatio || 55;
-    const budgetBal = econ.budgetDeficitSurplus || taxGdp - spendGdp;
-
-    return (
-      <Card className="glass-hierarchy-child border-amber-500/10 bg-amber-500/[0.02] p-3.5">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <BarChart3 className="h-3.5 w-3.5 text-amber-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">Fiscal Profile</span>
-        </div>
-        <div className="mb-2.5 grid grid-cols-2 gap-2.5">
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Tax Revenue / GDP</div>
-            <div className="mt-0.5 text-sm font-bold text-white">{taxGdp}%</div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Spending / GDP</div>
-            <div className="mt-0.5 text-sm font-bold text-white">{spendGdp}%</div>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div>
-              <div className="text-muted-foreground text-[10px]">Budget Balance</div>
-              <div
-                className={cn(
-                  "mt-0.5 text-sm font-bold",
-                  budgetBal >= 0 ? "text-emerald-400" : "text-red-400"
-                )}
-              >
-                {budgetBal >= 0 ? "+" : ""}
-                {budgetBal.toFixed(1)}%
-              </div>
-            </div>
-            {budgetBal >= 0 ? (
-              <ArrowUpRight className="h-5 w-5 shrink-0 text-emerald-400" />
-            ) : (
-              <ArrowDownRight className="h-5 w-5 shrink-0 text-red-400" />
-            )}
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Debt-to-GDP Ratio</div>
-            <div
-              className={cn(
-                "mt-0.5 text-sm font-bold",
-                debtGdp > 80 ? "text-red-400" : debtGdp > 40 ? "text-amber-400" : "text-emerald-400"
-              )}
-            >
-              {debtGdp}%
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // 7. Labor Market & Income Distribution
-  if (type === "labor_market") {
-    const econ = economicQuery.data;
-    if (!econ) {
-      return (
-        <Card className="glass-hierarchy-child text-muted-foreground border-teal-500/10 bg-teal-500/[0.02] p-3.5 text-center text-xs">
-          No labor market metrics available
-        </Card>
-      );
-    }
-
-    const unemp = econ.unemploymentRate || 5.2;
-    const gini = econ.incomeInequalityGini || 32;
-    const avgIncome = econ.averageAnnualIncome || 35000;
-    const minWage = econ.minimumWage || 8.5;
-
-    return (
-      <Card className="glass-hierarchy-child border-teal-500/10 bg-teal-500/[0.02] p-3.5">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Briefcase className="h-3.5 w-3.5 text-teal-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">Labor & Income</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Unemployment Rate</div>
-            <div className="mt-0.5 text-sm font-bold text-white">{unemp}%</div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Gini Coefficient</div>
-            <div className="mt-0.5 text-sm font-bold text-white">{gini}</div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Avg Annual Income</div>
-            <div className="mt-0.5 text-sm font-bold text-white">${avgIncome.toLocaleString()}</div>
-          </div>
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-            <div className="text-muted-foreground text-[10px]">Minimum Wage</div>
-            <div className="mt-0.5 text-sm font-bold text-white">${minWage}/hr</div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // 8. National Vitality & Well-being
-  if (type === "national_vitality") {
-    const vit = vitalityQuery.data;
-    if (!vit) {
-      return (
-        <Card className="glass-hierarchy-child text-muted-foreground border-red-500/10 bg-red-500/[0.02] p-3.5 text-center text-xs">
-          No vitality metrics available
-        </Card>
-      );
-    }
-
-    const econVit = vit.economicVitality || 50;
-    const popWell = vit.populationWellbeing || 50;
-    const diploStand = vit.diplomaticStanding || 50;
-    const govEff = vit.governmentalEfficiency || 50;
-
-    return (
-      <Card className="glass-hierarchy-child border-red-500/10 bg-red-500/[0.02] p-3.5">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Activity className="h-3.5 w-3.5 text-red-400" />
-            {title}
-          </span>
-          <span className="text-muted-foreground text-[10px]">National Vitality</span>
-        </div>
-        <div className="space-y-2">
-          {/* Economic Vitality */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[10px] text-white">
-              <span className="text-muted-foreground">Economic Vitality</span>
-              <span className="font-semibold text-emerald-400">{econVit}%</span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full bg-emerald-500" style={{ width: `${econVit}%` }} />
-            </div>
-          </div>
-          {/* Population Wellbeing */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[10px] text-white">
-              <span className="text-muted-foreground">Population Wellbeing</span>
-              <span className="font-semibold text-blue-400">{popWell}%</span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full bg-blue-500" style={{ width: `${popWell}%` }} />
-            </div>
-          </div>
-          {/* Diplomatic Standing */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[10px] text-white">
-              <span className="text-muted-foreground">Diplomatic Standing</span>
-              <span className="font-semibold text-purple-400">{diploStand}%</span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full bg-purple-500" style={{ width: `${diploStand}%` }} />
-            </div>
-          </div>
-          {/* Government Efficiency */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[10px] text-white">
-              <span className="text-muted-foreground">Government Efficiency</span>
-              <span className="font-semibold text-amber-400">{govEff}%</span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full bg-amber-500" style={{ width: `${govEff}%` }} />
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  return null;
+  return <LiveDataCard type={viz.type} title={viz.title} countryId={countryId} />;
 }
 
 ThinkpagesPost.displayName = "ThinkpagesPost";

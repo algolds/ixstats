@@ -114,12 +114,11 @@ export function GifPicker({ onSelectGif, trigger, disabled = false }: GifPickerP
       <PopoverTrigger
         disabled={disabled}
         className={cn(
-          "inline-flex h-7 items-center justify-center rounded-md px-2 text-sm text-xs font-medium text-green-400 transition-colors hover:bg-white/5 hover:text-green-300 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex h-8 w-8 items-center justify-center rounded-md text-purple-400 transition-colors hover:bg-white/5 hover:text-purple-300 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
           disabled && "cursor-not-allowed opacity-50"
         )}
       >
-        <GifIcon className="mr-1 h-3.5 w-3.5" />
-        GIF
+        <GifIcon className="h-4 w-4" />
       </PopoverTrigger>
       <PopoverContent
         align="start"

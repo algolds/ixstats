@@ -977,6 +977,29 @@ export const wikiosRouter = createTRPCRouter({
       };
     }),
 
+  /** Get a single stash item by ID. */
+  getStashItem: protectedProcedure
+    .input(z.object({ itemId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const item = await db.loreStashItem.findUnique({
+        where: { id: input.itemId },
+        include: { stash: true },
+      });
+      if (!item || item.stash.userId !== ctx.auth.userId) {
+        throw new Error("Item not found");
+      }
+      return {
+        id: item.id,
+        pageTitle: item.pageTitle,
+        pageSlug: item.pageSlug,
+        note: item.note,
+        savedAt: item.savedAt.toISOString(),
+        stashId: item.stashId,
+        stashName: item.stash.name,
+        stashColor: item.stash.color,
+      };
+    }),
+
   /** Move an item to a different stash. */
   moveItem: protectedProcedure
     .input(z.object({ itemId: z.string(), toStashId: z.string() }))

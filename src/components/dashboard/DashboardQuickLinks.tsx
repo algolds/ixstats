@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, MessageSquare, Bookmark } from "lucide-react";
+import { BookOpen, MessageSquare, Bookmark, Users } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/status-indicator";
 import { BUILD_VERSION, IXWORLD_VERSION } from "~/lib/buildVersion";
@@ -28,6 +28,12 @@ const EXTERNAL_LINKS = [
     href: "/stashes",
     icon: Bookmark,
     color: "text-blue-500",
+  },
+  {
+    label: "Groups",
+    href: "/messages/groups",
+    icon: Users,
+    color: "text-indigo-500",
   },
 ] as const;
 
@@ -75,7 +81,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           {discordBadge}
 
           {EXTERNAL_LINKS.map((link) => {
-            if (link.label === "Stashes" && !isSignedIn) {
+            if (["Stashes", "Groups"].includes(link.label) && !isSignedIn) {
               return null;
             }
             const Icon = link.icon;

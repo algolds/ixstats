@@ -1,13 +1,32 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, Users, Hash, Lock, Globe } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import {
+  Search,
+  Users,
+  Hash,
+  Lock,
+  Globe,
+  Loader2,
+  Compass,
+  Check,
+  ArrowRight,
+  ChevronLeft,
+  HelpCircle,
+} from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
 import { useUser } from "~/context/auth-context";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 
 const GROUP_CATEGORIES = [
@@ -26,15 +45,19 @@ type GroupView = "discover" | "joined" | "created";
 
 interface MessagesGroupsPanelProps {
   onSelectGroup: (conversationId: string) => void;
+  onBack?: () => void;
 }
 
-export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps) {
+export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPanelProps) {
   const { user } = useUser();
   const userId = user?.id ?? "";
+  const notify = useNotify();
+  const utils = api.useUtils();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeView, setActiveView] = useState<GroupView>("joined");
   const [activeCategory, setActiveCategory] = useState("All");
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   // Fetch groups
   const { data: groupsData, isLoading } = api.thinkpages.getThinktanks.useQuery(
@@ -62,75 +85,126 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
   }, [groupsData, activeCategory, searchQuery]);
 
   // Join/leave mutations
-  const joinMutation = api.thinkpages.joinThinktank.useMutation();
-  const leaveMutation = api.thinkpages.leaveThinktank.useMutation();
-  const utils = api.useUtils();
+  const joinMutation = api.thinkpages.joinThinktank.useMutation({
+    onSuccess: () => {
+      notify.success("Joined group successfully!");
+      void utils.thinkpages.getThinktanks.invalidate();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to join group");
+    },
+  });
 
-  const handleJoin = async (groupId: string) => {
-    await joinMutation.mutateAsync({ groupId, userId });
-    void utils.thinkpages.getThinktanks.invalidate();
+  const leaveMutation = api.thinkpages.leaveThinktank.useMutation({
+    onSuccess: () => {
+      notify.success("Left group");
+      void utils.thinkpages.getThinktanks.invalidate();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to leave group");
+    },
+  });
+
+  const handleJoin = async (e: React.MouseEvent, groupId: string) => {
+    e.stopPropagation();
+    joinMutation.mutate({ groupId, userId });
   };
 
-  const handleLeave = async (groupId: string) => {
-    await leaveMutation.mutateAsync({ groupId, userId });
-    void utils.thinkpages.getThinktanks.invalidate();
+  const handleLeave = async (e: React.MouseEvent, groupId: string) => {
+    e.stopPropagation();
+    leaveMutation.mutate({ groupId, userId });
   };
 
   const handleOpenGroup = (group: any) => {
-    // If the group has a linked conversationId, open it in the chat panel
     if (group.conversationId) {
       onSelectGroup(group.conversationId);
+    } else {
+      notify.error("This group doesn't have an active chat channel.");
     }
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="border-border/50 shrink-0 space-y-3 border-b p-4">
+    <div className="flex h-full flex-col bg-transparent">
+      {/* Header and Controls */}
+      <div className="border-border/40 shrink-0 space-y-4 border-b bg-blue-500/10 p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-foreground text-sm font-semibold">ThinkTank Groups</h2>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onBack}
+                className="mr-1 -ml-2 h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:text-white"
+                title="Go Back"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <Compass className="h-5 w-5 text-indigo-400" />
+            <h2 className="text-base font-bold text-slate-100">ThinkTank Groups</h2>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsHelpOpen(true)}
+            className="h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white"
+            title="ThinkTank Groups Help"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* View toggle */}
-        <div className="border-border/50 bg-muted/30 flex gap-1 rounded-lg border p-0.5">
-          {(["joined", "discover", "created"] as const).map((view) => (
-            <button
-              key={view}
-              onClick={() => setActiveView(view)}
-              className={cn(
-                "flex-1 rounded-md px-2 py-1 text-[11px] font-medium capitalize transition-all",
-                activeView === view
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {view}
-            </button>
-          ))}
+        {/* Action / View Toggles */}
+        <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
+          <div className="flex w-full gap-1 rounded-xl border border-white/5 bg-slate-950/40 p-1 backdrop-blur-md md:w-auto">
+            {(
+              [
+                { id: "joined", label: "My Groups" },
+                { id: "discover", label: "Discover" },
+                { id: "created", label: "Managed" },
+              ] as const
+            ).map((view) => (
+              <button
+                key={view.id}
+                onClick={() => {
+                  setActiveView(view.id);
+                  setSearchQuery("");
+                }}
+                className={cn(
+                  "flex-1 rounded-lg px-4 py-1.5 text-xs font-semibold capitalize transition-all duration-200 select-none md:flex-none",
+                  activeView === view.id
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/20"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full shrink-0 md:w-72">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Input
+              placeholder="Search groups..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 pl-9 text-xs"
+            />
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
-          <Input
-            placeholder="Search groups..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 pl-8 text-xs"
-          />
-        </div>
-
-        {/* Category pills */}
-        <div className="hide-scrollbar flex gap-1 overflow-x-auto">
+        {/* Scrollable Categories Row */}
+        <div className="hide-scrollbar flex gap-1.5 overflow-x-auto pb-1">
           {GROUP_CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors",
+                "shrink-0 rounded-full border px-3.5 py-1 text-[10px] font-bold transition-all duration-200",
                 activeCategory === cat
-                  ? "bg-indigo-500/15 text-indigo-500"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                  ? "border-indigo-500/40 bg-indigo-500/20 text-indigo-300 shadow-sm"
+                  : "border-transparent bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
               )}
             >
               {cat}
@@ -139,32 +213,42 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
         </div>
       </div>
 
-      {/* Groups list */}
-      <div className="flex-1 overflow-y-auto p-2">
+      {/* Main Grid View */}
+      <div className="flex-1 scrollbar-none overflow-y-auto p-6">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="flex h-full items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
           </div>
         ) : groups.length === 0 ? (
-          <div className="px-3 py-12 text-center">
-            <Users className="text-muted-foreground mx-auto mb-3 h-10 w-10" />
-            <p className="text-muted-foreground text-sm font-medium">
+          <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-20 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-400 shadow-lg">
+              <Users className="h-6 w-6" />
+            </div>
+            <h3 className="mb-1 font-semibold text-slate-200">
               {activeView === "joined"
                 ? "You haven't joined any groups yet"
                 : activeView === "created"
                   ? "You haven't created any groups"
                   : "No groups found"}
-            </p>
-            <p className="text-muted-foreground/70 mt-1 text-xs">
+            </h3>
+            <p className="mb-6 text-xs leading-relaxed text-slate-400">
               {activeView === "joined"
-                ? "Browse and join groups to start discussions"
+                ? "Discover and join group chats to start collaborating with other system owners and nations."
                 : activeView === "discover"
-                  ? "Try a different search or category"
-                  : "Create a ThinkTank to start collaborating"}
+                  ? "Try adjusting your search filters or browse other categories."
+                  : "Create a new group in the ThinkPages control center to start collaborating."}
             </p>
+            {activeView === "joined" && (
+              <Button
+                onClick={() => setActiveView("discover")}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-indigo-700"
+              >
+                Browse Directory
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {groups.map((group: any) => {
               const isMember =
                 group.isMember ??
@@ -175,83 +259,133 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
               return (
                 <div
                   key={group.id}
-                  role="button"
-                  tabIndex={0}
                   onClick={() => handleOpenGroup(group)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") handleOpenGroup(group);
-                  }}
-                  className="hover:bg-muted/50 flex w-full cursor-pointer items-start gap-3 rounded-lg border border-transparent p-3 text-left transition-colors"
+                  className="group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-white/5 bg-white/5 p-5 text-left transition-all duration-300 hover:scale-[1.01] hover:border-white/10 hover:bg-white/10 hover:shadow-xl hover:shadow-black/20"
                 >
-                  <Avatar className="h-10 w-10 shrink-0">
-                    <AvatarImage src={group.avatar ?? undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white">
-                      <Users className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <div>
+                    {/* Top row */}
+                    <div className="mb-3.5 flex items-start justify-between gap-3">
+                      <Avatar className="h-11 w-11 shrink-0 rounded-xl border border-white/10 shadow-md">
+                        <AvatarImage src={group.avatar ?? undefined} className="object-cover" />
+                        <AvatarFallback className="rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white">
+                          <Users className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-foreground truncate text-sm font-medium">
-                        {group.name}
-                      </span>
-                      <TypeIcon className="text-muted-foreground h-3 w-3 shrink-0" />
+                      <div className="flex items-center gap-1.5">
+                        <span title={group.type}>
+                          <TypeIcon className="h-3.5 w-3.5 text-slate-500" />
+                        </span>
+                        {group.category && (
+                          <span className="rounded-full border border-indigo-500/20 bg-indigo-500/20 px-2 py-0.5 text-[9px] font-bold text-indigo-300">
+                            {group.category}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {group.description && (
-                      <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
-                        {group.description}
-                      </p>
-                    )}
-                    <div className="mt-1 flex items-center gap-2">
-                      <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
-                        {group.memberCount ?? group._count?.members ?? 0} members
-                      </Badge>
-                      {group.category && (
-                        <Badge
-                          variant="outline"
-                          className="border-indigo-500/30 px-1.5 py-0 text-[10px] text-indigo-500"
-                        >
-                          {group.category}
-                        </Badge>
+
+                    {/* Title & Description */}
+                    <div className="min-w-0">
+                      <h4 className="truncate text-sm leading-tight font-bold text-slate-200 group-hover:text-white">
+                        {group.name}
+                      </h4>
+                      {group.description && (
+                        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed font-medium text-slate-400">
+                          {group.description}
+                        </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Join/Leave button */}
-                  {activeView === "discover" && !isMember && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleJoin(group.id);
-                      }}
-                      disabled={joinMutation.isPending}
-                    >
-                      Join
-                    </Button>
-                  )}
-                  {isMember && activeView !== "created" && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-muted-foreground shrink-0 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleLeave(group.id);
-                      }}
-                      disabled={leaveMutation.isPending}
-                    >
-                      Leave
-                    </Button>
-                  )}
+                  {/* Footer Stats & Button */}
+                  <div className="mt-5 flex items-center justify-between gap-4 border-t border-white/5 pt-3.5">
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
+                      <Users className="h-3 w-3" />
+                      {group.memberCount ?? group._count?.members ?? 0} Members
+                    </span>
+
+                    {/* Join/Leave/Open button */}
+                    <div className="flex items-center gap-1.5">
+                      {isMember ? (
+                        <>
+                          <button
+                            onClick={(e) => handleLeave(e, group.id)}
+                            disabled={leaveMutation.isPending}
+                            className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-[10px] font-semibold text-rose-400 transition-colors hover:bg-rose-500/20 hover:text-rose-300"
+                          >
+                            Leave
+                          </button>
+                          <span className="flex items-center gap-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-400">
+                            Joined <Check className="h-3 w-3" />
+                          </span>
+                        </>
+                      ) : (
+                        <button
+                          onClick={(e) => handleJoin(e, group.id)}
+                          disabled={joinMutation.isPending}
+                          className="flex items-center gap-1 rounded-lg border border-indigo-500/30 bg-indigo-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-md shadow-indigo-950/20 transition-all hover:bg-indigo-700"
+                        >
+                          {joinMutation.isPending && (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          )}
+                          Join Group
+                          <ArrowRight className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Groups Help Modal */}
+      <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+        <DialogContent className="border-white/10 bg-slate-900 text-white backdrop-blur-xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-indigo-400" />
+              About ThinkTank Groups
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              Collaborative hubs for system owners and nations.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 text-xs leading-relaxed text-slate-300">
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-200">🔍 Browse & Discover</h4>
+              <p>
+                Explore categories or use the search bar to find groups that match your interests.
+                You can view all available groups on the **Discover** tab.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-200">💬 Real-time Group Chats</h4>
+              <p>
+                Clicking on a group you've joined opens its dedicated chat channel, allowing you to
+                converse with other members in real-time.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-200">🔒 Group Types</h4>
+              <p>
+                Groups can be public (anyone can join), restricted (require approvals/invites), or
+                private.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-200">✍️ Collaboration & Lore</h4>
+              <p>
+                ThinkTank groups act as collaborative foundations to draft world history, national
+                policies, and shared wiki articles.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

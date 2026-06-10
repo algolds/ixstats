@@ -1,18 +1,15 @@
 "use client";
 
 import {
-  Inbox,
-  User,
-  Globe,
-  MessageCircle,
-  Users,
   Bell,
   Settings,
-  PanelLeftOpen,
-  PanelLeftClose,
   Volume2,
   Eye,
   Rows3,
+  MessageSquare,
+  Bookmark,
+  Users,
+  User,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
@@ -30,93 +27,60 @@ export interface MessagesSettings {
   notificationSounds: boolean;
   showReadReceipts: boolean;
   compactMode: boolean;
+  displayNamePreference: "account" | "country";
 }
 
 export const DEFAULT_MESSAGES_SETTINGS: MessagesSettings = {
   notificationSounds: true,
   showReadReceipts: true,
   compactMode: false,
+  displayNamePreference: "country",
 };
 
 export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   {
-    id: "inbox",
-    icon: Inbox,
-    title: "Inbox",
-    description: "All unread messages",
-    gradient: "text-blue-500",
-    activeGlow: "bg-blue-500/10 border-blue-500/40",
-    emptyTitle: "All caught up",
-    emptyDescription: "No unread messages across any system.",
-  },
-  {
-    id: "personal",
-    icon: User,
-    title: "Personal",
-    description: "Direct messages",
+    id: "conversations",
+    icon: MessageSquare,
+    title: "Conversations",
+    description: "All chat conversations",
     gradient: "text-emerald-500",
     activeGlow: "bg-emerald-500/10 border-emerald-500/40",
     emptyTitle: "No conversations yet",
-    emptyDescription: "Start a conversation with another user.",
+    emptyDescription: "Start a conversation to see it here.",
   },
   {
-    id: "diplomatic",
-    icon: Globe,
-    title: "Diplomatic",
-    description: "Country-to-country channels",
-    gradient: "text-amber-500",
-    activeGlow: "bg-amber-500/10 border-amber-500/40",
-    emptyTitle: "No diplomatic channels",
-    emptyDescription: "Diplomatic messages between countries appear here.",
-  },
-  {
-    id: "discussions",
-    icon: MessageCircle,
-    title: "Discussions",
-    description: "Wiki alerts & forum PMs",
-    gradient: "text-purple-500",
-    activeGlow: "bg-purple-500/10 border-purple-500/40",
-    emptyTitle: "No discussions",
-    emptyDescription: "Wiki notifications and forum private messages will appear here.",
+    id: "system",
+    icon: Bell,
+    title: "System Alerts",
+    description: "System notifications",
+    gradient: "text-rose-500",
+    activeGlow: "bg-rose-500/10 border-rose-500/40",
+    emptyTitle: "No system alerts",
+    emptyDescription: "Platform notifications will appear here.",
   },
   {
     id: "groups",
     icon: Users,
     title: "Groups",
     description: "ThinkTank group chats",
-    gradient: "text-indigo-500",
-    activeGlow: "bg-indigo-500/10 border-indigo-500/40",
-    emptyTitle: "No group chats",
-    emptyDescription: "Join or create a ThinkTank to start group messaging.",
-  },
-  {
-    id: "system",
-    icon: Bell,
-    title: "System",
-    description: "Notifications & alerts",
-    gradient: "text-rose-500",
-    activeGlow: "bg-rose-500/10 border-rose-500/40",
-    emptyTitle: "No system messages",
-    emptyDescription: "Platform notifications and alerts appear here.",
+    gradient: "text-blue-500",
+    activeGlow: "bg-blue-500/10 border-blue-500/40",
+    emptyTitle: "No groups found",
+    emptyDescription: "Join or create a ThinkTank group to start collaborating.",
   },
 ];
 
 export function getFolderFromPathname(pathname: string): MessageFolder {
   const cleaned = pathname.replace(/^\/projects\/ixstats/, "");
-  if (cleaned.startsWith("/messages/personal")) return "personal";
-  if (cleaned.startsWith("/messages/diplomatic")) return "diplomatic";
-  if (cleaned.startsWith("/messages/discussions")) return "discussions";
-  if (cleaned.startsWith("/messages/groups")) return "groups";
   if (cleaned.startsWith("/messages/system")) return "system";
-  return "inbox";
+  if (cleaned.startsWith("/messages/groups")) return "groups";
+  return "conversations";
 }
 
 interface MessagesFolderNavProps {
   activeFolder: MessageFolder;
   onNavigate: (folder: MessageFolder) => void;
   unreadCounts?: Record<MessageFolder, number>;
-  expanded: boolean;
-  onToggleExpanded: () => void;
   settings?: MessagesSettings;
   onSettingsChange?: (settings: MessagesSettings) => void;
 }
@@ -125,8 +89,6 @@ export function MessagesFolderNav({
   activeFolder,
   onNavigate,
   unreadCounts,
-  expanded,
-  onToggleExpanded,
   settings = DEFAULT_MESSAGES_SETTINGS,
   onSettingsChange,
 }: MessagesFolderNavProps) {
@@ -134,9 +96,33 @@ export function MessagesFolderNav({
     onSettingsChange?.({ ...settings, [key]: !settings[key] });
   };
 
+  // Folder-specific dynamic color accents for the cutout header background
+  const folderThemes: Record<MessageFolder, { bg: string; border: string }> = {
+    conversations: {
+      bg: "bg-emerald-500/10",
+      border: "border-b border-emerald-500/20",
+    },
+    system: {
+      bg: "bg-rose-500/10",
+      border: "border-b border-rose-500/20",
+    },
+    groups: {
+      bg: "bg-blue-500/10",
+      border: "border-b border-blue-500/20",
+    },
+  };
+
+  const currentTheme = folderThemes[activeFolder] || folderThemes.conversations;
+
   return (
-    <nav className="flex h-full flex-col justify-between">
-      <div className="flex flex-col gap-0.5 p-1.5">
+    <div
+      className={cn(
+        "relative z-20 flex w-full shrink-0 items-center gap-1.5 px-3 pt-3 pb-5 transition-colors duration-500",
+        currentTheme.bg,
+        currentTheme.border
+      )}
+    >
+      <div className="relative z-10 flex flex-1 gap-1 rounded-xl border border-white/5 bg-black/20 p-1">
         {MESSAGE_FOLDERS.map((folder) => {
           const isActive = folder.id === activeFolder;
           const Icon = folder.icon;
@@ -147,66 +133,18 @@ export function MessagesFolderNav({
               key={folder.id}
               onClick={() => onNavigate(folder.id)}
               className={cn(
-                "group/tip relative flex items-center gap-3 rounded-lg transition-all duration-200 outline-none",
-                expanded ? "px-3 py-2" : "justify-center p-2",
+                "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[11px] font-bold transition-all duration-200 select-none",
                 isActive
-                  ? cn("border", folder.activeGlow)
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
+                  ? "border-white/10 bg-white/10 text-white shadow-sm"
+                  : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               )}
               aria-label={folder.title}
-              aria-current={isActive ? "page" : undefined}
             >
-              {/* Left accent bar (collapsed mode) */}
-              {!expanded && isActive && (
-                <div
-                  className={cn(
-                    "absolute top-1/2 -left-[5px] h-5 w-[3px] -translate-y-1/2 rounded-full",
-                    folder.gradient.replace("text-", "bg-")
-                  )}
-                />
-              )}
-
-              <div className="relative shrink-0">
-                <Icon
-                  className={cn(
-                    "h-[18px] w-[18px] transition-all duration-150",
-                    isActive ? folder.gradient : "group-hover/tip:scale-110"
-                  )}
-                />
-
-                {/* Unread badge */}
-                {count > 0 && !expanded && (
-                  <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm">
-                    {count > 99 ? "99+" : count}
-                  </span>
-                )}
-              </div>
-
-              {/* Label (expanded mode) */}
-              {expanded && (
-                <span
-                  className={cn(
-                    "min-w-0 flex-1 truncate text-left text-sm",
-                    isActive ? "text-foreground font-semibold" : "font-medium"
-                  )}
-                >
-                  {folder.title}
-                </span>
-              )}
-
-              {/* Unread count (expanded mode) */}
-              {expanded && count > 0 && (
-                <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden truncate sm:inline">{folder.title}</span>
+              {count > 0 && (
+                <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] leading-none font-bold text-white">
                   {count > 99 ? "99+" : count}
-                </span>
-              )}
-
-              {/* Tooltip (collapsed mode only) */}
-              {!expanded && (
-                <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-[#0f172a] opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-[#1e293b] dark:text-[#f1f5f9]">
-                  {folder.title}
-                  {count > 0 && ` (${count})`}
-                  <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
                 </span>
               )}
             </button>
@@ -214,89 +152,76 @@ export function MessagesFolderNav({
         })}
       </div>
 
-      {/* Bottom: settings + expand toggle */}
-      <div className="flex flex-col gap-0.5 p-1.5">
-        {/* Settings popover */}
-        <Popover>
-          <PopoverTrigger
-            className={cn(
-              "group/tip text-muted-foreground hover:bg-muted/60 hover:text-foreground relative flex items-center gap-3 rounded-lg transition-colors",
-              expanded ? "px-3 py-2" : "justify-center p-2"
-            )}
-            aria-label="Settings"
-          >
-            <Settings className="h-[18px] w-[18px] shrink-0 transition-transform duration-150 group-hover/tip:scale-110" />
-            {expanded && <span className="min-w-0 truncate text-sm font-medium">Settings</span>}
-            {!expanded && (
-              <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-[#0f172a] opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-[#1e293b] dark:text-[#f1f5f9]">
-                Settings
-                <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
-              </span>
-            )}
-          </PopoverTrigger>
-          <PopoverContent side="right" align="end" className="w-64">
-            <PopoverHeader>
-              <PopoverTitle>Message Settings</PopoverTitle>
-              <PopoverDescription>Customize your messaging experience.</PopoverDescription>
-            </PopoverHeader>
-            <div className="mt-4 flex flex-col gap-3">
-              <label className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="text-muted-foreground h-3.5 w-3.5" />
-                  <span className="text-sm">Notification sounds</span>
-                </div>
-                <Switch
-                  checked={settings.notificationSounds}
-                  onCheckedChange={() => toggleSetting("notificationSounds")}
-                />
-              </label>
-              <label className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Eye className="text-muted-foreground h-3.5 w-3.5" />
-                  <span className="text-sm">Read receipts</span>
-                </div>
-                <Switch
-                  checked={settings.showReadReceipts}
-                  onCheckedChange={() => toggleSetting("showReadReceipts")}
-                />
-              </label>
-              <label className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Rows3 className="text-muted-foreground h-3.5 w-3.5" />
-                  <span className="text-sm">Compact mode</span>
-                </div>
-                <Switch
-                  checked={settings.compactMode}
-                  onCheckedChange={() => toggleSetting("compactMode")}
-                />
-              </label>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Expand / Collapse toggle */}
-        <button
-          onClick={onToggleExpanded}
-          className={cn(
-            "group/tip text-muted-foreground hover:bg-muted/60 hover:text-foreground relative flex items-center gap-3 rounded-lg transition-colors",
-            expanded ? "px-3 py-2" : "justify-center p-2"
-          )}
-          aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
+      {/* Settings popover button */}
+      <Popover>
+        <PopoverTrigger
+          className="relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/5 bg-slate-950/30 p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
+          aria-label="Settings"
         >
-          {expanded ? (
-            <PanelLeftClose className="h-[18px] w-[18px] shrink-0" />
-          ) : (
-            <PanelLeftOpen className="h-[18px] w-[18px] shrink-0" />
-          )}
-          {expanded && <span className="min-w-0 truncate text-sm font-medium">Collapse</span>}
-          {!expanded && (
-            <span className="pointer-events-none absolute left-full z-50 ml-3 rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-[#0f172a] opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 dark:bg-[#1e293b] dark:text-[#f1f5f9]">
-              Expand
-              <span className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-[#f8fafc] dark:border-r-[#1e293b]" />
-            </span>
-          )}
-        </button>
-      </div>
-    </nav>
+          <Settings className="h-4 w-4" />
+        </PopoverTrigger>
+        <PopoverContent
+          side="bottom"
+          align="end"
+          className="w-64 border-white/10 bg-slate-900 text-white backdrop-blur-xl"
+        >
+          <PopoverHeader>
+            <PopoverTitle className="text-sm font-bold text-slate-200">
+              Message Settings
+            </PopoverTitle>
+            <PopoverDescription className="mt-1 text-xs text-slate-400">
+              Customize your messaging experience.
+            </PopoverDescription>
+          </PopoverHeader>
+          <div className="mt-4 flex flex-col gap-3">
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Volume2 className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-xs font-semibold">Notification sounds</span>
+              </div>
+              <Switch
+                checked={settings.notificationSounds}
+                onCheckedChange={() => toggleSetting("notificationSounds")}
+              />
+            </label>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Eye className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-xs font-semibold">Read receipts</span>
+              </div>
+              <Switch
+                checked={settings.showReadReceipts}
+                onCheckedChange={() => toggleSetting("showReadReceipts")}
+              />
+            </label>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Rows3 className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-xs font-semibold">Compact mode</span>
+              </div>
+              <Switch
+                checked={settings.compactMode}
+                onCheckedChange={() => toggleSetting("compactMode")}
+              />
+            </label>
+            <label className="flex cursor-pointer items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-300">
+                <User className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-xs font-semibold">Show account username</span>
+              </div>
+              <Switch
+                checked={settings.displayNamePreference === "account"}
+                onCheckedChange={(checked) =>
+                  onSettingsChange?.({
+                    ...settings,
+                    displayNamePreference: checked ? "account" : "country",
+                  })
+                }
+              />
+            </label>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }

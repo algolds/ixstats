@@ -8,6 +8,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { withBasePath } from "~/lib/base-path";
+import { getSoundService } from "~/lib/sound-service";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { MessagesLayout } from "./MessagesLayout";
@@ -22,18 +23,16 @@ import { MessagesChatPanel } from "./MessagesChatPanel";
 import { MessagesEmptyState } from "./MessagesEmptyState";
 import { MessagesNewConversationModal } from "./MessagesNewConversationModal";
 import { MessagesGroupsPanel } from "./MessagesGroupsPanel";
+import { MessagesGroupsListPanel } from "./MessagesGroupsListPanel";
 
 import type { MessageFolder } from "~/types/messages";
 
 // ─── Section titles ──────────────────────────────────────────────
 
 const SECTION_TITLES: Record<MessageFolder, string> = {
-  inbox: "Inbox",
-  personal: "Personal",
-  diplomatic: "Diplomatic",
-  discussions: "Discussions",
-  groups: "Groups",
-  system: "System",
+  conversations: "Conversations",
+  system: "System Alerts",
+  groups: "ThinkTank Groups",
 };
 
 // ─── Inner Router ────────────────────────────────────────────────
@@ -53,7 +52,16 @@ function MessagesRouterInner() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversation, setShowNewConversation] = useState(false);
-  const [folderNavExpanded, setFolderNavExpanded] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Auto-collapse sidebar when a conversation is selected
+  useEffect(() => {
+    if (selectedConversationId) {
+      setIsSidebarCollapsed(true);
+    } else {
+      setIsSidebarCollapsed(false);
+    }
+  }, [selectedConversationId]);
 
   // ── Settings (localStorage-backed) ──
   const [messagesSettings, setMessagesSettings] = useState<MessagesSettings>(() => {
@@ -75,6 +83,53 @@ function MessagesRouterInner() {
     } catch {
       // Storage unavailable
     }
+  }, []);
+
+  // ── Muted and Archived conversations lists (localStorage-backed) ──
+  const [mutedConversations, setMutedConversations] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("ixstats:messages:muted");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [archivedConversations, setArchivedConversations] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("ixstats:messages:archived");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleMuteToggle = useCallback((conversationId: string) => {
+    setMutedConversations((prev) => {
+      const next = prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [...prev, conversationId];
+      try {
+        localStorage.setItem("ixstats:messages:muted", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const handleArchiveToggle = useCallback((conversationId: string) => {
+    setArchivedConversations((prev) => {
+      const next = prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [...prev, conversationId];
+      try {
+        localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    // Deselect active conversation if archived
+    setSelectedConversationId((prev) => (prev === conversationId ? null : prev));
   }, []);
 
   // ── Handle URL conversation param ──
@@ -104,10 +159,10 @@ function MessagesRouterInner() {
     }
   );
 
-  const activeFolderConversations = useMemo(
-    () => (folderData?.conversations ?? []) as any[],
-    [folderData?.conversations]
-  );
+  const activeFolderConversations = useMemo(() => {
+    const list = (folderData?.conversations ?? []) as any[];
+    return list.filter((c: any) => !archivedConversations.includes(c.id));
+  }, [folderData?.conversations, archivedConversations]);
 
   // ── Server-side folder counts ──
   const { data: folderCounts } = api.messages.getFolderCounts.useQuery(
@@ -122,21 +177,18 @@ function MessagesRouterInner() {
   const unreadCounts = useMemo(
     () =>
       (folderCounts as Record<MessageFolder, number> | undefined) ?? {
-        inbox: 0,
-        personal: 0,
-        diplomatic: 0,
-        discussions: 0,
-        groups: 0,
+        conversations: 0,
         system: 0,
+        groups: 0,
       },
     [folderCounts]
   );
 
   // ── Selected conversation object ──
-  const selectedConversation = useMemo(
-    () => activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null,
-    [activeFolderConversations, selectedConversationId]
-  );
+  const selectedConversation = useMemo(() => {
+    if (selectedConversationId === "groups_directory") return null;
+    return activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null;
+  }, [activeFolderConversations, selectedConversationId]);
 
   // ── Presence Tracking ──
   const [presenceMap, setPresenceMap] = useState<Record<string, string>>({});
@@ -147,6 +199,33 @@ function MessagesRouterInner() {
       accountId: currentUserId,
       autoReconnect: true,
       onMessageUpdate: (data: any) => {
+        if (data.type === "message:new") {
+          // Play sound on incoming message if not muted
+          const isMuted = mutedConversations.includes(data.conversationId);
+          if (data.accountId !== currentUserId && messagesSettings.notificationSounds && !isMuted) {
+            try {
+              getSoundService().play("card-select");
+            } catch (err) {
+              console.warn("Failed to play notification sound:", err);
+            }
+          }
+
+          // Unarchive on new message
+          if (archivedConversations.includes(data.conversationId)) {
+            setArchivedConversations((prev) => {
+              const next = prev.filter((id) => id !== data.conversationId);
+              try {
+                localStorage.setItem("ixstats:messages:archived", JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          }
+
+          // Invalidate list counts to show updated unread badge in sidebar
+          void utils.messages.getFolderCounts.invalidate();
+          void utils.messages.getConversationsByFolder.invalidate();
+        }
+
         if (!selectedConversationId || data.conversationId !== selectedConversationId) return;
 
         const queryKey = { conversationId: selectedConversationId, userId: currentUserId };
@@ -270,7 +349,17 @@ function MessagesRouterInner() {
         }
       },
     }),
-    [currentUserId, refetchConversations, selectedConversationId, selectedConversation, user, utils]
+    [
+      currentUserId,
+      refetchConversations,
+      selectedConversationId,
+      selectedConversation,
+      user,
+      utils,
+      messagesSettings,
+      mutedConversations,
+      archivedConversations,
+    ]
   );
 
   const {
@@ -308,7 +397,7 @@ function MessagesRouterInner() {
       setSelectedConversationId(null);
       setSearchQuery("");
 
-      const href = folder === "inbox" ? "/messages" : `/messages/${folder}`;
+      const href = folder === "conversations" ? "/messages" : `/messages/${folder}`;
       window.history.pushState(null, "", withBasePath(href));
       document.title = `${SECTION_TITLES[folder]} - Messages - IxStats`;
     },
@@ -330,6 +419,17 @@ function MessagesRouterInner() {
   useEffect(() => {
     document.title = `${SECTION_TITLES[activeFolder]} - Messages - IxStats`;
   }, [activeFolder]);
+
+  // Auto-select first conversation in system alerts folder
+  useEffect(() => {
+    if (
+      activeFolder === "system" &&
+      activeFolderConversations.length > 0 &&
+      !selectedConversationId
+    ) {
+      setSelectedConversationId(activeFolderConversations[0].id);
+    }
+  }, [activeFolder, activeFolderConversations, selectedConversationId]);
 
   // ── Create conversation (via unified messages router) ──
   const createConversation = api.messages.createConversation.useMutation();
@@ -364,46 +464,153 @@ function MessagesRouterInner() {
     [currentUserId, activeFolder, createConversation, notify, refetchConversations]
   );
 
+  const leaveConversationMutation = api.messages.leaveConversation.useMutation({
+    onSuccess: () => {
+      notify.success("Conversation deleted successfully");
+      setSelectedConversationId(null);
+      void refetchConversations();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to delete conversation");
+    },
+  });
+
+  const handleDeleteConversation = useCallback(
+    (conversationId: string) => {
+      if (
+        confirm(
+          "Are you sure you want to delete this conversation? This will remove it from your active list."
+        )
+      ) {
+        leaveConversationMutation.mutate({ conversationId, userId: currentUserId });
+      }
+    },
+    [leaveConversationMutation, currentUserId]
+  );
+
+  const addParticipantMutation = api.messages.addParticipant.useMutation({
+    onSuccess: () => {
+      notify.success("Participant added successfully");
+      if (selectedConversationId) {
+        void utils.messages.getConversationMessages.invalidate({
+          conversationId: selectedConversationId,
+          userId: currentUserId,
+        });
+      }
+      void refetchConversations();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to add participant");
+    },
+  });
+
+  const handleAddParticipant = useCallback(
+    async (userId: string) => {
+      if (!selectedConversation) return;
+
+      if (selectedConversation.type === "direct") {
+        // Upgrade direct conversation to group chat
+        const otherParticipantId = selectedConversation.otherParticipants[0]?.accountId;
+        const participantIds = [currentUserId];
+        if (otherParticipantId) {
+          participantIds.push(otherParticipantId);
+        }
+        participantIds.push(userId);
+
+        try {
+          const result = await createConversation.mutateAsync({
+            participantIds,
+            source: selectedConversation.source as any,
+            name: "Group Chat",
+          });
+          setSelectedConversationId(result.id);
+          notify.success("Upgraded to group chat");
+          void refetchConversations();
+        } catch (err: any) {
+          notify.error(err.message || "Failed to create group chat");
+        }
+      } else {
+        // Add participant directly to group chat
+        addParticipantMutation.mutate({
+          conversationId: selectedConversation.id,
+          userId,
+        });
+      }
+    },
+    [
+      selectedConversation,
+      currentUserId,
+      createConversation,
+      addParticipantMutation,
+      refetchConversations,
+      selectedConversationId,
+      utils.messages.getConversationMessages,
+    ]
+  );
+
   // ── Render ──
   return (
     <>
       <MessagesLayout
-        folderNavExpanded={folderNavExpanded}
-        folderNav={
-          <MessagesFolderNav
-            activeFolder={activeFolder}
-            onNavigate={handleFolderNavigate}
-            unreadCounts={unreadCounts}
-            expanded={folderNavExpanded}
-            onToggleExpanded={() => setFolderNavExpanded((prev) => !prev)}
-            settings={messagesSettings}
-            onSettingsChange={handleSettingsChange}
-          />
-        }
+        isSidebarCollapsed={isSidebarCollapsed}
         conversationPanel={
-          <MessagesConversationPanel
-            activeFolder={activeFolder}
-            conversations={activeFolderConversations}
-            isLoading={isLoadingConversations}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            selectedConversationId={selectedConversationId}
-            onSelectConversation={setSelectedConversationId}
-            currentUserId={currentUserId}
-            onNewConversation={() => setShowNewConversation(true)}
-          />
+          <div className="flex h-full flex-col">
+            <MessagesFolderNav
+              activeFolder={activeFolder}
+              onNavigate={handleFolderNavigate}
+              unreadCounts={unreadCounts}
+              settings={messagesSettings}
+              onSettingsChange={handleSettingsChange}
+            />
+            <div className="min-h-0 flex-1">
+              {activeFolder === "groups" ? (
+                <MessagesGroupsListPanel
+                  selectedConversationId={selectedConversationId}
+                  onSelectConversation={setSelectedConversationId}
+                  onOpenGroupsDirectory={() => setSelectedConversationId("groups_directory")}
+                />
+              ) : (
+                <MessagesConversationPanel
+                  activeFolder={activeFolder}
+                  conversations={activeFolderConversations}
+                  isLoading={isLoadingConversations}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  selectedConversationId={selectedConversationId}
+                  onSelectConversation={setSelectedConversationId}
+                  currentUserId={currentUserId}
+                  onNewConversation={() => setShowNewConversation(true)}
+                  onOpenGroupsDirectory={() => setSelectedConversationId("groups_directory")}
+                  settings={messagesSettings}
+                  mutedConversations={mutedConversations}
+                />
+              )}
+            </div>
+          </div>
         }
         chatPanel={
-          selectedConversation ? (
+          selectedConversationId === "groups_directory" ? (
+            <MessagesGroupsPanel
+              onSelectGroup={setSelectedConversationId}
+              onBack={() => setSelectedConversationId(null)}
+            />
+          ) : selectedConversation ? (
             <MessagesChatPanel
               conversation={selectedConversation}
               currentUserId={currentUserId}
               activeFolder={activeFolder}
               clientState={clientState}
               sendTypingIndicator={sendTypingIndicator}
+              isSidebarCollapsed={isSidebarCollapsed}
+              onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
+              settings={messagesSettings}
+              isMuted={mutedConversations.includes(selectedConversation.id)}
+              isArchived={archivedConversations.includes(selectedConversation.id)}
+              onMuteToggle={() => handleMuteToggle(selectedConversation.id)}
+              onArchiveToggle={() => handleArchiveToggle(selectedConversation.id)}
+              onDeleteConversation={() => handleDeleteConversation(selectedConversation.id)}
+              onAddParticipant={handleAddParticipant}
             />
-          ) : activeFolder === "groups" ? (
-            <MessagesGroupsPanel onSelectGroup={setSelectedConversationId} />
           ) : (
             <MessagesEmptyState
               activeFolder={activeFolder}

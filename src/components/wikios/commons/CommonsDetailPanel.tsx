@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Copy, Check, ExternalLink, Download, Bookmark } from "lucide-react";
+import { X, Copy, Check, ExternalLink, Download, Bookmark, Image } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -30,6 +30,7 @@ interface CommonsDetailPanelProps {
 
 export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [copyImageSuccess, setCopyImageSuccess] = useState(false);
   const [format, setFormat] = useState<"thumb" | "embed" | "raw" | "url">("thumb");
   const [isZoomed, setIsZoomed] = useState(false);
   const { user } = useUser();
@@ -67,6 +68,35 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopyImage = async () => {
+    try {
+      const response = await fetch(image.url);
+      const blob = await response.blob();
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            [blob.type]: blob,
+          }),
+        ]);
+        setCopyImageSuccess(true);
+        setTimeout(() => setCopyImageSuccess(false), 2000);
+      } else {
+        await navigator.clipboard.writeText(image.url);
+        setCopyImageSuccess(true);
+        setTimeout(() => setCopyImageSuccess(false), 2000);
+      }
+    } catch (err) {
+      console.warn("Failed to copy image blob, falling back to copying URL text:", err);
+      try {
+        await navigator.clipboard.writeText(image.url);
+        setCopyImageSuccess(true);
+        setTimeout(() => setCopyImageSuccess(false), 2000);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   const handleStash = () => {
     const isLocal = image.descriptionUrl.includes("ixwiki.com");
     const isIiwiki = image.descriptionUrl.includes("iiwiki.com");
@@ -83,37 +113,41 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
     <div className="wikios-commons-detail relative overflow-hidden">
       <TextureOverlay texture="paperGrain" opacity={0.06} className="mix-blend-overlay" />
       <TextureOverlay texture="diagonal" opacity={0.03} className="mix-blend-overlay" />
-      {/* Header */}
-      <div className="wikios-commons-detail-header">
-        <h3 className="wikios-commons-detail-title">{cleanTitle}</h3>
-        <button onClick={onClose} className="wikios-commons-detail-close">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+      {/* Sticky Header and Preview Container */}
+      <div className="sticky top-0 z-10 bg-[var(--wikios-surface)] border-b border-[var(--wikios-border)] shadow-sm">
+        {/* Header */}
+        <div className="wikios-commons-detail-header !border-b-0">
+          <h3 className="wikios-commons-detail-title">{cleanTitle}</h3>
+          <button onClick={onClose} className="wikios-commons-detail-close group">
+            <X className="h-4 w-4 transition-colors duration-200 group-hover:text-red-500" />
+          </button>
+        </div>
 
-      {/* Preview */}
-      <div
-        className="wikios-commons-detail-preview group relative cursor-zoom-in overflow-hidden"
-        onClick={() => setIsZoomed(true)}
-      >
-        <img
-          src={image.url}
-          alt={cleanTitle}
-          loading="lazy"
-          className="transition-transform duration-300 group-hover:scale-[1.02]"
-        />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-          <span className="flex items-center gap-1.5 rounded-md border border-white/10 bg-zinc-950/80 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-lg backdrop-blur-md">
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
-              />
-            </svg>
-            Click to Zoom
-          </span>
+        {/* Preview */}
+        <div
+          className="wikios-commons-detail-preview group relative cursor-zoom-in overflow-hidden"
+          onClick={() => setIsZoomed(true)}
+        >
+          <img
+            src={image.url}
+            alt={cleanTitle}
+            loading="lazy"
+            className="transition-transform duration-300 group-hover:scale-[1.02]"
+            onContextMenu={(e) => e.preventDefault()}
+          />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/10 bg-zinc-950/80 px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-lg backdrop-blur-md">
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
+                />
+              </svg>
+              Click to Zoom
+            </span>
+          </div>
         </div>
       </div>
 
@@ -146,31 +180,35 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
 
         {/* Action Buttons */}
         <div className="flex gap-1.5 px-3">
-          <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1 text-xs">
+          <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1 text-xs group">
             {copied ? (
               <Check className="mr-1.5 h-3.5 w-3.5 text-green-400" />
             ) : (
-              <Copy className="mr-1.5 h-3.5 w-3.5" />
+              <Copy className="mr-1.5 h-3.5 w-3.5 transition-colors duration-200 group-hover:text-blue-500" />
             )}
             {copied ? "Copied" : format === "url" ? "Copy URL" : "Copy Wikitext"}
           </Button>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => window.open(image.descriptionUrl, "_blank")}
-            title="View details on MediaWiki"
-            className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
+            onClick={handleCopyImage}
+            title="Copy image to clipboard"
+            className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] group"
           >
-            <ExternalLink className="h-3.5 w-3.5" />
+            {copyImageSuccess ? (
+              <Check className="h-3.5 w-3.5 text-green-400" />
+            ) : (
+              <Image className="h-3.5 w-3.5 transition-colors duration-200 group-hover:text-cyan-500" />
+            )}
           </Button>
           <Button
             size="sm"
             variant="outline"
             onClick={() => window.open(image.url, "_blank")}
             title="Download original file"
-            className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
+            className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] group"
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-3.5 w-3.5 transition-colors duration-200 group-hover:text-amber-500" />
           </Button>
           {isAuthenticated && (
             <Button
@@ -182,10 +220,14 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
               className={cn(
                 stashMutation.isSuccess
                   ? "border-green-500/30 bg-green-500/20 text-green-400"
-                  : "text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
+                  : "text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]",
+                "group"
               )}
             >
-              <Bookmark className="h-3.5 w-3.5" />
+              <Bookmark className={cn(
+                "h-3.5 w-3.5 transition-colors duration-200",
+                stashMutation.isSuccess ? "text-green-400" : "group-hover:text-emerald-500"
+              )} />
             </Button>
           )}
         </div>
@@ -217,13 +259,44 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             <span>{image.license}</span>
           </div>
         )}
-        {image.description && (
+        {image.description ? (
           <div className="wikios-commons-detail-desc">
             <span className="wikios-commons-detail-label">Description</span>
-            <p>
+            <p className="mb-2.5">
               {image.description.slice(0, 300)}
               {image.description.length > 300 ? "..." : ""}
             </p>
+            <div className="mt-2">
+              <a
+                href={image.descriptionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 hover:bg-blue-500/20 transition-all select-none"
+              >
+                <ExternalLink className="h-3 w-3" />
+                {image.descriptionUrl.includes("ixwiki.com")
+                  ? "View details on IxWiki"
+                  : image.descriptionUrl.includes("iiwiki.com")
+                    ? "View details on IIWiki"
+                    : "View details on Commons"}
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 pt-2 border-t border-white/5">
+            <a
+              href={image.descriptionUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-full border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 hover:bg-blue-500/20 transition-all select-none"
+            >
+              <ExternalLink className="h-3 w-3" />
+              {image.descriptionUrl.includes("ixwiki.com")
+                ? "View details on IxWiki"
+                : image.descriptionUrl.includes("iiwiki.com")
+                  ? "View details on IIWiki"
+                  : "View details on Commons"}
+            </a>
           </div>
         )}
       </div>
@@ -251,6 +324,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 src={image.url}
                 alt={cleanTitle}
                 className="animate-in zoom-in-95 max-h-[80vh] max-w-full rounded-md border border-white/10 object-contain shadow-2xl duration-200"
+                onContextMenu={(e) => e.preventDefault()}
               />
               <div className="mt-4 rounded-full border border-white/5 bg-black/60 px-4 py-2 text-center backdrop-blur-md select-none">
                 <p className="max-w-[80vw] truncate text-sm font-semibold text-white/90">

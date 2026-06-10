@@ -4,9 +4,7 @@
 // CodeMirror 6 with wikitext toolbar, word count, save panel.
 
 "use client";
-
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { Eye, EyeOff, X } from "lucide-react";
@@ -308,12 +306,10 @@ export function WikiSourceEditor({
   const notify = useNotify();
   const [saveDropdownOpen, setSaveDropdownOpen] = useState(false);
   const [saveActionType, setSaveActionType] = useState<"publish" | "session">("publish");
-  const [saving, setSaving] = useState(false);
-  const [writerMode, setWriterMode] = useState(false);
-  const [writerModeExiting, setWriterModeExiting] = useState(false);
   const { scrollY } = useNavigationScroll();
-  const repulsionProgress = writerMode ? 1 : Math.min(1, Math.max(0, scrollY / 56));
+  const repulsionProgress = Math.min(1, Math.max(0, scrollY / 56));
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [showLineNumbers, setShowLineNumbers] = useState(() => {
     if (typeof window !== "undefined") {
@@ -341,25 +337,7 @@ export function WikiSourceEditor({
   const wordWrapComp = useRef(new Compartment());
   const autocompleteComp = useRef(new Compartment());
 
-  const handleToggleWriterMode = useCallback((active: boolean) => {
-    if (active) {
-      setWriterMode(true);
-      setWriterModeExiting(false);
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.add("wikios-writer-mode");
-        viewRef.current?.focus();
-      }
-    } else {
-      setWriterModeExiting(true);
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.remove("wikios-writer-mode");
-      }
-      setTimeout(() => {
-        setWriterMode(false);
-        setWriterModeExiting(false);
-      }, 280);
-    }
-  }, []);
+
 
   const handleToggleLineNumbers = useCallback((val: boolean) => {
     setShowLineNumbers(val);
@@ -376,13 +354,7 @@ export function WikiSourceEditor({
     localStorage.setItem("wikios-editor-autocomplete", String(val));
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.remove("wikios-writer-mode");
-      }
-    };
-  }, []);
+
 
   // Sync preferences with CodeMirror dynamically
   useEffect(() => {
@@ -767,30 +739,9 @@ export function WikiSourceEditor({
   return (
     <div className="wikios-editor-modern">
       {/* Title bar */}
-      <motion.div
-        className="wikios-editor-titlebar"
-        animate={{
-          height: 48 + repulsionProgress * 34,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 30,
-          mass: 1,
-        }}
-      >
-        <motion.div
-          className="wikios-editor-titlebar-left"
-          animate={{
-            y: repulsionProgress * 8,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 30,
-            mass: 1,
-          }}
-        >
+      {/* Title bar */}
+      <div className="wikios-editor-titlebar">
+        <div className="wikios-editor-titlebar-left">
           <span className="wikios-editor-titlebar-name">
             <span className="mr-1 font-medium opacity-50">Editing</span>
             <span className="mr-1.5 opacity-30">:</span>
@@ -801,7 +752,7 @@ export function WikiSourceEditor({
               Unsaved
             </span>
           )}
-        </motion.div>
+        </div>
 
         {/* Center: Apple-style switch toggle */}
         <div className="wikios-editor-titlebar-center">
@@ -811,12 +762,14 @@ export function WikiSourceEditor({
               DYNAMIC_ISLAND_BORDER_CLASS
             )}
             animate={{
-              y: repulsionProgress * 20,
+              y: -repulsionProgress * 40,
               scale: 1 - repulsionProgress * 0.1,
               gap: 10 - repulsionProgress * 2,
+              opacity: 1 - repulsionProgress,
+              pointerEvents: repulsionProgress > 0.5 ? "none" : "auto",
               boxShadow:
-                repulsionProgress > 0
-                  ? `0 0 ${repulsionProgress * 12}px rgba(59, 130, 246, ${repulsionProgress * 0.4})`
+                repulsionProgress > 0 && repulsionProgress < 0.8
+                  ? `0 0 ${(1 - repulsionProgress) * 12}px rgba(59, 130, 246, ${(1 - repulsionProgress) * 0.4})`
                   : "none",
             }}
             transition={{
@@ -863,18 +816,7 @@ export function WikiSourceEditor({
           </motion.div>
         </div>
 
-        <motion.div
-          className="wikios-editor-titlebar-actions"
-          animate={{
-            y: repulsionProgress * 8,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 30,
-            mass: 1,
-          }}
-        >
+        <div className="wikios-editor-titlebar-actions">
           <button
             className={`wikios-editor-btn-preview ${showPreview ? "wikios-editor-btn-active" : ""}`}
             onClick={() => setShowPreview(!showPreview)}
@@ -944,8 +886,8 @@ export function WikiSourceEditor({
               </div>
             </PopoverContent>
           </Popover>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Save panel (slides down) */}
       {showSavePanel && (
@@ -1234,16 +1176,7 @@ export function WikiSourceEditor({
                   Editor Settings
                 </div>
 
-                {/* Writer Mode */}
-                <div className="flex items-center justify-between select-none">
-                  <span className="font-medium">Writer Mode</span>
-                  <AppleSwitch
-                    checked={writerMode}
-                    onCheckedChange={handleToggleWriterMode}
-                    size="sm"
-                    tone="neutral"
-                  />
-                </div>
+
 
                 {/* Line Numbers */}
                 <div className="flex items-center justify-between select-none">
@@ -1349,27 +1282,7 @@ export function WikiSourceEditor({
         onInsert={insertAtCursor}
       />
 
-      {/* Writer Mode — Apple Pages-style backdrop + exit button */}
-      {(writerMode || writerModeExiting) &&
-        createPortal(
-          <div
-            className={`wikios-writer-backdrop ${writerModeExiting ? "wikios-writer-backdrop-exit" : ""}`}
-            onClick={() => handleToggleWriterMode(false)}
-          >
-            <button
-              type="button"
-              className="wikios-writer-exit-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleWriterMode(false);
-              }}
-              aria-label="Exit writer mode"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>,
-          document.body
-        )}
+
     </div>
   );
 }

@@ -54,7 +54,8 @@ export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListPr
     }).format(value);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date | undefined | null) => {
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",

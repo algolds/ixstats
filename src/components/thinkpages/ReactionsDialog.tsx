@@ -127,7 +127,7 @@ export function ReactionsDialog({
 
   const discordMsgUrl = discordMsgId
     ? `https://discord.com/channels/552179975769161729/557223534418722818/${discordMsgId}`
-    : null;
+    : undefined;
 
   if (typeof window === "undefined") return null;
 

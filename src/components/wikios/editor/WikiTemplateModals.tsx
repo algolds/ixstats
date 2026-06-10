@@ -115,7 +115,7 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
         onClick={onClose}
       >
         <div
@@ -359,7 +359,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
         onClick={onClose}
       >
         <div
@@ -634,7 +634,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
         onClick={onClose}
       >
         <div
@@ -1193,7 +1193,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
         onClick={onClose}
       >
         <div

@@ -74,6 +74,8 @@ interface EditorMapProps {
   onGeometryUpdate?: (featureId: string, geometry: object) => void;
   /** Background map layers (world map context) */
   worldMapLayers?: import("~/components/maps/core/IxWorldMap").MapLayerData[];
+  /** Visible layer types in the editor context */
+  editorVisibleLayers?: Set<string>;
   /** Show coordinate grid lines */
   showGrid?: boolean;
   /** Called when map zoom changes */
@@ -86,6 +88,7 @@ interface EditorMapProps {
   layerVisibility?: Record<string, boolean>;
   /** Route editing details */
   editingRouteId?: string | null;
+  /** Route editing vertices */
   editingRouteVertices?: [number, number][];
   onRouteVerticesUpdate?: (vertices: [number, number][]) => void;
   onRouteEditCommit?: () => void;
@@ -108,6 +111,7 @@ const EditorMap = memo(
       onFeatureSelect,
       onGeometryUpdate,
       worldMapLayers,
+      editorVisibleLayers,
       showGrid,
       onZoomChange,
       paintColors,
@@ -169,6 +173,8 @@ const EditorMap = memo(
       features,
       countryGeometry,
       onDrawComplete,
+      worldMapLayers,
+      editorVisibleLayers,
     });
 
     // ── 3. Hook: Manage Subdivision Vertex Editing ──
@@ -186,6 +192,8 @@ const EditorMap = memo(
       features,
       countryGeometry,
       onGeometryUpdate,
+      worldMapLayers,
+      editorVisibleLayers,
     });
 
     // ── 4. Hook: Manage Route Path Editing & Snapping ──

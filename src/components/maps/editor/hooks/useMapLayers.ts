@@ -4,7 +4,7 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS } from "~/lib/map-config";
+import { OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS, MAP_LAYER_TYPES } from "~/lib/map-config";
 import { getGeoJSONSource, EMPTY_FC, haversineDistance } from "../utils/map-helpers";
 
 interface UseMapLayersProps {
@@ -119,25 +119,32 @@ export function useMapLayers({
             }
           }
         }
-
-        if (config.type === "line") {
-          if (map.getLayer(fillLayerId)) {
-            map.setPaintProperty(fillLayerId, "line-opacity", layer.visible ? 0.7 : 0);
-          }
-        } else if (config.type === "fill") {
-          if (map.getLayer(fillLayerId)) {
-            map.setPaintProperty(
-              fillLayerId,
-              "fill-opacity",
-              layer.visible ? config.fillOpacity : 0
-            );
-          }
-          if (map.getLayer(strokeLayerId)) {
-            map.setPaintProperty(strokeLayerId, "line-opacity", layer.visible ? 0.8 : 0);
-          }
-        }
       } catch (err) {
         console.warn(`[useMapLayers] context layer ${layer.type} error:`, err);
+      }
+    }
+
+    // Update visibility and opacity for all background layers in MAP_LAYER_TYPES
+    for (const type of MAP_LAYER_TYPES) {
+      if (type === "political") continue;
+      const activeLayer = worldMapLayers.find((l) => l.type === type);
+      const isVisible = activeLayer ? activeLayer.visible : false;
+      const fillLayerId = `editor-ctx-fill-${type}`;
+      const strokeLayerId = `editor-ctx-stroke-${type}`;
+      const config = LAYER_CONFIGS[type];
+      if (!config) continue;
+
+      if (config.type === "line") {
+        if (map.getLayer(fillLayerId)) {
+          map.setPaintProperty(fillLayerId, "line-opacity", isVisible ? 0.7 : 0);
+        }
+      } else if (config.type === "fill") {
+        if (map.getLayer(fillLayerId)) {
+          map.setPaintProperty(fillLayerId, "fill-opacity", isVisible ? config.fillOpacity : 0);
+        }
+        if (map.getLayer(strokeLayerId)) {
+          map.setPaintProperty(strokeLayerId, "line-opacity", isVisible ? 0.8 : 0);
+        }
       }
     }
   }, [map, isLoaded, worldMapLayers]);
@@ -327,6 +334,7 @@ export function useMapLayers({
       if (f.type === "storyPin" && lv.stories === false) return false;
       if (f.type === "mapLabel" && lv.labels === false) return false;
       if (f.type === "subdivision" && lv.regions === false) return false;
+      if (f.type === "route" && lv.routes === false) return false;
       return true;
     });
 

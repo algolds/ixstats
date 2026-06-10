@@ -11,12 +11,9 @@ import type { ThinkShareConversation } from "./thinkshare";
 // ─── Folder System ───────────────────────────────────────────────
 
 export type MessageFolder =
-  | "inbox"
-  | "personal"
-  | "diplomatic"
-  | "discussions"
-  | "groups"
-  | "system";
+  | "conversations"
+  | "system"
+  | "groups";
 
 export interface MessageFolderConfig {
   id: MessageFolder;

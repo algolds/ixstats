@@ -128,6 +128,15 @@ const PAINT_MODES = [
   { value: "wiki", label: "Wiki Coverage" },
 ];
 
+const SUGGESTED_LABEL_COLORS = [
+  { name: "Dark Slate", hex: "#0f172a" },
+  { name: "Ocean Blue", hex: "#1a5276" },
+  { name: "Purple", hex: "#7c3aed" },
+  { name: "Brown", hex: "#78350f" },
+  { name: "Green", hex: "#047857" },
+  { name: "Red", hex: "#b91c1c" },
+];
+
 const selectClass =
   "h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-primary/50";
 const btnClass =
@@ -331,6 +340,20 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   <ColorPickerEyeDropper />
                 </div>
               </ColorPicker>
+              <div className="mt-3 border-t border-border/40 pt-2 space-y-1">
+                <Label className="text-muted-foreground text-[10px]">Suggested Colors</Label>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {SUGGESTED_LABEL_COLORS.map((col) => (
+                    <button
+                      key={col.hex}
+                      onClick={() => props.onLabelColorChange?.(col.hex)}
+                      className="h-5 w-5 rounded border border-border/40 transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                      style={{ backgroundColor: col.hex }}
+                      title={col.name}
+                    />
+                  ))}
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
           <button

@@ -1,14 +1,16 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, useState, useRef } from "react";
 import { useUser } from "~/context/auth-context";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { extractHashtags, extractMentions } from "~/lib/text-formatter";
 
 interface PostPageProps {
   params: Promise<{
@@ -20,6 +22,8 @@ export default function PostPage({ params }: PostPageProps) {
   const { postId } = use(params);
   const { user } = useUser();
   const notify = useNotify();
+  const replyInputRef = useRef<HTMLInputElement>(null);
+  const [replyText, setReplyText] = useState("");
 
   // Get user profile to determine current account
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
@@ -30,30 +34,56 @@ export default function PostPage({ params }: PostPageProps) {
     { enabled: !!userProfile?.countryId }
   );
 
-  // Use first account if available (or you could add account selection later)
+  // Use first account if available
   const currentAccount = accounts?.[0];
 
-  // Get the specific post
+  // Get the specific post (which includes pre-fetched replies)
   const {
     data: post,
     isLoading,
     error,
   } = api.thinkpages.getPost.useQuery({ postId }, { enabled: !!postId });
 
-  // Get post replies
-  const { data: feed } = api.thinkpages.getFeed.useQuery({ limit: 50 });
+  const utils = api.useUtils();
 
-  // Filter replies to this post
-  const replies = React.useMemo(() => {
-    if (!feed?.posts || !postId) return [];
-    return feed.posts.filter((p) => p.parentPostId === postId);
-  }, [feed?.posts, postId]);
+  // Mutation for creating replies
+  const createPostMutation = api.thinkpages.createPost.useMutation({
+    onSuccess: () => {
+      notify.success("Reply posted!");
+      setReplyText("");
+      // Invalidate the post query to fetch new replies instantly
+      void utils.thinkpages.getPost.invalidate({ postId });
+      void utils.thinkpages.getFeed.invalidate();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to post reply");
+    },
+  });
+
+  const handleSubmitReply = async () => {
+    if (!replyText.trim() || !currentAccount?.id) return;
+    try {
+      await createPostMutation.mutateAsync({
+        accountId: currentAccount.id,
+        content: replyText,
+        parentPostId: postId,
+        visibility: "public",
+        hashtags: extractHashtags(replyText),
+        mentions: extractMentions(replyText),
+      });
+    } catch (_e) {
+      // Handled by onError
+    }
+  };
+
+  // Source replies directly from the fetched post object
+  const replies = (post?.replies || []) as any[];
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-2xl py-8">
+      <div className="container mx-auto max-w-2xl py-8 px-4">
         <div className="flex min-h-[400px] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       </div>
     );
@@ -61,15 +91,15 @@ export default function PostPage({ params }: PostPageProps) {
 
   if (error || !post) {
     return (
-      <div className="container mx-auto max-w-2xl py-8">
-        <Card>
+      <div className="container mx-auto max-w-2xl py-8 px-4">
+        <Card className="border-white/10 bg-slate-900/40 backdrop-blur-xl">
           <CardContent className="p-8 text-center">
-            <h2 className="mb-2 text-xl font-semibold">Post Not Found</h2>
-            <p className="text-muted-foreground mb-4">
+            <h2 className="mb-2 text-xl font-semibold text-slate-200">Post Not Found</h2>
+            <p className="text-slate-400 mb-6">
               This post may have been deleted or the link is incorrect.
             </p>
             <Link href="/thinkpages">
-              <Button>
+              <Button className="bg-blue-600 hover:bg-blue-500 text-white">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Feed
               </Button>
@@ -81,83 +111,149 @@ export default function PostPage({ params }: PostPageProps) {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl py-8">
-      {/* Back Button */}
-      <div className="mb-4">
-        <Link href="/thinkpages">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Feed
-          </Button>
-        </Link>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Absolute background glow circles */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute top-[20%] left-[10%] h-[450px] w-[450px] rounded-full bg-indigo-600/10 blur-[130px]" />
+        <div className="absolute top-[50%] right-[10%] h-[450px] w-[450px] rounded-full bg-purple-600/10 blur-[130px]" />
       </div>
 
-      {/* Main Post */}
-      <div className="space-y-4">
-        <ThinkpagesPost
-          post={post}
-          currentUserAccountId={currentAccount?.id || ""}
-          accounts={accounts || []}
-          countryId={userProfile?.countryId || ""}
-          onRepost={(postId) => {
-            notify.info("Repost functionality coming soon!");
-          }}
-          onReply={(postId) => {
-            notify.info("Reply functionality coming soon!");
-          }}
-          onShare={(postId) => {
-            const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
-            if (navigator.share) {
-              navigator.share({
-                title: "ThinkPages Post",
-                text: "Check out this post on ThinkPages",
-                url: postUrl,
-              });
-            } else {
-              navigator.clipboard.writeText(postUrl);
-              notify.success("Link copied to clipboard!");
-            }
-          }}
-          showThread={false}
-        />
+      <div className="relative z-10 container mx-auto max-w-2xl py-8 px-4 pb-32">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link href="/thinkpages">
+            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-200 hover:bg-white/5">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Feed
+            </Button>
+          </Link>
+        </div>
 
-        {/* Replies Section */}
-        {replies.length > 0 && (
-          <div className="mt-6">
-            <h3 className="mb-4 text-lg font-semibold">Replies ({replies.length})</h3>
-            <div className="space-y-4">
-              {replies.map((reply) => (
-                <ThinkpagesPost
-                  key={reply.id}
-                  post={reply}
-                  currentUserAccountId={currentAccount?.id || ""}
-                  accounts={accounts || []}
-                  countryId={userProfile?.countryId || ""}
-                  onRepost={(postId) => {
-                    notify.info("Repost functionality coming soon!");
-                  }}
-                  onReply={(postId) => {
-                    notify.info("Reply functionality coming soon!");
-                  }}
-                  onShare={(postId) => {
-                    const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
-                    if (navigator.share) {
-                      navigator.share({
-                        title: "ThinkPages Post",
-                        text: "Check out this post on ThinkPages",
-                        url: postUrl,
-                      });
-                    } else {
-                      navigator.clipboard.writeText(postUrl);
-                      notify.success("Link copied to clipboard!");
-                    }
-                  }}
-                  showThread={false}
-                />
+        {/* Thread Structure Wrapper */}
+        <div className="relative space-y-6">
+          {/* Vertical Thread Connector Line */}
+          {replies.length > 0 && (
+            <div className="absolute left-[48px] top-[108px] bottom-16 w-[2px] bg-gradient-to-b from-indigo-500/40 via-purple-500/15 to-transparent pointer-events-none z-0" />
+          )}
+
+          {/* Main Hero Post */}
+          <div className="z-10 relative">
+            <ThinkpagesPost
+              post={post}
+              currentUserAccountId={currentAccount?.id || ""}
+              accounts={accounts || []}
+              countryId={userProfile?.countryId || ""}
+              onRepost={() => {
+                notify.info("Repost shared");
+              }}
+              onReply={() => {
+                replyInputRef.current?.focus();
+              }}
+              onShare={() => {
+                const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
+                if (navigator.share) {
+                  navigator.share({
+                    title: "ThinkPages Post",
+                    text: "Check out this post on ThinkPages",
+                    url: postUrl,
+                  });
+                } else {
+                  navigator.clipboard.writeText(postUrl);
+                  notify.success("Link copied to clipboard!");
+                }
+              }}
+              isHero={true}
+              showThread={false}
+            />
+          </div>
+
+          {/* Replies Section */}
+          {replies.length > 0 && (
+            <div className="space-y-4 ml-5 relative z-10">
+              {replies.map((reply: any) => (
+                <div key={reply.id} className="transition-all duration-300">
+                  <ThinkpagesPost
+                    post={reply}
+                    currentUserAccountId={currentAccount?.id || ""}
+                    accounts={accounts || []}
+                    countryId={userProfile?.countryId || ""}
+                    onRepost={() => {
+                      notify.info("Repost shared");
+                    }}
+                    onReply={() => {
+                      replyInputRef.current?.focus();
+                      setReplyText(`@${reply.account.username} `);
+                    }}
+                    onShare={() => {
+                      const postUrl = `${window.location.origin}/thinkpages/post/${reply.id}`;
+                      if (navigator.share) {
+                        navigator.share({
+                          title: "ThinkPages Reply",
+                          text: "Check out this reply on ThinkPages",
+                          url: postUrl,
+                        });
+                      } else {
+                        navigator.clipboard.writeText(postUrl);
+                        notify.success("Link copied to clipboard!");
+                      }
+                    }}
+                    compact={true}
+                    showThread={false}
+                  />
+                </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
+
+      {/* Floating Bottom Composer Capsule */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4">
+        <div className="rounded-full border border-white/10 bg-slate-950/75 backdrop-blur-xl px-4 py-2 shadow-2xl flex items-center gap-3 w-full transition-all duration-200 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
+          <Avatar className="h-8 w-8 border border-white/10 shrink-0">
+            {currentAccount?.profileImageUrl ? (
+              <AvatarImage src={currentAccount.profileImageUrl} />
+            ) : null}
+            <AvatarFallback className="text-xs bg-slate-800 text-slate-400 font-semibold">
+              {currentAccount?.displayName
+                ? currentAccount.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase()
+                : "?"}
+            </AvatarFallback>
+          </Avatar>
+          
+          <input
+            ref={replyInputRef}
+            type="text"
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void handleSubmitReply();
+              }
+            }}
+            placeholder={
+              currentAccount
+                ? `Reply to @${post.account.username}...`
+                : "Select or create an account to reply"
+            }
+            disabled={!currentAccount || createPostMutation.isPending}
+            className="bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none border-none py-1.5 flex-1 text-sm disabled:opacity-50"
+          />
+
+          <Button
+            size="icon"
+            onClick={handleSubmitReply}
+            disabled={!replyText.trim() || !currentAccount || createPostMutation.isPending}
+            className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 shrink-0 transition-all duration-200"
+          >
+            {createPostMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowUp className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

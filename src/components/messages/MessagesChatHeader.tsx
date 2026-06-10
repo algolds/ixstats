@@ -33,6 +33,15 @@ interface MessagesChatHeaderProps {
   participantStatus?: string;
   onSearch?: (query: string) => void;
   onBack?: () => void;
+  isSidebarCollapsed?: boolean;
+  onViewDetails?: () => void;
+  onAddParticipants?: () => void;
+  onMuteToggle?: () => void;
+  onArchiveToggle?: () => void;
+  onDeleteConversation?: () => void;
+  isMuted?: boolean;
+  isArchived?: boolean;
+  displayNamePreference?: "account" | "country";
 }
 
 export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
@@ -42,6 +51,15 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   participantStatus,
   onSearch,
   onBack,
+  isSidebarCollapsed = false,
+  onViewDetails,
+  onAddParticipants,
+  onMuteToggle,
+  onArchiveToggle,
+  onDeleteConversation,
+  isMuted = false,
+  isArchived = false,
+  displayNamePreference = "country",
 }) => {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,7 +67,10 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   const isGroup = conversation.type === "group";
   const participant = conversation.otherParticipants[0];
 
-  const participantName = participant?.account?.displayName ?? conversation.name ?? "Unknown";
+  const participantName =
+    displayNamePreference === "account" && participant?.account?.username
+      ? `@${participant.account.username}`
+      : (participant?.account?.displayName ?? conversation.name ?? "Unknown");
   const participantAvatar = participant?.account?.profileImageUrl ?? null;
 
   const identity = participant
@@ -79,12 +100,47 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
     setIsSearchVisible(!isSearchVisible);
   };
 
+  // Folder-specific dynamic color accents for the cutout header background
+  const folderThemes: Record<MessageFolder, { bg: string; border: string }> = {
+    conversations: {
+      bg: "bg-emerald-500/10",
+      border: "border-b border-emerald-500/20",
+    },
+    system: {
+      bg: "bg-rose-500/10",
+      border: "border-b border-rose-500/20",
+    },
+    groups: {
+      bg: "bg-blue-500/10",
+      border: "border-b border-blue-500/20",
+    },
+  };
+
+  const currentTheme = folderThemes[activeFolder] || folderThemes.conversations;
+
   return (
-    <header className="border-border/40 bg-background/60 flex h-16 shrink-0 items-center justify-between border-b px-4 backdrop-blur-md">
+    <header
+      className={cn(
+        "relative z-10 flex h-16 shrink-0 items-center justify-between border-b px-4 backdrop-blur-md transition-colors duration-500",
+        currentTheme.bg,
+        currentTheme.border
+      )}
+    >
       <div className="flex min-w-0 items-center gap-3">
         {onBack && (
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={onBack}>
-            <ChevronLeft className="h-5 w-5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="shrink-0 text-slate-400 hover:text-white"
+            title={isSidebarCollapsed ? "Show conversation list" : "Hide conversation list"}
+          >
+            <ChevronLeft
+              className={cn(
+                "h-5 w-5 transition-transform duration-200",
+                isSidebarCollapsed && "rotate-180"
+              )}
+            />
           </Button>
         )}
 
@@ -173,25 +229,28 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               <DropdownMenuGroup>
                 <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onViewDetails}>
                   <Info className="mr-2 h-4 w-4" />
                   View Details
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onAddParticipants}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add Participants
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onMuteToggle}>
                   <BellOff className="mr-2 h-4 w-4" />
-                  Mute Notifications
+                  {isMuted ? "Unmute Notifications" : "Mute Notifications"}
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={onArchiveToggle}>
                   <Archive className="mr-2 h-4 w-4" />
-                  Archive Chat
+                  {isArchived ? "Unarchive Chat" : "Archive Chat"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={onDeleteConversation}
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Conversation
                 </DropdownMenuItem>

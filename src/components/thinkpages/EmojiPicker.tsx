@@ -1,7 +1,18 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Smile, Search, Loader2 } from "lucide-react";
+import React, { useState, useMemo, useRef } from "react";
+import {
+  Smile,
+  Search,
+  Loader2,
+  Cat,
+  Pizza,
+  Trophy,
+  Plane,
+  Lightbulb,
+  Heart,
+  Flag,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -11,7 +22,8 @@ import { api } from "~/trpc/react";
 // Categorized popular unicode emojis
 const EMOJI_CATEGORIES = [
   {
-    name: "Smileys & Emotion",
+    name: "Smileys & People",
+    icon: Smile,
     emojis: [
       { char: "😀", name: "grinning" },
       { char: "😃", name: "smiley" },
@@ -78,27 +90,9 @@ const EMOJI_CATEGORIES = [
       { char: "🤡", name: "clown" },
       { char: "👻", name: "ghost" },
       { char: "👽", name: "alien" },
-      { char: "👾", name: "space_invader" },
       { char: "🤖", name: "robot" },
-    ],
-  },
-  {
-    name: "Gestures & Body",
-    emojis: [
       { char: "👋", name: "wave" },
       { char: "👌", name: "ok_hand" },
-      { char: "🤌", name: "pinched_fingers" },
-      { char: "🤏", name: "pinching" },
-      { char: "✌️", name: "v_sign" },
-      { char: "🤞", name: "crossed_fingers" },
-      { char: "🤟", name: "love_you" },
-      { char: "🤘", name: "metal" },
-      { char: "🤙", name: "call_me" },
-      { char: "👈", name: "point_left" },
-      { char: "👉", name: "point_right" },
-      { char: "👆", name: "point_up" },
-      { char: "🖕", name: "middle_finger" },
-      { char: "👇", name: "point_down" },
       { char: "👍", name: "thumbsup" },
       { char: "👎", name: "thumbsdown" },
       { char: "👊", name: "fist" },
@@ -108,13 +102,267 @@ const EMOJI_CATEGORIES = [
       { char: "💪", name: "muscle" },
       { char: "🧠", name: "brain" },
       { char: "👀", name: "eyes" },
-      { char: "👄", name: "mouth" },
     ],
   },
   {
-    name: "Hearts & Symbols",
+    name: "Animals & Nature",
+    icon: Cat,
     emojis: [
-      { char: "❤️", name: "heart" },
+      { char: "🐶", name: "dog" },
+      { char: "🐱", name: "cat" },
+      { char: "🐭", name: "mouse" },
+      { char: "🐹", name: "hamster" },
+      { char: "🐰", name: "rabbit" },
+      { char: "🦊", name: "fox" },
+      { char: "Bear", name: "bear" },
+      { char: "🐻", name: "bear" },
+      { char: "🐼", name: "panda" },
+      { char: "🐨", name: "koala" },
+      { char: "🐯", name: "tiger" },
+      { char: "🦁", name: "lion" },
+      { char: "🐮", name: "cow" },
+      { char: "🐷", name: "pig" },
+      { char: "🐸", name: "frog" },
+      { char: "🐵", name: "monkey" },
+      { char: "🐔", name: "chicken" },
+      { char: "🐧", name: "penguin" },
+      { char: "🐦", name: "bird" },
+      { char: "🦆", name: "duck" },
+      { char: "🦅", name: "eagle" },
+      { char: "🦉", name: "owl" },
+      { char: "🦇", name: "bat" },
+      { char: "🐝", name: "bee" },
+      { char: "🐛", name: "bug" },
+      { char: "🦋", name: "butterfly" },
+      { char: "🐌", name: "snail" },
+      { char: "🐞", name: "ladybug" },
+      { char: "🐜", name: "ant" },
+      { char: "🕷️", name: "spider" },
+      { char: "🐢", name: "turtle" },
+      { char: "🐍", name: "snake" },
+      { char: "🦎", name: "lizard" },
+      { char: "🦖", name: "t-rex" },
+      { char: "🐙", name: "octopus" },
+      { char: "Squid", name: "squid" },
+      { char: "🦑", name: "squid" },
+      { char: "🐠", name: "fish" },
+      { char: "🐬", name: "dolphin" },
+      { char: "🐳", name: "whale" },
+      { char: "🦈", name: "shark" },
+      { char: "🌲", name: "pine_tree" },
+      { char: "🌳", name: "tree" },
+      { char: "🌴", name: "palm_tree" },
+      { char: "🌵", name: "cactus" },
+      { char: "🍀", name: "clover" },
+      { char: "🍁", name: "maple_leaf" },
+      { char: "🍂", name: "fallen_leaf" },
+      { char: "🌸", name: "cherry_blossom" },
+      { char: "🌹", name: "rose" },
+      { char: "🌻", name: "sunflower" },
+      { char: "🌷", name: "tulip" },
+    ],
+  },
+  {
+    name: "Food & Drink",
+    icon: Pizza,
+    emojis: [
+      { char: "🍇", name: "grapes" },
+      { char: "🍉", name: "watermelon" },
+      { char: "🍊", name: "tangerine" },
+      { char: "🍋", name: "lemon" },
+      { char: "🍌", name: "banana" },
+      { char: " Pineapple", name: "pineapple" },
+      { char: "🍍", name: "pineapple" },
+      { char: "🍎", name: "red_apple" },
+      { char: "🍐", name: "pear" },
+      { char: "🍒", name: "cherries" },
+      { char: "🍓", name: "strawberry" },
+      { char: "🫐", name: "blueberry" },
+      { char: "🥑", name: "avocado" },
+      { char: "🍆", name: "eggplant" },
+      { char: "🥔", name: "potato" },
+      { char: "🥕", name: "carrot" },
+      { char: "🌽", name: "corn" },
+      { char: "🌶️", name: "hot_pepper" },
+      { char: "🍄", name: "mushroom" },
+      { char: "🍞", name: "bread" },
+      { char: "🧀", name: "cheese" },
+      { char: "🍖", name: "meat_on_bone" },
+      { char: "🍗", name: "poultry_leg" },
+      { char: "🥩", name: "steak" },
+      { char: "🥓", name: "bacon" },
+      { char: "🍔", name: "hamburger" },
+      { char: "🍟", name: "french_fries" },
+      { char: "🍕", name: "pizza" },
+      { char: "🌭", name: "hotdog" },
+      { char: "🥪", name: "sandwich" },
+      { char: "🌮", name: "taco" },
+      { char: "🍳", name: "egg" },
+      { char: "🥗", name: "salad" },
+      { char: "🍿", name: "popcorn" },
+      { char: "🍣", name: "sushi" },
+      { char: "🥟", name: "dumpling" },
+      { char: "🍦", name: "icecream" },
+      { char: "🍩", name: "donut" },
+      { char: "🍪", name: "cookie" },
+      { char: "🎂", name: "birthday" },
+      { char: "🍫", name: "chocolate" },
+      { char: "🍬", name: "candy" },
+      { char: "☕", name: "coffee" },
+      { char: "🍵", name: "tea" },
+      { char: "🍾", name: "champagne" },
+      { char: "🍷", name: "wine" },
+      { char: "🍸", name: "cocktail" },
+      { char: "🍺", name: "beer" },
+      { char: "🍻", name: "beers" },
+      { char: "🥤", name: "soda" },
+      { char: "🧊", name: "ice" },
+    ],
+  },
+  {
+    name: "Activity",
+    icon: Trophy,
+    emojis: [
+      { char: "⚽", name: "soccer" },
+      { char: "🏀", name: "basketball" },
+      { char: "🏈", name: "football" },
+      { char: "⚾", name: "baseball" },
+      { char: "🥎", name: "softball" },
+      { char: "🎾", name: "tennis" },
+      { char: " Volleyball", name: "volleyball" },
+      { char: "🏐", name: "volleyball" },
+      { char: "🎱", name: "billiards" },
+      { char: "🏓", name: "ping_pong" },
+      { char: "🏹", name: "archery" },
+      { char: "🥊", name: "boxing" },
+      { char: "🥋", name: "martial_arts" },
+      { char: "⛳", name: "golf" },
+      { char: "⛸️", name: "ice_skate" },
+      { char: "🎯", name: "darts" },
+      { char: "🎮", name: "video_game" },
+      { char: "🕹️", name: "joystick" },
+      { char: "🎰", name: "slot_machine" },
+      { char: "🎲", name: "dice" },
+      { char: "🧩", name: "puzzle" },
+      { char: "♟️", name: "chess" },
+      { char: "🎭", name: "theater" },
+      { char: "🎨", name: "art" },
+      { char: "🎟️", name: "ticket" },
+      { char: "🎪", name: "circus" },
+      { char: "🏆", name: "trophy" },
+      { char: "🥇", name: "first_place" },
+      { char: "🥈", name: "second_place" },
+      { char: "🥉", name: "third_place" },
+      { char: "🎖️", name: "military_medal" },
+      { char: "🎸", name: "guitar" },
+      { char: "🎺", name: "trumpet" },
+      { char: "🎻", name: "violin" },
+      { char: "🥁", name: "drum" },
+      { char: "🎹", name: "keyboard_instrument" },
+      { char: "🎧", name: "headphones" },
+      { char: "🎤", name: "microphone" },
+    ],
+  },
+  {
+    name: "Travel & Places",
+    icon: Plane,
+    emojis: [
+      { char: "🚗", name: "car" },
+      { char: "🚕", name: "taxi" },
+      { char: "🚙", name: "suv" },
+      { char: "🚌", name: "bus" },
+      { char: "🏎️", name: "racecar" },
+      { char: "🚓", name: "police_car" },
+      { char: "🚑", name: "ambulance" },
+      { char: "🚒", name: "fire_engine" },
+      { char: "🚜", name: "tractor" },
+      { char: "🚲", name: "bicycle" },
+      { char: "🛴", name: "scooter" },
+      { char: "🚨", name: "siren" },
+      { char: "🛑", name: "stop_sign" },
+      { char: "⚓", name: "anchor" },
+      { char: "⛵", name: "sailboat" },
+      { char: "🚤", name: "speedboat" },
+      { char: "🚢", name: "ship" },
+      { char: "✈️", name: "airplane" },
+      { char: "🚀", name: "rocket" },
+      { char: "🛸", name: "ufo" },
+      { char: "🌙", name: "crescent_moon" },
+      { char: "☀️", name: "sun" },
+      { char: "☁️", name: "cloud" },
+      { char: "🌧️", name: "rain" },
+      { char: "❄️", name: "snowflake" },
+      { char: "🌋", name: "volcano" },
+      { char: "🏔️", name: "mountain" },
+      { char: "🗻", name: "mount_fuji" },
+      { char: "🏕️", name: "camping" },
+      { char: "🏖️", name: "beach" },
+      { char: "🏜️", name: "desert" },
+      { char: "🏢", name: "office_building" },
+      { char: "🏫", name: "school" },
+      { char: "🏰", name: "castle" },
+      { char: "🏯", name: "japanese_castle" },
+      { char: "🗼", name: "tokyo_tower" },
+      { char: "🗽", name: "statue_of_liberty" },
+      { char: "⛪", name: "church" },
+      { char: "🕌", name: "mosque" },
+    ],
+  },
+  {
+    name: "Objects",
+    icon: Lightbulb,
+    emojis: [
+      { char: "⌚", name: "watch" },
+      { char: "📱", name: "iphone" },
+      { char: "💻", name: "laptop" },
+      { char: "⌨️", name: "keyboard" },
+      { char: "🖱️", name: "mouse" },
+      { char: "💿", name: "minidisc" },
+      { char: "📅", name: "calendar" },
+      { char: "📈", name: "chart_increasing" },
+      { char: "📉", name: "chart_decreasing" },
+      { char: "📊", name: "bar_chart" },
+      { char: "📌", name: "pushpin" },
+      { char: "📍", name: "round_pushpin" },
+      { char: "📎", name: "paperclip" },
+      { char: "📏", name: "straight_ruler" },
+      { char: "📐", name: "triangular_ruler" },
+      { char: "✂️", name: "scissors" },
+      { char: "🔒", name: "lock" },
+      { char: "🔓", name: "unlock" },
+      { char: "🔑", name: "key" },
+      { char: "🗝️", name: "old_key" },
+      { char: "🔨", name: "hammer" },
+      { char: "🛠️", name: "tools" },
+      { char: "🛡️", name: "shield" },
+      { char: "⚙️", name: "gear" },
+      { char: "⛓️", name: "chains" },
+      { char: "🔬", name: "microscope" },
+      { char: "🔭", name: "telescope" },
+      { char: "📡", name: "satellite" },
+      { char: "🧪", name: "test_tube" },
+      { char: "💵", name: "dollar" },
+      { char: "🪙", name: "coin" },
+      { char: "💳", name: "credit_card" },
+      { char: "✉️", name: "envelope" },
+      { char: "📧", name: "email" },
+      { char: "📦", name: "package" },
+      { char: "🗳️", name: "ballot_box" },
+      { char: "✏️", name: "pencil" },
+      { char: "👑", name: "crown" },
+      { char: "🎒", name: "backpack" },
+      { char: "💼", name: "briefcase" },
+      { char: "🕶️", name: "sunglasses_obj" },
+      { char: "💡", name: "lightbulb" },
+      { char: "🕯️", name: "candle" },
+      { char: "🔋", name: "battery" },
+    ],
+  },
+  {
+    name: "Symbols",
+    icon: Heart,
+    emojis: [
+      { char: "❤️", name: "red_heart" },
       { char: "🧡", name: "orange_heart" },
       { char: "💛", name: "yellow_heart" },
       { char: "💚", name: "green_heart" },
@@ -129,7 +377,6 @@ const EMOJI_CATEGORIES = [
       { char: "💓", name: "heartbeat" },
       { char: "💖", name: "sparkles_heart" },
       { char: "💘", name: "cupid" },
-      { char: "💝", name: "gift_heart" },
       { char: "☮️", name: "peace" },
       { char: "✝️", name: "cross" },
       { char: "☯️", name: "yin_yang" },
@@ -140,6 +387,51 @@ const EMOJI_CATEGORIES = [
       { char: "💯", name: "100" },
       { char: "🎉", name: "tada" },
       { char: "🎊", name: "confetti" },
+      { char: "🚫", name: "prohibited" },
+      { char: "❌", name: "cross_mark" },
+      { char: "⭕", name: "circle_mark" },
+      { char: "❓", name: "question" },
+      { char: "❔", name: "grey_question" },
+      { char: "❕", name: "grey_exclamation" },
+      { char: "double_exclamation", name: "double_exclamation" },
+      { char: "‼️", name: "double_exclamation" },
+      { char: "♾️", name: "infinity" },
+      { char: "➕", name: "plus" },
+      { char: "➖", name: "minus" },
+      { char: "✖️", name: "multiply" },
+      { char: "➗", name: "divide" },
+    ],
+  },
+  {
+    name: "Flags",
+    icon: Flag,
+    emojis: [
+      { char: "🏁", name: "chequered_flag" },
+      { char: "🚩", name: "triangular_flag" },
+      { char: "🎌", name: "crossed_flags" },
+      { char: "🏴", name: "black_flag" },
+      { char: "🏳️", name: "white_flag" },
+      { char: "🏳️‍🌈", name: "rainbow_flag" },
+      { char: "🏳️‍⚧️", name: "transgender_flag" },
+      { char: "🏴‍☠️", name: "pirate_flag" },
+      { char: "🇺🇸", name: "usa" },
+      { char: "🇺🇳", name: "un" },
+      { char: "🇨🇳", name: "china" },
+      { char: "🇯🇵", name: "japan" },
+      { char: "🇩🇪", name: "germany" },
+      { char: "🇬🇧", name: "uk" },
+      { char: "🇫🇷", name: "france" },
+      { char: "🇮🇹", name: "italy" },
+      { char: "🇷🇺", name: "russia" },
+      { char: "🇪🇸", name: "spain" },
+      { char: "🇨🇦", name: "canada" },
+      { char: "🇦🇺", name: "australia" },
+      { char: "🇧🇷", name: "brazil" },
+      { char: "🇮🇳", name: "india" },
+      { char: "🇲🇽", name: "mexico" },
+      { char: "🇰🇷", name: "south_korea" },
+      { char: "🇿🇦", name: "south_africa" },
+      { char: "🇪🇺", name: "eu" },
     ],
   },
 ];
@@ -154,6 +446,8 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"unicode" | "discord">("unicode");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch Discord emojis when popover is open
   const { data: discordEmojisData, isLoading: isLoadingDiscord } =
@@ -201,21 +495,31 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
     setSearchQuery("");
   };
 
+  const scrollToCategory = (index: number) => {
+    const container = scrollRef.current;
+    const element = container?.querySelector(`#emoji-category-${index}`) as HTMLElement;
+    if (container && element) {
+      const containerTop = container.getBoundingClientRect().top;
+      const elementTop = element.getBoundingClientRect().top;
+      const relativeTop = elementTop - containerTop + container.scrollTop;
+      container.scrollTo({ top: relativeTop - 8, behavior: "smooth" });
+    }
+  };
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
         disabled={disabled}
         className={cn(
-          "inline-flex h-7 items-center justify-center rounded-md px-2 text-sm text-xs font-medium text-blue-400 transition-colors hover:bg-white/5 hover:text-blue-300 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex h-8 w-8 items-center justify-center rounded-md text-yellow-400 transition-colors hover:bg-white/5 hover:text-yellow-300 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
           disabled && "cursor-not-allowed opacity-50"
         )}
       >
-        <Smile className="mr-1 h-3.5 w-3.5" />
-        Emoji
+        {trigger ? trigger : <Smile className="h-4 w-4" />}
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="glass-hierarchy-child w-72 overflow-hidden border-blue-500/20 bg-neutral-900/90 p-0 shadow-xl backdrop-blur-xl"
+        className="glass-hierarchy-child w-80 overflow-hidden border-blue-500/20 bg-neutral-900/90 p-0 shadow-xl backdrop-blur-xl"
       >
         {/* Search */}
         <div className="relative border-b border-white/10 p-2">
@@ -231,9 +535,11 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
         {/* Tab Selection */}
         <div className="flex border-b border-white/10 bg-white/5 p-1">
           <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => setActiveTab("unicode")}
             className={cn(
-              "flex-1 rounded py-1 text-[11px] font-medium transition-all",
+              "flex-1 rounded py-1 text-[11px] font-medium transition-all focus:outline-none",
               activeTab === "unicode"
                 ? "bg-blue-500/20 text-blue-400"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -242,9 +548,11 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
             Unicode
           </button>
           <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => setActiveTab("discord")}
             className={cn(
-              "flex-1 rounded py-1 text-[11px] font-medium transition-all",
+              "flex-1 rounded py-1 text-[11px] font-medium transition-all focus:outline-none",
               activeTab === "discord"
                 ? "bg-blue-500/20 text-blue-400"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/5"
@@ -255,22 +563,25 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
         </div>
 
         {/* Picker Content Area */}
-        <div className="max-h-60 scrollbar-thin scrollbar-thumb-white/10 overflow-y-auto p-2">
+        <div
+          ref={scrollRef}
+          className="max-h-60 scrollbar-thin scrollbar-thumb-white/10 overflow-y-auto p-2"
+        >
           {activeTab === "unicode" ? (
             filteredUnicodeCategories.length > 0 ? (
-              <div className="space-y-3">
-                {filteredUnicodeCategories.map((category) => (
-                  <div key={category.name} className="space-y-1">
+              <div className="space-y-3 pb-8">
+                {filteredUnicodeCategories.map((category, idx) => (
+                  <div key={category.name} id={`emoji-category-${idx}`} className="space-y-1 scroll-mt-2">
                     <div className="px-1 text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
                       {category.name}
                     </div>
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-8 gap-1">
                       {category.emojis.map((emoji) => (
                         <button
                           key={emoji.name}
                           onClick={() => handleSelectUnicode(emoji.char)}
                           title={`:${emoji.name}:`}
-                          className="flex h-8 w-8 items-center justify-center rounded text-lg transition-transform duration-100 hover:scale-125 hover:bg-white/10"
+                          className="flex h-8 w-8 items-center justify-center rounded text-[1.35rem] leading-none transition-transform duration-100 hover:scale-125 hover:bg-white/10"
                         >
                           {emoji.char}
                         </button>
@@ -286,7 +597,7 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
             )
           ) : (
             /* Discord Emojis tab */
-            <div>
+            <div className="pb-8">
               {isLoadingDiscord ? (
                 <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-xs">
                   <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
@@ -318,6 +629,27 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
             </div>
           )}
         </div>
+
+        {/* Category Navigation Bar (iOS Style) at the Bottom */}
+        {activeTab === "unicode" && !searchQuery && (
+          <div className="flex items-center justify-around border-t border-white/10 bg-neutral-900/95 py-1.5 backdrop-blur-md">
+            {EMOJI_CATEGORIES.map((category, idx) => {
+              const Icon = category.icon;
+              return (
+                <button
+                  key={category.name}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => scrollToCategory(idx)}
+                  className="text-neutral-400 transition-colors hover:text-white focus:outline-none"
+                  title={category.name}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

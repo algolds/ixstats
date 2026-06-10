@@ -41,6 +41,12 @@ const switchTones = {
     thumb: "#ffffff",
     glow: "color-mix(in srgb, var(--accent) 42%, transparent)",
   },
+  discord: {
+    off: "color-mix(in srgb, var(--muted) 82%, transparent)",
+    on: "#5865F2",
+    thumb: "#ffffff",
+    glow: "color-mix(in srgb, #5865F2 32%, transparent)",
+  },
 } as const;
 
 const thumbSpring = {

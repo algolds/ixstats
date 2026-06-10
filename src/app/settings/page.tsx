@@ -16,12 +16,12 @@ import {
   BookOpen,
   Link2,
   Scale,
+  Bell,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useTheme } from "~/context/theme-context";
-import { LoadingState } from "~/components/shared";
 import { Skeleton } from "~/components/ui/skeleton";
 
 import {
@@ -33,6 +33,7 @@ import {
   VaultSettingsCard,
   PrivacySecurityCard,
   GeographicReconciliationCard,
+  NotificationSettingsCard,
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
 import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
@@ -56,6 +57,7 @@ function ProfileContent() {
   const [showVault, setShowVault] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showLore, setShowLore] = useState(false);
   const [showThinkpages, setShowThinkpages] = useState(false);
   const [showIxnayID, setShowIxnayID] = useState(false);
@@ -93,7 +95,7 @@ function ProfileContent() {
   return (
     <>
       <SignedIn>
-        <div className="relative bg-slate-50 dark:bg-slate-950">
+        <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950">
           {/* Animated Background Elements */}
           <div className="pointer-events-none absolute inset-0 z-0">
             <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/10 blur-[120px] dark:bg-indigo-500/20" />
@@ -224,6 +226,12 @@ function ProfileContent() {
                 {showPreferences && (
                   <div id="interface-section">
                     <UserPreferencesCard theme={theme} onThemeChange={setTheme} />
+                  </div>
+                )}
+
+                {showNotifications && user?.id && (
+                  <div id="notifications-section">
+                    <NotificationSettingsCard userId={user.id} />
                   </div>
                 )}
 
@@ -461,6 +469,45 @@ function ProfileContent() {
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
                           showPreferences
+                            ? "scale-110 animate-pulse bg-indigo-500"
+                            : "bg-slate-300 dark:bg-slate-700"
+                        )}
+                      />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const next = !showNotifications;
+                        setShowNotifications(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("notifications-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showNotifications
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <Bell
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showNotifications ? "text-indigo-500" : "text-slate-400"
+                          )}
+                        />
+                        Notification Preferences
+                      </div>
+                      <div
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showNotifications
                             ? "scale-110 animate-pulse bg-indigo-500"
                             : "bg-slate-300 dark:bg-slate-700"
                         )}

@@ -36,6 +36,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
 import { EmojiPicker } from "./EmojiPicker";
 import { GifPicker } from "./GifPicker";
+import { LiveDataCard } from "./LiveDataCard";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
@@ -201,6 +203,8 @@ export function GlassCanvasComposer({
   const hasTradeData = !!tradeData;
   const hasVitalityData = !!vitalityData;
 
+  const utils = api.useUtils();
+
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
       notify.success("Post shared successfully!");
@@ -208,6 +212,10 @@ export function GlassCanvasComposer({
       setSelectedVisualizations([]);
       setSelectedImages([]);
       setPostToDiscord(true);
+      void utils.thinkpages.getFeed.invalidate();
+      if (account?.clerkUserId) {
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: account.clerkUserId });
+      }
       onPost();
     },
     onError: (error) => {
@@ -500,129 +508,20 @@ export function GlassCanvasComposer({
   };
 
   const getVisualizationPreview = (viz: DataVisualization) => {
-    switch (viz.type) {
-      case "economic_chart":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-blue-500/20 to-green-500/20">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-green-400" />
-              <div className="text-sm">
-                <div className="font-medium">
-                  GDP: +
-                  {(((economicData as any)?.calculatedStats?.gdpGrowth || 0.03) * 100).toFixed(1)}%
-                </div>
-                <div className="text-muted-foreground text-xs">Q4 Performance</div>
-              </div>
-            </div>
-          </div>
-        );
-      case "diplomatic_map":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-blue-500/20 to-purple-500/20">
-            <div className="flex items-center gap-2">
-              <Globe className="h-6 w-6 text-blue-400" />
-              <div className="text-sm">
-                <div className="font-medium">{diplomaticData?.length || 12} Relations</div>
-                <div className="text-muted-foreground text-xs">Global Network</div>
-              </div>
-            </div>
-          </div>
-        );
-      case "trade_flow":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-purple-500/20 to-orange-500/20">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-6 w-6 text-purple-400" />
-              <div className="text-sm">
-                <div className="font-medium">
-                  ${((tradeData?.totalVolume || 2.4) / 1000).toFixed(1)}B
-                </div>
-                <div className="text-muted-foreground text-xs">Trade Volume</div>
-              </div>
-            </div>
-          </div>
-        );
-      case "gdp_growth":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-blue-500/20 to-emerald-500/20">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-emerald-400" />
-              <div className="text-sm">
-                <div className="font-medium">GDP Stats</div>
-                <div className="text-muted-foreground text-xs">Economic Performance</div>
-              </div>
-            </div>
-          </div>
-        );
-      case "demographics":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-green-500/20 to-teal-500/20">
-            <div className="flex items-center gap-2">
-              <Users className="h-6 w-6 text-green-400" />
-              <div className="text-sm">
-                <div className="font-medium">
-                  Life Exp: {economicData?.lifeExpectancy || 75} yrs
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  Literacy: {economicData?.literacyRate || 99}%
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      case "budget_debt":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-amber-500/20 to-red-500/20">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-6 w-6 text-amber-400" />
-              <div className="text-sm">
-                <div className="font-medium">
-                  Debt/GDP: {economicData?.totalDebtGDPRatio || 45}%
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  Tax Rev: {economicData?.taxRevenueGDPPercent || 25}% of GDP
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      case "labor_market":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-teal-500/20 to-blue-500/20">
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-6 w-6 text-teal-400" />
-              <div className="text-sm">
-                <div className="font-medium">
-                  Unemployment: {economicData?.unemploymentRate || 5.2}%
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  Gini Index: {economicData?.incomeInequalityGini || 32}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      case "national_vitality":
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-red-500/20 to-purple-500/20">
-            <div className="flex items-center gap-2">
-              <Activity className="h-6 w-6 text-red-400" />
-              <div className="text-sm">
-                <div className="font-medium">Vitality: {vitalityData?.economicVitality || 75}%</div>
-                <div className="text-muted-foreground text-xs">
-                  Wellbeing: {vitalityData?.populationWellbeing || 70}%
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-gray-500/20 to-gray-400/20">
-            <BarChart3 className="h-6 w-6 text-gray-400" />
-          </div>
-        );
-    }
+    return (
+      <LiveDataCard
+        type={viz.type}
+        title={viz.title}
+        countryId={countryId}
+        preloadedData={{
+          economicData,
+          gdpHistoryData,
+          diplomaticData,
+          tradeData,
+          vitalityData,
+        }}
+      />
+    );
   };
 
   const characterLimit = 280;
@@ -1046,59 +945,83 @@ export function GlassCanvasComposer({
                 {/* Action Bar */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
-                      className="h-7 px-2 text-xs text-blue-400 hover:text-blue-300"
-                    >
-                      {isGeneratingVisualization ? (
-                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <motion.div
-                          animate={{ rotate: showVisualizationPanel ? 180 : 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="mr-1"
-                        >
-                          {showVisualizationPanel ? (
-                            <Minus className="h-3.5 w-3.5" />
-                          ) : (
-                            <Plus className="h-3.5 w-3.5" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
+                          className={cn(
+                            "h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-white/5 transition-colors",
+                            showVisualizationPanel && "bg-white/10"
                           )}
-                        </motion.div>
-                      )}
-                      Data
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowMediaModal(true)}
-                      disabled={isUploadingImage || selectedImages.length >= 4}
-                      className="h-7 px-2 text-xs text-green-400 hover:text-green-300"
-                    >
-                      {isUploadingImage ? (
-                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Image className="mr-1 h-3.5 w-3.5" />
-                      )}
-                      Media
-                      {selectedImages.length > 0 && (
-                        <Badge variant="outline" className="ml-1 h-3.5 px-1 py-0 text-[9px]">
-                          {selectedImages.length}/4
-                        </Badge>
-                      )}
-                    </Button>
-                    <EmojiPicker onSelectEmoji={handleInsertEmoji} />
-                    <GifPicker
-                      onSelectGif={handleInsertGif}
-                      disabled={selectedImages.length >= 4}
-                    />
+                        >
+                          {isGeneratingVisualization ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <BarChart3 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Add live data chart</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowMediaModal(true)}
+                          disabled={isUploadingImage || selectedImages.length >= 4}
+                          className="h-8 w-8 p-0 text-green-400 hover:text-green-300 hover:bg-white/5 transition-colors"
+                        >
+                          {isUploadingImage ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <div className="relative">
+                              <Image className="h-4 w-4" />
+                              {selectedImages.length > 0 && (
+                                <Badge
+                                  variant="secondary"
+                                  className="absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border border-background bg-green-500 p-0 text-[7px] font-bold text-white leading-none"
+                                >
+                                  {selectedImages.length}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Add media / images</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <EmojiPicker onSelectEmoji={handleInsertEmoji} />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Insert emoji</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <GifPicker
+                            onSelectGif={handleInsertGif}
+                            disabled={selectedImages.length >= 4}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Insert GIF</TooltipContent>
+                    </Tooltip>
                     <div className="flex h-5 items-center gap-2 border-l border-white/10 px-2">
                       <Switch
                         id="share-to-discord-toggle"
                         checked={postToDiscord}
                         onCheckedChange={setPostToDiscord}
-                        className="border-white/10 data-[state=checked]:bg-[#5865F2] data-[state=checked]:shadow-[0_0_8px_rgba(88,101,242,0.4)] data-[state=unchecked]:bg-white/10 dark:data-[state=unchecked]:bg-white/10"
+                        tone="discord"
+                        className="border-white/10"
                       />
                       <label
                         htmlFor="share-to-discord-toggle"
