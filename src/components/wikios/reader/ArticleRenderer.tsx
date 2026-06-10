@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useRef, useEffect, useMemo, useState, useCallback } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   History,
@@ -38,7 +38,24 @@ import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createPortal } from "react-dom";
 import { MapPin } from "lucide-react";
-import { useMapEmbedManager } from "~/hooks/useMapEmbedManager";
+import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-embed-shared";
+import dynamic from "next/dynamic";
+
+const CoordinatesMapEmbed = dynamic(
+  () =>
+    import("~/components/maps/widgets/CoordinatesMapEmbed").then((m) => ({
+      default: m.CoordinatesMapEmbed,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="wikios-ixworld-loading min-h-[200px] flex items-center justify-center bg-white/5 rounded-xl border border-white/10">
+        <div className="wikios-loading-spinner animate-spin mr-2" style={{ width: 20, height: 20 }} />
+        <span className="text-xs text-zinc-400">Loading map...</span>
+      </div>
+    ),
+  }
+);
 
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {
@@ -466,7 +483,7 @@ function WikiOSHeader({
   );
 }
 
-const EMPTY_STATS_DATA = {};
+const EMPTY_STATS_DATA: Record<string, any> = {};
 
 export function ArticleRenderer({
   title,
@@ -527,8 +544,36 @@ export function ArticleRenderer({
     return { lat: c.lat || 0, lng: c.lng || 0 };
   }, [viewerCountryData]);
 
+  // Inject shared embed CSS + JS (mirrors IxStats PHP extension for vanilla JS embed support)
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    if (!document.getElementById("ixstats-embed-css")) {
+      const style = document.createElement("style");
+      style.id = "ixstats-embed-css";
+      style.textContent = EMBED_CSS;
+      document.head.appendChild(style);
+    }
+    if (!document.getElementById("ixstats-embed-js")) {
+      const script = document.createElement("script");
+      script.id = "ixstats-embed-js";
+      script.textContent = EMBED_JS;
+      document.head.appendChild(script);
+    }
+
+    if (!document.getElementById("ixstats-embed-prefetch")) {
+      const link = document.createElement("link");
+      link.id = "ixstats-embed-prefetch";
+      link.rel = "prefetch";
+      link.href = "/maps?embed=true";
+      link.setAttribute("as", "document");
+      document.head.appendChild(link);
+    }
+  }, []);
+
   // 4. Transform HTML string to inject placeholders
   const processedHtml = useMemo(() => injectPlaceholderElements(contentHtml), [contentHtml]);
+  const processedInfoboxHtml = useMemo(() => infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null, [infoboxHtml]);
 
   // 5. Track targets in DOM to render Portals into
   interface PortalTarget {
@@ -578,7 +623,7 @@ export function ArticleRenderer({
     });
 
     setPortalTargets(targets);
-  }, [processedHtml]);
+  }, [processedHtml, processedInfoboxHtml]);
 
   const { data: countryData } = api.countries.getByIdBasic.useQuery(
     { id: title },
@@ -801,7 +846,7 @@ export function ArticleRenderer({
       <div className="wikios-article-with-toc">
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
-            {infoboxHtml && <InfoboxWithMap infoboxHtml={infoboxHtml} articleTitle={title} />}
+            {processedInfoboxHtml && <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />}
             <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
 
             {/* Render portals into injected placeholder nodes */}
@@ -820,7 +865,7 @@ export function ArticleRenderer({
               }
               if (target.type === "map-embed") {
                 return createPortal(
-                  <MapEmbedIframe
+                  <CoordinatesMapEmbed
                     lat={target.data.lat}
                     lng={target.data.lng}
                     zoom={target.data.zoom}
@@ -1289,78 +1334,6 @@ function DynamicStatSpan({
         )}
       </PopoverContent>
     </Popover>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// MapEmbedIframe — shared-state map embed (singleton iframe, click to activate)
-// ---------------------------------------------------------------------------
-function MapEmbedIframe({
-  lat,
-  lng,
-  zoom,
-  options,
-}: {
-  lat: number;
-  lng: number;
-  zoom: number;
-  options: string;
-}) {
-  const manager = useMapEmbedManager();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const embedId = useMemo(
-    () => `mapembed-${lat.toFixed(2)}-${lng.toFixed(2)}-${zoom}`,
-    [lat, lng, zoom]
-  );
-  const isActive = manager.activeId === embedId;
-
-  const parsed = useMemo(() => {
-    const opts = { height: 400, width: "100%" } as { height: number; width: string };
-    if (!options) return opts;
-    const parts = safeDecodeURI(options).split("|");
-    for (const p of parts) {
-      const [k, v] = p.split("=") as [string, string | undefined];
-      if (k === "height") opts.height = parseInt(v || "400", 10) || 400;
-      if (k === "width") opts.width = v ?? "100%";
-    }
-    return opts;
-  }, [options]);
-
-  const handleActivate = useCallback(() => {
-    if (!containerRef.current) return;
-    manager.activate(embedId, lat, lng, zoom, containerRef.current);
-  }, [manager, embedId, lat, lng, zoom]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="wikios-ixworld-embed glass-hierarchy-child relative my-6 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
-      style={{ height: parsed.height, minHeight: 200 }}
-    >
-      {isActive ? (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-zinc-400 uppercase backdrop-blur-md select-none">
-          IxWorld embed
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={handleActivate}
-          className="absolute inset-0 z-10 flex cursor-pointer flex-col items-center justify-center gap-3 bg-[#0a1628] transition-colors hover:bg-[#0d1e33]"
-        >
-          <MapPin className="h-6 w-6 text-blue-400/60" />
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="font-mono text-xs text-white/80">
-              {lat.toFixed(4)}°, {lng.toFixed(4)}°
-            </span>
-            <span className="text-[10px] font-medium text-white/40">Click to load map</span>
-          </div>
-        </button>
-      )}
-
-      <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-zinc-400 uppercase backdrop-blur-md select-none">
-        Zoom {zoom}
-      </div>
-    </div>
   );
 }
 
