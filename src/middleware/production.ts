@@ -75,7 +75,9 @@ export function performanceMiddleware(request: NextRequest) {
 export function securityMiddleware(request: NextRequest) {
   const response = NextResponse.next();
 
-  return ProductionMiddleware.addSecurityHeaders(response);
+  return ProductionMiddleware.addSecurityHeaders(response, {
+    pathname: request.nextUrl.pathname,
+  });
 }
 
 /**
@@ -114,7 +116,9 @@ export function productionMiddleware(request: NextRequest) {
     }
 
     // Apply security headers
-    response = ProductionMiddleware.addSecurityHeaders(response);
+    response = ProductionMiddleware.addSecurityHeaders(response, {
+      pathname: request.nextUrl.pathname,
+    });
 
     // Add performance monitoring
     const path = request.nextUrl.pathname;

@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useRef, useEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   History,
@@ -37,7 +37,8 @@ import { safeDecodeURI } from "~/lib/wikios/safe-decode";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createPortal } from "react-dom";
-import { MapPin, Settings as Cog, Anchor, Shield, Building, Flag, Navigation } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { useMapEmbedManager } from "~/hooks/useMapEmbedManager";
 
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {
@@ -819,7 +820,7 @@ export function ArticleRenderer({
               }
               if (target.type === "map-embed") {
                 return createPortal(
-                  <MapEmbedComponent
+                  <MapEmbedIframe
                     lat={target.data.lat}
                     lng={target.data.lng}
                     zoom={target.data.zoom}
@@ -1014,6 +1015,10 @@ function QuickBacklinksModal({
 function injectPlaceholderElements(html: string): string {
   let processed = html;
 
+  // 0. Strip <iframe> tags — WikiOS renders maps inline or via iframe embeds;
+  // MediaWiki-generated iframes are redundant and cause CSP violations.
+  processed = processed.replace(/<iframe[\s\S]*?<\/iframe>/gi, "");
+
   // 1. Process Coords anchors e.g. <a href="...Coords:lat,lng,zoom...">Label</a>
   processed = processed.replace(
     /<a[^>]*href="[^"]*Coords(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
@@ -1135,58 +1140,19 @@ function calculateDistanceAndBearing(
 }
 
 // ---------------------------------------------------------------------------
-// CoordsMiniMap component centered on a custom coordinate
+// CoordsMiniMap — lightweight iframe-based map preview (replaces inline MapLibre GL)
 // ---------------------------------------------------------------------------
 const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    let map: any = null;
-    let active = true;
-
-    const init = async () => {
-      const maplibregl = (await import("maplibre-gl")).default;
-      await import("maplibre-gl/dist/maplibre-gl.css");
-      const { buildBaseStyle } = await import("~/lib/map-config");
-
-      if (!active || !mapContainerRef.current) return;
-
-      const baseStyle = buildBaseStyle() as any;
-      map = new maplibregl.Map({
-        container: mapContainerRef.current,
-        style: baseStyle,
-        center: [lng, lat],
-        zoom: zoom,
-        attributionControl: false,
-        interactive: true,
-      });
-      mapRef.current = map;
-
-      map.on("load", () => {
-        if (!active) return;
-        new maplibregl.Marker({ color: "#f43f5e" }).setLngLat([lng, lat]).addTo(map);
-      });
-    };
-
-    init();
-
-    return () => {
-      active = false;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [lat, lng, zoom]);
+  const src = `/maps?embed=true&lat=${lat.toFixed(4)}&lng=${lng.toFixed(4)}&zoom=${zoom}`;
 
   return (
-    <div
-      ref={mapContainerRef}
+    <iframe
+      src={src}
+      loading="lazy"
+      allow="fullscreen"
+      title="Map preview"
       className="h-32 w-full overflow-hidden rounded-lg border border-white/10 bg-white/5"
-      style={{ height: 130 }}
+      style={{ height: 130, border: "none" }}
     />
   );
 };
@@ -1327,9 +1293,9 @@ function DynamicStatSpan({
 }
 
 // ---------------------------------------------------------------------------
-// MapEmbedComponent
+// MapEmbedIframe — shared-state map embed (singleton iframe, click to activate)
 // ---------------------------------------------------------------------------
-function MapEmbedComponent({
+function MapEmbedIframe({
   lat,
   lng,
   zoom,
@@ -1340,322 +1306,61 @@ function MapEmbedComponent({
   zoom: number;
   options: string;
 }) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const [mapReady, setMapReady] = useState(false);
-  const [poiTargets, setPoiTargets] = useState<any[]>([]);
-  const [cityTargets, setCityTargets] = useState<any[]>([]);
+  const manager = useMapEmbedManager();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const embedId = useMemo(
+    () => `mapembed-${lat.toFixed(2)}-${lng.toFixed(2)}-${zoom}`,
+    [lat, lng, zoom]
+  );
+  const isActive = manager.activeId === embedId;
 
-  const parsedOptions = useMemo(() => {
-    const opts = {
-      height: 350,
-      layers: ["political", "POIs"],
-      controls: true,
-    };
+  const parsed = useMemo(() => {
+    const opts = { height: 400, width: "100%" } as { height: number; width: string };
     if (!options) return opts;
-    const decoded = safeDecodeURI(options);
-    const parts = decoded.split("&");
+    const parts = safeDecodeURI(options).split("|");
     for (const p of parts) {
-      const [k, v] = p.split("=");
-      if (k === "height") opts.height = parseInt(v || "350", 10);
-      if (k === "controls") opts.controls = v !== "false";
-      if (k === "layers" && v) opts.layers = v.split(",");
+      const [k, v] = p.split("=") as [string, string | undefined];
+      if (k === "height") opts.height = parseInt(v || "400", 10) || 400;
+      if (k === "width") opts.width = v ?? "100%";
     }
     return opts;
   }, [options]);
 
-  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
-    { layers: ["political"] },
-    { staleTime: 30 * 60 * 1000 }
-  );
-
-  const { data: featuresData } = api.geoCore.getAllMapFeatures.useQuery(undefined, {
-    staleTime: 30 * 60 * 1000,
-  });
-
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    let map: any = null;
-    let active = true;
-
-    const init = async () => {
-      const maplibregl = (await import("maplibre-gl")).default;
-      await import("maplibre-gl/dist/maplibre-gl.css");
-      const { buildBaseStyle } = await import("~/lib/map-config");
-
-      if (!active || !mapContainerRef.current) return;
-
-      const baseStyle = buildBaseStyle() as any;
-      map = new maplibregl.Map({
-        container: mapContainerRef.current,
-        style: baseStyle,
-        center: [lng, lat],
-        zoom: zoom,
-        attributionControl: false,
-        interactive: true,
-      });
-      mapRef.current = map;
-
-      map.on("load", () => {
-        if (!active) return;
-
-        // Political boundaries
-        if (parsedOptions.layers.includes("political") && worldMap?.political) {
-          map.addSource("source-world-political", {
-            type: "geojson",
-            data: worldMap.political,
-          });
-          map.addLayer({
-            id: "world-political-fill",
-            type: "fill",
-            source: "source-world-political",
-            paint: {
-              "fill-color": ["coalesce", ["get", "_fillColor"], "#c5cae9"],
-              "fill-opacity": 0.3,
-            },
-          });
-          map.addLayer({
-            id: "world-political-stroke",
-            type: "line",
-            source: "source-world-political",
-            paint: {
-              "line-color": "rgba(255,255,255,0.15)",
-              "line-width": 1.0,
-            },
-          });
-        }
-
-        // Add zoom controls
-        if (parsedOptions.controls) {
-          map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-        }
-
-        // POIs
-        if (parsedOptions.layers.includes("POIs") && featuresData?.pois?.features) {
-          const newPoiTargets: any[] = [];
-          featuresData.pois.features.forEach((poi: any) => {
-            const [poiLng, poiLat] = poi.geometry.coordinates;
-            const distLng = Math.abs(poiLng - lng);
-            const distLat = Math.abs(poiLat - lat);
-            if (distLng > 20 || distLat > 20) return;
-
-            const markerEl = document.createElement("div");
-            markerEl.className = "wikios-map-poi-marker-container";
-
-            new maplibregl.Marker({ element: markerEl }).setLngLat([poiLng, poiLat]).addTo(map);
-
-            newPoiTargets.push({
-              element: markerEl,
-              properties: poi.properties,
-              coordinates: [poiLng, poiLat],
-            });
-          });
-          setPoiTargets(newPoiTargets);
-        }
-
-        // Cities
-        if (parsedOptions.layers.includes("cities") && featuresData?.cities?.features) {
-          const newCityTargets: any[] = [];
-          featuresData.cities.features.forEach((city: any) => {
-            const [cityLng, cityLat] = city.geometry.coordinates;
-            const distLng = Math.abs(cityLng - lng);
-            const distLat = Math.abs(cityLat - lat);
-            if (distLng > 20 || distLat > 20) return;
-
-            const markerEl = document.createElement("div");
-            markerEl.className = "wikios-map-city-marker-container";
-
-            new maplibregl.Marker({ element: markerEl }).setLngLat([cityLng, cityLat]).addTo(map);
-
-            newCityTargets.push({
-              element: markerEl,
-              properties: city.properties,
-              coordinates: [cityLng, cityLat],
-            });
-          });
-          setCityTargets(newCityTargets);
-        }
-
-        setMapReady(true);
-      });
-    };
-
-    init();
-
-    return () => {
-      active = false;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, [lat, lng, zoom, worldMap, featuresData, parsedOptions]);
+  const handleActivate = useCallback(() => {
+    if (!containerRef.current) return;
+    manager.activate(embedId, lat, lng, zoom, containerRef.current);
+  }, [manager, embedId, lat, lng, zoom]);
 
   return (
     <div
+      ref={containerRef}
       className="wikios-ixworld-embed glass-hierarchy-child relative my-6 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
-      style={{ height: parsedOptions.height }}
+      style={{ height: parsed.height, minHeight: 200 }}
     >
-      <div
-        ref={mapContainerRef}
-        className="h-full w-full"
-        style={{ height: "100%", minHeight: 200 }}
-      />
-      {!mapReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/60 text-xs text-zinc-400 backdrop-blur-md">
-          <div className="wikios-loading-spinner mr-2" style={{ width: 16, height: 16 }} />
-          Loading map graphics...
+      {isActive ? (
+        <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-zinc-400 uppercase backdrop-blur-md select-none">
+          IxWorld embed
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleActivate}
+          className="absolute inset-0 z-10 flex cursor-pointer flex-col items-center justify-center gap-3 bg-[#0a1628] transition-colors hover:bg-[#0d1e33]"
+        >
+          <MapPin className="h-6 w-6 text-blue-400/60" />
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="font-mono text-xs text-white/80">
+              {lat.toFixed(4)}°, {lng.toFixed(4)}°
+            </span>
+            <span className="text-[10px] font-medium text-white/40">Click to load map</span>
+          </div>
+        </button>
       )}
 
-      {/* Render POI markers inside portals */}
-      {mapReady &&
-        poiTargets.map((target, idx) =>
-          createPortal(
-            <PoiMarker
-              key={`poi-${idx}`}
-              properties={target.properties}
-              coordinates={target.coordinates}
-            />,
-            target.element
-          )
-        )}
-
-      {/* Render City markers inside portals */}
-      {mapReady &&
-        cityTargets.map((target, idx) =>
-          createPortal(
-            <CityMarker
-              key={`city-${idx}`}
-              properties={target.properties}
-              coordinates={target.coordinates}
-            />,
-            target.element
-          )
-        )}
-
-      <div className="absolute bottom-3 left-3 rounded-lg border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-zinc-400 uppercase backdrop-blur-md select-none">
-        IxWorld embed
+      <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-zinc-400 uppercase backdrop-blur-md select-none">
+        Zoom {zoom}
       </div>
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// PoiMarker Component
-// ---------------------------------------------------------------------------
-function PoiMarker({
-  properties,
-  coordinates,
-}: {
-  properties: any;
-  coordinates: [number, number];
-}) {
-  const Icon = useMemo(() => {
-    const cat = String(properties.category).toLowerCase();
-    if (cat.includes("industrial") || cat.includes("factory")) return Cog;
-    if (cat.includes("port") || cat.includes("naval")) return Anchor;
-    if (cat.includes("fortress") || cat.includes("military")) return Shield;
-    if (cat.includes("palace") || cat.includes("parliament") || cat.includes("government"))
-      return Building;
-    if (cat.includes("landmark") || cat.includes("founding") || cat.includes("monument"))
-      return Flag;
-    return MapPin;
-  }, [properties.category]);
-
-  return (
-    <Popover>
-      <PopoverTrigger>
-        <button
-          type="button"
-          className="glass-surface glass-refraction flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-zinc-950/80 text-white shadow-md transition-all hover:scale-125 hover:border-rose-400"
-        >
-          <Icon size={11} className="text-zinc-200" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="z-[10001] flex w-56 flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/90 p-3 shadow-2xl backdrop-blur-xl">
-        <div className="text-xs font-bold text-zinc-200">{properties.name}</div>
-        {properties.description && (
-          <div className="text-[10px] leading-normal text-zinc-400">{properties.description}</div>
-        )}
-        <div className="mt-1 flex items-center justify-between border-t border-white/5 pt-1.5 font-mono text-[9px] text-zinc-500">
-          <span>
-            {coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}
-          </span>
-          {properties.wikiPageTitle && (
-            <Link
-              href={withBasePath(
-                `/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`
-              )}
-              className="text-[10px] font-bold text-blue-400 transition-colors hover:text-blue-300"
-            >
-              Read Article &rarr;
-            </Link>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// CityMarker Component
-// ---------------------------------------------------------------------------
-function CityMarker({
-  properties,
-  coordinates,
-}: {
-  properties: any;
-  coordinates: [number, number];
-}) {
-  return (
-    <Popover>
-      <PopoverTrigger>
-        <button
-          type="button"
-          className="group relative flex h-4 w-4 cursor-pointer items-center justify-center"
-        >
-          <span className="absolute h-2 w-2 rounded-full border border-zinc-800 bg-white shadow transition-all group-hover:scale-130" />
-          {properties.isCapital && (
-            <span className="absolute h-3 w-3 animate-ping rounded-full border border-amber-400 opacity-60" />
-          )}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="z-[10001] flex w-48 flex-col gap-1.5 rounded-xl border border-white/10 bg-zinc-950/90 p-2.5 shadow-2xl backdrop-blur-xl">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-200">
-          <span>{properties.name}</span>
-          {properties.isCapital && (
-            <span className="rounded border border-amber-500/30 bg-amber-500/20 px-1 text-[8px] leading-none font-extrabold text-amber-400 uppercase">
-              Capital
-            </span>
-          )}
-        </div>
-        {properties.population && (
-          <div className="text-[10px] text-zinc-400">
-            Population:{" "}
-            <span className="font-semibold text-zinc-300">
-              {properties.population.toLocaleString()}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center justify-between border-t border-white/5 pt-1.5 font-mono text-[9px] text-zinc-500">
-          <span>
-            {coordinates[1].toFixed(3)}, {coordinates[0].toFixed(3)}
-          </span>
-          {properties.wikiPageTitle && (
-            <Link
-              href={withBasePath(
-                `/w/${encodeURIComponent(properties.wikiPageTitle.replace(/ /g, "_"))}`
-              )}
-              className="text-[10px] font-bold text-blue-400 transition-colors hover:text-blue-300"
-            >
-              Read Article &rarr;
-            </Link>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }
 

@@ -13,7 +13,9 @@
  *   ?name=<countryName>   — auto-select by country name (wiki-friendly)
  *   ?lat=X&lng=Y&zoom=Z   — coordinate deep-link
  *   ?layer=climate         — show a specific layer on load
+ *   ?layers=political,POIs — comma-separated initial layers
  *   ?embed=true            — chromeless mode for iframe embedding (no nav, no controls)
+ *   ?controls=true         — force-show zoom/layer controls even in embed mode
  *
  * When running on maps.ixwiki.com, renders full-screen (standalone mode).
  */
@@ -64,9 +66,15 @@ export default function WorldMapPage() {
 
   // --- Layer selection via URL ---
   const layerParam = searchParams.get("layer") as MapLayerType | null;
-  const initialLayers = layerParam
-    ? (["background", "political", layerParam] as MapLayerType[])
-    : undefined;
+  const layersParam = searchParams.get("layers");
+  const initialLayers = layersParam
+    ? (["background", ...layersParam.split(",").filter(Boolean)] as MapLayerType[])
+    : layerParam
+      ? (["background", "political", layerParam] as MapLayerType[])
+      : undefined;
+
+  // --- Embed with controls override ---
+  const embedControls = searchParams.get("controls") === "true";
 
   const [, setSelectedCountry] = useState<SelectedCountry | null>(null);
 
@@ -80,9 +88,10 @@ export default function WorldMapPage() {
   return (
     <div className={`relative ${containerClass}`} data-maps-page>
       <MapContainer
-        showControls={!isEmbed}
+        showControls={embedControls || !isEmbed}
         showTools={!isEmbed}
         showPopup={!isEmbed}
+        showLoading={!isEmbed}
         onCountrySelect={handleCountrySelect}
         initialCountryId={initialCountryId}
         initialCenter={initialCenter}

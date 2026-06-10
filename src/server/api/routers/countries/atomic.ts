@@ -13,8 +13,8 @@ export const atomicProcedures = {
   getByNameWithAtomic: publicProcedure
     .input(z.object({ name: z.string() }))
     .query(async ({ ctx, input }) => {
-      const country = (await ctx.db.country.findUnique({
-        where: { name: input.name },
+      const country = (await ctx.db.country.findFirst({
+        where: { name: { equals: input.name, mode: "insensitive" as const } },
         include: {
           governmentComponents: {
             where: { isActive: true },

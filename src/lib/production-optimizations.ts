@@ -388,9 +388,22 @@ export class ProductionMiddleware {
   /**
    * Security headers for production
    */
-  static addSecurityHeaders(response: NextResponse): NextResponse {
+  static addSecurityHeaders(
+    response: NextResponse,
+    opts?: { pathname?: string }
+  ): NextResponse {
     response.headers.set("X-Content-Type-Options", "nosniff");
-    response.headers.set("X-Frame-Options", "DENY");
+
+    // Skip X-Frame-Options for embeddable paths — frame-ancestors CSP supersedes it
+    const pathname = opts?.pathname ?? "";
+    const isEmbeddable =
+      pathname.startsWith("/maps") ||
+      pathname.startsWith("/w/") ||
+      pathname.startsWith("/countries/");
+    if (!isEmbeddable) {
+      response.headers.set("X-Frame-Options", "DENY");
+    }
+
     response.headers.set("X-XSS-Protection", "1; mode=block");
     response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 

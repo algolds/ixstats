@@ -57,6 +57,7 @@ export interface MapContainerProps {
   showControls?: boolean;
   showTools?: boolean; // Search + measure tools (defaults to showControls)
   showPopup?: boolean;
+  showLoading?: boolean; // Full-screen loading overlay (default true; false for embeds)
   initialLayers?: MapLayerType[];
   /** Country ID to auto-select and fly to on mount (for deep linking) */
   initialCountryId?: string;
@@ -78,6 +79,7 @@ export function MapContainer({
   showControls = true,
   showTools,
   showPopup = true,
+  showLoading = true,
   initialLayers,
   initialCountryId,
   selectedCountryId,
@@ -747,7 +749,7 @@ export function MapContainer({
       )}
 
       {/* Full-screen loading overlay — shows until map data + engine are ready */}
-      <MapLoadingScreen isReady={!isPreloading && mapEngineReady} />
+      {showLoading && <MapLoadingScreen isReady={!isPreloading && mapEngineReady} />}
 
       {/* First-visit welcome modal — shows after loading screen dismisses */}
       {showControls && <MapWelcomeModal isMapReady={!isPreloading && mapEngineReady} />}
