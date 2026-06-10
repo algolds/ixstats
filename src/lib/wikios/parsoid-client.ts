@@ -3,6 +3,7 @@
 // Uses localhost loopback for minimal latency (~10ms network + rendering time)
 
 import { Cache } from "~/lib/cache";
+import { safeDecodeURI } from "~/lib/wikios/safe-decode";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -158,7 +159,7 @@ async function buildParsoidArticle(title: string, html: string): Promise<Parsoid
   const categories: string[] = [];
   let match;
   while ((match = categoryRegex.exec(html)) !== null) {
-    categories.push(decodeURIComponent(match[1]!.replace(/_/g, " ")));
+    categories.push(safeDecodeURI(match[1]!.replace(/_/g, " ")));
   }
 
   // Check for redirects
@@ -167,7 +168,7 @@ async function buildParsoidArticle(title: string, html: string): Promise<Parsoid
   if (isRedirect) {
     const redirectMatch = html.match(/href="[^"]*\/wiki\/([^"]+)"/);
     if (redirectMatch) {
-      redirectTarget = decodeURIComponent(redirectMatch[1]!.replace(/_/g, " "));
+      redirectTarget = safeDecodeURI(redirectMatch[1]!.replace(/_/g, " "));
     }
   }
 

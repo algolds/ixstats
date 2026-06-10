@@ -41,6 +41,7 @@ import {
 } from "~/lib/wiki-bridge";
 import { transformWikiLinks } from "~/lib/wikios/url-compat";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wikios/html-transformer";
+import { extractTemplateKeys, resolveTemplates, applyResolvedTemplates } from "~/lib/wikios/template-resolver";
 import { computeWikitextDiff } from "~/lib/wikios/wikitext-diff";
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wikios/csrf-cache";
 import {
@@ -68,7 +69,7 @@ export const wikiosRouter = createTRPCRouter({
         wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { wikiSource } = input;
 
       // For external wikis, fetch wikitext then render via ixwiki's action=parse
@@ -138,18 +139,48 @@ export const wikiosRouter = createTRPCRouter({
 
       const transformed = transformArticleHtml(stripConflictingStyles(article.html), "", "ixwiki");
 
+      // Pre-resolve custom templates (CountryData, BusinessData) server-side
+      // so they render immediately without a client-side second pass.
+      const templateKeys = extractTemplateKeys(transformed.contentHtml);
+      let resolvedMap: Map<string, any> | undefined;
+      try {
+        const myCountryId = (ctx as any).auth?.userId
+          ? (
+              await (ctx as any).db.user.findFirst({
+                where: { clerkUserId: (ctx as any).auth.userId },
+                select: { countryId: true },
+              })
+            )?.countryId ?? null
+          : null;
+        resolvedMap = await resolveTemplates(templateKeys, {
+          activeCountryId: myCountryId,
+        });
+      } catch {
+        resolvedMap = undefined;
+      }
+
+      const contentHtml = resolvedMap
+        ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
+        : transformed.contentHtml;
+      const infoboxHtml =
+        resolvedMap && transformed.infoboxHtml
+          ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
+          : transformed.infoboxHtml;
+      const noticesHtml =
+        resolvedMap && transformed.noticesHtml
+          ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
+          : transformed.noticesHtml;
+
       return {
-        contentHtml: transformed.contentHtml,
-        infoboxHtml: transformed.infoboxHtml,
-        noticesHtml: transformed.noticesHtml,
+        contentHtml,
+        infoboxHtml,
+        noticesHtml,
         toc: transformed.toc,
         title: article.title,
         categories: article.categories,
         lastModified: article.lastModified,
-        // Always false since we resolved the redirect
         isRedirect: false,
         redirectTarget: null,
-        // Pass the resolved title if different from input
         resolvedFrom: resolvedTitle !== input.title ? input.title : null,
         wikiSource: "ixwiki" as const,
       };

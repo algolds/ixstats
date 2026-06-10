@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { navigateWithBasePath } from "~/lib/base-path";
+import { safeDecodeURI } from "~/lib/wikios/safe-decode";
 
 // Show delay (ms) before tooltip appears — short enough to feel responsive
 const SHOW_DELAY = 150;
@@ -87,7 +88,7 @@ export function useLinkPreviews(containerRef: React.RefObject<HTMLElement | null
         return;
       }
 
-      const title = decodeURIComponent(match[1]!).replace(/_/g, " ");
+      const title = safeDecodeURI(match[1]!).replace(/_/g, " ");
       const lowerTitle = title.toLowerCase();
       if (
         lowerTitle.startsWith("special:") ||

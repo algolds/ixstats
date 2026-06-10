@@ -33,6 +33,7 @@ import { useCiteTooltips } from "~/components/wikios/reader/useCiteTooltips";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { getFlagColors } from "~/lib/flag-color-extractor";
+import { safeDecodeURI } from "~/lib/wikios/safe-decode";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createPortal } from "react-dom";
@@ -496,7 +497,7 @@ export function ArticleRenderer({
     const linkRegex =
       /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
     while ((match = linkRegex.exec(contentHtml)) !== null) {
-      if (match[1]) keys.add(decodeURIComponent(match[1]));
+      if (match[1]) keys.add(safeDecodeURI(match[1]));
     }
     return Array.from(keys);
   }, [contentHtml]);
@@ -1017,7 +1018,7 @@ function injectPlaceholderElements(html: string): string {
   processed = processed.replace(
     /<a[^>]*href="[^"]*Coords(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, coordsStr, label) => {
-      const decoded = decodeURIComponent(coordsStr);
+      const decoded = safeDecodeURI(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
       const safeLat = (lat || "0").replace(/"/g, "&quot;");
       const safeLng = (lng || "0").replace(/"/g, "&quot;");
@@ -1031,7 +1032,7 @@ function injectPlaceholderElements(html: string): string {
   processed = processed.replace(
     /\[\[Coords:([^\]|]+)(?:\|([^\]]+))?\]\]/gi,
     (match, coordsStr, label) => {
-      const decoded = decodeURIComponent(coordsStr);
+      const decoded = safeDecodeURI(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
       const safeLat = (lat || "0").replace(/"/g, "&quot;");
       const safeLng = (lng || "0").replace(/"/g, "&quot;");
@@ -1045,7 +1046,7 @@ function injectPlaceholderElements(html: string): string {
   processed = processed.replace(
     /<a[^>]*href="[^"]*MapEmbed(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, coordsStr, options) => {
-      const decoded = decodeURIComponent(coordsStr);
+      const decoded = safeDecodeURI(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
       const safeLat = (lat || "0").replace(/"/g, "&quot;");
       const safeLng = (lng || "0").replace(/"/g, "&quot;");
@@ -1059,7 +1060,7 @@ function injectPlaceholderElements(html: string): string {
   processed = processed.replace(
     /\[\[MapEmbed:([^\]|]+)(?:\|([^\]]+))?\]\]/gi,
     (match, coordsStr, options) => {
-      const decoded = decodeURIComponent(coordsStr);
+      const decoded = safeDecodeURI(coordsStr);
       const [lat, lng, zoom] = decoded.split(",");
       const safeLat = (lat || "0").replace(/"/g, "&quot;");
       const safeLng = (lng || "0").replace(/"/g, "&quot;");
@@ -1073,7 +1074,7 @@ function injectPlaceholderElements(html: string): string {
   processed = processed.replace(
     /<a[^>]*href="[^"]*Template(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
     (match, templateName, label) => {
-      const decoded = decodeURIComponent(templateName);
+      const decoded = safeDecodeURI(templateName);
       if (
         decoded.startsWith("MyCountry:") ||
         decoded.startsWith("CountryData:") ||
@@ -1352,7 +1353,7 @@ function MapEmbedComponent({
       controls: true,
     };
     if (!options) return opts;
-    const decoded = decodeURIComponent(options);
+    const decoded = safeDecodeURI(options);
     const parts = decoded.split("&");
     for (const p of parts) {
       const [k, v] = p.split("=");

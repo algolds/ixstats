@@ -63,7 +63,7 @@ function buildCSPTemplate(standalone: boolean): string {
     `img-src 'self' data: blob: https: http:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
     `connect-src 'self' https: wss: ws:`,
-    `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
+    `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://maps.ixwiki.com`,
     `worker-src 'self' blob:`,
     `media-src 'self' https://ixwiki.com data: blob:`,
     `object-src 'none'`,

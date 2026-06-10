@@ -29,9 +29,9 @@ import {
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
+import { ATOMIC_ECONOMY_WELCOME_VERSION } from "~/lib/buildVersion";
 
 const STORAGE_KEY = "atomic-economy-welcome-seen";
-const ATOMIC_ECONOMY_WELCOME_VERSION = "1.0";
 
 const TIPS = [
   {

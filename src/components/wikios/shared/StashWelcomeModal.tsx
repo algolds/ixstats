@@ -20,10 +20,9 @@ import {
   StickyNote,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { WIKIOS_VERSION } from "~/lib/buildVersion";
+import { WIKIOS_VERSION, STASHES_WELCOME_VERSION } from "~/lib/buildVersion";
 
 const STORAGE_KEY = "wikios-stashes-welcome-seen";
-const STASHES_WELCOME_VERSION = "1.0";
 
 const MARKUP_STEPS = [
   {

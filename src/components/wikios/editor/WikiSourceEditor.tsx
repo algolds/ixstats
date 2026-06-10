@@ -6,9 +6,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { api } from "~/trpc/react";
 import { ImageSearchModal } from "~/components/wikios/editor/ImageSearchModal";
 import {
@@ -310,6 +311,7 @@ export function WikiSourceEditor({
   const [saveActionType, setSaveActionType] = useState<"publish" | "session">("publish");
   const [saving, setSaving] = useState(false);
   const [writerMode, setWriterMode] = useState(false);
+  const [writerModeExiting, setWriterModeExiting] = useState(false);
   const { scrollY } = useNavigationScroll();
   const repulsionProgress = writerMode ? 1 : Math.min(1, Math.max(0, scrollY / 56));
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -341,12 +343,22 @@ export function WikiSourceEditor({
   const autocompleteComp = useRef(new Compartment());
 
   const handleToggleWriterMode = useCallback((active: boolean) => {
-    setWriterMode(active);
-    if (typeof document !== "undefined") {
-      document.documentElement.classList.toggle("wikios-writer-mode", active);
-      if (active) {
+    if (active) {
+      setWriterMode(true);
+      setWriterModeExiting(false);
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.add("wikios-writer-mode");
         viewRef.current?.focus();
       }
+    } else {
+      setWriterModeExiting(true);
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("wikios-writer-mode");
+      }
+      setTimeout(() => {
+        setWriterMode(false);
+        setWriterModeExiting(false);
+      }, 280);
     }
   }, []);
 
@@ -1337,6 +1349,28 @@ export function WikiSourceEditor({
         onClose={() => setShowMapCoordsModal(false)}
         onInsert={insertAtCursor}
       />
+
+      {/* Writer Mode — Apple Pages-style backdrop + exit button */}
+      {(writerMode || writerModeExiting) &&
+        createPortal(
+          <div
+            className={`wikios-writer-backdrop ${writerModeExiting ? "wikios-writer-backdrop-exit" : ""}`}
+            onClick={() => handleToggleWriterMode(false)}
+          >
+            <button
+              type="button"
+              className="wikios-writer-exit-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleWriterMode(false);
+              }}
+              aria-label="Exit writer mode"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

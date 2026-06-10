@@ -26,8 +26,6 @@ import { Tooltip } from "~/components/ui/tooltip-card";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
 
-/** IxWorld version — bump this to re-show welcome on major updates */
-export { IXWORLD_VERSION };
 const STORAGE_KEY = "ixworld-welcome-seen";
 
 interface MapWelcomeModalProps {

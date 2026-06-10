@@ -3,6 +3,7 @@
 // Handles conversion between /wiki/ (MediaWiki) and /w/ (WikiOS) URL schemes
 
 import { withBasePath } from "~/lib/base-path";
+import { safeDecodeURI } from "~/lib/wikios/safe-decode";
 
 /**
  * Convert a MediaWiki-style title to a WikiOS URL path.
@@ -29,7 +30,7 @@ export function titleToWikiOSRoute(title: string): string {
  */
 export function wikiOSPathToTitle(path: string): string {
   const slug = path.replace(/^\/w\//, "").replace(/^\/wiki\//, "");
-  return decodeURIComponent(slug).replace(/_/g, " ");
+  return safeDecodeURI(slug).replace(/_/g, " ");
 }
 
 /**

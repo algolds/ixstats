@@ -5,6 +5,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import {
@@ -69,6 +70,7 @@ import {
 } from "~/components/wikios/editor/WikiTemplateModals";
 import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
 import { useNotify } from "~/hooks/useNotify";
+import { fixEditorImageUrls } from "~/lib/wikios/fix-editor-images";
 
 interface WikiVisualEditorProps {
   initialHtml: string;
@@ -114,6 +116,7 @@ export function WikiVisualEditor({
   const [saveDropdownOpen, setSaveDropdownOpen] = useState(false);
   const [saveActionType, setSaveActionType] = useState<"publish" | "session">("publish");
   const [writerMode, setWriterMode] = useState(false);
+  const [writerModeExiting, setWriterModeExiting] = useState(false);
   const { scrollY } = useNavigationScroll();
   const repulsionProgress = writerMode ? 1 : Math.min(1, Math.max(0, scrollY / 56));
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -126,12 +129,22 @@ export function WikiVisualEditor({
   });
 
   const handleToggleWriterMode = useCallback((active: boolean) => {
-    setWriterMode(active);
-    if (typeof document !== "undefined") {
-      document.documentElement.classList.toggle("wikios-writer-mode", active);
-      if (active) {
+    if (active) {
+      setWriterMode(true);
+      setWriterModeExiting(false);
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.add("wikios-writer-mode");
         editableRef.current?.focus();
       }
+    } else {
+      setWriterModeExiting(true);
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("wikios-writer-mode");
+      }
+      setTimeout(() => {
+        setWriterMode(false);
+        setWriterModeExiting(false);
+      }, 280);
     }
   }, []);
 
@@ -249,8 +262,18 @@ export function WikiVisualEditor({
     el.querySelectorAll("a").forEach((anchor) => {
       const href = anchor.getAttribute("href") || "";
       const titleAttr = anchor.getAttribute("title") || "";
-      const decodedHref = decodeURIComponent(href);
-      const decodedTitle = decodeURIComponent(titleAttr);
+      let decodedHref: string;
+      try {
+        decodedHref = decodeURIComponent(href);
+      } catch {
+        decodedHref = href;
+      }
+      let decodedTitle: string;
+      try {
+        decodedTitle = decodeURIComponent(titleAttr);
+      } catch {
+        decodedTitle = titleAttr;
+      }
 
       if (decodedHref.includes("Coords:") || decodedTitle.includes("Coords:")) {
         const coordsMatch =
@@ -285,7 +308,7 @@ export function WikiVisualEditor({
   useEffect(() => {
     const el = editableRef.current;
     if (!el) return;
-    el.innerHTML = initialHtml;
+    el.innerHTML = fixEditorImageUrls(initialHtml);
     protectTemplatesAndImages(el);
     setWordCount(el.innerText.split(/\s+/).filter(Boolean).length);
   }, [initialHtml, protectTemplatesAndImages]);
@@ -299,7 +322,7 @@ export function WikiVisualEditor({
           `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
         );
         if (restore && editableRef.current) {
-          editableRef.current.innerHTML = draft;
+          editableRef.current.innerHTML = fixEditorImageUrls(draft);
           protectTemplatesAndImages(editableRef.current);
           setIsDirty(true);
           setWordCount(editableRef.current.innerText.split(/\s+/).filter(Boolean).length);
@@ -612,7 +635,7 @@ export function WikiVisualEditor({
         wrapper.setAttribute("data-mw", dataMw);
         wrapper.contentEditable = "false";
         wrapper.classList.add("wikios-ve-template");
-        wrapper.innerHTML = result.html;
+        wrapper.innerHTML = fixEditorImageUrls(result.html);
         insertNodeAtCursor(wrapper);
       } catch (err) {
         console.error("Failed to render template:", err);
@@ -629,7 +652,7 @@ export function WikiVisualEditor({
       try {
         const result = await previewMutation.mutateAsync({ wikitext: imageWikitext, title });
         const temp = document.createElement("div");
-        temp.innerHTML = result.html;
+        temp.innerHTML = fixEditorImageUrls(result.html);
         const figure = temp.querySelector("figure, .thumb, img");
         if (figure) {
           (figure as HTMLElement).contentEditable = "false";
@@ -694,7 +717,7 @@ export function WikiVisualEditor({
           ],
         });
         element.setAttribute("data-mw", dataMw);
-        element.innerHTML = result.html;
+        element.innerHTML = fixEditorImageUrls(result.html);
         setEditingTemplate(null);
         setIsDirty(true);
       } catch (err) {
@@ -1403,7 +1426,7 @@ export function WikiVisualEditor({
           try {
             const { type, values, optionOrLabel } = parseCoordsOrMapEmbed(wikitext);
             const anchor = document.createElement("a");
-            anchor.setAttribute("href", `./${type}:${values}`);
+            anchor.setAttribute("href", `${type}:${values}`);
             anchor.setAttribute("title", `${type}:${values}`);
             anchor.contentEditable = "false";
             if (type === "Coords") {
@@ -1435,6 +1458,28 @@ export function WikiVisualEditor({
           }}
         />
       )}
+
+      {/* Writer Mode — Apple Pages-style backdrop + exit button */}
+      {(writerMode || writerModeExiting) &&
+        createPortal(
+          <div
+            className={`wikios-writer-backdrop ${writerModeExiting ? "wikios-writer-backdrop-exit" : ""}`}
+            onClick={() => handleToggleWriterMode(false)}
+          >
+            <button
+              type="button"
+              className="wikios-writer-exit-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleWriterMode(false);
+              }}
+              aria-label="Exit writer mode"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
