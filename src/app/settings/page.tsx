@@ -36,7 +36,7 @@ import {
   NotificationSettingsCard,
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
-import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
+import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { cn } from "~/lib/utils";
 import {
   CutoutCard,

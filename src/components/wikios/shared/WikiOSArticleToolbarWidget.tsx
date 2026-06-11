@@ -7,7 +7,7 @@ import Link from "next/link";
 import { FileEdit, MessageSquare, Clock, Link2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { useSidebar } from "~/components/dashboard/DashboardSidebarLayout";
+import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { StashButton } from "~/components/wikios/reader/StashButton";
 import {
   CutoutCard,

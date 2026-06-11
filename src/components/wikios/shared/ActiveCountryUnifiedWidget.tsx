@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
-import { useSidebar } from "~/components/dashboard/DashboardSidebarLayout";
+import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
 

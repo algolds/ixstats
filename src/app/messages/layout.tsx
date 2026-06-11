@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { DashboardSidebarLayout } from "~/components/dashboard/DashboardSidebarLayout";
+import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 
 import type { Metadata } from "next";
 
