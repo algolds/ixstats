@@ -138,7 +138,7 @@ export async function seedMeetings(
               m.status === "scheduled"
                 ? "invited"
                 : a === attendees.length - 1
-                  ? "excused"
+                  ? "declined"
                   : "attended",
           },
         });

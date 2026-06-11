@@ -93,7 +93,7 @@ export const meetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      const { id, title, date, duration, status } = input;
 
       const oldMeeting = await ctx.db.cabinetMeeting.findUnique({
         where: { id },
@@ -102,7 +102,12 @@ export const meetingsRouter = createTRPCRouter({
 
       const meeting = await ctx.db.cabinetMeeting.update({
         where: { id },
-        data,
+        data: {
+          ...(title !== undefined && { title }),
+          ...(duration !== undefined && { duration }),
+          ...(status !== undefined && { status }),
+          ...(date !== undefined && { scheduledDate: date }),
+        },
       });
 
       // 🔔 Notify status changes
@@ -233,8 +238,16 @@ export const meetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // `estimatedDuration` maps to the model's `duration` column; `priority` is
+      // accepted for client compatibility but has no column on MeetingAgendaItem.
       return await ctx.db.meetingAgendaItem.create({
-        data: input,
+        data: {
+          meetingId: input.meetingId,
+          title: input.title,
+          description: input.description,
+          order: input.order,
+          duration: input.estimatedDuration,
+        },
       });
     }),
 
@@ -264,10 +277,17 @@ export const meetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      // `estimatedDuration` maps to `duration`; `priority` has no column and is ignored.
+      // Undefined fields are no-ops in Prisma, preserving partial-update behavior.
       return await ctx.db.meetingAgendaItem.update({
-        where: { id },
-        data,
+        where: { id: input.id },
+        data: {
+          title: input.title,
+          description: input.description,
+          order: input.order,
+          duration: input.estimatedDuration,
+          status: input.status,
+        },
       });
     }),
 
@@ -300,8 +320,13 @@ export const meetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { votesFor, votesAgainst, votesAbstain, ...rest } = input;
       return await ctx.db.meetingDecision.create({
-        data: input,
+        data: {
+          ...rest,
+          implementationStatus: "pending",
+          votingResult: JSON.stringify({ for: votesFor ?? 0, against: votesAgainst ?? 0, abstain: votesAbstain ?? 0 }),
+        },
       });
     }),
 
@@ -328,10 +353,13 @@ export const meetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      const { id, title, description } = input;
       return await ctx.db.meetingDecision.update({
         where: { id },
-        data,
+        data: {
+          ...(title !== undefined && { title }),
+          ...(description !== undefined && { description }),
+        },
       });
     }),
 
@@ -347,12 +375,16 @@ export const meetingsRouter = createTRPCRouter({
         description: z.string(),
         assignedToId: z.string(),
         dueDate: z.date().optional(),
-        priority: z.enum(["high", "medium", "low"]).default("medium"),
+        priority: z.enum(["urgent", "high", "normal", "medium", "low"]).default("normal"),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { assignedToId, ...rest } = input;
       return await ctx.db.meetingActionItem.create({
-        data: input,
+        data: {
+          ...rest,
+          assignedTo: assignedToId,
+        },
       });
     }),
 
@@ -367,7 +399,7 @@ export const meetingsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const where: any = {};
       if (input.meetingId) where.meetingId = input.meetingId;
-      if (input.officialId) where.assignedToId = input.officialId;
+      if (input.officialId) where.assignedTo = input.officialId;
       if (input.status) where.status = input.status;
 
       return await ctx.db.meetingActionItem.findMany({
@@ -392,10 +424,17 @@ export const meetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      const { id, title, description, status, dueDate, completedAt, notes } = input;
       return await ctx.db.meetingActionItem.update({
         where: { id },
-        data,
+        data: {
+          ...(title !== undefined && { title }),
+          ...(description !== undefined && { description }),
+          ...(status !== undefined && { status }),
+          ...(dueDate !== undefined && { dueDate }),
+          ...(completedAt !== undefined && { completedAt }),
+          ...(notes !== undefined && { completionNotes: notes }),
+        },
       });
     }),
 
@@ -565,7 +604,7 @@ export const meetingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      const { id, budget: _budget, ...data } = input;
       return await ctx.db.governmentDepartment.update({
         where: { id },
         data,

@@ -19,7 +19,7 @@ import {
   CalendarDays,
   ListTodo,
 } from "lucide-react";
-import { format, addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
 import { MeetingScheduler } from "./MeetingScheduler";
 import { MeetingDecisionsModal } from "./MeetingDecisionsModal";
 
@@ -183,6 +183,15 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
     }
     return days;
   }, [dateRange]);
+
+  // Generate days for month calendar grid (Mon-Sun, filling in prev/next month edges)
+  const monthDays = useMemo(() => {
+    const monthStart = startOfMonth(selectedDate);
+    const monthEnd = endOfMonth(selectedDate);
+    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    return eachDayOfInterval({ start: calStart, end: calEnd });
+  }, [selectedDate]);
 
   const handleMeetingComplete = (meetingId: string, title: string) => {
     setSelectedMeeting({ id: meetingId, title });
@@ -427,11 +436,61 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
 
             {/* Month View */}
             <TabsContent value="month">
-              <div className="text-muted-foreground py-12 text-center">
-                <Calendar className="mx-auto mb-4 h-16 w-16 opacity-50" />
-                <p className="mb-2 text-lg font-medium">Month view coming soon</p>
-                <p className="text-sm">Use week view or upcoming view for now</p>
-              </div>
+              {isLoading ? (
+                <div className="text-muted-foreground py-8 text-center">
+                  <Clock className="mx-auto mb-4 h-8 w-8 animate-spin" />
+                  <p>Loading activities...</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="mb-2 grid grid-cols-7 gap-1 text-center">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                      <div key={day} className="text-muted-foreground py-1 text-xs font-semibold uppercase">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {monthDays.map((day) => {
+                      const dayKey = format(day, "yyyy-MM-dd");
+                      const dayActivities = activitiesByDay.get(dayKey) ?? [];
+                      const isToday = isSameDay(day, new Date());
+                      const inMonth = isSameMonth(day, selectedDate);
+
+                      return (
+                        <div
+                          key={dayKey}
+                          className={`min-h-[100px] rounded-md border p-1.5 ${
+                            !inMonth
+                              ? "bg-muted/30 opacity-40"
+                              : isToday
+                                ? "border-blue-300 bg-blue-50 dark:bg-blue-950/20"
+                                : "bg-card"
+                          }`}
+                        >
+                          <div
+                            className={`mb-1 text-center text-xs font-semibold ${
+                              isToday ? "text-blue-600" : inMonth ? "" : "text-muted-foreground"
+                            }`}
+                          >
+                            {format(day, "d")}
+                          </div>
+                          <div className="space-y-0.5">
+                            {dayActivities.slice(0, 3).map((activity) => (
+                              <ActivityCard key={activity.id} activity={activity} />
+                            ))}
+                            {dayActivities.length > 3 && (
+                              <p className="text-muted-foreground text-center text-xs">
+                                +{dayActivities.length - 3} more
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 
