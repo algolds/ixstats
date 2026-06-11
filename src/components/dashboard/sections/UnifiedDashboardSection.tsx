@@ -24,7 +24,7 @@ import {
 } from "~/components/mycountry/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { FacetTabs, FacetMaterial } from "~/components/facet-ui";
+import { FacetTabs } from "~/components/facet-ui";
 import { cn } from "~/lib/utils";
 
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
@@ -330,30 +330,6 @@ export function UnifiedDashboardSection({
               </CutoutCard>
             )}
 
-            {/* Facet Material Lab */}
-            <div className="rounded-xl border border-black/[0.08] dark:border-white/10 p-4 bg-black/[0.01] dark:bg-white/[0.01] shadow-sm">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">
-                Facet Materials Lab
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <FacetMaterial material="satin" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px] border border-black/[0.04]">
-                  <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-100">Satin</span>
-                  <span className="text-[9px] text-slate-500 dark:text-slate-400">Frosted Glass</span>
-                </FacetMaterial>
-                <FacetMaterial material="paper" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px]">
-                  <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">Paper</span>
-                  <span className="text-[9px] text-slate-500 dark:text-slate-400">Matte Grain</span>
-                </FacetMaterial>
-                <FacetMaterial material="rubber" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px]">
-                  <span className="text-[11px] font-semibold text-zinc-100">Rubber</span>
-                  <span className="text-[9px] text-zinc-400">Tactile Matte</span>
-                </FacetMaterial>
-                <FacetMaterial material="metal" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px]">
-                  <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">Metal</span>
-                  <span className="text-[9px] text-slate-500 dark:text-slate-400">Brushed</span>
-                </FacetMaterial>
-              </div>
-            </div>
           </div>
         </div>
       </motion.div>

@@ -37,9 +37,8 @@ export function NewVersionNotice() {
       <div className="relative z-10 flex items-center gap-2.5">
         <MdBrowserUpdated className="h-4 w-4 shrink-0 text-blue-400" />
         <p className="text-foreground text-xs font-medium">
-          The system has been updated to{" "}
+          New version! The system has been updated to{" "}
           <span className="text-blue-400">v{APP_VERSION}</span>{" "}
-          <span className="text-blue-400/60">({CHANNEL})</span>{" "}
           <span className="text-muted-foreground font-mono text-[10px]">({BUILD_VERSION})</span>.
         </p>
       </div>

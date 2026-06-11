@@ -33,6 +33,7 @@ import {
   ChevronUp,
   BookOpen,
   Vote,
+  Layers,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
@@ -70,6 +71,13 @@ const QUICK_ACTIONS = [
     description: "Sync, Packs & Lore",
     href: "/admin/cards",
     color: "amber",
+  },
+  {
+    icon: Layers,
+    label: "Facet Materials Lab",
+    description: "Material & UI Configurator",
+    href: "/admin/facet-materials-lab",
+    color: "teal",
   },
   {
     icon: Coins,

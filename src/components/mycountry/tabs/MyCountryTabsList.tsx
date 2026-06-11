@@ -16,11 +16,11 @@ import { FacetTabs } from "~/components/facet-ui";
  */
 export function MyCountryTabsList({
   activeTab,
-  onChange,
+  onChangeAction,
   govComponentCount,
 }: {
   activeTab: string;
-  onChange: (value: string) => void;
+  onChangeAction: (value: string) => void;
   govComponentCount: number;
 }) {
   const govBadge = govComponentCount === 0 ? 1 : 0; // Needs setup
@@ -93,7 +93,7 @@ export function MyCountryTabsList({
       <FacetTabs
         tabs={tabs}
         activeTab={activeTab}
-        onChange={onChange}
+        onChange={onChangeAction}
         tone="mycountry"
         size="md"
         className="w-full min-w-fit rounded-xl border border-white/5 p-1 facet-surface facet-refraction"

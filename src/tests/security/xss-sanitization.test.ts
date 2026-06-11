@@ -103,6 +103,17 @@ describe("XSS Sanitization Test Suite", () => {
       expect(output).toContain('href="https://example.com"');
       expect(output).toContain('target="_blank"');
     });
+
+    it("preserves wiki card embed data attributes", () => {
+      const input = '<div data-wikiembed="true" data-title="Test Title" data-summary="Test Summary" data-imageurl="https://example.com/img.jpg" data-source="iiwiki" class="my-3 select-none">content</div>';
+      const output = sanitizeUserContent(input);
+
+      expect(output).toContain('data-wikiembed="true"');
+      expect(output).toContain('data-title="Test Title"');
+      expect(output).toContain('data-summary="Test Summary"');
+      expect(output).toContain('data-imageurl="https://example.com/img.jpg"');
+      expect(output).toContain('data-source="iiwiki"');
+    });
   });
 
   describe("sanitizeWikiContent() - Moderate Wiki Content", () => {

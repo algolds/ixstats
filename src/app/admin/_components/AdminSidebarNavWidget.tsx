@@ -17,6 +17,7 @@ import {
   Package,
   Vote,
   Coins,
+  Layers,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
@@ -72,6 +73,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: Sparkles,
     description: "Realms & World Configs",
     activeColor: "text-pink-500 dark:text-pink-400 border-l-pink-500",
+  },
+  {
+    label: "Facet Materials Lab",
+    href: "/admin/facet-materials-lab",
+    icon: Layers,
+    description: "Material & UI Configurator",
+    activeColor: "text-teal-500 dark:text-teal-400 border-l-teal-500",
   },
   {
     label: "Users & Roles",

@@ -59,7 +59,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
       <MyCountryTabsList
         activeTab={activeTab}
-        onChange={handleTabChange}
+        onChangeAction={handleTabChange}
         govComponentCount={govComponentCount}
       />
 

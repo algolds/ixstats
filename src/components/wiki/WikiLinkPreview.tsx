@@ -1,20 +1,4 @@
-"use client";
-
-/**
- * WikiLinkPreview — Hover tooltip wrappers for wiki and forum links.
- *
- * NOTE: The GlobalLinkTooltipProvider (mounted in root layout) handles
- * ALL link tooltips via document-level event delegation. These components
- * are kept for backward compatibility but the global provider is the
- * primary tooltip system.
- *
- * Components:
- * 1. WikiLinkPreview — wraps a React element (legacy, still works)
- * 2. WikiHtmlContent — renders raw HTML safely (tooltips handled by global provider)
- * 3. ForumLinkPreview — wraps a React element (legacy, still works)
- */
-
-import { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import { Tooltip } from "~/components/ui/tooltip-card";
 
@@ -70,8 +54,144 @@ interface WikiHtmlContentProps {
   as?: "div" | "p" | "span";
 }
 
+const parseStyleString = (styleStr: string): Record<string, string> => {
+  const styles: Record<string, string> = {};
+  styleStr.split(";").forEach((pair) => {
+    const [key, val] = pair.split(":");
+    if (key && val) {
+      const camelKey = key.trim().replace(/-./g, (c) => c.substring(1).toUpperCase());
+      styles[camelKey] = val.trim();
+    }
+  });
+  return styles;
+};
+
+function domNodeToReact(node: Node, index: number): React.ReactNode {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent;
+  }
+  
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return null;
+  }
+  
+  const element = node as HTMLElement;
+  const tagName = element.tagName.toLowerCase();
+  
+  // Custom Handler: Wiki Card Embed
+  if (tagName === "div" && element.getAttribute("data-wikiembed") === "true") {
+    const title = element.getAttribute("data-title") || "";
+    const summary = element.getAttribute("data-summary") || "";
+    const imageUrl = element.getAttribute("data-imageurl") || "";
+    const source = element.getAttribute("data-source") || "ixwiki";
+    
+    return (
+      <div key={index} className="my-3 select-none">
+        <a 
+          href={source === "iiwiki" ? `https://iiwiki.com/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}` : `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-500/[0.03] dark:bg-white/[0.03] backdrop-blur-md shadow-xs hover:border-slate-300 dark:hover:border-white/20 transition-all duration-200"
+        >
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-1.5 mb-1">
+              <img
+                src="https://cdn.simpleicons.org/wikipedia/1d4e89"
+                className="h-3 w-3 dark:hidden"
+                alt=""
+              />
+              <img
+                src="https://cdn.simpleicons.org/wikipedia/38bdf8"
+                className="h-3 w-3 hidden dark:block"
+                alt=""
+              />
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
+              </span>
+            </div>
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate leading-snug">
+              {title}
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5 leading-normal">
+              {summary}
+            </p>
+          </div>
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              className="h-16 w-16 rounded-xl object-cover border border-slate-200 dark:border-white/10"
+              alt=""
+            />
+          )}
+        </a>
+      </div>
+    );
+  }
+  
+  // Custom Handler: Wiki Link
+  if (tagName === "a" && element.getAttribute("href")?.startsWith("/wiki/")) {
+    const href = element.getAttribute("href") || "";
+    const className = element.className || "text-purple-600 dark:text-purple-400 font-semibold underline hover:text-purple-700 dark:hover:text-purple-300 transition-colors";
+    
+    return (
+      <a
+        key={index}
+        href={href}
+        className={className}
+      >
+        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
+      </a>
+    );
+  }
+  
+  // Standard HTML elements mapping
+  const children = Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx));
+  const props: any = { key: index };
+  
+  if (element.className) props.className = element.className;
+  if (element.getAttribute("href")) props.href = element.getAttribute("href");
+  if (element.getAttribute("target")) props.target = element.getAttribute("target");
+  if (element.getAttribute("rel")) props.rel = element.getAttribute("rel");
+  if (element.getAttribute("src")) props.src = element.getAttribute("src");
+  if (element.getAttribute("alt")) props.alt = element.getAttribute("alt");
+  
+  if (element.getAttribute("style")) {
+    props.style = parseStyleString(element.getAttribute("style") || "");
+  }
+  
+  if (["br", "hr", "img"].includes(tagName)) {
+    return React.createElement(tagName, props);
+  }
+  
+  return React.createElement(tagName, props, children);
+}
+
 export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
-  return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const parsedContent = useMemo(() => {
+    if (!isMounted || typeof window === "undefined" || !html) return null;
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+      const root = doc.body.firstElementChild;
+      if (!root) return null;
+      return Array.from(root.childNodes).map((node, idx) => domNodeToReact(node, idx));
+    } catch (err) {
+      console.warn("Failed to parse HTML in WikiHtmlContent:", err);
+      return null;
+    }
+  }, [html, isMounted]);
+
+  if (!isMounted || !parsedContent) {
+    return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+
+  return <Tag className={className}>{parsedContent}</Tag>;
 }
 
 // Re-export for backward compat

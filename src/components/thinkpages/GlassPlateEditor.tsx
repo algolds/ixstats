@@ -203,6 +203,56 @@ const ImagePlugin = createPlatePlugin({
 });
 
 // ---------------------------------------------------------------------------
+// Custom Slate-to-HTML Serializer
+// ---------------------------------------------------------------------------
+
+function escapeAttr(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function serializeLeaf(node: any): string {
+  let text: string = (node.text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  if (!text) return "";
+  if (node.bold) text = `<strong>${text}</strong>`;
+  if (node.italic) text = `<em>${text}</em>`;
+  if (node.underline) text = `<u>${text}</u>`;
+  return text;
+}
+
+function serializeNode(node: any): string {
+  // Leaf text nodes
+  if (typeof node.text === "string") {
+    return serializeLeaf(node);
+  }
+
+  const children: string = (node.children || []).map((c: any) => serializeNode(c)).join("");
+
+  switch (node.type) {
+    case "wikiembed":
+      return `<div data-wikiembed="true" data-title="${escapeAttr(node.title || "")}" data-summary="${escapeAttr(node.summary || "")}" data-imageurl="${escapeAttr(node.imageUrl || "")}" data-source="${escapeAttr(node.source || "ixwiki")}"></div>`;
+    case "wikilink":
+      return `<a href="/wiki/${encodeURIComponent((node.target || "").replace(/ /g, "_"))}">${children}</a>`;
+    case "link":
+      return `<a href="${escapeAttr(node.url || "")}" target="_blank" rel="noopener noreferrer">${children}</a>`;
+    case "img":
+      return `<img src="${escapeAttr(node.src || "")}" alt="${escapeAttr(node.alt || "")}" />`;
+    case "ul":
+      return `<ul>${children}</ul>`;
+    case "ol":
+      return `<ol>${children}</ol>`;
+    case "li":
+      return `<li>${children}</li>`;
+    case "p":
+    default:
+      return `<p>${children}</p>`;
+  }
+}
+
+function slateNodesToHtml(nodes: any[]): string {
+  return nodes.map((n: any) => serializeNode(n)).join("");
+}
+
+// ---------------------------------------------------------------------------
 // Editor Helpers
 // ---------------------------------------------------------------------------
 
@@ -238,11 +288,17 @@ function isBlockActive(editor: any, type: string): boolean {
 function toggleBlock(editor: any, type: string) {
   const isActive = isBlockActive(editor, type);
   
-  // Clean list items if toggling off
   if (isActive) {
+    Transforms.unwrapNodes(editor, {
+      match: (n: any) => n.type === "ul" || n.type === "ol",
+      split: true,
+    });
     Transforms.setNodes(editor, { type: "p" });
   } else {
-    // If wrapping in ul/ol, convert blocks to li, then wrap
+    Transforms.unwrapNodes(editor, {
+      match: (n: any) => n.type === "ul" || n.type === "ol",
+      split: true,
+    });
     Transforms.setNodes(editor, { type: "li" });
     const wrapper = { type, children: [] };
     Transforms.wrapNodes(editor, wrapper, {
@@ -453,7 +509,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
   const handleEditorChange = useCallback(() => {
     setVersion((v) => v + 1);
     try {
-      const html = (editor as any).api?.htmlReact?.serialize?.() || "";
+      const html = slateNodesToHtml(editor.children as any[]);
       const plainText = Editor.string(editor, []);
       onChange(html, plainText);
     } catch (err) {
@@ -501,11 +557,14 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
     // Select editor range to insert
     safeFocus();
     
-    Transforms.insertNodes(editor, {
-      type: "link",
-      url: linkUrl.startsWith("http") ? linkUrl : `https://${linkUrl}`,
-      children: [{ text: linkText.trim() || linkUrl }],
-    } as any);
+    Transforms.insertNodes(editor, [
+      {
+        type: "link",
+        url: linkUrl.startsWith("http") ? linkUrl : `https://${linkUrl}`,
+        children: [{ text: linkText.trim() || linkUrl }],
+      },
+      { text: " " }
+    ] as any);
     
     setLinkUrl("");
     setLinkText("");
@@ -519,20 +578,29 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
     safeFocus();
     
     if (wikiInsertMode === "embed") {
-      Transforms.insertNodes(editor, {
-        type: "wikiembed",
-        title: wikiTarget.trim(),
-        summary: wikiIntroQuery.data?.text || "No description available.",
-        imageUrl: selectedWikiImageUrl || "",
-        source: selectedWikiSource || "ixwiki",
-        children: [{ text: "" }],
-      } as any);
+      Transforms.insertNodes(editor, [
+        {
+          type: "wikiembed",
+          title: wikiTarget.trim(),
+          summary: wikiIntroQuery.data?.text || "No description available.",
+          imageUrl: selectedWikiImageUrl || "",
+          source: selectedWikiSource || "ixwiki",
+          children: [{ text: "" }],
+        },
+        {
+          type: "p",
+          children: [{ text: "" }]
+        }
+      ] as any);
     } else {
-      Transforms.insertNodes(editor, {
-        type: "wikilink",
-        target: wikiTarget.trim(),
-        children: [{ text: wikiText.trim() || wikiTarget }],
-      } as any);
+      Transforms.insertNodes(editor, [
+        {
+          type: "wikilink",
+          target: wikiTarget.trim(),
+          children: [{ text: wikiText.trim() || wikiTarget }],
+        },
+        { text: " " }
+      ] as any);
     }
     
     setWikiTarget("");
@@ -553,12 +621,18 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
   const insertStashedImage = useCallback((imageUrl: string, title: string) => {
     safeFocus();
     
-    Transforms.insertNodes(editor, {
-      type: "img",
-      src: imageUrl,
-      alt: title || "Stashed Image",
-      children: [{ text: "" }],
-    } as any);
+    Transforms.insertNodes(editor, [
+      {
+        type: "img",
+        src: imageUrl,
+        alt: title || "Stashed Image",
+        children: [{ text: "" }],
+      },
+      {
+        type: "p",
+        children: [{ text: "" }]
+      }
+    ] as any);
     
     setIsStashesOpen(false);
     handleEditorChange();
