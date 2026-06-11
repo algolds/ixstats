@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { X } from "lucide-react";
 import { MdBrowserUpdated } from "react-icons/md";
-import { APP_VERSION, BUILD_VERSION } from "~/lib/buildVersion";
+import { APP_VERSION, BUILD_VERSION, CHANNEL } from "~/lib/buildVersion";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 const STORAGE_KEY = "ixstats:version-seen";
@@ -37,7 +37,9 @@ export function NewVersionNotice() {
       <div className="relative z-10 flex items-center gap-2.5">
         <MdBrowserUpdated className="h-4 w-4 shrink-0 text-blue-400" />
         <p className="text-foreground text-xs font-medium">
-          The system has been updated to <span className="text-blue-400">v{APP_VERSION}</span>{" "}
+          The system has been updated to{" "}
+          <span className="text-blue-400">v{APP_VERSION}</span>{" "}
+          <span className="text-blue-400/60">({CHANNEL})</span>{" "}
           <span className="text-muted-foreground font-mono text-[10px]">({BUILD_VERSION})</span>.
         </p>
       </div>

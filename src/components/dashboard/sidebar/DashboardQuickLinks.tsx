@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BookOpen, MessageSquare, Bookmark, Users } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/status-indicator";
-import { BUILD_VERSION, IXWORLD_VERSION } from "~/lib/buildVersion";
+import { BUILD_VERSION, PLATFORM_VERSION, CHANNEL } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { FeedbackModal } from "~/components/modals/FeedbackModal";
 import {
@@ -118,7 +118,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
         <div className="border-border/40 space-y-1.5 border-t pt-2">
           <StatusIndicator status="operational" label="System Online" size="sm" />
           <div className="text-muted-foreground/60 text-[9px] tabular-nums whitespace-nowrap">
-            v{IXWORLD_VERSION} · Build {BUILD_VERSION}
+            v{PLATFORM_VERSION} {CHANNEL} · Build {BUILD_VERSION}
           </div>
         </div>
       </CutoutCardContent>
