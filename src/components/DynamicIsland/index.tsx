@@ -55,7 +55,7 @@ function CommandPaletteContent({
   scrollY?: number;
   diState: ReturnType<typeof useDynamicIslandState>;
 }) {
-  const { setSize } = useDynamicIslandSize();
+  const { state: diSizeState, setSize } = useDynamicIslandSize();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diPulseClass, setDiPulseClass] = useState("");
@@ -136,7 +136,7 @@ function CommandPaletteContent({
       if (expandedMode === "search") {
         newSize = SIZE_PRESETS.ULTRA; // 630px wide
       } else if (expandedMode === "notifications") {
-        newSize = SIZE_PRESETS.TALL; // 371px wide
+        newSize = diSizeState.size === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
       } else if (expandedMode === "settings") {
         newSize = SIZE_PRESETS.MEDIUM; // 371px wide
       } else if (expandedMode === "mycountry") {

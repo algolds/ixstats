@@ -1,0 +1,243 @@
+// IxStates — Exchange (market & corporate system)
+//
+// Phase 1 (P0) data model. See Exchange_v1_PRD.md §9.
+// Conventions mirror cards.prisma (MyVault / VaultTransaction / CardValueHistory):
+//   - cuid() string ids, createdAt/updatedAt wall-clock audit columns
+//   - String columns for type/status/direction (allowed values documented inline),
+//     matching VaultTransaction.type / CardAuction.status
+//   - *IxTime columns are Float epoch-ms from IxTime.getCurrentIxTime() (game time)
+//   - Sovereign wallet is isolated from MyVault to protect the IxCredits economy
+
+/// Per-user Sovereign (₷) wallet — Exchange's own currency, isolated from MyVault/IxCredits.
+model ExchangeWallet {
+  id             String                @id @default(cuid())
+  userId         String                @unique
+  sovereigns     Float                 @default(0)
+  lifetimeEarned Float                 @default(0)
+  lifetimeSpent  Float                 @default(0)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @default(now()) @updatedAt
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   ExchangeTransaction[]
+
+  @@index([userId])
+  @@map("exchange_wallets")
+}
+
+/// Sovereign transaction ledger. type: CONVERT_IN | CONVERT_OUT | CHARTER_FEE |
+/// SHARE_BUY | SHARE_SELL | CONTRACT_PAYOUT | SECTOR_BUY | SECTOR_SELL | ADMIN_ADJUSTMENT
+model ExchangeTransaction {
+  id           String         @id @default(cuid())
+  walletId     String
+  sovereigns   Float
+  balanceAfter Float
+  type         String
+  source       String
+  metadata     Json?
+  ixTime       Float
+  createdAt    DateTime       @default(now())
+  wallet       ExchangeWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+  @@index([type, createdAt])
+  @@map("exchange_transactions")
+}
+
+/// A player-founded company. Priced by the sim (fairValue); shares issued in Phase 1,
+/// traded in Phase 2. status: ACTIVE | DELISTED | BANKRUPT
+model Company {
+  id                 String                @id @default(cuid())
+  founderId          String
+  name               String                @unique
+  sectorKey          String
+  capital            Float                 @default(0)
+  standing           Float                 @default(0)
+  fairValue          Float                 @default(0)
+  sharesIssued       Int                   @default(0)
+  sharesOutstanding  Int                   @default(0)
+  contractsWonValue  Float                 @default(0)
+  status             String                @default("ACTIVE")
+  createdIxTime      Float
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @default(now()) @updatedAt
+  founder            User                  @relation("UserCompaniesFounded", fields: [founderId], references: [id], onDelete: Cascade)
+  valueHistory       CompanyValueHistory[]
+  issuances          ShareIssuance[]
+  shareholdings      Shareholding[]
+  decisions          CompanyDecision[]
+  bids               ContractBid[]
+
+  @@index([founderId])
+  @@index([sectorKey])
+  @@index([status])
+  @@map("exchange_companies")
+}
+
+/// Persisted fair-value history per company (mirrors CardValueHistory). The breakdown
+/// JSON captures the per-component contribution (sector / decisions / standing / contracts)
+/// for the MyPortfolio legibility panel (P0-7).
+model CompanyValueHistory {
+  id            String   @id @default(cuid())
+  companyId     String
+  fairValue     Float
+  breakdown     Json?
+  recordedIxTime Float
+  recordedAt    DateTime @default(now())
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([recordedIxTime])
+  @@map("exchange_company_value_history")
+}
+
+/// Primary share issuance record (P0-5). Founder issues shares at the fair-value anchor.
+model ShareIssuance {
+  id           String   @id @default(cuid())
+  companyId    String
+  shares       Int
+  pricePerShare Float
+  issuedIxTime Float
+  createdAt    DateTime @default(now())
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("exchange_share_issuances")
+}
+
+/// A player's holding in a company's shares.
+model Shareholding {
+  id          String   @id @default(cuid())
+  companyId   String
+  ownerUserId String
+  shares      Int      @default(0)
+  avgCost     Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  owner       User     @relation("UserShareholdings", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, ownerUserId])
+  @@index([ownerUserId])
+  @@map("exchange_shareholdings")
+}
+
+/// One of the 4 sim-driven macro-sector indices (Agriculture / Industry / Services /
+/// Government), aggregated from SectoralOutput across all nations. baseTotal is the
+/// epoch reference captured on first compute; dmModifier is a DM event lever.
+model SectorIndex {
+  id            String   @id @default(cuid())
+  sectorKey     String   @unique
+  label         String
+  value         Float    @default(1000)
+  baseTotal     Float?
+  dmModifier    Float    @default(0)
+  computedIxTime Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@map("exchange_sector_indices")
+}
+
+/// Persisted price history per sector index (mirrors CardValueHistory).
+model SectorIndexHistory {
+  id            String   @id @default(cuid())
+  sectorKey     String
+  value         Float
+  recordedIxTime Float
+  recordedAt    DateTime @default(now())
+
+  @@index([sectorKey])
+  @@index([recordedIxTime])
+  @@map("exchange_sector_index_history")
+}
+
+/// A player's position in a sector index instrument.
+model SectorPosition {
+  id          String   @id @default(cuid())
+  ownerUserId String
+  sectorKey   String
+  units       Float    @default(0)
+  avgCost     Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  owner       User     @relation("UserSectorPositions", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerUserId, sectorKey])
+  @@index([ownerUserId])
+  @@map("exchange_sector_positions")
+}
+
+/// Convert bridge audit + credit-sink record. direction: CONVERT_IN (IxCredits→Sovereign)
+/// | CONVERT_OUT (Sovereign→IxCredits). rate/fee are the values applied at conversion time.
+model ConversionLog {
+  id         String   @id @default(cuid())
+  userId     String
+  direction  String
+  ixCredits  Float
+  sovereigns Float
+  rate       Float
+  fee        Float
+  ixTime     Float
+  createdAt  DateTime @default(now())
+  user       User     @relation("UserConversionLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([direction, createdAt])
+  @@map("exchange_conversion_logs")
+}
+
+/// A periodic strategic decision queued by a founder, resolved on the IxTime tick.
+/// type: EXPAND | RND | ENTER_SECTOR | ACQUIRE | LOBBY | PRICE
+model CompanyDecision {
+  id           String   @id @default(cuid())
+  companyId    String
+  type         String
+  payload      Json?
+  effect       Json?
+  submittedIxTime Float
+  appliedIxTime Float?
+  createdAt    DateTime @default(now())
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([appliedIxTime])
+  @@map("exchange_company_decisions")
+}
+
+/// A B2G/B2B contract companies can bid on. type: B2G | B2B. status: OPEN | AWARDED | CLOSED
+model Contract {
+  id          String        @id @default(cuid())
+  type        String
+  title       String
+  sectorKey   String
+  value       Float
+  status      String        @default("OPEN")
+  winnerCompanyId String?
+  endIxTime   Float
+  createdIxTime Float
+  createdAt   DateTime      @default(now())
+  bids        ContractBid[]
+
+  @@index([status])
+  @@index([sectorKey])
+  @@index([endIxTime])
+  @@map("exchange_contracts")
+}
+
+/// A company's bid on a contract. outcome: WON | LOST (set on resolution).
+model ContractBid {
+  id           String   @id @default(cuid())
+  contractId   String
+  companyId    String
+  amount       Float
+  outcome      String?
+  standingDelta Float    @default(0)
+  createdIxTime Float
+  createdAt    DateTime @default(now())
+  contract     Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, companyId])
+  @@index([companyId])
+  @@map("exchange_contract_bids")
+}

@@ -15,7 +15,7 @@ export default function LorewardsPage() {
 
   return (
     <div className="bg-background text-muted-foreground flex h-screen items-center justify-center text-sm">
-      Redirecting to unified Achievements & Lorewards hub...
+      Redirecting to Achievements hub...
     </div>
   );
 }

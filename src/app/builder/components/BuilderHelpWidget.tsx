@@ -7,7 +7,6 @@ import { cn } from "~/lib/utils";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { type BuilderSection } from "../lib/builder-theme";
 import { contextualHelp } from "../data/contextual-help";
-import { DistortedGlass } from "~/components/ui/distorted-glass";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -68,7 +67,7 @@ export function BuilderHelpWidget({ activeSection }: BuilderHelpWidgetProps) {
       texture="dots"
       textureOpacity={0.06}
     >
-      <DistortedGlass asBackground className="bg-black/20" />
+
       {/* Cutout tab header */}
       <div className="relative bg-blue-500/10 px-3 pt-2.5 pb-4">
         <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">

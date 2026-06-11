@@ -2,31 +2,11 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Search, Loader2 } from "lucide-react";
+import { IconGif } from "@tabler/icons-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-
-// Custom SVG GIF Icon that matches Discord's style
-function GifIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <rect width="20" height="20" x="2" y="2" rx="4" />
-      <path d="M7 8H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v-4H6" />
-      <path d="M10 8h2v8h-2" />
-      <path d="M16 8h-3v8h3" />
-      <path d="M13 12h2.5" />
-    </svg>
-  );
-}
 
 interface GiphyGif {
   id: string;
@@ -118,7 +98,7 @@ export function GifPicker({ onSelectGif, trigger, disabled = false }: GifPickerP
           disabled && "cursor-not-allowed opacity-50"
         )}
       >
-        <GifIcon className="h-4 w-4" />
+        <IconGif className="h-4 w-4" />
       </PopoverTrigger>
       <PopoverContent
         align="start"

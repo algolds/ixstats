@@ -118,7 +118,17 @@ fi
 # and the public/ dir alongside it.
 rsync -ah --delete .next/standalone/ "$IXWORLD_DIR/"
 rsync -ah --delete .next/static/ "$IXWORLD_DIR/.next/static/"
-rsync -ah --delete public/ "$IXWORLD_DIR/public/"
+rsync -ah --delete \
+    --exclude 'images/discord' \
+    --exclude 'images/uploads' \
+    --exclude 'images/downloaded' \
+    public/ "$IXWORLD_DIR/public/"
+
+# Ensure shared dynamic assets are symlinked to preserve real-time updates
+ln -sfn "$IXSTATS_DIR/public/images/discord" "$IXWORLD_DIR/public/images/discord"
+ln -sfn "$IXSTATS_DIR/public/images/uploads" "$IXWORLD_DIR/public/images/uploads"
+ln -sfn "$IXSTATS_DIR/public/images/downloaded" "$IXWORLD_DIR/public/images/downloaded"
+
 # data/ holds runtime-generated content (cache, etc.) and is not build output, so do NOT
 # use --delete here. (D8)
 if [ -d "data" ]; then

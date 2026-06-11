@@ -114,7 +114,6 @@ const EMOJI_CATEGORIES = [
       { char: "🐹", name: "hamster" },
       { char: "🐰", name: "rabbit" },
       { char: "🦊", name: "fox" },
-      { char: "Bear", name: "bear" },
       { char: "🐻", name: "bear" },
       { char: "🐼", name: "panda" },
       { char: "🐨", name: "koala" },
@@ -143,7 +142,6 @@ const EMOJI_CATEGORIES = [
       { char: "🦎", name: "lizard" },
       { char: "🦖", name: "t-rex" },
       { char: "🐙", name: "octopus" },
-      { char: "Squid", name: "squid" },
       { char: "🦑", name: "squid" },
       { char: "🐠", name: "fish" },
       { char: "🐬", name: "dolphin" },
@@ -171,7 +169,6 @@ const EMOJI_CATEGORIES = [
       { char: "🍊", name: "tangerine" },
       { char: "🍋", name: "lemon" },
       { char: "🍌", name: "banana" },
-      { char: " Pineapple", name: "pineapple" },
       { char: "🍍", name: "pineapple" },
       { char: "🍎", name: "red_apple" },
       { char: "🍐", name: "pear" },
@@ -229,7 +226,6 @@ const EMOJI_CATEGORIES = [
       { char: "⚾", name: "baseball" },
       { char: "🥎", name: "softball" },
       { char: "🎾", name: "tennis" },
-      { char: " Volleyball", name: "volleyball" },
       { char: "🏐", name: "volleyball" },
       { char: "🎱", name: "billiards" },
       { char: "🏓", name: "ping_pong" },
@@ -393,7 +389,6 @@ const EMOJI_CATEGORIES = [
       { char: "❓", name: "question" },
       { char: "❔", name: "grey_question" },
       { char: "❕", name: "grey_exclamation" },
-      { char: "double_exclamation", name: "double_exclamation" },
       { char: "‼️", name: "double_exclamation" },
       { char: "♾️", name: "infinity" },
       { char: "➕", name: "plus" },
@@ -440,9 +435,12 @@ interface EmojiPickerProps {
   onSelectEmoji: (emoji: string) => void;
   trigger?: React.ReactNode;
   disabled?: boolean;
+  className?: string;
+  onOpenChange?: (open: boolean) => void;
+  side?: "top" | "bottom" | "left" | "right";
 }
 
-export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiPickerProps) {
+export function EmojiPicker({ onSelectEmoji, trigger, disabled = false, className, onOpenChange, side = "top" }: EmojiPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"unicode" | "discord">("unicode");
   const [searchQuery, setSearchQuery] = useState("");
@@ -483,6 +481,7 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
   const handleSelectUnicode = (emojiChar: string) => {
     onSelectEmoji(emojiChar);
     setIsOpen(false);
+    onOpenChange?.(false);
     setSearchQuery("");
   };
 
@@ -492,6 +491,7 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
       : `<:${emoji.name}:${emoji.id}>`;
     onSelectEmoji(markup);
     setIsOpen(false);
+    onOpenChange?.(false);
     setSearchQuery("");
   };
 
@@ -507,18 +507,30 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false }: EmojiP
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        onOpenChange?.(open);
+      }}
+    >
       <PopoverTrigger
         disabled={disabled}
         className={cn(
-          "inline-flex h-8 w-8 items-center justify-center rounded-md text-yellow-400 transition-colors hover:bg-white/5 hover:text-yellow-300 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
-          disabled && "cursor-not-allowed opacity-50"
+          "inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+          isOpen
+            ? "bg-yellow-500/15 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/25 dark:hover:bg-yellow-500/30 hover:text-yellow-700 dark:hover:text-yellow-300"
+            : "text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-300 hover:bg-yellow-500/10 dark:hover:bg-yellow-500/10",
+          disabled && "cursor-not-allowed opacity-50",
+          className
         )}
       >
-        {trigger ? trigger : <Smile className="h-4 w-4" />}
+        {trigger ? trigger : <Smile className="h-3.5 w-3.5" />}
       </PopoverTrigger>
       <PopoverContent
-        align="start"
+        side={side}
+        align="center"
+        sideOffset={8}
         className="glass-hierarchy-child w-80 overflow-hidden border-blue-500/20 bg-neutral-900/90 p-0 shadow-xl backdrop-blur-xl"
       >
         {/* Search */}

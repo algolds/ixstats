@@ -214,7 +214,7 @@ export default function AchievementsPage() {
               value="wiki-lore"
               className="text-muted-foreground data-[state=active]:text-foreground px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
             >
-              Wiki & Lore
+              Lorewards
             </TabsTrigger>
             <TabsTrigger
               value="leaderboard"

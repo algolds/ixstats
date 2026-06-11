@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { type BuilderSection, BUILDER_SECTION_THEMES } from "../lib/builder-theme";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
-import { DistortedGlass } from "~/components/ui/distorted-glass";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -164,7 +163,7 @@ export function BuilderSectionNavWidget({ activeSection }: BuilderSectionNavWidg
       texture="dots"
       textureOpacity={0.06}
     >
-      <DistortedGlass asBackground className="bg-black/20" />
+
       {/* Cutout tab header */}
       <div className={cn("relative px-3 pt-2.5 pb-4", headerBgClass)}>
         <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">

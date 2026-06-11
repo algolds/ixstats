@@ -304,12 +304,7 @@ export function EditorHeader({
 
       {/* Admin: Forge Mode toggle + actions */}
       {isAdmin && (
-        <div
-          className={cn(
-            editor.allFeatures.some((f: any) => f.type === "subdivision") ? "" : "ml-auto",
-            "flex items-center gap-1.5"
-          )}
-        >
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => {
               if (isWorldMode) {

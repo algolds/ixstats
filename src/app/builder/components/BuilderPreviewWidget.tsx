@@ -18,7 +18,6 @@ import { cn } from "~/lib/utils";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { DistortedGlass } from "~/components/ui/distorted-glass";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -322,7 +321,7 @@ export function BuilderPreviewWidget({
           texture="dots"
           textureOpacity={0.06}
         >
-          <DistortedGlass asBackground className="bg-black/20" />
+
           <div className="flex min-h-[80px] items-center justify-center">
             <span className="text-xs text-zinc-500">Select a country to preview</span>
           </div>
@@ -353,7 +352,7 @@ export function BuilderPreviewWidget({
           texture="dots"
           textureOpacity={0.06}
         >
-          <DistortedGlass asBackground className="bg-black/20" />
+
 
           {/* Cutout tab header with background flag (matches rest of builder) */}
           <div className="relative flex h-28 w-full flex-col items-center justify-center overflow-hidden bg-blue-500/10 px-3 pt-3 pb-6">
@@ -499,7 +498,7 @@ export function BuilderPreviewWidget({
           texture="dots"
           textureOpacity={0.06}
         >
-          <DistortedGlass asBackground className="bg-black/20" />
+
           {/* Cutout tab header with background flag */}
           <div className="relative flex h-40 w-full flex-col items-center justify-center overflow-hidden bg-blue-500/10 px-3 pt-3 pb-6">
             {flagUrl ? (

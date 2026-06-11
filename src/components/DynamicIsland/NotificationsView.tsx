@@ -20,10 +20,15 @@ import {
   Users,
   Building2,
   ChevronRight,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "./types";
 import { PreText } from "~/components/ui/pretext";
+import { cn } from "~/lib/utils";
+import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
+import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/glass/swipeable";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -49,13 +54,13 @@ function getIcon(n: any) {
 }
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
-  critical: { bg: "bg-red-500/15", text: "text-red-500" },
-  high: { bg: "bg-orange-500/15", text: "text-orange-500" },
-  medium: { bg: "bg-yellow-500/15", text: "text-yellow-500" },
-  warning: { bg: "bg-yellow-500/15", text: "text-yellow-500" },
-  success: { bg: "bg-green-500/15", text: "text-green-500" },
-  error: { bg: "bg-red-500/15", text: "text-red-500" },
-  info: { bg: "bg-blue-500/15", text: "text-blue-500" },
+  critical: { bg: "bg-red-500/15", text: "text-red-400" },
+  high: { bg: "bg-orange-500/15", text: "text-orange-400" },
+  medium: { bg: "bg-yellow-500/15", text: "text-yellow-400" },
+  warning: { bg: "bg-yellow-500/15", text: "text-yellow-400" },
+  success: { bg: "bg-green-500/15", text: "text-green-400" },
+  error: { bg: "bg-red-500/15", text: "text-red-400" },
+  info: { bg: "bg-blue-500/15", text: "text-blue-400" },
 };
 
 function getColors(n: any) {
@@ -75,12 +80,183 @@ function relativeTime(ts: string | number | Date): string {
   return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// ─── NotificationRow Component (powered by Glass SwipeableRow) ────────────────
+interface NotificationRowProps {
+  n: any;
+  isRead: boolean;
+  colors: { bg: string; text: string };
+  Icon: React.ComponentType<{ className?: string }>;
+  handleMarkRead: (n: any) => void;
+  handleClick: (n: any) => void;
+  relativeTime: (ts: any) => string;
+  isExpanded: boolean;
+  onExpandToggle: () => void;
+}
+
+function NotificationRow({
+  n,
+  isRead,
+  colors,
+  Icon,
+  handleMarkRead,
+  handleClick,
+  relativeTime: relTime,
+  isExpanded,
+  onExpandToggle,
+}: NotificationRowProps) {
+  return (
+    <SwipeableRow
+      id={`notif-${n.source}-${n.id}`}
+      className="rounded-xl mb-1.5 last:mb-0"
+      springPreset="bouncy"
+      expanded={isExpanded}
+      onExpandedChange={(expanded) => {
+        if (expanded !== isExpanded) onExpandToggle();
+      }}
+    >
+      {/* Leading actions (swipe right → open) */}
+      {n.href && (
+        <SwipeableRow.Leading
+          commit={{ action: () => handleClick(n), label: "Open", color: "#22c55e" }}
+        >
+          <SwipeActionButton
+            id="open"
+            icon={ChevronRight}
+            label="Open"
+            onClick={() => handleClick(n)}
+            color="#22c55e"
+          />
+        </SwipeableRow.Leading>
+      )}
+
+      {/* Trailing actions (swipe left → dismiss) */}
+      <SwipeableRow.Trailing
+        commit={{ action: () => handleMarkRead(n), label: "Clear", color: "#ef4444" }}
+      >
+        {n.href && (
+          <SwipeActionButton
+            id="open-trailing"
+            icon={ChevronRight}
+            label="Open"
+            onClick={() => handleClick(n)}
+            color="#3b82f6"
+          />
+        )}
+        <SwipeActionButton
+          id="clear"
+          icon={X}
+          label="Clear"
+          onClick={() => handleMarkRead(n)}
+          color="#ef4444"
+        />
+      </SwipeableRow.Trailing>
+
+      {/* Front card content */}
+      <SwipeableRow.Content>
+        <div
+          className={cn(
+            "relative bg-white/[0.16] dark:bg-slate-950/75 backdrop-blur-xl border border-white/[0.18] dark:border-white/10 hover:bg-white/[0.22] dark:hover:bg-slate-900/80 hover:border-white/[0.24] flex flex-col w-full rounded-xl transition-all duration-300 shadow-lg overflow-hidden",
+            !isRead && "bg-gradient-to-r from-white/[0.24] to-white/[0.14] dark:from-slate-900/60 dark:to-slate-950/80 border-blue-500/40 shadow-blue-500/10 shadow-md",
+            isRead && "opacity-80 bg-white/[0.1] dark:bg-slate-950/60 border-white/[0.08] dark:border-white/[0.06] hover:opacity-95"
+          )}
+        >
+          {/* Left Accent Border Strip */}
+          <div
+            className={cn(
+              "absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl transition-all duration-300",
+              colors.text.replace("text-", "bg-"),
+              isRead ? "opacity-30" : "opacity-100"
+            )}
+          />
+
+          {/* Header Content */}
+          <div className="flex items-center gap-3 p-3.5 text-left cursor-grab active:cursor-grabbing hover:bg-white/[0.02]">
+            <div
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm border border-white/5",
+                colors.bg
+              )}
+            >
+              <Icon className={cn("h-4 w-4", colors.text)} />
+            </div>
+
+            <div className="min-w-0 flex-1 pl-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-foreground text-xs font-bold block truncate">
+                  {n.title}
+                </span>
+                {!isRead && (
+                  <span className="bg-blue-500 h-1.5 w-1.5 shrink-0 rounded-full animate-pulse shadow-sm shadow-blue-500/50" />
+                )}
+              </div>
+              {!isExpanded && (n.description || n.message) && (
+                <span className="text-muted-foreground mt-0.5 block truncate text-[11px] font-semibold leading-relaxed">
+                  {n.description || n.message}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <span className="text-muted-foreground/80 text-[9px] font-semibold">
+                {relTime(n.timestamp || n.createdAt || Date.now())}
+              </span>
+              <motion.div
+                animate={{ rotate: isExpanded ? 90 : 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </SwipeableRow.Content>
+
+      {/* Expanded detail panel */}
+      <SwipeableRow.Expanded>
+        <div className="border-t border-slate-200/20 px-3.5 pb-3.5 pt-3 space-y-3 bg-black/[0.02] rounded-b-xl pl-[18px]">
+          <p className="text-[11.5px] text-foreground/95 font-semibold leading-relaxed whitespace-pre-wrap select-text selection:bg-blue-500/30">
+            {n.description || n.message}
+          </p>
+
+          <div className="flex items-center gap-2 pt-1.5">
+            {n.href && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClick(n);
+                }}
+                className="flex-1 py-1.5 px-3 bg-blue-500 hover:bg-blue-600 active:scale-[0.98] text-white text-[10px] font-bold rounded-md flex items-center justify-center gap-1.5 transition-all shadow-sm border border-blue-400/20"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+                <span>Open</span>
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMarkRead(n);
+              }}
+              className="flex-1 py-1.5 px-3 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 active:scale-[0.98] text-muted-foreground hover:text-foreground text-[10px] font-bold rounded-md flex items-center justify-center gap-1.5 transition-all border border-slate-300/30 dark:border-white/10"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground/60" />
+              <span>Dismiss</span>
+            </button>
+          </div>
+        </div>
+      </SwipeableRow.Expanded>
+    </SwipeableRow>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function NotificationsView({ onClose }: NotificationsViewProps) {
   const notify = useNotify();
   const { user } = useUser();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
+  const { state: diSizeState, setSize } = useDynamicIslandSize();
+  const isUltra = diSizeState.size === SIZE_PRESETS.ULTRA;
 
   // ESC to close
   React.useEffect(() => {
@@ -283,7 +459,10 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
       {/* List */}
       <div
-        className="max-h-80 space-y-2 overflow-y-auto pr-0.5"
+        className={cn(
+          "space-y-2 overflow-y-auto pr-0.5 transition-all duration-300",
+          isUltra ? "max-h-[520px]" : "max-h-80"
+        )}
         style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
       >
         {groups.length > 0 ? (
@@ -323,8 +502,9 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="space-y-0.5 overflow-hidden"
+                      className="space-y-1 overflow-hidden"
                     >
+                    <SwipeableGroup>
                       {group.items.map((n: any, i: number) => {
                         const Icon = getIcon(n);
                         const colors = getColors(n);
@@ -332,68 +512,25 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                         const key = n.id ? `${n.source}-${n.id}` : `${n.source}-${i}`;
 
                         return (
-                          <motion.button
+                          <NotificationRow
                             key={key}
-                            layout
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0, x: -120 }}
-                            drag="x"
-                            dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={0.25}
-                            onDragEnd={(_e, info) => {
-                              if (
-                                Math.abs(info.offset.x) > 100 ||
-                                Math.abs(info.velocity.x) > 500
-                              ) {
-                                handleMarkRead(n);
-                              }
+                            n={n}
+                            isRead={isRead}
+                            colors={colors}
+                            Icon={Icon}
+                            handleMarkRead={handleMarkRead}
+                            handleClick={handleClick}
+                            relativeTime={relativeTime}
+                            isExpanded={expandedNotificationId === key}
+                            onExpandToggle={() => {
+                              setExpandedNotificationId(
+                                expandedNotificationId === key ? null : key
+                              );
                             }}
-                            onClick={() => handleClick(n)}
-                            className={`hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                              isRead ? "opacity-50" : ""
-                            }`}
-                          >
-                            {/* Icon */}
-                            <div
-                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${colors.bg}`}
-                            >
-                              <Icon className={`h-3.5 w-3.5 ${colors.text}`} />
-                            </div>
-
-                            {/* Content */}
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <PreText
-                                  className="text-foreground truncate text-sm font-medium"
-                                  whiteSpace="nowrap"
-                                >
-                                  {n.title}
-                                </PreText>
-                                {!isRead && (
-                                  <span className="bg-primary h-1.5 w-1.5 shrink-0 rounded-full" />
-                                )}
-                              </div>
-                              {(n.description || n.message) && (
-                                <PreText
-                                  className="text-foreground/70 mt-0.5 block truncate text-xs"
-                                  whiteSpace="nowrap"
-                                >
-                                  {n.description || n.message}
-                                </PreText>
-                              )}
-                            </div>
-
-                            {/* Time */}
-                            <PreText
-                              className="text-muted-foreground/70 shrink-0 text-[10px]"
-                              whiteSpace="nowrap"
-                            >
-                              {relativeTime(n.timestamp || n.createdAt || Date.now())}
-                            </PreText>
-                          </motion.button>
+                          />
                         );
                       })}
+                    </SwipeableGroup>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -412,6 +549,24 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
             </PreText>
           </div>
         )}
+      </div>
+
+      {/* Expand / Minimize DI Size Toggle */}
+      <div className="mt-3 pt-2 border-t border-white/5 flex justify-center">
+        <button
+          onClick={() => {
+            setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
+          }}
+          className="text-muted-foreground hover:text-foreground hover:bg-white/5 flex h-7 w-7 items-center justify-center rounded-full transition-all border border-white/5 shadow-sm active:scale-[0.98]"
+          title={isUltra ? "Standard View" : "Reading View"}
+          aria-label={isUltra ? "Standard View" : "Reading View"}
+        >
+          {isUltra ? (
+            <Minimize2 className="h-3.5 w-3.5 text-blue-400" />
+          ) : (
+            <Maximize2 className="h-3.5 w-3.5 text-blue-400" />
+          )}
+        </button>
       </div>
     </div>
   );

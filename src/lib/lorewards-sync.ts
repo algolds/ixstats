@@ -453,3 +453,74 @@ function calculateStreaks(winDates: string[]): { current: number; longest: numbe
 
   return { current, longest };
 }
+
+let lastAutoSyncTime = 0;
+const AUTO_SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes cooldown
+
+/**
+ * Automatically sync recent winners from the state file, main OOL page,
+ * and current year's OOL wiki page, throttled with a 5-minute cooldown.
+ */
+export async function syncCurrentWinners(force = false): Promise<void> {
+  const now = Date.now();
+  if (!force && now - lastAutoSyncTime < AUTO_SYNC_COOLDOWN_MS) {
+    return;
+  }
+  lastAutoSyncTime = now;
+
+  console.log("[Lorewards] Running auto-sync of current winners...");
+  try {
+    // 1. Sync from local bot state file (extremely fast)
+    await syncFromStateFile();
+
+    // 2. Sync main OOL page (fast, updates active member scores)
+    await syncFromMainOOLPage();
+
+    // 3. Sync only the current year's OOL wiki page (updates daily/weekly/monthly wins)
+    const currentYear = new Date().getFullYear();
+    const wikitext = await fetchOOLPageWikitext(currentYear);
+    if (wikitext) {
+      const parsed = parseOOLPage(wikitext, currentYear);
+      const activeUsernames = new Set<string>();
+
+      for (const entry of parsed) {
+        if (!entry.winnerUser) continue;
+
+        activeUsernames.add(entry.winnerUser);
+        if (entry.runnerUpUser) activeUsernames.add(entry.runnerUpUser);
+
+        // Upsert so we get updates/corrections made on the wiki
+        await db.lorewardEntry.upsert({
+          where: { date_type: { date: entry.date, type: entry.type } },
+          create: {
+            date: entry.date,
+            type: entry.type,
+            winnerUser: entry.winnerUser,
+            winnerPage: entry.winnerPage,
+            runnerUpUser: entry.runnerUpUser,
+            runnerUpPage: entry.runnerUpPage,
+            status: "approved",
+            month: entry.month,
+            year: entry.year ?? currentYear,
+          },
+          update: {
+            winnerUser: entry.winnerUser,
+            winnerPage: entry.winnerPage,
+            runnerUpUser: entry.runnerUpUser,
+            runnerUpPage: entry.runnerUpPage,
+          },
+        });
+      }
+
+      // Recompute stats for only the users active in the current year to save DB overhead
+      for (const username of activeUsernames) {
+        await recomputeUserStats(username);
+      }
+    }
+
+    console.log("[Lorewards] Auto-sync of current winners completed.");
+  } catch (err) {
+    console.error("[Lorewards] Auto-sync of current winners failed:", err);
+  }
+}
+

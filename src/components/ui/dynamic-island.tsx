@@ -485,6 +485,7 @@ const DynamicIslandContent = ({
 }) => {
   const { state, presets } = useDynamicIslandSize();
   const currentSize = presets[state.size] ?? DynamicIslandSizePresets.default;
+  const isCompact = isCompactSize(state.size);
 
   const dimensions = calculateDimensions(state.size, screenSize, currentSize);
 
@@ -599,11 +600,27 @@ const DynamicIslandContent = ({
           <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/35 to-transparent" />
           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/25 to-transparent" />
           {/* Inner shimmer */}
-          <div
-            className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/10 to-transparent"
-            style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
-          />
+          {isCompact && (
+            <div
+              className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
+            />
+          )}
         </div>
+
+        {/* Local Backdrop Scrim Overlay for Expanded state */}
+        <AnimatePresence>
+          {!isCompact && (
+            <motion.div
+              key="card-backdrop-scrim"
+              className="absolute inset-0 z-0 bg-white/80 dark:bg-black/65 backdrop-blur-[6px] pointer-events-none rounded-[inherit]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Content container */}
         <div

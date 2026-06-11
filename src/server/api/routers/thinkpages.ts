@@ -99,7 +99,7 @@ const CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
   content: z
     .string()
-    .max(280)
+    .max(10000)
     .optional()
     .default("")
     .refine(
@@ -236,6 +236,35 @@ export const thinkpagesRouter = createTRPCRouter({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to search Unsplash images",
         });
+      }
+    }),
+
+  // Fetch Discord Channel Topic (Easter Egg)
+  getDiscordChannelTopic: publicProcedure
+    .query(async () => {
+      const discordBotToken = process.env.DISCORD_BOT_TOKEN;
+      if (!discordBotToken) {
+        return null;
+      }
+      try {
+        const channelId = "557016199427522561";
+        const res = await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bot ${discordBotToken}`,
+            "User-Agent": "IxStats/1.0",
+          },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!res.ok) {
+          console.error(`Failed to fetch Discord channel topic: ${res.status} ${res.statusText}`);
+          return null;
+        }
+        const data = await res.json() as { topic?: string | null };
+        return data.topic || null;
+      } catch (err) {
+        console.error("Error fetching Discord channel topic:", err);
+        return null;
       }
     }),
 
@@ -1035,7 +1064,7 @@ export const thinkpagesRouter = createTRPCRouter({
         content: z
           .string()
           .min(1)
-          .max(280)
+          .max(10000)
           .refine(
             (content) => {
               const validation = validateNoXSS(content);

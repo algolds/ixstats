@@ -6,9 +6,9 @@ import Link from "next/link";
 import { stripBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import type { VaultSection } from "./VaultSidebarNav";
-import { DashboardPlayerWidget } from "~/components/dashboard/DashboardPlayerWidget";
+import { DashboardPlayerWidget } from "~/components/dashboard/sidebar/DashboardPlayerWidget";
 import { VaultWidget } from "~/components/mycountry/VaultWidget";
-import { DashboardQuickLinks } from "~/components/dashboard/DashboardQuickLinks";
+import { DashboardQuickLinks } from "~/components/dashboard/sidebar/DashboardQuickLinks";
 import { useTheme } from "~/context/theme-context";
 
 interface VaultSidebarLayoutProps {

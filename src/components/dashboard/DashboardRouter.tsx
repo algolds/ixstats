@@ -30,7 +30,7 @@ import {
   Users,
   Map as MapIcon,
 } from "lucide-react";
-import { DashboardSidebarLayout } from "./DashboardSidebarLayout";
+import { DashboardSidebarLayout } from "./sidebar/DashboardSidebarLayout";
 import { NewVersionNotice } from "./NewVersionNotice";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -38,12 +38,12 @@ import * as LucideIcons from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { DistortedGlass } from "~/components/ui/distorted-glass";
 import { EconomicTierBadge, PopulationTierBadge, LocationBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
@@ -135,6 +135,7 @@ function DashboardHero({
   const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
   const [activeSection, setActiveSection] = useState<HeroSection>("Overview");
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   // Toggleable metric views for Overview
   const [metricView, setMetricView] = useState({
@@ -560,7 +561,7 @@ function DashboardHero({
   };
 
   return (
-    <div className="glass-surface glass-refraction relative overflow-hidden rounded-xl shadow-sm">
+    <div className="glass-surface relative overflow-hidden rounded-xl shadow-sm">
       {/* Neon Frame Overlay */}
       {neonFrame.enabled && (
         <motion.div
@@ -583,14 +584,17 @@ function DashboardHero({
           }}
         />
       )}
+
+      <TextureOverlay texture="paperGrain" opacity={0.09} />
+
       <button
         onClick={() => onCollapsedChange(true)}
-        className="text-muted-foreground hover:bg-muted/30 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors"
+        className="relative z-10 text-muted-foreground hover:bg-muted/30 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors"
       >
         <ChevronUp className="h-3 w-3 shrink-0" />
       </button>
 
-      <div className="grid gap-4 p-4 pt-1 md:grid-cols-5">
+      <div className="relative z-10 grid gap-4 p-4 pt-1 md:grid-cols-5">
         <div className="border-border/30 overflow-hidden rounded-xl border md:col-span-3">
           <CountryMapEmbed
             countryId={countryId}
@@ -607,7 +611,7 @@ function DashboardHero({
           <div>
             <div className="mb-2 flex items-center gap-2.5">
               <div
-                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm"
+                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/20 shadow-sm"
                 style={
                   avatarGlow.enabled
                     ? {
@@ -658,7 +662,12 @@ function DashboardHero({
             {vaultData && (
               <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-400">
                 <Wallet className="h-3 w-3 shrink-0" />
-                <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+                <UnifiedCountryFlag
+                  showTooltip={false}
+                  countryName={stats.countryName}
+                  size="sm"
+                  className="mr-0.5 h-3.5 w-auto shrink-0 rounded-sm border border-white/10"
+                />
                 {vaultData.credits.toLocaleString()}
                 <Flame className="ml-0.5 h-2.5 w-2.5 shrink-0" />
                 {vaultData.loginStreak}d

@@ -9,7 +9,7 @@ import { db } from "~/server/db";
 import * as fs from "fs";
 import * as mysql from "mysql2/promise";
 import { getWikiDbPool } from "~/lib/wiki-bridge";
-import { fullSync } from "~/lib/lorewards-sync";
+import { fullSync, syncCurrentWinners } from "~/lib/lorewards-sync";
 import { scoreDailyWikiOS } from "~/lib/lorewards-scoring";
 import type { LorewardEntry, WikiArticleAward } from "@prisma/client";
 
@@ -226,6 +226,7 @@ export const lorewardsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      await syncCurrentWinners();
       const entries = await db.lorewardEntry.findMany({
         where: {
           status: "approved",
@@ -762,6 +763,7 @@ export const lorewardsRouter = createTRPCRouter({
 
   /** UFC-Style Top 15 Leaderboard */
   getUfcLeaderboard: publicProcedure.query(async () => {
+    await syncCurrentWinners();
     const stats = await db.lorewardUserStats.findMany();
     const usernames = stats.map((s) => s.username);
     if (usernames.length === 0) return [];
@@ -1004,6 +1006,7 @@ export const lorewardsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      await syncCurrentWinners();
       const monthStr = String(input.month).padStart(2, "0");
       const prefix = `${input.year}-${monthStr}`;
 

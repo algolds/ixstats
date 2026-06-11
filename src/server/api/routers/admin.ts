@@ -3524,6 +3524,36 @@ export const adminRouter = createTRPCRouter({
       invalidateConfigCache();
       return { success: true };
     }),
+
+  searchWikiUsers: adminProcedure
+    .input(
+      z.object({
+        query: z.string().min(1).max(100),
+        limit: z.number().min(1).max(50).default(10),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = getWikiDbPool();
+      try {
+        const patternUnderscore = `%${input.query.trim().replace(/ /g, "_")}%`;
+        const patternSpace = `%${input.query.trim().replace(/_/g, " ")}%`;
+        const [rows] = await db.execute<mysql.RowDataPacket[]>(
+          `SELECT user_name, user_editcount 
+           FROM user 
+           WHERE user_name LIKE ? OR user_name LIKE ?
+           ORDER BY user_editcount DESC 
+           LIMIT ?`,
+          [patternUnderscore, patternSpace, input.limit]
+        );
+        return (rows ?? []).map((row) => ({
+          username: String(row.user_name),
+          editCount: Number(row.user_editcount) || 0,
+        }));
+      } catch (err) {
+        console.error("Failed to search MediaWiki users:", err);
+        return [];
+      }
+    }),
 });
 
 // getWikiDbPool is now imported from "~/lib/wiki-bridge"

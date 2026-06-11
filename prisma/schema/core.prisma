@@ -245,6 +245,12 @@ model User {
   lastDiscordSync     DateTime?
   blurbResponses      BlurbResponse[]          @relation("UserBlurbResponses")
   CardWatchlist       CardWatchlist[]
+  // Exchange (market & corporate system)
+  exchangeWallet      ExchangeWallet?
+  companiesFounded    Company[]                @relation("UserCompaniesFounded")
+  shareholdings       Shareholding[]           @relation("UserShareholdings")
+  sectorPositions     SectorPosition[]         @relation("UserSectorPositions")
+  conversionLogs      ConversionLog[]          @relation("UserConversionLogs")
 
   @@index([clerkUserId])
   @@index([countryId])
