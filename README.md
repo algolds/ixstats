@@ -4,11 +4,11 @@
 
 IxStates is a nation simulation and worldbuilding platform — a persistent world where every country's economy, military, diplomacy, and borders are live and interconnected.
 
-[83 routers · 1,329 endpoints · 237 data models · 893 components · v2.1]
+[IxStates 1.0 "Ogma" · 83 routers · 1,329 endpoints · 237 data models · 893 components]
 
 ---
 
-### IxMaps
+### IxWorld
 
 A handmade world with full topography, water systems, and climate modeling. Dynamic borders, live-updating territory, story pins that chart history, and a border editor. Every nation mapped with precision.
 
@@ -47,12 +47,17 @@ Next.js 16 · React 19 · TypeScript 5.9 · Prisma 6.19 · tRPC 11.17 Tailwind C
 
 ## Feature Pillars
 
+Each tier carries an independent version where noted — see the **[Versioning & Release Architecture](docs/reference/revision.md)** (`docs/reference/revision.md`).
+
 | Tier | Systems |
 |------|---------|
-| **Integrated Products** | IxWorld (maps + IxMaps standalone deployment), IxForum (community), IxVault (wallet + trading cards + IxCredits + crafting/trading/marketplace/packs/lore cards/NS import), IxWiki (powered by WikiOS) |
-| **Core Systems** | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), LoreStash, Blurbs, Dynamic Island, Admin CMS (28 interfaces) |
+| **Apps** *(independent version)* | IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software — powers the IxWiki content; Canvas editor sub-system), IxVault (wallet + trading cards + IxCredits + crafting/trading/marketplace/packs/lore cards/NS import) |
+| **Engines** *(internal sim cores, independent version)* | MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld) |
+| **Core Systems** *(independent version)* | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS (28 interfaces) |
+| **Design System** *(independent version)* | Facet (glass / refraction / depth) |
 | **Platform Utilities** | IxTime (game clock), IxnayID (cross-platform identity) |
-| **Infrastructure** | Glass Physics (design system), Notifications, Help, c15t (consent manager), Flag Service, WebSocket, Cron, Cache/RateLimit/Auth |
+| **Inherits platform version** | IxForum (community), Experimental Labs |
+| **Infrastructure** | Notifications, Help, c15t (consent manager), Flag Service, WebSocket, Cron, Cache/RateLimit/Auth |
 | **Navigation Hubs** | Dashboard, Explore/Countries, Feed |
 
 ## Technology Stack
@@ -64,7 +69,7 @@ Next.js 16 · React 19 · TypeScript 5.9 · Prisma 6.19 · tRPC 11.17 Tailwind C
 | Language | TypeScript 5.9.3 |
 | API Layer | tRPC 11.17 with SuperJSON + Clerk auth context |
 | Database | Prisma 6.19.3, PostgreSQL (port 5433) |
-| Styling | Tailwind CSS 4.3, custom glass physics design system, Lucide icons |
+| Styling | Tailwind CSS 4.3, custom **Facet** design system (glass/refraction/depth), Lucide icons |
 | Mapping | MapLibre GL JS with globe/mercator projection, PostGIS spatial queries |
 | Realtime | Socket.IO via `server.mjs` and `src/lib/websocket-server.ts` |
 
@@ -124,7 +129,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 │   ├── src/app/builder/            # MyCountry Builder — nation creation wizard
 │   ├── src/app/thinkpages/         # ThinkPages — feed, ThinkShare messages, ThinkTanks
 │   ├── src/app/achievements/       # Achievements & Awards — quest paths, LoreWards
-│   ├── src/app/stashes/            # LoreStash — save-for-later with annotations
+│   ├── src/app/stashes/            # Stash — save-for-later with annotations
 │   ├── src/app/blurbs/             # Blurbs — community wiki reviews
 │   └── src/app/admin/              # Admin CMS — 28 management interfaces
 │
@@ -133,7 +138,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 │   ├── src/hooks/                  # Custom React hooks (107)
 │   ├── src/server/api/routers/     # tRPC routers (83, including subdirectories)
 │   ├── src/lib/                    # Utilities, rate limiter, game clock, cron, WebSocket
-│   ├── src/styles/                 # Glass physics design system, themes, forum CSS
+│   ├── src/styles/                 # Facet design system (glass/refraction/depth), themes, forum CSS
 │   ├── prisma/                     # Schema (237 models across 12 files) + migrations
 │   └── server.mjs                  # Custom Node server (Socket.IO + cron)
 │
@@ -157,7 +162,7 @@ Early-stage prototype systems under the Labs dropdown.
 
 ## Design System
 
-The platform is built on **Glass Physics** — a custom glassmorphism design system with depth hierarchy, dynamic refraction, and light/dark theme support. See `src/styles/glass-refraction.css` and `src/styles/themes.css`.
+The platform is built on **Facet** *(formerly "Glass Physics")* — a custom glass / refraction / depth design system with hierarchy, dynamic refraction, and light/dark theme support. See `src/styles/glass-refraction.css` and `src/styles/themes.css`. *(CSS classes/tokens remain `glass-*` / `--glass-*` pending a separate mechanical rename.)*
 
 - **Icons**: Lucide React (primary), React Icons (Font Awesome, Game Icons, Remix), 36 custom animated icons (`src/components/ui/icons/`)
 - **Brand colors**: Indigo primary (`#6366f1`), with per-system accent colors mapped in `docs/reference/branding.md`
@@ -182,6 +187,7 @@ The platform is built on **Glass Physics** — a custom glassmorphism design sys
 - `docs/reference/api-complete.md` — full tRPC API catalog
 - `docs/reference/branding.md` — complete brand catalog: all systems, icons, colors, visual identity tokens
 - `docs/systems/` — system-specific guides (MyCountry, Intelligence, Diplomacy, Economy, etc.)
+- `docs/reference/revision.md` — **Versioning & Release Architecture** (platform/app/engine/system versioning, release names, channels, the Version Registry)
 - `CHANGELOG.md` — version history
 
 ## Contributing

@@ -20,7 +20,7 @@ Elections, political parties, and legislature management form the governance sim
 ### Router
 | File | Purpose |
 | --- | --- |
-| `src/server/api/routers/elections.ts` | 762-line tRPC router with 11 procedures |
+| `src/server/api/routers/elections.ts` | 887-line tRPC router with 13 procedures |
 
 ### Components
 | File | Purpose |

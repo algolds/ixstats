@@ -73,10 +73,10 @@ The IxStats rate limiting system consists of three main components:
    - Tiered middleware for different operation types
    - Error handling and user feedback
 
-3. **Next.js Middleware** (`/src/middleware.ts`)
-   - Sets rate limit identifiers from request context
-   - Extracts user ID or IP address for tracking
-   - Adds security headers
+3. **Proxy + Middleware** (`/src/proxy.ts`)
+    - Sets rate limit identifiers from request context
+    - Extracts user ID or IP address for tracking
+    - Adds security headers (CSP, auth, etc.)
 
 ### Rate Limiting Tiers
 
@@ -838,11 +838,11 @@ if (!result.success) {
    ```
 
 4. **Verify ioredis is installed**:
-   ```bash
-   npm list ioredis
-   # If not installed:
-   bun install ioredis
-   ```
+    ```bash
+    bun pm ls | grep ioredis
+    # If not installed:
+    bun add ioredis
+    ```
 
 ### Issue 3: Rate Limit Too Restrictive
 
@@ -1160,7 +1160,7 @@ describe('Rate Limiting', () => {
 #### 1. IP-Based Rate Limiting
 
 ```typescript
-// In src/middleware.ts, enhance identifier logic
+// In src/proxy.ts, enhance identifier logic
 const getRateLimitIdentifier = (req: NextRequest, userId: string | null): string => {
   // Prefer user ID for authenticated requests
   if (userId) {
@@ -1341,10 +1341,7 @@ Rate limiting is a critical component of the IxStats platform's security and per
 
 ### Related Documentation
 
-- **API Reference**: `/docs/API_REFERENCE.md` - Complete tRPC API catalog
-- **Security Guide**: `/docs/SECURITY_GUIDE.md` - Security best practices (if exists)
-- **Deployment Guide**: `/docs/DEPLOYMENT_GUIDE.md` - Production deployment (if exists)
-- **Monitoring Guide**: `/docs/MONITORING_GUIDE.md` - Application monitoring (if exists)
+- **API Reference**: `docs/reference/api-complete.md` — Full tRPC API catalog (1,329 endpoints)
 
 ---
 

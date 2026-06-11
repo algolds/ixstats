@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Hierarchy:** IxWorld is the integrated maps product. IxMaps (maps.ixwiki.com) is the standalone deployment. Forge Mode is an admin sub-feature of IxWorld.
+**Hierarchy:** IxWorld is the integrated maps product (also deployed standalone at maps.ixwiki.com). Forge Mode is an admin sub-feature of IxWorld.
 
 The IxWorld map system provides interactive visualization of IxEarth, a fictional planet with six continents, four oceans, and 60+ countries. Built with MapLibre GL JS, it replaces the v1 Leaflet-based IxMaps system (deprecated November 2025, rebuilt January–May 2026).
 
@@ -328,3 +328,151 @@ Browser ──► React Query (in-memory)
 - [`IXWORLD_OCEANOGRAPHY_REPORT.md`](../IXWORLD_OCEANOGRAPHY_REPORT.md) — Ocean basins, seas, currents, shipping routes, and marine ecology
 - [`reference/api-complete.md`](../reference/api-complete.md) — Full tRPC API catalog including geo router
 - Old v1 map docs preserved in `docs/archive/` (vector tiles, Martin tile server — superseded)
+
+## Map Overlay Framework
+
+> **Merged from:** docs/systems/map-overlay-framework.md
+> **Status: design-only (P7).** Documents a pluggable overlay architecture. No implementation ships with this doc.
+
+### Motivation
+
+IxWorld (`src/components/maps/`) renders five production overlays, but each is hardcoded in four places (component, fetch call, visibility key, two UI lists). Adding a new overlay means touching all of them. Goal: a declarative registry where adding an overlay = ~30-line registry entry + optionally a small imperative component.
+
+### Current State
+
+**Overlay components** (`src/components/maps/overlays/`):
+- `ChoroplethOverlay` — recolors the `fill-political` layer by a per-country value (wealth/population)
+- `RiskHeatmapOverlay` — recolors `fill-political` by risk + adds crisis point markers
+- `GeopoliticalOverlay` — diplomatic relation lines + conflict markers
+- `TradeRouteOverlay` / `TransportOverlay` — bilateral line layers
+
+**Hardcoded wiring across 4 files:**
+- `MapContainer.tsx` — local `overlayVisibility` state with literal keys, conditional tRPC fetches per overlay, hardcoded mutual-exclusivity list
+- `IxWorldMap.tsx` — `OverlayVisibility` type with literal keys, effect toggling layer visibility, conditional render block
+- `MapControls.tsx` — hardcoded `FEATURE_OVERLAYS` / `ANALYTICS_OVERLAYS` lists
+
+### Proposed Architecture
+
+A single registry, `src/lib/overlay-registry.ts`:
+
+```ts
+type OverlayCategory = "fill" | "feature" | "analytics";
+
+interface OverlayPluginDefinition {
+  id: string;                         // unique; replaces literal OverlayVisibility keys
+  label: string;                      // control-panel label
+  category: OverlayCategory;
+  icon?: LucideIcon;
+  defaultVisible?: boolean;
+  dataFetcher: (utils: TRPCUtils, ctx: OverlayFetchCtx) => Promise<unknown>;
+  component: React.LazyExoticComponent<React.ComponentType<OverlayComponentProps>>;
+  legend?: OverlayLegend;
+  isAvailable?: (ctx: OverlayFetchCtx) => boolean;
+}
+```
+
+- **Fill** overlays recolor the political layer; mutually exclusive
+- **Feature** overlays are independent point/line features; default-on; freely combinable
+- **Analytics** overlays are independent data layers; combinable; usually default-off
+
+### Integration Seams
+
+- **MapContainer:** Replace literal state + per-overlay queries with registry-driven loops; toggle uses category-based exclusivity
+- **MapControls:** Generate panel from registry instead of hardcoded lists
+- **IxWorldMap:** One render loop instead of hardcoded `<Suspense>` block
+- **Legend:** `AnalyticsLegend` iterates registry entries whose overlay is visible and has a `legend`
+
+### Migration Plan (incremental, zero breaking changes)
+
+1. Add `src/lib/overlay-registry.ts` + `overlay-types.ts`; register existing overlays
+2. Refactor `MapControls` to read the registry (UI only — lowest risk)
+3. Refactor `MapContainer` visibility/fetch/toggle to the registry
+4. Refactor `IxWorldMap` render block to the loop; delete literal `OverlayVisibility` type
+5. Add 1–2 new IxStats overlays to prove the ~30-line path
+6. (Later) `useCountryOverlay` for MyCountry widgets
+
+### Open Questions
+
+- Should the panel cap simultaneous analytics overlays for legibility?
+- Premium overlays — `isAvailable` can gate
+- Performance — large choropleths use `match` paint expressions
+- Legend system — declarative `legend` covers scales/categories; bespoke legends fall back to a component
+
+## MyCountry Integration
+
+> **Merged from:** docs/systems/maps-mycountry-integration.md, docs/ma-smycountry.md
+> **Status: design + Phase A complete.** Tier-0 architecture for making IxWorld geography the single source of truth for MyCountry.
+
+### Locked Design Decisions
+
+- **One canonical record, two editing surfaces** — each geographic entity is ONE row; the map editor owns the spatial half (geometry/coordinates/world placement → admin review), the MyCountry editor owns the attribute half (name/population/role/economy → owner-direct)
+- **Geography is authoritative for geography** — borders/area/centroid/adjacency come from the geo store, never re-stored on `Country`
+- **Unify:** Cities + Subdivisions + Borders/Territory + POIs/pins
+- **Rollups:** hybrid + reconciled (national stays sim baseline; cities/subdivisions hold absolute values + coverage meter + "rebase national from geography" action)
+- **Edit authority:** attributes direct, spatial reviewed
+
+### Canonical Data Model
+
+| Source of truth | Holds | Models |
+|---|---|---|
+| Borders/territory | country footprint, area, centroid, bbox, adjacency | `MapLayer` (political), `Territory`, `BorderHistory` (audit) |
+| Settlements & features | cities, regions, POIs, pins, labels | `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `MapLabel` |
+| Computed geo stats (cache) | climate/elevation/coastline/arable, sim modifiers | `CountryGeoProfile` (1:1 Country) |
+
+All already FK to `Country.id`. The work is linking, de-duplicating, and opening them to owners.
+
+### Schema Changes
+
+**A. Replace string geography with FKs:**
+- `NationalIdentity.capitalCityId → City.id` (and `largestCityId → City.id`)
+- `Subdivision.capitalCityId → City.id`
+- Invariant: `City.isNationalCapital` ⇔ it's the `capitalCityId` for the country
+
+**B. Stop duplicating border geometry on `Country`:** `Country.geometry/centroid/boundingBox/landArea` become derived (read from `MapLayer`), not authoritative columns. Transitional: keep columns as cache updated by one sync hook.
+
+**C. Add attribute half for gameplay:**
+- `City`: `gdpContribution`, `populationShare`, `economyOutput`, `specialization`, `infrastructureLevel`, `isPort`, `mayorName`
+- `Subdivision`: `gdpContribution`, `budgetShare`, `governorName`, `governmentType`
+- Both: `editableByOwner Boolean @default(true)`
+
+### Two-Surface Editing
+
+| Edit | Surface | Path | Review? |
+|---|---|---|---|
+| Country border geometry, split/merge, world placement | Map editor | `geoEditor.*` → `MapEditRequest` | Yes (affects shared world) |
+| Move/redraw a city/subdivision shape | Map editor or MyCountry map-picker | spatial mutation → `MapEditRequest` | Yes (light) |
+| Create/name a city, set population/role/economy, capital | MyCountry editor | new `countryGeo.*` owner mutations | No — direct |
+| Add POI/story pin/label (intra-territory) | Either | direct (auto-approved) | No |
+
+### Rollups & Reconciliation
+
+- National `currentPopulation`/`currentTotalGdp` stay the sim's authoritative baseline
+- Cities/subdivisions hold absolute `population`/`gdpContribution`
+- Derived `geographicCoverage = Σ(city.population) / national.population` shown to owner
+- Owner picks a mode: Top-down (national distributes to cities by share) or Bottom-up (national = Σ cities; only when coverage is "complete")
+- "Rebase national from geography" action recomputes national from the sum
+
+### Tier-0 Surfaces
+
+- **Embedded everywhere** — one shared `<CountryMap countryId focus>` built on real `MapContainer`/`IxWorldMap` core (replaces `CountryMapWidget`/`DiplomacyMapWidget`/`DefenseMapWidget`)
+- **Interaction canvas** — clicking a city/subdivision on the embedded map opens its config via a shared selection context
+- **Live gameplay layers** — embassies, operations, crises, trade, alliances render through the `OVERLAY_REGISTRY`
+- **Stats from geography** — rollup surfaces in MyCountry (national breakdown by region/city) and on the map (choropleth overlays)
+
+### Migration Plan (phased)
+
+- **P-A Schema + backfill** (DONE — applied 2026-06-06, commit `cc1586be`): Additive schema — `NationalIdentity.capitalCityId`/`largestCityId` + `Subdivision.capitalCityId` FK→`City`; attribute-half fields on `City`/`Subdivision`; `Country.geoRollupMode` default "hybrid". Backfill linked 13 capitals by name (0 ambiguous, 14 unmatched).
+- **P-B** (next): De-dup read layer — `src/lib/country-geo-service.ts` + `countryGeo` tRPC router + `getCountryGeoBundle`
+- **P-C:** Owner editing — attribute mutations + map-picker in MyCountry editor
+- **P-D:** Rollups + reconciliation UI
+- **P-E:** Tier-0 embed — shared `<CountryMap>` across MyCountry
+- **P-F:** Live layers — implement OVERLAY_REGISTRY (P7)
+
+### Risks
+
+- Capital backfill ambiguity — string "New Haven" may match 0 or many City rows; needs owner confirmation
+- Rollup mode — hybrid confirmed (keeps sim intact)
+- Owner vs world authority — exact line between direct attribute edit and queued spatial edit
+- Performance — PostGIS rollups/derived stats per read; cache in `CountryGeoProfile`
+- Existing data — many countries have no linked `MapLayer`; MyCountry must degrade gracefully
+- Approval load — owner spatial edits could flood admin queue

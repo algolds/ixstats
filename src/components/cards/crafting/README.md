@@ -18,7 +18,7 @@ Main crafting interface where players perform crafting operations.
 - IxCredits cost display
 - "Craft" button with validation
 - Result preview system
-- Glass physics workbench styling
+- Facet (glass) workbench styling
 
 **Props:**
 ```typescript
@@ -332,8 +332,8 @@ Crafting operations use Prisma transactions to ensure atomicity:
 
 ## UI/UX Features
 
-### Glass Physics Design
-All components use the glass physics design system:
+### Facet Design
+All components use the Facet (glass) design system:
 - `glassDepth="parent"` - Page-level containers
 - `glassDepth="child"` - Section containers
 - `glassDepth="interactive"` - Interactive elements
@@ -424,7 +424,7 @@ All components use the glass physics design system:
 - `framer-motion` - Animations
 - `~/lib/vault-service` - IxCredits management
 - `~/lib/card-service` - Card operations
-- `~/components/ui/comet-card` - Glass physics components
+- `~/components/ui/comet-card` - Facet (glass) components
 - `~/components/cards/display/CardDisplay` - Card rendering
 
 ## File Structure
@@ -455,7 +455,7 @@ prisma/
   - Success rate system
   - XP rewards and progression
   - 12 sample recipes
-  - Full UI with glass physics design
+  - Full UI with Facet (glass) design
 
 ---
 

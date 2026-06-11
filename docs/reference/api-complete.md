@@ -1,8 +1,8 @@
 # Complete tRPC API Reference
 
-**Last updated:** May 2026
+**Last updated:** June 2026
 
-Comprehensive reference for all 73 tRPC routers with 1205 procedures across the IxStates (IxStats) platform.
+Comprehensive reference for all 83 tRPC routers with 1,432 endpoints across the IxStates (IxStats) platform.
 
 ## Quick Navigation
 - [Core Systems](#core-systems) (14 routers, 212 procedures)
@@ -12,7 +12,7 @@ Comprehensive reference for all 73 tRPC routers with 1205 procedures across the 
 - [Social & Collaboration](#social--collaboration) (7 routers, 165 procedures)
 - [Operations](#operations) (10 routers, 142 procedures)
 - [IxVault (Cards & Credits)](#ixvault-cards--credits) (10 routers, 147 procedures)
-- [Maps & Geography](#maps--geography) (active January–May 2026)
+- [Maps & Geography](#maps--geography) (active January–June 2026)
 
 ---
 
@@ -70,7 +70,7 @@ Comprehensive reference for all 73 tRPC routers with 1205 procedures across the 
 | notifications | 4 | 2 | 6 | Notification management |
 | quickactions | 8 | 13 | 21 | Quick actions orchestration |
 | scheduledChanges | 3 | 4 | 7 | Delayed impact changes |
-| ~~**MAPS & GEOGRAPHY**~~ | | | | **DEPRECATED - removed November 2025** |
+| **MAPS & GEOGRAPHY** | | | | Active January–June 2026 |
 | **CARDS & MYVAULT** | | | | |
 | vault | 5 | 2 | 7 | IxCredits balance, transactions, bonuses |
 | cards | 5 | 1 | 6 | Card browsing, ownership, stats |
@@ -93,7 +93,7 @@ Comprehensive reference for all 73 tRPC routers with 1205 procedures across the 
 | **AUTOSAVE SYSTEM** | | | | |
 | autosaveHistory | 5 | 0 | 5 | Autosave history, stats, timeline |
 | autosaveMonitoring | 5 | 0 | 5 | Global autosave monitoring (admin) |
-| **TOTAL** | **~477** | **~450** | **~927** | |
+| **TOTAL** | **—** | **—** | **~1,432** | |
 
 **Legend:** Q = Queries, M = Mutations
 
@@ -1287,3 +1287,196 @@ All autosave hooks use a 15-second debounce to batch changes and prevent excessi
 - [Database Reference](./database.md) - Prisma schema
 - [Edge Cases](./edge-cases.md) - Common errors and handling
 - [API Examples](./api-examples.md) - Real-world usage examples
+
+> **Note:** The legacy `api.md` snapshot (February 2026) has been superseded by this document (June 2026). This api-complete.md is the canonical API reference with more routers (83 vs 61) and endpoints (1,432 vs 927). The legacy file has been removed.
+
+---
+
+## API Examples
+
+> Merged from `docs/reference/api-examples.md`. Date: June 2026.
+> Worked request/response examples for the most commonly used endpoints.
+
+### Authentication
+
+All protected endpoints require Clerk authentication. The tRPC client automatically includes auth headers when used within a `ClerkProvider` context. Wrap your app in `app/layout.tsx`:
+
+```typescript
+import { ClerkProvider } from "@clerk/nextjs";
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return <ClerkProvider><html lang="en"><body>{children}</body></html></ClerkProvider>;
+}
+```
+
+### countries.getAll — List Countries
+
+```typescript
+const { data } = api.countries.getAll.useQuery({
+  limit: 20, offset: 0, includeEconomicData: true, sortBy: 'gdp', sortOrder: 'desc'
+});
+// Returns: { countries: Array<Country>, total: 45, hasMore: true }
+```
+
+### countries.createCountry — Create Country
+
+```typescript
+const createCountry = api.countries.createCountry.useMutation({
+  onSuccess: (data) => router.push(`/countries/${data.country.slug}`)
+});
+createCountry.mutate({
+  countryName: "Republic of Innovation", capitalCity: "Techville",
+  population: 25000000, gdp: 500000000000, currencyCode: "IND",
+  economicSystem: "mixed_market", governmentType: "federal_republic",
+  nationalIdentity: { officialLanguages: ["English", "Spanish"], /* ... */ },
+  taxSystem: { categories: [{ name: "Personal Income Tax", type: "income", brackets: [/* ... */] }] }
+});
+// Returns: { success: true, country: { id, countryName, slug, ... }, message: "Country created successfully" }
+```
+
+### countries.getById — Get Single Country
+
+```typescript
+const { data: country } = api.countries.getById.useQuery({
+  id: "clx8a1b2c3d4e5f6g7h8i9j0", includeEconomicData: true, includeRelations: true
+});
+// Returns full country with economic data, diplomatic relations, national identity
+```
+
+### mycountry.getDashboardData — Dashboard
+
+```typescript
+const { data: dashboard } = api.mycountry.getDashboardData.useQuery({
+  timeRange: "30d", includeProjections: true
+});
+// Returns: { country, vitalityScores, intelligenceFeed, achievements, metrics, projections }
+```
+
+### diplomatic.createEmbassy — Establish Embassy
+
+```typescript
+const createEmbassy = api.diplomatic.createEmbassy.useMutation({
+  onSuccess: () => utils.diplomatic.getEmbassies.invalidate()
+});
+createEmbassy.mutate({
+  countryId: "clx...", targetCountryId: "clx9b...", ambassadorName: "Ambassador Jane Smith",
+  staffCount: 25, specialization: "trade", budget: 5000000
+});
+// Returns: { success, embassy: { id, status, relationshipBonus, monthlyMaintenance }, relationshipUpdate }
+```
+
+### economics.getProjections — Economic Projections
+
+```typescript
+const { data: projections } = api.economics.getProjections.useQuery({
+  countryId: "clx...", years: 5, includeScenarios: true
+});
+// Returns: { projections: Array<{ year, quarter, gdp, gdpGrowthRate, ... }>,
+//           scenarios: { optimistic, baseline, pessimistic } }
+```
+
+### thinkpages.createPost — Create Post
+
+```typescript
+const createPost = api.thinkpages.createPost.useMutation({
+  onSuccess: () => utils.thinkpages.getFeed.invalidate()
+});
+createPost.mutate({
+  accountId: "account_abc123", visibility: "public",
+  content: "Excited to announce our new trade agreement! #diplomacy #trade",
+  hashtags: ["diplomacy", "trade"], mentions: ["@RepublicOfTrade"]
+});
+// Returns: { success, post: { id, content, engagement, account } }
+```
+
+### users.getProfile — Current User Profile
+
+```typescript
+const { data: profile } = api.users.getProfile.useQuery();
+// Returns: { userId, countryId, country: { id, countryName, ... },
+//           role: { name, permissions }, preferences: { theme, language, ... } }
+// Unauthenticated: { userId: null, countryId: null, hasCompletedSetup: false }
+```
+
+### achievements.getByCountry — Country Achievements
+
+```typescript
+const { data } = api.achievements.getByCountry.useQuery({ countryId: "clx...", includeProgress: true });
+// Returns: { unlocked: Array<Achievement>, inProgress: Array<{ progress: { current, target, percentage } }>,
+//           locked: Array<Achievement>, statistics: { totalUnlocked, totalPoints, rank } }
+```
+
+### admin.getSystemStatus — System Status (Admin Only)
+
+```typescript
+const { data: status } = api.admin.getSystemStatus.useQuery();
+// Returns: { system: { version, uptime, ixTime }, database: { status, connectionPool },
+//           statistics: { totalCountries, activeUsers, ... }, apiHealth, externalServices }
+```
+
+### Best Practices
+
+**Query Invalidation**: After mutations, invalidate related queries:
+```typescript
+utils.countries.getById.invalidate({ id: data.country.id });
+utils.countries.invalidate();
+utils.mycountry.getDashboardData.invalidate();
+```
+
+**Optimistic Updates**: Update UI before server response, rollback on error:
+```typescript
+const updateCountry = api.countries.updateCountry.useMutation({
+  onMutate: async (newData) => {
+    await utils.countries.getById.cancel({ id: newData.id });
+    const previousData = utils.countries.getById.getData({ id: newData.id });
+    utils.countries.getById.setData({ id: newData.id }, (old) => ({ ...old, ...newData }));
+    return { previousData };
+  },
+  onError: (err, newData, context) => {
+    utils.countries.getById.setData({ id: newData.id }, context.previousData);
+  },
+  onSettled: (data, error, variables) => {
+    utils.countries.getById.invalidate({ id: variables.id });
+  }
+});
+```
+
+**Pagination**: Use offset-based pagination:
+```typescript
+const [page, setPage] = useState(0);
+const { data } = api.countries.getAll.useQuery({ limit: 20, offset: page * 20 });
+// Next page: if (data?.hasMore) setPage(page + 1)
+```
+
+**Type Safety**: Use TypeScript inference:
+```typescript
+import { type RouterInputs, type RouterOutputs } from "~/lib/trpc";
+type CreateCountryInput = RouterInputs["countries"]["createCountry"];
+type Country = RouterOutputs["countries"]["getById"];
+```
+
+### Rate Limiting
+
+| Endpoint Type | Rate Limit |
+|---------------|-----------|
+| Public endpoints | 100 requests/minute |
+| Protected endpoints | 60 requests/minute |
+| Mutations | 30 requests/minute |
+| Admin endpoints | 30 requests/minute |
+
+Rate limit headers included in all responses: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+
+### Error Handling Pattern
+
+```typescript
+const mutation = api.countries.createCountry.useMutation({
+  onError: (error) => {
+    switch (error.data?.code) {
+      case "BAD_REQUEST": toast.error(error.message); break;
+      case "UNAUTHORIZED": toast.error("Please sign in"); router.push("/sign-in"); break;
+      case "FORBIDDEN": toast.error("Insufficient permissions"); break;
+      case "TOO_MANY_REQUESTS": toast.error("Rate limit exceeded, please wait"); break;
+      case "INTERNAL_SERVER_ERROR": toast.error("Server error, try again later"); break;
+      default: toast.error(error.message || "An error occurred");
+    }
+  }
+});

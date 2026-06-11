@@ -1,8 +1,8 @@
 # Backend Architecture
 
-**Last updated:** February 2026
+**Last updated:** June 2026
 
-IxStates (IxStats) uses tRPC 11.4 to expose a fully typed API layer with **61 routers** and **927 procedures**. Routers live in `src/server/api/routers`, while shared infrastructure is defined in `src/server/api/trpc.ts` and supporting libraries under `src/lib`.
+IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **83 routers** and **1,432 endpoints**. Routers live in `src/server/api/routers`, while shared infrastructure is defined in `src/server/api/trpc.ts` and supporting libraries under `src/lib`.
 
 ## Context & Middleware
 - **Auth Context** – `createTRPCContext` loads Clerk sessions (via `@clerk/nextjs/server`) and auto-provisions users into the database when needed.
@@ -45,6 +45,6 @@ IxStates (IxStats) uses tRPC 11.4 to expose a fully typed API layer with **61 ro
 ## Testing & Audits
 - Jest-based router tests live under `src/server/api/routers/__tests__` (e.g., `diplomaticIntelligence.test.ts`).
 - Automation scripts in `scripts/audit` validate CRUD coverage, endpoint wiring, and economic formula correctness.
-- Use `npm run audit:wiring` and `npm run test:critical` before deployments.
+- Use `bun run audit:wiring` and `bun run test:critical` before deployments.
 
 Maintain this guide when introducing new middleware, authentication layers, or API consumption patterns.

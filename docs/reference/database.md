@@ -1,9 +1,9 @@
 # Database Reference Snapshot
 
-**Last updated:** May 2026
+**Last updated:** June 2026
 
-Prisma schema: `prisma/schema.prisma`
-Models: **236**
+Prisma schema: `prisma/schema/*.prisma` (14 files)
+Models: **272**
 
 ## Domain Groupings
 | Domain | Representative Models |

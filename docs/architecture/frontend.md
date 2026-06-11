@@ -1,8 +1,8 @@
 # Frontend Architecture
 
-**Last updated:** February 2026
+**Last updated:** June 2026
 
-The frontend is built entirely on the Next.js 16.1.3 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (645+ components, 124 page routes).
+The frontend is built entirely on the Next.js 16.2.9 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (893+ components, 187 page routes).
 
 ## Layout Composition
 - **App Router** – Each route folder contains `page.tsx`, optional `layout.tsx`, and feature-specific components. The root layout lives at `src/app/layout.tsx`.
@@ -10,7 +10,7 @@ The frontend is built entirely on the Next.js 16.1.3 App Router. Client and serv
 - **Dynamic segments** – Features such as countries, settings, and wiki content use nested routes in `src/app/countries`, `src/app/settings`, and `src/app/wiki`.
 
 ## Component Layers
-- **Design System (`src/components/ui`)** – Buttons, cards, dialogs, badges, and Apple-style carousel components that power the "glass physics" theme.
+- **Design System (`src/components/ui`)** – Buttons, cards, dialogs, badges, and Apple-style carousel components that power the **Facet** (glass/refraction) theme.
 - **Domain Widgets (`src/components/*`)** – Intelligence dashboards, diplomatic feeds, economic charts, and compliance modals. Components are grouped by domain to encourage reuse.
 - **Feature Shells (`src/app/**/components`)** – Lightweight wrappers that stitch together UI primitives and data hooks for specific pages.
 
@@ -88,7 +88,7 @@ Major sections use a client-side routing pattern for instant, SPA-like navigatio
 
 ## Hooks Library
 
-80 custom hooks in `src/hooks/` organized by domain:
+107+ custom hooks in `src/hooks/` organized by domain:
 - **Builder/Sync**: `useAtomicEconomicBuilder`, `useBuilderAutoSync`, `useGovernmentAutoSync`, `useTaxSystemAutoSync`
 - **Data**: `useEconomicComponentsData`, `useGovernmentComponentsData`, `useEconomyData`, `useFiscalData`
 - **Flags**: `useFlag`, `useSimpleFlag`, `useUnifiedFlags`, `useCountryFlags`, `useBulkFlagCache`
@@ -99,7 +99,7 @@ Major sections use a client-side routing pattern for instant, SPA-like navigatio
 
 ## Styling & Theming
 - Tailwind CSS 4 with `prettier-plugin-tailwindcss` ensures consistent class ordering.
-- **Glass Physics & Depth**: Dark/light mode friendly gradients, blur, and depth levels are implemented via utility classes and helper components.
+- **Facet & Depth**: Dark/light mode friendly gradients, blur, and depth levels are implemented via utility classes and helper components.
 - **GPU Acceleration**: High-performance rendering components utilize `.force-gpu` promotion styles (`transform: translate3d(0,0,0)` and `backface-visibility: hidden`) to promote glows and animated containers to independent hardware compositor layers, preventing browser micro-stuttering.
 - **Rack-Focus Transitions**: Layout shifts and visual swapping jumps are resolved using a custom two-stage animation state machine (`hidden` -> `blurring` -> `focusing` -> `visible`) that fades/blurs out active data, swaps content while fully hidden, and then focuses/scales the new text back into view.
 - **Page Loading Blurs**: App page load states employ custom layout wrappers that apply standard CSS filters (`filter: blur(10px)`) to blur children dynamically without breaking layout flow.
@@ -111,7 +111,7 @@ Major sections use a client-side routing pattern for instant, SPA-like navigatio
 - **Server Components** – Data-heavy sections such as leaderboards and dashboard cards leverage server components for hydration efficiency when feasible.
 
 ## Performance Considerations
-- Webpack dev server (`npm run dev`) - Turbopack disabled for memory stability.
+- Turbopack dev server (`bun run dev`) — Next.js 16 defaults to Turbopack.
 - Lazy loading via dynamic imports for large visualisations and modals.
 - Shared chart utilities (`src/lib/chart-utils.ts`) to standardise formatting and avoid duplicate logic.
 

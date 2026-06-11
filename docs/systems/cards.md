@@ -250,7 +250,7 @@ async function importNSCollection(userId: string, nsNation: string) {
 ### SPECIAL Cards (Event/Limited Editions)
 
 **Event Cards:**
-- Platform milestones ("IxStats v2.0 Launch")
+- Platform milestones ("IxStates 1.0 Ogma Launch")
 - User milestones ("100K Users")
 - Seasonal holidays (limited time)
 - Anniversary editions
@@ -815,10 +815,132 @@ enum AcquireMethod {
 }
 ```
 
+## Card Packs
+
+> Merged from `docs/systems/card-packs.md` (pack acquisition and opening mechanics). Date: June 2026.
+
+Card packs are the primary method for acquiring new cards. Players purchase packs with IxCredits, open them through a cinematic reveal sequence, and receive randomized cards based on rarity distribution mechanics.
+
+### Pack Types
+
+#### Basic Pack (15 IxC)
+Standard entry-level pack — 5 cards with standard odds: Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9%, Legendary 0.1%.
+
+#### Premium Pack (35 IxC)
+Improved odds — 5 cards: Common 50%, Uncommon 30%, Rare 15%, Ultra Rare 3.5%, Epic 1.3%, Legendary 0.2%.
+
+#### Elite Pack (75 IxC)
+Guaranteed Rare+ — 5 cards: Common 30%, Uncommon 35%, Rare 25%, Ultra Rare 7%, Epic 2.5%, Legendary 0.5%. At least 1 Rare or better guaranteed.
+
+#### Themed Packs (50 IxC)
+Region, era, or type-specific card pools (e.g., "Sarpedon Regional Pack"). Standard odds with a theme filter applied.
+
+#### Seasonal Packs (60 IxC)
+Time-limited releases with enhanced odds and purchase limits (e.g., max 10 per user).
+
+#### Event Packs (100 IxC)
+Limited quantity exclusives (e.g., only 1,000 available, max 3 per user).
+
+### Pack Opening Flow
+
+The pack opening experience consists of 4 stages:
+
+1. **Pack Reveal (1.5s)** — Pack appears with pulsing glow, "Tap to Open" prompt
+2. **Pack Explosion (0.8s)** — Particle effects, pack model shatters, cards fly into view
+3. **Card Reveal (0.8s per card)** — Cards flip one-by-one with rarity-specific sound effects
+4. **Quick Actions** — Junk/Keep/List buttons, collection stats update, bonus credits notification
+
+### Bonus Mechanics
+
+- **Lucky Pack**: 10% chance when opening any pack, awards 5-50 bonus IxC
+- **First Pack of Day**: +2 IxC for opening first pack each day
+- **Weekly Streak**: Open 10 packs in 1 week for +25 IxC bonus
+
+### Purchase Validation
+
+Before purchase, the system validates:
+- Pack is available (not deactivated)
+- Pack has not expired
+- User hasn't exceeded purchase limit
+- Pack hasn't sold out (limited quantity)
+- User has sufficient IxCredits balance
+
+### Anti-Duplicate Logic
+
+Within a single pack, no duplicate cards are generated. After 10 retry attempts, the system falls back to allow duplicates if no unique card can be found.
+
+### Admin Pack Operations
+
+- `createPack` — Create new pack with validated odds (must sum to 100%)
+- `updatePack` — Toggle availability
+- `deactivatePack` — Deactivate pack
+- Pack analytics: total purchased, opened, unopened, revenue
+
+### Pack DB Schema
+
+```prisma
+model CardPack {
+  id              String      @id @default(cuid())
+  name            String
+  cardCount       Int         @default(5)
+  packType        PackType    // BASIC, PREMIUM, ELITE, THEMED, SEASONAL, EVENT
+  priceCredits    Float
+  commonOdds      Float       @default(65)
+  uncommonOdds    Float       @default(25)
+  rareOdds        Float       @default(7)
+  ultraRareOdds   Float       @default(2)
+  epicOdds        Float       @default(0.9)
+  legendaryOdds   Float       @default(0.1)
+  season          Int?
+  cardType        CardType?
+  themeFilter     Json?
+  isAvailable     Boolean     @default(true)
+  limitedQuantity Int?
+  purchaseLimit   Int?
+  expiresAt       DateTime?
+  owners          UserPack[]
+  @@map("card_packs")
+}
+```
+
+## Phase 1 Implementation Status
+
+> Merged from `docs/development/ixcards-phase1.md` (Phase 1 foundation deliverables). Date: November 2025. Status: Complete.
+
+### Completed Deliverables
+
+- Database schema design (9 models: MyVault, Card, CardPack, CardOwnership, VaultTransaction, UserPack, CardCollection, CardAuction, CardTrade)
+- Service layer architecture (VaultService, CardService, PackService, NSIntegrationService)
+- tRPC API design (23 endpoints across 4 routers: vault 7, cards 6, cardPacks 7, nsIntegration 3)
+- Comprehensive documentation (4 system docs: myvault, cards, card-packs, ns-integration)
+- API reference documentation
+- Integration point specifications (MyCountry Dashboard, Diplomacy, Economy, Intelligence, Achievements, ThinkPages, Profile)
+
+### Integration Points Specified
+
+**MyCountry Dashboard**: New MyVault navigation card, IxCredits balance display, quick actions (Open Pack, Visit Market).
+
+**Diplomacy System**: Mission completion rewards (3-15 IxC), embassy partner card trading, diplomatic event rewards.
+
+**Economy System**: Nation performance → card value correlation, budget allocation → vault income multiplier, GDP metrics → card stat calculations.
+
+**Achievement System**: Dual rewards (badges + IxCredits), special card rewards for milestones, collection completion achievements.
+
+### Key Features Designed
+
+**IxCredits Economy**: Passive nation income (GDP-based), active gameplay rewards, card activities, social engagement. Spending sinks: card packs (15-200 IxC), market fees, enhancements, boosts, cosmetics.
+
+**Card Types**: NATION (auto-generated from IxStats nations, dynamic stats), LORE (from IxWiki/IIWiki), NS_IMPORT (from NationStates card dump), SPECIAL (events, milestones, community).
+
+**Pack Mechanics**: Basic/Premium/Elite/Themed/Seasonal/Event packs with configurable rarity odds.
+
+### Next Phase (Phase 2)
+
+Backend implementation: database migration, service layer implementation, tRPC router implementation, NS API client setup, frontend components (MyVault dashboard, card display, pack opening, MyCards inventory).
+
 ## See Also
 
 - [MyVault System](./myvault.md) - IxCredits economy and earning mechanics (both part of IxVault)
-- [Card Packs System](./card-packs.md) - Pack types and opening mechanics
 - [NationStates Integration](./ns-integration.md) - NS card import and sync
 - [API Reference](../reference/api-complete.md#cards-router) - Complete endpoint documentation
 - [Database Reference](../reference/database.md) - Full schema documentation

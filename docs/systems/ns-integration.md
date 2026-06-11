@@ -67,7 +67,7 @@ async function syncNSCards(season: number) {
   const dumpUrl = `https://www.nationstates.net/pages/cardlist_S${season}.xml.gz`;
   const response = await fetch(dumpUrl, {
     headers: {
-      'User-Agent': 'IxStats Card System (https://ixstats.com, contact@ixstats.com)'
+      'User-Agent': 'IxStats Card System (https://ixwiki.com, contact@ixwiki.com)'
     }
   });
 
@@ -201,7 +201,7 @@ async function verifyNSOwnership(
 
   const response = await fetch(apiUrl.toString(), {
     headers: {
-      'User-Agent': 'IxStats Card System (https://ixstats.com, contact@ixstats.com)'
+      'User-Agent': 'IxStats Card System (https://ixwiki.com, contact@ixwiki.com)'
     }
   });
 
@@ -262,7 +262,7 @@ async function fetchNSDeck(nation: string): Promise<NSCardDeck> {
 
   const response = await fetch(apiUrl.toString(), {
     headers: {
-      'User-Agent': 'IxStats Card System (https://ixstats.com, contact@ixstats.com)'
+      'User-Agent': 'IxStats Card System (https://ixwiki.com, contact@ixwiki.com)'
     }
   });
 

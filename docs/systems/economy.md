@@ -21,11 +21,11 @@ The economy pillar models GDP, income, labor, trade, projections, and economic t
 ## Calculations & Helpers
 - `src/lib/chart-utils.ts` – Currency/population formatting helpers
 - `src/lib/economy-calculations.ts` (and related utilities) – Growth curves, tier thresholds, resilience indices
-- Scripts: `npm run test:economics`, `scripts/audit/verify-economic-calculations.ts`
+- Scripts: `scripts/audit/verify-economic-calculations.ts`
 
 ## Data Models
 - Prisma tables for `EconomicHistory`, `EconomicProjection`, `EconomicIndicator`, `LaborMetric`, `TradeBalance`, `TaxPolicy`
-- Historical data extends back to Jan 2028 via seed scripts
+- Historical data extends back to Jan 2025 via seed scripts
 
 ## Integration Points
 - Builder flows populate baseline GDP, growth, and tier settings

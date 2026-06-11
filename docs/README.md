@@ -49,7 +49,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/national-issues.md`](systems/national-issues.md) – National issues engine and consequences
 - [`systems/forum.md`](systems/forum.md) – XenForo forum integration and widget embedding
 - [`systems/maps.md`](systems/maps.md) – IxWorld interactive map, MapLibre GL JS, procedural world generation, border editor
-- [`systems/dynamic-island.md`](systems/dynamic-island.md) – Dynamic Island plugin-driven system architecture, registry, and custom layouts (Core System)
+- [`systems/dynamic-island.md`](systems/dynamic-island.md) – **Halo** (formerly Dynamic Island) plugin-driven system architecture, registry, and custom layouts (Core System)
 
 ### Operations
 - [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
@@ -67,6 +67,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`reference/api-examples.md`](reference/api-examples.md) – tRPC API usage examples
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
 - [`reference/branding.md`](reference/branding.md) – complete brand catalog: all systems, icons, colors, and visual identity tokens
+- [`./reference/revision.md`](./reference/revision.md) – **Versioning & Release Architecture**: platform (`Major.Minor.Patch` + epoch release name + channel), Apps/Engines/Systems single-integer versions, the Version Registry (`src/lib/buildVersion.ts`), schema/API/build versioning
 - [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
 - [`reference/edge-cases.md`](reference/edge-cases.md) – edge case handling and error scenarios
 - [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) – government component synergy system and interaction patterns
@@ -120,4 +121,4 @@ Completed implementation docs, audit reports, and historical documentation are p
 4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
 5. Keep root directory clean—only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS).
 
-The documentation was last refreshed May 2026 (v2.1). Treat the structure as the source of truth going forward.
+The documentation was last refreshed June 2026 (**IxStates 1.0 "Ogma"**). Treat the structure as the source of truth going forward. Version info comes from the [Version Registry](../src/lib/buildVersion.ts); see the [Versioning & Release Architecture](./reference/revision.md).

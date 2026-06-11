@@ -1,7 +1,7 @@
 # Production Deployment Checklist
 
-**Last Updated:** October 22, 2025
-**Version:** v1.2.0
+**Last Updated:** June 2026
+**Version:** IxStates 1.0 "Ogma"
 
 Complete checklist for deploying IxStats to production. Follow these steps to ensure a safe, successful deployment.
 
@@ -72,19 +72,19 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 - [ ] **On correct branch**
   ```bash
   git branch
-  # Should show: * main (or production)
+  # Should show: * v2
   ```
 
 - [ ] **Latest changes pulled**
   ```bash
-  git pull origin main
-  # Should show: "Already up to date"
+git pull origin v2
+# Should show: "Already up to date"
   ```
 
 - [ ] **Create release tag**
   ```bash
-  git tag -a v1.2.0 -m "Release v1.2.0"
-  git push origin v1.2.0
+git tag -a v1.0.0 -m "Release IxStates 1.0"
+git push origin v1.0.0
   ```
 
 ### Backups
@@ -110,8 +110,8 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 - [ ] **Previous deployment code archived**
   ```bash
   # Tag current production deployment
-  git tag -a production-pre-v1.2.0 -m "Production before v1.2.0 deployment"
-  git push origin production-pre-v1.2.0
+git tag -a production-pre-v1.0.0 -m "Production before IxStates 1.0 deployment"
+git push origin production-pre-v1.0.0
   ```
 
 - [ ] **Backup retention verified**
@@ -172,7 +172,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Server requirements met:**
   - [ ] Node.js version: v18.17.0 or higher
-  - [ ] npm version: 9.0.0 or higher
+  - [ ] bun version: 1.0.0 or higher
   - [ ] PostgreSQL version: 14+ (if using PostgreSQL)
   - [ ] Redis: 6.0+ (for rate limiting)
   - [ ] Disk space: 10GB+ available
@@ -180,7 +180,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Server dependencies installed:**
   - [ ] Node.js: `node --version`
-  - [ ] npm: `bun --version`
+  - [ ] bun: `bun --version`
   - [ ] PostgreSQL: `psql --version` (if applicable)
   - [ ] Redis: `redis-cli --version` (if applicable)
   - [ ] PM2: `pm2 --version` (if using PM2)
@@ -249,7 +249,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Migration status checked**
   ```bash
-  npx prisma migrate status
+  bunx prisma migrate status
   # Should show: "Database schema is up to date!"
   ```
 
@@ -261,12 +261,12 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Schema validated**
   ```bash
-  npx prisma validate
+  bunx prisma validate
   # Should show: "✓ The schema is valid"
   ```
 
 - [ ] **Database indexes created**
-  - Check schema.prisma for @@index directives
+  - Check prisma/schema/*.prisma for @@index directives
   - Verify indexes exist in database
   ```bash
   # PostgreSQL: List indexes
@@ -473,8 +473,8 @@ Choose your deployment method:
 - [ ] **Pull latest code**
   ```bash
   git fetch origin
-  git checkout main
-  git pull origin main
+  git checkout v2
+  git pull origin v2
   ```
 
 - [ ] **Install dependencies**
@@ -502,7 +502,7 @@ Choose your deployment method:
 - [ ] **Start new application**
   ```bash
   # PM2
-  pm2 start ecosystem.config.js
+  pm2 start ecosystem.config.cjs
   pm2 save
 
   # systemd
@@ -530,7 +530,7 @@ Choose your deployment method:
 
 - [ ] **Docker image built**
   ```bash
-  docker build -t ixstats:v1.2.0 .
+  docker build -t ixstats:latest .
   ```
 
 - [ ] **Environment variables configured**
@@ -652,7 +652,7 @@ Test all critical features:
 
 - [ ] **Lighthouse score acceptable**
   ```bash
-  npx lighthouse https://ixstats.com --view
+  bunx lighthouse https://ixstats.com --view
   # Performance: 70+
   # Accessibility: 90+
   # Best Practices: 80+
@@ -792,7 +792,7 @@ Immediately rollback if:
 
 - [ ] **Revert to previous version**
   ```bash
-  git checkout production-pre-v1.2.0
+  git checkout production-pre-v1.0.0
   # Or specific commit: git checkout <commit-hash>
   ```
 
@@ -817,7 +817,7 @@ Immediately rollback if:
 
 - [ ] **Restart application**
   ```bash
-  pm2 start ecosystem.config.js
+  pm2 start ecosystem.config.cjs
   # or
   docker-compose up -d
   ```
@@ -901,13 +901,12 @@ Use this checklist for every production deployment to ensure:
 
 ## Additional Resources
 
-- **Migration Guide:** [/docs/MIGRATION_v1.1_to_v1.2.md](/docs/MIGRATION_v1.1_to_v1.2.md)
 - **Troubleshooting:** [/docs/TROUBLESHOOTING_v1.2.md](/docs/TROUBLESHOOTING_v1.2.md)
 - **API Reference:** [/docs/reference/api-examples.md](/docs/reference/api-examples.md)
 - **Deployment Guide:** [/docs/operations/deployment.md](/docs/operations/deployment.md)
 
 ---
 
-**Last Updated:** October 22, 2025
-**Version:** v1.2.0
+**Last Updated:** June 2026
+**Version:** IxStates 1.0 "Ogma"
 **Maintainer:** IxStats Development Team

@@ -15,7 +15,7 @@ IxStates (IxStats) integrates a native XenForo forum experience via server-side 
 | Account linking | Clerk users link to XenForo accounts via IxnayID |
 | Thread & post CRUD | Create threads, reply, edit, delete — all proxied through XenForo |
 | Forum search | Full-text search across threads and posts |
-| LoreStash bookmarks | Stash forum threads using the shared LoreStash system |
+| Stash bookmarks | Stash forum threads using the shared Stash system |
 | Conversation system | Private messages routed through ThinkShare (unified messaging) |
 | Widget embeds | Embeddable forum cards for user profiles |
 
@@ -104,8 +104,8 @@ IxStates (IxStats) integrates a native XenForo forum experience via server-side 
 ### Stash Endpoints (Protected)
 | Procedure | Type | Description |
 | --- | --- | --- |
-| `stashThread` | mutation | Bookmark a thread to LoreStash |
-| `unstashThread` | mutation | Remove a thread from LoreStash |
+| `stashThread` | mutation | Bookmark a thread to Stash |
+| `unstashThread` | mutation | Remove a thread from Stash |
 | `isThreadStashed` | query | Check if a thread is bookmarked |
 | `getStashedThreads` | query | List all bookmarked threads |
 

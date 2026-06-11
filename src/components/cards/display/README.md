@@ -1,12 +1,12 @@
 # Card Display Components
 
-Premium trading card display components with glass physics integration for the IxCards system.
+Premium trading card display components with Facet (glass) integration for the IxCards system.
 
 ## Overview
 
 This directory contains all card display components built for Phase 1 of the IxCards implementation. These components feature:
 
-- **Glass Physics Integration**: All components follow the IxStats glass physics depth hierarchy
+- **Facet Integration**: All components follow the IxStats Facet (glass) depth hierarchy
 - **3D Effects**: Holographic parallax and mouse-tracked tilt effects
 - **Rarity System**: Color-coded displays with glow effects for 6 rarity tiers
 - **Performance**: GPU-accelerated animations, lazy loading, React.memo optimization
@@ -260,9 +260,9 @@ TypeScript type definitions.
 - Rare+: Shimmer animation
 - Legendary: Rainbow pulse animation
 
-## Glass Physics Integration
+## Facet Integration
 
-All components use the IxStats glass physics hierarchy:
+All components use the IxStats Facet (glass) hierarchy:
 
 - **CardDisplay**: `glass-hierarchy-child` (cards)
 - **CardGrid skeletons**: `glass-hierarchy-child` (loading states)
@@ -376,7 +376,7 @@ src/types/
 
 - Card data structure defined in `/prisma/schema.prisma`
 - Existing card APIs in `/src/server/api/routers/cards.ts`
-- Glass physics classes defined in Tailwind config
+- Facet (glass) classes defined in Tailwind config
 - All animations respect `prefers-reduced-motion`
 
 ## Next Steps (Other Agents)

@@ -1,14 +1,16 @@
-# Dynamic Island Plugin System
+# Halo Plugin System
 
-**Hierarchy:** Dynamic Island is a Core System within IxStates (IxStats) (global UI overlay with plugin architecture). Note: Rebrand TBD.
+> **Naming:** **Halo** is the UI/Feature System formerly called "Dynamic Island". The code identifiers keep the `DI` / `DynamicIsland` prefix (directory `src/components/DynamicIsland/`, hooks `useDIPlugin`, types `DIPlugin`/`DIAction`/`DIBadge`) pending a separate mechanical rename.
 
-The Dynamic Island (DI) is the central, interactive user interface element for the IxStates (IxStats) platform. To support multiple application contexts (such as WikiOS, Forums, and MyCountry) without bloating the core DI codebase with path-specific conditional checks, the system implements a **plugin-driven architecture**.
+**Hierarchy:** Halo is a Core System within IxStates (IxStats) — a global UI overlay with plugin architecture (independently versioned: `HALO_VERSION` in the Version Registry).
+
+Halo (code-prefixed `DI`) is the central, interactive user interface element for the IxStates (IxStats) platform. To support multiple application contexts (such as WikiOS, Forums, and MyCountry) without bloating the core codebase with path-specific conditional checks, the system implements a **plugin-driven architecture**.
 
 ---
 
 ## Architecture Overview
 
-Instead of checking the current pathname or using hardcoded switches internally, the Dynamic Island reads its layout, actions, expanded views, and custom styling from a centralized plugin context. Pages or layouts register their plugins on mount, and the DI dynamically resolves to the active plugin with the highest priority.
+Instead of checking the current pathname or using hardcoded switches internally, the Halo reads its layout, actions, expanded views, and custom styling from a centralized plugin context. Pages or layouts register their plugins on mount, and the DI dynamically resolves to the active plugin with the highest priority.
 
 ```mermaid
 graph TD
@@ -23,7 +25,7 @@ graph TD
         Registry -- Resolves active plugin --> ActiveHook[useActiveDIPlugin]
     end
 
-    subgraph Dynamic Island UI
+    subgraph Halo UI
         ActiveHook --> CompactView[CompactView]
         ActiveHook --> ExpandedView[ExpandedView]
     end
@@ -85,7 +87,7 @@ The DI plugin state is managed in [plugin-context.tsx](file:///ixwiki/public/pro
 
 ### 1. Registration
 
-Any page or layout can hook into the Dynamic Island using the `useDIPlugin` hook.
+Any page or layout can hook into the Halo using the `useDIPlugin` hook.
 
 ```typescript
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
@@ -107,7 +109,7 @@ export function MyPageLayout({ children }) {
 
 ### 2. Active Plugin Resolution
 
-The `useActiveDIPlugin` hook retrieves all registered plugins and selects the one with the highest `priority`. If multiple plugins are active, the highest priority plugin wins. If no plugin is registered, the Dynamic Island falls back to the default platform state (clock, greeting popover, and standard search).
+The `useActiveDIPlugin` hook retrieves all registered plugins and selects the one with the highest `priority`. If multiple plugins are active, the highest priority plugin wins. If no plugin is registered, the Halo falls back to the default platform state (clock, greeting popover, and standard search).
 
 ---
 

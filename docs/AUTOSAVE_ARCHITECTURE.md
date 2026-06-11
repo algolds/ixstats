@@ -733,7 +733,7 @@ export const newSectionRouter = createTRPCRouter({
 #### Step 2: Create Autosave Hook
 
 ```typescript
-// src/hooks/useNewSectionAutoSync.ts
+// Example: src/hooks/use[SectionName]AutoSync.ts
 import { useEffect, useState, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
 
@@ -846,7 +846,7 @@ export function useNewSectionAutoSync(
 #### Step 3: Integrate into Component
 
 ```typescript
-// src/app/builder/components/NewSectionBuilder.tsx
+// Example: src/app/builder/components/[SectionName]Builder.tsx
 "use client";
 
 import { useState } from "react";
@@ -907,7 +907,7 @@ export function NewSectionBuilder({ countryId, mode }: { countryId?: string; mod
 #### Step 4: Add Database Model
 
 ```prisma
-// prisma/schema.prisma
+// prisma/schema/ (schema is split across multiple .prisma files)
 model NewSection {
   id         String   @id @default(cuid())
   countryId  String   @unique
@@ -929,7 +929,8 @@ model Country {
 }
 ```
 
-Then run: `npm run db:generate && npm run db:push`
+Then generate types and apply migration:
+`bun run db:generate`
 
 #### Step 5: Testing Checklist
 
@@ -1286,7 +1287,7 @@ await ctx.db.auditLog.create({
 5. Check for database constraints failing silently
 
 **Common causes**:
-- Database migration not applied (`npm run db:push`)
+- Database migration not applied (`bun run db:generate`)
 - Unique constraint violation (silent failure in some setups)
 - Foreign key cascade delete removing data
 - Cache showing stale data (clear query cache)
@@ -1858,3 +1859,126 @@ console.log(JSON.stringify({
 - `/docs/reference/api-complete.md` - Complete tRPC API reference
 - `/docs/systems/database.md` - Database schema documentation
 - `/docs/RATE_LIMITING_GUIDE.md` - Rate limiting configuration
+
+---
+
+## User Guide (End-User Facing)
+
+> Merged from `docs/USER_GUIDE_AUTOSAVE.md`. Date: June 2026.
+> Covers save behavior, visual indicators, offline mode, conflict resolution, and troubleshooting from the user's perspective.
+
+### What is Autosave?
+
+Autosave is an intelligent data protection system that automatically saves your progress while building your nation. It monitors changes across all builder sections (National Identity, Government, Tax System, Economy) and waits 15 seconds after you stop typing before triggering a save. You can also click the "Save Progress" button at any time for immediate persistence.
+
+**What Data is Saved**: All builder sections — national identity (names, symbols, culture, geography), government structure (components, departments, budgets), tax system (brackets, rates, deductions), and economic configuration (sectors, demographics, labor market).
+
+### Visual Indicators
+
+The autosave system provides real-time feedback via status messages in the builder header:
+
+| Status | Meaning |
+|--------|---------|
+| "Saving..." | Actively writing data to database |
+| "Last saved at [timestamp]" | Save confirmed with precise time |
+| "Save failed" | Error encountered; automatic retry in progress |
+| "Unsaved changes" | Edits made but not yet persisted (debounce pending) |
+
+**Color coding**: Blue/Gray (normal), Yellow (saving), Green (success with checkmark animation), Red (failed).
+
+**Checkmark animation**: Green checkmark fades in over 300ms on success, remains 3 seconds, then fades out.
+
+### Manual "Save Progress" Button
+
+Located prominently in the builder header. Bypasses the 15-second debounce delay. Use before navigating away, after critical changes, on slow connections, before browser refresh, or after completing major sections.
+
+### Edit Mode Data Loading
+
+When returning to edit an existing country, autosave automatically loads previously saved data: detects edit mode via country ID, fetches most recent data from database, hydrates all form fields with saved values, and displays the last save timestamp.
+
+### Offline Mode & localStorage Fallback
+
+When network saves fail, data is automatically saved to browser localStorage:
+
+1. **Detection**: Monitors network requests; triggers offline fallback on failure
+2. **Backup**: Complete builder state saved to localStorage immediately
+3. **Status**: "Saved locally (pending sync)" with yellow warning icon
+4. **Sync on Reconnect**: Automatically uploads localStorage data to database when connection restores; status updates to "Synced successfully"
+
+localStorage capacity is 5-10MB (builder data typically <500KB), surviving browser refresh, close, and reopen. Works for short outages (<5 min, no user action needed), medium (5-30 min, consider backups), and long outages (>30 min, data persists indefinitely offline).
+
+### Conflict Resolution
+
+Autosave handles multi-tab/multi-device editing with a **last-write-wins** strategy:
+
+- **Minor conflicts** (small differences): Handled silently; latest timestamp wins
+- **Major conflicts** (significant differences): Toast notification with resolution dialog offering "Keep My Changes" or "Load Latest Version"
+- **Tab coordination**: Browser tabs communicate via localStorage events; save notifications propagate across tabs
+
+**Best practices**: Edit from one tab/device at a time, close unused builder tabs, use manual save before switching devices, and wait for "Last saved at..." confirmation before switching.
+
+### Error Handling & Automatic Retry
+
+Failed saves trigger exponential backoff retry: 2s, 4s, 8s (max 3 attempts). Status shows "Retrying save... (attempt N of 3)". If all retries fail, the system alerts the user.
+
+**Common error causes**: Network timeout, server error (500/503), authentication expired (Clerk session), database lock, validation error, rate limiting.
+
+**Data safety during errors**: Changes remain in React state, localStorage backup preserves data, you can continue editing while retries happen, and the manual save button is always available.
+
+### Autosave History Panel
+
+Access via "Autosave History" button in builder header. Features:
+- Chronological list of all saves (up to 90 days retention)
+- Time and section filters
+- Side-by-side version comparison (before/after diffs)
+- Version restoration (overwrites current data with historical snapshot)
+- Entry details: timestamp, section, fields changed, save type, status, duration, data size
+
+**Retention**: 90 days for all autosaves; current country data is permanent.
+
+### Best Practices
+
+- Develop a habit of clicking "Save Progress" before major browser actions
+- Wait for "Last saved at..." before closing tabs or switching devices
+- Use manual saves for critical/config checkpoints
+- During long editing sessions, save manually every 15-20 minutes
+- Edit from one tab/device at a time
+
+### Browser Compatibility
+
+Fully supported: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+, Brave 1.25+, Opera 76+. Requires JavaScript enabled, localStorage available, cookies for Clerk authentication. Unsupported: IE11, legacy Edge (EdgeHTML), Opera Mini.
+
+### FAQ
+
+**How often does autosave happen?** 15 seconds after you stop making changes (debounced). Manual save is immediate.
+
+**Can I disable autosave?** No — it's a core data protection feature. You can rely on manual saves exclusively while autosave runs as a safety net.
+
+**What if I lose internet connection?** Data saves to localStorage automatically. When connection restores, it syncs to database. Changes never lost during offline periods.
+
+**How long are autosaves kept?** 90 days in the database. Current country data is permanent. Manual saves follow the same retention.
+
+**Does autosave work across devices?** Yes — all autosaves are stored in the database and accessible from any device once logged in with the same Clerk account. Must refresh/reload to see changes from other devices.
+
+**What sections have autosave?** All four: National Identity, Government Structure, Tax System, Economic Configuration.
+
+**Can I undo autosaves?** Not via a direct undo button. Use the Autosave History panel to view and restore previous versions.
+
+### Data Privacy & Security
+
+- **Ownership**: All autosaves associated with your Clerk user account; only you can view/edit/restore
+- **Admin access**: Limited to audit/troubleshooting; all admin actions logged
+- **Encryption**: HTTPS (TLS 1.3) in transit; AES-256 at rest in PostgreSQL
+- **Audit logging**: Every save logged with userId, countryId, section, type, success/failure, IP, user agent. Retained 1 year.
+- **Rate limiting**: 10 autosaves/minute/user (Redis-based); manual saves 60/minute; 10 restores/hour
+- **GDPR/CCPA compliant**: Right to access, rectify, erase, and data portability
+
+### Troubleshooting (User-Focused)
+
+**"Save Failed" error**: Check internet connection → verify authentication status → check browser console (F12) for errors → retry manual save → check localStorage backup (F12 → Application → Local Storage) → try different section → refresh page → clear cache → try different browser → contact support.
+
+**Changes not persisting**: Verify "Last saved at..." appeared before leaving; close duplicate tabs; check for validation errors in console; hard refresh (Ctrl+Shift+R) to clear cache.
+
+**Manual save works but autosave doesn't**: Debounce timer may not be triggering — try different field types; use manual save as workaround; check for browser extensions interfering with timers.
+
+**Contact support**: Email support@ixwiki.com, Discord #ixstats-support, or GitHub issues. Include user ID, country ID, browser/OS, timestamp, section, error messages, console logs, and screenshots.

@@ -179,7 +179,7 @@ MyVault is the complete trading card management system for IxStats, providing pl
 - User context from `~/context/auth-context`
 
 ## Design System
-- **Glass Physics Hierarchy:**
+- **Facet Hierarchy:**
   - Parent: Sidebar, main containers
   - Child: Cards, stats boxes
   - Interactive: Modals, dropdowns
@@ -298,6 +298,6 @@ All pages have been created with placeholder integration points. When other agen
 - [ ] IxCredits balance displays correctly
 - [ ] Daily bonus claim works
 - [ ] Mobile responsive on all pages
-- [ ] Glass physics styling applied consistently
+- [ ] Facet styling applied consistently
 - [ ] Loading states display properly
 - [ ] Error boundaries catch errors gracefully

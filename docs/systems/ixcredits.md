@@ -293,3 +293,227 @@ Each transaction records: amount, balance after, type, source description, optio
 | useEarnCredits hook | `src/hooks/vault/useEarnCredits.ts` |
 | useDailyBonus hook | `src/hooks/vault/useDailyBonus.ts` |
 | useVaultStats hook | `src/hooks/vault/useVaultStats.ts` |
+
+---
+
+## Earning Architecture
+
+> Merged from `docs/EARNING_ARCHITECTURE.md`. Date: June 2026.
+> Architecture diagrams, data flow, hook architecture, error handling strategy, daily cap enforcement, passive income cron job spec, and monitoring/metrics.
+
+### System Architecture
+
+```
+                           IxStats Platform
+     ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+     │  Diplomacy   │  │ Achievements │  │   Social     │
+     │   System     │  │    System    │  │  Platform    │
+     └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+            └──────────────────┼──────────────────┘
+                               ▼
+                     ┌─────────────────┐
+                     │  Vault Service  │ ◄── Centralized earning logic
+                     └────────┬────────┘
+                              ▼
+                     ┌─────────────────┐
+                     │   PostgreSQL    │ ◄── Transaction logging
+                     └─────────────────┘
+```
+
+All earning flows through the centralized `vaultService.earnCredits()`. Client hooks (`useVaultBalance`, `useEarnCredits`, `useDailyBonus`) handle UI updates with optimistic rendering, toast notifications, and automatic cache invalidation.
+
+### Earning Sources Architecture
+
+| Category | Sources | Daily Cap |
+|----------|---------|-----------|
+| `EARN_ACTIVE` | Missions (3-15 IxC), Crisis Response (5 IxC), Achievements (10-100 IxC), Daily Bonus (1-7 IxC) | 100 IxC |
+| `EARN_SOCIAL` | Posts (1 IxC each, max 5/day), Replies (1 IxC each, max 5/day) | 50 IxC |
+| `EARN_PASSIVE` | Daily Dividend (GDP-based, once daily) | No cap |
+| `EARN_CARDS` | Card Activities (TBD) | TBD |
+
+### Transaction Lifecycle
+
+1. **Earning Request** → Source system calls `vaultService.earnCredits()` with userId, amount, type, source, metadata
+2. **Vault Service Processing** → Validates amount, checks auth, gets/creates vault, resets daily earnings if new day, checks daily cap
+3. **Database Transaction (Atomic)** → Updates MyVault (credits, lifetimeEarned, todayEarned, vaultXp) + creates VaultTransaction
+4. **Response** → Returns success, new balance, message
+5. **Client Update** → Invalidates cache, shows toast notification, updates UI
+
+### Hook Architecture
+
+- **`useVaultBalance`** — Query: `vault.getBalance`. Refetches every 30s, on window focus. Returns balance, todayEarned, lifetimeEarned, lifetimeSpent, vaultLevel, vaultXp, loginStreak.
+- **`useEarnCredits`** — Mutation: `vault.earnCredits`. Optimistic update on mutate, toast on success, rollback on error, cache invalidation on settled.
+- **`useDailyBonus`** — Mutation: `vault.claimDailyBonus`. Checks cooldown (server-side), updates streak, awards 1-7 IxC based on streak, toasts amount + streak.
+
+### Error Handling Strategy (Non-Blocking Pattern)
+
+```
+try {
+  const earnResult = await vaultService.earnCredits(...)
+  if (earnResult.success) creditsEarned = amount
+} catch (error) {
+  console.error("Earning failed:", error)
+  // DON'T rethrow - let main action complete
+}
+// Main action continues regardless of earning result
+```
+
+**Benefits**: Main actions never blocked by earning failures, graceful degradation (0 credits on error), errors logged for debugging.
+
+### Daily Cap Enforcement Flow
+
+1. Earn request → `vaultService.earnCredits()`
+2. Check type → `EARN_PASSIVE` skips cap check
+3. For `EARN_ACTIVE`/`EARN_SOCIAL`: Query today's transactions (userId + type + createdAt >= today), sum credits
+4. Calculate remaining: `cap - todayEarnings`
+5. Award `min(amount, remaining)` or return error "Daily cap reached"
+
+### Passive Income Distribution (Cron Job)
+
+Scheduled midnight UTC daily. Processes countries with active users in batches of 100.
+
+**Formula**:
+```
+baseRate = (GDP/capita / 10000) × tierMultiplier
+popBonus = (population / 1M) × 0.01
+growthBonus = (growth > 3%) ? baseRate × 0.1 : 0
+dailyDividend = baseRate + popBonus + growthBonus
+```
+
+Each country awarded via `vaultService.earnCredits(userId, dailyDividend, "EARN_PASSIVE", "DAILY_DIVIDEND", ...)`. Results logged: total processed, success/error count, total credits distributed, duration.
+
+### Security & Audit Trail
+
+Every VaultTransaction includes: vaultId, credits, balanceAfter, type, source, createdAt, and optional JSON metadata (e.g., `{ missionId, difficulty }`, `{ achievementId, rarity }`, `{ countryId, gdp }`). Enables detailed audit trails, analytics, anti-cheat detection, and user transaction history.
+
+### Performance Optimizations
+
+**Client-side**: Optimistic updates (instant UI), automatic refetch (30s interval), cache invalidation on mutations, stale time to reduce requests.
+**Server-side**: Prisma transactions (atomic), batch processing (cron efficiency), indexed queries (userId, createdAt, type), non-blocking errors.
+**Database**: Composite index on (userId, createdAt, type), count vs. full fetch for cap checks.
+
+### Monitoring & Analytics
+
+Key metrics: daily active earners, average earnings per user, daily cap hit rate, login streak distribution, total credits in circulation, daily credit creation rate, passive vs. active earning ratio, earning endpoint latency, cron job success rate, unusual earning patterns, cap bypass attempts.
+
+### Architecture Principles
+
+1. Centralization — All earning through vault service
+2. Auditability — Every transaction logged with metadata
+3. Non-Blocking — Earning failures never block main actions
+4. Cap Enforcement — Server-side daily limits
+5. Type Safety — TypeScript throughout
+6. Optimistic UI — Instant feedback for users
+7. Error Resilience — Graceful degradation
+8. Performance — Batch processing, caching, indexing
+
+---
+
+## Developer Quick Reference
+
+> Merged from `docs/EARNING_QUICK_REFERENCE.md`. Date: June 2026.
+> Copy-paste developer patterns for integrating IxCredits earning into new features.
+
+### Client-Side Usage (React Hooks)
+
+```typescript
+import { useVaultBalance, useEarnCredits, useDailyBonus } from '~/hooks/vault';
+
+// Display balance
+function BalanceDisplay() {
+  const { balance, todayEarned, vaultLevel } = useVaultBalance();
+  return <p>Balance: {balance.toLocaleString()} IxC | Today: +{todayEarned} | Level: {vaultLevel}</p>;
+}
+
+// Award credits for custom action
+function CustomAction() {
+  const { earn, isEarning } = useEarnCredits();
+  const handleAction = () => earn({
+    amount: 5, type: 'EARN_ACTIVE', source: 'CUSTOM_ACTION',
+    metadata: { actionId: '123', actionType: 'quest_complete' }
+  });
+  return <button onClick={handleAction} disabled={isEarning}>Complete (+5 IxC)</button>;
+}
+```
+
+### Server-Side Integration (tRPC Routers)
+
+```typescript
+import { vaultService } from "~/lib/vault-service";
+
+// Basic earning integration
+.mutation(async ({ ctx, input }) => {
+  const result = await doSomething(input);
+  let creditsEarned = 0;
+  if (ctx.auth?.userId) {
+    try {
+      const earnResult = await vaultService.earnCredits(
+        ctx.auth.userId, 10, "EARN_ACTIVE", "YOUR_SOURCE", ctx.db,
+        { actionId: input.id, actionType: "custom" }
+      );
+      if (earnResult.success) creditsEarned = 10;
+    } catch (error) {
+      console.error("[YourRouter] Failed to award credits:", error);
+    }
+  }
+  return { ...result, creditsEarned };
+})
+```
+
+### Common Patterns
+
+**Pattern 1: Simple Reward**
+```typescript
+let creditsEarned = 0;
+if (ctx.auth?.userId && actionSuccessful) {
+  try {
+    const earnResult = await vaultService.earnCredits(
+      ctx.auth.userId, amount, "EARN_ACTIVE", "ACTION_NAME", ctx.db, { actionId: id }
+    );
+    if (earnResult.success) creditsEarned = amount;
+  } catch (error) { console.error("[Router] Earning error:", error); }
+}
+```
+
+**Pattern 2: Daily Cap Enforcement**
+```typescript
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const countToday = await ctx.db.table.count({
+  where: { userId: ctx.auth.userId, createdAt: { gte: today } },
+});
+if (countToday <= MAX_PER_DAY) { /* award credits */ }
+```
+
+**Pattern 3: Difficulty-Based Rewards**
+```typescript
+const difficultyRewards: Record<string, number> = { easy: 3, medium: 5, hard: 10, expert: 15 };
+const reward = difficultyRewards[result.difficulty] || 5;
+```
+
+**Pattern 4: State Transition Reward**
+```typescript
+if (previousState === "pending" && newState === "completed") {
+  // Award credits for transitioning between specific states
+}
+```
+
+### Checklist for New Integrations
+
+- [ ] Import vault service: `import { vaultService } from "~/lib/vault-service"`
+- [ ] Determine transaction type: `EARN_ACTIVE`, `EARN_SOCIAL`, or `EARN_PASSIVE`
+- [ ] Wrap in try/catch — never throw errors from earning logic
+- [ ] Don't block main action on earning failure
+- [ ] Include metadata for audit trail: `{ actionId, actionType, ... }`
+- [ ] Return `creditsEarned` in response
+- [ ] Test daily caps — verify cap enforcement works
+- [ ] Verify audit trail — check VaultTransaction records
+
+### Troubleshooting
+
+**Credits not appearing in UI**: Check earning mutation success, cache invalidation (`utils.vault.getBalance.invalidate()`), user authentication.
+
+**Daily cap not working**: Verify correct transaction type (`EARN_ACTIVE` or `EARN_SOCIAL`), vault service auto-checks caps.
+
+**Earning blocking main action**: Wrap in try/catch; don't throw errors.
+
+**Transactions not logged**: Always use `vaultService.earnCredits()` — never create VaultTransaction records directly.

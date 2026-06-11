@@ -5,6 +5,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 ## Quick Links
 - **Project Overview** – [`docs/overview/platform.md`](overview/platform.md)
 - **Feature Map** – [`docs/overview/feature-map.md`](overview/feature-map.md)
+- **Versioning & Release Architecture** – [`revision.md`](reference/revision.md)
 - **API Reference** – [`docs/reference/api.md`](reference/api.md)
 - **Database Reference** – [`docs/reference/database.md`](reference/database.md)
 - **Environment Reference** – [`docs/operations/environments.md`](operations/environments.md)
@@ -74,7 +75,8 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | --- | --- |
 | [`reference/api.md`](reference/api.md) | Generated table of routers, procedures, input/output, and auth requirements |
 | [`reference/database.md`](reference/database.md) | Prisma models, relations, derived views, and data ownership |
-| [`reference/branding.md`](reference/branding.md) | Complete brand catalog: Integrated Products, Core Systems, and utilities, icons, colors, symbols, and visual identity tokens |
+| [`reference/branding.md`](reference/branding.md) | Complete brand catalog: Apps, Engines, UI/Feature Systems, Facet design system, utilities, icons, colors, symbols, and visual identity tokens |
+| [`revision.md`](reference/revision.md) | **Versioning & Release Architecture** — platform (`Major.Minor.Patch` + epoch release name + channel), Apps/Engines/Systems single-integer versions, the Version Registry (`src/lib/buildVersion.ts`), schema/API/build versioning |
 | [`reference/events.md`](reference/events.md) | WebSocket channels, notification payloads, cron/scheduled jobs |
 | [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) | Government component synergy system and interaction patterns |
 | [`ADMIN_ENDPOINT_SECURITY_MAP.md`](ADMIN_ENDPOINT_SECURITY_MAP.md) | Admin endpoint security mappings and authentication requirements |

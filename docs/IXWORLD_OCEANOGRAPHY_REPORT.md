@@ -921,6 +921,6 @@ Top 10 bilateral maritime trade corridors by estimated annual value:
 
 ---
 
-*This report was compiled using IxWorld climate simulation data (Trewartha classification), geographic survey coordinates, and economic modeling from IxStats v2. All distances computed via Haversine formula. Shipping times assume standard commercial vessel operations with weather routing. Current speeds derived from the IxWorld ocean circulation model with western boundary intensification.*
+*This report was compiled using IxWorld climate simulation data (Trewartha classification), geographic survey coordinates, and economic modeling from IxStates 1.0 Ogma. All distances computed via Haversine formula. Shipping times assume standard commercial vessel operations with weather routing. Current speeds derived from the IxWorld ocean circulation model with western boundary intensification.*
 
 *© IxWorld Bureau of Oceanographic Sciences, IxYear 2041*

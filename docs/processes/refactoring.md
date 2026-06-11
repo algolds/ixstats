@@ -922,7 +922,7 @@ Track these metrics before and after refactoring:
 - **Cyclomatic complexity**: <10 per function
 - **Number of hooks**: <8 in main component
 - **Test coverage**: >80% for business logic
-- **Bundle size**: Monitor with `npm run build`
+- **Bundle size**: Monitor with `bun run build`
 - **Re-render count**: Use React DevTools Profiler
 
 ### Qualitative Metrics
@@ -946,5 +946,3 @@ Remember: **Refactoring is an investment in long-term code health**. Take the ti
 - [React Performance Optimization](https://react.dev/learn/render-and-commit)
 - [TypeScript Best Practices](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html)
 - [Testing Library Documentation](https://testing-library.com/docs/react-testing-library/intro/)
-- IxStats Refactoring Summary: `REFACTORING_SUMMARY_OCT_2025.md`
-- IxStats Design System: `docs/DESIGN_SYSTEM.md`

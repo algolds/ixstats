@@ -1,24 +1,24 @@
 # Data Architecture
 
-**Last updated:** February 2026
+**Last updated:** June 2026
 
 IxStates (IxStats) stores structured gameplay data using Prisma 6.19. The schema models countries, economic indicators, diplomatic relationships, social content, achievements, notifications, cards/vault, elections, and operational logs.
 
 ## Schema Overview
-- Prisma schema lives at `prisma/schema.prisma`
-- 206 models span government, economic, diplomatic, social, notification, cards/vault, elections, national issues, forum, crafting/trading, and audit domains
+- Prisma schema is split across `prisma/schema/*.prisma` (14 files)
+- 272 models span government, economic, diplomatic, social, notification, cards/vault, elections, national issues, forum, crafting/trading, and audit domains
 - Enum duplication (e.g., `Priority`, `Category`) retains legacy casing for compatibility across services
 
 ## Database Targets
 - **Development** – PostgreSQL (`localhost:5433/ixstats`) for full feature parity with production
 - **Production** – PostgreSQL with PostGIS extension for geographic data
 - **Migration Note (October 2025)** – Migrated from SQLite to PostgreSQL for better performance and PostGIS support
-- Migrations applied via `prisma migrate deploy` or `npm run db:migrate`
+- Migrations applied via `prisma migrate deploy` or `bun run db:migrate:force` (db:migrate is BLOCKED by default for data safety)
 
 ## Data Lifecycle
 | Phase | Scripts & Locations |
 | --- | --- |
-| Generation | `npm run db:generate`, `npm run db:push`, `npm run db:init` |
+| Generation | `bun run db:generate`, `bun run db:push:force` (db:push is BLOCKED), `bun run db:init` |
 | Seeding | `scripts/setup/seed-db.ts`, domain-specific importers in `src/services` |
 | Backups | `scripts/setup/backup-db.ts`, stored under `prisma/` with timestamped filenames |
 | Restore | `scripts/setup/restore-db.ts` |
@@ -48,8 +48,8 @@ IxStates (IxStats) stores structured gameplay data using Prisma 6.19. The schema
 - `IXWIKI_API_URL`, `FLAG_SERVICE_URL` – External imports powering builder flows
 
 ## Tooling
-- Prisma Studio scripts (`npm run db:studio`, `npm run db:studio:prod`)
-- Audit scripts for economic correctness (`npm run test:economics`) and CRUD health (`npm run test:crud`)
+- Prisma Studio scripts (`bun run db:studio`, `bun run db:studio:prod`)
+- Audit scripts for economic correctness (`bun run test:economics`) and CRUD health (`bun run test:crud`)
 - Generated outputs (CSV/JSON) should be stored under `docs/reference` when used for documentation
 
 Update this reference whenever the schema evolves, new data domains appear, or database targets change.

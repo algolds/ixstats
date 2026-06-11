@@ -4,51 +4,55 @@
 
 > **Naming note:** IxStates is the platform/ecosystem (future product). IxStats is the current dev codename used in the repository (`package.json` name: `ixstates`) and database. The two names coexist — code is `ixstats`, brand is IxStates.
 
+> **Versioning note:** All version numbers come from the **Version Registry** at `src/lib/buildVersion.ts` (the single source of truth) — see [`revision.md`](./revision.md). This doc intentionally does **not** quote version numbers; consult the registry, the About page, or the Developer panel for live values. The platform is **IxStates 1.0 "Ogma"** (channel: Alpha); Apps/Engines/Systems each carry a single capability integer.
+
 ---
 
 ## Brand Architecture
 
 ```
-IxStates (platform/ecosystem)
+IxStates (platform/ecosystem)         ← versioned: 1.0 "Ogma" (Major.Minor.Patch + epoch + channel)
 ├── dev codename: IxStats
 
-├── Integrated Products
+├── Apps (own brand, ship/break independently — single integer)
 │   ├── IxWorld (maps)
-│   ├── IxForum (community)
-│   ├── IxVault (wallet/economy/trading cards)
-│   └── IxWiki (wiki — powered by WikiOS)
+│   ├── WikiOS (wiki software — powers the IxWiki content)
+│   │   └── Canvas (visual editor — WikiOS sub-system)
+│   └── IxVault (wallet/economy/trading cards)
 
-├── Core Systems
-│   ├── MyCountry ★ (flagship executive command)
+├── Engines (internal-only simulation cores — single integer)
+│   ├── MyCountry  (nation-scoped deterministic sim)
+│   ├── Concord    (living-world sim — time, diplomacy, crises, NPCs)
+│   └── Atlas      (spatial foundation — worldgen, geo, maps; powers IxWorld)
+
+├── UI / Feature Systems (single integer)
+│   ├── MyCountry ★ (flagship executive command UI)
 │   ├── MyCountry Builder (nation creation wizard)
 │   ├── ThinkPages (social knowledge sharing)
-│   ├── Achievements & Awards
-│   ├── LoreStash
+│   ├── Achievements & Awards (incl. LoreWards)
+│   ├── Stash (save-for-later wiki articles)
+│   ├── Repository (WikiOS Commons explorer)
+│   ├── Halo (global contextual overlay)
 │   ├── Blurbs
-│   ├── Dynamic Island
 │   └── Admin CMS
 
-├── Experimental / Labs
-│   └── Vexel, Onoma, Strata, Dynas, Nomora
+├── Design System (single integer)
+│   └── Facet (glass / refraction / depth design language)
 
-├── Platform Utilities
-│   ├── IxTime (game clock)
-│   └── IxnayID (cross-platform identity)
+├── Inherits platform version (NOT independently versioned)
+│   ├── IxForum (community — not promoted to an App yet)
+│   ├── Platform Utilities: IxTime (game clock), IxnayID (cross-platform identity)
+│   ├── Experimental / Labs: Vexel, Onoma, Strata, Dynas, Nomora (preview label only)
+│   └── Navigation Hubs: Dashboard, Explore / Countries, Feed
 
-├── Infrastructure
-│   ├── Glass Physics (design system)
-│   ├── Notifications
-│   ├── Help System
-│   ├── Consent Manager (c15t)
-│   ├── Flag Service
-│   ├── WebSocket / Real-Time
-│   ├── Cron Jobs
-│   └── Caching / Rate Limiting / Auth
-
-└── Navigation Hubs
-    ├── Dashboard
-    ├── Explore / Countries
-    └── Feed
+└── Infrastructure
+    ├── Notifications
+    ├── Help System
+    ├── Consent Manager (c15t)
+    ├── Flag Service
+    ├── WebSocket / Real-Time
+    ├── Cron Jobs
+    └── Caching / Rate Limiting / Auth
 ```
 
 ---
@@ -60,7 +64,7 @@ IxStates (platform/ecosystem)
 | **Name** | IxStates™ (platform/ecosystem) |
 | **Dev codename** | IxStats (repo, package, database) |
 | **Project name** | `ixstates` (`package.json`, Prisma schema headers) |
-| **Version** | `APP_VERSION = "2.1"` |
+| **Version** | `APP_VERSION` (from registry) — platform **1.0 "Ogma"**, channel Alpha |
 | **Homepage** | `https://ixwiki.com/projects/ixstats` |
 | **Meta title** | `IxStats — Nations, economy, lore` |
 | **Meta description** | `Build your country from the ground up...` |
@@ -97,18 +101,18 @@ IxStates (platform/ecosystem)
 
 ---
 
-## 2. Integrated Products
+## 2. Apps
 
-Products with their own distinct brand identity that integrate into the IxStates platform.
+Integrated apps with their own distinct brand identity that ship and break independently (each carries a single capability integer). **IxForum** is documented here for reference but is **not** an independently-versioned App yet — it inherits the platform version until promoted.
 
 ### 2.1 IxWorld (Maps)
 
 | Token | Value |
 |---|---|
-| **Version** | `IXWORLD_VERSION = "2.3.0"` |
+| **Version** | `IXWORLD_VERSION` (from registry — single capability integer) |
 | **Nav icon** | Compass (Lucide) |
 | **Accent hex** | `#06b6d4` (cyan-500) |
-| **Standalone** | IxMaps — `maps.ixwiki.com` (port 3002/3003, `NEXT_PUBLIC_IXWORLD_STANDALONE`) |
+| **Standalone** | IxWorld — `maps.ixwiki.com` (port 3002/3003, `NEXT_PUBLIC_IXWORLD_STANDALONE`) |
 | **Prisma** | `maps.prisma` (ProceduralWorld, Realm, CountrySovereignty, TransportRoute, TransportHub, StoryPin, ElevationZone, City, PointOfInterest, etc.) |
 | **Key files** | `src/app/maps/`, `src/components/maps/{core,editor,overlays,widgets}/`, `src/lib/map-*.ts` |
 | **Map overlays** | Choropleth, Geopolitical, RiskHeatmap, TradeRoute, Transport |
@@ -130,7 +134,7 @@ Products with their own distinct brand identity that integrate into the IxStates
 
 | Token | Value |
 |---|---|
-| **Version** | `IXFORUM_VERSION = "1.0-preview"` |
+| **Version** | `IXFORUM_VERSION` (from registry) — **inherits the platform version**; not promoted to an independently-versioned App yet |
 | **Nav icon** | MessageSquare (Lucide) |
 | **Accent hex** | `#f97316` (orange-500) |
 | **Shine** | `["#f97316", "#ea580c", "#fb923c"]` |
@@ -175,7 +179,7 @@ Products with their own distinct brand identity that integrate into the IxStates
 | Marketplace | `from-blue-500 to-cyan-500` |
 | Import | `from-rose-500 to-orange-500` |
 
-### 2.4 IxWiki (Wiki — powered by WikiOS)
+### 2.4 WikiOS (Wiki software — renders the "IxWiki" content)
 
 | Token | Value |
 |---|---|
@@ -192,8 +196,8 @@ Products with their own distinct brand identity that integrate into the IxStates
 
 | Sub-system | Version | Description |
 |---|---|---|
-| **WikiOS** | `WIKIOS_VERSION = "1.3"` | Next-gen wiki software platform. Will eventually power IxWiki, deprecating legacy MediaWiki to "Classic Mode." |
-| **Canvas Editor** | `CANVAS_VERSION = "1.0"` | Visual/contenteditable wiki editor (`src/components/wikios/editor/WikiVisualEditor.tsx`). Also used in ThinkPages Glass Canvas Composer. |
+| **WikiOS** | `WIKIOS_VERSION` (registry) | The **App** — next-gen wiki software that powers the IxWiki content, deprecating legacy MediaWiki to "Classic Mode." |
+| **Canvas Editor** | `CANVAS_VERSION` (registry) | WikiOS **sub-system** (nested sub-version): visual/contenteditable wiki editor (`src/components/wikios/editor/WikiVisualEditor.tsx`). Also used in ThinkPages Glass Canvas Composer. |
 | **Image Repository** | — | WikiOS Commons Explorer at `/w/repository/`. Wikimedia Commons API proxy. tRPC: `commons.ts`. |
 
 #### WikiOS Special Pages
@@ -272,7 +276,7 @@ First-class systems within the IxStates platform.
 
 | Token | Value |
 |---|---|
-| **Version** | `BUILDER_VERSION = "3.1-preview"` |
+| **Version** | `BUILDER_VERSION` (from registry — single capability integer) |
 | **Glass var** | `--glass-builder: #10b981` (emerald-500) |
 | **Nav (notch) icons** | Foundation: Globe, Identity: Flag, Government: Building2, Economics: TrendingUp, Preview: CheckCircle, Import: Download |
 | **Route** | `src/app/builder/` |
@@ -292,7 +296,7 @@ First-class systems within the IxStates platform.
 
 | Token | Value |
 |---|---|
-| **Version** | `THINKPAGES_VERSION = "1.0"` |
+| **Version** | `THINKPAGES_VERSION` (from registry — single capability integer) |
 | **Nav icon** | ThinkPagesIcon (custom SVG: cyan-to-teal gradient) + Rss (Lucide, contextual) |
 | **Accent hex** | `#3b82f6` (blue-500) |
 | **Shine** | `["#3b82f6", "#1d4ed8", "#60a5fa"]` |
@@ -357,9 +361,9 @@ First-class systems within the IxStates platform.
 
 ---
 
-### 3.5 LoreStash
+### 3.5 Stash
 
-Save-for-later wiki articles with annotations. Integrated with WikiOS reader (`StashButton.tsx`).
+Save-for-later wiki articles with annotations. Integrated with WikiOS reader (`StashButton.tsx`). *(Formerly "LoreStash"; the Prisma models `LoreStash`/`LoreStashItem` keep their names.)*
 
 | Token | Value |
 |---|---|
@@ -382,9 +386,9 @@ Community wiki content reviews/blurbs. Mentioned in WikiOS integrations.
 
 ---
 
-### 3.7 Dynamic Island
+### 3.7 Halo
 
-Global UI overlay system with plugin architecture. [Rebrand TBD.]
+Global contextual UI overlay system with plugin architecture. *(Formerly "Dynamic Island". The code directory `src/components/DynamicIsland/` keeps its name pending a separate mechanical rename.)*
 
 | Token | Value |
 |---|---|
@@ -451,9 +455,9 @@ Cross-platform identity linking service — unifies Forum, Wiki, and Discord ide
 
 ## 6. Infrastructure
 
-### 6.1 Glass Physics
+### 6.1 Facet (Design System)
 
-Design system — glassmorphism depth hierarchy used throughout all UI. File: `src/styles/glass-refraction.css` (1379 lines).
+The platform's design system — a glass / refraction / depth visual language used throughout all UI (independently versioned; `FACET_VERSION` in the registry). File: `src/styles/glass-refraction.css` (1379 lines). *(Formerly "Glass Physics". The CSS tokens/classes `--glass-*` / `glass-*` keep their names pending a separate mechanical rename.)*
 
 **Glass CSS Variables:**
 
@@ -551,7 +555,7 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 | Help | `#fb923c` | `["#fb923c", "#f97316", "#fdba74"]` | `text-orange-400` |
 | Intelligence | `#6366f1` | `["#6366f1", "#4f46e5", "#818cf8"]` | `text-indigo-400` |
 
-### 8.2 Dynamic Island NavTray Section Colors
+### 8.2 Halo NavTray Section Colors
 
 | Route | Accent Hex | Label |
 |---|---|---|
