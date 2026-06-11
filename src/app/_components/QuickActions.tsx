@@ -154,7 +154,7 @@ function QuickActionCard({ action }: { action: any }) {
           <h3 className="mb-2 font-semibold text-[var(--color-text-primary)]">{action.title}</h3>
           <p className="mb-3 text-sm text-[var(--color-text-muted)]">{action.description}</p>
           {action.badge && (
-            <Badge variant="outline" className="glass-badge text-xs">
+            <Badge variant="outline" className="facet-badge text-xs">
               {action.badge}
             </Badge>
           )}

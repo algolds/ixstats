@@ -70,7 +70,7 @@ function InlineWikiExcerpt({
         <p className="text-foreground/75 text-xs leading-relaxed">{excerpt}</p>
       )}
       {wikiUrl &&
-        (wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+        (wikiUrl.startsWith("/") || wikiUrl.includes("/wiki/") ? (
           <Link
             href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
             className={cn(

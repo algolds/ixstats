@@ -49,33 +49,16 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
           <img
             src={parsedData.flagUrl}
             alt={`Flag of ${parsedData.name}`}
-            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-10 blur-3xl"
-            style={{
-              filter: "blur(24px) saturate(0.7) brightness(0.5)",
-              transform: "scale(1.2)",
-            }}
+            className="scale-[1.2] saturate-[0.7] brightness-[0.5] absolute inset-0 h-full w-full object-cover opacity-10 blur-3xl"
           />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--color-bg-primary)/90 0%, var(--color-bg-secondary)/95 50%, var(--color-bg-primary)/90 100%)",
-              backdropFilter: "blur(8px)",
-            }}
-          />
+          <div className="bg-gradient-to-br from-background/90 via-card/95 to-background/90 backdrop-blur absolute inset-0" />
         </div>
       )}
       <GlassCardHeader className="relative z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="rounded-lg border p-2"
-              style={{
-                backgroundColor: "var(--color-success)/20",
-                borderColor: "var(--color-success)/30",
-              }}
-            >
-              <CheckCircle className="h-5 w-5" style={{ color: "var(--color-success)" }} />
+            <div className="bg-success/20 border-success/30 rounded-lg border p-2">
+              <CheckCircle className="text-success h-5 w-5" />
             </div>
             <div>
               <h2 className="text-text-primary text-lg font-semibold">
@@ -89,14 +72,8 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
             whileTap={{ scale: 0.95 }}
             onClick={handleContinueWithData}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-6 py-3 font-medium",
-              "border transition-all duration-200"
+              "bg-brand-primary border-brand-primary flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white border transition-all duration-200"
             )}
-            style={{
-              backgroundColor: "var(--color-brand-primary)",
-              borderColor: "var(--color-brand-primary)",
-              color: "white",
-            }}
           >
             <Import className="h-4 w-4" />
             Continue with Data
@@ -106,60 +83,47 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
       <GlassCardContent className="relative z-10">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div
-            className="rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
-            style={{
-              backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: "var(--color-border-primary)",
-            }}
+            className="border-border bg-card/80 rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
             title="Total population of the country"
           >
             <div className="mb-2 flex items-center gap-2">
-              <Users className="h-4 w-4" style={{ color: "var(--color-info)" }} />
-              <span className="text-sm font-medium" style={{ color: "var(--color-text-muted)" }}>
+              <Users className="text-info h-4 w-4" />
+              <span className="text-muted-foreground text-sm font-medium">
                 Population
               </span>
             </div>
-            <p className="text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
+            <p className="text-foreground text-lg font-semibold">
               {formatNumber(parsedData.population, 0)}
             </p>
           </div>
 
           <div
-            className="rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
-            style={{
-              backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: "var(--color-border-primary)",
-            }}
+            className="border-border bg-card/80 rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
             title="Gross Domestic Product per capita"
           >
             <div className="mb-2 flex items-center gap-2">
-              <DollarSign className="h-4 w-4" style={{ color: "var(--color-success)" }} />
-              <span className="text-sm font-medium" style={{ color: "var(--color-text-muted)" }}>
+              <DollarSign className="text-success h-4 w-4" />
+              <span className="text-muted-foreground text-sm font-medium">
                 GDP per Capita
               </span>
             </div>
-            <p className="text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
+            <p className="text-foreground text-lg font-semibold">
               ${formatNumber(parsedData.gdpPerCapita)}
             </p>
           </div>
 
           <div
-            className="rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
-            style={{
-              backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: "var(--color-border-primary)",
-            }}
+            className="border-border bg-card/80 rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
             title="Capital city of the country"
           >
             <div className="mb-2 flex items-center gap-2">
-              <MapPin className="h-4 w-4" style={{ color: "var(--color-error)" }} />
-              <span className="text-sm font-medium" style={{ color: "var(--color-text-muted)" }}>
+              <MapPin className="text-error h-4 w-4" />
+              <span className="text-muted-foreground text-sm font-medium">
                 Capital
               </span>
             </div>
             <div
-              className="[&_a]:text-brand-primary text-lg font-semibold [&_a]:hover:underline"
-              style={{ color: "var(--color-text-primary)" }}
+              className="text-foreground [&_a]:text-brand-primary text-lg font-semibold [&_a]:hover:underline"
               // SECURITY: Sanitize wiki content
               dangerouslySetInnerHTML={{
                 __html: sanitizeWikiContent(parsedData.capital || "Unknown"),
@@ -168,22 +132,17 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
           </div>
 
           <div
-            className="rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
-            style={{
-              backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: "var(--color-border-primary)",
-            }}
+            className="border-border bg-card/80 rounded-lg border p-4 backdrop-blur-sm transition-all duration-200 hover:shadow-md"
             title="Type of government system"
           >
             <div className="mb-2 flex items-center gap-2">
-              <Building className="h-4 w-4" style={{ color: "var(--color-brand-secondary)" }} />
-              <span className="text-sm font-medium" style={{ color: "var(--color-text-muted)" }}>
+              <Building className="text-brand-secondary h-4 w-4" />
+              <span className="text-muted-foreground text-sm font-medium">
                 Government
               </span>
             </div>
             <div
-              className="[&_a]:text-brand-primary text-lg font-semibold [&_a]:hover:underline"
-              style={{ color: "var(--color-text-primary)" }}
+              className="text-foreground [&_a]:text-brand-primary text-lg font-semibold [&_a]:hover:underline"
               // SECURITY: Sanitize wiki content
               dangerouslySetInnerHTML={{
                 __html: sanitizeWikiContent(parsedData.government || "Unknown"),
@@ -234,13 +193,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
               <div className="flex flex-wrap gap-6">
                 {(parsedData.flag || parsedData.flagUrl) && (
                   <div className="flex flex-col items-center">
-                    <div
-                      className="rounded-lg border p-3 shadow-sm backdrop-blur-sm"
-                      style={{
-                        backgroundColor: "var(--color-bg-surface)/80",
-                        borderColor: "var(--color-border-primary)",
-                      }}
-                    >
+                    <div className="border-border bg-card/80 rounded-lg border p-3 shadow-sm backdrop-blur-sm">
                       {parsedData.flagUrl ? (
                         <img
                           src={parsedData.flagUrl}
@@ -268,13 +221,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
 
                 {(parsedData.coatOfArms || parsedData.coatOfArmsUrl) && (
                   <div className="flex flex-col items-center">
-                    <div
-                      className="rounded-lg border p-3 shadow-sm backdrop-blur-sm"
-                      style={{
-                        backgroundColor: "var(--color-bg-surface)/80",
-                        borderColor: "var(--color-border-primary)",
-                      }}
-                    >
+                    <div className="border-border bg-card/80 rounded-lg border p-3 shadow-sm backdrop-blur-sm">
                       {parsedData.coatOfArmsUrl ? (
                         <img
                           src={parsedData.coatOfArmsUrl}

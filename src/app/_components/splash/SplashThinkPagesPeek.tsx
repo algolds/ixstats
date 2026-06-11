@@ -32,6 +32,10 @@ function proxyDiscordUrl(url: string | null | undefined): string | undefined {
       cleanPath = cleanPath.slice("/projects/ixstates".length);
     }
 
+    if (cleanPath.includes("/images/discord/")) {
+      cleanPath = cleanPath.includes("?") ? `${cleanPath}&v=1` : `${cleanPath}?v=1`;
+    }
+
     if (process.env.NODE_ENV === "production") {
       return `https://ixwiki.com/projects/ixstates${cleanPath}`;
     }

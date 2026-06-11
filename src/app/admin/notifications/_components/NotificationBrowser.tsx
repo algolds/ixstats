@@ -14,14 +14,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Search,
@@ -39,8 +31,12 @@ import {
   Bell,
   Eye,
   EyeOff,
+  X,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "~/lib/utils";
+import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/facet-ui/swipeable";
+import { motion } from "motion/react";
 
 const TYPE_OPTIONS = [
   { value: "", label: "All Types" },
@@ -91,6 +87,217 @@ function getScopeLabel(notification: { userId: string | null; countryId: string 
   return { label: "Global", icon: <Zap className="h-3 w-3" /> };
 }
 
+interface AdminNotificationRowProps {
+  n: any;
+  handleDelete: (id: string) => void;
+  deleteMutation: any;
+}
+
+function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotificationRowProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const scope = getScopeLabel(n);
+  const typeIcon = getTypeIcon(n.type);
+  const formattedTime = formatDistanceToNow(new Date(n.createdAt), { addSuffix: true });
+
+  const colors =
+    n.priority === "critical"
+      ? { bg: "bg-red-500/10", text: "text-red-500" }
+      : n.priority === "high"
+        ? { bg: "bg-orange-500/10", text: "text-orange-500" }
+        : n.priority === "medium"
+          ? { bg: "bg-yellow-500/10", text: "text-yellow-500" }
+          : { bg: "bg-slate-500/10", text: "text-slate-400" };
+
+  return (
+    <SwipeableRow
+      id={n.id}
+      className="rounded-xl overflow-hidden mb-2 last:mb-0"
+      springPreset="tight"
+      expanded={isExpanded}
+      onExpandedChange={setIsExpanded}
+    >
+      {/* Trailing Action: swipe left to delete */}
+      <SwipeableRow.Trailing
+        commit={{
+          action: () => handleDelete(n.id),
+          label: "Delete",
+          color: "#ef4444",
+        }}
+      >
+        <SwipeActionButton
+          id="delete"
+          icon={Trash2}
+          label="Delete"
+          onClick={() => handleDelete(n.id)}
+          color="#ef4444"
+        />
+      </SwipeableRow.Trailing>
+
+      {/* Main card content */}
+      <SwipeableRow.Content>
+        <div
+          className={cn(
+            "relative flex items-center justify-between p-3.5 bg-white/[0.05] dark:bg-slate-950/75 backdrop-blur-md border border-white/[0.08] dark:border-white/10 rounded-xl hover:bg-white/[0.08] dark:hover:bg-slate-900/80 hover:border-white/[0.12] transition-all duration-200 cursor-grab active:cursor-grabbing",
+            !n.read && "bg-blue-500/5 dark:bg-blue-950/20 border-blue-500/30"
+          )}
+        >
+          {/* Left indicator accent border */}
+          <div
+            className={cn(
+              "absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl transition-all duration-300",
+              colors.text.replace("text-", "bg-")
+            )}
+          />
+
+          <div className="flex items-center gap-3 pl-1.5 flex-1 min-w-0">
+            <div
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/5",
+                colors.bg
+              )}
+            >
+              {typeIcon}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-foreground text-sm font-semibold truncate max-w-[280px]">
+                  {n.title}
+                </span>
+                {!n.read && (
+                  <span className="bg-blue-500 h-1.5 w-1.5 rounded-full animate-pulse shadow-sm shadow-blue-500/50" />
+                )}
+                <Badge
+                  variant="outline"
+                  className="text-[9px] uppercase tracking-wider py-0 px-1.5 h-4 border-white/10 text-muted-foreground"
+                >
+                  {n.category || n.type || "system"}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="text-[9px] py-0 px-1.5 h-4 border-white/10 text-muted-foreground flex items-center gap-1"
+                >
+                  {scope.icon}
+                  <span>{scope.label}</span>
+                </Badge>
+                <Badge
+                  variant={
+                    n.priority === "critical"
+                      ? "destructive"
+                      : n.priority === "high"
+                        ? "default"
+                        : "secondary"
+                  }
+                  className="text-[9px] py-0 px-1.5 h-4 leading-none"
+                >
+                  {n.priority}
+                </Badge>
+              </div>
+              {n.description && (
+                <div className="text-muted-foreground text-xs mt-1 truncate max-w-[500px]">
+                  {n.description}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-1.5 shrink-0 pl-3">
+            <span className="text-muted-foreground/80 text-[10px] font-medium whitespace-nowrap">
+              {formattedTime}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {n.read ? (
+                <span title="Read">
+                  <Eye className="text-muted-foreground/60 h-3.5 w-3.5" />
+                </span>
+              ) : (
+                <span title="Unread">
+                  <EyeOff className="h-3.5 w-3.5 text-blue-400" />
+                </span>
+              )}
+              <motion.div
+                animate={{ rotate: isExpanded ? 90 : 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </SwipeableRow.Content>
+
+      {/* Expanded details */}
+      <SwipeableRow.Expanded>
+        <div className="border-t border-white/5 bg-slate-950/40 p-4 rounded-b-xl space-y-3 pl-[52px]">
+          {n.message && (
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                Full Message
+              </span>
+              <p className="text-xs text-foreground/90 font-medium whitespace-pre-wrap leading-relaxed select-text">
+                {n.message}
+              </p>
+            </div>
+          )}
+          {n.description && !n.message && (
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                Description
+              </span>
+              <p className="text-xs text-foreground/90 font-medium whitespace-pre-wrap leading-relaxed select-text">
+                {n.description}
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-2 text-[10px] border-t border-white/5">
+            <div>
+              <span className="text-muted-foreground font-semibold">User ID:</span>{" "}
+              <code className="text-foreground/90 bg-white/5 px-1 py-0.5 rounded">
+                {n.userId || "Global / System"}
+              </code>
+            </div>
+            <div>
+              <span className="text-muted-foreground font-semibold">Country ID:</span>{" "}
+              <code className="text-foreground/90 bg-white/5 px-1 py-0.5 rounded">
+                {n.countryId || "Global / System"}
+              </code>
+            </div>
+            {n.href && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground font-semibold">Target URL:</span>{" "}
+                <a href={n.href} className="text-blue-400 hover:underline">
+                  {n.href}
+                </a>
+              </div>
+            )}
+            {n.metadata && (
+              <div className="col-span-2 space-y-1 mt-1">
+                <span className="text-muted-foreground font-semibold">Metadata:</span>
+                <pre className="text-[10px] bg-black/30 p-2 rounded border border-white/5 text-emerald-400 overflow-x-auto max-w-full font-mono">
+                  {JSON.stringify(JSON.parse(n.metadata), null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 justify-end pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] text-red-400 hover:text-red-500 hover:bg-red-500/10 border-red-500/20"
+              onClick={() => handleDelete(n.id)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="h-3 w-3 mr-1.5" />
+              Delete Notification
+            </Button>
+          </div>
+        </div>
+      </SwipeableRow.Expanded>
+    </SwipeableRow>
+  );
+}
+
 export function NotificationBrowser() {
   const notify = useNotify();
   const [page, setPage] = useState(0);
@@ -99,6 +306,8 @@ export function NotificationBrowser() {
   const [priorityFilter, setPriorityFilter] = useState("");
   const [readFilter, setReadFilter] = useState<string>("");
   const limit = 50;
+
+  const [locallyDeletedIds, setLocallyDeletedIds] = useState<Set<string>>(new Set());
 
   const { data, isLoading, refetch } = api.notifications.getAllAdminNotifications.useQuery({
     limit,
@@ -116,6 +325,18 @@ export function NotificationBrowser() {
     },
     onError: (e) => notify.error("Delete failed", e.message),
   });
+
+  const handleDelete = (id: string) => {
+    setLocallyDeletedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    deleteMutation.mutate({
+      notificationId: id,
+      adminUserId: "system-admin",
+    });
+  };
 
   const deleteAllMutation = api.notifications.deleteAllNotifications.useMutation({
     onSuccess: (res) => {
@@ -218,7 +439,7 @@ export function NotificationBrowser() {
         </Button>
       </div>
 
-      {/* Table */}
+      {/* List container */}
       <Card>
         <CardHeader className="py-3">
           <CardTitle className="flex items-center justify-between text-sm">
@@ -229,106 +450,31 @@ export function NotificationBrowser() {
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="max-h-[600px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8" />
-                  <TableHead>Title</TableHead>
-                  <TableHead className="w-[90px]">Type</TableHead>
-                  <TableHead className="w-[80px]">Priority</TableHead>
-                  <TableHead className="w-[70px]">Scope</TableHead>
-                  <TableHead className="w-[60px]">Read</TableHead>
-                  <TableHead className="w-[130px]">Created</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
-                      Loading...
-                    </TableCell>
-                  </TableRow>
-                ) : data?.notifications.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
-                      <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                      No notifications found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  data?.notifications.map((n) => {
-                    const scope = getScopeLabel(n);
-                    return (
-                      <TableRow key={n.id} className={!n.read ? "bg-accent/30" : ""}>
-                        <TableCell>{getTypeIcon(n.type)}</TableCell>
-                        <TableCell className="max-w-[300px]">
-                          <div className="truncate text-sm font-medium">{n.title}</div>
-                          {n.description && (
-                            <div className="text-muted-foreground truncate text-xs">
-                              {n.description}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px]">
-                            {n.type || "—"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              n.priority === "critical"
-                                ? "destructive"
-                                : n.priority === "high"
-                                  ? "default"
-                                  : "secondary"
-                            }
-                            className="text-[10px]"
-                          >
-                            {n.priority}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px]">
-                            {scope.icon}
-                            <span className="ml-1">{scope.label}</span>
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {n.read ? (
-                            <Eye className="text-muted-foreground h-4 w-4" />
-                          ) : (
-                            <EyeOff className="h-4 w-4 text-blue-500" />
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              deleteMutation.mutate({
-                                notificationId: n.id,
-                                adminUserId: "system-admin",
-                              })
-                            }
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+        <CardContent className="p-3">
+          <ScrollArea className="max-h-[600px] pr-2">
+            {isLoading ? (
+              <div className="text-muted-foreground py-8 text-center">Loading...</div>
+            ) : data?.notifications.length === 0 ? (
+              <div className="text-muted-foreground py-8 text-center">
+                <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                No notifications found
+              </div>
+            ) : (
+              <SwipeableGroup>
+                <div className="space-y-2">
+                  {data?.notifications
+                    .filter((n) => !locallyDeletedIds.has(n.id))
+                    .map((n) => (
+                      <AdminNotificationRow
+                        key={n.id}
+                        n={n}
+                        handleDelete={handleDelete}
+                        deleteMutation={deleteMutation}
+                      />
+                    ))}
+                </div>
+              </SwipeableGroup>
+            )}
           </ScrollArea>
         </CardContent>
       </Card>

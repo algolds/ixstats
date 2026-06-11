@@ -18,8 +18,8 @@ export function WikiAuthorPopover({ username }: { username: string }) {
     { enabled: open, staleTime: 60_000 }
   );
 
-  const wikiUserUrl = createUrl(`/w/special/user/${username}`);
-  const wikiContribsUrl = createUrl(`/w/special/contributions/${username}`);
+  const wikiUserUrl = createUrl(`/wiki/user/${username}`);
+  const wikiContribsUrl = createUrl(`/wiki/contributions/${username}`);
 
   return (
     <HoverCardPrimitive.Root open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>

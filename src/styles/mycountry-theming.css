@@ -610,51 +610,51 @@
 
 /* Active tab trigger states */
 .tab-trigger-executive[data-state="active"] {
-  background: var(--tab-executive-bg);
-  color: var(--tab-executive-primary);
-  border-bottom: 2px solid var(--tab-executive-primary);
+  background: var(--tab-executive-bg) !important;
+  color: var(--tab-executive-primary) !important;
+  border-bottom: 2px solid var(--tab-executive-primary) !important;
 }
 
 .tab-trigger-economy[data-state="active"] {
-  background: var(--tab-economy-bg);
-  color: var(--tab-economy-primary);
-  border-bottom: 2px solid var(--tab-economy-primary);
+  background: var(--tab-economy-bg) !important;
+  color: var(--tab-economy-primary) !important;
+  border-bottom: 2px solid var(--tab-economy-primary) !important;
 }
 
 .tab-trigger-labor[data-state="active"] {
-  background: var(--tab-labor-bg);
-  color: var(--tab-labor-primary);
-  border-bottom: 2px solid var(--tab-labor-primary);
+  background: var(--tab-labor-bg) !important;
+  color: var(--tab-labor-primary) !important;
+  border-bottom: 2px solid var(--tab-labor-primary) !important;
 }
 
 .tab-trigger-government[data-state="active"] {
-  background: var(--tab-government-bg);
-  color: var(--tab-government-primary);
-  border-bottom: 2px solid var(--tab-government-primary);
+  background: var(--tab-government-bg) !important;
+  color: var(--tab-government-primary) !important;
+  border-bottom: 2px solid var(--tab-government-primary) !important;
 }
 
 .tab-trigger-demographics[data-state="active"] {
-  background: var(--tab-demographics-bg);
-  color: var(--tab-demographics-primary);
-  border-bottom: 2px solid var(--tab-demographics-primary);
+  background: var(--tab-demographics-bg) !important;
+  color: var(--tab-demographics-primary) !important;
+  border-bottom: 2px solid var(--tab-demographics-primary) !important;
 }
 
 .tab-trigger-intelligence[data-state="active"] {
-  background: var(--tab-intelligence-bg);
-  color: var(--tab-intelligence-primary);
-  border-bottom: 2px solid var(--tab-intelligence-primary);
+  background: var(--tab-intelligence-bg) !important;
+  color: var(--tab-intelligence-primary) !important;
+  border-bottom: 2px solid var(--tab-intelligence-primary) !important;
 }
 
 .tab-trigger-detailed[data-state="active"] {
-  background: var(--tab-detailed-bg);
-  color: var(--tab-detailed-primary);
-  border-bottom: 2px solid var(--tab-detailed-primary);
+  background: var(--tab-detailed-bg) !important;
+  color: var(--tab-detailed-primary) !important;
+  border-bottom: 2px solid var(--tab-detailed-primary) !important;
 }
 
 .tab-trigger-modeling[data-state="active"] {
-  background: var(--tab-modeling-bg);
-  color: var(--tab-modeling-primary);
-  border-bottom: 2px solid var(--tab-modeling-primary);
+  background: var(--tab-modeling-bg) !important;
+  color: var(--tab-modeling-primary) !important;
+  border-bottom: 2px solid var(--tab-modeling-primary) !important;
 }
 
 .tab-trigger-diplomacy:hover {
@@ -663,9 +663,9 @@
 }
 
 .tab-trigger-diplomacy[data-state="active"] {
-  background: var(--tab-diplomacy-bg);
-  color: var(--tab-diplomacy-primary);
-  border-bottom: 2px solid var(--tab-diplomacy-primary);
+  background: var(--tab-diplomacy-bg) !important;
+  color: var(--tab-diplomacy-primary) !important;
+  border-bottom: 2px solid var(--tab-diplomacy-primary) !important;
 }
 
 .tab-trigger-defense:hover {
@@ -674,9 +674,9 @@
 }
 
 .tab-trigger-defense[data-state="active"] {
-  background: var(--tab-defense-bg);
-  color: var(--tab-defense-primary);
-  border-bottom: 2px solid var(--tab-defense-primary);
+  background: var(--tab-defense-bg) !important;
+  color: var(--tab-defense-primary) !important;
+  border-bottom: 2px solid var(--tab-defense-primary) !important;
 }
 
 .tab-trigger-politics:hover {
@@ -685,9 +685,9 @@
 }
 
 .tab-trigger-politics[data-state="active"] {
-  background: var(--tab-politics-bg);
-  color: var(--tab-politics-primary);
-  border-bottom: 2px solid var(--tab-politics-primary);
+  background: var(--tab-politics-bg) !important;
+  color: var(--tab-politics-primary) !important;
+  border-bottom: 2px solid var(--tab-politics-primary) !important;
 }
 
 /* === SUB-TAB PILL STYLING === */
@@ -1013,6 +1013,12 @@
     rgba(252, 211, 77, 0.03) 75%,
     var(--tab-executive-bg) 100%
   );
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 
+    0 4px 24px rgba(255, 215, 0, 0.1),
+    0 0 0 1px rgba(255, 215, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mycountry-card:hover {
@@ -1023,6 +1029,52 @@
     var(--tab-executive-bg) 75%,
     rgba(252, 211, 77, 0.12) 100%
   );
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 40px rgba(255, 215, 0, 0.2),
+    0 0 0 1px rgba(255, 215, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Dark mode MyCountry gradient overlay */
+.dark .mycountry-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.12) 0%,
+    rgba(255, 223, 0, 0.08) 25%,
+    rgba(255, 215, 0, 0.12) 50%,
+    rgba(255, 223, 0, 0.06) 75%,
+    rgba(255, 215, 0, 0.12) 100%
+  );
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 
+    0 6px 32px rgba(255, 215, 0, 0.15),
+    0 0 0 1px rgba(255, 215, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Light mode MyCountry gradient overlay */
+.light .mycountry-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.06) 0%,
+    rgba(255, 223, 0, 0.04) 25%,
+    rgba(255, 215, 0, 0.06) 50%,
+    rgba(255, 223, 0, 0.02) 75%,
+    rgba(255, 215, 0, 0.06) 100%
+  ),
+  rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 215, 0, 0.25);
+  box-shadow: 
+    0 2px 16px rgba(255, 215, 0, 0.08),
+    0 0 0 1px rgba(255, 215, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Light mode MyCountry hover overlay */
+.light .mycountry-card:hover {
+  box-shadow: 
+    0 4px 24px rgba(255, 215, 0, 0.12),
+    0 0 0 1px rgba(255, 215, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 /* Gold shimmer animation */
@@ -1248,77 +1300,6 @@
   z-index: -1;
 }
 
-.glass-eci {
-  background: rgba(180, 83, 9, 0.08);
-  border: 1px solid rgba(180, 83, 9, 0.2);
-  backdrop-filter: blur(12px) saturate(120%);
-  box-shadow: 
-    0 8px 32px rgba(180, 83, 9, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.glass-eci:hover {
-  background: rgba(180, 83, 9, 0.12);
-  border-color: rgba(180, 83, 9, 0.3);
-  box-shadow: 
-    0 12px 48px rgba(180, 83, 9, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.glass-sdi {
-  background: rgba(8, 145, 178, 0.08);
-  border: 1px solid rgba(8, 145, 178, 0.2);
-  backdrop-filter: blur(12px) saturate(120%);
-  box-shadow: 
-    0 8px 32px rgba(8, 145, 178, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.glass-sdi:hover {
-  background: rgba(8, 145, 178, 0.12);
-  border-color: rgba(8, 145, 178, 0.3);
-  box-shadow: 
-    0 12px 48px rgba(8, 145, 178, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.glass-global {
-  background: rgba(71, 85, 105, 0.08);
-  border: 1px solid rgba(71, 85, 105, 0.2);
-  backdrop-filter: blur(12px) saturate(120%);
-  box-shadow: 
-    0 8px 32px rgba(71, 85, 105, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.glass-global:hover {
-  background: rgba(71, 85, 105, 0.12);
-  border-color: rgba(71, 85, 105, 0.3);
-  box-shadow: 
-    0 12px 48px rgba(71, 85, 105, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.glass-mycountry {
-  background: rgba(252, 211, 77, 0.08);
-  border: 1px solid rgba(252, 211, 77, 0.2);
-  backdrop-filter: blur(12px) saturate(120%);
-  box-shadow: 
-    0 8px 32px rgba(252, 211, 77, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.glass-mycountry:hover {
-  background: rgba(252, 211, 77, 0.12);
-  border-color: rgba(252, 211, 77, 0.3);
-  box-shadow: 
-    0 12px 48px rgba(252, 211, 77, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
 
 /* Cinematic transitions for executive mode */
 .executive-enter {
@@ -1389,4 +1370,44 @@
   50% { background-position: 0% 100%; }
   75% { background-position: 100% 0%; }
   100% { background-position: 0% 0%; }
+}
+
+/* ==========================================================================
+   VOLUMETRIC THEMED GRADIENTS FOR CONTAINER CARDS
+   ========================================================================== */
+
+/* Overview Tab - Amber/Gold Volumetric Glow */
+.bg-gradient-overview {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-overview-start), 
+    var(--bg-gradient-overview-end)
+  ) !important;
+}
+
+/* Economy Tab - Emerald/Green Volumetric Glow */
+.bg-gradient-economy {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-economy-start), 
+    var(--bg-gradient-economy-end)
+  ) !important;
+}
+
+/* Labor Tab - Red/Burgundy Volumetric Glow */
+.bg-gradient-labor {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-labor-start), 
+    var(--bg-gradient-labor-end)
+  ) !important;
+}
+
+/* Government Tab - Violet/Amethyst Volumetric Glow */
+.bg-gradient-government {
+  background: linear-gradient(
+    to bottom, 
+    var(--bg-gradient-government-start), 
+    var(--bg-gradient-government-end)
+  ) !important;
 }

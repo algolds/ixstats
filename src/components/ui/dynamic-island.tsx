@@ -760,6 +760,22 @@ const DynamicDescription = ({ className, children }: MotionProps) => {
   );
 };
 
+// ──────────────────────────────────────────────────────────────────────────
+   /* HALO BRAND ALIAS EXPORTS */
+// ──────────────────────────────────────────────────────────────────────────
+
+/** @deprecated Use Halo instead */
+export const Halo = DynamicIsland;
+
+/** @deprecated Use useHaloSize instead */
+export const useHaloSize = useDynamicIslandSize;
+
+/** @deprecated Use HaloProvider instead */
+export const HaloProvider = DynamicIslandProvider;
+
+/** @deprecated Use HaloContainer instead */
+export const HaloContainer = DynamicContainer;
+
 export {
   DynamicContainer,
   DynamicTitle,

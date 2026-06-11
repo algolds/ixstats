@@ -175,10 +175,10 @@ const optionVariants = cva(
   {
     variants: {
       state: {
-        idle: ["border-border bg-background hover:border-primary/50 hover:bg-accent/50"],
+        idle: ["border-border bg-background hover:border-[#ff8a65]/50 hover:bg-[#ff8a65]/5"],
         selected: [
-          "border-primary bg-primary/5 shadow-sm",
-          "hover:border-primary hover:bg-primary/10",
+          "border-[#ff8a65]/55 bg-[#ff8a65]/5 shadow-sm",
+          "hover:border-[#ff8a65] hover:bg-[#ff8a65]/10",
         ],
         voted: ["cursor-default border-border bg-muted/30"],
       },
@@ -198,7 +198,7 @@ const indicatorVariants = cva(
     variants: {
       state: {
         idle: "border-muted-foreground/30 bg-background",
-        selected: "border-primary bg-primary text-primary-foreground",
+        selected: "border-[#ff8a65] bg-[#ff8a65] text-white",
         voted: "border-muted-foreground/30 bg-muted",
       },
       multiple: {
@@ -219,8 +219,8 @@ const progressVariants = cva(
     variants: {
       state: {
         idle: "bg-transparent",
-        selected: "bg-primary/10",
-        voted: "bg-muted/50",
+        selected: "bg-[#ff8a65]/15",
+        voted: "bg-[#ff8a65]/10",
       },
     },
     defaultVariants: {
@@ -1144,7 +1144,7 @@ export function PollWidgetSubmit({
           </Button>
         </DialogClose>
         <Button
-          className={cn("min-w-[120px]", className)}
+          className={cn("min-w-[120px] bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white font-semibold", className)}
           data-slot="poll-widget-submit"
           disabled={!canSubmit || isSubmitting}
           onClick={handleClick}
@@ -1159,7 +1159,7 @@ export function PollWidgetSubmit({
 
   return (
     <Button
-      className={cn("w-full overflow-hidden", className)}
+      className={cn("w-full overflow-hidden bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white font-semibold", className)}
       data-slot="poll-widget-submit"
       disabled={!canSubmit || isSubmitting}
       onClick={handleClick}

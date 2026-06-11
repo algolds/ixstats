@@ -28,7 +28,7 @@ import {
   ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { CardPriceHistoryChart } from "./CardPriceHistoryChart";
@@ -147,7 +147,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
         url = card.wikiUrl ?? null;
       }
 
-      // Post-process: convert legacy external ixwiki links to internal WikiOS /w/ routes
+      // Post-process: convert legacy external ixwiki links to internal WikiOS /wiki/ routes
       if (url && (url.includes("ixwiki.com/wiki/") || url.includes("/wiki/"))) {
         const match = url.match(/(?:ixwiki\.com)?\/wiki\/([^#?]+)/);
         if (match && match[1]) {

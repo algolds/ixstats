@@ -22,11 +22,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { useWikiContext } from "~/components/wikios/shared/WikiContext";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
+import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import type { DIViewProps } from "./types";
@@ -101,7 +101,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   }, [articleTitle, pathname]);
 
   const isMainPage =
-    pathname?.includes("/w/Main_Page") || pathname?.includes("/w/Main%20Page") || false;
+    pathname?.includes("/wiki/Main_Page") || pathname?.includes("/wiki/Main%20Page") || false;
 
   useEffect(() => {
     setTimeout(() => searchInputRef.current?.focus(), 50);
@@ -124,7 +124,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const handleNavigateToArticle = useCallback(
     (title: string) => {
       onClose();
-      navigateWithBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`, router);
+      navigateWithBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`, router);
     },
     [router, onClose]
   );
@@ -550,7 +550,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                     onClick={() => {
                       onClose();
                       navigateWithBasePath(
-                        `/w/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
+                        `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
                         router
                       );
                     }}
@@ -659,7 +659,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                     shortcut="Tab Tab"
                     onClick={() => {
                       onClose();
-                      navigateWithBasePath(`/w/${slug}/edit`, router);
+                      navigateWithBasePath(`/wiki/${slug}/edit`, router);
                     }}
                   />
                 )}
@@ -668,7 +668,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                   label="History"
                   onClick={() => {
                     onClose();
-                    navigateWithBasePath(`/w/special/history/${slug}`, router);
+                    navigateWithBasePath(`/wiki/history/${slug}`, router);
                   }}
                 />
                 <QuickAction
@@ -676,7 +676,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                   label="What links here"
                   onClick={() => {
                     onClose();
-                    navigateWithBasePath(`/w/special/whatlinkshere/${slug}`, router);
+                    navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
                   }}
                 />
                 <QuickAction

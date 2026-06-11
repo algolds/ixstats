@@ -20,7 +20,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import {
   Dialog,
   DialogContent,

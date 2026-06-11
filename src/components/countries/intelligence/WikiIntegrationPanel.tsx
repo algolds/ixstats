@@ -6,7 +6,7 @@
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

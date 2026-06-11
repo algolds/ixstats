@@ -96,7 +96,7 @@ export function WikiLoreDayModal({
                       </div>
                       {entry.winnerPage && (
                         <Link
-                          href={`/w/${encodeURIComponent(entry.winnerPage)}`}
+                          href={`/wiki/${encodeURIComponent(entry.winnerPage)}`}
                           className="block truncate text-xs text-amber-500 hover:underline"
                         >
                           {entry.winnerPage}
@@ -139,7 +139,7 @@ export function WikiLoreDayModal({
                       </div>
                       {entry.runnerUpPage && (
                         <Link
-                          href={`/w/${encodeURIComponent(entry.runnerUpPage)}`}
+                          href={`/wiki/${encodeURIComponent(entry.runnerUpPage)}`}
                           className="text-muted-foreground block truncate text-xs hover:underline"
                         >
                           {entry.runnerUpPage}
@@ -197,7 +197,7 @@ export function WikiLoreDayModal({
                             <td className="text-muted-foreground max-w-[200px] truncate p-3">
                               {cand.page ? (
                                 <Link
-                                  href={`/w/${encodeURIComponent(cand.page)}`}
+                                  href={`/wiki/${encodeURIComponent(cand.page)}`}
                                   className="font-medium text-amber-600 hover:text-amber-500 hover:underline dark:text-amber-500/80"
                                 >
                                   {cand.page}

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -24,8 +25,11 @@ import {
   Minus,
   Landmark,
   Newspaper,
+  Vote,
+  Info,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Card, CardContent } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -33,6 +37,13 @@ import { Badge } from "~/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Switch } from "~/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
@@ -97,23 +108,13 @@ export function GlassCanvasComposer({
   hasCountry = true,
 }: GlassCanvasComposerProps) {
   const notify = useNotify();
+  const isRegularUser = !isOwner && account?.accountType === "citizen";
   const { data: channelTopic } = api.thinkpages.getDiscordChannelTopic.useQuery(undefined, {
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
 
-  const [resolvedPlaceholder, setResolvedPlaceholder] = useState(placeholder);
-
-  useEffect(() => {
-    if (channelTopic) {
-      const isDev = process.env.NODE_ENV === "development";
-      const shouldShow = isDev || Math.random() < 0.10;
-      if (shouldShow) {
-        setResolvedPlaceholder(channelTopic);
-      }
-    }
-  }, [channelTopic, placeholder]);
-
+  const [showDiscordTopic, setShowDiscordTopic] = useState(false);
   const editorRef = useRef<any>(null);
   const [content, setContent] = useState("");
   const [plainText, setPlainText] = useState("");
@@ -126,6 +127,25 @@ export function GlassCanvasComposer({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [postToDiscord, setPostToDiscord] = useState(true);
   const [isEditorFocused, setIsEditorFocused] = useState(false);
+  const [pollDraft, setPollDraft] = useState<{
+    question: string;
+    pollType: "choice" | "feature-poll";
+    multiple: boolean;
+    options: string[];
+  } | null>(null);
+  const [showPollModal, setShowPollModal] = useState(false);
+
+  useEffect(() => {
+    if (channelTopic) {
+      const isDev = process.env.NODE_ENV === "development";
+      const shouldShow = isDev || Math.random() < 0.10;
+      if (shouldShow) {
+        setShowDiscordTopic(true);
+      }
+    }
+  }, [channelTopic]);
+
+  const resolvedPlaceholder = (showDiscordTopic && !isEditorFocused) ? channelTopic : placeholder;
 
   const accountAvatarUrl = account
     ? account.profileImageUrl ||
@@ -151,7 +171,7 @@ export function GlassCanvasComposer({
   const hasContent =
     plainText.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
 
-  const showActionBar = true;
+  const showActionBar = isEditorFocused || hasContent || showVisualizationPanel;
 
   // Get latest economic data for visualizations - live wired
   const { data: economicData, isLoading: isLoadingEconomic } =
@@ -203,6 +223,7 @@ export function GlassCanvasComposer({
       }
       setSelectedVisualizations([]);
       setSelectedImages([]);
+      setPollDraft(null);
       setPostToDiscord(true);
       void utils.thinkpages.getFeed.invalidate();
       if (account?.clerkUserId) {
@@ -218,9 +239,26 @@ export function GlassCanvasComposer({
   const handleSubmit = useCallback(() => {
     if (!account) return;
 
-    if (!plainText.trim() && selectedVisualizations.length === 0 && selectedImages.length === 0) {
-      notify.error("Please add content, a visualization, or an image");
+    if (
+      !plainText.trim() &&
+      selectedVisualizations.length === 0 &&
+      selectedImages.length === 0 &&
+      !pollDraft
+    ) {
+      notify.error("Please add content, a visualization, an image, or a poll");
       return;
+    }
+
+    if (pollDraft) {
+      if (!pollDraft.question.trim()) {
+        notify.error("Please enter a poll question");
+        return;
+      }
+      const validOpts = pollDraft.options.map((opt) => opt.trim()).filter((opt) => opt.length > 0);
+      if (validOpts.length < 2) {
+        notify.error("A poll must have at least 2 options");
+        return;
+      }
     }
 
     // Create post with embedded visualizations and media
@@ -238,6 +276,14 @@ export function GlassCanvasComposer({
       mediaUrls: selectedImages,
       repostOfId: repostData?.originalPost?.id,
       postToDiscord,
+      poll: pollDraft
+        ? {
+            question: pollDraft.question.trim(),
+            pollType: pollDraft.pollType,
+            multiple: pollDraft.multiple,
+            options: pollDraft.options.map((opt) => opt.trim()).filter((opt) => opt.length > 0),
+          }
+        : undefined,
     };
 
     createPostMutation.mutate(postData);
@@ -250,6 +296,7 @@ export function GlassCanvasComposer({
     createPostMutation,
     repostData,
     postToDiscord,
+    pollDraft,
   ]);
 
   const extractHashtags = (text: string): string[] => {
@@ -525,12 +572,12 @@ export function GlassCanvasComposer({
   // Conditional render for account required notice inline
   if (accounts.length === 0) {
     return (
-      <Card className="glass-hierarchy-child relative gap-0 overflow-hidden border-purple-500/30 bg-purple-500/5 p-5">
+      <Card className="glass-hierarchy-child relative gap-0 overflow-hidden border-[#ff8a65]/35 bg-[#ff8a65]/5 p-5">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
         <div className="flex items-start justify-between gap-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-500/15 border border-purple-500/20">
-              <Newspaper className="h-5 w-5 text-purple-400" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#ff8a65]/15 border border-[#ff8a65]/20">
+              <Newspaper className="h-5 w-5 text-[#ff8a65]" />
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="text-foreground text-xs font-semibold">
@@ -544,7 +591,7 @@ export function GlassCanvasComposer({
           <Button
             size="sm"
             onClick={onCreateAccount}
-            className="h-8 shrink-0 text-xs bg-purple-600 hover:bg-purple-700 text-white border-0"
+            className="h-8 shrink-0 text-xs bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white border-0 cursor-pointer"
           >
             Create Account
           </Button>
@@ -604,7 +651,7 @@ export function GlassCanvasComposer({
               >
                 <Avatar className="h-9 w-9 border border-border/50 shadow-sm transition-all duration-200 group-hover:scale-105 active:scale-95">
                   <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-semibold text-white">
                     {account.displayName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
@@ -775,6 +822,48 @@ export function GlassCanvasComposer({
                 </div>
               ))}
             </div>
+          )}
+
+          {pollDraft && (
+            <motion.div
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="flex items-center justify-between rounded-xl border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3.5 mt-1.5"
+            >
+              <div className="flex items-center gap-2">
+                <Vote className="h-4 w-4 text-[#ff8a65] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {pollDraft.question || "Untitled Poll"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} • {pollDraft.options.filter(o => o.trim()).length} options
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPollModal(true)}
+                  className="h-7 px-2.5 text-[10px] font-semibold border-[#ff8a65]/30 text-[#ff8a65] dark:text-[#ff8a65] hover:bg-[#ff8a65]/10 cursor-pointer"
+                >
+                  Edit Poll
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPollDraft(null)}
+                  className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </motion.div>
           )}
 
           <motion.div
@@ -1040,6 +1129,34 @@ export function GlassCanvasComposer({
                     </TooltipTrigger>
                     <TooltipContent side="top">Insert GIF</TooltipContent>
                   </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (!pollDraft) {
+                            setPollDraft({
+                              question: "",
+                              pollType: "choice",
+                              multiple: false,
+                              options: ["", ""],
+                            });
+                          }
+                          setShowPollModal(true);
+                        }}
+                        className={cn(
+                          "h-8 w-8 p-0 text-[#ff8a65] dark:text-[#ff8a65] hover:text-[#ff8a65] dark:hover:text-[#ff8a65]/90 hover:bg-slate-500/5 dark:hover:bg-white/5 transition-colors cursor-pointer",
+                          pollDraft && "bg-slate-500/10 dark:bg-white/10"
+                        )}
+                      >
+                        <Vote className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Add Poll</TooltipContent>
+                  </Tooltip>
+
                   <div className="flex h-5 items-center gap-2 border-l border-slate-200 dark:border-white/10 px-2">
                     <Switch
                       id="share-to-discord-toggle"
@@ -1096,6 +1213,231 @@ export function GlassCanvasComposer({
         onClose={() => setShowMediaModal(false)}
         onImageSelect={handleImageSelect}
       />
+
+      {/* Poll Configuration Modal */}
+      {/* Poll Configuration Modal */}
+      {typeof window !== "undefined" && createPortal(
+        <AnimatePresence>
+          {showPollModal && pollDraft && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowPollModal(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-md"
+              />
+
+              {/* Modal Container */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-900/95 dark:bg-neutral-900/95 p-5 space-y-4 shadow-2xl backdrop-blur-xl z-10 text-foreground"
+              >
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#ff8a65]">
+                    <Vote className="h-4 w-4" />
+                    <span>Configure Poll Draft</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPollModal(false)}
+                    className="h-7 w-7 rounded-full text-slate-400 hover:bg-slate-500/10 hover:text-slate-200 cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Poll Question */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Question / Topic *
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Ask a question..."
+                    value={pollDraft.question}
+                    onChange={(e) =>
+                      setPollDraft({ ...pollDraft, question: e.target.value })
+                    }
+                    className="w-full bg-background/50 focus-visible:ring-[#ff8a65]/50"
+                    required
+                  />
+                </div>
+
+                {/* Poll Type & Multiple Options */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                      Poll Type
+                    </label>
+                    <Select
+                      value={pollDraft.pollType}
+                      onValueChange={(val: "choice" | "feature-poll") =>
+                        setPollDraft({
+                          ...pollDraft,
+                          pollType: val,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full bg-background/50 border border-slate-200 dark:border-white/10 text-xs h-8 focus:border-[#ff8a65]/50">
+                        <SelectValue placeholder="Select Poll Type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border border-slate-200 dark:border-slate-800 text-xs z-[100020]">
+                        <SelectItem value="choice">Choice Poll</SelectItem>
+                        {!isRegularUser && (
+                          <SelectItem value="feature-poll">Feature Poll</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col justify-end pb-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="modal-poll-multiple-toggle"
+                        checked={pollDraft.multiple}
+                        onCheckedChange={(checked) =>
+                          setPollDraft({ ...pollDraft, multiple: checked })
+                        }
+                        className="scale-90"
+                      />
+                      <label
+                        htmlFor="modal-poll-multiple-toggle"
+                        className="cursor-pointer text-[11px] font-semibold text-slate-650 dark:text-neutral-300"
+                      >
+                        Multiple Selection
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Blurb Prompt Notice for Regular Users */}
+                {isRegularUser && (
+                  <div className="rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-[11px] text-[#ff8a65] flex items-start gap-2 leading-relaxed">
+                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>
+                      Citizen accounts can only launch Choice Polls. To prioritize features, create a structured roadmap, or run custom campaigns, submit a{" "}
+                      <a
+                        href={withBasePath("/blurbs")}
+                        className="underline font-bold hover:text-[#ff8a65]/80"
+                        onClick={() => setShowPollModal(false)}
+                      >
+                        Blurb prompt
+                      </a>{" "}
+                      instead.
+                    </span>
+                  </div>
+                )}
+
+                {/* Poll Options */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Options * (min 2)
+                    </label>
+                    <span className="text-[9px] text-muted-foreground/60 font-medium">
+                      {pollDraft.options.filter(o => o.trim()).length} / 10
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                    {pollDraft.options.map((option, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-muted-foreground/60 w-4 text-center">
+                          {idx + 1}
+                        </span>
+                        <Input
+                          type="text"
+                          placeholder={`Option ${idx + 1}`}
+                          value={option}
+                          onChange={(e) => {
+                            const updated = [...pollDraft.options];
+                            updated[idx] = e.target.value;
+                            setPollDraft({ ...pollDraft, options: updated });
+                          }}
+                          className="flex-1 bg-background/50 text-xs focus-visible:ring-[#ff8a65]/50"
+                          required
+                        />
+                        {pollDraft.options.length > 2 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setPollDraft({
+                                ...pollDraft,
+                                options: pollDraft.options.filter((_, i) => i !== idx),
+                              });
+                            }}
+                            className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 cursor-pointer shrink-0"
+                          >
+                            <Minus className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {pollDraft.options.length < 10 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setPollDraft({
+                          ...pollDraft,
+                          options: [...pollDraft.options, ""],
+                        });
+                      }}
+                      className="h-8 w-full border-dashed border-[#ff8a65]/35 text-[#ff8a65] dark:text-[#ff8a65] hover:bg-[#ff8a65]/10 mt-1 cursor-pointer text-[10px] font-semibold"
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Add Option
+                    </Button>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-white/10 pt-3.5 mt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setPollDraft(null);
+                      setShowPollModal(false);
+                    }}
+                    className="h-8 px-3 text-xs text-rose-500 hover:bg-rose-500/10 cursor-pointer font-semibold"
+                  >
+                    Discard Poll
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const validOpts = pollDraft.options.map(o => o.trim()).filter(Boolean);
+                      if (!pollDraft.question.trim()) {
+                        notify.error("Please enter a question");
+                        return;
+                      }
+                      if (validOpts.length < 2) {
+                        notify.error("At least 2 non-empty options are required");
+                        return;
+                      }
+                      setShowPollModal(false);
+                      notify.success("Poll configured successfully!");
+                    }}
+                    className="h-8 px-4 text-xs bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white cursor-pointer font-bold"
+                  >
+                    Save & Apply
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </motion.div>
   );
 }

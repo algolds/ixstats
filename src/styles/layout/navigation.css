@@ -1,0 +1,70 @@
+/* ==========================================
+   NAVIGATION BACKGROUND TRANSPARENCY & OVERLAP
+   ========================================== */
+
+/* Make the navigation bar absolute by default so it sits on top of page backgrounds */
+.navigation-bar {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50; /* Above background, but below dropdowns/overlays */
+}
+
+/* On pages with headless builder, preserve fixed positioning */
+body:has([data-builder-headless]) .navigation-bar {
+  position: fixed !important;
+}
+
+/* Offset the main element's content by the height of the absolute navigation bar */
+main {
+  padding-top: 56px; /* standard mobile navigation height */
+}
+
+@media (min-width: 1024px) {
+  main {
+    padding-top: 64px; /* standard desktop navigation height */
+  }
+}
+
+/* Support compact mode */
+body.compact-mode main {
+  padding-top: 48px;
+}
+
+/* Headless builder mode should have zero padding at the top since it starts hidden */
+body:has([data-builder-headless]) main {
+  padding-top: 0 !important;
+}
+
+/* Maps pages manage their own top positioning via MapDynamicIsland — no main padding needed */
+body:has([data-maps-page]) main {
+  padding-top: 0 !important;
+}
+
+/* ==========================================
+   PAGE BACKGROUND EXTENSION & STICKY OFFSETS
+   ========================================== */
+
+/* Background wrapper that extends to the top behind the navigation */
+.extend-under-nav {
+  position: absolute !important;
+  top: -56px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+@media (min-width: 1024px) {
+  .extend-under-nav {
+    top: -64px;
+  }
+}
+
+body.compact-mode .extend-under-nav {
+  top: -48px;
+}
+
+body:has([data-builder-headless]) .extend-under-nav {
+  top: 0 !important;
+}

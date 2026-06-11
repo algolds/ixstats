@@ -19,7 +19,7 @@ import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { IOSActivityIndicator } from "~/components/ui/loader";
-import { useWikiContext } from "~/components/wikios/shared/WikiContext";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -28,6 +28,10 @@ export {
   useDynamicIslandSize,
   SIZE_PRESETS,
   DynamicIslandProvider,
+  Halo,
+  HaloContainer,
+  useHaloSize,
+  HaloProvider,
 } from "../ui/dynamic-island";
 
 // Re-export plugin system for page-level consumption

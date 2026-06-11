@@ -83,20 +83,9 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                 <img
                   src={selectedResult.flagUrl}
                   alt={`Flag of ${selectedResult.title}`}
-                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-10 blur-3xl"
-                  style={{
-                    filter: "blur(24px) saturate(0.7) brightness(0.5)",
-                    transform: "scale(1.2)",
-                  }}
+                  className="scale-[1.2] saturate-[0.7] brightness-[0.5] absolute inset-0 h-full w-full object-cover opacity-10 blur-3xl"
                 />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--color-bg-primary)/90 0%, var(--color-bg-secondary)/95 50%, var(--color-bg-primary)/90 100%)",
-                    backdropFilter: "blur(8px)",
-                  }}
-                />
+                <div className="bg-gradient-to-br from-background/90 via-card/95 to-background/90 backdrop-blur absolute inset-0" />
               </div>
             )}
 
@@ -106,12 +95,7 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                   whileHover={{ scale: 1.05, x: -2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onCancel}
-                  className="flex items-center gap-2 rounded-md border px-3 py-1.5 backdrop-blur-sm transition-all duration-200"
-                  style={{
-                    backgroundColor: "var(--color-bg-surface)/80",
-                    borderColor: "var(--color-border-primary)",
-                    color: "var(--color-text-primary)",
-                  }}
+                  className="border-border bg-card/80 text-foreground flex items-center gap-2 rounded-md border px-3 py-1.5 backdrop-blur-sm transition-all duration-200"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   <span className="text-xs font-medium">Back</span>
@@ -123,11 +107,7 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
-                      className="rounded border p-0.5 backdrop-blur-sm"
-                      style={{
-                        backgroundColor: "var(--color-bg-surface)/80",
-                        borderColor: "var(--color-border-primary)",
-                      }}
+                      className="border-border bg-card/80 rounded border p-0.5 backdrop-blur-sm"
                     >
                       <img
                         src={selectedResult.flagUrl}
@@ -136,14 +116,8 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                       />
                     </motion.div>
                   ) : (
-                    <div
-                      className="flex h-6 w-10 items-center justify-center rounded border backdrop-blur-sm"
-                      style={{
-                        backgroundColor: "var(--color-bg-surface)/80",
-                        borderColor: "var(--color-border-primary)",
-                      }}
-                    >
-                      <Globe className="h-4 w-4" style={{ color: "var(--color-text-muted)" }} />
+                    <div className="border-border bg-card/80 flex h-6 w-10 items-center justify-center rounded border backdrop-blur-sm">
+                      <Globe className="text-muted-foreground h-4 w-4" />
                     </div>
                   )}
                   <div>
@@ -151,18 +125,16 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="flex items-center gap-2 text-xl font-bold"
-                      style={{ color: "var(--color-text-primary)" }}
+                      className="text-foreground flex items-center gap-2 text-xl font-bold"
                     >
                       {selectedResult.title}
-                      <Crown className="h-4 w-4" style={{ color: "var(--color-brand-primary)" }} />
+                      <Crown className="text-brand-primary h-4 w-4" />
                     </motion.h1>
                     <motion.p
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.15 }}
-                      className="text-xs"
-                      style={{ color: "var(--color-text-muted)" }}
+                      className="text-muted-foreground text-xs"
                     >
                       Country Preview
                     </motion.p>
@@ -181,17 +153,10 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="rounded-lg border p-4 backdrop-blur-sm"
-                  style={{
-                    backgroundColor: "var(--color-bg-surface)/80",
-                    borderColor: "var(--color-border-primary)",
-                  }}
+                  className="border-border bg-card/80 rounded-lg border p-4 backdrop-blur-sm"
                 >
-                  <h3
-                    className="mb-3 flex items-center gap-2 text-base font-semibold"
-                    style={{ color: "var(--color-text-primary)" }}
-                  >
-                    <Building className="h-4 w-4" style={{ color: "var(--color-info)" }} />
+                  <h3 className="text-foreground mb-3 flex items-center gap-2 text-base font-semibold">
+                    <Building className="text-info h-4 w-4" />
                     Key Information
                   </h3>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -200,26 +165,16 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.4 }}
-                        className="rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
-                        style={{
-                          backgroundColor: "var(--color-bg-surface)/80",
-                          borderColor: "var(--color-border-primary)",
-                        }}
+                        className="border-border bg-card/80 rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
                         title="Total population of the country"
                       >
                         <div className="mb-1 flex items-center gap-2">
-                          <Users className="h-3.5 w-3.5" style={{ color: "var(--color-info)" }} />
-                          <span
-                            className="text-xs font-medium"
-                            style={{ color: "var(--color-text-muted)" }}
-                          >
+                          <Users className="text-info h-3.5 w-3.5" />
+                          <span className="text-muted-foreground text-xs font-medium">
                             Population
                           </span>
                         </div>
-                        <p
-                          className="text-sm font-semibold"
-                          style={{ color: "var(--color-text-primary)" }}
-                        >
+                        <p className="text-foreground text-sm font-semibold">
                           {formatNumber(selectedResult.population, 0)}
                         </p>
                       </motion.div>
@@ -230,29 +185,16 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.45 }}
-                        className="rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
-                        style={{
-                          backgroundColor: "var(--color-bg-surface)/80",
-                          borderColor: "var(--color-border-primary)",
-                        }}
+                        className="border-border bg-card/80 rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
                         title="Gross Domestic Product per capita"
                       >
                         <div className="mb-1 flex items-center gap-2">
-                          <DollarSign
-                            className="h-3.5 w-3.5"
-                            style={{ color: "var(--color-success)" }}
-                          />
-                          <span
-                            className="text-xs font-medium"
-                            style={{ color: "var(--color-text-muted)" }}
-                          >
+                          <DollarSign className="text-success h-3.5 w-3.5" />
+                          <span className="text-muted-foreground text-xs font-medium">
                             GDP per Capita
                           </span>
                         </div>
-                        <p
-                          className="text-sm font-semibold"
-                          style={{ color: "var(--color-text-primary)" }}
-                        >
+                        <p className="text-foreground text-sm font-semibold">
                           ${formatNumber(selectedResult.gdpPerCapita)}
                         </p>
                       </motion.div>
@@ -263,25 +205,17 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.5 }}
-                        className="rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
-                        style={{
-                          backgroundColor: "var(--color-bg-surface)/80",
-                          borderColor: "var(--color-border-primary)",
-                        }}
+                        className="border-border bg-card/80 rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
                         title="Capital city of the country"
                       >
                         <div className="mb-1 flex items-center gap-2">
-                          <MapPin className="h-3.5 w-3.5" style={{ color: "var(--color-error)" }} />
-                          <span
-                            className="text-xs font-medium"
-                            style={{ color: "var(--color-text-muted)" }}
-                          >
+                          <MapPin className="text-error h-3.5 w-3.5" />
+                          <span className="text-muted-foreground text-xs font-medium">
                             Capital
                           </span>
                         </div>
                         <div
-                          className="[&_a]:text-brand-primary text-sm font-semibold [&_a]:hover:underline"
-                          style={{ color: "var(--color-text-primary)" }}
+                          className="text-foreground [&_a]:text-brand-primary text-sm font-semibold [&_a]:hover:underline"
                           // SECURITY: Sanitize wiki content
                           dangerouslySetInnerHTML={{
                             __html: sanitizeWikiContent(selectedResult.capital || "Unknown"),
@@ -295,28 +229,17 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.55 }}
-                        className="rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
-                        style={{
-                          backgroundColor: "var(--color-bg-surface)/80",
-                          borderColor: "var(--color-border-primary)",
-                        }}
+                        className="border-border bg-card/80 rounded border p-3 backdrop-blur-sm transition-all duration-200 hover:shadow-sm"
                         title="Type of government system"
                       >
                         <div className="mb-1 flex items-center gap-2">
-                          <Building
-                            className="h-3.5 w-3.5"
-                            style={{ color: "var(--color-brand-secondary)" }}
-                          />
-                          <span
-                            className="text-xs font-medium"
-                            style={{ color: "var(--color-text-muted)" }}
-                          >
+                          <Building className="text-brand-secondary h-3.5 w-3.5" />
+                          <span className="text-muted-foreground text-xs font-medium">
                             Government
                           </span>
                         </div>
                         <div
-                          className="[&_a]:text-brand-primary text-sm font-semibold [&_a]:hover:underline"
-                          style={{ color: "var(--color-text-primary)" }}
+                          className="text-foreground [&_a]:text-brand-primary text-sm font-semibold [&_a]:hover:underline"
                           // SECURITY: Sanitize wiki content
                           dangerouslySetInnerHTML={{
                             __html: sanitizeWikiContent(selectedResult.government || "Unknown"),
@@ -333,25 +256,14 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="rounded-lg border p-4 backdrop-blur-sm"
-                style={{
-                  backgroundColor: "var(--color-bg-surface)/80",
-                  borderColor: "var(--color-border-primary)",
-                }}
+                className="border-border bg-card/80 rounded-lg border p-4 backdrop-blur-sm"
               >
-                <h3
-                  className="mb-2 flex items-center gap-2 text-base font-semibold"
-                  style={{ color: "var(--color-text-primary)" }}
-                >
-                  <ExternalLink
-                    className="h-4 w-4"
-                    style={{ color: "var(--color-brand-primary)" }}
-                  />
+                <h3 className="text-foreground mb-2 flex items-center gap-2 text-base font-semibold">
+                  <ExternalLink className="text-brand-primary h-4 w-4" />
                   Description
                 </h3>
                 <p
-                  className="[&_a]:text-brand-primary line-clamp-3 text-sm leading-relaxed [&_a]:hover:underline"
-                  style={{ color: "var(--color-text-secondary)" }}
+                  className="text-text-secondary [&_a]:text-brand-primary line-clamp-3 text-sm leading-relaxed [&_a]:hover:underline"
                   // SECURITY: Sanitize wiki snippet
                   dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(selectedResult.snippet) }}
                 />
@@ -368,12 +280,7 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onCancel}
-                  className="flex-1 rounded border px-4 py-2 backdrop-blur-sm transition-all duration-200"
-                  style={{
-                    backgroundColor: "var(--color-bg-surface)/80",
-                    borderColor: "var(--color-border-primary)",
-                    color: "var(--color-text-primary)",
-                  }}
+                  className="border-border bg-card/80 text-foreground flex-1 rounded border px-4 py-2 backdrop-blur-sm transition-all duration-200"
                 >
                   <span className="text-sm font-medium">Cancel</span>
                 </motion.button>
@@ -382,12 +289,7 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={onContinue}
-                  className="flex-1 rounded border px-4 py-2 backdrop-blur-sm transition-all duration-200"
-                  style={{
-                    backgroundColor: "var(--color-brand-primary)",
-                    borderColor: "var(--color-brand-primary)",
-                    color: "white",
-                  }}
+                  className="bg-brand-primary border-brand-primary flex-1 rounded border px-4 py-2 text-white backdrop-blur-sm transition-all duration-200"
                 >
                   <span className="text-sm font-medium">Import Country</span>
                 </motion.button>

@@ -109,7 +109,7 @@ export function useWikiSectionMap(countryName: string | undefined, context: stri
         key: `${i}-${s.anchor || s.line || i}`,
       }));
 
-    const url = `/w/${encodeURIComponent((countryName ?? "").replace(/ /g, "_"))}`;
+    const url = `/wiki/${encodeURIComponent((countryName ?? "").replace(/ /g, "_"))}`;
 
     return { sections: filtered, wikiUrl: url };
   }, [wikiSections, context, countryName]);

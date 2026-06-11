@@ -440,6 +440,20 @@ export class IxnayWikiService {
     if (cached !== null) {
       return cached;
     }
+
+    if (typeof window === "undefined" && this.wikiSource === "ixwiki") {
+      try {
+        const { getArticleWikitext } = await import("~/lib/wiki-bridge");
+        const article = await getArticleWikitext(pageName, "ixwiki");
+        if (article) {
+          this.setCacheValue(this.WIKITEXT_CACHE, normName, article.wikitext, this.WIKITEXT_TTL);
+          return article.wikitext;
+        }
+      } catch (err) {
+        console.error(`[MediaWiki] Error fetching wikitext for ${pageName} via direct SQL:`, err);
+      }
+    }
+
     return this.getOrCreateRequest(`wikitext_${normName}`, async () => {
       try {
         const params = new URLSearchParams({
@@ -1670,6 +1684,21 @@ export class IxnayWikiService {
     if (cached !== null) {
       return cached;
     }
+
+    if (typeof window === "undefined" && this.wikiSource === "ixwiki") {
+      try {
+        const { getArticleWikitext } = await import("~/lib/wiki-bridge");
+        const fullTemplateName = templateName.startsWith("Template:") ? templateName : `Template:${templateName}`;
+        const article = await getArticleWikitext(fullTemplateName, "ixwiki");
+        if (article) {
+          this.setCacheValue(this.TEMPLATE_CACHE, normName, article.wikitext, this.TEMPLATE_TTL);
+          return article.wikitext;
+        }
+      } catch (err) {
+        console.error(`[MediaWiki] Error fetching template ${templateName} via direct SQL:`, err);
+      }
+    }
+
     return this.getOrCreateRequest(`template_${normName}`, async () => {
       try {
         const params = new URLSearchParams({
@@ -1738,6 +1767,24 @@ export class IxnayWikiService {
 
     if (NOT_FOUND_SET.has(normalizedKey)) {
       return { error: `[MediaWiki] File not found (cached): ${cleanFileName}` };
+    }
+
+    const cached = this.getCacheValue(this.FILE_CACHE, cleanFileName);
+    if (cached !== null) {
+      return cached;
+    }
+
+    if (typeof window === "undefined" && this.wikiSource === "ixwiki") {
+      try {
+        const { getImageMeta } = await import("~/lib/wiki-bridge");
+        const meta = await getImageMeta(cleanFileName);
+        if (meta?.url) {
+          this.setCacheValue(this.FILE_CACHE, cleanFileName, meta.url, this.FILE_TTL);
+          return meta.url;
+        }
+      } catch (err) {
+        console.error("[MediaWiki] Error fetching file URL via direct SQL:", err);
+      }
     }
 
     return this.getOrCreateRequest(`file:${normalizedKey}`, async () => {
@@ -1980,7 +2027,7 @@ export class IxnayWikiService {
               page.fullurl && this.wikiSource !== "ixwiki"
                 ? page.fullurl
                 : this.wikiSource === "ixwiki"
-                  ? `/w/${encodeURIComponent(page.title)}`
+                  ? `/wiki/${encodeURIComponent(page.title)}`
                   : `https://iiwiki.com/wiki/${encodeURIComponent(page.title)}`,
           };
 
@@ -2006,7 +2053,7 @@ export class IxnayWikiService {
   getCountryWikiUrl(countryName: string): string {
     if (this.wikiSource === "ixwiki") {
       const basePath = process.env.BASE_PATH || "";
-      return `${basePath}/w/${encodeURIComponent(this.sanitizePageName(countryName))}`;
+      return `${basePath}/wiki/${encodeURIComponent(this.sanitizePageName(countryName))}`;
     }
     return `${MEDIAWIKI_CONFIG.baseUrl}/wiki/${encodeURIComponent(this.sanitizePageName(countryName))}`;
   }
@@ -2191,7 +2238,7 @@ export class IxnayWikiService {
   private createWikiLink(target: string, display: string): string {
     const normalizedTarget = target.replace(/ /g, "_").replace(/^_+|_+$/g, "");
     const basePath = process.env.BASE_PATH || "";
-    const wikiUrl = `${basePath}/w/${encodeURIComponent(normalizedTarget)}`;
+    const wikiUrl = `${basePath}/wiki/${encodeURIComponent(normalizedTarget)}`;
     const safeDisplay = display.replace(/[&<>"']/g, (char: string) => {
       const escapeMap: Record<string, string> = {
         "&": "&amp;",

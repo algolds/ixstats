@@ -61,6 +61,7 @@ import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { LiveDataCard } from "./LiveDataCard";
+import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import {
   formatThinkpagesContentForDisplay,
   extractHashtags,
@@ -85,6 +86,9 @@ function proxyDiscordUrl(url: string): string {
       cleanPath = cleanPath.slice("/projects/ixstates".length);
     } else if (cleanPath.startsWith("/projects/ixstates")) {
       cleanPath = cleanPath.slice("/projects/ixstates".length);
+    }
+    if (cleanPath.includes("/images/discord/")) {
+      cleanPath = cleanPath.includes("?") ? `${cleanPath}&v=1` : `${cleanPath}?v=1`;
     }
     return withBasePath(cleanPath);
   }
@@ -768,6 +772,11 @@ const ThinkpagesPostComponent = ({
           </div>
         )}
 
+        {/* Embedded Poll */}
+        {post.poll && (
+          <FeedPollWidget poll={post.poll} />
+        )}
+
         {/* Inline Link Previews */}
         {(() => {
           const content = post.content ?? "";
@@ -1192,6 +1201,11 @@ const ThinkpagesPostComponent = ({
                 />
               ))}
             </div>
+          )}
+
+          {/* Embedded Poll */}
+          {post.poll && (
+            <FeedPollWidget poll={post.poll} />
           )}
 
           {/* Inline Link Previews (Wiki / Forum) */}

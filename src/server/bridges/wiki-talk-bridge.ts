@@ -153,7 +153,7 @@ export const wikiTalkBridge: BridgeAdapter = {
           const comment = rc.comment?.replace(/\/\*.*?\*\/\s*/, "").trim();
 
           const basePath = process.env.BASE_PATH || "";
-          const wikiUrl = `${basePath}/w/${encodeURIComponent(rc.title)}`;
+          const wikiUrl = `${basePath}/wiki/${encodeURIComponent(rc.title)}`;
           const description = isNew
             ? `<strong>${rc.user}</strong> created <a href="${wikiUrl}"><strong>${rc.title}</strong></a> (${sizeStr} bytes)`
             : `<strong>${rc.user}</strong> edited <a href="${wikiUrl}"><strong>${rc.title}</strong></a> (${sizeStr} bytes)${comment ? `: ${comment}` : ""}`;

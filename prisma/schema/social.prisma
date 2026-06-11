@@ -61,6 +61,8 @@ model ThinkpagesPost {
   replies          ThinkpagesPost[]  @relation("PostReplies")
   repostOf         ThinkpagesPost?   @relation("PostReposts", fields: [repostOfId], references: [id])
   reposts          ThinkpagesPost[]  @relation("PostReposts")
+  pollId           String?
+  poll             Poll?             @relation("PostPolls", fields: [pollId], references: [id], onDelete: SetNull)
 
   @@index([accountId])
   @@index([ixTimeTimestamp])
@@ -69,6 +71,7 @@ model ThinkpagesPost {
   @@index([postType])
   @@index([parentPostId])
   @@index([repostOfId])
+  @@index([pollId])
 }
 
 model PostReaction {
@@ -470,6 +473,7 @@ model Poll {
   options          PollOption[]
   votes            PollVote[]
   activityFeeds    ActivityFeed[]
+  thinkpagesPosts  ThinkpagesPost[] @relation("PostPolls")
 
   country          Country?       @relation("CountryPolls", fields: [countryId], references: [id], onDelete: Cascade)
 

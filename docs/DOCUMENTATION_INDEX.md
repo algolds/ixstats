@@ -76,6 +76,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`reference/api.md`](reference/api.md) | Generated table of routers, procedures, input/output, and auth requirements |
 | [`reference/database.md`](reference/database.md) | Prisma models, relations, derived views, and data ownership |
 | [`reference/branding.md`](reference/branding.md) | Complete brand catalog: Apps, Engines, UI/Feature Systems, Facet design system, utilities, icons, colors, symbols, and visual identity tokens |
+| [`reference/facet-design-system.md`](reference/facet-design-system.md) | Facet Design System Reference & Style Guide: tokens, volumetric depth, compound hierarchy blurs, physical materials, adaptive textures, and edge glare refraction |
 | [`revision.md`](reference/revision.md) | **Versioning & Release Architecture** — platform (`Major.Minor.Patch` + epoch release name + channel), Apps/Engines/Systems single-integer versions, the Version Registry (`src/lib/buildVersion.ts`), schema/API/build versioning |
 | [`reference/events.md`](reference/events.md) | WebSocket channels, notification payloads, cron/scheduled jobs |
 | [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) | Government component synergy system and interaction patterns |

@@ -114,7 +114,7 @@ async function fetchWikiIntro(
           wikiSource: wiki,
           wikiUrl:
             wiki === "ixwiki"
-              ? `/w/${encodeURIComponent(result.title)}`
+              ? `/wiki/${encodeURIComponent(result.title)}`
               : `https://iiwiki.com/wiki/${encodeURIComponent(result.title)}`,
         };
       }
@@ -177,7 +177,7 @@ async function fetchWikiRichIntro(
       const wikitext = article.wikitext;
       const wikiUrl =
         wiki === "ixwiki"
-          ? `/w/${encodeURIComponent(article.title)}`
+          ? `/wiki/${encodeURIComponent(article.title)}`
           : `https://iiwiki.com/wiki/${encodeURIComponent(article.title)}`;
 
       // Strip infobox template (match balanced braces)
@@ -230,7 +230,7 @@ async function fetchWikiRichIntro(
         .trim();
 
       // Convert wiki links to HTML
-      const linkBase = base;
+      const linkBase = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
       const processedContent = cleanContent
         .replace(/\[\[([^\[\]|]+)\|([^\[\]]+?)\]\]/g, (_, pg: string, display: string) => {
           if (pg.toLowerCase().includes("template:")) return "";

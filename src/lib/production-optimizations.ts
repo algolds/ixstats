@@ -395,7 +395,7 @@ export class ProductionMiddleware {
     const pathname = opts?.pathname ?? "";
     const isEmbeddable =
       pathname.startsWith("/maps") ||
-      pathname.startsWith("/w/") ||
+      pathname.startsWith("/wiki/") ||
       pathname.startsWith("/countries/");
     if (!isEmbeddable) {
       response.headers.set("X-Frame-Options", "DENY");

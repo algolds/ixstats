@@ -1,0 +1,316 @@
+/* ==========================================
+   VAULT THEME - Complete Color System v2.0
+   ========================================== */
+:root {
+  /* WikiOS color tokens (global so nav bar can reference them) */
+  --wikios-bg: #0f1114;
+  --wikios-surface: #16181d;
+  --wikios-border: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] {
+  --wikios-bg: #fafafa;
+  --wikios-surface: #ffffff;
+  --wikios-border: rgba(0, 0, 0, 0.1);
+}
+
+:root {
+  /* Vault Primary Colors */
+  --vault-gold-start: #ffd700;
+  --vault-gold-end: #ff8c00;
+  --vault-purple-start: #9333ea;
+  --vault-purple-end: #ec4899;
+  --vault-cyan-start: #06b6d4;
+  --vault-cyan-end: #3b82f6;
+  --vault-orange: #f97316;
+  --vault-red: #f87171;
+
+  /* Vault Extended Palette */
+  --vault-purple-400: #c084fc;
+  --vault-purple-500: #a855f7;
+  --vault-purple-600: #9333ea;
+  --vault-gold-400: #fcd34d;
+  --vault-gold-500: #fbbf24;
+  --vault-gold-600: #f59e0b;
+  --vault-cyan-400: #22d3ee;
+  --vault-cyan-500: #06b6d4;
+  --vault-blue-400: #60a5fa;
+  --vault-blue-500: #3b82f6;
+
+  /* Metallic Colors */
+  --vault-metal-light: #94a3b8;
+  --vault-metal-dark: #1e293b;
+  --vault-metal-border: #334155;
+  --vault-chrome: linear-gradient(135deg, #b4b4b4 0%, #e0e0e0 50%, #a8a8a8 100%);
+  --vault-steel: linear-gradient(135deg, #475569 0%, #64748b 50%, #475569 100%);
+
+  /* Holographic Rainbow Colors */
+  --vault-holo-1: #ff00ff;
+  --vault-holo-2: #00ffff;
+  --vault-holo-3: #ffff00;
+  --vault-holo-4: #ff6b6b;
+  --vault-holo-5: #4ecdc4;
+
+  /* Card Rarity Colors */
+  --vault-rarity-common: #60a5fa; /* blue-400 */
+  --vault-rarity-uncommon: #4ade80; /* green-400 */
+  --vault-rarity-rare: #a855f7; /* purple-400 */
+  --vault-rarity-ultra-rare: #c084fc; /* purple-500 */
+  --vault-rarity-epic: #fbbf24; /* gold-400 */
+  --vault-rarity-legendary: #ffd700; /* gold with animated gradient */
+
+  /* Vault Gradients */
+  --vault-gradient-primary: linear-gradient(
+    135deg,
+    var(--vault-purple-start) 0%,
+    var(--vault-purple-end) 50%,
+    var(--vault-gold-start) 100%
+  );
+  --vault-gradient-secondary: linear-gradient(
+    135deg,
+    var(--vault-gold-start) 0%,
+    var(--vault-gold-end) 100%
+  );
+  --vault-gradient-rare: linear-gradient(
+    135deg,
+    var(--vault-cyan-start) 0%,
+    var(--vault-cyan-end) 50%,
+    var(--vault-purple-start) 100%
+  );
+  --vault-gradient-holographic: linear-gradient(
+    135deg,
+    var(--vault-holo-1) 0%,
+    var(--vault-holo-2) 25%,
+    var(--vault-holo-3) 50%,
+    var(--vault-holo-4) 75%,
+    var(--vault-holo-5) 100%
+  );
+  --vault-gradient-legendary: linear-gradient(
+    135deg,
+    #ffd700 0%,
+    #ffa500 25%,
+    #ffd700 50%,
+    #ffa500 75%,
+    #ffd700 100%
+  );
+
+  /* Vault Shadows */
+  --vault-shadow-gold: 0 4px 20px rgba(255, 215, 0, 0.3);
+  --vault-shadow-purple: 0 4px 20px rgba(147, 51, 234, 0.3);
+  --vault-shadow-cyan: 0 4px 20px rgba(6, 182, 212, 0.3);
+  --vault-shadow-orange: 0 4px 20px rgba(249, 115, 22, 0.3);
+  --vault-shadow-holographic: 0 8px 32px rgba(147, 51, 234, 0.4), 0 0 64px rgba(255, 215, 0, 0.2);
+  --vault-shadow-metallic: 0 2px 8px rgba(30, 41, 59, 0.5), 0 0 16px rgba(148, 163, 184, 0.2);
+
+  /* Vault Borders */
+  --vault-border-gold: 1px solid rgba(251, 191, 36, 0.3);
+  --vault-border-purple: 1px solid rgba(168, 85, 247, 0.3);
+  --vault-border-metallic: 1px solid var(--vault-metal-border);
+}
+
+.dark {
+  /* Enhanced vault colors for dark mode */
+  --vault-gold-start: #fcd34d;
+  --vault-gold-end: #fb923c;
+  --vault-purple-start: #a855f7;
+  --vault-purple-end: #f472b6;
+  --vault-cyan-start: #22d3ee;
+  --vault-cyan-end: #60a5fa;
+}
+
+/* ==========================================
+   VAULT UTILITY CLASSES
+   ========================================== */
+
+/* Glow Effects */
+.vault-glow-gold {
+  box-shadow: var(--vault-shadow-gold);
+  transition: box-shadow 0.3s ease;
+}
+
+.vault-glow-gold:hover {
+  box-shadow: 0 6px 30px rgba(255, 215, 0, 0.5);
+}
+
+.vault-glow-purple {
+  box-shadow: var(--vault-shadow-purple);
+  transition: box-shadow 0.3s ease;
+}
+
+.vault-glow-purple:hover {
+  box-shadow: 0 6px 30px rgba(147, 51, 234, 0.5);
+}
+
+.vault-glow-cyan {
+  box-shadow: var(--vault-shadow-cyan);
+  transition: box-shadow 0.3s ease;
+}
+
+.vault-glow-cyan:hover {
+  box-shadow: 0 6px 30px rgba(6, 182, 212, 0.5);
+}
+
+.vault-glow-holographic {
+  box-shadow: var(--vault-shadow-holographic);
+  transition: box-shadow 0.3s ease;
+}
+
+.vault-glow-holographic:hover {
+  box-shadow:
+    0 12px 48px rgba(147, 51, 234, 0.6),
+    0 0 96px rgba(255, 215, 0, 0.3);
+}
+
+/* Card Variant Classes */
+.vault-card-primary {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  border: var(--vault-border-purple);
+  border-image: linear-gradient(135deg, var(--vault-purple-500), var(--vault-gold-500)) 1;
+}
+
+.vault-card-featured {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(16px);
+  border: 2px solid transparent;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), var(--vault-gradient-holographic);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  animation: vault-holographic-spin 3s linear infinite;
+}
+
+.vault-card-premium {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  border: var(--vault-border-gold);
+  position: relative;
+  overflow: hidden;
+}
+
+.vault-card-premium::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  animation: vault-shimmer 2s infinite;
+}
+
+.vault-card-secure {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  border: var(--vault-border-metallic);
+  position: relative;
+}
+
+.vault-card-secure::after {
+  content: "🔒";
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  opacity: 0.1;
+  font-size: 48px;
+  pointer-events: none;
+}
+
+/* Metallic Effects */
+.vault-metallic-border {
+  border: 2px solid var(--vault-metal-border);
+  box-shadow: var(--vault-shadow-metallic);
+}
+
+.vault-chrome-effect {
+  background: var(--vault-chrome);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Rarity-Specific Glows */
+.vault-rarity-common-glow {
+  box-shadow: 0 4px 20px rgba(96, 165, 250, 0.3);
+}
+
+.vault-rarity-uncommon-glow {
+  box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+}
+
+.vault-rarity-rare-glow {
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3);
+}
+
+.vault-rarity-epic-glow {
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
+}
+
+.vault-rarity-legendary-glow {
+  box-shadow:
+    0 4px 20px rgba(255, 215, 0, 0.5),
+    0 0 40px rgba(255, 165, 0, 0.3);
+  animation: vault-legendary-pulse 2s ease-in-out infinite;
+}
+
+/* ==========================================
+   VAULT ANIMATIONS
+   ========================================== */
+
+@keyframes vault-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes vault-holographic-spin {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes vault-legendary-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 20px rgba(255, 215, 0, 0.5),
+      0 0 40px rgba(255, 165, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 6px 30px rgba(255, 215, 0, 0.7),
+      0 0 60px rgba(255, 165, 0, 0.5);
+  }
+}
+
+@keyframes vault-security-scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Vault Background Pattern */
+.vault-bg-pattern {
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(147, 51, 234, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+}
+
+/* 3D Tilt Effect Base Class */
+.vault-tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+}

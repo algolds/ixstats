@@ -87,12 +87,12 @@ const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
 /**
  * Paths that should be embeddable via iframe from any origin:
  * - /maps — map pages with ?embed=true
- * - /w/ — WikiOS article pages
+ * - /wiki/ — WikiOS article pages
  * - /countries/ — country detail pages
  */
 function isEmbeddablePathFn(pathname: string): boolean {
   return (
-    pathname.startsWith("/maps") || pathname.startsWith("/w/") || pathname.startsWith("/countries/")
+    pathname.startsWith("/maps") || pathname.startsWith("/wiki/") || pathname.startsWith("/countries/")
   );
 }
 

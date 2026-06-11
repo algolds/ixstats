@@ -98,7 +98,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Vault & Economy",
     href: "/admin/vault",
     icon: Coins,
-    description: "Balances, Streaks & Store CRUD",
+    description: "Balances, Streaks & Store",
     activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
   },
   {
@@ -109,10 +109,10 @@ const NAV_ITEMS: NavItem[] = [
     activeColor: "text-cyan-500 dark:text-cyan-400 border-l-cyan-500",
   },
   {
-    label: "WikiOS Administration",
+    label: "WikiOS Settings",
     href: "/admin/wiki",
     icon: BookOpen,
-    description: "Wiki Links & Scanning",
+    description: "LoreScanner, Awards & Links",
     activeColor: "text-sky-500 dark:text-sky-400 border-l-sky-500",
   },
   {

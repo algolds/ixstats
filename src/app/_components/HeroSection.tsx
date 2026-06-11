@@ -1,5 +1,5 @@
 import React from "react";
-import { GlassCard } from "~/components/ui/enhanced-card";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TrendIndicator } from "~/components/ui/trend-indicator";
@@ -27,7 +27,7 @@ export function HeroSection({ systemStatus, globalStats }: HeroSectionProps) {
       {/* Animated background */}
       <div className="aurora-bg absolute inset-0 opacity-30" />
       <div className="relative z-10 container mx-auto px-4">
-        <GlassCard variant="diplomatic" glow="hover" className="hero-card overflow-hidden">
+        <FacetCard className="facet-sdi hero-card overflow-hidden">
           <div className="hero-content p-8 lg:p-12">
             {/* System Header */}
             <div className="mb-8 flex flex-wrap items-center justify-between gap-6">
@@ -49,15 +49,15 @@ export function HeroSection({ systemStatus, globalStats }: HeroSectionProps) {
                   <div className="nation-meta mt-4 flex flex-wrap gap-3">
                     <Badge
                       variant={systemStatus.status === "operational" ? "default" : "destructive"}
-                      className="glass-badge"
+                      className="facet-badge"
                     >
                       {systemStatus.status === "operational" ? "🟢" : "🟡"} System{" "}
                       {systemStatus.status}
                     </Badge>
-                    <Badge variant="outline" className="glass-badge">
+                    <Badge variant="outline" className="facet-badge">
                       🌍 {systemStatus.totalCountries} Nations
                     </Badge>
-                    <Badge variant="outline" className="glass-badge">
+                    <Badge variant="outline" className="facet-badge">
                       👥 {systemStatus.activePlayers} Active Players
                     </Badge>
                   </div>
@@ -101,7 +101,7 @@ export function HeroSection({ systemStatus, globalStats }: HeroSectionProps) {
               />
             </div>
           </div>
-        </GlassCard>
+        </FacetCard>
       </div>
     </section>
   );

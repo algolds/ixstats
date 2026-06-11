@@ -95,6 +95,7 @@ export const notificationsRouter = createTRPCRouter({
       const whereConditions = {
         AND: [
           { OR: orConditions },
+          { dismissed: false },
           input.unreadOnly ? { read: false } : {},
           input.type ? { type: input.type } : {},
         ],

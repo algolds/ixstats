@@ -2341,7 +2341,7 @@ function AwardsManagerSection() {
                           <td className="px-4 py-2 text-xs">
                             {winner.winnerPage ? (
                               <a
-                                href={`/w/${winner.winnerPage}`}
+                                href={`/wiki/${winner.winnerPage}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="flex items-center gap-1 font-semibold text-amber-500 hover:underline"

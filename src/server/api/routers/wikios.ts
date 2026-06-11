@@ -13,7 +13,7 @@ import {
   htmlToWikitext,
   wikitextToHtml,
   invalidateCache,
-} from "~/lib/wikios/parsoid-client";
+} from "~/lib/wiki-os/parsoid-client";
 import {
   searchPages,
   getArticleWikitext,
@@ -39,20 +39,20 @@ import {
   getPageLog,
   type WikiSource,
 } from "~/lib/wiki-bridge";
-import { transformWikiLinks } from "~/lib/wikios/url-compat";
-import { transformArticleHtml, stripConflictingStyles } from "~/lib/wikios/html-transformer";
+import { transformWikiLinks } from "~/lib/wiki-os/url-compat";
+import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
 import {
   extractTemplateKeys,
   resolveTemplates,
   applyResolvedTemplates,
-} from "~/lib/wikios/template-resolver";
-import { computeWikitextDiff } from "~/lib/wikios/wikitext-diff";
-import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wikios/csrf-cache";
+} from "~/lib/wiki-os/template-resolver";
+import { computeWikitextDiff } from "~/lib/wiki-os/wikitext-diff";
+import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
 import {
   fetchTemplateData,
   getTemplatePreview as renderTemplatePreview,
   categorizeTemplate,
-} from "~/lib/wikios/template-registry";
+} from "~/lib/wiki-os/template-registry";
 import { db } from "~/server/db";
 import { resolveWikiPlaceholdersInternal } from "./wiki";
 
@@ -1760,8 +1760,8 @@ async function notifyStashOwners(
 
   const pageSlug = encodeURIComponent(pageTitle.replace(/ /g, "_"));
   const href = revisionId
-    ? `/w/special/diff?from=${revisionId - 1}&to=${revisionId}`
-    : `/w/${pageSlug}`;
+    ? `/wiki/diff?from=${revisionId - 1}&to=${revisionId}`
+    : `/wiki/${pageSlug}`;
 
   await db.notification.createMany({
     data: userIds.map((userId) => ({

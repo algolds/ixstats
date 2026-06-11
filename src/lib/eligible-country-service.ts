@@ -552,12 +552,12 @@ async function fetchEligibleCountriesRaw(
   const finalResults: EligibleCountryResult[] = allResults.map(({ result, flagFilename }) => {
     if (flagFilename) {
       if (site === "iiwiki") {
-        result.flagUrl = `/api/iiwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
+        result.flagUrl = `/api/mediawiki/iiwiki/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
       } else {
         const lookupKey = flagFilename.toLowerCase().replace(/_/g, " ").trim();
         result.flagUrl =
           urlMap.get(lookupKey) ||
-          `/api/althistory-wiki-proxy/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
+          `/api/mediawiki/althistory/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
       }
     }
     return result;

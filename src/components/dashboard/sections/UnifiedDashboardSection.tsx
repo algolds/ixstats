@@ -24,11 +24,7 @@ import {
 } from "~/components/mycountry/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import {
-  DynamicIslandEffects,
-  DYNAMIC_ISLAND_STYLE,
-  DYNAMIC_ISLAND_BORDER_CLASS,
-} from "~/app/builder/components/glass";
+import { FacetTabs, FacetMaterial } from "~/components/facet-ui";
 import { cn } from "~/lib/utils";
 
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
@@ -181,69 +177,29 @@ export function UnifiedDashboardSection({
     >
       {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="facet-layout-grid-3">
           {/* Feed stream (left 2/3) */}
-          <div className="space-y-5 lg:col-span-2">
+          <div className="facet-layout-main-span-2 space-y-5">
             {/* Feed Tab Bar */}
-            <motion.div variants={staggerItem}>
-              <div
-                className={cn(
-                  "relative flex gap-1 overflow-hidden rounded-xl p-1",
-                  DYNAMIC_ISLAND_BORDER_CLASS
-                )}
-                style={DYNAMIC_ISLAND_STYLE}
-              >
-                {/* Dynamic Island refraction edge, sheen highlights, and pulse shimmer */}
-                <DynamicIslandEffects showGlow={false} showShimmer={false} />
-
-                {/* Sliding indicator behind active tab */}
-                <motion.div
-                  className="absolute inset-y-1 rounded-lg border border-white/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 shadow-md backdrop-blur-md"
-                  layout
-                  layoutId="feed-tab-indicator"
-                  style={{
-                    width: `${100 / TABS.length}%`,
-                    left: `${(TABS.findIndex((t) => t.id === activeTab) / TABS.length) * 100}%`,
-                  }}
-                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                />
-                {TABS.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <motion.button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={cn(
-                        "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-200",
-                        isActive
-                          ? "text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                      whileTap={{ scale: 0.97 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    >
-                      <Icon
-                        className={cn(
-                          "h-3.5 w-3.5 transition-colors duration-200",
-                          isActive && "text-indigo-400"
-                        )}
-                      />
-                      <span className="hidden sm:inline">{tab.label}</span>
-                    </motion.button>
-                  );
-                })}
-                {/* Settings gear */}
-                {isSignedIn && (
-                  <button
-                    onClick={() => setIsAccountModalOpen(true)}
-                    className="text-muted-foreground hover:text-foreground relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors hover:bg-white/10"
-                    title="Feed & Account Settings"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+            <motion.div variants={staggerItem} className="flex gap-2 items-center">
+              <FacetTabs
+                tabs={TABS}
+                activeTab={activeTab}
+                onChange={(tabId) => setActiveTab(tabId as FeedTab)}
+                tone="accent"
+                size="md"
+                className="flex-1"
+              />
+              {/* Settings gear */}
+              {isSignedIn && (
+                <button
+                  onClick={() => setIsAccountModalOpen(true)}
+                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-all duration-300 bg-black/[0.04] dark:bg-white/[0.03] border border-black/[0.08] dark:border-white/10 shadow-sm hover:bg-black/[0.08] dark:hover:bg-white/[0.08]"
+                  title="Feed & Account Settings"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                </button>
+              )}
             </motion.div>
 
             {/* ThinkPages Composer integrated on top of the stream */}
@@ -328,7 +284,7 @@ export function UnifiedDashboardSection({
           </div>
 
           {/* Sidebar (right 1/3): Community widgets */}
-          <div className="space-y-5 md:sticky md:top-6 md:self-start lg:col-span-1">
+          <div className="facet-layout-sidebar-span-1 space-y-5 md:sticky md:top-6 md:self-start">
             {/* Trending Now — Compact */}
             <TrendingSectionWidget />
 
@@ -373,6 +329,31 @@ export function UnifiedDashboardSection({
                 </CutoutCardContent>
               </CutoutCard>
             )}
+
+            {/* Facet Material Lab */}
+            <div className="rounded-xl border border-black/[0.08] dark:border-white/10 p-4 bg-black/[0.01] dark:bg-white/[0.01] shadow-sm">
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">
+                Facet Materials Lab
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FacetMaterial material="satin" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px] border border-black/[0.04]">
+                  <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-100">Satin</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400">Frosted Glass</span>
+                </FacetMaterial>
+                <FacetMaterial material="paper" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px]">
+                  <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">Paper</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400">Matte Grain</span>
+                </FacetMaterial>
+                <FacetMaterial material="rubber" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px]">
+                  <span className="text-[11px] font-semibold text-zinc-100">Rubber</span>
+                  <span className="text-[9px] text-zinc-400">Tactile Matte</span>
+                </FacetMaterial>
+                <FacetMaterial material="metal" className="p-3 text-center rounded-lg flex flex-col justify-center min-h-[65px]">
+                  <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">Metal</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400">Brushed</span>
+                </FacetMaterial>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>

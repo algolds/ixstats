@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {

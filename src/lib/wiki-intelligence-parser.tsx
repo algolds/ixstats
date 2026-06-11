@@ -123,7 +123,7 @@ export function parseWikiMarkup(markup: string, title: string = ""): ParsedWikiC
       title: sectionTitle,
       level,
       sourcePage: title || sectionTitle,
-      sourceUrl: `${process.env.BASE_PATH || ""}/w/${encodeURIComponent(sectionTitle)}`,
+      sourceUrl: `${process.env.BASE_PATH || ""}/wiki/${encodeURIComponent(sectionTitle)}`,
       content,
       subsections: [],
       classification: "PUBLIC",

@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
-import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
+import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -36,8 +36,8 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import "~/styles/wikios.css";
-import { StashWelcomeModal } from "~/components/wikios/shared/StashWelcomeModal";
+import "~/styles/wiki-os.css";
+import { StashWelcomeModal } from "~/components/wiki-os/shared/StashWelcomeModal";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -556,7 +556,7 @@ export default function StashesPage() {
                             <>
                               Browse the{" "}
                               <Link
-                                href={withBasePath("/w/repository")}
+                                href={withBasePath("/wiki/repository")}
                                 className="text-[var(--wikios-accent)] hover:underline"
                               >
                                 Image Repository
@@ -707,7 +707,7 @@ export default function StashesPage() {
                           return (
                             <div key={item.id} className="wikios-stash-item-card">
                               <Link
-                                href={withBasePath(`/w/${item.pageSlug}`)}
+                                href={withBasePath(`/wiki/${item.pageSlug}`)}
                                 className="wikios-stash-item-link"
                               >
                                 <div className="wikios-stash-item-info">

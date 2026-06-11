@@ -376,7 +376,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
             <CardContent className="pt-6">
               <WikiLinkPreview title={countryName}>
                 <Link
-                  href={`/w/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}
+                  href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}
                   className="text-primary flex items-center gap-2 text-sm hover:underline"
                 >
                   <BookOpen className="h-4 w-4" />

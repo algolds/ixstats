@@ -25,8 +25,8 @@ export function Navigation() {
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "/");
   const isWikiPage =
-    normalizedPathname.startsWith("/w/") ||
-    normalizedPathname.startsWith("/w/special/") ||
+    normalizedPathname.startsWith("/wiki/") ||
+    normalizedPathname.startsWith("/wiki/") ||
     normalizedPathname.startsWith("/blurbs");
   const { user, isLoaded } = useUser();
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
@@ -211,9 +211,8 @@ export function Navigation() {
 
       {!isMobile && (
         <motion.div
-          className="pointer-events-none fixed top-0 left-1/2 z-[var(--z-command)] flex justify-center"
+          className="pointer-events-none fixed top-0 left-0 right-0 z-[var(--z-command)] flex justify-center"
           animate={{
-            x: "-50%",
             y: activeIsSticky ? 8 : Math.max(-100, 10 - activeScrollY),
           }}
           transition={{

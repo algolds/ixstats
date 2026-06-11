@@ -68,6 +68,6 @@ export const handleWikiLinkClick = (link: string): void => {
     window.open(link, "_blank");
   } else {
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
-    window.location.href = `${basePath}/w/${encodeURIComponent(link)}`;
+    window.location.href = `${basePath}/wiki/${encodeURIComponent(link)}`;
   }
 };

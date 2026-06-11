@@ -1,7 +1,3 @@
-import type { Mock } from "jest-mock";
-
-type FetchMock = Mock<Promise<unknown>, [unknown, RequestInit?]>;
-
 const ORIGINAL_ENV = process.env;
 const globalWithWindow = global as typeof global & { window?: unknown };
 const ORIGINAL_WINDOW = globalWithWindow.window;
@@ -23,7 +19,7 @@ function mockFetch() {
         search: [],
       },
     }),
-  }) as FetchMock;
+  }) as any;
 }
 
 describe("wiki-search-service base path handling", () => {
@@ -57,13 +53,13 @@ describe("wiki-search-service base path handling", () => {
     delete (global as any).__TEST_IS_SERVER;
     globalWithWindow.window = ORIGINAL_WINDOW as any;
 
-    const fetchCalls = (global.fetch as FetchMock).mock.calls;
+    const fetchCalls = (global.fetch as any).mock.calls as any[][];
     const targetCall = fetchCalls.find(
-      ([url]) => typeof url === "string" && url.includes("/api/ixwiki-proxy")
+      ([url]: any[]) => typeof url === "string" && url.includes("/api/mediawiki/ixwiki")
     );
     expect(targetCall).toBeDefined();
     expect(targetCall?.[0] as string).toMatch(
-      /^https:\/\/ixstates\.example\.com\/projects\/ixstates\/api\/ixwiki-proxy\/api\.php\?/
+      /^https:\/\/ixstates\.example\.com\/projects\/ixstates\/api\/mediawiki\/ixwiki\/api\.php\?/
     );
   });
 
@@ -76,13 +72,13 @@ describe("wiki-search-service base path handling", () => {
     const { searchWiki } = await import("../wiki-search-service");
     await searchWiki("Caphiria", "ixwiki");
 
-    const fetchCalls = (global.fetch as FetchMock).mock.calls;
+    const fetchCalls = (global.fetch as any).mock.calls as any[][];
     const targetCall = fetchCalls.find(
-      ([url]) => typeof url === "string" && url.includes("/api/ixwiki-proxy")
+      ([url]: any[]) => typeof url === "string" && url.includes("/api/mediawiki/ixwiki")
     );
     expect(targetCall).toBeDefined();
     expect(targetCall?.[0] as string).toMatch(
-      /^\/projects\/ixstates\/api\/ixwiki-proxy\/api\.php\?/
+      /^\/projects\/ixstates\/api\/mediawiki\/ixwiki\/api\.php\?/
     );
   });
 
@@ -96,11 +92,11 @@ describe("wiki-search-service base path handling", () => {
     await searchWiki("Caphiria", "iiwiki");
     await searchWiki("Caphiria", "althistory");
 
-    const fetchCalls = (global.fetch as FetchMock).mock.calls.map((call) => call[0] as string);
+    const fetchCalls = ((global.fetch as any).mock.calls as any[][]).map((call: any[]) => call[0] as string);
 
-    expect(fetchCalls.some((url) => url.includes("/api/ixwiki-proxy/api.php?"))).toBe(true);
-    expect(fetchCalls.some((url) => url.includes("https://iiwiki.com/api.php?"))).toBe(true);
-    expect(fetchCalls.some((url) => url.includes("/api/althistory-wiki-proxy/api.php?"))).toBe(
+    expect(fetchCalls.some((url: string) => url.includes("/api/mediawiki/ixwiki/api.php?"))).toBe(true);
+    expect(fetchCalls.some((url: string) => url.includes("https://iiwiki.com/api.php?"))).toBe(true);
+    expect(fetchCalls.some((url: string) => url.includes("/api/mediawiki/althistory/api.php?"))).toBe(
       true
     );
   });
@@ -122,13 +118,13 @@ describe("wiki-search-service base path handling", () => {
     delete (global as any).__TEST_IS_SERVER;
     globalWithWindow.window = ORIGINAL_WINDOW as any;
 
-    const fetchCalls = (global.fetch as FetchMock).mock.calls;
+    const fetchCalls = (global.fetch as any).mock.calls as any[][];
     const targetCall = fetchCalls.find(
-      ([url]) => typeof url === "string" && url.includes("/api/ixwiki-proxy")
+      ([url]: any[]) => typeof url === "string" && url.includes("/api/mediawiki/ixwiki")
     );
     expect(targetCall).toBeDefined();
     expect(targetCall?.[0] as string).toMatch(
-      /^http:\/\/localhost:4567\/api\/ixwiki-proxy\/api\.php\?/
+      /^http:\/\/localhost:4567\/api\/mediawiki\/ixwiki\/api\.php\?/
     );
   });
 });

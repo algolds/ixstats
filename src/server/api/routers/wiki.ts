@@ -299,7 +299,7 @@ export const wikiRouter = createTRPCRouter({
           pageUrl:
             input.wiki === "iiwiki"
               ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name ?? "")}`
-              : `/w/File:${encodeURIComponent(img.name ?? "")}`,
+              : `/wiki/File:${encodeURIComponent(img.name ?? "")}`,
         }));
     }),
 

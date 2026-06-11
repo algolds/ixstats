@@ -12,7 +12,7 @@
 
 import { memo, useState } from "react";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { BookOpen, ChevronDown, ExternalLink, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api } from "~/trpc/react";

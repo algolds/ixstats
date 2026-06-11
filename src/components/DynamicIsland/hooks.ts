@@ -397,7 +397,7 @@ export function useDynamicIslandState() {
           icon: BookOpen,
           action: () => {
             window.location.href = createAbsoluteUrl(
-              `/w/${encodeURIComponent(article.title.replace(/ /g, "_"))}`
+              `/wiki/${encodeURIComponent(article.title.replace(/ /g, "_"))}`
             );
           },
         });
@@ -822,25 +822,25 @@ export const commands = [
   },
   {
     name: "IxWiki",
-    path: "/w/Main_Page",
+    path: "/wiki/Main_Page",
     icon: BookOpen,
     description: "IxWiki main page (WikiOS)",
   },
   {
     name: "Wiki Recent Changes",
-    path: "/w/special/recent-changes",
+    path: "/wiki/recent-changes",
     icon: History,
     description: "Latest wiki edits and activity",
   },
   {
     name: "Wiki Random Article",
-    path: "/w/special/random",
+    path: "/wiki/random",
     icon: Shuffle,
     description: "Discover a random wiki article",
   },
   {
     name: "Wiki Search",
-    path: "/w/special/search",
+    path: "/wiki/search",
     icon: Search,
     description: "Search wiki articles",
   },

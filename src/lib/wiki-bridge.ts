@@ -167,7 +167,7 @@ async function ixwikiSearch(query: string, limit: number = 10): Promise<WikiSear
       `SELECT page_id, page_title, page_len
        FROM page
        WHERE page_namespace = 0
-         AND page_title LIKE ?
+         AND CONVERT(page_title USING utf8mb4) LIKE ?
          AND page_is_redirect = 0
        ORDER BY page_len DESC
        LIMIT ?`,
@@ -815,7 +815,7 @@ async function ixwikiSearchTemplates(query: string, limit: number = 20): Promise
     const pattern = query.replace(/ /g, "_") + "%";
     const [rows] = await pool.execute<mysql.RowDataPacket[]>(
       `SELECT page_title FROM page
-       WHERE page_namespace = 10 AND page_title LIKE ? AND page_is_redirect = 0
+       WHERE page_namespace = 10 AND CONVERT(page_title USING utf8mb4) LIKE ? AND page_is_redirect = 0
        ORDER BY page_len DESC LIMIT ?`,
       [pattern, limit]
     );

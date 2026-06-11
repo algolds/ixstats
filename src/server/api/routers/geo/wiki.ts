@@ -33,7 +33,7 @@ export const geoWikiRouter = createTRPCRouter({
             wikiSource: wiki,
             wikiUrl:
               wiki === "ixwiki"
-                ? `/w/${encodeURIComponent(result.title)}`
+                ? `/wiki/${encodeURIComponent(result.title)}`
                 : `https://iiwiki.com/wiki/${encodeURIComponent(result.title)}`,
           };
         }
@@ -57,7 +57,7 @@ export const geoWikiRouter = createTRPCRouter({
 
         const pageUrl =
           wiki === "ixwiki"
-            ? `/w/${encodeURIComponent(article.title)}`
+            ? `/wiki/${encodeURIComponent(article.title)}`
             : `https://iiwiki.com/wiki/${encodeURIComponent(article.title)}`;
         const parsed = parseInfobox(article.wikitext);
 
@@ -127,7 +127,7 @@ export const geoWikiRouter = createTRPCRouter({
               description: "",
               url:
                 wiki === "ixwiki"
-                  ? `/w/${encodeURIComponent(r.title)}`
+                  ? `/wiki/${encodeURIComponent(r.title)}`
                   : `https://iiwiki.com/wiki/${encodeURIComponent(r.title)}`,
             })),
           };

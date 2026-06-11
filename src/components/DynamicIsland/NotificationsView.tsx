@@ -28,7 +28,7 @@ import type { NotificationsViewProps } from "./types";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
-import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/glass/swipeable";
+import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/facet-ui/swipeable";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -87,6 +87,7 @@ interface NotificationRowProps {
   colors: { bg: string; text: string };
   Icon: React.ComponentType<{ className?: string }>;
   handleMarkRead: (n: any) => void;
+  handleDismiss: (n: any) => void;
   handleClick: (n: any) => void;
   relativeTime: (ts: any) => string;
   isExpanded: boolean;
@@ -99,6 +100,7 @@ function NotificationRow({
   colors,
   Icon,
   handleMarkRead,
+  handleDismiss,
   handleClick,
   relativeTime: relTime,
   isExpanded,
@@ -131,7 +133,7 @@ function NotificationRow({
 
       {/* Trailing actions (swipe left → dismiss) */}
       <SwipeableRow.Trailing
-        commit={{ action: () => handleMarkRead(n), label: "Clear", color: "#ef4444" }}
+        commit={{ action: () => handleDismiss(n), label: "Clear", color: "#ef4444" }}
       >
         {n.href && (
           <SwipeActionButton
@@ -146,7 +148,7 @@ function NotificationRow({
           id="clear"
           icon={X}
           label="Clear"
-          onClick={() => handleMarkRead(n)}
+          onClick={() => handleDismiss(n)}
           color="#ef4444"
         />
       </SwipeableRow.Trailing>
@@ -234,7 +236,7 @@ function NotificationRow({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleMarkRead(n);
+                handleDismiss(n);
               }}
               className="flex-1 py-1.5 px-3 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 active:scale-[0.98] text-muted-foreground hover:text-foreground text-[10px] font-bold rounded-md flex items-center justify-center gap-1.5 transition-all border border-slate-300/30 dark:border-white/10"
             >
@@ -255,6 +257,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   const { user } = useUser();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
+  const [locallyDismissedIds, setLocallyDismissedIds] = useState<Set<string>>(new Set());
   const { state: diSizeState, setSize } = useDynamicIslandSize();
   const isUltra = diSizeState.size === SIZE_PRESETS.ULTRA;
 
@@ -277,6 +280,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   const markEnhancedAsRead = useNotificationStore((s) => s.markAsRead);
   const markAllEnhancedAsRead = useNotificationStore((s) => s.markAllAsRead);
   const recordEngagement = useNotificationStore((s) => s.recordEngagement);
+  const dismissEnhanced = useNotificationStore((s) => s.dismissNotification);
 
   const {
     notifications: executiveNotifications,
@@ -300,6 +304,9 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
     onSuccess: () => void refetchNotifications(),
   });
+  const dismissMutation = api.notifications.dismissNotification.useMutation({
+    onSuccess: () => void refetchNotifications(),
+  });
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
       void refetchNotifications();
@@ -318,15 +325,17 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   // ─── Merge & group ─────────────────────────────────────────────────────
 
-  const standardList = (notificationsData?.notifications || []).map((n: any) => ({
-    ...n,
-    source: "standard",
-  }));
+  const standardList = (notificationsData?.notifications || [])
+    .filter((n: any) => !n.dismissed && !locallyDismissedIds.has(n.id))
+    .map((n: any) => ({
+      ...n,
+      source: "standard",
+    }));
   const executiveList = (isExecutiveMode ? executiveNotifications || [] : [])
-    .filter((n: any) => n?.id)
+    .filter((n: any) => n?.id && !locallyDismissedIds.has(n.id))
     .map((n: any) => ({ ...n, source: "executive" }));
   const enhancedList = (enhancedNotifications || [])
-    .filter((n: any) => n?.id)
+    .filter((n: any) => n?.id && n?.status !== "dismissed" && !locallyDismissedIds.has(n.id))
     .map((n: any) => ({ ...n, source: "enhanced" }));
 
   const allNotifications = [...enhancedList, ...executiveList, ...standardList]
@@ -390,6 +399,23 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       markExecutiveAsRead(n.id);
     } else if (user?.id) {
       markAsReadMutation.mutate({ notificationId: n.id, userId: user.id });
+    }
+  };
+
+  const handleDismiss = (n: any) => {
+    setLocallyDismissedIds((prev) => {
+      const next = new Set(prev);
+      next.add(n.id);
+      return next;
+    });
+
+    if (n.source === "enhanced") {
+      dismissEnhanced(n.id);
+      recordEngagement(n.id, "dismiss");
+    } else if (n.source === "executive") {
+      markExecutiveAsRead(n.id);
+    } else if (user?.id) {
+      dismissMutation.mutate({ notificationId: n.id, userId: user.id });
     }
   };
 
@@ -519,6 +545,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                             colors={colors}
                             Icon={Icon}
                             handleMarkRead={handleMarkRead}
+                            handleDismiss={handleDismiss}
                             handleClick={handleClick}
                             relativeTime={relativeTime}
                             isExpanded={expandedNotificationId === key}

@@ -546,7 +546,7 @@ export class WikiCacheService {
         // Strip infobox, templates, categories, and wiki syntax for display
         const content = cleanWikitextForDisplay(rawContent);
 
-        let sourceUrl = `${process.env.BASE_PATH || ""}/w/${encodeURIComponent(result.pageName)}`;
+        let sourceUrl = `${process.env.BASE_PATH || ""}/wiki/${encodeURIComponent(result.pageName)}`;
         if (wikiSource === "iiwiki") {
           sourceUrl = `https://iiwiki.com/wiki/${encodeURIComponent(result.pageName)}`;
         } else if (wikiSource === "althistory") {

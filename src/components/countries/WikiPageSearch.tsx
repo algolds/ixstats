@@ -8,7 +8,7 @@ import { Loader2, Search, Plus, X, ExternalLink } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { debounce } from "lodash";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { api } from "~/trpc/react";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 

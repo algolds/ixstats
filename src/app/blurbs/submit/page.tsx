@@ -10,7 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { CheckCircle, User } from "lucide-react";
-import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
+import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
 
 function SubmitPromptForm() {

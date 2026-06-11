@@ -3,8 +3,7 @@
 import React, { useState, useTransition } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { ChoicePoll } from "~/components/ui/choice-poll";
-import { FeaturePoll } from "~/components/ui/feature-poll";
+import { PollWidget } from "~/components/ui/poll-widget";
 import { FeatureVoting } from "~/components/ui/feature-voting";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -38,15 +37,15 @@ interface FeedPollWidgetProps {
 
 export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   const { isSignedIn, user } = useUser();
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(poll.userVotedOptionIds);
+  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(poll.userVotedOptionIds || []);
   const [isPending, startTransition] = useTransition();
 
   // Local state for interactive instant feedback
   const [pollState, setPollState] = useState({
-    votes: poll.votes,
-    totalVotes: poll.totalVotes,
-    hasVoted: poll.hasVoted,
-    userVotedOptionIds: poll.userVotedOptionIds,
+    votes: poll.votes || {},
+    totalVotes: poll.totalVotes || 0,
+    hasVoted: poll.hasVoted || false,
+    userVotedOptionIds: poll.userVotedOptionIds || [],
   });
 
   // tRPC mutation to cast a vote
@@ -72,19 +71,19 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   const { data: updatedData, refetch: refetchDetails } = api.polls.getPollDetails.useQuery(
     { pollId: poll.id },
     {
-      enabled: false,
+      enabled: isSignedIn,
     }
   );
 
   React.useEffect(() => {
     if (updatedData) {
       setPollState({
-        votes: updatedData.votes as Record<string, number>,
-        totalVotes: updatedData.totalVotes,
-        hasVoted: updatedData.hasVoted,
-        userVotedOptionIds: updatedData.userVotedOptionIds,
+        votes: (updatedData.votes || {}) as Record<string, number>,
+        totalVotes: updatedData.totalVotes || 0,
+        hasVoted: updatedData.hasVoted || false,
+        userVotedOptionIds: updatedData.userVotedOptionIds || [],
       });
-      setSelectedOptionIds(updatedData.userVotedOptionIds);
+      setSelectedOptionIds(updatedData.userVotedOptionIds || []);
     }
   }, [updatedData]);
 
@@ -92,30 +91,31 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   const isDisabled = !poll.isActive || isExpired || voteMutation.isPending || isPending;
 
   // Handle standard choice or feature-poll submission
-  const handleVoteSubmit = () => {
+  const handleVoteSubmit = (ids?: string[]) => {
     if (!isSignedIn) {
       toast.error("You must sign in to vote");
       return;
     }
-    if (selectedOptionIds.length === 0) return;
+    const targetIds = ids || selectedOptionIds;
+    if (!targetIds || targetIds.length === 0) return;
 
     startTransition(async () => {
       // Optimistic updates
       const newVotes = { ...pollState.votes };
-      selectedOptionIds.forEach((id) => {
+      targetIds.forEach((id) => {
         newVotes[id] = (newVotes[id] ?? 0) + 1;
       });
 
       setPollState((prev) => ({
         votes: newVotes,
-        totalVotes: prev.totalVotes + selectedOptionIds.length,
+        totalVotes: prev.totalVotes + targetIds.length,
         hasVoted: true,
-        userVotedOptionIds: selectedOptionIds,
+        userVotedOptionIds: targetIds,
       }));
 
       await voteMutation.mutateAsync({
         pollId: poll.id,
-        optionIds: selectedOptionIds,
+        optionIds: targetIds,
       });
       toast.success("Vote recorded!");
     });
@@ -162,160 +162,52 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   const showResults = pollState.hasVoted || isExpired;
 
-  // 1. Choice Poll Render
-  if (poll.pollType === "choice") {
+  // 1. Choice Poll or Feature Poll Render
+  if (poll.pollType === "choice" || poll.pollType === "feature-poll") {
+    const pollOptions = poll.options.map((opt) => ({
+      id: opt.id,
+      label: opt.label,
+      description: opt.description || undefined,
+    }));
+
     return (
       <div className="glass-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
-        <ChoicePoll.Root
+        <PollWidget
+          question={poll.question}
+          description={poll.description || undefined}
+          options={pollOptions}
           value={selectedOptionIds}
           onValueChange={(val) => {
             setSelectedOptionIds(Array.isArray(val) ? val : [val]);
           }}
           multiple={poll.multiple}
           disabled={isDisabled || !isSignedIn}
-          showResults={showResults}
           votes={pollState.votes}
           hasVoted={pollState.hasVoted}
+          onVote={(ids) => handleVoteSubmit(ids)}
+          mode="inline"
         >
-          <ChoicePoll.Header>
-            <ChoicePoll.Title className="text-foreground text-base font-semibold sm:text-lg">
-              {poll.question}
-            </ChoicePoll.Title>
-            {poll.description && (
-              <ChoicePoll.Description className="text-muted-foreground/80 mt-1 text-xs sm:text-sm">
-                {poll.description}
-              </ChoicePoll.Description>
+          <PollWidget.Content>
+            <PollWidget.Question />
+            <PollWidget.Options className="mt-3">
+              {pollOptions.map((opt) => (
+                <PollWidget.Option key={opt.id} value={opt.id} />
+              ))}
+            </PollWidget.Options>
+
+            {isSignedIn && !pollState.hasVoted && (
+              <PollWidget.Submit className="mt-4 animate-in fade-in zoom-in-95 duration-200" />
             )}
-          </ChoicePoll.Header>
-          <ChoicePoll.Options className="mt-3">
-            {poll.options.map((opt) => (
-              <ChoicePoll.Option key={opt.id} value={opt.id}>
-                <ChoicePoll.Indicator />
-                <ChoicePoll.Label className="text-foreground text-sm font-medium">
-                  {opt.label}
-                </ChoicePoll.Label>
-                {showResults && (
-                  <>
-                    <ChoicePoll.Progress className="bg-primary/20" />
-                    <ChoicePoll.Percentage className="text-foreground/80 text-xs font-semibold" />
-                  </>
-                )}
-              </ChoicePoll.Option>
-            ))}
-          </ChoicePoll.Options>
 
-          {!pollState.hasVoted && isSignedIn && (
-            <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-3">
-              <span className="text-muted-foreground text-xs">
-                {poll.multiple ? "Select multiple options" : "Select one option"}
-              </span>
-              <Button
-                size="sm"
-                disabled={selectedOptionIds.length === 0 || isDisabled}
-                onClick={handleVoteSubmit}
-                className="flex h-8 shrink-0 items-center gap-1.5 bg-purple-600 px-4 text-xs font-medium text-white hover:bg-purple-700"
-              >
-                {isDisabled ? (
-                  <>
-                    <Loader2 className="h-3 w-3 animate-spin" /> Casting...
-                  </>
-                ) : (
-                  "Submit Vote"
-                )}
-              </Button>
-            </div>
-          )}
-
-          {!isSignedIn && (
-            <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
-              Sign in to participate in this poll
-            </p>
-          )}
-
-          <ChoicePoll.Footer
-            className="border-border/40 text-muted-foreground/60 mt-3 border-t pt-2.5 text-xs"
-            totalVotes={pollState.totalVotes}
-          />
-        </ChoicePoll.Root>
-      </div>
-    );
-  }
-
-  // 2. Feature Poll Render
-  if (poll.pollType === "feature-poll") {
-    return (
-      <div className="glass-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
-        <FeaturePoll.Root
-          value={selectedOptionIds}
-          onValueChange={(val) => {
-            setSelectedOptionIds(Array.isArray(val) ? val : [val]);
-          }}
-          multiple={poll.multiple}
-          disabled={isDisabled || !isSignedIn}
-          showResults={showResults}
-          votes={pollState.votes}
-          hasVoted={pollState.hasVoted}
-        >
-          <FeaturePoll.Header>
-            <FeaturePoll.Title className="text-foreground text-base font-semibold sm:text-lg">
-              {poll.question}
-            </FeaturePoll.Title>
-            {poll.description && (
-              <FeaturePoll.Description className="text-muted-foreground/80 mt-1 text-xs sm:text-sm">
-                {poll.description}
-              </FeaturePoll.Description>
+            {!isSignedIn && (
+              <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
+                Sign in to participate in this poll
+              </p>
             )}
-          </FeaturePoll.Header>
-          <FeaturePoll.Options className="mt-3">
-            {poll.options.map((opt) => (
-              <FeaturePoll.Option key={opt.id} value={opt.id}>
-                <FeaturePoll.Indicator />
-                <FeaturePoll.Label className="text-foreground text-sm font-medium">
-                  {opt.label}
-                </FeaturePoll.Label>
-                {showResults && (
-                  <>
-                    <FeaturePoll.Progress className="bg-purple-600/15" />
-                    <FeaturePoll.Percentage className="text-xs font-semibold text-purple-600 dark:text-purple-400" />
-                  </>
-                )}
-              </FeaturePoll.Option>
-            ))}
-          </FeaturePoll.Options>
 
-          {!pollState.hasVoted && isSignedIn && (
-            <div className="border-border/40 mt-4 flex items-center justify-between border-t pt-3">
-              <span className="text-muted-foreground text-xs">
-                {poll.multiple ? "Select multiple features" : "Select one feature"}
-              </span>
-              <Button
-                size="sm"
-                disabled={selectedOptionIds.length === 0 || isDisabled}
-                onClick={handleVoteSubmit}
-                className="flex h-8 shrink-0 items-center gap-1.5 bg-purple-600 px-4 text-xs font-medium text-white hover:bg-purple-700"
-              >
-                {isDisabled ? (
-                  <>
-                    <Loader2 className="h-3 w-3 animate-spin" /> Casting...
-                  </>
-                ) : (
-                  "Submit Vote"
-                )}
-              </Button>
-            </div>
-          )}
-
-          {!isSignedIn && (
-            <p className="text-muted-foreground/60 mt-3 text-center text-[11px]">
-              Sign in to participate in this feature poll
-            </p>
-          )}
-
-          <FeaturePoll.Footer
-            className="border-border/40 text-muted-foreground/60 mt-3 border-t pt-2.5 text-xs"
-            totalVotes={pollState.totalVotes}
-          />
-        </FeaturePoll.Root>
+            <PollWidget.Results className="border-border/40 text-muted-foreground/60 mt-3 border-t pt-2.5 text-xs" />
+          </PollWidget.Content>
+        </PollWidget>
       </div>
     );
   }
@@ -346,7 +238,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
               className={cn(
                 "flex items-center justify-between gap-4 rounded-xl border p-3 text-left transition-all duration-200 sm:p-4",
                 hasVotedOpt
-                  ? "border-purple-500 bg-purple-500/5 shadow-sm"
+                  ? "border-[#ff8a65]/40 bg-[#ff8a65]/5 shadow-sm"
                   : "border-border/60 bg-card/40 hover:bg-muted/30"
               )}
             >
@@ -367,7 +259,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 className={cn(
                   "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200",
                   hasVotedOpt
-                    ? "border-purple-600 bg-purple-600 text-white hover:bg-purple-700"
+                    ? "border-[#ff8a65] bg-[#ff8a65] text-white hover:bg-[#ff8a65]/90"
                     : "border-border/80 bg-background hover:bg-muted text-muted-foreground hover:text-foreground"
                 )}
               >

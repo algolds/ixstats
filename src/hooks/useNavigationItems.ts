@@ -96,7 +96,7 @@ export function useNavigationItems({
       },
       {
         name: "Wiki",
-        href: "/w",
+        href: "/wiki",
         icon: FaWikipediaW,
         requiresAuth: false,
       },

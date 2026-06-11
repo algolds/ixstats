@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { useWikiContext } from "~/components/wikios/shared/WikiContext";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
 import {
@@ -266,7 +266,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     onClick={() => {
                       onClose();
                       navigateWithBasePath(
-                        `/w/special/user/${encodeURIComponent(wikiUsername)}`,
+                        `/wiki/user/${encodeURIComponent(wikiUsername)}`,
                         router
                       );
                     }}

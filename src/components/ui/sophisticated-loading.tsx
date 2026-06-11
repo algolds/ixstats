@@ -78,22 +78,27 @@ export function SophisticatedLoading({
         className={cn("flex flex-col items-center justify-center gap-4 p-6", className)}
         role="status"
         aria-label={message || "Loading atomic components"}
+        style={{
+          "--primary-color": colors.primary,
+          "--secondary-color": colors.secondary,
+          "--accent-color": colors.accent,
+        } as React.CSSProperties}
       >
         <div className={cn("relative", sizeClass)}>
           {/* Outer orbital ring */}
           <div
-            className="absolute inset-0 animate-spin rounded-full border-2 border-t-transparent"
+            className="absolute inset-0 animate-spin rounded-full border-2"
             style={{
-              borderColor: `transparent ${colors.primary} transparent transparent`,
+              borderColor: "transparent var(--primary-color) transparent transparent",
               animationDuration: "2s",
             }}
           />
 
           {/* Middle orbital ring */}
           <div
-            className="absolute inset-2 animate-spin rounded-full border-2 border-r-transparent"
+            className="absolute inset-2 animate-spin rounded-full border-2"
             style={{
-              borderColor: `${colors.secondary} transparent ${colors.secondary} ${colors.secondary}`,
+              borderColor: "var(--secondary-color) transparent var(--secondary-color) var(--secondary-color)",
               animationDuration: "1.5s",
               animationDirection: "reverse",
             }}
@@ -102,7 +107,7 @@ export function SophisticatedLoading({
           {/* Inner core */}
           <div
             className="absolute inset-4 animate-pulse rounded-full"
-            style={{ backgroundColor: colors.accent }}
+            style={{ backgroundColor: "var(--accent-color)" }}
           />
 
           {/* Center nucleus */}
@@ -227,11 +232,14 @@ export function SophisticatedLoading({
         className={cn("inline-flex items-center gap-2", className)}
         role="status"
         aria-label={message || "Loading"}
+        style={{
+          "--primary-color": colors.primary,
+        } as React.CSSProperties}
       >
         <div className={cn("relative", sizeClass)}>
           <div
-            className="absolute inset-0 animate-spin rounded-full border-2 border-t-transparent"
-            style={{ borderColor: `transparent ${colors.primary} transparent transparent` }}
+            className="absolute inset-0 animate-spin rounded-full border-2"
+            style={{ borderColor: "transparent var(--primary-color) transparent transparent" }}
           />
         </div>
         {message && <span className="text-muted-foreground text-sm">{message}</span>}
@@ -245,22 +253,27 @@ export function SophisticatedLoading({
       className={cn("flex flex-col items-center justify-center gap-4 p-4", className)}
       role="status"
       aria-label={message || "Loading dashboard"}
+      style={{
+        "--primary-color": colors.primary,
+        "--secondary-color": colors.secondary,
+        "--accent-color": colors.accent,
+      } as React.CSSProperties}
     >
       <div className={cn("relative", sizeClass)}>
         {/* Glass-style loading with theme colors */}
         <div
-          className="glass-hierarchy-interactive absolute inset-0 animate-spin rounded-full border-2 border-t-transparent"
+          className="glass-hierarchy-interactive absolute inset-0 animate-spin rounded-full border-2"
           style={{
-            borderColor: `transparent ${colors.primary} transparent transparent`,
+            borderColor: "transparent var(--primary-color) transparent transparent",
             animationDuration: "1s",
           }}
         />
 
         {/* Inner rotating ring */}
         <div
-          className="absolute inset-2 animate-spin rounded-full border-2 border-r-transparent"
+          className="absolute inset-2 animate-spin rounded-full border-2"
           style={{
-            borderColor: `${colors.secondary} transparent ${colors.secondary} ${colors.secondary}`,
+            borderColor: "var(--secondary-color) transparent var(--secondary-color) var(--secondary-color)",
             animationDuration: "1.5s",
             animationDirection: "reverse",
           }}
@@ -269,7 +282,7 @@ export function SophisticatedLoading({
         {/* Center pulse */}
         <div
           className="absolute inset-4 animate-pulse rounded-full"
-          style={{ backgroundColor: `${colors.accent}40` }}
+          style={{ backgroundColor: "var(--accent-color)", opacity: 0.25 }}
         />
       </div>
 
@@ -282,7 +295,7 @@ export function SophisticatedLoading({
         <div
           className="h-full animate-pulse rounded-full"
           style={{
-            background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary}, ${colors.accent})`,
+            background: "linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color))",
             animation: "loading-bar 2s ease-in-out infinite",
           }}
         />

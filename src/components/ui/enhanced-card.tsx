@@ -27,14 +27,14 @@ export function EnhancedCard({
 }: EnhancedCardProps) {
   const variantClasses = {
     default: "",
-    glass: "glass-card",
-    diplomatic: "glass-card-diplomatic",
-    economic: "glass-card-economic",
-    military: "glass-card-military",
-    cultural: "glass-card-cultural",
-    social: "glass-card-social",
-    security: "glass-card-security",
-    mycountry: "glass-card-mycountry",
+    glass: "facet-card glass-card",
+    diplomatic: "facet-card-diplomatic glass-card-diplomatic",
+    economic: "facet-card-economic glass-card-economic",
+    military: "facet-card-military glass-card-military",
+    cultural: "facet-card-cultural glass-card-cultural",
+    social: "facet-card-social glass-card-social",
+    security: "facet-card-security glass-card-security",
+    mycountry: "facet-card-mycountry glass-card-mycountry",
   };
 
   const hoverClasses = {

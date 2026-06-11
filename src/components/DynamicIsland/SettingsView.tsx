@@ -248,7 +248,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
               onClick={() =>
                 (window.location.href =
                   isOnWikiPage && wikiUsername
-                    ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
+                    ? createAbsoluteUrl(`/wiki/user/${encodeURIComponent(wikiUsername)}`)
                     : createAbsoluteUrl("/settings"))
               }
               className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"

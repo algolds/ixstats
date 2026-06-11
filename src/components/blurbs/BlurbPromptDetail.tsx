@@ -118,7 +118,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
               )}
               <Link
                 href={withBasePath(
-                  `/w/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`
+                  `/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`
                 )}
                 className="text-sm font-medium text-[var(--wikios-text)] transition-colors hover:text-white"
               >
@@ -201,7 +201,7 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
   const addArticle = () => {
     if (articleTitle.trim() && linkedArticles.length < 5) {
       const url =
-        articleUrl.trim() || `/w/${encodeURIComponent(articleTitle.trim().replace(/ /g, "_"))}`;
+        articleUrl.trim() || `/wiki/${encodeURIComponent(articleTitle.trim().replace(/ /g, "_"))}`;
       setLinkedArticles([...linkedArticles, { title: articleTitle.trim(), url }]);
       setArticleTitle("");
       setArticleUrl("");

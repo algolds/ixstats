@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { withBasePath } from "~/lib/base-path";
-import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
+import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { BlurbPromptDetail } from "~/components/blurbs/BlurbPromptDetail";
 import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
 

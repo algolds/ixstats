@@ -1,5 +1,5 @@
 /* Marquee animations - optimized for performance */
-@keyframes marquee {
+@keyframes marquee-legacy {
   from {
     transform: translate3d(0%, 0, 0);
   }
@@ -66,7 +66,7 @@
 
 .marquee-content {
   display: flex;
-  animation: marquee linear infinite;
+  animation: marquee-legacy linear infinite;
   will-change: transform;
   backface-visibility: hidden;
   perspective: 1000px;
@@ -330,6 +330,42 @@
 .animate-di-success { animation: di-success-flash 0.6s ease-out; }
 .animate-di-warning { animation: di-warning-flash 0.7s ease-out; }
 
+/* Rainbow animation for I'm Feeling Lucky button */
+@keyframes rainbow {
+  0% {
+    background-position: 0%;
+  }
+  100% {
+    background-position: 200%;
+  }
+}
+
+/* Subtle rainbow animation for I'm Feeling Lucky button */
+@keyframes rainbow-subtle {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+}
+
+:root {
+  --color-1: oklch(66.2% 0.225 25.9);
+  --color-2: oklch(60.4% 0.26 302);
+  --color-3: oklch(69.6% 0.165 251);
+  --color-4: oklch(80.2% 0.134 225);
+  --color-5: oklch(90.7% 0.231 133);
+  --animate-rainbow: rainbow 2s infinite linear;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .marquee-content,
@@ -351,6 +387,10 @@
     animation: none;
   }
   
+  :root {
+    --animate-rainbow: none;
+  }
+
   .interface-transition {
     transition: none;
   }

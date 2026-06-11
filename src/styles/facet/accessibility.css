@@ -1,0 +1,137 @@
+/* ==========================================================================
+   FACET DESIGN SYSTEM — ACCESSIBILITY & USER CONFIGURATIONS
+   ========================================================================== */
+
+/* GPU Hardware Acceleration Promotion */
+.force-gpu {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   RESPONSIVE MOBILE BLUR ADAPTATIONS
+   ────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .facet-base,
+  .facet-surface,
+  .facet-depth-1 {
+    backdrop-filter: blur(var(--blur-subtle)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(150%);
+  }
+
+  .facet-floating,
+  .facet-depth-2 {
+    backdrop-filter: blur(var(--blur-moderate)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(160%);
+  }
+
+  .facet-overlay,
+  .facet-depth-3,
+  .facet-depth-4 {
+    backdrop-filter: blur(var(--blur-prominent)) saturate(170%);
+    -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(170%);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   REDUCE MOTION ACCESSIBILITY OVERRIDES
+   ────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .facet-interactive,
+  .facet-transition-spring,
+  .facet-cutout-card {
+    transition: none !important;
+  }
+
+  .facet-interactive:hover {
+    transform: none !important;
+  }
+}
+
+/* Reduce Animations & Motion HTML Flag */
+html[data-reduce-animations="true"] *,
+html[data-reduce-animations="true"] *::before,
+html[data-reduce-animations="true"] *::after {
+  animation-delay: -1ms !important;
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-reduce-animations="true"] .facet-interactive:hover {
+  transform: none !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LOW FIDELITY MODE (DIAL DOWN BLURS, SHADOWS, GRADIENTS)
+   ────────────────────────────────────────────────────────────────────────── */
+
+html[data-low-fidelity="true"] .facet-surface,
+html[data-low-fidelity="true"] .facet-base,
+html[data-low-fidelity="true"] .facet-floating,
+html[data-low-fidelity="true"] .facet-overlay,
+html[data-low-fidelity="true"] .facet-depth-1,
+html[data-low-fidelity="true"] .facet-depth-2,
+html[data-low-fidelity="true"] .facet-depth-3,
+html[data-low-fidelity="true"] .facet-depth-4,
+html[data-low-fidelity="true"] .facet-mycountry,
+html[data-low-fidelity="true"] .facet-global,
+html[data-low-fidelity="true"] .facet-eci,
+html[data-low-fidelity="true"] .facet-sdi,
+html[data-low-fidelity="true"] .facet-builder,
+html[data-low-fidelity="true"] .facet-forum,
+html[data-low-fidelity="true"] .facet-enhanced,
+html[data-low-fidelity="true"] .navigation-facet,
+html[data-low-fidelity="true"] .command-palette-facet,
+html[data-low-fidelity="true"] .facet-halo {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+html[data-low-fidelity="true"] .facet-refraction::before,
+html[data-low-fidelity="true"] .facet-refraction::after,
+html[data-low-fidelity="true"] .bg-card.facet-enhanced::before,
+html[data-low-fidelity="true"] .bg-card.facet-enhanced::after,
+html[data-low-fidelity="true"] .navigation-facet::before,
+html[data-low-fidelity="true"] .navigation-facet::after,
+html[data-low-fidelity="true"] .command-palette-facet::before,
+html[data-low-fidelity="true"] .command-palette-facet::after,
+html[data-low-fidelity="true"] .facet-halo::before,
+html[data-low-fidelity="true"] .facet-halo::after {
+  display: none !important;
+}
+
+/* Enable / Disable Textures */
+html[data-enable-textures="false"] .texture-overlay,
+html[data-low-fidelity="true"] .texture-overlay {
+  display: none !important;
+}
+
+/* Enable / Disable Interactive Hover depth transformation */
+html[data-interactive-hover="false"] .facet-interactive:hover {
+  transform: none !important;
+  box-shadow: inherit !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .facet-base,
+  .facet-surface,
+  .facet-depth-1,
+  .facet-depth-2,
+  .facet-depth-3,
+  .facet-depth-4 {
+    border-width: 2px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(var(--background-rgb), 0.95) !important;
+  }
+}

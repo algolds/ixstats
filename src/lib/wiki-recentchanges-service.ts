@@ -107,7 +107,7 @@ export async function getWikiTrendingPages(limit = 10): Promise<WikiTrendingPage
     const basePath = process.env.BASE_PATH || "";
     pages.push({
       title,
-      url: `${basePath}/w/${encodeURIComponent(title.replace(/ /g, "_"))}`,
+      url: `${basePath}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`,
       editCount: edits.length,
       uniqueEditors: editors.size,
       totalBytesChanged: totalBytes,

@@ -89,6 +89,51 @@ const thinkpagesAccountBaseSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+function formatPollForClient(poll: any) {
+  if (!poll) return null;
+  const votes: Record<string, number> = {};
+  let totalVotes = 0;
+  poll.options.forEach((opt: any) => {
+    const count = opt._count?.votes ?? 0;
+    votes[opt.id] = count;
+    totalVotes += count;
+  });
+
+  return {
+    id: poll.id,
+    question: poll.question,
+    description: poll.description,
+    pollType: poll.pollType,
+    multiple: poll.multiple,
+    isActive: poll.isActive,
+    endDate: poll.endDate,
+    countryId: poll.countryId,
+    options: poll.options.map((opt: any) => ({
+      id: opt.id,
+      label: opt.label,
+      description: opt.description,
+    })),
+    votes,
+    totalVotes,
+    hasVoted: false,
+    userVotedOptionIds: [],
+  };
+}
+
+const pollInclude = {
+  poll: {
+    include: {
+      options: {
+        include: {
+          _count: {
+            select: { votes: true },
+          },
+        },
+      },
+    },
+  },
+};
+
 // Create schema - all required fields with defaults
 const CreateAccountSchema = thinkpagesAccountBaseSchema;
 
@@ -158,6 +203,13 @@ const CreatePostSchema = z.object({
     .optional(), // Data visualizations embedded in post
   mediaUrls: z.array(z.string()).max(4).optional(), // Up to 4 images per post
   postToDiscord: z.boolean().optional().default(true),
+  poll: z.object({
+    question: z.string().min(1).max(500),
+    description: z.string().max(2000).optional(),
+    pollType: z.enum(["choice", "feature-poll"]).default("choice"),
+    multiple: z.boolean().default(false),
+    options: z.array(z.string().min(1).max(200)).min(2, "At least 2 options are required"),
+  }).optional(),
 });
 
 const AddReactionSchema = z.object({
@@ -814,6 +866,24 @@ export const thinkpagesRouter = createTRPCRouter({
     if (input.parentPostId) postType = "reply";
     if (input.repostOfId) postType = "repost";
 
+    let pollId: string | null = null;
+    if (input.poll) {
+      const createdPoll = await db.poll.create({
+        data: {
+          question: input.poll.question,
+          description: input.poll.description,
+          pollType: input.poll.pollType,
+          multiple: input.poll.multiple,
+          options: {
+            create: input.poll.options.map((opt) => ({
+              label: opt,
+            })),
+          },
+        },
+      });
+      pollId = createdPoll.id;
+    }
+
     // Create the post
     const post = await db.thinkpagesPost.create({
       data: {
@@ -826,7 +896,8 @@ export const thinkpagesRouter = createTRPCRouter({
         repostOfId: input.repostOfId,
         visibility: input.visibility,
         ixTimeTimestamp: new Date(), // Store real-world time for social media timestamps
-      },
+        pollId,
+      } as any,
       include: {
         account: {
           select: {
@@ -958,7 +1029,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }
 
     // 🔔 Notify if this is a reply
-    if (input.parentPostId && post.parentPost) {
+    if (input.parentPostId && (post as any).parentPost) {
       const parentPost = await db.thinkpagesPost.findUnique({
         where: { id: input.parentPostId },
         select: {
@@ -1266,6 +1337,15 @@ export const thinkpagesRouter = createTRPCRouter({
       const deletedPost = await db.thinkpagesPost.delete({
         where: { id: input.postId },
       });
+
+      // If the post had an associated poll, delete it
+      if ((post as any).pollId) {
+        await db.poll.delete({
+          where: { id: (post as any).pollId },
+        }).catch((err) => {
+          console.error("[ThinkPages] Failed to delete associated poll:", err);
+        });
+      }
 
       // Decrement account post count (include deleted reposts)
       await db.thinkpagesAccount.update({
@@ -1695,6 +1775,7 @@ export const thinkpagesRouter = createTRPCRouter({
           },
           reactions: true,
           mediaAttachments: true,
+          ...pollInclude,
           reposts: {
             select: { accountId: true },
           },
@@ -1714,6 +1795,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Transform posts to include parsed hashtags and reaction counts
       const transformedPosts = posts.map((post) => ({
         ...post,
+        poll: formatPollForClient((post as any).poll),
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
         reactionCounts: (() => {
           let baseline: Record<string, number> = {};
@@ -1917,12 +1999,14 @@ export const thinkpagesRouter = createTRPCRouter({
               },
               reactions: true,
               mediaAttachments: true,
+              ...pollInclude,
             },
             orderBy: { ixTimeTimestamp: "asc" },
             take: 50,
           },
           reactions: true,
           mediaAttachments: true,
+          ...pollInclude,
           reposts: {
             select: { accountId: true },
           },
@@ -1967,6 +2051,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
         return {
           ...p,
+          poll: formatPollForClient(p.poll),
           hashtags: p.hashtags ? (typeof p.hashtags === "string" ? JSON.parse(p.hashtags) : p.hashtags) : [],
           reactionCounts,
           timestamp: p.isAutoGenerated
@@ -2079,6 +2164,7 @@ export const thinkpagesRouter = createTRPCRouter({
           },
           reactions: true,
           mediaAttachments: true,
+          ...pollInclude,
           reposts: {
             select: { accountId: true },
           },
@@ -2098,6 +2184,7 @@ export const thinkpagesRouter = createTRPCRouter({
       // Transform posts to include parsed hashtags and reaction counts
       const transformedPosts = posts.map((post) => ({
         ...post,
+        poll: formatPollForClient((post as any).poll),
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
         reactionCounts: (() => {
           let baseline: Record<string, number> = {};

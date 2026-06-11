@@ -68,7 +68,7 @@ function getWikiConfigs(): Record<string, WikiConfig> {
   const baseUrl = getApiBaseUrl();
   return {
     ixwiki: {
-      baseUrl: `${baseUrl}/api/ixwiki-proxy`,
+      baseUrl: `${baseUrl}/api/mediawiki/ixwiki`,
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
@@ -79,7 +79,7 @@ function getWikiConfigs(): Record<string, WikiConfig> {
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     althistory: {
-      baseUrl: `${baseUrl}/api/althistory-wiki-proxy`,
+      baseUrl: `${baseUrl}/api/mediawiki/althistory`,
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },

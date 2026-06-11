@@ -23,6 +23,7 @@ import {
   Bell,
   Vote,
   Coins,
+  Terminal,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -120,6 +121,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/polls",
     icon: Vote,
     description: "Create & Manage Feed Polls",
+  },
+  {
+    label: "Logs",
+    href: "/admin/logs",
+    icon: Terminal,
+    description: "System & Server Audit Trail",
   },
 ];
 

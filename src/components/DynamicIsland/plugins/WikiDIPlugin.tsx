@@ -8,7 +8,7 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { useWikiContext } from "~/components/wikios/shared/WikiContext";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { WikiView } from "~/components/DynamicIsland/WikiView";
 import { WikiProfileButton } from "~/components/DynamicIsland/WikiProfileButton";

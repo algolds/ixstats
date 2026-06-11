@@ -59,7 +59,7 @@ export function UnclaimedTerritoryView({
 
       {wikiRichIntro?.wikiUrl && (
         <div className="mt-3">
-          {wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/w/") ? (
+          {wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/wiki/") ? (
             <Link
               href={wikiRichIntro.wikiUrl}
               className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"

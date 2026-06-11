@@ -40,7 +40,7 @@ export function LaborTab({
   };
 
   return (
-    <Card className="glass-surface glass-refraction border-border relative overflow-hidden">
+    <Card className="glass-surface glass-refraction bg-gradient-labor border-border relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background

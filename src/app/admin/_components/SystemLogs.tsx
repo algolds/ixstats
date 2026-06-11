@@ -1,418 +1,99 @@
 // src/app/admin/_components/SystemLogs.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import {
-  Terminal,
-  Download,
-  Search,
-  RefreshCw,
-  AlertTriangle,
-  Info,
-  XCircle,
-  Database,
-  Server,
-  Bot,
-  Users,
-  Zap,
-} from "lucide-react";
-import { Card, CardContent } from "~/components/ui/card";
+import { useState } from "react";
+import Link from "next/link";
+import { api } from "~/trpc/react";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/log-viewer";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Badge } from "~/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { formatDistanceToNow } from "date-fns";
-import { JsonViewer } from "~/components/json-viewer";
-
-interface SystemLog {
-  id: string;
-  timestamp: Date;
-  level: "DEBUG" | "INFO" | "WARN" | "ERROR" | "FATAL";
-  category: "DATABASE" | "API" | "AUTH" | "BOT" | "CALCULATION" | "SYSTEM";
-  message: string;
-  details?: any;
-  userId?: string;
-  requestId?: string;
-  duration?: number;
-}
-
-const LOG_LEVELS = {
-  DEBUG: { color: "text-muted-foreground", bg: "bg-muted/50", icon: Terminal },
-  INFO: { color: "text-blue-600", bg: "bg-blue-500/10", icon: Info },
-  WARN: {
-    color: "text-amber-600",
-    bg: "bg-amber-500/10",
-    icon: AlertTriangle,
-  },
-  ERROR: { color: "text-red-600", bg: "bg-red-500/10", icon: XCircle },
-  FATAL: { color: "text-red-600", bg: "bg-red-500/20", icon: XCircle },
-};
-
-const LOG_CATEGORIES = {
-  DATABASE: { color: "text-purple-600", icon: Database },
-  API: { color: "text-green-600", icon: Server },
-  AUTH: { color: "text-indigo-600", icon: Users },
-  BOT: { color: "text-orange-600", icon: Bot },
-  CALCULATION: { color: "text-cyan-600", icon: Zap },
-  SYSTEM: { color: "text-gray-600", icon: Terminal },
-};
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Activity, ExternalLink, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function SystemLogs() {
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<SystemLog[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState<string>("ALL");
-  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [isRealTime, setIsRealTime] = useState(false);
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const [limit] = useState(100);
 
-  // Generate mock logs
-  const generateMockLogs = (count: number = 50) => {
-    const mockLogs: SystemLog[] = [];
-    const messages = {
-      DATABASE: [
-        "Connection pool initialized with 10 connections",
-        "Query execution completed",
-        "Database migration applied successfully",
-        "Connection timeout on query execution",
-        "Index optimization completed",
-        "Backup operation started",
-      ],
-      API: [
-        "HTTP request processed successfully",
-        "Rate limit exceeded for IP",
-        "Authentication successful",
-        "API endpoint deprecated warning",
-        "Request validation failed",
-        "Cache hit for resource",
-      ],
-      AUTH: [
-        "User login successful",
-        "Invalid authentication attempt",
-        "Session expired",
-        "Password reset requested",
-        "Admin access granted",
-        "JWT token validated",
-      ],
-      BOT: [
-        "Discord bot connected successfully",
-        "Command processing completed",
-        "Bot health check passed",
-        "Message rate limit applied",
-        "Guild member update received",
-        "Bot reconnection attempt",
-      ],
-      CALCULATION: [
-        "GDP growth calculation completed",
-        "Economic tier updated for country",
-        "Tax efficiency recalculated",
-        "Population growth processed",
-        "Storyteller effect modifier applied",
-        "Atomic component effectiveness updated",
-      ],
-      SYSTEM: [
-        "System startup completed",
-        "Memory usage optimization applied",
-        "Cache cleared successfully",
-        "Configuration reloaded",
-        "Health check endpoint responded",
-        "Scheduled task executed",
-      ],
+  // Fetch actual logs from the database
+  const { data: logsData, isLoading, refetch } = api.admin.getSystemLogs.useQuery(
+    { limit },
+    {
+      refetchInterval: 10000, // Refresh logs every 10 seconds automatically
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const clearLogsMutation = api.admin.clearSystemLogs.useMutation({
+    onSuccess: () => {
+      toast.success("System logs cleared successfully");
+      void refetch();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to clear logs");
+    },
+  });
+
+  const handleClearLogs = () => {
+    if (confirm("Are you sure you want to purge all system logs? This cannot be undone.")) {
+      clearLogsMutation.mutate();
+    }
+  };
+
+  // Map database logs to LogViewer entries format
+  const entries: LogEntry[] = (logsData?.logs ?? []).map((log) => {
+    let level: LogLevel = "info";
+    const dbLevel = log.level?.toUpperCase();
+    if (dbLevel === "DEBUG") level = "debug";
+    else if (dbLevel === "WARN" || dbLevel === "WARNING") level = "warn";
+    else if (dbLevel === "ERROR" || dbLevel === "CRITICAL" || dbLevel === "FATAL") level = "error";
+
+    let msg = `[${log.category}] ${log.message}`;
+    if (log.userId) msg += ` | user: ${log.userId}`;
+    if (log.component) msg += ` | component: ${log.component}`;
+    if (log.duration) msg += ` (${log.duration}ms)`;
+    if (log.errorMessage) msg += `\nError: ${log.errorMessage}`;
+    if (log.errorStack) msg += `\nStack: ${log.errorStack.slice(0, 1000)}`;
+
+    return {
+      level,
+      message: msg,
+      timestamp: log.timestamp ? new Date(log.timestamp).toISOString() : undefined,
     };
-
-    for (let i = 0; i < count; i++) {
-      const categories = Object.keys(messages) as (keyof typeof messages)[];
-      const category = categories[Math.floor(Math.random() * categories.length)]!;
-      const levels: SystemLog["level"][] = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"];
-      const level = levels[Math.floor(Math.random() * levels.length)]!;
-
-      // Weight towards INFO and DEBUG, fewer errors
-      const levelWeights = { DEBUG: 30, INFO: 50, WARN: 15, ERROR: 4, FATAL: 1 };
-      const weightedLevel =
-        Math.random() < 0.8
-          ? "INFO"
-          : Math.random() < 0.9
-            ? "DEBUG"
-            : Math.random() < 0.95
-              ? "WARN"
-              : Math.random() < 0.99
-                ? "ERROR"
-                : "FATAL";
-
-      mockLogs.push({
-        id: `log-${i}`,
-        timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Last 7 days
-        level: weightedLevel as SystemLog["level"],
-        category,
-        message: messages[category][Math.floor(Math.random() * messages[category].length)]!,
-        userId: Math.random() > 0.7 ? `user-${Math.floor(Math.random() * 100)}` : undefined,
-        requestId:
-          Math.random() > 0.5 ? `req-${Math.random().toString(36).substring(7)}` : undefined,
-        duration: Math.random() > 0.6 ? Math.random() * 1000 + 10 : undefined,
-        details:
-          Math.random() > 0.8
-            ? {
-                additionalInfo: "Sample details object",
-                errorCode: Math.random() > 0.5 ? "ERR_001" : undefined,
-                stackTrace: weightedLevel === "ERROR" ? "Error: Sample stack trace..." : undefined,
-              }
-            : undefined,
-      });
-    }
-
-    return mockLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  };
-
-  // Initialize logs
-  useEffect(() => {
-    const initialLogs = generateMockLogs(100);
-    setLogs(initialLogs);
-  }, []);
-
-  // Real-time log simulation
-  useEffect(() => {
-    if (!isRealTime) return;
-
-    const interval = setInterval(
-      () => {
-        const newLog = generateMockLogs(1)[0];
-        if (newLog) {
-          newLog.timestamp = new Date();
-          setLogs((prevLogs) => [newLog, ...prevLogs.slice(0, 999)]); // Keep last 1000 logs
-        }
-      },
-      2000 + Math.random() * 3000
-    ); // Random interval 2-5 seconds
-
-    return () => clearInterval(interval);
-  }, [isRealTime]);
-
-  // Filter logs
-  useEffect(() => {
-    let filtered = logs;
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (log) =>
-          log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.requestId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.userId?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedLevel !== "ALL") {
-      filtered = filtered.filter((log) => log.level === selectedLevel);
-    }
-
-    if (selectedCategory !== "ALL") {
-      filtered = filtered.filter((log) => log.category === selectedCategory);
-    }
-
-    setFilteredLogs(filtered);
-  }, [logs, searchTerm, selectedLevel, selectedCategory]);
-
-  // Auto scroll to bottom
-  useEffect(() => {
-    if (isRealTime) {
-      logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [filteredLogs, isRealTime]);
-
-  const exportLogs = () => {
-    const logData = filteredLogs.map((log) => ({
-      timestamp: log.timestamp.toISOString(),
-      level: log.level,
-      category: log.category,
-      message: log.message,
-      userId: log.userId,
-      requestId: log.requestId,
-      duration: log.duration,
-      details: log.details,
-    }));
-
-    const dataStr = JSON.stringify(logData, null, 2);
-    const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
-
-    const exportFileDefaultName = `system-logs-${new Date().toISOString().split("T")[0]}.json`;
-
-    const linkElement = document.createElement("a");
-    linkElement.setAttribute("href", dataUri);
-    linkElement.setAttribute("download", exportFileDefaultName);
-    linkElement.click();
-  };
-
-  const clearLogs = () => {
-    if (confirm("Are you sure you want to clear all logs? This action cannot be undone.")) {
-      setLogs([]);
-    }
-  };
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">System Logs</h2>
-          <p className="text-muted-foreground">Real-time system logs and error tracking</p>
+    <Card className="border-border/40 bg-card/30 backdrop-blur-md">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="space-y-0.5">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <Activity className="h-4 w-4 text-indigo-500" />
+            System Audit logs
+          </CardTitle>
+          <p className="text-muted-foreground text-xs">Live system execution trail and audit log</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportLogs} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Button variant="outline" onClick={clearLogs} className="flex items-center gap-2">
-            <XCircle className="h-4 w-4" />
-            Clear
-          </Button>
-          <Button
-            variant={isRealTime ? "default" : "outline"}
-            onClick={() => setIsRealTime(!isRealTime)}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRealTime ? "animate-spin" : ""}`} />
-            {isRealTime ? "Stop" : "Live"}
+          <Button variant="outline" size="sm" asChild className="h-8 gap-1 text-xs">
+            <Link href="/admin/logs">
+              <ExternalLink className="h-3.5 w-3.5" />
+              Dedicated View
+            </Link>
           </Button>
         </div>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-4">
-            <div className="relative">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-              <Input
-                placeholder="Search logs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Levels</SelectItem>
-                {Object.keys(LOG_LEVELS).map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {level}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Categories</SelectItem>
-                {Object.keys(LOG_CATEGORIES).map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{filteredLogs.length} logs</Badge>
-              {isRealTime && (
-                <Badge variant="default" className="animate-pulse">
-                  LIVE
-                </Badge>
-              )}
-            </div>
+      </CardHeader>
+      <CardContent className="p-4 pt-2">
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Logs Display */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="max-h-[600px] overflow-y-auto">
-            {filteredLogs.length > 0 ? (
-              <div className="divide-y">
-                {filteredLogs.map((log) => {
-                  const levelConfig = LOG_LEVELS[log.level];
-                  const categoryConfig = LOG_CATEGORIES[log.category];
-                  const LevelIcon = levelConfig.icon;
-                  const CategoryIcon = categoryConfig.icon;
-
-                  return (
-                    <div key={log.id} className={`hover:bg-muted/50 p-4 ${levelConfig.bg}`}>
-                      <div className="flex items-start gap-3">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <LevelIcon className={`h-4 w-4 ${levelConfig.color} shrink-0`} />
-                          <Badge variant="outline" className="shrink-0 text-xs">
-                            {log.level}
-                          </Badge>
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex items-center gap-2">
-                            <CategoryIcon className={`h-4 w-4 ${categoryConfig.color}`} />
-                            <span className="text-sm font-medium">{log.category}</span>
-                            <span className="text-muted-foreground text-xs">
-                              {formatDistanceToNow(log.timestamp, { addSuffix: true })}
-                            </span>
-                            {log.duration && (
-                              <span className="text-muted-foreground text-xs">
-                                ({log.duration.toFixed(0)}ms)
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-foreground mb-2 text-sm">{log.message}</p>
-
-                          <div className="text-muted-foreground flex items-center gap-4 text-xs">
-                            <span>{log.timestamp.toLocaleString()}</span>
-                            {log.requestId && (
-                              <span className="font-mono">req: {log.requestId}</span>
-                            )}
-                            {log.userId && <span className="font-mono">user: {log.userId}</span>}
-                          </div>
-
-                          {log.details && (
-                            <details className="mt-2">
-                              <summary className="text-muted-foreground hover:text-foreground mb-2 cursor-pointer text-xs">
-                                Show details
-                              </summary>
-                              <JsonViewer
-                                data={log.details}
-                                defaultExpanded={1}
-                                className="border-border/30 bg-card/20 mt-2 backdrop-blur-md"
-                              />
-                            </details>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={logsEndRef} />
-              </div>
-            ) : (
-              <div className="py-12 text-center">
-                <Terminal className="text-muted-foreground mx-auto h-12 w-12" />
-                <h3 className="mt-2 text-sm font-medium">No logs found</h3>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  No logs match your current filters
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        ) : (
+          <LogViewerFilterable
+            entries={entries}
+            title="Latest System Logs"
+            maxHeight={400}
+            onClear={handleClearLogs}
+            className="border-border/30 bg-black/10 dark:bg-black/30"
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }

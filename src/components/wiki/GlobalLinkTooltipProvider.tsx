@@ -19,7 +19,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { BookOpen, ExternalLink, MessageSquare, Eye, Users } from "lucide-react";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 
 // ──────────────────────────────────────────────
 // Link detection types
@@ -31,7 +31,7 @@ type DetectedLink =
 
 /** Parse a link href and return detection info, or null if not a recognized link */
 function detectLink(href: string, rect: DOMRect): DetectedLink | null {
-  // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /w/Title (WikiOS)
+  // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
   const ixMatch =
     href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/) ??
     href.match(/^(?:\/[^/]+)?\/wiki\/([^#?]+)/) ??

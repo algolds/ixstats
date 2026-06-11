@@ -35,7 +35,7 @@ import { scoreDailyWikiOS } from "~/lib/lorewards-scoring";
 import type { ScoringWeights } from "~/lib/lorewards-scoring";
 import * as mysql from "mysql2/promise";
 import { getWikiDbPool } from "~/lib/wiki-bridge";
-import { fetchTemplateData, categorizeTemplate } from "~/lib/wikios/template-registry";
+import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/template-registry";
 
 export const adminRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -3280,7 +3280,7 @@ export const adminRouter = createTRPCRouter({
         existingAwards.map((a) => `${a.pageTitle}|${a.category}|${a.name}`)
       );
 
-      const createdAwards = [];
+      const createdAwards: any[] = [];
 
       for (const row of rows) {
         const pageTitle = String(row.page_title).replace(/_/g, " ");
@@ -3554,6 +3554,102 @@ export const adminRouter = createTRPCRouter({
         return [];
       }
     }),
+
+  getSystemLogs: adminProcedure
+    .input(
+      z.object({
+        limit: z.number().optional().default(100),
+        offset: z.number().optional().default(0),
+        level: z.string().optional(),
+        category: z.string().optional(),
+        searchTerm: z.string().optional(),
+        userId: z.string().optional(),
+        nextJsErrors: z.boolean().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const where: any = {};
+
+        if (input.level && input.level !== "ALL") {
+          where.level = input.level;
+        }
+
+        if (input.category && input.category !== "ALL") {
+          where.category = input.category;
+        }
+
+        if (input.userId) {
+          where.userId = input.userId;
+        }
+
+        if (input.nextJsErrors) {
+          where.OR = [
+            { component: { contains: "Global Error Handler", mode: "insensitive" } },
+            { component: { contains: "Unhandled Promise Rejection", mode: "insensitive" } },
+            { errorName: { not: null } },
+            { errorMessage: { not: null } },
+            { level: { in: ["ERROR", "CRITICAL", "FATAL"] } }
+          ];
+        }
+
+        if (input.searchTerm) {
+          const searchFilter = [
+            { message: { contains: input.searchTerm, mode: "insensitive" } },
+            { component: { contains: input.searchTerm, mode: "insensitive" } },
+            { errorMessage: { contains: input.searchTerm, mode: "insensitive" } },
+            { errorStack: { contains: input.searchTerm, mode: "insensitive" } },
+            { category: { contains: input.searchTerm, mode: "insensitive" } },
+          ];
+          if (where.OR) {
+            // Combine nextJsErrors conditions and search filters
+            where.AND = [
+              { OR: where.OR },
+              { OR: searchFilter }
+            ];
+            delete where.OR;
+          } else {
+            where.OR = searchFilter;
+          }
+        }
+
+        const [logs, total] = await Promise.all([
+          ctx.db.systemLog.findMany({
+            where,
+            orderBy: { timestamp: "desc" },
+            take: input.limit,
+            skip: input.offset,
+          }),
+          ctx.db.systemLog.count({ where }),
+        ]);
+
+        return {
+          logs,
+          total,
+          hasMore: total > (input.offset || 0) + (input.limit || 100),
+        };
+      } catch (error) {
+        console.error("Failed to get system logs:", error);
+        return {
+          logs: [],
+          total: 0,
+          hasMore: false,
+        };
+      }
+    }),
+
+  clearSystemLogs: adminProcedure.mutation(async ({ ctx }) => {
+    try {
+      await ctx.db.systemLog.deleteMany({});
+      return { success: true, message: "System logs cleared successfully" };
+    } catch (error) {
+      console.error("Failed to clear system logs:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to clear system logs",
+      });
+    }
+  }),
 });
 
 // getWikiDbPool is now imported from "~/lib/wiki-bridge"

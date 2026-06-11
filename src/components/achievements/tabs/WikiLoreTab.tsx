@@ -420,7 +420,7 @@ export function WikiLoreTab({
                         <div className="text-muted-foreground">
                           Last active in:{" "}
                           <Link
-                            href={`/w/${encodeURIComponent(champ.lastEditPage)}`}
+                            href={`/wiki/${encodeURIComponent(champ.lastEditPage)}`}
                             className="font-bold text-amber-400 hover:underline"
                           >
                             {champ.lastEditPage}
@@ -565,7 +565,7 @@ export function WikiLoreTab({
                             <div className="text-muted-foreground/60 max-w-full truncate text-[10px]">
                               Last active in:{" "}
                               <Link
-                                href={`/w/${encodeURIComponent(user.lastEditPage)}`}
+                                href={`/wiki/${encodeURIComponent(user.lastEditPage)}`}
                                 className="text-amber-500/80 hover:text-amber-500 hover:underline"
                               >
                                 {user.lastEditPage}
@@ -924,7 +924,7 @@ export function WikiLoreTab({
                         );
                       })()}
                       <Link
-                        href={`/w/${a.pageSlug}`}
+                        href={`/wiki/${a.pageSlug}`}
                         className="group flex w-fit items-center gap-1 text-xs font-bold text-amber-500 hover:underline"
                       >
                         {a.pageTitle}

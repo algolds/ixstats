@@ -107,7 +107,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
       <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
       <div class="featured-links">
-        <a href="${createUrl("/w/Main_Page")}">Visit IxWiki</a>
+        <a href="${createUrl("/wiki/Main_Page")}">Visit IxWiki</a>
         <a href="${createUrl("/countries")}">Browse Countries</a>
       </div>
     </div>
@@ -213,7 +213,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
             <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
             <div class="featured-links">
-              <a href="${createUrl("/w/Main_Page")}">Visit IxWiki</a>
+              <a href="${createUrl("/wiki/Main_Page")}">Visit IxWiki</a>
               <a href="${createUrl("/countries")}">Browse Countries</a>
             </div>
           </div>
@@ -385,7 +385,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
           title: "Welcome to IxWiki",
           description:
             "Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.",
-          articleUrl: createUrl("/w/Main_Page"),
+          articleUrl: createUrl("/wiki/Main_Page"),
           category: "Featured",
           lastUpdated: new Date().toLocaleDateString(),
         };
@@ -462,7 +462,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
             <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
             <div class="featured-links">
-              <a href="${createUrl("/w/Main_Page")}">Visit IxWiki</a>
+              <a href="${createUrl("/wiki/Main_Page")}">Visit IxWiki</a>
               <a href="${createUrl("/countries")}">Browse Countries</a>
             </div>
           </div>
@@ -488,7 +488,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         title: "Welcome to IxWiki",
         description:
           "Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.",
-        articleUrl: createUrl("/w/Main_Page"),
+        articleUrl: createUrl("/wiki/Main_Page"),
         category: "Featured",
         lastUpdated: new Date().toLocaleDateString(),
       };
@@ -516,7 +516,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
 
     // Construct the article URL (you might need to adjust this based on your wiki structure)
     const articleUrl = title
-      ? createUrl(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`)
+      ? createUrl(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`)
       : "#";
 
     return {
@@ -623,7 +623,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         summary = summary.substring(0, 300) + "...";
       }
 
-      const articleUrl = createUrl(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`);
+      const articleUrl = createUrl(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`);
       const imageUrl = imageFileName
         ? `https://ixwiki.com/wiki/Special:Filepath/${encodeURIComponent(imageFileName)}`
         : undefined;
@@ -649,7 +649,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       return {
         title: "Featured Article",
         description: "Discover today's featured article from the wiki.",
-        articleUrl: createUrl("/w/Main_Page"),
+        articleUrl: createUrl("/wiki/Main_Page"),
         category: "Featured",
         lastUpdated: new Date().toLocaleDateString(),
       };
@@ -700,7 +700,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             <div className="text-sm">
               <h3 className="mb-2 text-lg font-semibold">
                 <Link
-                  href={createUrl("/w/Anglasweorċ")}
+                  href={createUrl("/wiki/Anglasweorċ")}
                   className="text-blue-600 hover:text-blue-800 hover:underline"
                 >
                   Anglasweorċ
@@ -719,7 +719,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                 Featured
               </Badge>
               <Link
-                href={createUrl("/w/Anglasweorċ")}
+                href={createUrl("/wiki/Anglasweorċ")}
                 className="text-primary inline-flex items-center gap-1 text-xs hover:underline"
               >
                 <BookOpen className="h-3 w-3" />
@@ -790,7 +790,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
                 </button>
                 {articleData?.articleUrl &&
                   (articleData.articleUrl.startsWith("/") ||
-                  articleData.articleUrl.includes("/w/") ? (
+                  articleData.articleUrl.includes("/wiki/") ? (
                     <Link
                       href={articleData.articleUrl}
                       className="text-primary inline-flex items-center gap-1 text-xs transition-all duration-300 hover:scale-105 hover:underline"

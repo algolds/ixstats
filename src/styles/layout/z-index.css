@@ -1,0 +1,78 @@
+/* ====================================
+   COMPREHENSIVE Z-INDEX SYSTEM
+   ==================================== */
+
+/* 
+   THINKPAGES Z-INDEX HIERARCHY (Low to High):
+   z-1    → glass-hierarchy-parent (base cards)
+   z-2    → glass-hierarchy-child (account manager, nested cards)
+   z-3    → glass-hierarchy-interactive (buttons, hover states)
+   z-40   → tooltips, hover previews
+   z-50   → post options menu
+   z-100  → reaction popups (PRIORITY: must be above all content)
+   z-13040 → dialog overlays
+   z-13050 → dialog content, dropdowns
+*/
+
+[data-radix-dialog-content],
+[data-radix-alert-dialog-content] {
+  z-index: var(--z-modal) !important;
+  position: fixed !important;
+}
+
+/* Radix Portal elements (where most dropdowns render) */
+[data-radix-portal] {
+  z-index: unset !important;
+}
+
+/* Ensure dialog overlays are properly layered */
+[data-radix-dialog-overlay] {
+  z-index: var(--z-backdrop) !important;
+}
+
+/* Glass hierarchy base z-indices (much lower than dropdowns) */
+.glass-hierarchy-parent {
+  z-index: 1;
+}
+
+.glass-hierarchy-child {
+  z-index: 2;
+}
+
+.glass-hierarchy-interactive {
+  z-index: 3;
+}
+
+/* Correct the sticky sidebar top position for standard mode (64px) on lg screens */
+.wikios-icon-rail,
+.forum-icon-rail {
+  top: 64px !important;
+  height: calc(100vh - 64px) !important;
+}
+
+/* Override for compact mode (48px) */
+body.compact-mode .wikios-icon-rail,
+body.compact-mode .forum-icon-rail {
+  top: 48px !important;
+  height: calc(100vh - 48px) !important;
+}
+
+/* Override for headless mode (0px) */
+body:has([data-builder-headless]) .wikios-icon-rail,
+body:has([data-builder-headless]) .forum-icon-rail {
+  top: 0 !important;
+  height: 100vh !important;
+}
+
+/* Ensure sticky top-6 widgets in MyCountry, Dashboard, Vault, and Admin layouts sit below the navigation bar */
+.sticky.top-6 {
+  top: 80px !important; /* 64px nav height + 16px (1rem) spacing */
+}
+
+body.compact-mode .sticky.top-6 {
+  top: 64px !important; /* 48px nav height + 16px (1rem) spacing */
+}
+
+body:has([data-builder-headless]) .sticky.top-6 {
+  top: 24px !important; /* 0px nav height + 24px (1.5rem) spacing */
+}

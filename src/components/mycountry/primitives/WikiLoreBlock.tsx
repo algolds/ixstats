@@ -217,7 +217,7 @@ function WikiSectionRow({
                 </p>
               )}
               {wikiUrl &&
-                (wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+                (wikiUrl.startsWith("/") || wikiUrl.includes("/wiki/") ? (
                   <Link
                     href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
                     className="mt-1 inline-flex items-center gap-1 text-[10px] text-purple-500 hover:underline"
@@ -296,7 +296,7 @@ export const WikiLoreBlock = React.memo(function WikiLoreBlock({
           </span>
         )}
         {wikiUrl &&
-          (wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+          (wikiUrl.startsWith("/") || wikiUrl.includes("/wiki/") ? (
             <Link
               href={wikiUrl}
               className={cn(
@@ -362,7 +362,7 @@ export const WikiLoreBlock = React.memo(function WikiLoreBlock({
                       +{sectionCount - maxSections} more sections
                     </p>
                   )}
-                  {wikiUrl.startsWith("/") || wikiUrl.includes("/w/") ? (
+                  {wikiUrl.startsWith("/") || wikiUrl.includes("/wiki/") ? (
                     <Link
                       href={wikiUrl}
                       className={cn(

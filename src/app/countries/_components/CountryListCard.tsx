@@ -84,7 +84,7 @@ export function CountryListCard({
 
   const dominantColor = useDominantColor(flagUrl);
 
-  const wikiUrl = `/w/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
+  const wikiUrl = `/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
 
   const goToDetail = () => {
     router.push(createUrl(`/countries/${country.slug}`));

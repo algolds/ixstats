@@ -57,7 +57,11 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-      <MyCountryTabsList govComponentCount={govComponentCount} />
+      <MyCountryTabsList
+        activeTab={activeTab}
+        onChange={handleTabChange}
+        govComponentCount={govComponentCount}
+      />
 
       {/* Animated tab content wrapper */}
       <AnimatedTabContent activeTab={activeTab} direction={tabDirection} mode="slide">

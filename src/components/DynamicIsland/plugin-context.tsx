@@ -65,6 +65,9 @@ export function DIPluginProvider({ children }: { children: React.ReactNode }) {
 
 // ── Hooks ──
 
+const DUMMY_SUBSCRIBE = () => () => {};
+const DUMMY_SNAPSHOT = () => new Map<string, DIPlugin>();
+
 /**
  * Register a DI plugin for the lifetime of the calling component.
  * Call from any page/layout to inject content into the DI pill.
@@ -79,18 +82,14 @@ export function DIPluginProvider({ children }: { children: React.ReactNode }) {
  */
 export function useDIPlugin(plugin: DIPlugin) {
   const ctx = useContext(DIPluginContext);
-  if (!ctx) {
-    // Silently no-op if provider is missing (e.g. during SSR or tests)
-    return;
-  }
-
-  const { registry } = ctx;
+  const registry = ctx?.registry;
   const pluginRef = useRef(plugin);
   pluginRef.current = plugin;
 
   // Register on mount, unregister on unmount
   // Re-register when id changes (stable identity)
   React.useEffect(() => {
+    if (!registry) return;
     registry.register(pluginRef.current);
     return () => {
       registry.unregister(pluginRef.current.id);
@@ -101,6 +100,7 @@ export function useDIPlugin(plugin: DIPlugin) {
 
   // Re-register when plugin content changes (center, actions, etc.)
   React.useEffect(() => {
+    if (!registry) return;
     registry.register(plugin);
   }, [registry, plugin]);
 }
@@ -111,16 +111,14 @@ export function useDIPlugin(plugin: DIPlugin) {
  */
 export function useActiveDIPlugin(): DIPlugin | null {
   const ctx = useContext(DIPluginContext);
-  if (!ctx) return null;
-
-  const { registry } = ctx;
+  const registry = ctx?.registry;
   const plugins = useSyncExternalStore(
-    registry.subscribe,
-    registry.getSnapshot,
-    registry.getSnapshot
+    registry?.subscribe ?? DUMMY_SUBSCRIBE,
+    registry?.getSnapshot ?? DUMMY_SNAPSHOT,
+    registry?.getSnapshot ?? DUMMY_SNAPSHOT
   );
 
-  if (plugins.size === 0) return null;
+  if (!registry || plugins.size === 0) return null;
 
   // Find highest priority plugin
   let best: DIPlugin | null = null;
@@ -140,15 +138,14 @@ export function useActiveDIPlugin(): DIPlugin | null {
  */
 export function useAllDIPlugins(): DIPlugin[] {
   const ctx = useContext(DIPluginContext);
-  if (!ctx) return [];
-
-  const { registry } = ctx;
+  const registry = ctx?.registry;
   const plugins = useSyncExternalStore(
-    registry.subscribe,
-    registry.getSnapshot,
-    registry.getSnapshot
+    registry?.subscribe ?? DUMMY_SUBSCRIBE,
+    registry?.getSnapshot ?? DUMMY_SNAPSHOT,
+    registry?.getSnapshot ?? DUMMY_SNAPSHOT
   );
 
+  if (!registry) return [];
   return Array.from(plugins.values());
 }
 

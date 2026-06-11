@@ -22,7 +22,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
-import { titleToWikiOSRoute } from "~/lib/wikios/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { renderDiscordEmojis } from "~/lib/text-formatter";
 import { sanitizeUserContent } from "~/lib/sanitize-html";
@@ -148,7 +148,7 @@ export function UnifiedFeedItem({ activity }: { activity: any }) {
     : "";
 
   return (
-    <div className="group glass-hierarchy-child bg-muted/5 hover:bg-muted/15 border-border/30 rounded-xl border p-3 transition-colors">
+    <div className="group glass-hierarchy-child hover:glass-hierarchy-interactive shadow-sm transition-all duration-300 p-3">
       <div className="flex items-start gap-3">
         {/* Source icon — wiki uses the W logo */}
         <div

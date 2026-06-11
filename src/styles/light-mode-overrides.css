@@ -126,7 +126,7 @@ body {
 /* Enhanced component theming for navigation, command palette, and dynamic island */
 .command-palette-dropdown {
   background: hsl(var(--card) / 0.95);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   backdrop-filter: blur(12px);
 }
 
@@ -278,6 +278,34 @@ body {
 
 .light .glass-card .text-gray-400 {
   color: rgb(156, 163, 175) !important;
+}
+
+/* Fix hierarchy glass and facet structures in light mode */
+.light .glass-hierarchy-child,
+.light .facet-hierarchy-child {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.light .glass-hierarchy-child:hover,
+.light .facet-hierarchy-child:hover,
+.light .glass-hierarchy-interactive:hover,
+.light .facet-hierarchy-interactive:hover {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+.light .glass-hierarchy-parent,
+.light .facet-hierarchy-parent {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Print styles */

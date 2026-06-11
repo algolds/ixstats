@@ -1,0 +1,134 @@
+/* ==========================================================================
+   FACET DESIGN SYSTEM — BASE LAYOUTS & DEPTHS
+   ========================================================================== */
+
+.facet-base {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  border: 1px solid var(--facet-border-1);
+  background: var(--facet-bg-1);
+  box-shadow: var(--facet-shadow-1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.facet-surface {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  border: 1px solid var(--facet-border-1);
+  background: var(--facet-bg-1);
+  box-shadow: var(--facet-shadow-1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-depth-surface);
+}
+
+.facet-floating {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  border: 1px solid var(--facet-border-2);
+  background: var(--facet-bg-2);
+  box-shadow: var(--facet-shadow-2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-depth-floating);
+}
+
+.facet-overlay {
+  position: relative;
+  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  border: 1px solid var(--facet-border-3);
+  background: var(--facet-bg-3);
+  box-shadow: var(--facet-shadow-3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-depth-overlay);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Z-DEPTH SPATIAL LAYERS
+   ────────────────────────────────────────────────────────────────────────── */
+
+.facet-depth-1 {
+  position: relative;
+  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
+  border: 1px solid var(--facet-border-1);
+  background: var(--facet-bg-1);
+  box-shadow: var(--facet-shadow-1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-depth-surface);
+  transform: translateZ(0);
+}
+
+.facet-depth-2 {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  border: 1px solid var(--facet-border-2);
+  background: var(--facet-bg-2);
+  box-shadow: var(--facet-shadow-2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-depth-floating);
+  transform: translateZ(10px);
+}
+
+.facet-depth-3 {
+  position: relative;
+  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
+  border: 1px solid var(--facet-border-3);
+  background: var(--facet-bg-3);
+  box-shadow: var(--facet-shadow-3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-depth-overlay);
+  transform: translateZ(20px);
+}
+
+.facet-depth-4 {
+  position: relative;
+  backdrop-filter: blur(var(--blur-intense)) saturate(220%);
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
+  border: 1px solid var(--facet-border-4);
+  background: var(--facet-bg-4);
+  box-shadow: var(--facet-shadow-4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-depth-modal);
+  transform: translateZ(30px);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   BACKGROUND ADAPTIVITY (REACTION FIELDS)
+   ────────────────────────────────────────────────────────────────────────── */
+
+.facet-adapt-light {
+  --refraction-light: 0.08;
+  --refraction-medium: 0.12;
+  --refraction-strong: 0.18;
+  --refraction-intense: 0.25;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.facet-adapt-dark {
+  --refraction-light: 0.15;
+  --refraction-medium: 0.22;
+  --refraction-strong: 0.32;
+  --refraction-intense: 0.45;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark .facet-adapt-light {
+  --refraction-light: 0.12;
+  --refraction-medium: 0.18;
+  --refraction-strong: 0.28;
+  --refraction-intense: 0.35;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .facet-adapt-dark {
+  --refraction-light: 0.18;
+  --refraction-medium: 0.28;
+  --refraction-strong: 0.38;
+  --refraction-intense: 0.5;
+  border-color: rgba(255, 255, 255, 0.18);
+}

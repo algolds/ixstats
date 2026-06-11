@@ -75,7 +75,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
   }, [name, trpcUtils]);
 
   const slug = String(country.slug ?? "");
-  const wikiUrl = `/w/${encodeURIComponent(name.replace(/ /g, "_"))}`;
+  const wikiUrl = `/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
   const ixstatsUrl = `/countries/${slug}`;
 
   const growthRate = (country.adjustedGdpGrowth as number | undefined) ?? 0;

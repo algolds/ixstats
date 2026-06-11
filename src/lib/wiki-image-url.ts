@@ -33,17 +33,17 @@ export function resolveImageUrl(
 
   if (wikiSource === "ixwiki") {
     return withBasePath(
-      `/api/ixwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+      `/api/mediawiki/ixwiki/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
     );
   }
   if (wikiSource === "iiwiki") {
     return withBasePath(
-      `/api/iiwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+      `/api/mediawiki/iiwiki/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
     );
   }
   if (wikiSource === "althistory") {
     return withBasePath(
-      `/api/althistory-wiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+      `/api/mediawiki/althistory/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
     );
   }
   return getImageUrl(cleanName);

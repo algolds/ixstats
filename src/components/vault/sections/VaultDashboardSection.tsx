@@ -280,9 +280,9 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
       <div className="flex flex-col gap-1"></div>
 
       {/* 2-Column Premium Banking Grid Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="facet-layout-grid-3">
         {/* Left Column (Financial Center) */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="facet-layout-main-span-2 space-y-6">
           {/* 1. Account Net Worth Card (Premium Cutout style) */}
           <CutoutCard
             className={cn(
@@ -620,7 +620,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
         </div>
 
         {/* Right Column (Asset Portfolio & Account Status) */}
-        <div className="space-y-6">
+        <div className="facet-layout-sidebar-span-1 space-y-6">
           {hasImported === false && !isNoticeDismissed && (
             <div className="relative overflow-hidden rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 shadow-sm backdrop-blur-md dark:border-rose-500/15">
               {/* Close Button */}

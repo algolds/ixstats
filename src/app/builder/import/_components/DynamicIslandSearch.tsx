@@ -299,31 +299,26 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: -10 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="flex items-center gap-3 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur-md"
-            style={{
-              backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: "var(--color-border-primary)",
-            }}
+            className="border-border bg-card/80 flex items-center gap-3 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur-md"
           >
             {selectedCountryFlag && !flagImgError ? (
               <img
                 src={selectedCountryFlag}
                 alt="Flag"
-                className="h-4 w-6 rounded-sm border object-cover shadow-sm"
-                style={{ borderColor: "var(--color-border-primary)" }}
+                className="border-border h-4 w-6 rounded-sm border object-cover shadow-sm"
                 referrerPolicy="no-referrer"
                 onError={() => setFlagImgError(true)}
               />
             ) : (
-              <Globe className="h-4 w-5" style={{ color: "var(--color-text-muted)" }} />
+              <Globe className="text-muted-foreground h-4 w-5" />
             )}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             >
-              <Loader2 className="h-4 w-4" style={{ color: "var(--color-text-muted)" }} />
+              <Loader2 className="text-muted-foreground h-4 w-4" />
             </motion.div>
-            <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+            <span className="text-foreground text-sm font-medium">
               Parsing {selectedResult.title}...
             </span>
           </motion.div>
@@ -337,26 +332,21 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: -10 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="flex items-center gap-3 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur-md"
-            style={{
-              backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: "var(--color-border-primary)",
-            }}
+            className="border-border bg-card/80 flex items-center gap-3 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur-md"
           >
             {selectedCountryFlag && !flagImgError ? (
               <img
                 src={selectedCountryFlag}
                 alt="Flag"
-                className="h-4 w-6 rounded-sm border object-cover shadow-sm"
-                style={{ borderColor: "var(--color-border-primary)" }}
+                className="border-border h-4 w-6 rounded-sm border object-cover shadow-sm"
                 referrerPolicy="no-referrer"
                 onError={() => setFlagImgError(true)}
               />
             ) : (
-              <Globe className="h-4 w-5" style={{ color: "var(--color-text-muted)" }} />
+              <Globe className="text-muted-foreground h-4 w-5" />
             )}
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+            <span className="text-foreground text-sm font-medium">
               Parsed{" "}
               {(parsedData?.common_name as string) ||
                 (parsedData?.official_name as string) ||
@@ -373,13 +363,9 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             layout
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className={cn(
-              "overflow-hidden rounded-2xl border shadow-lg backdrop-blur-md",
-              isExpanded ? "p-0" : "cursor-pointer"
+              "border-border bg-card/80 overflow-hidden rounded-2xl border shadow-lg backdrop-blur-md",
+              isExpanded ? "p-0 border-blue-500/30" : "cursor-pointer"
             )}
-            style={{
-              backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: isExpanded ? "rgba(59, 130, 246, 0.3)" : "var(--color-border-primary)",
-            }}
             onClick={!isExpanded ? handleExpand : undefined}
           >
             {/* ─── Collapsed State ─── */}
@@ -390,8 +376,8 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3 px-4 py-2.5"
               >
-                <Search className="h-4 w-4 shrink-0" style={{ color: "var(--color-text-muted)" }} />
-                <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+                <span className="text-muted-foreground text-sm">
                   Search {selectedSite.displayName}...
                 </span>
                 <button
@@ -405,7 +391,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     alt={selectedSite.displayName}
                     className="h-4 w-4 object-contain opacity-60 transition-opacity hover:opacity-100"
                   />
-                  <ChevronDown className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
+                  <ChevronDown className="text-muted-foreground h-3 w-3" />
                 </button>
               </motion.div>
             )}
@@ -419,10 +405,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 transition={{ duration: 0.15 }}
               >
                 {/* Search Input Row */}
-                <div
-                  className="flex items-center gap-2 border-b px-3 py-2.5"
-                  style={{ borderColor: "var(--color-border-primary)" }}
-                >
+                <div className="border-border flex items-center gap-2 border-b px-3 py-2.5">
                   {/* Category Filter Icon */}
                   <button
                     onClick={(e) => {
@@ -446,16 +429,10 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       animate={{ rotate: 360 }}
                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     >
-                      <Loader2
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: "var(--color-text-muted)" }}
-                      />
+                      <Loader2 className="text-muted-foreground h-4 w-4 shrink-0" />
                     </motion.div>
                   ) : (
-                    <Search
-                      className="h-4 w-4 shrink-0"
-                      style={{ color: "var(--color-text-muted)" }}
-                    />
+                    <Search className="text-muted-foreground h-4 w-4 shrink-0" />
                   )}
 
                   {/* Search Input */}
@@ -466,8 +443,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onFocus={() => setShowResults(true)}
-                    className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
-                    style={{ color: "var(--color-text-primary)" }}
+                    className="placeholder:text-muted-foreground text-foreground flex-1 bg-transparent text-sm outline-none"
                   />
 
                   {/* Clear Button */}
@@ -480,7 +456,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       }}
                       className="hover:bg-accent flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors"
                     >
-                      <X className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
+                      <X className="text-muted-foreground h-3 w-3" />
                     </button>
                   )}
 
@@ -500,7 +476,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                         />
                       </IconSwapItem>
                     </IconSwap>
-                    <ChevronDown className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
+                    <ChevronDown className="text-muted-foreground h-3 w-3" />
                   </button>
                 </div>
 
@@ -512,14 +488,10 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden border-b"
-                      style={{ borderColor: "var(--color-border-primary)" }}
+                      className="border-border overflow-hidden border-b"
                     >
                       <div className="px-3 py-3">
-                        <div
-                          className="mb-2 text-xs font-medium"
-                          style={{ color: "var(--color-text-muted)" }}
-                        >
+                        <div className="text-muted-foreground mb-2 text-xs font-medium">
                           Category: {categoryFilter}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
@@ -560,12 +532,9 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                           animate={{ rotate: 360 }}
                           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         >
-                          <Loader2
-                            className="h-5 w-5"
-                            style={{ color: "var(--color-text-muted)" }}
-                          />
+                          <Loader2 className="text-muted-foreground h-5 w-5" />
                         </motion.div>
-                        <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                        <span className="text-muted-foreground text-sm">
                           Searching {categoryFilter} on {selectedSite.displayName}...
                         </span>
                       </div>
@@ -584,7 +553,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       displayedResults.length === 0 &&
                       !error && (
                         <div className="px-4 py-8 text-center">
-                          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                          <p className="text-muted-foreground text-sm">
                             No results found for "{searchTerm}"
                           </p>
                         </div>
@@ -622,11 +591,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                                 e.stopPropagation();
                                 loadMoreResults();
                               }}
-                              className="hover:bg-accent/50 rounded-lg border px-4 py-2 text-sm transition-colors"
-                              style={{
-                                borderColor: "var(--color-border-primary)",
-                                color: "var(--color-text-muted)",
-                              }}
+                              className="hover:bg-accent/50 border-border text-muted-foreground rounded-lg border px-4 py-2 text-sm transition-colors"
                             >
                               Load more ({displayedResults.length} of{" "}
                               {displayedResults.length + (hasMoreResults ? 10 : 0)})
@@ -649,11 +614,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                           <div className="p-4">
                             <button
                               onClick={handleCancelPreview}
-                              className="hover:bg-accent/50 mb-4 flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
-                              style={{
-                                borderColor: "var(--color-border-primary)",
-                                color: "var(--color-text-primary)",
-                              }}
+                              className="hover:bg-accent/50 border-border text-foreground mb-4 flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
                             >
                               <X className="h-3.5 w-3.5" />
                               Back to results
@@ -664,30 +625,20 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                                 <img
                                   src={previewingCountry.flagUrl}
                                   alt="Flag"
-                                  className="h-8 w-12 rounded border object-cover shadow-sm"
-                                  style={{ borderColor: "var(--color-border-primary)" }}
+                                  className="border-border h-8 w-12 rounded border object-cover shadow-sm"
                                   referrerPolicy="no-referrer"
                                   onError={() => setPreviewImgError(true)}
                                 />
                               ) : (
-                                <div
-                                  className="flex h-8 w-12 items-center justify-center rounded border"
-                                  style={{ borderColor: "var(--color-border-primary)" }}
-                                >
-                                  <Globe
-                                    className="h-5 w-5"
-                                    style={{ color: "var(--color-text-muted)" }}
-                                  />
+                                <div className="border-border flex h-8 w-12 items-center justify-center rounded border">
+                                  <Globe className="text-muted-foreground h-5 w-5" />
                                 </div>
                               )}
                               <div>
-                                <h3
-                                  className="text-lg font-semibold"
-                                  style={{ color: "var(--color-text-primary)" }}
-                                >
+                                <h3 className="text-foreground text-lg font-semibold">
                                   {previewingCountry.title}
                                 </h3>
-                                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                                <p className="text-muted-foreground text-xs">
                                   Country Preview
                                 </p>
                               </div>
@@ -699,75 +650,41 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                               previewingCountry.government) && (
                               <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
                                 {previewingCountry.population && (
-                                  <div
-                                    className="rounded-lg border p-3"
-                                    style={{ borderColor: "var(--color-border-primary)" }}
-                                  >
+                                  <div className="border-border rounded-lg border p-3">
                                     <div className="mb-1 flex items-center gap-1.5">
-                                      <Users
-                                        className="h-3 w-3"
-                                        style={{ color: "var(--color-info)" }}
-                                      />
-                                      <span
-                                        className="text-xs"
-                                        style={{ color: "var(--color-text-muted)" }}
-                                      >
+                                      <Users className="text-info h-3 w-3" />
+                                      <span className="text-muted-foreground text-xs">
                                         Population
                                       </span>
                                     </div>
-                                    <p
-                                      className="text-sm font-semibold"
-                                      style={{ color: "var(--color-text-primary)" }}
-                                    >
+                                    <p className="text-foreground text-sm font-semibold">
                                       {formatNumber(previewingCountry.population, 0)}
                                     </p>
                                   </div>
                                 )}
                                 {previewingCountry.gdpPerCapita && (
-                                  <div
-                                    className="rounded-lg border p-3"
-                                    style={{ borderColor: "var(--color-border-primary)" }}
-                                  >
+                                  <div className="border-border rounded-lg border p-3">
                                     <div className="mb-1 flex items-center gap-1.5">
-                                      <DollarSign
-                                        className="h-3 w-3"
-                                        style={{ color: "var(--color-success)" }}
-                                      />
-                                      <span
-                                        className="text-xs"
-                                        style={{ color: "var(--color-text-muted)" }}
-                                      >
+                                      <DollarSign className="text-success h-3 w-3" />
+                                      <span className="text-muted-foreground text-xs">
                                         GDP/Capita
                                       </span>
                                     </div>
-                                    <p
-                                      className="text-sm font-semibold"
-                                      style={{ color: "var(--color-text-primary)" }}
-                                    >
+                                    <p className="text-foreground text-sm font-semibold">
                                       ${formatNumber(previewingCountry.gdpPerCapita)}
                                     </p>
                                   </div>
                                 )}
                                 {previewingCountry.capital && (
-                                  <div
-                                    className="rounded-lg border p-3"
-                                    style={{ borderColor: "var(--color-border-primary)" }}
-                                  >
+                                  <div className="border-border rounded-lg border p-3">
                                     <div className="mb-1 flex items-center gap-1.5">
-                                      <MapPin
-                                        className="h-3 w-3"
-                                        style={{ color: "var(--color-error)" }}
-                                      />
-                                      <span
-                                        className="text-xs"
-                                        style={{ color: "var(--color-text-muted)" }}
-                                      >
+                                      <MapPin className="text-error h-3 w-3" />
+                                      <span className="text-muted-foreground text-xs">
                                         Capital
                                       </span>
                                     </div>
                                     <p
-                                      className="truncate text-sm font-semibold"
-                                      style={{ color: "var(--color-text-primary)" }}
+                                      className="text-foreground truncate text-sm font-semibold"
                                       dangerouslySetInnerHTML={{
                                         __html: sanitizeWikiContent(previewingCountry.capital),
                                       }}
@@ -775,25 +692,15 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                                   </div>
                                 )}
                                 {previewingCountry.government && (
-                                  <div
-                                    className="rounded-lg border p-3"
-                                    style={{ borderColor: "var(--color-border-primary)" }}
-                                  >
+                                  <div className="border-border rounded-lg border p-3">
                                     <div className="mb-1 flex items-center gap-1.5">
-                                      <Building
-                                        className="h-3 w-3"
-                                        style={{ color: "var(--color-brand-secondary)" }}
-                                      />
-                                      <span
-                                        className="text-xs"
-                                        style={{ color: "var(--color-text-muted)" }}
-                                      >
+                                      <Building className="text-brand-secondary h-3 w-3" />
+                                      <span className="text-muted-foreground text-xs">
                                         Government
                                       </span>
                                     </div>
                                     <p
-                                      className="truncate text-sm font-semibold"
-                                      style={{ color: "var(--color-text-primary)" }}
+                                      className="text-foreground truncate text-sm font-semibold"
                                       dangerouslySetInnerHTML={{
                                         __html: sanitizeWikiContent(previewingCountry.government),
                                       }}
@@ -804,8 +711,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                             )}
 
                             <p
-                              className="mb-4 text-sm leading-relaxed"
-                              style={{ color: "var(--color-text-secondary)" }}
+                              className="text-text-secondary mb-4 text-sm leading-relaxed"
                               dangerouslySetInnerHTML={{
                                 __html: sanitizeWikiContent(previewingCountry.snippet),
                               }}
@@ -814,11 +720,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                             <div className="flex gap-3">
                               <button
                                 onClick={handleCancelPreview}
-                                className="hover:bg-accent/50 flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
-                                style={{
-                                  borderColor: "var(--color-border-primary)",
-                                  color: "var(--color-text-primary)",
-                                }}
+                                className="hover:bg-accent/50 border-border text-foreground flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
                               >
                                 Cancel
                               </button>
@@ -879,64 +781,47 @@ function SearchResultItemInline({
       className={cn(
         "group flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-left transition-all duration-150",
         isFocused && "ring-2 ring-blue-500/50",
-        isSelected && "bg-blue-500/10"
+        isSelected ? "bg-blue-500/10 border-blue-500/30" : "bg-card border-border"
       )}
-      style={{
-        backgroundColor: isSelected ? undefined : "var(--color-bg-secondary)",
-        borderColor: isSelected ? "rgba(59, 130, 246, 0.3)" : "var(--color-border-primary)",
-      }}
     >
       {/* Flag */}
       {result.flagUrl && !imgError ? (
         <img
           src={result.flagUrl}
           alt={`Flag of ${result.title}`}
-          className="mt-0.5 h-5 w-8 shrink-0 rounded-sm border object-cover shadow-sm"
-          style={{ borderColor: "var(--color-border-primary)" }}
+          className="border-border mt-0.5 h-5 w-8 shrink-0 rounded-sm border object-cover shadow-sm"
           referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
         />
       ) : (
-        <div
-          className="flex h-5 w-8 shrink-0 items-center justify-center rounded-sm border"
-          style={{ borderColor: "var(--color-border-primary)" }}
-        >
-          <Globe className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
+        <div className="border-border flex h-5 w-8 shrink-0 items-center justify-center rounded-sm border">
+          <Globe className="text-muted-foreground h-3 w-3" />
         </div>
       )}
 
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <h4
-            className="truncate text-sm font-medium"
-            style={{ color: "var(--color-text-primary)" }}
-          >
+          <h4 className="text-foreground truncate text-sm font-medium">
             {result.title}
           </h4>
-          <ExternalLink
-            className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-            style={{ color: "var(--color-text-muted)" }}
-          />
+          <ExternalLink className="text-muted-foreground h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
         </div>
 
         {/* Country info or snippet */}
         {(categoryFilter.toLowerCase() === "countries" ||
           categoryFilter.toLowerCase() === "nations") &&
         (result.population || result.gdpPerCapita || result.capital || result.government) ? (
-          <div
-            className="flex flex-wrap gap-x-3 gap-y-1 text-xs"
-            style={{ color: "var(--color-text-muted)" }}
-          >
+          <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-xs">
             {result.population && (
               <span className="flex items-center gap-1">
-                <Users className="h-3 w-3" style={{ color: "var(--color-info)" }} />
+                <Users className="text-info h-3 w-3" />
                 {formatNumber(result.population, 0)}
               </span>
             )}
             {result.gdpPerCapita && (
               <span className="flex items-center gap-1">
-                <DollarSign className="h-3 w-3" style={{ color: "var(--color-success)" }} />$
+                <DollarSign className="text-success h-3 w-3" />$
                 {formatNumber(result.gdpPerCapita)}
               </span>
             )}
@@ -955,8 +840,7 @@ function SearchResultItemInline({
           </div>
         ) : (
           <p
-            className="line-clamp-2 text-xs leading-relaxed"
-            style={{ color: "var(--color-text-muted)" }}
+            className="text-muted-foreground line-clamp-2 text-xs leading-relaxed"
             dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(result.snippet) }}
           />
         )}

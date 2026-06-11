@@ -24,7 +24,7 @@ import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { DIPluginProvider } from "~/components/DynamicIsland";
-import { WikiContextProvider } from "~/components/wikios/shared/WikiContext";
+import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 
 // Removed force-dynamic to enable static generation and ISR where possible
@@ -79,7 +79,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                         {isStandalone ? (
                           <div className="flex min-h-screen flex-col">
                             <Navigation />
-                            <main className="flex-1">
+                            <main className="flex-1 flex flex-col">
                               <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
                             </main>
                           </div>
@@ -88,7 +88,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                             <Navigation />
                             {/* <GlobalActivityMarquee /> */}
                             <SetupRedirect />
-                            <main className="flex-1">
+                            <main className="flex-1 flex flex-col">
                               <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
                             </main>
                           </div>

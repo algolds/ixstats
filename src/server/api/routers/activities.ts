@@ -187,6 +187,17 @@ export const activitiesRouter = createTRPCRouter({
                 },
                 reactions: true,
                 mediaAttachments: true,
+                poll: {
+                  include: {
+                    options: {
+                      include: {
+                        _count: {
+                          select: { votes: true },
+                        },
+                      },
+                    },
+                  },
+                },
                 reposts: {
                   select: { accountId: true },
                 },
@@ -196,7 +207,7 @@ export const activitiesRouter = createTRPCRouter({
                     reposts: true,
                   },
                 },
-              },
+              } as any
             })
           : [];
 
@@ -338,7 +349,7 @@ export const activitiesRouter = createTRPCRouter({
         }
 
         // Transform ThinkPages posts
-        for (const post of thinkpagesPosts) {
+        for (const post of thinkpagesPosts as any[]) {
           const cleanContent = post.content.replace(/\s*\[DiscordMsg:\d+\]\s*$/, "");
           combinedActivities.push({
             id: `thinkpages-${post.id}`,
@@ -358,7 +369,7 @@ export const activitiesRouter = createTRPCRouter({
                 return raw.length ? raw : `@${post.account.username} · ThinkPages`;
               })(),
               description: cleanContent,
-              mediaAttachments: post.mediaAttachments.map((m) => ({
+              mediaAttachments: post.mediaAttachments.map((m: any) => ({
                 id: m.id,
                 url: m.url,
                 filename: m.filename,
@@ -380,6 +391,35 @@ export const activitiesRouter = createTRPCRouter({
                 postType: "thinkpages",
               },
             },
+            poll: post.poll
+              ? {
+                  id: post.poll.id,
+                  question: post.poll.question,
+                  description: post.poll.description,
+                  pollType: post.poll.pollType,
+                  multiple: post.poll.multiple,
+                  isActive: post.poll.isActive,
+                  endDate: post.poll.endDate,
+                  options: post.poll.options.map((o: any) => ({
+                    id: o.id,
+                    label: o.label,
+                    description: o.description,
+                  })),
+                  votes: (() => {
+                    const v: Record<string, number> = {};
+                    post.poll.options.forEach((opt: any) => {
+                      v[opt.id] = opt._count?.votes ?? 0;
+                    });
+                    return v;
+                  })(),
+                  totalVotes: post.poll.options.reduce(
+                    (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+                    0
+                  ),
+                  hasVoted: false,
+                  userVotedOptionIds: [],
+                }
+              : null,
             engagement: {
               likes: post.likeCount,
               comments: post.replyCount,
@@ -451,7 +491,7 @@ export const activitiesRouter = createTRPCRouter({
                     pageTitle: rc.title,
                     sizeChange,
                     isNewPage,
-                    wikiUrl: `/w/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+                    wikiUrl: `/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
                   },
                 },
                 engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
@@ -807,7 +847,7 @@ export const activitiesRouter = createTRPCRouter({
                   return raw.length ? raw : `@${post.account.username} · ThinkPages`;
                 })(),
                 description: cleanContent,
-                mediaAttachments: post.mediaAttachments.map((m) => ({
+                mediaAttachments: post.mediaAttachments.map((m: any) => ({
                   id: m.id,
                   url: m.url,
                   filename: m.filename,
@@ -1890,7 +1930,7 @@ export const activitiesRouter = createTRPCRouter({
         return Math.round(v).toLocaleString();
       };
 
-      const wikiUrl = (name: string) => `/w/${encodeURIComponent(name.replace(/ /g, "_"))}`;
+      const wikiUrl = (name: string) => `/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
       topGdp.forEach((c, i) => {
         headlines.push({
@@ -2179,7 +2219,7 @@ export const activitiesRouter = createTRPCRouter({
             category: "wiki",
             priority: isNewPage ? "medium" : "low",
             timestamp: wikiTimestamp,
-            url: `/w/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+            url: `/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
           });
         }
       } catch (error) {
@@ -2381,7 +2421,7 @@ export const activitiesRouter = createTRPCRouter({
               reposts: 0,
             },
             author: undefined,
-            url: `/w/${encodeURIComponent(page.title.replace(/ /g, "_"))}`,
+            url: `/wiki/${encodeURIComponent(page.title.replace(/ /g, "_"))}`,
             excerpt: page.isNew
               ? `New page — ${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""}`
               : `${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""} (${page.totalBytesChanged > 0 ? "+" : ""}${page.totalBytesChanged} bytes)`,

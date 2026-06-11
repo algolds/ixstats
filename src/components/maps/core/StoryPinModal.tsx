@@ -225,7 +225,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                     </p>
                     {wikiEnrichment.wikiUrl &&
                       (wikiEnrichment.wikiUrl.startsWith("/") ||
-                      wikiEnrichment.wikiUrl.includes("/w/") ? (
+                      wikiEnrichment.wikiUrl.includes("/wiki/") ? (
                         <Link
                           href={wikiEnrichment.wikiUrl}
                           className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:underline"
@@ -321,7 +321,7 @@ export const StoryPinModal = memo(function StoryPinModal({
             <div className="flex flex-wrap items-center gap-2">
               {wikiEnrichment?.wikiUrl &&
                 (wikiEnrichment.wikiUrl.startsWith("/") ||
-                wikiEnrichment.wikiUrl.includes("/w/") ? (
+                wikiEnrichment.wikiUrl.includes("/wiki/") ? (
                   <Link
                     href={wikiEnrichment.wikiUrl}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300"

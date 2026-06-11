@@ -19,7 +19,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { RiGlobalLine, RiShieldLine, RiBookOpenLine, RiRefreshLine } from "react-icons/ri";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";

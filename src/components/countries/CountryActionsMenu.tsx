@@ -29,7 +29,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { createUrl } from "~/lib/url-utils";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 

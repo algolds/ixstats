@@ -33,7 +33,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 0,
-    patch: 0,
+    patch: 2,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },
@@ -59,7 +59,7 @@ export const VERSIONS = {
     thinkpages: 1,
     achievements: 1, // incl. LoreWards
     stash: 1, // save-for-later wiki articles (was "LoreStash")
-    repository: 1, // WikiOS Commons image explorer
+    repository: 2, // WikiOS Commons image explorer
     halo: 1, // global contextual overlay (was "Dynamic Island")
   },
 

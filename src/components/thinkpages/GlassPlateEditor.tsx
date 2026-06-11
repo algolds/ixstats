@@ -11,6 +11,7 @@ import {
   ParagraphPlugin,
 } from "platejs/react";
 import { Transforms, Editor, Element as SlateElement } from "slate";
+import { ReactEditor } from "slate-react";
 import {
   Bold,
   Italic,
@@ -302,7 +303,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
     // Expose ref methods
     useImperativeHandle(ref, () => ({
       insertText: (text: string) => {
-        editor.focus();
+        safeFocus();
         try {
           Transforms.insertText(editor, text);
         } catch (err) {
@@ -434,6 +435,20 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
     });
   }, []);
 
+  const safeFocus = useCallback(() => {
+    try {
+      ReactEditor.focus(editor);
+    } catch (err) {
+      console.warn("ReactEditor.focus failed, using fallback:", err);
+      try {
+        const domNode = ReactEditor.toDOMNode(editor, editor);
+        domNode?.focus();
+      } catch (domErr) {
+        // Safe no-op
+      }
+    }
+  }, [editor]);
+
   // Sync Plate content change back to parent
   const handleEditorChange = useCallback(() => {
     setVersion((v) => v + 1);
@@ -469,7 +484,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
   );
 
   const handleSelectEmoji = useCallback((emoji: string) => {
-    editor.focus();
+    safeFocus();
     try {
       Transforms.insertText(editor, emoji);
     } catch (err) {
@@ -484,7 +499,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
     if (!linkUrl.trim()) return;
     
     // Select editor range to insert
-    editor.focus();
+    safeFocus();
     
     Transforms.insertNodes(editor, {
       type: "link",
@@ -501,7 +516,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
   const insertWikiLink = useCallback(() => {
     if (!wikiTarget.trim()) return;
     
-    editor.focus();
+    safeFocus();
     
     if (wikiInsertMode === "embed") {
       Transforms.insertNodes(editor, {
@@ -536,7 +551,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
   ]);
 
   const insertStashedImage = useCallback((imageUrl: string, title: string) => {
-    editor.focus();
+    safeFocus();
     
     Transforms.insertNodes(editor, {
       type: "img",
@@ -675,7 +690,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
   }, [editor, version]);
 
   return (
-    <div className="relative flex flex-col rounded-xl glass-surface glass-refraction focus-within:border-blue-500/50 dark:focus-within:border-blue-400/50 focus-within:ring-1 focus-within:ring-blue-500/20 dark:focus-within:ring-blue-400/20 shadow-xs focus-within:shadow-md transition-all duration-300">
+    <div className="relative flex flex-col rounded-xl glass-surface glass-refraction-none glass-composer-editor focus-within:border-blue-500/50 dark:focus-within:border-blue-400/50 focus-within:ring-1 focus-within:ring-blue-500/20 dark:focus-within:ring-blue-400/20 shadow-xs focus-within:shadow-md transition-all duration-300">
       {/* ── Embedded Top Toolbar Wrapper ── */}
       <div
         className={cn(

@@ -15,14 +15,29 @@ import {
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { Trash2, Plus, Send, X, Calendar } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Send,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Info,
+  CheckCircle,
+} from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "~/lib/utils";
 
 interface PollComposerProps {
   onSuccess?: () => void;
 }
 
 export function PollComposer({ onSuccess }: PollComposerProps) {
+  // Wizard Step State
+  const [step, setStep] = useState(1);
+
+  // Form States
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
   const [pollType, setPollType] = useState<"choice" | "feature-poll" | "feature-voting">("choice");
@@ -36,7 +51,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
   const createMutation = api.polls.create.useMutation({
     onSuccess: () => {
-      toast.success("Poll created successfully!");
+      toast.success("Poll created and broadcasted successfully!");
       if (onSuccess) onSuccess();
       // Reset form
       setQuestion("");
@@ -47,6 +62,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
       setTargetScope("global");
       setCountryId("");
       setOptions(["", ""]);
+      setStep(1);
     },
     onError: (err) => {
       toast.error(err.message || "Failed to create poll");
@@ -66,6 +82,22 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
     const updated = [...options];
     updated[index] = val;
     setOptions(updated);
+  };
+
+  const nextStep = () => {
+    if (step === 1 && !question.trim()) {
+      toast.error("Please enter a question or topic");
+      return;
+    }
+    if (step === 2 && targetScope === "country" && !countryId) {
+      toast.error("Please select a target country");
+      return;
+    }
+    setStep((prev) => Math.min(prev + 1, 3));
+  };
+
+  const prevStep = () => {
+    setStep((prev) => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -109,226 +141,314 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
     createMutation.mutate(payload);
   };
 
+  // Progress Indicators
+  const STEPS = [
+    { number: 1, label: "Topic & Context" },
+    { number: 2, label: "Scope & Targeting" },
+    { number: 3, label: "Options & Publish" },
+  ];
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <Card className="border-border/40 bg-card/30 border backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Plus className="h-5 w-5 text-purple-500" />
-              Create New Poll
-            </CardTitle>
+        <Card className="border-border/20 bg-card/10 border backdrop-blur-md relative overflow-hidden">
+          
+          <CardHeader className="border-border/20 border-b">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+                <Sparkles className="h-4 w-4 text-[#ff8a65]" />
+                Poll Wizard Composer
+              </CardTitle>
+              <span className="text-muted-foreground text-xs font-semibold">Step {step} of 3</span>
+            </div>
+
+            {/* Stepper Progress bar */}
+            <div className="mt-4 flex items-center justify-between gap-2">
+              {STEPS.map((s, idx) => (
+                <div key={s.number} className="flex-1 flex flex-col gap-1.5">
+                  <div className="h-1 rounded-full overflow-hidden bg-muted/40">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-300",
+                        step >= s.number ? "bg-[#ff8a65]" : "bg-transparent"
+                      )}
+                    />
+                  </div>
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold tracking-tight transition-colors",
+                      step === s.number ? "text-[#ff8a65] font-extrabold" : "text-muted-foreground"
+                    )}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="question" className="text-foreground text-sm font-semibold">
-                  Poll Question / Topic *
-                </Label>
-                <Input
-                  id="question"
-                  placeholder="e.g., What should be our priority for the next national budget?"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  className="bg-background/50 border-border/60"
-                  required
-                />
-              </div>
+          
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6 min-h-[300px] flex flex-col justify-between">
+              
+              {/* Step 1 Content */}
+              {step === 1 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-300">
+                  <div className="space-y-2">
+                    <Label htmlFor="question" className="text-foreground text-xs font-bold tracking-tight">
+                      Poll Question / Topic *
+                    </Label>
+                    <Input
+                      id="question"
+                      placeholder="e.g., What should be our priority for the next national budget?"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      className="bg-background/40 border-border/60 focus-visible:ring-[#ff8a65]"
+                      required
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-foreground text-sm font-semibold">
-                  Description / Context (optional)
-                </Label>
-                <Textarea
-                  id="description"
-                  placeholder="Provide additional details or context for voters..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="bg-background/50 border-border/60"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm font-semibold">Poll Type</Label>
-                  <Select
-                    value={pollType}
-                    onValueChange={(val: "choice" | "feature-poll" | "feature-voting") => {
-                      setPollType(val);
-                      if (val === "feature-voting") {
-                        setMultiple(true); // Feature voting typically allows multiple upvotes
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="bg-background/50 border-border/60">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="choice">Standard Choice Poll</SelectItem>
-                      <SelectItem value="feature-poll">Feature Priority Poll</SelectItem>
-                      <SelectItem value="feature-voting">Feature Upvoting Board</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm font-semibold">Scope & Targeting</Label>
-                  <Select
-                    value={targetScope}
-                    onValueChange={(val: "global" | "country") => setTargetScope(val)}
-                  >
-                    <SelectTrigger className="bg-background/50 border-border/60">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="global">Global (All Users)</SelectItem>
-                      <SelectItem value="country">Country Targeted</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {targetScope === "country" && (
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm font-semibold">Target Country *</Label>
-                  <Select value={countryId} onValueChange={setCountryId}>
-                    <SelectTrigger className="bg-background/50 border-border/60">
-                      <SelectValue placeholder="Select country to restrict voting to" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {countriesData?.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-foreground text-xs font-bold tracking-tight">
+                      Description / Context (optional)
+                    </Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Provide additional details or context to help citizens make an informed choice..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="bg-background/40 border-border/60 focus-visible:ring-[#ff8a65]"
+                      rows={5}
+                    />
+                  </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="endDate"
-                    className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
-                  >
-                    <Calendar className="text-muted-foreground h-4 w-4" />
-                    Expiry Date (optional)
-                  </Label>
-                  <Input
-                    id="endDate"
-                    type="datetime-local"
-                    value={endDateStr}
-                    onChange={(e) => setEndDateStr(e.target.value)}
-                    className="bg-background/50 border-border/60 dark:[color-scheme:dark]"
-                  />
-                </div>
+              {/* Step 2 Content */}
+              {step === 2 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-300">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-xs font-bold tracking-tight">Poll Type</Label>
+                      <Select
+                        value={pollType}
+                        onValueChange={(val: "choice" | "feature-poll" | "feature-voting") => {
+                          setPollType(val);
+                          if (val === "feature-voting") {
+                            setMultiple(true);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="bg-background/40 border-border/60">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-border/60">
+                          <SelectItem value="choice">Standard Choice Poll</SelectItem>
+                          <SelectItem value="feature-poll">Feature Priority Poll</SelectItem>
+                          <SelectItem value="feature-voting">Feature Upvoting Board</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                {pollType !== "feature-voting" && (
-                  <div className="flex items-center gap-2 pt-6">
-                    <Switch id="multiple" checked={multiple} onCheckedChange={setMultiple} />
-                    <Label
-                      htmlFor="multiple"
-                      className="text-foreground cursor-pointer text-sm font-semibold"
-                    >
-                      Allow Multiple Choices
-                    </Label>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-xs font-bold tracking-tight">Scope & Targeting</Label>
+                      <Select
+                        value={targetScope}
+                        onValueChange={(val: "global" | "country") => setTargetScope(val)}
+                      >
+                        <SelectTrigger className="bg-background/40 border-border/60">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-border/60">
+                          <SelectItem value="global">Global (All Users)</SelectItem>
+                          <SelectItem value="country">Country Targeted</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
+
+                  {targetScope === "country" && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Label className="text-foreground text-xs font-bold tracking-tight">Target Country *</Label>
+                      <Select value={countryId} onValueChange={setCountryId}>
+                        <SelectTrigger className="bg-background/40 border-border/60">
+                          <SelectValue placeholder="Select country to restrict voting to" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-border/60">
+                          {countriesData?.map((c: any) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="endDate"
+                        className="text-foreground flex items-center gap-1.5 text-xs font-bold tracking-tight"
+                      >
+                        <Calendar className="text-muted-foreground h-4 w-4" />
+                        Expiry Date (optional)
+                      </Label>
+                      <Input
+                        id="endDate"
+                        type="datetime-local"
+                        value={endDateStr}
+                        onChange={(e) => setEndDateStr(e.target.value)}
+                        className="bg-background/40 border-border/60 dark:[color-scheme:dark]"
+                      />
+                    </div>
+
+                    {pollType !== "feature-voting" && (
+                      <div className="flex items-center gap-2 pt-6">
+                        <Switch id="multiple" checked={multiple} onCheckedChange={setMultiple} />
+                        <Label
+                          htmlFor="multiple"
+                          className="text-foreground cursor-pointer text-xs font-bold tracking-tight"
+                        >
+                          Allow Multiple Option Choices
+                        </Label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3 Content */}
+              {step === 3 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-300">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground text-xs font-bold">List Poll Options *</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddOption}
+                      className="h-8 gap-1 border-[#ff8a65]/35 font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65] text-xs cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Option
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                    {options.map((option, idx) => (
+                      <div key={idx} className="flex items-center gap-2 animate-in fade-in duration-200">
+                        <span className="text-muted-foreground/60 w-6 text-center text-xs font-bold">
+                          {idx + 1}.
+                        </span>
+                        <Input
+                          placeholder={`Option label ${idx + 1}`}
+                          value={option}
+                          onChange={(e) => handleOptionChange(idx, e.target.value)}
+                          className="bg-background/40 border-border/60 flex-1 text-xs"
+                          required
+                        />
+                        {options.length > 2 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveOption(idx)}
+                            className="shrink-0 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 h-8 w-8 cursor-pointer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-xs text-[#ff8a65] flex items-start gap-2 mt-4">
+                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>
+                      Review all parameters. Clicking <strong>Create & Publish</strong> will record the poll
+                      and publish an announcement card directly to the active feeds.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Actions */}
+              <div className="border-border/20 flex justify-between gap-3 border-t pt-4 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={step === 1}
+                  className="h-9 gap-1.5 border-border/60 text-xs font-semibold cursor-pointer"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </Button>
+
+                {step < 3 ? (
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    className="h-9 gap-1.5 bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white font-semibold text-xs cursor-pointer"
+                  >
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending}
+                    className="h-9 gap-1.5 bg-[#ff8a65] px-6 font-semibold text-white hover:bg-[#ff8a65]/90 text-xs cursor-pointer"
+                  >
+                    {createMutation.isPending ? (
+                      "Creating..."
+                    ) : (
+                      <>
+                        <Send className="h-3.5 w-3.5" /> Create & Publish
+                      </>
+                    )}
+                  </Button>
                 )}
               </div>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-sm font-bold">Poll Options *</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddOption}
-                    className="h-8 gap-1 border-purple-500/35 font-semibold text-purple-600 hover:bg-purple-500/10 dark:text-purple-400"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> Add Option
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  {options.map((option, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="text-muted-foreground/60 w-6 text-center text-xs font-bold">
-                        {idx + 1}.
-                      </span>
-                      <Input
-                        placeholder={`Option ${idx + 1}`}
-                        value={option}
-                        onChange={(e) => handleOptionChange(idx, e.target.value)}
-                        className="bg-background/50 border-border/60 flex-1"
-                        required
-                      />
-                      {options.length > 2 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveOption(idx)}
-                          className="shrink-0 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-border/40 flex justify-end gap-3 border-t pt-4">
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="flex items-center gap-1.5 bg-purple-600 px-6 font-semibold text-white hover:bg-purple-700"
-                >
-                  {createMutation.isPending ? (
-                    "Creating..."
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" /> Create & Publish
-                    </>
-                  )}
-                </Button>
-              </div>
             </form>
           </CardContent>
         </Card>
       </div>
 
+      {/* Guide Card */}
       <div className="space-y-4">
-        <Card className="border-border/40 bg-card/30 border backdrop-blur-md">
+        <Card className="border-border/20 bg-card/10 border backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-bold">
+            <CardTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
               🗳️ Poll Creation Guide
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-muted-foreground space-y-3 text-xs leading-relaxed">
-            <p>
-              <strong>Standard Choice Poll:</strong> Classic single or multiple choice query.
-              Displays bar charts and counts to voters.
-            </p>
-            <p>
-              <strong>Feature Priority Poll:</strong> Designed to gauge preference across proposed
-              items/features using a specialized layout.
-            </p>
-            <p>
-              <strong>Feature Upvoting Board:</strong> Lists cards with upvote tallies, letting
-              users upvote or unvote features at any time.
-            </p>
-            <p className="border-border/20 border-t pt-3">
-              <strong>Targeting:</strong> Specifying a targeted country limits voting permissions
-              strictly to verified citizens of that country.
-            </p>
-            <p>
-              <strong>Feeds:</strong> Creating a poll automatically injects an announcement post
-              into the Activity Feed. Deleting a poll removes the feed item automatically.
-            </p>
+          <CardContent className="text-muted-foreground space-y-3.5 text-xs leading-relaxed">
+            <div>
+              <h5 className="font-bold text-foreground flex items-center gap-1.5 mb-1">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Standard Choice Poll
+              </h5>
+              <p>Classic single or multiple choice query. Displays vote bar charts and raw counts to citizens.</p>
+            </div>
+            
+            <div>
+              <h5 className="font-bold text-foreground flex items-center gap-1.5 mb-1">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Feature Priority Poll
+              </h5>
+              <p>Designed to rank user preferences across proposed ideas, mods, or system features.</p>
+            </div>
+
+            <div>
+              <h5 className="font-bold text-foreground flex items-center gap-1.5 mb-1">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Feature Upvoting Board
+              </h5>
+              <p>Lists feature proposals with upvote cards, enabling citizens to upvote/downvote features in real-time.</p>
+            </div>
+
+            <div className="border-border/20 border-t pt-3.5">
+              <p>
+                <strong>Targeting Note:</strong> Restricting the scope to a country restricts ballot cast actions
+                only to validated residents of that nation.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

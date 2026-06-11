@@ -19,7 +19,7 @@ import { withBasePath } from "~/lib/base-path";
 import IxLogoV2 from "~/app/_components/ix-logo-v2.svg";
 import type { CompactViewProps } from "./types";
 import { useRouter, usePathname } from "next/navigation";
-import { useWikiContext } from "~/components/wikios/shared/WikiContext";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { isStandaloneClient } from "~/lib/standalone-detection";
 
 // Extracted sub-components

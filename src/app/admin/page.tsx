@@ -32,6 +32,7 @@ import {
   ChevronDown,
   ChevronUp,
   BookOpen,
+  Vote,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
@@ -73,7 +74,7 @@ const QUICK_ACTIONS = [
   {
     icon: Coins,
     label: "Vault & Economy",
-    description: "Balances, Streaks & Store CRUD",
+    description: "Balances, Streaks & Store",
     href: "/admin/vault",
     color: "amber",
   },
@@ -95,8 +96,15 @@ const QUICK_ACTIONS = [
     icon: Activity,
     label: "System Logs",
     description: "Audit trail & monitoring",
-    href: "/admin/platform",
+    href: "/admin/logs",
     color: "indigo",
+  },
+  {
+    icon: Vote,
+    label: "Polls Management",
+    description: "Create and manage global or targeted polls",
+    href: "/admin/polls",
+    color: "purple",
   },
 ] as const;
 

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { BookOpen, Image as ImageIcon, ExternalLink } from "lucide-react";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
@@ -55,7 +55,7 @@ export function CountryInfoTab({
         wikiSections.length > 0 &&
         (() => {
           const baseWikiUrl = wikiRichIntro?.wikiUrl ?? titleToWikiOSPath(displayName);
-          const isInternal = baseWikiUrl.startsWith("/") || baseWikiUrl.includes("/w/");
+          const isInternal = baseWikiUrl.startsWith("/") || baseWikiUrl.includes("/wiki/");
           return (
             <div>
               <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
@@ -151,7 +151,7 @@ export function CountryInfoTab({
 
       {/* Wiki link */}
       {wikiRichIntro?.wikiUrl &&
-        (wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/w/") ? (
+        (wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/wiki/") ? (
           <Link
             href={wikiRichIntro.wikiUrl}
             className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"

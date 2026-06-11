@@ -1,0 +1,55 @@
+/* ==========================================================================
+   FACET DESIGN SYSTEM — TOKENS & CUSTOM PROPERTIES
+   ========================================================================== */
+
+:root {
+  /* Core Brand & Theme Colors */
+  --facet-mycountry: #ca8a04; /* yellow-600 */
+  --facet-global: #2563eb;    /* blue-600 */
+  --facet-eci: #4f46e5;       /* indigo-600 */
+  --facet-sdi: #dc2626;       /* red-600 */
+  --facet-builder: #10b981;   /* emerald-500 */
+  --facet-forum: #f97316;     /* orange-500 */
+
+  /* Volumetric Z-axis Depth Scale */
+  --z-depth-background: -1;
+  --z-depth-surface: 0;
+  --z-depth-floating: 100;
+  --z-depth-overlay: 1000;
+  --z-depth-navigation: 5000;
+  --z-depth-popover: 100010;
+  --z-depth-tooltip: 100020;
+  --z-depth-toast: 100050;
+  --z-depth-backdrop: 100000;
+  --z-depth-modal: 100001;
+  --z-depth-command: 110000;
+
+  /* Blur Intensities */
+  --blur-subtle: 8px;
+  --blur-moderate: 16px;
+  --blur-prominent: 24px;
+  --blur-intense: 32px;
+
+  /* Edge Refraction Sheen Coefficients */
+  --refraction-light: 0.1;
+  --refraction-medium: 0.15;
+  --refraction-strong: 0.25;
+  --refraction-intense: 0.35;
+
+  /* Adaptive Light Mode Base Values */
+  --facet-light-bg: rgba(255, 255, 255, 0.8);
+  --facet-light-border: rgba(0, 0, 0, 0.1);
+  --facet-light-shadow: rgba(0, 0, 0, 0.08);
+
+  /* Texture Patterns Foreground Base Color */
+  --facet-texture-color: rgba(0, 0, 0, 0.25);
+
+  /* Halo (Formerly Dynamic Island) Specific Properties */
+  --facet-halo-height-compact: 40px;
+  --facet-halo-glow-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark {
+  /* Texture Patterns dynamically adapt to translucent white in Dark Mode */
+  --facet-texture-color: rgba(255, 255, 255, 0.08);
+}

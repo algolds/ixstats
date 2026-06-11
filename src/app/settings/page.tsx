@@ -37,6 +37,8 @@ import {
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
+import { Backlight } from "~/components/ui/backlight";
+import { PixelHeading } from "~/components/ui/pixel-heading-character";
 import { cn } from "~/lib/utils";
 import {
   CutoutCard,
@@ -95,13 +97,15 @@ function ProfileContent() {
   return (
     <>
       <SignedIn>
-        <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950">
-          {/* Animated Background Elements */}
-          <div className="pointer-events-none absolute inset-0 z-0">
-            <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/10 blur-[120px] dark:bg-indigo-500/20" />
-            <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/10 blur-[100px] dark:bg-blue-500/15" />
-            <div className="absolute -bottom-[10%] left-[20%] h-[40%] w-[40%] rounded-full bg-purple-500/10 blur-[120px] dark:bg-purple-500/20" />
-          </div>
+        <div className="relative min-h-full flex-1 flex flex-col w-full">
+          {/* Backlight background wrapper */}
+          <Backlight blur={60} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+            <div className="relative w-full h-full">
+              <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/15" />
+              <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/10 dark:bg-blue-500/10" />
+              <div className="absolute -bottom-[10%] left-[20%] h-[40%] w-[40%] rounded-full bg-purple-500/10 dark:bg-purple-500/15" />
+            </div>
+          </Backlight>
 
           <DashboardSidebarLayout
             heroCollapsed={heroCollapsed}
@@ -111,9 +115,17 @@ function ProfileContent() {
             <div className="mb-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-                    Account <span className="text-indigo-600 dark:text-indigo-400">Settings</span>
-                  </h1>
+                  <PixelHeading
+                    as="h1"
+                    prefix="Account"
+                    prefixFont="none"
+                    prefixClassName="text-slate-900 dark:text-white"
+                    mode="wave"
+                    autoPlay
+                    className="text-4xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400 sm:text-5xl"
+                  >
+                    Settings
+                  </PixelHeading>
                 </div>
 
                 {user && (
@@ -606,15 +618,15 @@ function ProfileContent() {
     </>
   );
 }
-
 function SettingsSkeleton() {
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Background decoration */}
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/5 blur-[120px] dark:bg-indigo-500/10" />
-        <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/5 blur-[100px] dark:bg-blue-500/10" />
-      </div>
+    <div className="relative min-h-full flex-1 flex flex-col w-full">
+      <Backlight blur={60} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="relative w-full h-full">
+          <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/5 dark:bg-indigo-500/10" />
+          <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/5 dark:bg-blue-500/10" />
+        </div>
+      </Backlight>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-8">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

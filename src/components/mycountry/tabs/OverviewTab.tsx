@@ -56,7 +56,7 @@ export function OverviewTab({
   setWikiSectionsOpenAction: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
-    <Card className="glass-surface glass-refraction border-border overflow-hidden">
+    <Card className="glass-surface glass-refraction bg-gradient-overview border-border overflow-hidden">
       <CardContent className="space-y-4 pt-4 pb-4">
         {/* ── Metrics Grid (GDP / Population / Land Area) ── */}
         <Tooltip>

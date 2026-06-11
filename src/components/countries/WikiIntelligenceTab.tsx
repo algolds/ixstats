@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { motion, AnimatePresence } from "motion/react";
 import type { WikiIntelligenceTabProps } from "~/types/wiki-intelligence";
 import { useWikiIntelligence } from "~/hooks/useWikiIntelligence";

@@ -1,0 +1,201 @@
+/* ==========================================================================
+   FACET DESIGN SYSTEM — PHYSICAL MATERIALS LIBRARY
+   ========================================================================== */
+
+/* Base container class for Facet Material wrappers */
+.facet-material {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius, 16px);
+  transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   1. SATIN: Frosted glass backing, dynamic white sheen, refraction highlights
+   ────────────────────────────────────────────────────────────────────────── */
+.facet-material-satin {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(248, 250, 252, 0.3) 50%,
+    rgba(241, 245, 249, 0.4) 100%
+  );
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.dark .facet-material-satin {
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 59, 0.45) 0%,
+    rgba(15, 23, 42, 0.35) 50%,
+    rgba(30, 41, 59, 0.45) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Satin Pointer Sheen Glow Layer */
+.facet-material-satin::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    circle 250px at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .facet-material-satin::before {
+  background: radial-gradient(
+    circle 300px at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.facet-material-satin:hover::before {
+  opacity: 1;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   2. PAPER: Matte warm-white/off-black surface, cast shadow opposite to pointer
+   ────────────────────────────────────────────────────────────────────────── */
+.facet-material-paper {
+  background-color: #fafaf9; /* stone-50 warm tone */
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    var(--pointer-offset-x, 0px) var(--pointer-offset-y, 0px) 16px rgba(0, 0, 0, 0.06);
+}
+
+.dark .facet-material-paper {
+  background-color: #1c1917; /* stone-900 warm dark tone */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    var(--pointer-offset-x, 0px) var(--pointer-offset-y, 0px) 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   3. RUBBER: High-friction matte texture, chamfered edge borders, deep soft shadows
+   ────────────────────────────────────────────────────────────────────────── */
+.facet-material-rubber {
+  background: #27272a; /* zinc-800 */
+  color: #f4f4f5;
+  border: 1px solid #18181b;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.dark .facet-material-rubber {
+  background: #18181b; /* zinc-900 */
+  border: 1px solid #09090b;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.03),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* Rubber Pointer Matte Highlight */
+.facet-material-rubber::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    circle 300px at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.facet-material-rubber:hover::before {
+  opacity: 1;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   4. METAL: Metallic linear base gradients, brushed texture, linear highlights
+   ────────────────────────────────────────────────────────────────────────── */
+.facet-material-metal {
+  background: linear-gradient(
+    135deg,
+    #e2e8f0 0%,
+    #cbd5e1 40%,
+    #e2e8f0 60%,
+    #cbd5e1 100%
+  );
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.dark .facet-material-metal {
+  background: linear-gradient(
+    135deg,
+    #1e293b 0%,
+    #0f172a 40%,
+    #1e293b 60%,
+    #0f172a 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Anisotropic linear reflect band following mouse horizontally */
+.facet-material-metal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) calc(var(--pointer-x, 50%) - 15%),
+    rgba(255, 255, 255, 0.10) var(--pointer-x, 50%),
+    rgba(255, 255, 255, 0.04) calc(var(--pointer-x, 50%) + 15%),
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .facet-material-metal::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.02) calc(var(--pointer-x, 50%) - 15%),
+    rgba(255, 255, 255, 0.06) var(--pointer-x, 50%),
+    rgba(255, 255, 255, 0.02) calc(var(--pointer-x, 50%) + 15%),
+    transparent 100%
+  );
+}
+
+.facet-material-metal:hover::before {
+  opacity: 1;
+}

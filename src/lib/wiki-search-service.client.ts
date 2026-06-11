@@ -37,18 +37,18 @@ function getWikiConfigs(): Record<string, WikiConfig> {
   const baseUrl = getApiBaseUrl();
   return {
     ixwiki: {
-      baseUrl: `${baseUrl}/api/ixwiki-proxy`,
+      baseUrl: `${baseUrl}/api/mediawiki/ixwiki`,
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6],
     },
     iiwiki: {
       // Route through server-side proxy — required for whitelisted User-Agent
-      baseUrl: `${baseUrl}/api/iiwiki-proxy`,
+      baseUrl: `${baseUrl}/api/mediawiki/iiwiki`,
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6],
     },
     althistory: {
-      baseUrl: `${baseUrl}/api/althistory-wiki-proxy`,
+      baseUrl: `${baseUrl}/api/mediawiki/althistory`,
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6],
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
+import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { BlurbPromptList } from "~/components/blurbs/BlurbPromptList";
 import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
 
