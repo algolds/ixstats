@@ -6,7 +6,7 @@ set -e
 
 echo "📦 Running post-build script for standalone deployment..."
 
-PROJECT_DIR="/ixwiki/public/projects/ixstats"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # Check if standalone build exists

@@ -9,7 +9,7 @@ echo "🚀 Starting IxStates Production Server"
 echo "====================================="
 
 # Navigate to project directory
-PROJECT_DIR="/ixwiki/public/projects/ixstats"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 
 # Load production environment variables
