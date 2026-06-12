@@ -523,4 +523,3 @@ export async function syncCurrentWinners(force = false): Promise<void> {
     console.error("[Lorewards] Auto-sync of current winners failed:", err);
   }
 }
-

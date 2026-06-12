@@ -34,28 +34,32 @@ const TIPS = [
     color: "text-blue-400",
     bg: "bg-blue-500/10",
     title: "Cities & POIs",
-    description: "Drop pins to spawn cities, fortresses, or ports. Mark capitals, specify populations, and link them to wiki pages.",
+    description:
+      "Drop pins to spawn cities, fortresses, or ports. Mark capitals, specify populations, and link them to wiki pages.",
   },
   {
     icon: Hexagon,
     color: "text-purple-400",
     bg: "bg-purple-500/10",
     title: "Regions & Boundaries",
-    description: "Forge provinces and regional borders. Use automatic vertex simplification to keep boundaries clean and low-poly.",
+    description:
+      "Forge provinces and regional borders. Use automatic vertex simplification to keep boundaries clean and low-poly.",
   },
   {
     icon: Layers,
     color: "text-amber-400",
     bg: "bg-amber-500/10",
     title: "Unified Layers Tree",
-    description: "Manage global visibility, opacity, and locks, then expand layer folders to view and edit individual features.",
+    description:
+      "Manage global visibility, opacity, and locks, then expand layer folders to view and edit individual features.",
   },
   {
     icon: Sparkles,
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     title: "Terrain Awareness",
-    description: "Get real-time feedback on climate zone, elevation, and terrain suitability as you click or sketch routes.",
+    description:
+      "Get real-time feedback on climate zone, elevation, and terrain suitability as you click or sketch routes.",
   },
 ];
 
@@ -170,7 +174,9 @@ export function MapEditorWelcomeModal({
                     <Map className="h-4.5 w-4.5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-foreground text-sm font-bold sm:text-base">Map Editor Onboarding</h2>
+                    <h2 className="text-foreground text-sm font-bold sm:text-base">
+                      Map Editor Onboarding
+                    </h2>
                     <p className="text-muted-foreground text-[11px] sm:text-xs">
                       Forge the geography, borders, and features of IxWorld
                     </p>
@@ -179,7 +185,7 @@ export function MapEditorWelcomeModal({
               </div>
 
               {/* Content Area */}
-              <div className="min-h-[290px] px-6 pb-4 flex flex-col justify-start">
+              <div className="flex min-h-[290px] flex-col justify-start px-6 pb-4">
                 <AnimatePresence mode="wait">
                   {currentPage === 0 && (
                     <motion.div
@@ -195,7 +201,7 @@ export function MapEditorWelcomeModal({
                         return (
                           <div
                             key={tip.title}
-                            className={`rounded-lg border border-border/40 ${tip.bg} p-2.5 flex flex-col gap-1 transition-colors hover:border-border/80`}
+                            className={`border-border/40 rounded-lg border ${tip.bg} hover:border-border/80 flex flex-col gap-1 p-2.5 transition-colors`}
                           >
                             <div className="flex items-center gap-1.5">
                               <Icon className={`h-3.5 w-3.5 ${tip.color}`} />
@@ -221,7 +227,7 @@ export function MapEditorWelcomeModal({
                       transition={{ duration: 0.15 }}
                       className="space-y-1.5"
                     >
-                      <h3 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider">
+                      <h3 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
                         <Keyboard className="h-3.5 w-3.5" />
                         Editor Shortcuts
                       </h3>
@@ -231,7 +237,9 @@ export function MapEditorWelcomeModal({
                             key={s.action}
                             className="bg-muted/30 border-border/40 flex items-center justify-between rounded-lg border px-3 py-1.5"
                           >
-                            <span className="text-muted-foreground text-[11px] font-medium">{s.action}</span>
+                            <span className="text-muted-foreground text-[11px] font-medium">
+                              {s.action}
+                            </span>
                             <kbd className="bg-muted text-foreground/90 border-border/50 inline-flex h-5 items-center justify-center rounded border px-1.5 font-mono text-[10px]">
                               {s.keys[0]}
                             </kbd>
@@ -250,15 +258,15 @@ export function MapEditorWelcomeModal({
                       transition={{ duration: 0.15 }}
                       className="space-y-2"
                     >
-                      <h3 className="text-muted-foreground mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider">
+                      <h3 className="text-muted-foreground mb-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
                         <Zap className="h-3.5 w-3.5 text-amber-500" />
                         Changelog & Updates
                       </h3>
-                      <div className="max-h-[260px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                      <div className="max-h-[260px] scrollbar-thin space-y-2 overflow-y-auto pr-1">
                         {CHANGELOG.map((item) => (
                           <div
                             key={item.title}
-                            className="bg-muted/20 border-border/30 rounded-lg border p-2 flex flex-col gap-0.5 text-left"
+                            className="bg-muted/20 border-border/30 flex flex-col gap-0.5 rounded-lg border p-2 text-left"
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-foreground text-[11px] font-bold">
@@ -280,7 +288,7 @@ export function MapEditorWelcomeModal({
               </div>
 
               {/* Footer */}
-              <div className="border-border flex items-center justify-between border-t px-6 py-3.5 bg-muted/25">
+              <div className="border-border bg-muted/25 flex items-center justify-between border-t px-6 py-3.5">
                 {/* Dots indicator */}
                 <div className="flex items-center gap-1.5">
                   {Array.from({ length: totalPages }).map((_, i) => (
@@ -289,7 +297,7 @@ export function MapEditorWelcomeModal({
                       onClick={() => setCurrentPage(i)}
                       className={`h-1.5 rounded-full transition-all ${
                         i === currentPage
-                          ? "w-4 bg-primary"
+                          ? "bg-primary w-4"
                           : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-1.5"
                       }`}
                     />
@@ -310,7 +318,7 @@ export function MapEditorWelcomeModal({
                   {currentPage < totalPages - 1 ? (
                     <button
                       onClick={() => setCurrentPage((p) => p + 1)}
-                      className="flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
+                      className="bg-primary/10 text-primary hover:bg-primary/15 flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-semibold transition-colors"
                     >
                       Next
                       <ChevronRight className="h-3 w-3" />

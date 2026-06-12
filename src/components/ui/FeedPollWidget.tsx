@@ -37,7 +37,9 @@ interface FeedPollWidgetProps {
 
 export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   const { isSignedIn, user } = useUser();
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(poll.userVotedOptionIds || []);
+  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
+    poll.userVotedOptionIds || []
+  );
   const [isPending, startTransition] = useTransition();
 
   // Local state for interactive instant feedback
@@ -196,7 +198,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
             </PollWidget.Options>
 
             {isSignedIn && !pollState.hasVoted && (
-              <PollWidget.Submit className="mt-4 animate-in fade-in zoom-in-95 duration-200" />
+              <PollWidget.Submit className="animate-in fade-in zoom-in-95 mt-4 duration-200" />
             )}
 
             {!isSignedIn && (

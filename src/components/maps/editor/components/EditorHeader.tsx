@@ -178,7 +178,7 @@ export function EditorHeader({
         {/* Rivers/elevation layer toggles + Settings popover */}
         <div className="flex items-center gap-1">
           {isAdmin && (
-            <div className="flex items-center gap-0.5 mr-0.5">
+            <div className="mr-0.5 flex items-center gap-0.5">
               <button
                 onClick={() => toggleEditorLayer("rivers")}
                 className={cn(
@@ -210,7 +210,7 @@ export function EditorHeader({
           {onShowHelp && (
             <button
               onClick={onShowHelp}
-              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
               title="Map Editor Guide & Onboarding"
             >
               <HelpCircle className="h-3.5 w-3.5" />
@@ -231,11 +231,11 @@ export function EditorHeader({
               <Settings className="h-3.5 w-3.5" />
             </PopoverTrigger>
             <PopoverContent
-              className="glass-none bg-popover border-border text-foreground w-64 p-3 shadow-md z-[100] rounded-md border"
+              className="glass-none bg-popover border-border text-foreground z-[100] w-64 rounded-md border p-3 shadow-md"
               align="end"
             >
               <div className="flex flex-col gap-3">
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase select-none">
                   Map Editor Settings
                 </div>
 
@@ -246,10 +246,10 @@ export function EditorHeader({
                       setIsSettingsOpen(false);
                       editor.setMode("import-provinces");
                     }}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors text-left"
+                    className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
                     title="Import provinces from external GeoJSON"
                   >
-                    <FileUp className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                    <FileUp className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
                     <span className="font-medium">Import Provinces</span>
                   </button>
 
@@ -273,10 +273,15 @@ export function EditorHeader({
                         }
                       }}
                       disabled={simplifyAll.isPending || !activeCountryId}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50 transition-colors text-left"
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
                       title="Simplify all regions — reduce vertices while preserving shape"
                     >
-                      <Minimize2 className={cn("h-3.5 w-3.5 text-violet-500 shrink-0", simplifyAll.isPending && "animate-pulse")} />
+                      <Minimize2
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0 text-violet-500",
+                          simplifyAll.isPending && "animate-pulse"
+                        )}
+                      />
                       <span className="font-medium">
                         {simplifyAll.isPending ? "Simplifying..." : "Simplify All Regions"}
                       </span>

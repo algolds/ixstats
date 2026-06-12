@@ -97,7 +97,7 @@ export function DashboardSidebarLayout({
         isHovered: isHoverActive,
       }}
     >
-      <div className="relative min-h-full flex-1 flex flex-col space-y-0 w-full">
+      <div className="relative flex min-h-full w-full flex-1 flex-col space-y-0">
         {/* Hero Section */}
         {heroSection && (
           <div

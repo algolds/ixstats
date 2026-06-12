@@ -59,19 +59,23 @@ export function StashSettingsContent() {
               <Database className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{stats ? stats.totalStashes.toLocaleString() : "..."}</p>
+              <p className="text-2xl font-bold">
+                {stats ? stats.totalStashes.toLocaleString() : "..."}
+              </p>
               <p className="text-muted-foreground text-xs">Total Stashes Saved</p>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="glass-surface border-border/40">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="rounded-lg bg-purple-500/10 p-3 text-purple-500">
               <Sparkles className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{stats ? stats.totalHighlights.toLocaleString() : "..."}</p>
+              <p className="text-2xl font-bold">
+                {stats ? stats.totalHighlights.toLocaleString() : "..."}
+              </p>
               <p className="text-muted-foreground text-xs">Stashed Highlight Marks</p>
             </div>
           </CardContent>
@@ -99,7 +103,9 @@ export function StashSettingsContent() {
           <div className="bg-card/10 border-border/20 flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-sm font-medium">Max Stash Limit per Account</Label>
-              <p className="text-muted-foreground text-xs">Cap the maximum number of stashed wiki pages per user</p>
+              <p className="text-muted-foreground text-xs">
+                Cap the maximum number of stashed wiki pages per user
+              </p>
             </div>
             <Input
               type="number"
@@ -113,7 +119,9 @@ export function StashSettingsContent() {
           <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
             <div>
               <Label className="text-sm font-medium">Offline Storage Syncing</Label>
-              <p className="text-muted-foreground text-xs">Cache stashed articles locally in browser indexDB storage</p>
+              <p className="text-muted-foreground text-xs">
+                Cache stashed articles locally in browser indexDB storage
+              </p>
             </div>
             <Switch
               checked={settings.offlineCacheEnabled}
@@ -125,7 +133,9 @@ export function StashSettingsContent() {
           <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
             <div>
               <Label className="text-sm font-medium">Automatic Image Categorization</Label>
-              <p className="text-muted-foreground text-xs">Group stashed images by orientation and type filters automatically</p>
+              <p className="text-muted-foreground text-xs">
+                Group stashed images by orientation and type filters automatically
+              </p>
             </div>
             <Switch
               checked={settings.autoCategorization}
@@ -137,7 +147,9 @@ export function StashSettingsContent() {
           <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
             <div>
               <Label className="text-sm font-medium">Text Highlight Tracking</Label>
-              <p className="text-muted-foreground text-xs">Save and sync custom reader highlights on stashed pages</p>
+              <p className="text-muted-foreground text-xs">
+                Save and sync custom reader highlights on stashed pages
+              </p>
             </div>
             <Switch
               checked={settings.highlightTracking}
@@ -149,7 +161,9 @@ export function StashSettingsContent() {
           <div className="bg-card/10 border-border/20 flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-sm font-medium">Welcome Guide Overlay Version</Label>
-              <p className="text-muted-foreground text-xs">Bump the version identifier to re-show the stash welcome overlay to users</p>
+              <p className="text-muted-foreground text-xs">
+                Bump the version identifier to re-show the stash welcome overlay to users
+              </p>
             </div>
             <Input
               value={settings.welcomeVersion}

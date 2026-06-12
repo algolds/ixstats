@@ -117,7 +117,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
 
         <div className="border-border/40 space-y-1.5 border-t pt-2">
           <StatusIndicator status="operational" label="System Online" size="sm" />
-          <div className="text-muted-foreground/60 text-[9px] tabular-nums whitespace-nowrap">
+          <div className="text-muted-foreground/60 text-[9px] whitespace-nowrap tabular-nums">
             v{PLATFORM_VERSION} {CHANNEL} · Build {BUILD_VERSION}
           </div>
         </div>

@@ -9,10 +9,22 @@ import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
 import type { ArchetypeType } from "~/lib/sports";
+
+const archetypeLabels: Record<ArchetypeType, string> = {
+  league: "League",
+  division_conference: "Division / Conference",
+  bracket: "Bracket",
+  circuit: "Circuit",
+};
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -23,17 +35,6 @@ interface LeagueCreatorProps {
   isCanonical?: boolean;
 }
 
-// ─── Archetype badge styling ────────────────────────────────────────────────
-
-const archetypeMeta: Record<ArchetypeType, { label: string; className: string }> = {
-  league: { label: "League", className: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
-  division_conference: {
-    label: "Division / Conference",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-  },
-  bracket: { label: "Bracket", className: "bg-red-500/10 text-red-400 border-red-500/30" },
-  circuit: { label: "Circuit", className: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
-};
 
 // ─── Animation variants ─────────────────────────────────────────────────────
 
@@ -51,13 +52,18 @@ const cardVariants = {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = false }: LeagueCreatorProps) {
+export function LeagueCreator({
+  open,
+  onOpenChange,
+  onCreated,
+  isCanonical = false,
+}: LeagueCreatorProps) {
   const notify = useNotify();
 
   // ── Presets query ───────────────────────────────────────────────────────
   const { data: presets, isLoading: presetsLoading } = api.sports.getSportPresets.useQuery(
     undefined,
-    { enabled: open },
+    { enabled: open }
   );
 
   // ── Create league mutation ──────────────────────────────────────────────
@@ -82,7 +88,7 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
   }, [presets, selectedPresetKey]);
 
   const archetype = selectedPreset?.archetype as ArchetypeType | undefined;
-  const archetypeInfo = archetype ? archetypeMeta[archetype] : null;
+  const archetypeLabel = archetype ? archetypeLabels[archetype] : null;
 
   const isDivisionConference = archetype === "division_conference";
   const isBracket = archetype === "bracket";
@@ -95,13 +101,16 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
     leagueName.trim().length > 0 && teamCount >= (selectedPreset?.minTeamCount ?? 2);
 
   // ── Handlers ────────────────────────────────────────────────────────────
-  const handleSportSelect = useCallback((key: string) => {
-    setSelectedPresetKey(key);
-    const preset = presets?.find((p) => p.key === key);
-    if (preset) {
-      setTeamCount(preset.defaultTeamCount);
-    }
-  }, [presets]);
+  const handleSportSelect = useCallback(
+    (key: string) => {
+      setSelectedPresetKey(key);
+      const preset = presets?.find((p) => p.key === key);
+      if (preset) {
+        setTeamCount(preset.defaultTeamCount);
+      }
+    },
+    [presets]
+  );
 
   const handleClose = useCallback(() => {
     onOpenChange(false);
@@ -188,14 +197,14 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
       }
       onOpenChange(newOpen);
     },
-    [onOpenChange, resetForm],
+    [onOpenChange, resetForm]
   );
 
   // ── Step indicator ──────────────────────────────────────────────────────
   const totalSteps = 4;
 
   const stepIndicator = (
-    <div className="flex items-center justify-center gap-2 pt-4 mb-6">
+    <div className="mb-6 flex items-center justify-center gap-2 pt-4">
       {Array.from({ length: totalSteps }, (_, i) => {
         const step = i + 1;
         const isActive = step === currentStep;
@@ -206,17 +215,18 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
               <div
                 className={cn(
                   "h-px w-6 transition-colors duration-300",
-                  isDone ? "bg-primary/60" : "bg-border",
+                  isDone ? "bg-primary/60" : "bg-border"
                 )}
               />
             )}
             <div
-                className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all duration-300",
-                  isActive && "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
-                  isDone && "bg-primary/20 text-primary",
-                  !isActive && !isDone && "bg-muted text-muted-foreground",
-                )}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all duration-300",
+                isActive &&
+                  "bg-primary text-primary-foreground ring-primary/40 ring-offset-background shadow-md ring-2 ring-offset-2",
+                isDone && "bg-primary/20 text-primary",
+                !isActive && !isDone && "bg-muted text-muted-foreground"
+              )}
             >
               {isDone ? <Check className="h-3.5 w-3.5" /> : step}
             </div>
@@ -241,13 +251,12 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
 
       {presetsLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {(presets ?? []).map((preset) => {
             const isSelected = selectedPresetKey === preset.key;
-            const meta = archetypeMeta[preset.archetype];
 
             return (
               <motion.button
@@ -258,10 +267,10 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
                 whileTap="tap"
                 onClick={() => handleSportSelect(preset.key)}
                 className={cn(
-                  "facet-hierarchy-interactive group relative cursor-pointer rounded-xl border p-4 text-left transition-all focus:ring-2 focus:ring-primary/30 focus:outline-none",
+                  "facet-hierarchy-interactive group focus:ring-primary/30 relative cursor-pointer rounded-xl border p-4 text-left transition-all focus:ring-2 focus:outline-none",
                   isSelected
-                    ? "border-primary/60 bg-primary/5 ring-2 ring-primary"
-                    : "border-border/60 bg-card/50 hover:border-border hover:bg-card/80",
+                    ? "border-primary/60 bg-primary/5 ring-primary ring-2"
+                    : "border-border/60 bg-card/50 hover:border-border hover:bg-card/80"
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -269,14 +278,6 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-foreground text-sm font-semibold">{preset.name}</span>
-                      {meta && (
-                        <Badge
-                          variant="outline"
-                          className={cn("shrink-0 text-[10px]", meta.className)}
-                        >
-                          {meta.label}
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -320,9 +321,7 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
           onChange={(e) => setLeagueName(e.target.value.slice(0, 100))}
           maxLength={100}
         />
-        <p className="text-muted-foreground text-[11px]">
-          {leagueName.length}/100 characters
-        </p>
+        <p className="text-muted-foreground text-[11px]">{leagueName.length}/100 characters</p>
       </div>
 
       {/* Team Count */}
@@ -341,7 +340,7 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
             if (!isNaN(val)) {
               const clamped = Math.min(
                 Math.max(val, selectedPreset?.minTeamCount ?? 2),
-                selectedPreset?.maxTeamCount ?? 64,
+                selectedPreset?.maxTeamCount ?? 64
               );
               setTeamCount(clamped);
             } else if (e.target.value === "") {
@@ -383,9 +382,7 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
             value={weightClassesRaw}
             onChange={(e) => setWeightClassesRaw(e.target.value)}
           />
-          <p className="text-muted-foreground text-[11px]">
-            Comma-separated weight class names.
-          </p>
+          <p className="text-muted-foreground text-[11px]">Comma-separated weight class names.</p>
         </div>
       )}
 
@@ -415,16 +412,10 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
       )}
 
       {/* Archetype preview */}
-      {archetypeInfo && (
-        <div
-          className={cn(
-            "rounded-lg border px-3 py-2.5",
-            archetypeInfo.className.replace(/text-\S+/, "").replace(/bg-\S+\/10/, "bg-muted/50"),
-            "border-border/50",
-          )}
-        >
+      {archetypeLabel && (
+        <div className="border-border/50 bg-muted/50 rounded-lg border px-3 py-2.5">
           <p className="text-muted-foreground text-xs leading-relaxed">
-            <span className="text-foreground font-medium">{archetypeInfo.label}</span>
+            <span className="text-foreground font-medium">{archetypeLabel}</span>
             {" — "}
             {selectedPreset?.federationName}
           </p>
@@ -463,34 +454,25 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         className="space-y-5"
       >
-        <DialogDescription>
-          Review your league configuration before creating it.
-        </DialogDescription>
+        <DialogDescription>Review your league configuration before creating it.</DialogDescription>
 
         <Card className="facet-hierarchy-child border-border/60 bg-card/50">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
               <span className="text-3xl">{selectedPreset?.icon}</span>
               <div>
-                <CardTitle className="text-base">
-                  {leagueName || "(unnamed league)"}
-                </CardTitle>
+                <CardTitle className="text-base">{leagueName || "(unnamed league)"}</CardTitle>
                 <p className="text-muted-foreground text-sm">{selectedPreset?.name}</p>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-
-
-            <div className="h-px bg-border/60" />
-
+            <div className="bg-border/60 h-px" />
 
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-muted-foreground text-xs">Archetype</span>
-                <p className="text-foreground font-medium">
-                  {archetypeInfo?.label ?? "—"}
-                </p>
+                <p className="text-foreground font-medium">{archetypeLabel ?? "—"}</p>
               </div>
               <div>
                 <span className="text-muted-foreground text-xs">Teams</span>
@@ -519,7 +501,7 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
               )}
             </div>
 
-            <div className="h-px bg-border/60" />
+            <div className="bg-border/60 h-px" />
 
             <div>
               <span className="text-muted-foreground text-xs">
@@ -536,14 +518,15 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
         </Card>
 
         <div className="flex items-center justify-between pt-2">
-          <Button variant="ghost" onClick={() => setCurrentStep(2)} disabled={createMutation.isPending}>
+          <Button
+            variant="ghost"
+            onClick={() => setCurrentStep(2)}
+            disabled={createMutation.isPending}
+          >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={createMutation.isPending}
-          >
+          <Button onClick={handleCreate} disabled={createMutation.isPending}>
             {createMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -577,7 +560,7 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
           initial={{ scale: 0, rotate: -10 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+          className="bg-primary/10 mb-4 flex h-16 w-16 items-center justify-center rounded-full"
         >
           <span className="text-4xl">{selectedPreset?.icon}</span>
         </motion.div>
@@ -621,9 +604,7 @@ export function LeagueCreator({ open, onOpenChange, onCreated, isCanonical = fal
         }}
       >
         <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
-          <DialogTitle>
-            {currentStep === 4 ? "All Set!" : "Create a League"}
-          </DialogTitle>
+          <DialogTitle>{currentStep === 4 ? "All Set!" : "Create a League"}</DialogTitle>
         </DialogHeader>
 
         <div className="shrink-0 px-6 pt-4 pb-0">{stepIndicator}</div>

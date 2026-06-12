@@ -22,15 +22,12 @@ export function RegionHoverTooltip({ hoveredFeature, editorMode }: RegionHoverTo
         maxWidth: 220,
       }}
     >
-      <div className="text-foreground text-xs font-semibold">
-        {hoveredFeature.feature.name}
-      </div>
+      <div className="text-foreground text-xs font-semibold">{hoveredFeature.feature.name}</div>
       <div className="text-muted-foreground mt-1 space-y-0.5 text-[10px]">
         <div className="flex justify-between gap-3">
           <span>Type</span>
           <span className="text-foreground font-medium">
-            {hoveredFeature.feature.properties.subdivisionType ??
-              hoveredFeature.feature.type}
+            {hoveredFeature.feature.properties.subdivisionType ?? hoveredFeature.feature.type}
           </span>
         </div>
         {hoveredFeature.feature.properties.areaSqKm != null && (

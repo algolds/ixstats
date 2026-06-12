@@ -30,7 +30,9 @@ export type ExchangeTxType =
   | "SECTOR_BUY"
   | "SECTOR_SELL"
   | "CONTRACT_PAYOUT"
-  | "ADMIN_ADJUSTMENT";
+  | "ADMIN_ADJUSTMENT"
+  | "TRAINING_FEE"
+  | "TEAM_TRAINING";
 
 export interface ExchangeMutationResult {
   success: boolean;
@@ -101,10 +103,11 @@ export class ExchangeService {
     type: ExchangeTxType,
     source: string,
     db: PrismaClient,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<ExchangeMutationResult> {
     try {
-      if (!(amount > 0)) return { success: false, newBalance: 0, message: "Amount must be positive" };
+      if (!(amount > 0))
+        return { success: false, newBalance: 0, message: "Amount must be positive" };
       const wallet = await this.getOrCreateWallet(userIdOrClerkId, db);
 
       const updated = await db.$transaction(async (tx) => {
@@ -140,10 +143,11 @@ export class ExchangeService {
     type: ExchangeTxType,
     source: string,
     db: PrismaClient,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<ExchangeMutationResult> {
     try {
-      if (!(amount > 0)) return { success: false, newBalance: 0, message: "Amount must be positive" };
+      if (!(amount > 0))
+        return { success: false, newBalance: 0, message: "Amount must be positive" };
       const wallet = await this.getOrCreateWallet(userIdOrClerkId, db);
 
       if (wallet.sovereigns < amount) {

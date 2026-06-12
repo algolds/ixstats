@@ -21,13 +21,10 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
   { mapRef, onActiveChange, headless = false },
   ref
 ) {
-  const {
-    active,
-    points,
-    totalDistance,
-    clearPoints,
-    handleToggle,
-  } = useMeasureToolState({ mapRef, onActiveChange });
+  const { active, points, totalDistance, clearPoints, handleToggle } = useMeasureToolState({
+    mapRef,
+    onActiveChange,
+  });
 
   // Expose toggle via ref for external control (headless mode)
   useImperativeHandle(ref, () => ({ toggle: handleToggle }), [handleToggle]);

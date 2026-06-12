@@ -45,7 +45,11 @@ export function BlurbSection() {
         </div>
       </div>
 
-      <BlurbResponseModal open={modalOpen} onCloseAction={() => setModalOpen(false)} prompt={prompt} />
+      <BlurbResponseModal
+        open={modalOpen}
+        onCloseAction={() => setModalOpen(false)}
+        prompt={prompt}
+      />
     </>
   );
 }

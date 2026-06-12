@@ -126,9 +126,7 @@ export function CountryOverviewTab({
             )}
             {summary.region && (
               <button
-                onClick={() =>
-                  onGeographyFilter?.({ type: "region", value: summary.region! })
-                }
+                onClick={() => onGeographyFilter?.({ type: "region", value: summary.region! })}
                 className="cursor-pointer rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-600 transition-colors hover:bg-indigo-100 hover:ring-1 hover:ring-indigo-300/50"
               >
                 {summary.region}
@@ -152,8 +150,7 @@ export function CountryOverviewTab({
             )}
             {summary.governmentType && (
               <p>
-                Type:{" "}
-                <span className="text-foreground font-medium">{summary.governmentType}</span>
+                Type: <span className="text-foreground font-medium">{summary.governmentType}</span>
               </p>
             )}
           </div>
@@ -238,15 +235,12 @@ export function CountryOverviewTab({
                 }
                 className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
               >
-                {s.flag && (
-                  <img src={s.flag} alt="" className="h-3 w-4 rounded-sm object-cover" />
-                )}
+                {s.flag && <img src={s.flag} alt="" className="h-3 w-4 rounded-sm object-cover" />}
                 {s.name}
                 <span className="text-[9px] text-indigo-400">
                   (
-                  {SOVEREIGNTY_TYPE_MAP[
-                    s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
-                  ]?.short ?? s.relationshipType}
+                  {SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]
+                    ?.short ?? s.relationshipType}
                   )
                 </span>
               </button>

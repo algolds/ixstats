@@ -67,7 +67,6 @@ export function BuilderHelpWidget({ activeSection }: BuilderHelpWidgetProps) {
       texture="dots"
       textureOpacity={0.06}
     >
-
       {/* Cutout tab header */}
       <div className="relative bg-blue-500/10 px-3 pt-2.5 pb-4">
         <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">

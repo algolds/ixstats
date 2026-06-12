@@ -52,7 +52,7 @@ export function getActivityLabel(activity: any): {
 } {
   const cat = activity.category ?? activity.content?.metadata?.category ?? "";
   const title = (activity.content?.title ?? "").toLowerCase();
-  
+
   if (title.includes("point of interest") || title.includes("poi"))
     return { label: "POI", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
   if (title.includes("city") || title.includes("settlement"))
@@ -148,7 +148,7 @@ export function UnifiedFeedItem({ activity }: { activity: any }) {
     : "";
 
   return (
-    <div className="group glass-hierarchy-child hover:glass-hierarchy-interactive shadow-sm transition-all duration-300 p-3">
+    <div className="group glass-hierarchy-child hover:glass-hierarchy-interactive p-3 shadow-sm transition-all duration-300">
       <div className="flex items-start gap-3">
         {/* Source icon — wiki uses the W logo */}
         <div

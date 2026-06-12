@@ -4,7 +4,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Users, Globe } from "lucide-react";
-import { CutoutCard, CutoutCardContent, CutoutCorner, cutoutCardSurfaceClassName } from "~/components/ui/cutout-card";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";

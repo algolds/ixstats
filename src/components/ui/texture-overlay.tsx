@@ -13,6 +13,12 @@ export type TextureType =
   | "paperGrain"
   | "horizontalLines"
   | "verticalLines"
+  | "waves"
+  | "zigzag"
+  | "woven"
+  | "brick"
+  | "herringbone"
+  | "shimmer"
   | "none";
 
 interface TextureOverlayProps {
@@ -34,6 +40,12 @@ const texturePatterns: Record<TextureType, string> = {
   paperGrain: "facet-texture-paper-grain",
   horizontalLines: "facet-texture-horizontal-lines",
   verticalLines: "facet-texture-vertical-lines",
+  waves: "facet-texture-waves",
+  zigzag: "facet-texture-zigzag",
+  woven: "facet-texture-woven",
+  brick: "facet-texture-brick",
+  herringbone: "facet-texture-herringbone",
+  shimmer: "facet-texture-shimmer",
   none: "",
 };
 
@@ -43,7 +55,6 @@ const defaultOpacities: Record<TextureType, number> = {
   noise: 1,
   crosshatch: 1,
   diagonal: 1,
-
   scatteredDots: 1,
   halftone: 1,
   triangular: 1,
@@ -51,6 +62,12 @@ const defaultOpacities: Record<TextureType, number> = {
   paperGrain: 1,
   horizontalLines: 1,
   verticalLines: 1,
+  waves: 1,
+  zigzag: 1,
+  woven: 1,
+  brick: 1,
+  herringbone: 1,
+  shimmer: 0.6,
   none: 0,
 };
 

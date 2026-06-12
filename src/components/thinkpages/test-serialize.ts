@@ -6,7 +6,7 @@ async function main() {
     plugins: [ParagraphPlugin],
     value: [{ type: "p", children: [{ text: "Hello World!" }] }],
   });
-  
+
   const html = serializeHtml(editor);
   console.log("HTML:", html);
 }

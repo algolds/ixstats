@@ -18,9 +18,7 @@ export default function MessagesLayout({ children }: { children: React.ReactNode
       }
     >
       <div className="relative min-h-screen">
-        <DashboardSidebarLayout disableCollapse={true}>
-          {children}
-        </DashboardSidebarLayout>
+        <DashboardSidebarLayout disableCollapse={true}>{children}</DashboardSidebarLayout>
       </div>
     </Suspense>
   );

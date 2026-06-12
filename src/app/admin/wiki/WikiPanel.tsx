@@ -55,7 +55,14 @@ import {
 } from "lucide-react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandGroup } from "~/components/ui/command";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandItem,
+  CommandGroup,
+} from "~/components/ui/command";
 
 const getIconComponent = (iconName?: string) => {
   switch (iconName) {

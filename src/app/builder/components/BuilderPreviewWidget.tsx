@@ -321,7 +321,6 @@ export function BuilderPreviewWidget({
           texture="dots"
           textureOpacity={0.06}
         >
-
           <div className="flex min-h-[80px] items-center justify-center">
             <span className="text-xs text-zinc-500">Select a country to preview</span>
           </div>
@@ -352,8 +351,6 @@ export function BuilderPreviewWidget({
           texture="dots"
           textureOpacity={0.06}
         >
-
-
           {/* Cutout tab header with background flag (matches rest of builder) */}
           <div className="relative flex h-28 w-full flex-col items-center justify-center overflow-hidden bg-blue-500/10 px-3 pt-3 pb-6">
             {flagUrl ? (
@@ -498,7 +495,6 @@ export function BuilderPreviewWidget({
           texture="dots"
           textureOpacity={0.06}
         >
-
           {/* Cutout tab header with background flag */}
           <div className="relative flex h-40 w-full flex-col items-center justify-center overflow-hidden bg-blue-500/10 px-3 pt-3 pb-6">
             {flagUrl ? (

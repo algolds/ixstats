@@ -295,8 +295,8 @@ export function UserManagement({ className, mode }: UserManagementProps) {
             {mode === "users"
               ? "User Directory"
               : mode === "roles"
-              ? "Role Configuration"
-              : "User & Role Management"}
+                ? "Role Configuration"
+                : "User & Role Management"}
           </CardTitle>
 
           {(!roles || roles.length === 0) && (
@@ -499,7 +499,9 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                             onCheckedChange={() =>
                               handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
                             }
-                            disabled={updateMembershipTier.isPending || !ability.can("manage", "User")}
+                            disabled={
+                              updateMembershipTier.isPending || !ability.can("manage", "User")
+                            }
                           />
                         </div>
                         <Can I="manage" a="User">
@@ -512,8 +514,9 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Unlink User from Country</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to unlink <strong>{user.clerkUserId}</strong>{" "}
-                                  from <strong>{user.country?.name}</strong>? This action will remove
+                                  Are you sure you want to unlink{" "}
+                                  <strong>{user.clerkUserId}</strong> from{" "}
+                                  <strong>{user.country?.name}</strong>? This action will remove
                                   their access to country-specific features.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
@@ -590,7 +593,9 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                             onCheckedChange={() =>
                               handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
                             }
-                            disabled={updateMembershipTier.isPending || !ability.can("manage", "User")}
+                            disabled={
+                              updateMembershipTier.isPending || !ability.can("manage", "User")
+                            }
                           />
                         </div>
                         <Badge variant="outline" className="border-amber-600 text-amber-600">
@@ -668,7 +673,9 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                         <label className="text-sm font-medium">Description</label>
                         <Textarea
                           value={roleForm.description}
-                          onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setRoleForm({ ...roleForm, description: e.target.value })
+                          }
                           placeholder="Brief description of the role's responsibilities"
                         />
                       </div>
@@ -684,7 +691,10 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                                 </h4>
                                 <div className="space-y-2">
                                   {categoryPermissions.map((permission: any) => (
-                                    <div key={permission.id} className="flex items-center space-x-2">
+                                    <div
+                                      key={permission.id}
+                                      className="flex items-center space-x-2"
+                                    >
                                       <Checkbox
                                         id={permission.id}
                                         checked={roleForm.permissionIds.includes(permission.id)}
@@ -909,7 +919,9 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                           onCheckedChange={() =>
                             handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
                           }
-                          disabled={updateMembershipTier.isPending || !ability.can("manage", "User")}
+                          disabled={
+                            updateMembershipTier.isPending || !ability.can("manage", "User")
+                          }
                         />
                         <Badge
                           variant={

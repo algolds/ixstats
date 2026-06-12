@@ -111,7 +111,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
   return (
     <SwipeableRow
       id={n.id}
-      className="rounded-xl overflow-hidden mb-2 last:mb-0"
+      className="mb-2 overflow-hidden rounded-xl last:mb-0"
       springPreset="tight"
       expanded={isExpanded}
       onExpandedChange={setIsExpanded}
@@ -137,19 +137,19 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
       <SwipeableRow.Content>
         <div
           className={cn(
-            "relative flex items-center justify-between p-3.5 bg-white/[0.05] dark:bg-slate-950/75 backdrop-blur-md border border-white/[0.08] dark:border-white/10 rounded-xl hover:bg-white/[0.08] dark:hover:bg-slate-900/80 hover:border-white/[0.12] transition-all duration-200 cursor-grab active:cursor-grabbing",
-            !n.read && "bg-blue-500/5 dark:bg-blue-950/20 border-blue-500/30"
+            "relative flex cursor-grab items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.05] p-3.5 backdrop-blur-md transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.08] active:cursor-grabbing dark:border-white/10 dark:bg-slate-950/75 dark:hover:bg-slate-900/80",
+            !n.read && "border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/20"
           )}
         >
           {/* Left indicator accent border */}
           <div
             className={cn(
-              "absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl transition-all duration-300",
+              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-all duration-300",
               colors.text.replace("text-", "bg-")
             )}
           />
 
-          <div className="flex items-center gap-3 pl-1.5 flex-1 min-w-0">
+          <div className="flex min-w-0 flex-1 items-center gap-3 pl-1.5">
             <div
               className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/5",
@@ -160,21 +160,21 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-foreground text-sm font-semibold truncate max-w-[280px]">
+                <span className="text-foreground max-w-[280px] truncate text-sm font-semibold">
                   {n.title}
                 </span>
                 {!n.read && (
-                  <span className="bg-blue-500 h-1.5 w-1.5 rounded-full animate-pulse shadow-sm shadow-blue-500/50" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
                 )}
                 <Badge
                   variant="outline"
-                  className="text-[9px] uppercase tracking-wider py-0 px-1.5 h-4 border-white/10 text-muted-foreground"
+                  className="text-muted-foreground h-4 border-white/10 px-1.5 py-0 text-[9px] tracking-wider uppercase"
                 >
                   {n.category || n.type || "system"}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="text-[9px] py-0 px-1.5 h-4 border-white/10 text-muted-foreground flex items-center gap-1"
+                  className="text-muted-foreground flex h-4 items-center gap-1 border-white/10 px-1.5 py-0 text-[9px]"
                 >
                   {scope.icon}
                   <span>{scope.label}</span>
@@ -187,20 +187,20 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                         ? "default"
                         : "secondary"
                   }
-                  className="text-[9px] py-0 px-1.5 h-4 leading-none"
+                  className="h-4 px-1.5 py-0 text-[9px] leading-none"
                 >
                   {n.priority}
                 </Badge>
               </div>
               {n.description && (
-                <div className="text-muted-foreground text-xs mt-1 truncate max-w-[500px]">
+                <div className="text-muted-foreground mt-1 max-w-[500px] truncate text-xs">
                   {n.description}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1.5 shrink-0 pl-3">
+          <div className="flex shrink-0 flex-col items-end gap-1.5 pl-3">
             <span className="text-muted-foreground/80 text-[10px] font-medium whitespace-nowrap">
               {formattedTime}
             </span>
@@ -214,11 +214,8 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                   <EyeOff className="h-3.5 w-3.5 text-blue-400" />
                 </span>
               )}
-              <motion.div
-                animate={{ rotate: isExpanded ? 90 : 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+              <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
+                <ChevronRight className="text-muted-foreground/40 h-4 w-4" />
               </motion.div>
             </div>
           </div>
@@ -227,38 +224,38 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
 
       {/* Expanded details */}
       <SwipeableRow.Expanded>
-        <div className="border-t border-white/5 bg-slate-950/40 p-4 rounded-b-xl space-y-3 pl-[52px]">
+        <div className="space-y-3 rounded-b-xl border-t border-white/5 bg-slate-950/40 p-4 pl-[52px]">
           {n.message && (
             <div className="space-y-1">
-              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 Full Message
               </span>
-              <p className="text-xs text-foreground/90 font-medium whitespace-pre-wrap leading-relaxed select-text">
+              <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
                 {n.message}
               </p>
             </div>
           )}
           {n.description && !n.message && (
             <div className="space-y-1">
-              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 Description
               </span>
-              <p className="text-xs text-foreground/90 font-medium whitespace-pre-wrap leading-relaxed select-text">
+              <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
                 {n.description}
               </p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-2 text-[10px] border-t border-white/5">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-white/5 pt-2 text-[10px]">
             <div>
               <span className="text-muted-foreground font-semibold">User ID:</span>{" "}
-              <code className="text-foreground/90 bg-white/5 px-1 py-0.5 rounded">
+              <code className="text-foreground/90 rounded bg-white/5 px-1 py-0.5">
                 {n.userId || "Global / System"}
               </code>
             </div>
             <div>
               <span className="text-muted-foreground font-semibold">Country ID:</span>{" "}
-              <code className="text-foreground/90 bg-white/5 px-1 py-0.5 rounded">
+              <code className="text-foreground/90 rounded bg-white/5 px-1 py-0.5">
                 {n.countryId || "Global / System"}
               </code>
             </div>
@@ -271,24 +268,24 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
               </div>
             )}
             {n.metadata && (
-              <div className="col-span-2 space-y-1 mt-1">
+              <div className="col-span-2 mt-1 space-y-1">
                 <span className="text-muted-foreground font-semibold">Metadata:</span>
-                <pre className="text-[10px] bg-black/30 p-2 rounded border border-white/5 text-emerald-400 overflow-x-auto max-w-full font-mono">
+                <pre className="max-w-full overflow-x-auto rounded border border-white/5 bg-black/30 p-2 font-mono text-[10px] text-emerald-400">
                   {JSON.stringify(JSON.parse(n.metadata), null, 2)}
                 </pre>
               </div>
             )}
           </div>
 
-          <div className="flex gap-2 justify-end pt-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-[10px] text-red-400 hover:text-red-500 hover:bg-red-500/10 border-red-500/20"
+              className="h-7 border-red-500/20 text-[10px] text-red-400 hover:bg-red-500/10 hover:text-red-500"
               onClick={() => handleDelete(n.id)}
               disabled={deleteMutation.isPending}
             >
-              <Trash2 className="h-3 w-3 mr-1.5" />
+              <Trash2 className="mr-1.5 h-3 w-3" />
               Delete Notification
             </Button>
           </div>

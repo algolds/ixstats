@@ -209,7 +209,6 @@ export function MapDynamicIsland({
                   transition={{ ...SPRING_SOFT, opacity: { duration: 0.2 } }}
                   className="flex items-center gap-1 px-3 py-2"
                 >
-
                   {/* Auth greeting / sign-in */}
                   <AuthSection
                     user={user}

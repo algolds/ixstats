@@ -54,8 +54,7 @@ export function SovereigntyPanel({
   setSovereigntyTypeFilter,
   relationsLoading,
 }: SovereigntyPanelProps) {
-  const typeLabel = (t: string) =>
-    SOVEREIGNTY_TYPES.find((s) => s.value === t)?.label ?? t;
+  const typeLabel = (t: string) => SOVEREIGNTY_TYPES.find((s) => s.value === t)?.label ?? t;
 
   return (
     <div className="space-y-4 p-3 text-xs">

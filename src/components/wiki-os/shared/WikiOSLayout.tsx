@@ -112,8 +112,7 @@ export function WikiOSLayout({
 
   const activeId = getActiveId();
 
-  const isSpecialPage =
-    pathname.includes("/wiki/") || pathname.includes("/blurbs") || isMainPage;
+  const isSpecialPage = pathname.includes("/wiki/") || pathname.includes("/blurbs") || isMainPage;
 
   const sidebarContent = (
     <WikiOSUnifiedSidebar

@@ -413,15 +413,22 @@ export function useMapEditorOverlayState({
           next.panelA.tabs.push("linkages");
           changed = true;
         }
-        if (!next.panelA.tabs.includes("sovereignty") && !next.panelB.tabs.includes("sovereignty")) {
+        if (
+          !next.panelA.tabs.includes("sovereignty") &&
+          !next.panelB.tabs.includes("sovereignty")
+        ) {
           next.panelA.tabs.push("sovereignty");
           changed = true;
         }
       } else {
         const oldLenA = next.panelA.tabs.length;
         const oldLenB = next.panelB.tabs.length;
-        next.panelA.tabs = next.panelA.tabs.filter((t) => t !== "linkages" && t !== "sovereignty" && t !== "features");
-        next.panelB.tabs = next.panelB.tabs.filter((t) => t !== "linkages" && t !== "sovereignty" && t !== "features");
+        next.panelA.tabs = next.panelA.tabs.filter(
+          (t) => t !== "linkages" && t !== "sovereignty" && t !== "features"
+        );
+        next.panelB.tabs = next.panelB.tabs.filter(
+          (t) => t !== "linkages" && t !== "sovereignty" && t !== "features"
+        );
         if (next.panelA.tabs.length !== oldLenA || next.panelB.tabs.length !== oldLenB) {
           changed = true;
         }
@@ -459,15 +466,18 @@ export function useMapEditorOverlayState({
     });
   }, []);
 
-  const handleChangePanelPlacement = useCallback((panelId: "panelA" | "panelB", placement: "left" | "right" | "bottom") => {
-    setPanelConfigs((prev) => ({
-      ...prev,
-      [panelId]: {
-        ...prev[panelId],
-        placement,
-      },
-    }));
-  }, []);
+  const handleChangePanelPlacement = useCallback(
+    (panelId: "panelA" | "panelB", placement: "left" | "right" | "bottom") => {
+      setPanelConfigs((prev) => ({
+        ...prev,
+        [panelId]: {
+          ...prev[panelId],
+          placement,
+        },
+      }));
+    },
+    []
+  );
 
   const expandPropertiesPanel = useCallback(() => {
     setPanelConfigs((prev) => {
@@ -488,8 +498,8 @@ export function useMapEditorOverlayState({
   // Auto-expand/collapse whichever panel contains "properties" tab when mode changes
   useEffect(() => {
     const shouldExpand = isWorldMode
-      ? (activeEditorMode !== "view" || !!mapSelectedCountry)
-      : (editor.mode !== "view" && editor.mode !== "import-provinces");
+      ? activeEditorMode !== "view" || !!mapSelectedCountry
+      : editor.mode !== "view" && editor.mode !== "import-provinces";
 
     if (shouldExpand) {
       setPanelConfigs((prev) => {
@@ -682,18 +692,21 @@ export function useMapEditorOverlayState({
 
   const handleSaveFeatureProperties = () => {
     if (!mapSelectedCountry?.featureId) return;
-    updatePropertiesMutation.mutate({
-      featureId: mapSelectedCountry.featureId,
-      displayName: editableFeatureName || undefined,
-      countryId: editableCountryLinkageId || undefined,
-      properties: parsedProperties,
-      wikiPageTitle: wikiPageTitle || null,
-    }, {
-      onSuccess: () => {
-        refetchFeatureDetails();
-        setIsEditingJson(false);
+    updatePropertiesMutation.mutate(
+      {
+        featureId: mapSelectedCountry.featureId,
+        displayName: editableFeatureName || undefined,
+        countryId: editableCountryLinkageId || undefined,
+        properties: parsedProperties,
+        wikiPageTitle: wikiPageTitle || null,
+      },
+      {
+        onSuccess: () => {
+          refetchFeatureDetails();
+          setIsEditingJson(false);
+        },
       }
-    });
+    );
   };
 
   const handleConfirmBorderSave = async () => {
@@ -1232,7 +1245,9 @@ export function useMapEditorOverlayState({
     setPanelConfigs,
     handleMoveTab,
     handleChangePanelPlacement,
-    showRightPanel: isWorldMode ? true : editor.mode !== "view" && editor.mode !== "import-provinces",
+    showRightPanel: isWorldMode
+      ? true
+      : editor.mode !== "view" && editor.mode !== "import-provinces",
     cursorTerrainInfo,
     cursorCoords,
     setCursorCoords,

@@ -97,10 +97,10 @@ function ProfileContent() {
   return (
     <>
       <SignedIn>
-        <div className="relative min-h-full flex-1 flex flex-col w-full">
+        <div className="relative flex min-h-full w-full flex-1 flex-col">
           {/* Backlight background wrapper */}
           <Backlight blur={60} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-            <div className="relative w-full h-full">
+            <div className="relative h-full w-full">
               <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/15" />
               <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/10 dark:bg-blue-500/10" />
               <div className="absolute -bottom-[10%] left-[20%] h-[40%] w-[40%] rounded-full bg-purple-500/10 dark:bg-purple-500/15" />
@@ -122,7 +122,7 @@ function ProfileContent() {
                     prefixClassName="text-slate-900 dark:text-white"
                     mode="wave"
                     autoPlay
-                    className="text-4xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400 sm:text-5xl"
+                    className="text-4xl font-extrabold tracking-tight text-indigo-600 sm:text-5xl dark:text-indigo-400"
                   >
                     Settings
                   </PixelHeading>
@@ -620,9 +620,9 @@ function ProfileContent() {
 }
 function SettingsSkeleton() {
   return (
-    <div className="relative min-h-full flex-1 flex flex-col w-full">
+    <div className="relative flex min-h-full w-full flex-1 flex-col">
       <Backlight blur={60} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="relative w-full h-full">
+        <div className="relative h-full w-full">
           <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/5 dark:bg-indigo-500/10" />
           <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/5 dark:bg-blue-500/10" />
         </div>

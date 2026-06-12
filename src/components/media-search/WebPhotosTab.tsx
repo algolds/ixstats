@@ -43,7 +43,10 @@ export function WebPhotosTab({
     );
 
   const fetchNextUnsplashPage = useCallback(() => setUnsplashPage((prev) => prev + 1), []);
-  const fetchPrevUnsplashPage = useCallback(() => setUnsplashPage((prev) => Math.max(1, prev - 1)), []);
+  const fetchPrevUnsplashPage = useCallback(
+    () => setUnsplashPage((prev) => Math.max(1, prev - 1)),
+    []
+  );
   const hasNextUnsplashPage = unsplashImages && unsplashImages.length >= 9;
   const hasPrevUnsplashPage = unsplashPage > 1;
 
@@ -56,7 +59,7 @@ export function WebPhotosTab({
             placeholder="Search public photos (e.g. 'castle', 'mountains', 'city')..."
             value={unsplashQuery}
             onChange={(e) => setUnsplashQuery(e.target.value)}
-            className="pl-9 h-9 text-xs"
+            className="h-9 pl-9 text-xs"
           />
         </div>
       </div>
@@ -72,7 +75,7 @@ export function WebPhotosTab({
               <div
                 key={`unsplash-${image.id}-${index}`}
                 className={cn(
-                  "group relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all aspect-video bg-black/20",
+                  "group relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 bg-black/20 transition-all",
                   selectedImage === image.url
                     ? "border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
                     : "border-transparent hover:border-blue-400"
@@ -86,25 +89,25 @@ export function WebPhotosTab({
                   className="h-full w-full object-cover"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 flex flex-col justify-end p-2 text-[10px] text-white">
-                  <span className="font-semibold truncate">by {image.photographer}</span>
+                <div className="absolute inset-0 flex flex-col justify-end bg-black/60 p-2 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="truncate font-semibold">by {image.photographer}</span>
                 </div>
                 {selectedImage === image.url && (
                   <div className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
-                    <Check className="h-8 w-8 text-white filter drop-shadow-md" />
+                    <Check className="h-8 w-8 text-white drop-shadow-md filter" />
                   </div>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center text-xs text-muted-foreground py-12">
+          <div className="text-muted-foreground py-12 text-center text-xs">
             {debouncedUnsplashQuery ? "No photos found." : "Enter a search term above."}
           </div>
         )}
 
         {unsplashImages.length > 0 && (
-          <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-border/10">
+          <div className="border-border/10 mt-4 flex items-center justify-center gap-2 border-t pt-3">
             <Button
               variant="outline"
               size="sm"
@@ -112,9 +115,9 @@ export function WebPhotosTab({
               disabled={!hasPrevUnsplashPage}
               className="h-7 text-xs"
             >
-              <ChevronLeft className="h-3 w-3 mr-1" /> Prev
+              <ChevronLeft className="mr-1 h-3 w-3" /> Prev
             </Button>
-            <span className="text-xs text-muted-foreground">Page {unsplashPage}</span>
+            <span className="text-muted-foreground text-xs">Page {unsplashPage}</span>
             <Button
               variant="outline"
               size="sm"
@@ -122,7 +125,7 @@ export function WebPhotosTab({
               disabled={!hasNextUnsplashPage}
               className="h-7 text-xs"
             >
-              Next <ChevronRight className="h-3 w-3 ml-1" />
+              Next <ChevronRight className="ml-1 h-3 w-3" />
             </Button>
           </div>
         )}

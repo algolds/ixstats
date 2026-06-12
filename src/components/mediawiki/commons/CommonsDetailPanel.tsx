@@ -114,7 +114,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
       <TextureOverlay texture="paperGrain" opacity={0.06} className="mix-blend-overlay" />
       <TextureOverlay texture="diagonal" opacity={0.03} className="mix-blend-overlay" />
       {/* Sticky Header and Preview Container */}
-      <div className="sticky top-0 z-10 bg-[var(--wikios-surface)] border-b border-[var(--wikios-border)] shadow-sm">
+      <div className="sticky top-0 z-10 border-b border-[var(--wikios-border)] bg-[var(--wikios-surface)] shadow-sm">
         {/* Header */}
         <div className="wikios-commons-detail-header !border-b-0">
           <h3 className="wikios-commons-detail-title">{cleanTitle}</h3>
@@ -180,7 +180,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
 
         {/* Action Buttons */}
         <div className="flex gap-1.5 px-3">
-          <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1 text-xs group">
+          <Button size="sm" variant="outline" onClick={handleCopy} className="group flex-1 text-xs">
             {copied ? (
               <Check className="mr-1.5 h-3.5 w-3.5 text-green-400" />
             ) : (
@@ -193,7 +193,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             variant="outline"
             onClick={handleCopyImage}
             title="Copy image to clipboard"
-            className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] group"
+            className="group text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
           >
             {copyImageSuccess ? (
               <Check className="h-3.5 w-3.5 text-green-400" />
@@ -206,7 +206,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             variant="outline"
             onClick={() => window.open(image.url, "_blank")}
             title="Download original file"
-            className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] group"
+            className="group text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
           >
             <Download className="h-3.5 w-3.5 transition-colors duration-200 group-hover:text-amber-500" />
           </Button>
@@ -224,10 +224,12 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 "group"
               )}
             >
-              <Bookmark className={cn(
-                "h-3.5 w-3.5 transition-colors duration-200",
-                stashMutation.isSuccess ? "text-green-400" : "group-hover:text-emerald-500"
-              )} />
+              <Bookmark
+                className={cn(
+                  "h-3.5 w-3.5 transition-colors duration-200",
+                  stashMutation.isSuccess ? "text-green-400" : "group-hover:text-emerald-500"
+                )}
+              />
             </Button>
           )}
         </div>
@@ -271,7 +273,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 href={image.descriptionUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 hover:bg-blue-500/20 transition-all select-none"
+                className="inline-flex items-center gap-1 rounded-full border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 transition-all select-none hover:bg-blue-500/20"
               >
                 <ExternalLink className="h-3 w-3" />
                 {image.descriptionUrl.includes("ixwiki.com")
@@ -283,12 +285,12 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             </div>
           </div>
         ) : (
-          <div className="mt-3 pt-2 border-t border-white/5">
+          <div className="mt-3 border-t border-white/5 pt-2">
             <a
               href={image.descriptionUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 hover:bg-blue-500/20 transition-all select-none"
+              className="inline-flex items-center gap-1 rounded-full border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400 transition-all select-none hover:bg-blue-500/20"
             >
               <ExternalLink className="h-3 w-3" />
               {image.descriptionUrl.includes("ixwiki.com")

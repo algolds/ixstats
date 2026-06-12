@@ -92,13 +92,19 @@ describe("wiki-search-service base path handling", () => {
     await searchWiki("Caphiria", "iiwiki");
     await searchWiki("Caphiria", "althistory");
 
-    const fetchCalls = ((global.fetch as any).mock.calls as any[][]).map((call: any[]) => call[0] as string);
+    const fetchCalls = ((global.fetch as any).mock.calls as any[][]).map(
+      (call: any[]) => call[0] as string
+    );
 
-    expect(fetchCalls.some((url: string) => url.includes("/api/mediawiki/ixwiki/api.php?"))).toBe(true);
-    expect(fetchCalls.some((url: string) => url.includes("https://iiwiki.com/api.php?"))).toBe(true);
-    expect(fetchCalls.some((url: string) => url.includes("/api/mediawiki/althistory/api.php?"))).toBe(
+    expect(fetchCalls.some((url: string) => url.includes("/api/mediawiki/ixwiki/api.php?"))).toBe(
       true
     );
+    expect(fetchCalls.some((url: string) => url.includes("https://iiwiki.com/api.php?"))).toBe(
+      true
+    );
+    expect(
+      fetchCalls.some((url: string) => url.includes("/api/mediawiki/althistory/api.php?"))
+    ).toBe(true);
   });
 
   it("falls back to localhost base when server env vars are missing", async () => {

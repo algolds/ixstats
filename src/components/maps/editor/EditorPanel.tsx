@@ -128,9 +128,7 @@ export function EditorPanel({
   const [panelHeight, setPanelHeight] = useState(() => {
     if (typeof window === "undefined") return 240;
     const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-height`);
-    return stored
-      ? Math.min(500, Math.max(120, parseInt(stored)))
-      : 240;
+    return stored ? Math.min(500, Math.max(120, parseInt(stored))) : 240;
   });
 
   useEffect(() => {
@@ -197,9 +195,7 @@ export function EditorPanel({
     return (
       <div
         className={`border-border bg-card/75 flex shrink-0 items-center justify-between px-2 py-1.5 backdrop-blur-md ${
-          placement === "bottom"
-            ? "h-9 w-32 border rounded-md"
-            : "h-9 w-full border-b border-t"
+          placement === "bottom" ? "h-9 w-32 rounded-md border" : "h-9 w-full border-t border-b"
         }`}
       >
         <div className="flex items-center gap-1.5 overflow-hidden">
@@ -209,7 +205,7 @@ export function EditorPanel({
             return (
               <tabDef.Icon
                 key={tabId}
-                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                className="text-muted-foreground h-3.5 w-3.5 shrink-0"
                 title={tabDef.label}
               />
             );
@@ -217,7 +213,7 @@ export function EditorPanel({
         </div>
         <button
           onClick={onToggleCollapse}
-          className="text-muted-foreground hover:text-foreground rounded p-0.5 hover:bg-accent/40 transition-colors shrink-0"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent/40 shrink-0 rounded p-0.5 transition-colors"
           title="Expand Panel"
         >
           {placement === "bottom" ? (
@@ -246,7 +242,7 @@ export function EditorPanel({
             <div
               className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
                 placement === "bottom"
-                  ? "top-0 left-0 w-full h-1 cursor-row-resize"
+                  ? "top-0 left-0 h-1 w-full cursor-row-resize"
                   : placement === "left"
                     ? "top-0 right-0 h-full w-1 cursor-col-resize"
                     : "top-0 left-0 h-full w-1 cursor-col-resize"
@@ -272,33 +268,33 @@ export function EditorPanel({
             onTabDrop(tabId);
           }
         }}
-        className={`border-dashed border-2 border-border/40 bg-card/20 flex flex-col items-center justify-center p-4 text-[11px] text-muted-foreground rounded-lg m-2 backdrop-blur-sm transition-colors hover:border-primary/40`}
+        className={`border-border/40 bg-card/20 text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-[11px] backdrop-blur-sm transition-colors`}
         style={{
           width: placement === "bottom" ? "100%" : 140,
           height: placement === "bottom" ? 80 : "100%",
         }}
       >
-        <Layout className="h-4 w-4 mb-1 text-muted-foreground/60" />
+        <Layout className="text-muted-foreground/60 mb-1 h-4 w-4" />
         <span>Drag tab here</span>
         {onChangePlacement && (
-          <div className="flex gap-1 mt-2">
+          <div className="mt-2 flex gap-1">
             <button
               onClick={() => onChangePlacement("left")}
-              className={`p-0.5 rounded ${placement === "left" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
+              className={`rounded p-0.5 ${placement === "left" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
               title="Dock Left"
             >
               <ChevronLeft className="h-3 w-3" />
             </button>
             <button
               onClick={() => onChangePlacement("bottom")}
-              className={`p-0.5 rounded ${placement === "bottom" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
+              className={`rounded p-0.5 ${placement === "bottom" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
               title="Dock Bottom"
             >
               <ChevronDown className="h-3 w-3" />
             </button>
             <button
               onClick={() => onChangePlacement("right")}
-              className={`p-0.5 rounded ${placement === "right" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
+              className={`rounded p-0.5 ${placement === "right" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
               title="Dock Right"
             >
               <ChevronRight className="h-3 w-3" />
@@ -319,10 +315,10 @@ export function EditorPanel({
         <div
           className={`border-border bg-card/75 relative flex flex-col shadow-lg backdrop-blur-md ${
             placement === "bottom"
-              ? "border-t w-full"
+              ? "w-full border-t"
               : placement === "left"
-                ? "border-r h-full"
-                : "border-l h-full"
+                ? "h-full border-r"
+                : "h-full border-l"
           }`}
           style={{
             width: placement === "bottom" ? "100%" : panelWidth,
@@ -333,14 +329,14 @@ export function EditorPanel({
           <div
             className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
               placement === "bottom"
-                ? "top-0 left-0 w-full h-1 cursor-row-resize"
+                ? "top-0 left-0 h-1 w-full cursor-row-resize"
                 : placement === "left"
                   ? "top-0 right-0 h-full w-1 cursor-col-resize"
                   : "top-0 left-0 h-full w-1 cursor-col-resize"
             }`}
             onMouseDown={handleResizeStart}
           />
-          
+
           {/* Tab bar */}
           <div
             onDragOver={(e) => e.preventDefault()}
@@ -352,7 +348,7 @@ export function EditorPanel({
             }}
             className="border-border bg-muted/20 flex h-9 w-full shrink-0 items-center justify-between border-b"
           >
-            <div className="flex h-full min-w-0 flex-1 overflow-x-auto scrollbar-none">
+            <div className="flex h-full min-w-0 flex-1 scrollbar-none overflow-x-auto">
               {tabs.map((tabId) => {
                 const tabDef = TAB_DEFS[tabId];
                 if (!tabDef) return null;
@@ -385,10 +381,10 @@ export function EditorPanel({
 
             {/* Dock selector buttons */}
             {onChangePlacement && (
-              <div className="flex items-center gap-1 border-l border-border px-2 ml-auto shrink-0 py-1 bg-muted/5">
+              <div className="border-border bg-muted/5 ml-auto flex shrink-0 items-center gap-1 border-l px-2 py-1">
                 <button
                   onClick={() => onChangePlacement("left")}
-                  className={`p-1 rounded transition-colors ${
+                  className={`rounded p-1 transition-colors ${
                     placement === "left"
                       ? "bg-primary/20 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
@@ -399,7 +395,7 @@ export function EditorPanel({
                 </button>
                 <button
                   onClick={() => onChangePlacement("bottom")}
-                  className={`p-1 rounded transition-colors ${
+                  className={`rounded p-1 transition-colors ${
                     placement === "bottom"
                       ? "bg-primary/20 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
@@ -410,7 +406,7 @@ export function EditorPanel({
                 </button>
                 <button
                   onClick={() => onChangePlacement("right")}
-                  className={`p-1 rounded transition-colors ${
+                  className={`rounded p-1 transition-colors ${
                     placement === "right"
                       ? "bg-primary/20 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
@@ -427,11 +423,11 @@ export function EditorPanel({
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <div
               key={activeTab}
-              className="h-full flex flex-col min-h-0"
+              className="flex h-full min-h-0 flex-col"
               style={{ animation: "editorTabFadeIn 150ms ease" }}
             >
               {activeTab === "properties" && propertiesContent && (
-                <div className="h-full px-3 py-3 overflow-y-auto">{propertiesContent}</div>
+                <div className="h-full overflow-y-auto px-3 py-3">{propertiesContent}</div>
               )}
               {activeTab === "linkages" && linkagesContent && (
                 <div className="h-full overflow-y-auto">{linkagesContent}</div>
@@ -449,7 +445,7 @@ export function EditorPanel({
                 </div>
               )}
               {activeTab === "features" && featureListContent && (
-                <div className="flex h-full min-h-0 flex-1 flex-col px-3 py-3 overflow-y-auto">
+                <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3">
                   {featuresLoading ? <FeatureListSkeleton /> : featureListContent}
                 </div>
               )}

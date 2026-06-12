@@ -8,10 +8,7 @@ const TextureCardStyled = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "facet-texture-card",
-      className
-    )}
+    className={cn("facet-texture-card", className)}
     style={{ "--radius": "24px" } as React.CSSProperties}
     {...props}
   >
@@ -20,9 +17,7 @@ const TextureCardStyled = React.forwardRef<
       <div className="facet-texture-card-level-2">
         <div className="facet-texture-card-level-3">
           {/* Inner content wrapper */}
-          <div className="facet-texture-card-inner">
-            {children}
-          </div>
+          <div className="facet-texture-card-inner">{children}</div>
         </div>
       </div>
     </div>
@@ -35,14 +30,7 @@ const TextureCard = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode }
 >(({ className, children, ...props }, ref) => {
   return (
-    <div
-      ref={ref}
-      className={cn(
-        "facet-texture-card",
-        className
-      )}
-      {...props}
-    >
+    <div ref={ref} className={cn("facet-texture-card", className)} {...props}>
       <div className="facet-texture-card-level-1">
         <div className="facet-texture-card-level-2">
           <div className="facet-texture-card-level-3">

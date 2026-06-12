@@ -185,12 +185,12 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
       {pendingCoordinates && isPointMode && (
         <div className="flex flex-wrap gap-1.5">
           {isPendingPointInfoLoading && (
-            <span className="bg-muted/40 border border-border/30 text-muted-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px]">
+            <span className="bg-muted/40 border-border/30 text-muted-foreground inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px]">
               <Loader2 className="h-2.5 w-2.5 animate-spin" /> Terrain...
             </span>
           )}
           {pendingPointInfo?.elevation?.zoneName && (
-            <span className="bg-muted/40 border border-border/30 text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
+            <span className="bg-muted/40 border-border/30 text-foreground inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium">
               {pendingPointInfo.elevation.color && (
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-sm"
@@ -206,7 +206,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
             </span>
           )}
           {pendingPointInfo?.climate?.climateName && (
-            <span className="bg-muted/40 border border-border/30 text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium">
+            <span className="bg-muted/40 border-border/30 text-foreground inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium">
               {pendingPointInfo.climate.color && (
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-sm"

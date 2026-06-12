@@ -102,7 +102,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
         </CardDescription>
         <Button
           onClick={onCreateNew}
-          className="gap-1.5 bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90 cursor-pointer"
+          className="cursor-pointer gap-1.5 bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90"
         >
           <Plus className="h-4 w-4" /> Create First Poll
         </Button>
@@ -114,44 +114,44 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
     <div className="space-y-6">
       {/* Premium Frosted Glass Stats Overview */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="border-border/20 bg-card/10 border shadow-sm backdrop-blur-md relative overflow-hidden">
+        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
           <CardContent className="flex items-center justify-between p-5">
             <div className="space-y-1">
               <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
                 Ballots Configured
               </span>
-              <span className="text-2xl font-semibold text-foreground">{polls.length}</span>
+              <span className="text-foreground text-2xl font-semibold">{polls.length}</span>
             </div>
-            <div className="rounded-lg border border-border/40 p-2.5">
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <div className="border-border/40 rounded-lg border p-2.5">
+              <BarChart3 className="text-muted-foreground h-4 w-4" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/20 bg-card/10 border shadow-sm backdrop-blur-md relative overflow-hidden">
+        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
           <CardContent className="flex items-center justify-between p-5">
             <div className="space-y-1">
               <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
                 Active Ballots
               </span>
-              <span className="text-2xl font-semibold text-foreground">{activePollsCount}</span>
+              <span className="text-foreground text-2xl font-semibold">{activePollsCount}</span>
             </div>
-            <div className="rounded-lg border border-border/40 p-2.5">
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <div className="border-border/40 rounded-lg border p-2.5">
+              <CheckCircle2 className="text-muted-foreground h-4 w-4" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/20 bg-card/10 border shadow-sm backdrop-blur-md relative overflow-hidden">
+        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
           <CardContent className="flex items-center justify-between p-5">
             <div className="space-y-1">
               <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
                 Responses Collected
               </span>
-              <span className="text-2xl font-semibold text-foreground">{totalVotesCast}</span>
+              <span className="text-foreground text-2xl font-semibold">{totalVotesCast}</span>
             </div>
-            <div className="rounded-lg border border-border/40 p-2.5">
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="border-border/40 rounded-lg border p-2.5">
+              <Users className="text-muted-foreground h-4 w-4" />
             </div>
           </CardContent>
         </Card>
@@ -175,7 +175,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <CardTitle className="text-sm font-bold text-foreground sm:text-base">
+                      <CardTitle className="text-foreground text-sm font-bold sm:text-base">
                         {poll.question}
                       </CardTitle>
                       <Badge
@@ -189,7 +189,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                             : "Upvote Board"}
                       </Badge>
                       <Badge
-                        className={`text-[9px] font-bold tracking-wider uppercase border ${
+                        className={`border text-[9px] font-bold tracking-wider uppercase ${
                           poll.isActive && !isExpired
                             ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
                             : isExpired
@@ -205,14 +205,18 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       </Badge>
                     </div>
                     {poll.description && (
-                      <CardDescription className="text-xs text-muted-foreground/80">{poll.description}</CardDescription>
+                      <CardDescription className="text-muted-foreground/80 text-xs">
+                        {poll.description}
+                      </CardDescription>
                     )}
                   </div>
 
                   {/* Actions Panel */}
                   <div className="bg-muted/10 border-border/20 flex shrink-0 items-center gap-3.5 self-start rounded-xl border p-2 md:self-auto">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-[10px] font-bold tracking-tight uppercase">Active:</span>
+                      <span className="text-muted-foreground text-[10px] font-bold tracking-tight uppercase">
+                        Active:
+                      </span>
                       <Switch
                         checked={poll.isActive}
                         onCheckedChange={() => handleToggleActive(poll.id, poll.isActive)}
@@ -220,15 +224,15 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                         className="scale-90"
                       />
                     </div>
-                    
+
                     <div className="bg-border/30 h-4 w-px" />
-                    
+
                     {/* Announce / Publish to Discord button */}
                     <Button
                       variant="outline"
                       onClick={() => handlePublishToDiscord(poll.id)}
                       disabled={publishToDiscordMutation.isPending}
-                      className="h-7 gap-1 border-[#ff8a65]/35 text-[#ff8a65] hover:bg-[#ff8a65]/10 text-[10px] font-semibold transition-all duration-200 cursor-pointer"
+                      className="h-7 cursor-pointer gap-1 border-[#ff8a65]/35 text-[10px] font-semibold text-[#ff8a65] transition-all duration-200 hover:bg-[#ff8a65]/10"
                       size="sm"
                     >
                       {publishToDiscordMutation.isPending ? (
@@ -246,7 +250,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       size="icon"
                       onClick={() => handleDelete(poll.id)}
                       disabled={deleteMutation.isPending}
-                      className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 rounded-lg cursor-pointer"
+                      className="h-7 w-7 cursor-pointer rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -304,16 +308,18 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     const percentage = votesCount > 0 ? (optVotes / votesCount) * 100 : 0;
 
                     return (
-                      <div key={opt.id} className="space-y-1.5 group/opt">
+                      <div key={opt.id} className="group/opt space-y-1.5">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-foreground transition-colors group-hover/opt:text-[#ff8a65]">{opt.label}</span>
+                          <span className="text-foreground transition-colors group-hover/opt:text-[#ff8a65]">
+                            {opt.label}
+                          </span>
                           <span className="text-muted-foreground">
                             {optVotes} {optVotes === 1 ? "vote" : "votes"} ({percentage.toFixed(1)}
                             %)
                           </span>
                         </div>
                         {/* Linear Progress Bar */}
-                        <div className="bg-muted/35 h-2 w-full overflow-hidden rounded-full relative">
+                        <div className="bg-muted/35 relative h-2 w-full overflow-hidden rounded-full">
                           <div
                             className="h-full rounded-full bg-[#ff8a65] transition-all duration-500"
                             style={{ width: `${percentage}%` }}
@@ -323,7 +329,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     );
                   })}
                 </div>
-                <div className="border-border/20 text-muted-foreground/70 mt-4 flex justify-between border-t pt-3 text-[10px] font-bold uppercase tracking-tight">
+                <div className="border-border/20 text-muted-foreground/70 mt-4 flex justify-between border-t pt-3 text-[10px] font-bold tracking-tight uppercase">
                   <span>Total Option Votes Cast: {votesCount}</span>
                   {poll.multiple && (
                     <span className="text-[#ff8a65]">Multiple selection enabled</span>

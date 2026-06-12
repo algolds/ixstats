@@ -83,9 +83,9 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                 <img
                   src={selectedResult.flagUrl}
                   alt={`Flag of ${selectedResult.title}`}
-                  className="scale-[1.2] saturate-[0.7] brightness-[0.5] absolute inset-0 h-full w-full object-cover opacity-10 blur-3xl"
+                  className="absolute inset-0 h-full w-full scale-[1.2] object-cover opacity-10 blur-3xl brightness-[0.5] saturate-[0.7]"
                 />
-                <div className="bg-gradient-to-br from-background/90 via-card/95 to-background/90 backdrop-blur absolute inset-0" />
+                <div className="from-background/90 via-card/95 to-background/90 absolute inset-0 bg-gradient-to-br backdrop-blur" />
               </div>
             )}
 
@@ -210,9 +210,7 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                       >
                         <div className="mb-1 flex items-center gap-2">
                           <MapPin className="text-error h-3.5 w-3.5" />
-                          <span className="text-muted-foreground text-xs font-medium">
-                            Capital
-                          </span>
+                          <span className="text-muted-foreground text-xs font-medium">Capital</span>
                         </div>
                         <div
                           className="text-foreground [&_a]:text-brand-primary text-sm font-semibold [&_a]:hover:underline"

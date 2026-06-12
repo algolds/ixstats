@@ -32,7 +32,7 @@ interface SyncHealthStats {
 
 export class SyncHealthMonitor {
   private static ERROR_RATE_THRESHOLD = 0.1; // 10%
-  private static WEBHOOK_ENABLED = env.DISCORD_WEBHOOK_ENABLED === "true";
+  private static WEBHOOK_ENABLED = env.DISCORD_WEBHOOK_ENABLED === "true" && process.env.NODE_ENV !== "test";
   private static WEBHOOK_URL = env.DISCORD_WEBHOOK_URL;
 
   /**

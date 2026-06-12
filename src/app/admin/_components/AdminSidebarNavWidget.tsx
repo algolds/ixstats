@@ -226,6 +226,19 @@ const NAV_GROUPS: NavGroup[] = [
       },
     ],
   },
+  {
+    title: "Labs",
+    items: [
+      {
+        label: "MyLeague Settings",
+        href: "/admin/sports-labs",
+        icon: Trophy,
+        description: "Simulation sandbox & pipeline viz",
+        activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
+        section: "sports-labs",
+      },
+    ],
+  },
 ];
 
 const UNGROUPED_ITEMS: NavItem[] = [
@@ -250,23 +263,29 @@ const UNGROUPED_ITEMS: NavItem[] = [
 function getSectionFromPathname(rawPathname: string): string {
   const pathname = rawPathname.replace(/\/$/, "");
   if (pathname === "/admin") return "dashboard";
-  
+
   // Find in groups
   for (const group of NAV_GROUPS) {
     for (const item of group.items) {
-      if (pathname === withBasePath(item.href) || pathname.startsWith(withBasePath(item.href) + "/")) {
+      if (
+        pathname === withBasePath(item.href) ||
+        pathname.startsWith(withBasePath(item.href) + "/")
+      ) {
         return item.section;
       }
     }
   }
-  
+
   // Find in ungrouped
   for (const item of UNGROUPED_ITEMS) {
-    if (pathname === withBasePath(item.href) || pathname.startsWith(withBasePath(item.href) + "/")) {
+    if (
+      pathname === withBasePath(item.href) ||
+      pathname.startsWith(withBasePath(item.href) + "/")
+    ) {
       return item.section;
     }
   }
-  
+
   return "dashboard";
 }
 
@@ -297,7 +316,13 @@ export function AdminSidebarNavWidget({ onNavigate, activeSection }: AdminSideba
   const isControlled = !!onNavigate;
 
   const renderItem = (item: NavItem) => {
-    const active = isActive(pathname, withBasePath(item.href), item.exact, currentSection, item.section);
+    const active = isActive(
+      pathname,
+      withBasePath(item.href),
+      item.exact,
+      currentSection,
+      item.section
+    );
 
     const handleClick = (e: React.MouseEvent) => {
       // Middle click, Cmd+click, Ctrl+click, Shift+click should behave normally (open in new tab/window)
@@ -325,9 +350,7 @@ export function AdminSidebarNavWidget({ onNavigate, activeSection }: AdminSideba
             {item.label}
           </div>
           {item.description && !active && (
-            <div className="text-muted-foreground/60 truncate text-[9px]">
-              {item.description}
-            </div>
+            <div className="text-muted-foreground/60 truncate text-[9px]">{item.description}</div>
           )}
         </div>
       </Link>
@@ -336,7 +359,6 @@ export function AdminSidebarNavWidget({ onNavigate, activeSection }: AdminSideba
 
   return (
     <nav className="border-border/30 bg-card/40 flex max-h-[calc(100vh-320px)] w-full flex-col rounded-xl border p-2 shadow-sm backdrop-blur-md">
-     
       <div className="thin-scrollbar mt-2 flex-1 [scrollbar-width:thin] space-y-2.5 overflow-y-auto pr-1">
         {/* Render grouped links */}
         {NAV_GROUPS.map((group) => (
@@ -344,17 +366,13 @@ export function AdminSidebarNavWidget({ onNavigate, activeSection }: AdminSideba
             <div className="text-muted-foreground/50 px-2.5 text-[8px] font-bold tracking-wider uppercase select-none">
               {group.title}
             </div>
-            <div className="space-y-0.5 pl-0.5">
-              {group.items.map(renderItem)}
-            </div>
+            <div className="space-y-0.5 pl-0.5">{group.items.map(renderItem)}</div>
           </div>
         ))}
 
         {/* Render ungrouped items */}
         <div className="space-y-1 border-t border-white/5 pt-2">
-          <div className="space-y-0.5">
-            {UNGROUPED_ITEMS.map(renderItem)}
-          </div>
+          <div className="space-y-0.5">{UNGROUPED_ITEMS.map(renderItem)}</div>
         </div>
       </div>
     </nav>

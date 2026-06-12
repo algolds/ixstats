@@ -75,14 +75,13 @@ export function UploadTab({
             onClose();
             notify.success("Image uploaded successfully");
           } else if (response.status === 401) {
-            notify.error(
-              "Authentication required",
-              "You need to be signed in to upload images."
-            );
+            notify.error("Authentication required", "You need to be signed in to upload images.");
           } else if (response.status === 429) {
             notify.error(
               "Upload limit reached",
-              result.retryAfter ? `Please try again in ${result.retryAfter} seconds.` : "Please try again later."
+              result.retryAfter
+                ? `Please try again in ${result.retryAfter} seconds.`
+                : "Please try again later."
             );
           } else {
             notify.error(result.error || "Failed to upload image");
@@ -134,27 +133,30 @@ export function UploadTab({
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-6 overflow-y-auto">
-      <div className="mx-auto w-full max-w-lg mt-6">
+    <div className="flex flex-1 flex-col justify-between overflow-y-auto p-6">
+      <div className="mx-auto mt-6 w-full max-w-lg">
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => document.getElementById("drag-upload-input")?.click()}
           className={cn(
-            "rounded-xl border-2 border-dashed p-10 text-center transition-all cursor-pointer backdrop-blur-md bg-slate-100/50 dark:bg-white/5 flex flex-col items-center justify-center min-h-[200px]",
+            "flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-slate-100/50 p-10 text-center backdrop-blur-md transition-all dark:bg-white/5",
             isDragging
               ? "border-blue-500 bg-blue-500/5 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
               : "border-border/40 hover:border-blue-400/50 hover:bg-slate-200/50 dark:hover:bg-white/10"
           )}
         >
-          <Upload className={cn("mb-4 h-10 w-10 transition-colors", isDragging ? "text-blue-400" : "text-muted-foreground")} />
-          <h3 className="mb-1 text-sm font-semibold text-foreground">
+          <Upload
+            className={cn(
+              "mb-4 h-10 w-10 transition-colors",
+              isDragging ? "text-blue-400" : "text-muted-foreground"
+            )}
+          />
+          <h3 className="text-foreground mb-1 text-sm font-semibold">
             {isDragging ? "Drop your file here" : "Drag, drop or paste your image"}
           </h3>
-          <p className="text-xs text-muted-foreground mb-4">
-            or click to browse local files
-          </p>
+          <p className="text-muted-foreground mb-4 text-xs">or click to browse local files</p>
           <input
             type="file"
             id="drag-upload-input"
@@ -189,7 +191,7 @@ export function UploadTab({
       </div>
 
       {/* Requirements low-contrast subtle footer */}
-      <div className="border-t border-border/5 pt-4 mt-6 text-[10px] text-muted-foreground flex justify-between">
+      <div className="border-border/5 text-muted-foreground mt-6 flex justify-between border-t pt-4 text-[10px]">
         <span>Maximum size: 5MB</span>
         <span>Formats: PNG, JPG, GIF, WEBP, SVG</span>
         <span>Directly embeds in your content</span>

@@ -136,7 +136,6 @@ function DashboardHero({
   const [activeSection, setActiveSection] = useState<HeroSection>("Overview");
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-
   // Toggleable metric views for Overview
   const [metricView, setMetricView] = useState({
     gdp: "perCapita" as "perCapita" | "total",
@@ -589,7 +588,7 @@ function DashboardHero({
 
       <button
         onClick={() => onCollapsedChange(true)}
-        className="relative z-10 text-muted-foreground hover:bg-muted/30 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors"
+        className="text-muted-foreground hover:bg-muted/30 relative z-10 flex w-full cursor-pointer items-center justify-end px-4 py-1.5 text-[10px] transition-colors"
       >
         <ChevronUp className="h-3 w-3 shrink-0" />
       </button>

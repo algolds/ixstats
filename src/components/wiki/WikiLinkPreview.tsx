@@ -70,31 +70,35 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent;
   }
-  
+
   if (node.nodeType !== Node.ELEMENT_NODE) {
     return null;
   }
-  
+
   const element = node as HTMLElement;
   const tagName = element.tagName.toLowerCase();
-  
+
   // Custom Handler: Wiki Card Embed
   if (tagName === "div" && element.getAttribute("data-wikiembed") === "true") {
     const title = element.getAttribute("data-title") || "";
     const summary = element.getAttribute("data-summary") || "";
     const imageUrl = element.getAttribute("data-imageurl") || "";
     const source = element.getAttribute("data-source") || "ixwiki";
-    
+
     return (
       <div key={index} className="my-3 select-none">
-        <a 
-          href={source === "iiwiki" ? `https://iiwiki.com/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}` : `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`}
+        <a
+          href={
+            source === "iiwiki"
+              ? `https://iiwiki.com/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`
+              : `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`
+          }
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-500/[0.03] dark:bg-white/[0.03] backdrop-blur-md shadow-xs hover:border-slate-300 dark:hover:border-white/20 transition-all duration-200"
+          className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-slate-500/[0.03] p-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
         >
-          <div className="flex-1 min-w-0 text-left">
-            <div className="flex items-center gap-1.5 mb-1">
+          <div className="min-w-0 flex-1 text-left">
+            <div className="mb-1 flex items-center gap-1.5">
               <img
                 src="https://cdn.simpleicons.org/wikipedia/1d4e89"
                 className="h-3 w-3 dark:hidden"
@@ -102,24 +106,24 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
               />
               <img
                 src="https://cdn.simpleicons.org/wikipedia/38bdf8"
-                className="h-3 w-3 hidden dark:block"
+                className="hidden h-3 w-3 dark:block"
                 alt=""
               />
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
               </span>
             </div>
-            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate leading-snug">
+            <h4 className="truncate text-sm leading-snug font-semibold text-slate-800 dark:text-slate-200">
               {title}
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5 leading-normal">
+            <p className="mt-0.5 line-clamp-2 text-xs leading-normal text-slate-500 dark:text-slate-400">
               {summary}
             </p>
           </div>
           {imageUrl && (
             <img
               src={imageUrl}
-              className="h-16 w-16 rounded-xl object-cover border border-slate-200 dark:border-white/10"
+              className="h-16 w-16 rounded-xl border border-slate-200 object-cover dark:border-white/10"
               alt=""
             />
           )}
@@ -127,48 +131,48 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
       </div>
     );
   }
-  
+
   // Custom Handler: Wiki Link
   if (tagName === "a" && element.getAttribute("href")?.startsWith("/wiki/")) {
     const href = element.getAttribute("href") || "";
-    const className = element.className || "text-purple-600 dark:text-purple-400 font-semibold underline hover:text-purple-700 dark:hover:text-purple-300 transition-colors";
-    
+    const className =
+      element.className ||
+      "text-purple-600 dark:text-purple-400 font-semibold underline hover:text-purple-700 dark:hover:text-purple-300 transition-colors";
+
     return (
-      <a
-        key={index}
-        href={href}
-        className={className}
-      >
+      <a key={index} href={href} className={className}>
         {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
       </a>
     );
   }
-  
+
   // Standard HTML elements mapping
-  const children = Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx));
+  const children = Array.from(element.childNodes).map((child, childIdx) =>
+    domNodeToReact(child, childIdx)
+  );
   const props: any = { key: index };
-  
+
   if (element.className) props.className = element.className;
   if (element.getAttribute("href")) props.href = element.getAttribute("href");
   if (element.getAttribute("target")) props.target = element.getAttribute("target");
   if (element.getAttribute("rel")) props.rel = element.getAttribute("rel");
   if (element.getAttribute("src")) props.src = element.getAttribute("src");
   if (element.getAttribute("alt")) props.alt = element.getAttribute("alt");
-  
+
   if (element.getAttribute("style")) {
     props.style = parseStyleString(element.getAttribute("style") || "");
   }
-  
+
   if (["br", "hr", "img"].includes(tagName)) {
     return React.createElement(tagName, props);
   }
-  
+
   return React.createElement(tagName, props, children);
 }
 
 export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
     setIsMounted(true);
   }, []);

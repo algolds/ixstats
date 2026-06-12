@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AbilityProvider as CaslAbilityProvider, Can as CaslCan, useAbility as useCaslAbility } from "@casl/react";
+import {
+  AbilityProvider as CaslAbilityProvider,
+  Can as CaslCan,
+  useAbility as useCaslAbility,
+} from "@casl/react";
 import { api } from "~/trpc/react";
 import { type AppAbility, defineAbilityFor } from "~/lib/ability";
 import { useUser } from "@clerk/nextjs";
@@ -33,12 +37,7 @@ export function AbilityProvider({ children }: AbilityProviderProps) {
   useEffect(() => {
     if (user && data) {
       setAbility(
-        defineAbilityFor(
-          data.role,
-          data.permissions,
-          data.membershipTier,
-          data.unlockedTools
-        )
+        defineAbilityFor(data.role, data.permissions, data.membershipTier, data.unlockedTools)
       );
     } else if (isLoaded && !user) {
       // Clear/Reset to guest abilities on logout
@@ -58,9 +57,5 @@ export function AbilityProvider({ children }: AbilityProviderProps) {
     };
   }, [refetch]);
 
-  return (
-    <CaslAbilityProvider value={ability}>
-      {children}
-    </CaslAbilityProvider>
-  );
+  return <CaslAbilityProvider value={ability}>{children}</CaslAbilityProvider>;
 }

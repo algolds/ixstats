@@ -32,13 +32,7 @@ export function FacetTabs({
 
   const indicatorSpringConfig = SPRING_PRESETS[springPreset];
 
-  const {
-    springX,
-    springWidth,
-    springGrab,
-    handlers,
-    handleTabClick,
-  } = useSliderPhysics({
+  const { springX, springWidth, springGrab, handlers, handleTabClick } = useSliderPhysics({
     bounds,
     activeId: activeTab,
     onChange,
@@ -89,7 +83,7 @@ export function FacetTabs({
       onPointerMove={updateSheenFromEvent}
       onPointerLeave={handlePointerLeave}
       className={cn(
-        "relative flex select-none overflow-hidden transition-all duration-300 group/tabs",
+        "group/tabs relative flex overflow-hidden transition-all duration-300 select-none",
         "border border-black/[0.08] dark:border-white/10",
         "shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)]",
         metrics.container,
@@ -97,11 +91,11 @@ export function FacetTabs({
       )}
     >
       {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="absolute inset-0 bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005] rounded-[inherit] overflow-hidden pointer-events-none z-0">
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
         {/* Softened edge sheens */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
+          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
           <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
         </div>
@@ -114,14 +108,14 @@ export function FacetTabs({
           width: springWidth,
         }}
         className={cn(
-          "absolute inset-y-1 rounded-[inherit] blur-md opacity-20 dark:opacity-25 pointer-events-none transition-colors duration-300",
+          "pointer-events-none absolute inset-y-1 rounded-[inherit] opacity-20 blur-md transition-colors duration-300 dark:opacity-25",
           tabs.find((t) => t.id === activeTab)?.glowClassName || toneGlowClasses[tone]
         )}
       />
 
       {/* 3. Frosted glass backdrop blur filter layer (Z-10) */}
-      <div 
-        className="absolute inset-0 z-10 pointer-events-none rounded-[inherit] backdrop-blur-[20px] saturate-[190%]"
+      <div
+        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
         style={{
           WebkitBackdropFilter: "blur(20px) saturate(190%)",
         }}
@@ -136,18 +130,22 @@ export function FacetTabs({
             scale: activeScale,
           }}
           className={cn(
-            "absolute inset-y-1 z-20 border shadow-sm backdrop-blur-sm pointer-events-none transition-colors duration-300 overflow-hidden",
+            "pointer-events-none absolute inset-y-1 z-20 overflow-hidden border shadow-sm backdrop-blur-sm transition-colors duration-300",
             metrics.indicator,
-            tabs.find((t) => t.id === activeTab)?.activeIndicatorClassName || cn(
-              activeIndicatorTone.light,
-              activeIndicatorTone.dark.split(" ").map(c => `dark:${c}`).join(" ")
-            )
+            tabs.find((t) => t.id === activeTab)?.activeIndicatorClassName ||
+              cn(
+                activeIndicatorTone.light,
+                activeIndicatorTone.dark
+                  .split(" ")
+                  .map((c) => `dark:${c}`)
+                  .join(" ")
+              )
           )}
         >
           {/* Frosted Satin Sheen Overlay (follows pointer relative to indicator bounds) */}
           {sheenPos.active && (
             <div
-              className="absolute inset-0 pointer-events-none transition-opacity duration-700 ease-out"
+              className="pointer-events-none absolute inset-0 transition-opacity duration-700 ease-out"
               style={{
                 background: `radial-gradient(circle 130px at var(--sheen-x, 50%) var(--sheen-y, 50%), rgba(255, 255, 255, 0.14) 0%, transparent 100%)`,
                 mixBlendMode: "overlay",
@@ -187,7 +185,7 @@ export function FacetTabs({
               updateSheenFromEvent(e);
             }}
             className={cn(
-              "relative z-30 flex flex-1 items-center justify-center cursor-pointer transition-colors duration-200 select-none outline-none",
+              "relative z-30 flex flex-1 cursor-pointer items-center justify-center transition-colors duration-200 outline-none select-none",
               "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
               metrics.item,
               isActive
@@ -204,8 +202,8 @@ export function FacetTabs({
                   metrics.icon,
                   "transition-colors duration-200",
                   isActive
-                    ? tab.activeIconClassName || (
-                        tone === "neutral"
+                    ? tab.activeIconClassName ||
+                        (tone === "neutral"
                           ? "text-slate-950 dark:text-white"
                           : tone === "accent"
                             ? "text-indigo-500 dark:text-indigo-400"
@@ -213,19 +211,18 @@ export function FacetTabs({
                               ? "text-amber-500 dark:text-amber-400"
                               : tone === "forum"
                                 ? "text-orange-500 dark:text-orange-400"
-                                : "text-red-500 dark:text-red-400"
-                      )
+                                : "text-red-500 dark:text-red-400")
                     : "text-slate-400 dark:text-slate-500"
                 )}
               />
             )}
-            
+
             <span>{tab.label}</span>
 
             {tab.badge !== undefined && (
               <span
                 className={cn(
-                  "ml-1.5 flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none scale-95",
+                  "ml-1.5 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] leading-none font-bold",
                   isActive
                     ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
                     : "bg-black/10 text-slate-600 dark:bg-white/10 dark:text-slate-400"
@@ -240,4 +237,3 @@ export function FacetTabs({
     </div>
   );
 }
-

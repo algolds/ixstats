@@ -337,8 +337,6 @@ export function WikiSourceEditor({
   const wordWrapComp = useRef(new Compartment());
   const autocompleteComp = useRef(new Compartment());
 
-
-
   const handleToggleLineNumbers = useCallback((val: boolean) => {
     setShowLineNumbers(val);
     localStorage.setItem("wikios-editor-line-numbers", String(val));
@@ -353,8 +351,6 @@ export function WikiSourceEditor({
     setEnableAutocomplete(val);
     localStorage.setItem("wikios-editor-autocomplete", String(val));
   }, []);
-
-
 
   // Sync preferences with CodeMirror dynamically
   useEffect(() => {
@@ -1176,8 +1172,6 @@ export function WikiSourceEditor({
                   Editor Settings
                 </div>
 
-
-
                 {/* Line Numbers */}
                 <div className="flex items-center justify-between select-none">
                   <span className="font-medium">Line Numbers</span>
@@ -1281,8 +1275,6 @@ export function WikiSourceEditor({
         onClose={() => setShowMapCoordsModal(false)}
         onInsert={insertAtCursor}
       />
-
-
     </div>
   );
 }

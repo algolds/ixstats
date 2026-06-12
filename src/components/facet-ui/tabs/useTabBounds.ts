@@ -12,7 +12,7 @@ export function useTabBounds(tabs: FacetTabItem[]) {
     const containerRect = containerRef.current.getBoundingClientRect();
     const buttons = containerRef.current.querySelectorAll("button[data-tab-id]");
     const newBounds: Record<string, { left: number; width: number }> = {};
-    
+
     buttons.forEach((btn) => {
       const id = btn.getAttribute("data-tab-id");
       if (id) {
@@ -23,7 +23,7 @@ export function useTabBounds(tabs: FacetTabItem[]) {
         };
       }
     });
-    
+
     setBounds(newBounds);
   }, []);
 

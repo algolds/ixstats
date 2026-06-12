@@ -1688,7 +1688,9 @@ export class IxnayWikiService {
     if (typeof window === "undefined" && this.wikiSource === "ixwiki") {
       try {
         const { getArticleWikitext } = await import("~/lib/wiki-bridge");
-        const fullTemplateName = templateName.startsWith("Template:") ? templateName : `Template:${templateName}`;
+        const fullTemplateName = templateName.startsWith("Template:")
+          ? templateName
+          : `Template:${templateName}`;
         const article = await getArticleWikitext(fullTemplateName, "ixwiki");
         if (article) {
           this.setCacheValue(this.TEMPLATE_CACHE, normName, article.wikitext, this.TEMPLATE_TTL);

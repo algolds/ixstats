@@ -270,7 +270,9 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
                   </p>
                   <Button variant="outline" className="w-full" asChild>
                     <Link
-                      href={createUrl(`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`)}
+                      href={createUrl(
+                        `/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`
+                      )}
                     >
                       <BookOpen className="mr-2 h-4 w-4" />
                       View Wiki Page

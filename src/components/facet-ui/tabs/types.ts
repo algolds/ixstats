@@ -25,4 +25,3 @@ export interface FacetTabsProps {
   springPreset?: SpringPreset;
   className?: string;
 }
-

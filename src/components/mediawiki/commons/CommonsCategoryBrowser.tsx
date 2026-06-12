@@ -99,31 +99,117 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
 const THEMATIC_GROUPS = [
   {
     label: "Government & Royalty",
-    keywords: ["government", "royal", "crown", "throne", "coronation", "flag", "heraldry", "coat of arm", "monarch", "emblem", "sovereign", "capit"],
+    keywords: [
+      "government",
+      "royal",
+      "crown",
+      "throne",
+      "coronation",
+      "flag",
+      "heraldry",
+      "coat of arm",
+      "monarch",
+      "emblem",
+      "sovereign",
+      "capit",
+    ],
   },
   {
     label: "Architecture & Places",
-    keywords: ["architecture", "building", "castle", "bridge", "wall", "house", "palace", "cathedral", "monument", "ruins", "fortification", "landmark"],
+    keywords: [
+      "architecture",
+      "building",
+      "castle",
+      "bridge",
+      "wall",
+      "house",
+      "palace",
+      "cathedral",
+      "monument",
+      "ruins",
+      "fortification",
+      "landmark",
+    ],
   },
   {
     label: "Military & Warfare",
-    keywords: ["military", "uniform", "battle", "ship", "navy", "weapon", "sword", "armour", "war", "army", "soldier"],
+    keywords: [
+      "military",
+      "uniform",
+      "battle",
+      "ship",
+      "navy",
+      "weapon",
+      "sword",
+      "armour",
+      "war",
+      "army",
+      "soldier",
+    ],
   },
   {
     label: "People & Culture",
-    keywords: ["people", "costume", "clothing", "ceremony", "sculpture", "painting", "portrait", "culture", "ethnography", "art", "music"],
+    keywords: [
+      "people",
+      "costume",
+      "clothing",
+      "ceremony",
+      "sculpture",
+      "painting",
+      "portrait",
+      "culture",
+      "ethnography",
+      "art",
+      "music",
+    ],
   },
   {
     label: "Geography & Nature",
-    keywords: ["geography", "map", "landscape", "mountain", "river", "lake", "sea", "ocean", "island", "forest", "terrain", "topo", "region", "border"],
+    keywords: [
+      "geography",
+      "map",
+      "landscape",
+      "mountain",
+      "river",
+      "lake",
+      "sea",
+      "ocean",
+      "island",
+      "forest",
+      "terrain",
+      "topo",
+      "region",
+      "border",
+    ],
   },
   {
     label: "Economy & Trade",
-    keywords: ["economy", "market", "banknote", "money", "coin", "trade", "agriculture", "industry", "business", "company"],
+    keywords: [
+      "economy",
+      "market",
+      "banknote",
+      "money",
+      "coin",
+      "trade",
+      "agriculture",
+      "industry",
+      "business",
+      "company",
+    ],
   },
   {
     label: "Religion",
-    keywords: ["religion", "church", "mosque", "temple", "monastery", "religious", "cathedral", "belief", "deity"],
+    keywords: [
+      "religion",
+      "church",
+      "mosque",
+      "temple",
+      "monastery",
+      "religious",
+      "cathedral",
+      "belief",
+      "deity",
+    ],
   },
 ];
 
@@ -386,7 +472,7 @@ function CategoryGroupSection({
     { enabled: isCommons && isGroupOpen, staleTime: 30 * 60 * 1000 }
   );
 
-  const groupCounts = isCommons ? commonsGroupCounts : (group.counts || {});
+  const groupCounts = isCommons ? commonsGroupCounts : group.counts || {};
 
   return (
     <div className="wikios-commons-group">

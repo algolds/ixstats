@@ -117,7 +117,9 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
         <button
           onClick={() => state.setActiveTab("info")}
           className={`relative px-3 py-2 text-xs font-medium transition-colors ${
-            state.activeTab === "info" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            state.activeTab === "info"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Info

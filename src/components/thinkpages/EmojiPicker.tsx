@@ -440,7 +440,14 @@ interface EmojiPickerProps {
   side?: "top" | "bottom" | "left" | "right";
 }
 
-export function EmojiPicker({ onSelectEmoji, trigger, disabled = false, className, onOpenChange, side = "top" }: EmojiPickerProps) {
+export function EmojiPicker({
+  onSelectEmoji,
+  trigger,
+  disabled = false,
+  className,
+  onOpenChange,
+  side = "top",
+}: EmojiPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"unicode" | "discord">("unicode");
   const [searchQuery, setSearchQuery] = useState("");
@@ -519,8 +526,8 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false, classNam
         className={cn(
           "inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
           isOpen
-            ? "bg-yellow-500/15 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/25 dark:hover:bg-yellow-500/30 hover:text-yellow-700 dark:hover:text-yellow-300"
-            : "text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-300 hover:bg-yellow-500/10 dark:hover:bg-yellow-500/10",
+            ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/25 hover:text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 dark:hover:bg-yellow-500/30 dark:hover:text-yellow-300"
+            : "text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-600 dark:text-yellow-400 dark:hover:bg-yellow-500/10 dark:hover:text-yellow-300",
           disabled && "cursor-not-allowed opacity-50",
           className
         )}
@@ -583,7 +590,11 @@ export function EmojiPicker({ onSelectEmoji, trigger, disabled = false, classNam
             filteredUnicodeCategories.length > 0 ? (
               <div className="space-y-3 pb-8">
                 {filteredUnicodeCategories.map((category, idx) => (
-                  <div key={category.name} id={`emoji-category-${idx}`} className="space-y-1 scroll-mt-2">
+                  <div
+                    key={category.name}
+                    id={`emoji-category-${idx}`}
+                    className="scroll-mt-2 space-y-1"
+                  >
                     <div className="px-1 text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
                       {category.name}
                     </div>

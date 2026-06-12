@@ -32,7 +32,8 @@ export const DRAG_DEAD_ZONE = 3;
 
 // ── Shared Glass Styling (Tailwind Composition) ────────────────────────────
 
-export const GLASS_BACKING = "bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]";
+export const GLASS_BACKING =
+  "bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]";
 export const GLASS_BORDER = "border-black/[0.08] dark:border-white/10";
 export const GLASS_BLUR = "backdrop-blur-[20px] saturate-[190%]";
 export const GLASS_SHADOW = "shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)]";

@@ -149,7 +149,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const currentGdp = rawHistory[rawHistory.length - 1]?.totalGdp || 0;
 
     return (
-      <Card className="glass-hierarchy-child border-blue-500/15 bg-blue-950/10 hover:border-blue-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-blue-500/15 bg-blue-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-blue-500/30">
         <div className="mb-2 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
@@ -174,9 +174,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
         <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
           <span>Recent Trajectory</span>
-          <span className="font-semibold text-white">
-            Current: {formatMoney(currentGdp)}
-          </span>
+          <span className="font-semibold text-white">Current: {formatMoney(currentGdp)}</span>
         </div>
       </Card>
     );
@@ -184,13 +182,14 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 2. Diplomatic Relations Map
   if (type === "diplomatic_map") {
-    const activeRelations = relations.length > 0
-      ? relations.slice(0, 5)
-      : [
-          { targetCountryName: "Kelssek", relationship: "alliance", strength: 85 },
-          { targetCountryName: "Candelaria", relationship: "trade", strength: 70 },
-          { targetCountryName: "Jasĭyun", relationship: "tension", strength: 30 },
-        ];
+    const activeRelations =
+      relations.length > 0
+        ? relations.slice(0, 5)
+        : [
+            { targetCountryName: "Kelssek", relationship: "alliance", strength: 85 },
+            { targetCountryName: "Candelaria", relationship: "trade", strength: 70 },
+            { targetCountryName: "Jasĭyun", relationship: "tension", strength: 30 },
+          ];
 
     const chartData = activeRelations.map((rel: any) => ({
       name: rel.targetCountryName,
@@ -198,7 +197,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     }));
 
     return (
-      <Card className="glass-hierarchy-child border-purple-500/15 bg-purple-950/10 hover:border-purple-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-purple-500/15 bg-purple-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-purple-500/30">
         <div className="mb-2 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <Globe className="h-3.5 w-3.5 text-purple-400" />
@@ -224,9 +223,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
         <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
           <span>Global Network</span>
-          <span className="font-semibold text-white">
-            Top {activeRelations.length} Relations
-          </span>
+          <span className="font-semibold text-white">Top {activeRelations.length} Relations</span>
         </div>
       </Card>
     );
@@ -243,7 +240,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const netTrade = activeTrade.exports - activeTrade.imports;
 
     return (
-      <Card className="glass-hierarchy-child border-orange-500/15 bg-orange-950/10 hover:border-orange-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-orange-500/15 bg-orange-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-orange-500/30">
         <div className="mb-2 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <BarChart3 className="h-3.5 w-3.5 text-orange-400" />
@@ -269,7 +266,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           <span>Net Balance</span>
           <span
             className={cn(
-              "font-bold uppercase tracking-wider",
+              "font-bold tracking-wider uppercase",
               netTrade >= 0 ? "text-emerald-400" : "text-red-400"
             )}
           >
@@ -299,7 +296,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-emerald-500/15 bg-emerald-950/10 hover:border-emerald-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-emerald-500/15 bg-emerald-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30">
         <div className="mb-3 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
@@ -347,7 +344,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-green-500/15 bg-green-950/10 hover:border-green-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-green-500/15 bg-green-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-green-500/30">
         <div className="mb-3 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <Users className="h-3.5 w-3.5 text-green-400" />
@@ -392,7 +389,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-amber-500/15 bg-amber-950/10 hover:border-amber-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-amber-500/15 bg-amber-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-amber-500/30">
         <div className="mb-3 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <BarChart3 className="h-3.5 w-3.5 text-amber-400" />
@@ -444,7 +441,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-teal-500/15 bg-teal-950/10 hover:border-teal-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-teal-500/15 bg-teal-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-teal-500/30">
         <div className="mb-2 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <Briefcase className="h-3.5 w-3.5 text-teal-400" />
@@ -493,7 +490,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-red-500/15 bg-red-950/10 hover:border-red-500/30 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01]">
+      <Card className="glass-hierarchy-child border-red-500/15 bg-red-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-red-500/30">
         <div className="mb-2.5 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
             <Activity className="h-3.5 w-3.5 text-red-400" />

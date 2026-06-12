@@ -398,7 +398,9 @@ export function CountryOverviewPanel({
                 <div className="border-border/50 flex items-center justify-between border-t pt-4">
                   <WikiLinkPreview title={country.name}>
                     <Link
-                      href={createUrl(`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`)}
+                      href={createUrl(
+                        `/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`
+                      )}
                       className="text-primary flex items-center gap-2 text-xs hover:underline"
                     >
                       <BookOpen className="h-3 w-3" />

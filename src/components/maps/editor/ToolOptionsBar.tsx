@@ -340,14 +340,14 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   <ColorPickerEyeDropper />
                 </div>
               </ColorPicker>
-              <div className="mt-3 border-t border-border/40 pt-2 space-y-1">
+              <div className="border-border/40 mt-3 space-y-1 border-t pt-2">
                 <Label className="text-muted-foreground text-[10px]">Suggested Colors</Label>
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {SUGGESTED_LABEL_COLORS.map((col) => (
                     <button
                       key={col.hex}
                       onClick={() => props.onLabelColorChange?.(col.hex)}
-                      className="h-5 w-5 rounded border border-border/40 transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                      className="border-border/40 h-5 w-5 cursor-pointer rounded border transition-all hover:scale-110 active:scale-95"
                       style={{ backgroundColor: col.hex }}
                       title={col.name}
                     />

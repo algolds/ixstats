@@ -38,7 +38,10 @@ import { getAllPresets } from "~/lib/sports";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const statusMeta: Record<string, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
+  active: {
+    label: "Active",
+    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  },
   draft: { label: "Draft", className: "bg-muted/50 text-muted-foreground border-border" },
   archived: { label: "Archived", className: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
   suspended: { label: "Suspended", className: "bg-red-500/10 text-red-400 border-red-500/30" },
@@ -77,10 +80,7 @@ export default function SportsAdminPage() {
     isLoading,
     isError,
     refetch,
-  } = api.sports.getLeagues.useQuery(
-    {},
-    { refetchOnWindowFocus: false },
-  );
+  } = api.sports.getLeagues.useQuery({}, { refetchOnWindowFocus: false });
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const deleteMutation = api.sports.deleteLeague.useMutation({
@@ -95,10 +95,7 @@ export default function SportsAdminPage() {
   });
 
   // ── Derived data ─────────────────────────────────────────────────────────
-  const canonicalLeagues = useMemo(
-    () => leagues?.filter((l) => l.isCanonical) ?? [],
-    [leagues],
-  );
+  const canonicalLeagues = useMemo(() => leagues?.filter((l) => l.isCanonical) ?? [], [leagues]);
 
   const handleDelete = () => {
     if (deleteTarget) {
@@ -115,10 +112,7 @@ export default function SportsAdminPage() {
   };
 
   // ── Shared table rendering ──────────────────────────────────────────────
-  const renderTable = (
-    leagueList: typeof leagues,
-    showManageButton: boolean,
-  ) => {
+  const renderTable = (leagueList: typeof leagues, showManageButton: boolean) => {
     if (isLoading) {
       return (
         <div className="space-y-3 py-6">
@@ -144,7 +138,7 @@ export default function SportsAdminPage() {
     if (!leagueList || leagueList.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Trophy className="h-10 w-10 text-muted-foreground/40" />
+          <Trophy className="text-muted-foreground/40 h-10 w-10" />
           <p className="text-muted-foreground text-sm">No leagues found.</p>
         </div>
       );
@@ -191,9 +185,7 @@ export default function SportsAdminPage() {
                     {archetype.label}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {league.teamCount}
-                </TableCell>
+                <TableCell className="text-right tabular-nums">{league.teamCount}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className={cn("text-[10px]", status.className)}>
                     {status.label}
@@ -214,19 +206,11 @@ export default function SportsAdminPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleView(league.id)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleView(league.id)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                     {showManageButton && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleManage(league.id)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleManage(league.id)}>
                         Manage
                       </Button>
                     )}
@@ -256,17 +240,15 @@ export default function SportsAdminPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="facet-hierarchy-parent rounded-xl border border-border/60 bg-card/40 p-6">
+      <div className="facet-hierarchy-parent border-border/60 bg-card/40 rounded-xl border p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 bg-muted/30">
-              <Trophy className="h-6 w-6 text-primary" />
+            <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border">
+              <Trophy className="text-primary h-6 w-6" />
             </div>
             <div>
               <h1 className="text-foreground text-2xl font-bold">Sports Admin</h1>
-              <p className="text-muted-foreground text-sm">
-                Manage canonical leagues for MyLeague
-              </p>
+              <p className="text-muted-foreground text-sm">Manage canonical leagues for MyLeague</p>
             </div>
           </div>
           <Button onClick={() => setCreatorOpen(true)} className="gap-2">
@@ -277,7 +259,7 @@ export default function SportsAdminPage() {
 
         {/* Stats row */}
         <div className="mt-5 grid grid-cols-3 gap-3">
-          <div className="facet-hierarchy-child rounded-lg border border-border/50 bg-card/30 p-3">
+          <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
             <span className="text-muted-foreground text-[11px] font-medium uppercase">
               Total Leagues
             </span>
@@ -296,19 +278,17 @@ export default function SportsAdminPage() {
             {isLoading ? (
               <Skeleton className="mt-1 h-7 w-12" />
             ) : (
-              <div className="text-purple-400 mt-0.5 text-xl font-bold tabular-nums">
+              <div className="mt-0.5 text-xl font-bold text-purple-400 tabular-nums">
                 {totalCanonical}
               </div>
             )}
           </div>
           <div className="facet-hierarchy-child rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-            <span className="text-muted-foreground text-[11px] font-medium uppercase">
-              Active
-            </span>
+            <span className="text-muted-foreground text-[11px] font-medium uppercase">Active</span>
             {isLoading ? (
               <Skeleton className="mt-1 h-7 w-12" />
             ) : (
-              <div className="text-emerald-400 mt-0.5 text-xl font-bold tabular-nums">
+              <div className="mt-0.5 text-xl font-bold text-emerald-400 tabular-nums">
                 {activeLeagues}
               </div>
             )}
@@ -349,8 +329,8 @@ export default function SportsAdminPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                  <Shield className="h-8 w-8 text-primary" />
+                <div className="bg-primary/10 flex h-16 w-16 items-center justify-center rounded-full">
+                  <Shield className="text-primary h-8 w-8" />
                 </div>
                 <div>
                   <p className="text-foreground font-medium">Create a Canonical League</p>
@@ -386,12 +366,16 @@ export default function SportsAdminPage() {
             <DialogTitle>Delete League</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete{" "}
-              <span className="text-foreground font-semibold">{deleteTarget?.name}</span>?
-              This action cannot be undone.
+              <span className="text-foreground font-semibold">{deleteTarget?.name}</span>? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)} disabled={deleteMutation.isPending}>
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleteMutation.isPending}
+            >
               Cancel
             </Button>
             <Button

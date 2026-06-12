@@ -4,13 +4,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "motion/react";
 
-import {
-  Users,
-  Rss,
-  BookOpen,
-  Settings,
-  Globe,
-} from "lucide-react";
+import { Users, Rss, BookOpen, Settings, Globe } from "lucide-react";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -181,7 +175,7 @@ export function UnifiedDashboardSection({
           {/* Feed stream (left 2/3) */}
           <div className="facet-layout-main-span-2 space-y-5">
             {/* Feed Tab Bar */}
-            <motion.div variants={staggerItem} className="flex gap-2 items-center">
+            <motion.div variants={staggerItem} className="flex items-center gap-2">
               <FacetTabs
                 tabs={TABS}
                 activeTab={activeTab}
@@ -194,7 +188,7 @@ export function UnifiedDashboardSection({
               {isSignedIn && (
                 <button
                   onClick={() => setIsAccountModalOpen(true)}
-                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-all duration-300 bg-black/[0.04] dark:bg-white/[0.03] border border-black/[0.08] dark:border-white/10 shadow-sm hover:bg-black/[0.08] dark:hover:bg-white/[0.08]"
+                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] shadow-sm transition-all duration-300 hover:bg-black/[0.08] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.08]"
                   title="Feed & Account Settings"
                 >
                   <Settings className="h-3.5 w-3.5" />
@@ -329,7 +323,6 @@ export function UnifiedDashboardSection({
                 </CutoutCardContent>
               </CutoutCard>
             )}
-
           </div>
         </div>
       </motion.div>

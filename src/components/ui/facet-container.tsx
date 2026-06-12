@@ -4,7 +4,7 @@ import React, { forwardRef, useEffect, useRef, useState } from "react";
 import { cn } from "~/lib/utils";
 
 // Facet design variants matching the dashboard and indicators
-export type FacetVariant = "base" | "mycountry" | "global" | "eci" | "sdi" | "forum";
+export type FacetVariant = "base" | "mycountry" | "global" | "overview" | "economy" | "military" | "cultural" | "security" | "forum" | "builder";
 
 // Volumetric Z-depth levels for layering
 export type FacetDepth = 1 | 2 | 3 | 4;
@@ -241,7 +241,7 @@ export const FacetNavigation = forwardRef<
 FacetNavigation.displayName = "FacetNavigation";
 
 // ──────────────────────────────────────────────────────────────────────────
-   /* BACKWARDS COMPATIBILITY LAYER EXPORTS */
+/* BACKWARDS COMPATIBILITY LAYER EXPORTS */
 // ──────────────────────────────────────────────────────────────────────────
 
 /** @deprecated Use FacetContainer instead */

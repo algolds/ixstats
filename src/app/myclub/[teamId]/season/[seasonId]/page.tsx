@@ -45,8 +45,8 @@ const SPORT_EMOJIS: Record<string, string> = {
 
 const MATCH_STATUS_ICON: Record<string, React.ReactNode> = {
   scheduled: <Clock className="text-muted-foreground h-4 w-4" />,
-  in_progress: <Clock className="text-amber-500 h-4 w-4 animate-pulse" />,
-  completed: <CheckCircle2 className="text-emerald-500 h-4 w-4" />,
+  in_progress: <Clock className="h-4 w-4 animate-pulse text-amber-500" />,
+  completed: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
 };
 
 const MATCH_STATUS_LABEL: Record<string, string> = {
@@ -96,15 +96,9 @@ function MatchCard({
   const teamScore = isHome ? homeScore : awayScore;
   const opponentScore = isHome ? awayScore : homeScore;
   const won =
-    isCompleted &&
-    teamScore != null &&
-    opponentScore != null &&
-    teamScore > opponentScore;
+    isCompleted && teamScore != null && opponentScore != null && teamScore > opponentScore;
   const lost =
-    isCompleted &&
-    teamScore != null &&
-    opponentScore != null &&
-    teamScore < opponentScore;
+    isCompleted && teamScore != null && opponentScore != null && teamScore < opponentScore;
 
   return (
     <motion.div
@@ -116,15 +110,15 @@ function MatchCard({
         className={cn(
           "overflow-hidden transition-colors",
           won && "border-emerald-500/30 bg-emerald-500/5",
-          lost && "border-red-500/20 bg-red-500/5",
+          lost && "border-red-500/20 bg-red-500/5"
         )}
       >
         <CardContent className="flex items-center gap-4 py-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
             {won ? (
-              <ArrowUp className="text-emerald-500 h-5 w-5" />
+              <ArrowUp className="h-5 w-5 text-emerald-500" />
             ) : lost ? (
-              <ArrowDown className="text-red-500 h-5 w-5" />
+              <ArrowDown className="h-5 w-5 text-red-500" />
             ) : (
               <Minus className="text-muted-foreground h-5 w-5" />
             )}
@@ -132,17 +126,15 @@ function MatchCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className={cn("font-medium text-sm", isHome && "font-semibold")}>
+              <p className={cn("text-sm font-medium", isHome && "font-semibold")}>
                 {isHome ? homeTeam?.name : awayTeam?.name}
               </p>
               {isCompleted && (
-                <span className="text-lg font-bold tabular-nums tracking-tight">
+                <span className="text-lg font-bold tracking-tight tabular-nums">
                   {teamScore} - {opponentScore}
                 </span>
               )}
-              {!isCompleted && (
-                <span className="text-muted-foreground text-xs">vs</span>
-              )}
+              {!isCompleted && <span className="text-muted-foreground text-xs">vs</span>}
               <p className="text-muted-foreground text-sm">
                 {isHome ? awayTeam?.name : homeTeam?.name}
               </p>
@@ -153,10 +145,7 @@ function MatchCard({
             </p>
           </div>
 
-          <Badge
-            variant={isCompleted ? "outline" : "secondary"}
-            className="shrink-0 gap-1 text-xs"
-          >
+          <Badge variant={isCompleted ? "outline" : "secondary"} className="shrink-0 gap-1 text-xs">
             {MATCH_STATUS_ICON[status] ?? null}
             {MATCH_STATUS_LABEL[status] ?? status}
           </Badge>
@@ -174,17 +163,12 @@ export default function MyClubSeasonDetailPage() {
 
   const { data: season, isLoading } = api.sports.getSeason.useQuery(
     { id: seasonId },
-    { enabled: !!seasonId },
+    { enabled: !!seasonId }
   );
-  const { data: history } = api.sports.getTeamHistory.useQuery(
-    { teamId },
-    { enabled: !!teamId },
-  );
+  const { data: history } = api.sports.getTeamHistory.useQuery({ teamId }, { enabled: !!teamId });
 
   usePageTitle({
-    title: season
-      ? `MyClub - Season ${season.seasonNumber}`
-      : "MyClub - Season",
+    title: season ? `MyClub - Season ${season.seasonNumber}` : "MyClub - Season",
   });
 
   if (isLoading) return <SeasonDetailSkeleton />;
@@ -217,12 +201,12 @@ export default function MyClubSeasonDetailPage() {
   const isCompleted = season.status === "completed";
 
   const teamStanding = season.standings?.find(
-    (s: Record<string, unknown>) => (s.team as Record<string, string>)?.id === teamId,
+    (s: Record<string, unknown>) => (s.team as Record<string, string>)?.id === teamId
   ) as Record<string, number> | undefined;
 
   const standingIndex = season.standings
     ? (season.standings as unknown[]).findIndex(
-        (s: Record<string, unknown>) => (s.team as Record<string, string>)?.id === teamId,
+        (s: Record<string, unknown>) => (s.team as Record<string, string>)?.id === teamId
       )
     : -1;
   const finishPosition = standingIndex >= 0 ? standingIndex + 1 : null;
@@ -242,9 +226,7 @@ export default function MyClubSeasonDetailPage() {
         })
     : [];
 
-  const seasonHistoryEntry = history?.find(
-    (h) => h.seasonId === seasonId,
-  );
+  const seasonHistoryEntry = history?.find((h) => h.seasonId === seasonId);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -282,8 +264,7 @@ export default function MyClubSeasonDetailPage() {
           <p className="text-muted-foreground mt-1 text-sm">
             <Calendar className="mr-1 inline h-3.5 w-3.5" />
             Started {new Date(season.startIxTime).toLocaleDateString()}
-            {season.endIxTime &&
-              ` \u2014 Ended ${new Date(season.endIxTime).toLocaleDateString()}`}
+            {season.endIxTime && ` \u2014 Ended ${new Date(season.endIxTime).toLocaleDateString()}`}
           </p>
         )}
       </div>
@@ -292,20 +273,18 @@ export default function MyClubSeasonDetailPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="from-amber-500/10 via-yellow-500/10 to-orange-500/10 mb-6 rounded-xl border border-amber-500/30 bg-gradient-to-r p-6 text-center"
+          className="mb-6 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 p-6 text-center"
         >
           <Trophy className="mx-auto mb-2 h-10 w-10 text-amber-500" />
           <h2 className="text-2xl font-bold">{season.champion.name}</h2>
-          <p className="text-muted-foreground mt-1">
-            Season {season.seasonNumber} Champion
-          </p>
+          <p className="text-muted-foreground mt-1">Season {season.seasonNumber} Champion</p>
         </motion.div>
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Record
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums">
@@ -317,36 +296,32 @@ export default function MyClubSeasonDetailPage() {
         </Card>
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Points
             </p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">
-              {teamStanding?.points ?? "-"}
-            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{teamStanding?.points ?? "-"}</p>
           </CardContent>
         </Card>
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               PF / PA
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums">
-              {teamStanding
-                ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}`
-                : "-"}
+              {teamStanding ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}` : "-"}
             </p>
           </CardContent>
         </Card>
         <Card className="facet-hierarchy-child">
           <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Position
             </p>
             <p className="mt-1 flex items-center justify-center gap-1 text-2xl font-bold">
               {finishPosition ? (
                 <>
                   #{finishPosition}
-                  {finishPosition === 1 && <Trophy className="text-amber-500 h-5 w-5" />}
+                  {finishPosition === 1 && <Trophy className="h-5 w-5 text-amber-500" />}
                 </>
               ) : (
                 "-"
@@ -381,9 +356,7 @@ export default function MyClubSeasonDetailPage() {
 
         <TabsContent value="matches">
           <div>
-            <h2 className="mb-4 text-lg font-semibold">
-              Match Results ({teamMatches.length})
-            </h2>
+            <h2 className="mb-4 text-lg font-semibold">Match Results ({teamMatches.length})</h2>
             {teamMatches.length > 0 ? (
               <div className="space-y-2">
                 {teamMatches.map((match, i) => (
@@ -438,7 +411,7 @@ export default function MyClubSeasonDetailPage() {
                         <TableRow
                           key={(s.team as Record<string, string>).id}
                           className={cn(
-                            (s.team as Record<string, string>).id === teamId && "bg-muted/50",
+                            (s.team as Record<string, string>).id === teamId && "bg-muted/50"
                           )}
                         >
                           <TableCell className="font-medium">{i + 1}</TableCell>
@@ -460,14 +433,10 @@ export default function MyClubSeasonDetailPage() {
                           <TableCell className="text-center font-bold">
                             {s.points as number}
                           </TableCell>
-                          <TableCell className="text-center">
-                            {s.pointsFor as number}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {s.pointsAgainst as number}
-                          </TableCell>
+                          <TableCell className="text-center">{s.pointsFor as number}</TableCell>
+                          <TableCell className="text-center">{s.pointsAgainst as number}</TableCell>
                         </TableRow>
-                      ),
+                      )
                     )}
                   </TableBody>
                 </Table>
@@ -490,47 +459,39 @@ export default function MyClubSeasonDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <Card className="border-0 bg-muted/30">
+                  <Card className="bg-muted/30 border-0">
                     <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">
-                        Wins
-                      </p>
+                      <p className="text-muted-foreground text-xs font-medium uppercase">Wins</p>
                       <p className="mt-1 text-3xl font-bold tabular-nums">
                         {seasonHistoryEntry.wins}
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 bg-muted/30">
+                  <Card className="bg-muted/30 border-0">
                     <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">
-                        Losses
-                      </p>
+                      <p className="text-muted-foreground text-xs font-medium uppercase">Losses</p>
                       <p className="mt-1 text-3xl font-bold tabular-nums">
                         {seasonHistoryEntry.losses}
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 bg-muted/30">
+                  <Card className="bg-muted/30 border-0">
                     <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">
-                        Draws
-                      </p>
+                      <p className="text-muted-foreground text-xs font-medium uppercase">Draws</p>
                       <p className="mt-1 text-3xl font-bold tabular-nums">
                         {seasonHistoryEntry.draws}
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 bg-muted/30">
+                  <Card className="bg-muted/30 border-0">
                     <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">
-                        Points
-                      </p>
+                      <p className="text-muted-foreground text-xs font-medium uppercase">Points</p>
                       <p className="mt-1 text-3xl font-bold tabular-nums">
                         {seasonHistoryEntry.points}
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 bg-muted/30">
+                  <Card className="bg-muted/30 border-0">
                     <CardContent className="pt-6 text-center">
                       <p className="text-muted-foreground text-xs font-medium uppercase">
                         Points For
@@ -540,7 +501,7 @@ export default function MyClubSeasonDetailPage() {
                       </p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 bg-muted/30">
+                  <Card className="bg-muted/30 border-0">
                     <CardContent className="pt-6 text-center">
                       <p className="text-muted-foreground text-xs font-medium uppercase">
                         Points Against

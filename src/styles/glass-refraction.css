@@ -3,10 +3,10 @@
    ========================================================================== */
 
 @import "./facet/tokens.css";
-@import "./facet/base.css";
 @import "./facet/hierarchy.css";
 @import "./facet/effects.css";
 @import "./facet/materials.css";
+@import "./facet/base.css";
 @import "./facet/variants.css";
 @import "./facet/layout.css";
 @import "./facet/integrations.css";

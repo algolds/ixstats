@@ -965,7 +965,6 @@ export function WikiLoreTab({
         </div>
       )}
 
-
       {/* Day Details Modal */}
       <WikiLoreDayModal
         isOpen={calendarModalOpen}

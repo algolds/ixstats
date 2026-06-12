@@ -17,21 +17,13 @@ import { LorewardsBotSection } from "./platform/LorewardsBotSection";
 export function BotIntegrationCenter() {
   usePageTitle({ title: "Admin - Bot Settings" });
 
-  const {
-    config,
-    setConfig,
-    timeState,
-    importState,
-    setImportState,
-    actionState,
-    setActionState,
-  } = useAdminState();
+  const { config, setConfig, timeState, importState, setImportState, actionState, setActionState } =
+    useAdminState();
 
   // tRPC queries
-  const { refetch: refetchStatus } = api.admin.getSystemStatus.useQuery(
-    undefined,
-    { enabled: false }
-  );
+  const { refetch: refetchStatus } = api.admin.getSystemStatus.useQuery(undefined, {
+    enabled: false,
+  });
 
   const { data: botStatus, refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(
     undefined,

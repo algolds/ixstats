@@ -98,13 +98,10 @@ export function MapContainer({
   } = useMapPinInfo();
 
   // Fetch user profile to get countryId first
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    undefined,
-    {
-      staleTime: 5 * 60_000,
-      retry: false,
-    }
-  );
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
   const userCountryId = userProfile?.countryId ?? null;
 
   // 1. Hook: Manage State (selections, controls, UI panels)

@@ -24,19 +24,23 @@ export const sizeClasses = {
 
 export const toneIndicatorStyles = {
   neutral: {
-    light: "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-slate-900",
+    light:
+      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-slate-900",
     dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-white",
   },
   accent: {
-    light: "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-indigo-700",
+    light:
+      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-indigo-700",
     dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-indigo-300",
   },
   mycountry: {
-    light: "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-amber-700",
+    light:
+      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-amber-700",
     dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-amber-300",
   },
   forum: {
-    light: "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-orange-700",
+    light:
+      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-orange-700",
     dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-orange-300",
   },
   sdi: {
@@ -65,4 +69,3 @@ export const grabSpringConfig = {
 
 export const DRAG_ELASTICITY = SHARED_DRAG_ELASTICITY;
 export const DRAG_DEAD_ZONE = SHARED_DRAG_DEAD_ZONE;
-

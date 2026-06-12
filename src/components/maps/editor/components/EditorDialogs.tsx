@@ -104,7 +104,7 @@ export function EditorDialogs({
               <button
                 onClick={handleConfirmBorderSave}
                 disabled={!saveReason.trim() || isSubmitting}
-                className="disabled:text-muted-foreground/50 flex items-center gap-1.5 rounded-lg bg-blue-650 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-blue-600/40"
+                className="disabled:text-muted-foreground/50 bg-blue-650 flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-blue-600/40"
               >
                 {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Confirm & Save

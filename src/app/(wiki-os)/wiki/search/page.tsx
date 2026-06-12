@@ -61,7 +61,9 @@ export default function SearchPage() {
               {results.map((item) => (
                 <li key={item.title} className="wikios-search-result-item">
                   <Link
-                    href={withBasePath(`/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`)}
+                    href={withBasePath(
+                      `/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`
+                    )}
                     className="wikios-search-result-title-link"
                   >
                     {item.title}

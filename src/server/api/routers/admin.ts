@@ -3647,7 +3647,7 @@ export const adminRouter = createTRPCRouter({
             { component: { contains: "Unhandled Promise Rejection", mode: "insensitive" } },
             { errorName: { not: null } },
             { errorMessage: { not: null } },
-            { level: { in: ["ERROR", "CRITICAL", "FATAL"] } }
+            { level: { in: ["ERROR", "CRITICAL", "FATAL"] } },
           ];
         }
 
@@ -3661,10 +3661,7 @@ export const adminRouter = createTRPCRouter({
           ];
           if (where.OR) {
             // Combine nextJsErrors conditions and search filters
-            where.AND = [
-              { OR: where.OR },
-              { OR: searchFilter }
-            ];
+            where.AND = [{ OR: where.OR }, { OR: searchFilter }];
             delete where.OR;
           } else {
             where.OR = searchFilter;

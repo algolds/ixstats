@@ -94,11 +94,15 @@ export async function setExchangeConfig(
   db: PrismaClient,
   field: keyof ExchangeConfig,
   value: number,
-  description?: string,
+  description?: string
 ): Promise<void> {
   await db.systemConfig.upsert({
     where: { key: KEY[field] },
-    create: { key: KEY[field], value: String(value), description: description ?? `Exchange: ${field}` },
+    create: {
+      key: KEY[field],
+      value: String(value),
+      description: description ?? `Exchange: ${field}`,
+    },
     update: { value: String(value) },
   });
   cache = null;
@@ -107,7 +111,7 @@ export async function setExchangeConfig(
 /** Read a cron last-run IxTime (ms). Returns null if never run. */
 export async function getExchangeState(
   db: PrismaClient,
-  key: (typeof EXCHANGE_STATE_KEYS)[keyof typeof EXCHANGE_STATE_KEYS],
+  key: (typeof EXCHANGE_STATE_KEYS)[keyof typeof EXCHANGE_STATE_KEYS]
 ): Promise<number | null> {
   const row = await db.systemConfig.findUnique({ where: { key } });
   if (!row) return null;
@@ -119,7 +123,7 @@ export async function getExchangeState(
 export async function setExchangeState(
   db: PrismaClient,
   key: (typeof EXCHANGE_STATE_KEYS)[keyof typeof EXCHANGE_STATE_KEYS],
-  ixTime: number,
+  ixTime: number
 ): Promise<void> {
   await db.systemConfig.upsert({
     where: { key },

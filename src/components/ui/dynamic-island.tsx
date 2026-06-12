@@ -613,7 +613,7 @@ const DynamicIslandContent = ({
           {!isCompact && (
             <motion.div
               key="card-backdrop-scrim"
-              className="absolute inset-0 z-0 bg-white/80 dark:bg-black/65 backdrop-blur-[6px] pointer-events-none rounded-[inherit]"
+              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-white/80 backdrop-blur-[6px] dark:bg-black/65"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -761,7 +761,7 @@ const DynamicDescription = ({ className, children }: MotionProps) => {
 };
 
 // ──────────────────────────────────────────────────────────────────────────
-   /* HALO BRAND ALIAS EXPORTS */
+/* HALO BRAND ALIAS EXPORTS */
 // ──────────────────────────────────────────────────────────────────────────
 
 /** @deprecated Use Halo instead */

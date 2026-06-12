@@ -143,7 +143,8 @@ export async function POST(request: NextRequest) {
 
     // Ensure uploads directory exists
     const uploadsDir =
-      process.env.UPLOAD_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "images", "uploads");
+      process.env.UPLOAD_DIR ||
+      path.join(/*turbopackIgnore: true*/ process.cwd(), "public", "images", "uploads");
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
       console.log(`[ImageUpload] Created directory: ${uploadsDir}`);

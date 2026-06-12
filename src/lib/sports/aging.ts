@@ -67,7 +67,7 @@ export function processAging(args: {
       player.careerStage,
       newAge,
       teamCoachDev,
-      args.seed + player.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
+      args.seed + player.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)
     );
 
     const shift = STAGE_RATING_SHIFTS[newStage];
@@ -98,7 +98,7 @@ export function processAging(args: {
       coach.careerStage,
       newAge,
       selfDev,
-      args.seed + 100000 + coach.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
+      args.seed + 100000 + coach.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)
     );
 
     const shift = COACH_STAGE_RATING_SHIFTS[newCoachStage];

@@ -133,7 +133,10 @@ export function GlassBarChart({
     return value;
   };
 
-  const gradientId = useMemo(() => `bar-grad-${theme}-${Math.random().toString(36).substr(2, 9)}`, [theme]);
+  const gradientId = useMemo(
+    () => `bar-grad-${theme}-${Math.random().toString(36).substr(2, 9)}`,
+    [theme]
+  );
 
   // Map theme to premium gradient stop colors
   const themeColors = {
@@ -155,7 +158,10 @@ export function GlassBarChart({
       theme={theme}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: hideXAxis ? 10 : 20, right: 10, left: hideYAxis ? 10 : 20, bottom: 5 }}>
+        <BarChart
+          data={data}
+          margin={{ top: hideXAxis ? 10 : 20, right: 10, left: hideYAxis ? 10 : 20, bottom: 5 }}
+        >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={themeColors[0]} stopOpacity={1} />
@@ -210,11 +216,15 @@ export function GlassBarChart({
               </Bar>
             ))
           ) : (
-            <Bar dataKey={yKey} fill={colors ? colors[0] : `url(#${gradientId})`} radius={[4, 4, 0, 0]}>
+            <Bar
+              dataKey={yKey}
+              fill={colors ? colors[0] : `url(#${gradientId})`}
+              radius={[4, 4, 0, 0]}
+            >
               {data.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={colors ? colors[index % colors.length] : `url(#${gradientId})`} 
+                <Cell
+                  key={`cell-${index}`}
+                  fill={colors ? colors[index % colors.length] : `url(#${gradientId})`}
                 />
               ))}
             </Bar>
@@ -252,16 +262,20 @@ export function GlassLineChart({
   }, [colors, yKey]);
 
   const ChartComponent = area ? AreaChart : LineChart;
-  const gradientId = useMemo(() => `area-grad-${theme}-${Math.random().toString(36).substr(2, 9)}`, [theme]);
+  const gradientId = useMemo(
+    () => `area-grad-${theme}-${Math.random().toString(36).substr(2, 9)}`,
+    [theme]
+  );
 
   // Stroke color for the line based on the theme
-  const themeStrokeColor = {
-    default: "#94A3B8",
-    blue: "#3B82F6",
-    purple: "#A855F7",
-    emerald: "#10B981",
-    gold: "#F59E0B",
-  }[theme] || "#94A3B8";
+  const themeStrokeColor =
+    {
+      default: "#94A3B8",
+      blue: "#3B82F6",
+      purple: "#A855F7",
+      emerald: "#10B981",
+      gold: "#F59E0B",
+    }[theme] || "#94A3B8";
 
   return (
     <GlassChart
@@ -274,7 +288,10 @@ export function GlassLineChart({
       theme={theme}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <ChartComponent data={data} margin={{ top: hideXAxis ? 10 : 20, right: 10, left: hideYAxis ? 10 : 20, bottom: 5 }}>
+        <ChartComponent
+          data={data}
+          margin={{ top: hideXAxis ? 10 : 20, right: 10, left: hideYAxis ? 10 : 20, bottom: 5 }}
+        >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={themeStrokeColor} stopOpacity={0.4} />
@@ -415,4 +432,3 @@ export function GlassPieChart({
     </GlassChart>
   );
 }
-

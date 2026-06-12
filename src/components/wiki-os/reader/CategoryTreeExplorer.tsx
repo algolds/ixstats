@@ -46,9 +46,7 @@ function CategoryNode({ title, fullTitle, depth }: CategoryNodeProps) {
           <Folder size={14} className="wikios-tree-icon" />
         )}
         <Link
-          href={withBasePath(
-            `/wiki/categories/${encodeURIComponent(title.replace(/ /g, "_"))}`
-          )}
+          href={withBasePath(`/wiki/categories/${encodeURIComponent(title.replace(/ /g, "_"))}`)}
           className="wikios-tree-label"
           onClick={(e) => e.stopPropagation()}
         >

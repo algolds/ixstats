@@ -44,7 +44,7 @@ export function NewVersionNotice() {
       </div>
       <button
         onClick={dismiss}
-        className="relative z-10 text-muted-foreground hover:text-foreground rounded-lg p-1 transition-colors hover:bg-white/5"
+        className="text-muted-foreground hover:text-foreground relative z-10 rounded-lg p-1 transition-colors hover:bg-white/5"
         title="Dismiss"
       >
         <X className="h-4 w-4" />

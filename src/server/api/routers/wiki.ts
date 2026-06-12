@@ -321,13 +321,16 @@ export const wikiRouter = createTRPCRouter({
         try {
           const { getIxWikiPool } = await import("~/lib/wiki-bridge");
           const pool = getIxWikiPool();
-          const [rows] = await pool.query<any[]>(`
+          const [rows] = await pool.query<any[]>(
+            `
             SELECT cat_title AS name, cat_files AS fileCount
             FROM category
             WHERE cat_files > 0
             ORDER BY cat_files DESC
             LIMIT ?
-          `, [input.limit]);
+          `,
+            [input.limit]
+          );
           return (rows as any[]).map((r) => ({
             name: String(r.name).replace(/_/g, " "),
             fileCount: Number(r.fileCount),

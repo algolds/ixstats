@@ -75,9 +75,9 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
           // Calculate displacement from center to drive shadow direction offsets (e.g. for paper height effect)
           const centerX = rect.width / 2;
           const centerY = rect.height / 2;
-          
+
           // Max displacement shift is 8px for tactile depth
-          const maxDisplacement = 8; 
+          const maxDisplacement = 8;
           const diffX = ((centerX - rawX) / centerX) * maxDisplacement;
           const diffY = ((centerY - rawY) / centerY) * maxDisplacement;
 
@@ -132,11 +132,7 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
     return (
       <Component
         ref={resolvedRef}
-        className={cn(
-          "facet-material",
-          `facet-material-${material}`,
-          className
-        )}
+        className={cn("facet-material", `facet-material-${material}`, className)}
         style={combinedStyle}
         {...props}
       >
@@ -144,13 +140,11 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
         <TextureOverlay
           texture={activeTexture}
           opacity={activeOpacity}
-          className="rounded-[inherit] z-0"
+          className="z-0 rounded-[inherit]"
         />
 
         {/* Content wrapper layer */}
-        <div className="relative z-10 w-full h-full rounded-[inherit]">
-          {children}
-        </div>
+        <div className="relative z-10 h-full w-full rounded-[inherit]">{children}</div>
       </Component>
     );
   }

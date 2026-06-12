@@ -1144,7 +1144,10 @@ export function PollWidgetSubmit({
           </Button>
         </DialogClose>
         <Button
-          className={cn("min-w-[120px] bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white font-semibold", className)}
+          className={cn(
+            "min-w-[120px] bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90",
+            className
+          )}
           data-slot="poll-widget-submit"
           disabled={!canSubmit || isSubmitting}
           onClick={handleClick}
@@ -1159,7 +1162,10 @@ export function PollWidgetSubmit({
 
   return (
     <Button
-      className={cn("w-full overflow-hidden bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white font-semibold", className)}
+      className={cn(
+        "w-full overflow-hidden bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90",
+        className
+      )}
       data-slot="poll-widget-submit"
       disabled={!canSubmit || isSubmitting}
       onClick={handleClick}

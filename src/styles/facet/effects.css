@@ -296,6 +296,50 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+   ADDITIONAL TEXTURES from shadcn registries
+   ────────────────────────────────────────────────────────────────────────── */
+
+.facet-texture-waves {
+  background-image: repeating-radial-gradient(circle at 0 50%, transparent 0, var(--facet-texture-color) 2px, transparent 3px);
+  background-size: 16px 16px;
+}
+
+.facet-texture-zigzag {
+  background-image: repeating-linear-gradient(45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 6px),
+                    repeating-linear-gradient(-45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 6px);
+  background-size: 12px 12px;
+}
+
+.facet-texture-woven {
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, var(--facet-texture-color) 3px, var(--facet-texture-color) 4px),
+                    repeating-linear-gradient(90deg, transparent, transparent 3px, var(--facet-texture-color) 3px, var(--facet-texture-color) 4px);
+  background-size: 8px 8px;
+}
+
+.facet-texture-brick {
+  background-image: linear-gradient(90deg, var(--facet-texture-color) 1px, transparent 1px),
+                    linear-gradient(0deg, var(--facet-texture-color) 1px, transparent 1px);
+  background-size: 20px 10px;
+}
+
+.facet-texture-herringbone {
+  background-image: repeating-linear-gradient(45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 8px),
+                    repeating-linear-gradient(-45deg, transparent 0px, transparent 4px, var(--facet-texture-color) 4px, var(--facet-texture-color) 5px, transparent 5px, transparent 8px);
+  background-size: 12px 12px;
+}
+
+.facet-texture-shimmer {
+  background: linear-gradient(135deg, transparent 0%, var(--facet-texture-color) 25%, transparent 50%, var(--facet-texture-color) 75%, transparent 100%);
+  background-size: 400% 400%;
+  animation: facet-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes facet-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
    CUTOUT SHADOW STACKS
    ────────────────────────────────────────────────────────────────────────── */
 

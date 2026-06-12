@@ -81,7 +81,7 @@ export default function PostPage({ params }: PostPageProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-2xl py-8 px-4">
+      <div className="container mx-auto max-w-2xl px-4 py-8">
         <div className="flex min-h-[400px] items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
@@ -91,15 +91,15 @@ export default function PostPage({ params }: PostPageProps) {
 
   if (error || !post) {
     return (
-      <div className="container mx-auto max-w-2xl py-8 px-4">
+      <div className="container mx-auto max-w-2xl px-4 py-8">
         <Card className="border-white/10 bg-slate-900/40 backdrop-blur-xl">
           <CardContent className="p-8 text-center">
             <h2 className="mb-2 text-xl font-semibold text-slate-200">Post Not Found</h2>
-            <p className="text-slate-400 mb-6">
+            <p className="mb-6 text-slate-400">
               This post may have been deleted or the link is incorrect.
             </p>
             <Link href="/thinkpages">
-              <Button className="bg-blue-600 hover:bg-blue-500 text-white">
+              <Button className="bg-blue-600 text-white hover:bg-blue-500">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Feed
               </Button>
@@ -111,18 +111,22 @@ export default function PostPage({ params }: PostPageProps) {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden">
       {/* Absolute background glow circles */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute top-[20%] left-[10%] h-[450px] w-[450px] rounded-full bg-indigo-600/10 blur-[130px]" />
         <div className="absolute top-[50%] right-[10%] h-[450px] w-[450px] rounded-full bg-purple-600/10 blur-[130px]" />
       </div>
 
-      <div className="relative z-10 container mx-auto max-w-2xl py-8 px-4 pb-32">
+      <div className="relative z-10 container mx-auto max-w-2xl px-4 py-8 pb-32">
         {/* Back Button */}
         <div className="mb-6">
           <Link href="/thinkpages">
-            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-200 hover:bg-white/5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:bg-white/5 hover:text-slate-200"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Feed
             </Button>
@@ -133,11 +137,11 @@ export default function PostPage({ params }: PostPageProps) {
         <div className="relative space-y-6">
           {/* Vertical Thread Connector Line */}
           {replies.length > 0 && (
-            <div className="absolute left-[48px] top-[108px] bottom-16 w-[2px] bg-gradient-to-b from-indigo-500/40 via-purple-500/15 to-transparent pointer-events-none z-0" />
+            <div className="pointer-events-none absolute top-[108px] bottom-16 left-[48px] z-0 w-[2px] bg-gradient-to-b from-indigo-500/40 via-purple-500/15 to-transparent" />
           )}
 
           {/* Main Hero Post */}
-          <div className="z-10 relative">
+          <div className="relative z-10">
             <ThinkpagesPost
               post={post}
               currentUserAccountId={currentAccount?.id || ""}
@@ -169,7 +173,7 @@ export default function PostPage({ params }: PostPageProps) {
 
           {/* Replies Section */}
           {replies.length > 0 && (
-            <div className="space-y-4 ml-5 relative z-10">
+            <div className="relative z-10 ml-5 space-y-4">
               {replies.map((reply: any) => (
                 <div key={reply.id} className="transition-all duration-300">
                   <ThinkpagesPost
@@ -208,19 +212,23 @@ export default function PostPage({ params }: PostPageProps) {
       </div>
 
       {/* Floating Bottom Composer Capsule */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4">
-        <div className="rounded-full border border-white/10 bg-slate-950/75 backdrop-blur-xl px-4 py-2 shadow-2xl flex items-center gap-3 w-full transition-all duration-200 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
-          <Avatar className="h-8 w-8 border border-white/10 shrink-0">
+      <div className="fixed bottom-6 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 px-4">
+        <div className="flex w-full items-center gap-3 rounded-full border border-white/10 bg-slate-950/75 px-4 py-2 shadow-2xl backdrop-blur-xl transition-all duration-200 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
+          <Avatar className="h-8 w-8 shrink-0 border border-white/10">
             {currentAccount?.profileImageUrl ? (
               <AvatarImage src={currentAccount.profileImageUrl} />
             ) : null}
-            <AvatarFallback className="text-xs bg-slate-800 text-slate-400 font-semibold">
+            <AvatarFallback className="bg-slate-800 text-xs font-semibold text-slate-400">
               {currentAccount?.displayName
-                ? currentAccount.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase()
+                ? currentAccount.displayName
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .toUpperCase()
                 : "?"}
             </AvatarFallback>
           </Avatar>
-          
+
           <input
             ref={replyInputRef}
             type="text"
@@ -238,14 +246,14 @@ export default function PostPage({ params }: PostPageProps) {
                 : "Select or create an account to reply"
             }
             disabled={!currentAccount || createPostMutation.isPending}
-            className="bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none border-none py-1.5 flex-1 text-sm disabled:opacity-50"
+            className="flex-1 border-none bg-transparent py-1.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none disabled:opacity-50"
           />
 
           <Button
             size="icon"
             onClick={handleSubmitReply}
             disabled={!replyText.trim() || !currentAccount || createPostMutation.isPending}
-            className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 shrink-0 transition-all duration-200"
+            className="h-8 w-8 shrink-0 rounded-full bg-blue-600 text-white transition-all duration-200 hover:bg-blue-500 disabled:opacity-40"
           >
             {createPostMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

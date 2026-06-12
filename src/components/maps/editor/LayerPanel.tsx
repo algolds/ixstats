@@ -115,9 +115,9 @@ export const LayerPanel = React.memo(function LayerPanel({
     const row = (
       <div
         key={feature.id}
-        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 transition-colors pl-8 ${
+        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-colors ${
           isSelected
-            ? "bg-primary/10 ring-primary/30 ring-1 font-semibold"
+            ? "bg-primary/10 ring-primary/30 font-semibold ring-1"
             : isMultiSelected
               ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
               : "hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
@@ -152,7 +152,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onEditFeature(feature);
               }}
-              className="text-neutral-500 rounded p-0.5 transition-colors hover:bg-neutral-200 hover:text-blue-600 dark:hover:bg-neutral-700 dark:hover:text-blue-400"
+              className="rounded p-0.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-blue-600 dark:hover:bg-neutral-700 dark:hover:text-blue-400"
               title="Edit"
             >
               <Pencil className="h-3 w-3" />
@@ -164,7 +164,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onDeleteFeature(feature);
               }}
-              className="text-neutral-500 rounded p-0.5 transition-colors hover:bg-neutral-200 hover:text-red-650 dark:hover:bg-neutral-700 dark:hover:text-red-400"
+              className="hover:text-red-650 rounded p-0.5 text-neutral-500 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-red-400"
               title="Delete"
             >
               <Trash2 className="h-3 w-3" />
@@ -192,7 +192,9 @@ export const LayerPanel = React.memo(function LayerPanel({
         {layers.map((layer) => {
           const Icon = layer.icon;
           const layerFeatures = getLayerFeatures(layer.id);
-          const count = featureCounts?.[layer.id] ?? (layer.id === "border" || layer.id === "climate" ? undefined : layerFeatures.length);
+          const count =
+            featureCounts?.[layer.id] ??
+            (layer.id === "border" || layer.id === "climate" ? undefined : layerFeatures.length);
           const isExpanded = expandedLayers.has(layer.id);
           const showOpacity = layer.id === "regions";
 
@@ -208,7 +210,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 {layer.id !== "border" && layer.id !== "climate" ? (
                   <button
                     onClick={() => toggleLayerExpanded(layer.id)}
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                   >
                     {isExpanded ? (
                       <ChevronDown className="h-3.5 w-3.5" />
@@ -217,7 +219,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                     )}
                   </button>
                 ) : (
-                  <span className="w-5 h-5 shrink-0" />
+                  <span className="h-5 w-5 shrink-0" />
                 )}
 
                 {/* Visibility Toggle */}
@@ -234,7 +236,9 @@ export const LayerPanel = React.memo(function LayerPanel({
                 </button>
 
                 {/* Lock Toggle */}
-                {layer.id !== "border" && layer.id !== "country-border" && layer.id !== "climate" ? (
+                {layer.id !== "border" &&
+                layer.id !== "country-border" &&
+                layer.id !== "climate" ? (
                   <button
                     onClick={() => onToggleLock(layer.id)}
                     className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
@@ -251,19 +255,21 @@ export const LayerPanel = React.memo(function LayerPanel({
                 )}
 
                 {/* Layer Icon */}
-                <Icon className="h-4 w-4 shrink-0 text-neutral-500 dark:text-neutral-400 ml-0.5" />
+                <Icon className="ml-0.5 h-4 w-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
 
                 {/* Layer Name */}
                 <span
-                  onClick={() => layer.id !== "border" && layer.id !== "climate" && toggleLayerExpanded(layer.id)}
-                  className="flex-1 truncate text-[11px] font-medium leading-none ml-1 cursor-pointer"
+                  onClick={() =>
+                    layer.id !== "border" && layer.id !== "climate" && toggleLayerExpanded(layer.id)
+                  }
+                  className="ml-1 flex-1 cursor-pointer truncate text-[11px] leading-none font-medium"
                 >
                   {layer.name}
                 </span>
 
                 {/* Badge Count */}
                 {count !== undefined && count > 0 && (
-                  <span className="rounded bg-neutral-200 px-1 py-0.5 text-[9px] leading-none font-semibold text-neutral-500 dark:bg-neutral-750 dark:text-neutral-400 mr-1.5">
+                  <span className="dark:bg-neutral-750 mr-1.5 rounded bg-neutral-200 px-1 py-0.5 text-[9px] leading-none font-semibold text-neutral-500 dark:text-neutral-400">
                     {count}
                   </span>
                 )}
@@ -271,10 +277,10 @@ export const LayerPanel = React.memo(function LayerPanel({
 
               {/* Layer Children (Opacity Slider and Features List) */}
               {isExpanded && (
-                <div className="bg-neutral-50/20 dark:bg-neutral-900/10 pb-1.5 space-y-0.5">
+                <div className="space-y-0.5 bg-neutral-50/20 pb-1.5 dark:bg-neutral-900/10">
                   {/* Opacity slider for Regions */}
                   {showOpacity && (
-                    <div className="flex items-center gap-2 bg-neutral-100/30 dark:bg-neutral-800/20 px-3 py-1 ml-8 mr-1.5 rounded mb-1 text-[10px]">
+                    <div className="mr-1.5 mb-1 ml-8 flex items-center gap-2 rounded bg-neutral-100/30 px-3 py-1 text-[10px] dark:bg-neutral-800/20">
                       <span className="text-neutral-500 dark:text-neutral-400">Opacity</span>
                       <input
                         type="range"
@@ -296,7 +302,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                   {layerFeatures.length > 0 ? (
                     layerFeatures.map(renderFeatureRow)
                   ) : (
-                    <div className="text-neutral-400 dark:text-neutral-500 pl-8 py-1 text-[10px] italic">
+                    <div className="py-1 pl-8 text-[10px] text-neutral-400 italic dark:text-neutral-500">
                       No features in this layer
                     </div>
                   )}

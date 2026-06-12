@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
 import { Clock, Cloud, Flag, MapPin, Zap } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 
 interface RaceResultsProps {
   races: Array<{
@@ -43,15 +44,8 @@ const WEATHER_ICONS: Record<string, string> = {
   hot: "\uD83E\uDD75",
 };
 
-function DriverStandingsTable({
-  races,
-}: {
-  races: RaceResultsProps["races"];
-}) {
-  const driverTotals = new Map<
-    string,
-    { driverName: string; points: number }
-  >();
+function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
+  const driverTotals = new Map<string, { driverName: string; points: number }>();
 
   for (const race of races) {
     if (race.status !== "completed" || !race.results) continue;
@@ -86,9 +80,27 @@ function DriverStandingsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">#</TableHead>
+              <TableHead className="w-12">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="decoration-border/60 cursor-help underline decoration-dotted">
+                      #
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Rank / Position</TooltipContent>
+                </Tooltip>
+              </TableHead>
               <TableHead>Driver</TableHead>
-              <TableHead className="text-center">Pts</TableHead>
+              <TableHead className="text-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="decoration-border/60 cursor-help font-bold underline decoration-dotted">
+                      Pts
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Points</TooltipContent>
+                </Tooltip>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -131,9 +143,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                       : "default"
                 }
               >
-                {race.status === "qualifying_complete"
-                  ? "Qualifying Complete"
-                  : race.status}
+                {race.status === "qualifying_complete" ? "Qualifying Complete" : race.status}
               </Badge>
               {race.weather && (
                 <span className="text-muted-foreground flex items-center gap-1 text-xs">
@@ -160,7 +170,16 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">Pos</TableHead>
+                        <TableHead className="w-12">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="decoration-border/60 cursor-help underline decoration-dotted">
+                                Pos
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Grid Position</TooltipContent>
+                          </Tooltip>
+                        </TableHead>
                         <TableHead>Driver</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -169,12 +188,8 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                         .sort((a, b) => a.position - b.position)
                         .map((g) => (
                           <TableRow key={g.driverId}>
-                            <TableCell className="font-medium">
-                              P{g.position}
-                            </TableCell>
-                            <TableCell>
-                              {g.driverName ?? g.driverId}
-                            </TableCell>
+                            <TableCell className="font-medium">P{g.position}</TableCell>
+                            <TableCell>{g.driverName ?? g.driverId}</TableCell>
                           </TableRow>
                         ))}
                     </TableBody>
@@ -191,28 +206,47 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">Pos</TableHead>
+                        <TableHead className="w-12">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="decoration-border/60 cursor-help underline decoration-dotted">
+                                Pos
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Finish Position</TooltipContent>
+                          </Tooltip>
+                        </TableHead>
                         <TableHead>Driver</TableHead>
-                        <TableHead className="text-center">Pts</TableHead>
-                        <TableHead className="w-8 text-center">FL</TableHead>
+                        <TableHead className="text-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="decoration-border/60 cursor-help font-bold underline decoration-dotted">
+                                Pts
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Points Earned</TooltipContent>
+                          </Tooltip>
+                        </TableHead>
+                        <TableHead className="w-8 text-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="decoration-border/60 cursor-help underline decoration-dotted">
+                                FL
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Fastest Lap</TooltipContent>
+                          </Tooltip>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {race.results
-                        .sort(
-                          (a, b) => a.finishPosition - b.finishPosition,
-                        )
+                        .sort((a, b) => a.finishPosition - b.finishPosition)
                         .map((r) => (
                           <TableRow key={r.driverId}>
-                            <TableCell className="font-medium">
-                              {r.finishPosition}
-                            </TableCell>
-                            <TableCell>
-                              {r.driverName ?? r.driverId}
-                            </TableCell>
-                            <TableCell className="text-center font-bold">
-                              {r.points}
-                            </TableCell>
+                            <TableCell className="font-medium">{r.finishPosition}</TableCell>
+                            <TableCell>{r.driverName ?? r.driverId}</TableCell>
+                            <TableCell className="text-center font-bold">{r.points}</TableCell>
                             <TableCell className="text-center">
                               {r.fastestLap && (
                                 <Zap className="inline h-3.5 w-3.5 text-purple-400" />

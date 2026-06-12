@@ -333,9 +333,7 @@ export default function MapEditorOverlay({
     />
   );
 
-  const renderRightPanelContent = () => (
-    <PropertiesPanelContent {...state} />
-  );
+  const renderRightPanelContent = () => <PropertiesPanelContent {...state} />;
 
   const renderPanel = (panelId: "panelA" | "panelB") => {
     const config = panelConfigs[panelId];
@@ -464,7 +462,7 @@ export default function MapEditorOverlay({
       {/* Main content: Rail + Canvas + Panel */}
       <div className="flex min-h-0 flex-1">
         {/* Left tool rail — desktop only */}
-        <div className="hidden sm:block shrink-0">
+        <div className="hidden shrink-0 sm:block">
           {isWorldMode && activeEditorMode === "border_edit" ? (
             <div className="border-border bg-card/45 z-10 flex h-full w-12 shrink-0 flex-col items-center gap-2 border-r py-3">
               <button
@@ -524,91 +522,98 @@ export default function MapEditorOverlay({
 
         {/* Left panel slot */}
         {(!toolsDisabled || isWorldMode) && (
-          <div ref={leftSidebarRef} className="hidden h-full sm:flex shrink-0">
-            {panelConfigs.panelA.placement === "left" && panelConfigs.panelB.placement !== "left" && (
-              <EditorErrorBoundary name="LeftPanel-A">
-                {renderPanel("panelA")}
-              </EditorErrorBoundary>
-            )}
-            {panelConfigs.panelB.placement === "left" && panelConfigs.panelA.placement !== "left" && (
-              <EditorErrorBoundary name="RightPanel-B">
-                {renderPanel("panelB")}
-              </EditorErrorBoundary>
-            )}
-            {panelConfigs.panelA.placement === "left" && panelConfigs.panelB.placement === "left" && (() => {
-              const collapsedA = panelConfigs.panelA.collapsed;
-              const collapsedB = panelConfigs.panelB.collapsed;
+          <div ref={leftSidebarRef} className="hidden h-full shrink-0 sm:flex">
+            {panelConfigs.panelA.placement === "left" &&
+              panelConfigs.panelB.placement !== "left" && (
+                <EditorErrorBoundary name="LeftPanel-A">
+                  {renderPanel("panelA")}
+                </EditorErrorBoundary>
+              )}
+            {panelConfigs.panelB.placement === "left" &&
+              panelConfigs.panelA.placement !== "left" && (
+                <EditorErrorBoundary name="RightPanel-B">
+                  {renderPanel("panelB")}
+                </EditorErrorBoundary>
+              )}
+            {panelConfigs.panelA.placement === "left" &&
+              panelConfigs.panelB.placement === "left" &&
+              (() => {
+                const collapsedA = panelConfigs.panelA.collapsed;
+                const collapsedB = panelConfigs.panelB.collapsed;
 
-              if (collapsedA && collapsedB) {
-                return (
-                  <div className="flex flex-col h-full bg-card/75 border-r border-border shrink-0 backdrop-blur-md">
-                    <EditorErrorBoundary name="LeftPanel-A">
-                      {renderPanel("panelA")}
-                    </EditorErrorBoundary>
-                    <EditorErrorBoundary name="RightPanel-B">
-                      {renderPanel("panelB")}
-                    </EditorErrorBoundary>
-                  </div>
-                );
-              }
+                if (collapsedA && collapsedB) {
+                  return (
+                    <div className="bg-card/75 border-border flex h-full shrink-0 flex-col border-r backdrop-blur-md">
+                      <EditorErrorBoundary name="LeftPanel-A">
+                        {renderPanel("panelA")}
+                      </EditorErrorBoundary>
+                      <EditorErrorBoundary name="RightPanel-B">
+                        {renderPanel("panelB")}
+                      </EditorErrorBoundary>
+                    </div>
+                  );
+                }
 
-              if (collapsedA) {
+                if (collapsedA) {
+                  return (
+                    <div className="flex h-full shrink-0 flex-col">
+                      <EditorErrorBoundary name="LeftPanel-A">
+                        {renderPanel("panelA")}
+                      </EditorErrorBoundary>
+                      <div className="min-h-0 w-full flex-1">
+                        <EditorErrorBoundary name="RightPanel-B">
+                          {renderPanel("panelB")}
+                        </EditorErrorBoundary>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (collapsedB) {
+                  return (
+                    <div className="flex h-full shrink-0 flex-col">
+                      <div className="min-h-0 w-full flex-1">
+                        <EditorErrorBoundary name="LeftPanel-A">
+                          {renderPanel("panelA")}
+                        </EditorErrorBoundary>
+                      </div>
+                      <EditorErrorBoundary name="RightPanel-B">
+                        {renderPanel("panelB")}
+                      </EditorErrorBoundary>
+                    </div>
+                  );
+                }
+
+                // Both are expanded: vertical resizable split
                 return (
-                  <div className="flex flex-col h-full shrink-0">
-                    <EditorErrorBoundary name="LeftPanel-A">
-                      {renderPanel("panelA")}
-                    </EditorErrorBoundary>
-                    <div className="flex-1 min-h-0 w-full">
+                  <div className="flex h-full shrink-0 flex-col">
+                    <div
+                      style={{ height: `calc(${leftSplitRatio * 100}% - 2px)` }}
+                      className="min-h-0 w-full shrink-0"
+                    >
+                      <EditorErrorBoundary name="LeftPanel-A">
+                        {renderPanel("panelA")}
+                      </EditorErrorBoundary>
+                    </div>
+                    <div
+                      className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+                      onMouseDown={handleVerticalSplitResize("left")}
+                    />
+                    <div className="min-h-0 w-full flex-1">
                       <EditorErrorBoundary name="RightPanel-B">
                         {renderPanel("panelB")}
                       </EditorErrorBoundary>
                     </div>
                   </div>
                 );
-              }
-
-              if (collapsedB) {
-                return (
-                  <div className="flex flex-col h-full shrink-0">
-                    <div className="flex-1 min-h-0 w-full">
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                    </div>
-                    <EditorErrorBoundary name="RightPanel-B">
-                      {renderPanel("panelB")}
-                    </EditorErrorBoundary>
-                  </div>
-                );
-              }
-
-              // Both are expanded: vertical resizable split
-              return (
-                <div className="flex flex-col h-full shrink-0">
-                  <div style={{ height: `calc(${leftSplitRatio * 100}% - 2px)` }} className="w-full shrink-0 min-h-0">
-                    <EditorErrorBoundary name="LeftPanel-A">
-                      {renderPanel("panelA")}
-                    </EditorErrorBoundary>
-                  </div>
-                  <div
-                    className="h-1 w-full cursor-row-resize bg-neutral-200 hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50 transition-colors shrink-0"
-                    onMouseDown={handleVerticalSplitResize("left")}
-                  />
-                  <div className="flex-1 w-full min-h-0">
-                    <EditorErrorBoundary name="RightPanel-B">
-                      {renderPanel("panelB")}
-                    </EditorErrorBoundary>
-                  </div>
-                </div>
-              );
-            })()}
+              })()}
           </div>
         )}
 
         {/* Center slot (Canvas + Bottom panels) */}
-        <div className="flex flex-1 flex-col min-w-0 h-full relative">
+        <div className="relative flex h-full min-w-0 flex-1 flex-col">
           {/* Map canvas */}
-          <div className="relative min-w-0 flex-1 min-h-0">
+          <div className="relative min-h-0 min-w-0 flex-1">
             <EditorErrorBoundary name="Map">
               {isWorldMode && activeEditorMode === "view" ? (
                 <MapContainer
@@ -746,28 +751,130 @@ export default function MapEditorOverlay({
 
           {/* Bottom panel slot */}
           {(!toolsDisabled || isWorldMode) && (
-            <div ref={bottomDockRef} className="hidden w-full sm:flex flex-row shrink-0 bg-card/40 backdrop-blur-md">
-              {panelConfigs.panelA.placement === "bottom" && panelConfigs.panelB.placement !== "bottom" && (
-                <EditorErrorBoundary name="BottomPanel-A">
+            <div
+              ref={bottomDockRef}
+              className="bg-card/40 hidden w-full shrink-0 flex-row backdrop-blur-md sm:flex"
+            >
+              {panelConfigs.panelA.placement === "bottom" &&
+                panelConfigs.panelB.placement !== "bottom" && (
+                  <EditorErrorBoundary name="BottomPanel-A">
+                    {renderPanel("panelA")}
+                  </EditorErrorBoundary>
+                )}
+              {panelConfigs.panelB.placement === "bottom" &&
+                panelConfigs.panelA.placement !== "bottom" && (
+                  <EditorErrorBoundary name="BottomPanel-B">
+                    {renderPanel("panelB")}
+                  </EditorErrorBoundary>
+                )}
+              {panelConfigs.panelA.placement === "bottom" &&
+                panelConfigs.panelB.placement === "bottom" &&
+                (() => {
+                  const collapsedA = panelConfigs.panelA.collapsed;
+                  const collapsedB = panelConfigs.panelB.collapsed;
+
+                  if (collapsedA && collapsedB) {
+                    return (
+                      <div className="bg-card/75 border-border flex w-full shrink-0 flex-row gap-2 border-t px-2 py-1 backdrop-blur-md">
+                        <EditorErrorBoundary name="BottomPanel-A">
+                          {renderPanel("panelA")}
+                        </EditorErrorBoundary>
+                        <EditorErrorBoundary name="BottomPanel-B">
+                          {renderPanel("panelB")}
+                        </EditorErrorBoundary>
+                      </div>
+                    );
+                  }
+
+                  if (collapsedA) {
+                    return (
+                      <div className="flex w-full shrink-0 flex-row items-center">
+                        <div className="mr-2 shrink-0">
+                          <EditorErrorBoundary name="BottomPanel-A">
+                            {renderPanel("panelA")}
+                          </EditorErrorBoundary>
+                        </div>
+                        <div className="h-full min-w-0 flex-1">
+                          <EditorErrorBoundary name="BottomPanel-B">
+                            {renderPanel("panelB")}
+                          </EditorErrorBoundary>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (collapsedB) {
+                    return (
+                      <div className="flex w-full shrink-0 flex-row items-center">
+                        <div className="h-full min-w-0 flex-1">
+                          <EditorErrorBoundary name="BottomPanel-A">
+                            {renderPanel("panelA")}
+                          </EditorErrorBoundary>
+                        </div>
+                        <div className="ml-2 shrink-0">
+                          <EditorErrorBoundary name="BottomPanel-B">
+                            {renderPanel("panelB")}
+                          </EditorErrorBoundary>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Both are expanded: horizontal resizable split
+                  return (
+                    <div className="flex w-full shrink-0 flex-row">
+                      <div
+                        style={{ width: `calc(${bottomSplitRatio * 100}% - 2px)` }}
+                        className="h-full min-w-0 shrink-0"
+                      >
+                        <EditorErrorBoundary name="BottomPanel-A">
+                          {renderPanel("panelA")}
+                        </EditorErrorBoundary>
+                      </div>
+                      <div
+                        className="h-full w-1 shrink-0 cursor-col-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+                        onMouseDown={handleHorizontalSplitResize}
+                      />
+                      <div className="h-full min-w-0 flex-1">
+                        <EditorErrorBoundary name="BottomPanel-B">
+                          {renderPanel("panelB")}
+                        </EditorErrorBoundary>
+                      </div>
+                    </div>
+                  );
+                })()}
+            </div>
+          )}
+        </div>
+
+        {/* Right panel slot */}
+        {(!toolsDisabled || isWorldMode) && (
+          <div ref={rightSidebarRef} className="hidden h-full shrink-0 sm:flex">
+            {panelConfigs.panelA.placement === "right" &&
+              panelConfigs.panelB.placement !== "right" && (
+                <EditorErrorBoundary name="LeftPanel-A">
                   {renderPanel("panelA")}
                 </EditorErrorBoundary>
               )}
-              {panelConfigs.panelB.placement === "bottom" && panelConfigs.panelA.placement !== "bottom" && (
-                <EditorErrorBoundary name="BottomPanel-B">
+            {panelConfigs.panelB.placement === "right" &&
+              panelConfigs.panelA.placement !== "right" && (
+                <EditorErrorBoundary name="RightPanel-B">
                   {renderPanel("panelB")}
                 </EditorErrorBoundary>
               )}
-              {panelConfigs.panelA.placement === "bottom" && panelConfigs.panelB.placement === "bottom" && (() => {
+            {panelConfigs.panelA.placement === "right" &&
+              panelConfigs.panelB.placement === "right" &&
+              (() => {
                 const collapsedA = panelConfigs.panelA.collapsed;
                 const collapsedB = panelConfigs.panelB.collapsed;
 
                 if (collapsedA && collapsedB) {
                   return (
-                    <div className="flex flex-row w-full bg-card/75 border-t border-border shrink-0 backdrop-blur-md py-1 px-2 gap-2">
-                      <EditorErrorBoundary name="BottomPanel-A">
+                    <div className="bg-card/75 border-border flex h-full shrink-0 flex-col border-l backdrop-blur-md">
+                      <EditorErrorBoundary name="LeftPanel-A">
                         {renderPanel("panelA")}
                       </EditorErrorBoundary>
-                      <EditorErrorBoundary name="BottomPanel-B">
+                      <EditorErrorBoundary name="RightPanel-B">
                         {renderPanel("panelB")}
                       </EditorErrorBoundary>
                     </div>
@@ -776,14 +883,12 @@ export default function MapEditorOverlay({
 
                 if (collapsedA) {
                   return (
-                    <div className="flex flex-row w-full shrink-0 items-center">
-                      <div className="shrink-0 mr-2">
-                        <EditorErrorBoundary name="BottomPanel-A">
-                          {renderPanel("panelA")}
-                        </EditorErrorBoundary>
-                      </div>
-                      <div className="flex-1 min-w-0 h-full">
-                        <EditorErrorBoundary name="BottomPanel-B">
+                    <div className="flex h-full shrink-0 flex-col">
+                      <EditorErrorBoundary name="LeftPanel-A">
+                        {renderPanel("panelA")}
+                      </EditorErrorBoundary>
+                      <div className="min-h-0 w-full flex-1">
+                        <EditorErrorBoundary name="RightPanel-B">
                           {renderPanel("panelB")}
                         </EditorErrorBoundary>
                       </div>
@@ -793,125 +898,42 @@ export default function MapEditorOverlay({
 
                 if (collapsedB) {
                   return (
-                    <div className="flex flex-row w-full shrink-0 items-center">
-                      <div className="flex-1 min-w-0 h-full">
-                        <EditorErrorBoundary name="BottomPanel-A">
+                    <div className="flex h-full shrink-0 flex-col">
+                      <div className="min-h-0 w-full flex-1">
+                        <EditorErrorBoundary name="LeftPanel-A">
                           {renderPanel("panelA")}
                         </EditorErrorBoundary>
                       </div>
-                      <div className="shrink-0 ml-2">
-                        <EditorErrorBoundary name="BottomPanel-B">
-                          {renderPanel("panelB")}
-                        </EditorErrorBoundary>
-                      </div>
+                      <EditorErrorBoundary name="RightPanel-B">
+                        {renderPanel("panelB")}
+                      </EditorErrorBoundary>
                     </div>
                   );
                 }
 
-                // Both are expanded: horizontal resizable split
+                // Both are expanded: vertical resizable split
                 return (
-                  <div className="flex flex-row w-full shrink-0">
-                    <div style={{ width: `calc(${bottomSplitRatio * 100}% - 2px)` }} className="h-full shrink-0 min-w-0">
-                      <EditorErrorBoundary name="BottomPanel-A">
+                  <div className="flex h-full shrink-0 flex-col">
+                    <div
+                      style={{ height: `calc(${rightSplitRatio * 100}% - 2px)` }}
+                      className="min-h-0 w-full shrink-0"
+                    >
+                      <EditorErrorBoundary name="LeftPanel-A">
                         {renderPanel("panelA")}
                       </EditorErrorBoundary>
                     </div>
                     <div
-                      className="w-1 h-full cursor-col-resize bg-neutral-200 hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50 transition-colors shrink-0"
-                      onMouseDown={handleHorizontalSplitResize}
+                      className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+                      onMouseDown={handleVerticalSplitResize("right")}
                     />
-                    <div className="flex-1 h-full min-w-0">
-                      <EditorErrorBoundary name="BottomPanel-B">
-                        {renderPanel("panelB")}
-                      </EditorErrorBoundary>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-
-        {/* Right panel slot */}
-        {(!toolsDisabled || isWorldMode) && (
-          <div ref={rightSidebarRef} className="hidden h-full sm:flex shrink-0">
-            {panelConfigs.panelA.placement === "right" && panelConfigs.panelB.placement !== "right" && (
-              <EditorErrorBoundary name="LeftPanel-A">
-                {renderPanel("panelA")}
-              </EditorErrorBoundary>
-            )}
-            {panelConfigs.panelB.placement === "right" && panelConfigs.panelA.placement !== "right" && (
-              <EditorErrorBoundary name="RightPanel-B">
-                {renderPanel("panelB")}
-              </EditorErrorBoundary>
-            )}
-            {panelConfigs.panelA.placement === "right" && panelConfigs.panelB.placement === "right" && (() => {
-              const collapsedA = panelConfigs.panelA.collapsed;
-              const collapsedB = panelConfigs.panelB.collapsed;
-
-              if (collapsedA && collapsedB) {
-                return (
-                  <div className="flex flex-col h-full bg-card/75 border-l border-border shrink-0 backdrop-blur-md">
-                    <EditorErrorBoundary name="LeftPanel-A">
-                      {renderPanel("panelA")}
-                    </EditorErrorBoundary>
-                    <EditorErrorBoundary name="RightPanel-B">
-                      {renderPanel("panelB")}
-                    </EditorErrorBoundary>
-                  </div>
-                );
-              }
-
-              if (collapsedA) {
-                return (
-                  <div className="flex flex-col h-full shrink-0">
-                    <EditorErrorBoundary name="LeftPanel-A">
-                      {renderPanel("panelA")}
-                    </EditorErrorBoundary>
-                    <div className="flex-1 min-h-0 w-full">
+                    <div className="min-h-0 w-full flex-1">
                       <EditorErrorBoundary name="RightPanel-B">
                         {renderPanel("panelB")}
                       </EditorErrorBoundary>
                     </div>
                   </div>
                 );
-              }
-
-              if (collapsedB) {
-                return (
-                  <div className="flex flex-col h-full shrink-0">
-                    <div className="flex-1 min-h-0 w-full">
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                    </div>
-                    <EditorErrorBoundary name="RightPanel-B">
-                      {renderPanel("panelB")}
-                    </EditorErrorBoundary>
-                  </div>
-                );
-              }
-
-              // Both are expanded: vertical resizable split
-              return (
-                <div className="flex flex-col h-full shrink-0">
-                  <div style={{ height: `calc(${rightSplitRatio * 100}% - 2px)` }} className="w-full shrink-0 min-h-0">
-                    <EditorErrorBoundary name="LeftPanel-A">
-                      {renderPanel("panelA")}
-                    </EditorErrorBoundary>
-                  </div>
-                  <div
-                    className="h-1 w-full cursor-row-resize bg-neutral-200 hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50 transition-colors shrink-0"
-                    onMouseDown={handleVerticalSplitResize("right")}
-                  />
-                  <div className="flex-1 w-full min-h-0">
-                    <EditorErrorBoundary name="RightPanel-B">
-                      {renderPanel("panelB")}
-                    </EditorErrorBoundary>
-                  </div>
-                </div>
-              );
-            })()}
+              })()}
           </div>
         )}
       </div>
@@ -1009,7 +1031,7 @@ export default function MapEditorOverlay({
             }
           }}
         >
-          <DialogContent className="max-w-2xl p-0 overflow-hidden bg-card border border-border rounded-xl shadow-2xl max-h-[85vh] flex flex-col h-[580px]">
+          <DialogContent className="bg-card border-border flex h-[580px] max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-xl border p-0 shadow-2xl">
             <ProvinceImportWizard
               importer={importer}
               onComplete={() => {
@@ -1029,10 +1051,7 @@ export default function MapEditorOverlay({
       <EditorDialogs {...state} onExit={onExit} />
 
       {/* Onboarding Welcome Modal */}
-      <MapEditorWelcomeModal
-        isOpen={showWelcomeModal}
-        onClose={() => setShowWelcomeModal(false)}
-      />
+      <MapEditorWelcomeModal isOpen={showWelcomeModal} onClose={() => setShowWelcomeModal(false)} />
     </div>
   );
 }

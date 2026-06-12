@@ -3,7 +3,17 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "~/lib/utils";
-import { Search, Loader2, Check, X, FolderOpen, Globe, Database, Bookmark, ZoomIn } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  Check,
+  X,
+  FolderOpen,
+  Globe,
+  Database,
+  Bookmark,
+  ZoomIn,
+} from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -93,20 +103,24 @@ export function WikiRepositoryTab({
     );
 
   // 3. Local/External Wiki files query (ixwiki / iiwiki)
-  const localIsBrowseMode = (wikiSource === "ixwiki" || wikiSource === "iiwiki") && !debouncedWikiQuery && !!browsingCategory;
-  const { data: wikiFileData, isFetching: isFetchingWikiFiles } =
-    api.wiki.searchFiles.useQuery(
-      {
-        query: debouncedWikiQuery || undefined,
-        category: localIsBrowseMode ? (browsingCategory ?? undefined) : undefined,
-        limit: 50,
-        wiki: wikiSource === "iiwiki" ? "iiwiki" : "ixwiki",
-      },
-      {
-        enabled: (wikiSource === "ixwiki" || wikiSource === "iiwiki") && (debouncedWikiQuery.length >= 2 || localIsBrowseMode),
-        staleTime: 60_000,
-      }
-    );
+  const localIsBrowseMode =
+    (wikiSource === "ixwiki" || wikiSource === "iiwiki") &&
+    !debouncedWikiQuery &&
+    !!browsingCategory;
+  const { data: wikiFileData, isFetching: isFetchingWikiFiles } = api.wiki.searchFiles.useQuery(
+    {
+      query: debouncedWikiQuery || undefined,
+      category: localIsBrowseMode ? (browsingCategory ?? undefined) : undefined,
+      limit: 50,
+      wiki: wikiSource === "iiwiki" ? "iiwiki" : "ixwiki",
+    },
+    {
+      enabled:
+        (wikiSource === "ixwiki" || wikiSource === "iiwiki") &&
+        (debouncedWikiQuery.length >= 2 || localIsBrowseMode),
+      staleTime: 60_000,
+    }
+  );
 
   // Merge Commons Search into wikiImages
   useEffect(() => {
@@ -214,7 +228,7 @@ export function WikiRepositoryTab({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header controls & tabs */}
-      <div className="border-border/10 flex flex-col gap-2 border-b p-3 bg-card/5">
+      <div className="border-border/10 bg-card/5 flex flex-col gap-2 border-b p-3">
         <div className="flex items-center justify-between gap-4">
           {/* Wiki Sub-tabs */}
           <div className="wikios-commons-tabs">
@@ -264,8 +278,8 @@ export function WikiRepositoryTab({
                 size="sm"
                 onClick={() => setIsCategoryExpanded((prev) => !prev)}
                 className={cn(
-                  "h-8 text-xs flex items-center gap-1.5",
-                  isCategoryExpanded && "bg-slate-100 dark:bg-white/5 border-blue-500/50"
+                  "flex h-8 items-center gap-1.5 text-xs",
+                  isCategoryExpanded && "border-blue-500/50 bg-slate-100 dark:bg-white/5"
                 )}
               >
                 <SlidersHorizontalIcon size={14} className="h-3.5 w-3.5" />
@@ -288,7 +302,7 @@ export function WikiRepositoryTab({
                 }
                 value={wikiSearchQuery}
                 onChange={(e) => setWikiSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs"
+                className="h-9 pl-9 text-xs"
               />
             </div>
 
@@ -297,14 +311,16 @@ export function WikiRepositoryTab({
               <div className="flex items-center justify-between gap-4 pt-1 text-[11px] transition-all">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Type:</span>
-                    <div className="flex gap-0.5 rounded bg-slate-100 dark:bg-white/5 p-0.5">
+                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                      Type:
+                    </span>
+                    <div className="flex gap-0.5 rounded bg-slate-100 p-0.5 dark:bg-white/5">
                       {(["all", "jpg", "png", "svg"] as const).map((type) => (
                         <button
                           key={type}
                           onClick={() => setFileTypeFilter(type)}
                           className={cn(
-                            "px-2 py-0.5 rounded text-[10px] font-semibold transition-all",
+                            "rounded px-2 py-0.5 text-[10px] font-semibold transition-all",
                             fileTypeFilter === type
                               ? "bg-slate-200 text-slate-900 dark:bg-white/10 dark:text-white"
                               : "text-muted-foreground hover:text-foreground hover:bg-slate-200/50 dark:hover:bg-white/5"
@@ -317,20 +333,28 @@ export function WikiRepositoryTab({
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Orient:</span>
-                    <div className="flex gap-0.5 rounded bg-slate-100 dark:bg-white/5 p-0.5">
+                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                      Orient:
+                    </span>
+                    <div className="flex gap-0.5 rounded bg-slate-100 p-0.5 dark:bg-white/5">
                       {(["all", "landscape", "portrait", "square"] as const).map((orient) => (
                         <button
                           key={orient}
                           onClick={() => setOrientationFilter(orient)}
                           className={cn(
-                            "px-2 py-0.5 rounded text-[10px] font-semibold transition-all",
+                            "rounded px-2 py-0.5 text-[10px] font-semibold transition-all",
                             orientationFilter === orient
                               ? "bg-slate-200 text-slate-900 dark:bg-white/10 dark:text-white"
                               : "text-muted-foreground hover:text-foreground hover:bg-slate-200/50 dark:hover:bg-white/5"
                           )}
                         >
-                          {orient === "landscape" ? "Land" : orient === "portrait" ? "Port" : orient === "square" ? "Sq" : "All"}
+                          {orient === "landscape"
+                            ? "Land"
+                            : orient === "portrait"
+                              ? "Port"
+                              : orient === "square"
+                                ? "Sq"
+                                : "All"}
                         </button>
                       ))}
                     </div>
@@ -343,7 +367,7 @@ export function WikiRepositoryTab({
                       setFileTypeFilter("all");
                       setOrientationFilter("all");
                     }}
-                    className="text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                    className="cursor-pointer font-semibold text-blue-400 hover:text-blue-300"
                   >
                     Clear Filters
                   </button>
@@ -353,14 +377,17 @@ export function WikiRepositoryTab({
 
             {/* Active Category Chips */}
             {wikiSource === "commons" && activeCategories.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
+              <div className="mt-1 flex flex-wrap gap-1">
                 {activeCategories.map((cat) => (
                   <span
                     key={cat}
-                    className="inline-flex items-center gap-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full text-[10px]"
+                    className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[10px] text-blue-400"
                   >
                     {cat}
-                    <button onClick={() => handleToggleCategory(cat)} className="hover:text-blue-300">
+                    <button
+                      onClick={() => handleToggleCategory(cat)}
+                      className="hover:text-blue-300"
+                    >
                       <X className="h-2.5 w-2.5" />
                     </button>
                   </span>
@@ -369,8 +396,8 @@ export function WikiRepositoryTab({
             )}
 
             {browsingCategory && !isSearchMode && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                <span className="inline-flex items-center gap-1 bg-white/5 border border-border/10 text-muted-foreground px-2 py-0.5 rounded-full text-[10px]">
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="border-border/10 text-muted-foreground inline-flex items-center gap-1 rounded-full border bg-white/5 px-2 py-0.5 text-[10px]">
                   Browsing: {browsingCategory}
                   <button
                     onClick={() => {
@@ -397,11 +424,11 @@ export function WikiRepositoryTab({
         />
       ) : (
         /* Split layout: Category Browser + Grid + Detail Panel */
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Category Browser sidebar */}
           <div
             className={cn(
-              "transition-all duration-200 border-r border-border/10 shrink-0 bg-card/5",
+              "border-border/10 bg-card/5 shrink-0 border-r transition-all duration-200",
               isCategoryExpanded ? "w-60" : "w-0 overflow-hidden"
             )}
           >
@@ -417,13 +444,14 @@ export function WikiRepositoryTab({
           </div>
 
           {/* Grid panel */}
-          <div className="flex-1 overflow-y-auto p-4 min-w-0 flex flex-col">
-            {(isFetchingCommonsSearch || isFetchingCommonsCat || isFetchingWikiFiles) && wikiImages.length === 0 ? (
+          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-4">
+            {(isFetchingCommonsSearch || isFetchingCommonsCat || isFetchingWikiFiles) &&
+            wikiImages.length === 0 ? (
               <div className="flex h-48 items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
               </div>
             ) : filteredWikiImages.length > 0 ? (
-              <div className="flex-1 wikios-commons-results">
+              <div className="wikios-commons-results flex-1">
                 <div className="wikios-commons-grid">
                   {filteredWikiImages.map((img) => {
                     const isSelected = selectedImageObj?.pageid === img.pageid;
@@ -431,7 +459,7 @@ export function WikiRepositoryTab({
 
                     return (
                       <button
-                        key={img.pageid}
+                        key={`${img.pageid}-${img.title}`}
                         onClick={() => onSelectImage(img)}
                         onDoubleClick={onDoubleClickConfirm}
                         className={cn(
@@ -440,8 +468,16 @@ export function WikiRepositoryTab({
                         )}
                         style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
                       >
-                        <TextureOverlay texture="paperGrain" opacity={0.05} className="mix-blend-overlay" />
-                        <TextureOverlay texture="dots" opacity={0.03} className="mix-blend-overlay" />
+                        <TextureOverlay
+                          texture="paperGrain"
+                          opacity={0.05}
+                          className="mix-blend-overlay"
+                        />
+                        <TextureOverlay
+                          texture="dots"
+                          opacity={0.03}
+                          className="mix-blend-overlay"
+                        />
                         <div className="wikios-commons-card-thumb">
                           <img
                             src={img.thumbUrl}
@@ -465,7 +501,7 @@ export function WikiRepositoryTab({
                 </div>
 
                 {hasMoreWikiImages && (
-                  <div className="text-center py-4 mt-2">
+                  <div className="mt-2 py-4 text-center">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -478,7 +514,7 @@ export function WikiRepositoryTab({
                 )}
               </div>
             ) : (
-              <div className="text-center text-xs text-muted-foreground py-12">
+              <div className="text-muted-foreground py-12 text-center text-xs">
                 {wikiSearchQuery || browsingCategory
                   ? "No images match filters/search."
                   : "Search or select a category sidebar folder to browse images."}
@@ -488,7 +524,7 @@ export function WikiRepositoryTab({
 
           {/* Right Side Detail Panel */}
           {selectedImageObj && (
-            <div className="w-80 border-l border-border/10 shrink-0 overflow-y-auto bg-slate-100/30 dark:bg-zinc-950/20 backdrop-blur-md">
+            <div className="border-border/10 w-80 shrink-0 overflow-y-auto border-l bg-slate-100/30 backdrop-blur-md dark:bg-zinc-950/20">
               <CommonsDetailPanel
                 image={selectedImageObj}
                 onClose={() => {

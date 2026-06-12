@@ -117,13 +117,13 @@ export function UnifiedMediaServiceAdmin() {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {stats?.serviceStats.flagRequests ?? 0}
+              {stats?.serviceStats?.flagRequests ?? 0}
             </div>
             <div className="text-muted-foreground text-sm">Flag Requests</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {stats?.serviceStats.totalRequests ?? 0}
+              {stats?.serviceStats?.totalRequests ?? 0}
             </div>
             <div className="text-muted-foreground text-sm">Total Requests</div>
           </div>
@@ -203,15 +203,15 @@ export function UnifiedMediaServiceAdmin() {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Flag Requests:</span>
-                  <span>{stats.serviceStats.flagRequests}</span>
+                  <span>{stats.serviceStats?.flagRequests ?? 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Infobox Requests:</span>
-                  <span>{stats.serviceStats.infoboxRequests}</span>
+                  <span>{stats.serviceStats?.infoboxRequests ?? 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total Service Requests:</span>
-                  <span>{stats.serviceStats.totalRequests}</span>
+                  <span>{stats.serviceStats?.totalRequests ?? 0}</span>
                 </div>
               </div>
             </div>

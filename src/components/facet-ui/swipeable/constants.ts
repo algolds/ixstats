@@ -20,7 +20,6 @@ export { SPRING_TIGHT, SPRING_BOUNCY, SPRING_GENTLE, SPRING_FLUID };
 
 export const SPRING_PRESETS = SHARED_SPRING_PRESETS;
 
-
 // ── Default Snap Thresholds (percentage of container width, 0-1) ────────
 
 export const DEFAULT_THRESHOLDS = {
@@ -69,4 +68,3 @@ export const DRAG_DEAD_ZONE = SHARED_DRAG_DEAD_ZONE;
 
 /** Drag elasticity past the commit threshold (rubber-band resistance) */
 export const DRAG_ELASTICITY = SHARED_DRAG_ELASTICITY;
-

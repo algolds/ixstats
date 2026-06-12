@@ -17,18 +17,19 @@ import {
   generateCoach,
   generateSchedule,
   createRNG,
+  transitionToNextStage,
+  transitionSeasonAction,
   type SportPresetKey,
   type ArchetypeType,
   type TeamRatingVector,
 } from "~/lib/sports";
+import { exchangeService } from "~/lib/exchange-service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function simpleHash(seasonId: string, matchDay: number, matchIndex: number): number {
   return (
-    seasonId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 +
-    matchDay * 7 +
-    matchIndex
+    seasonId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + matchDay * 7 + matchIndex
   );
 }
 
@@ -38,6 +39,38 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
     teamIndex * 13 +
     playerIndex * 3
   );
+}
+
+async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
+  if (!team.nationId) return undefined;
+  
+  let effects: any[] = [];
+  if (effectsMap) {
+    effects = effectsMap.get(team.nationId) ?? [];
+  } else {
+    effects = await db.storytellerEffect.findMany({
+      where: {
+        countryId: team.nationId,
+        isActive: true,
+      },
+    });
+  }
+
+  let saintBlessing = 0;
+  let countryScandal = 0;
+  for (const e of effects) {
+    if (e.inputType === "sports_saint_blessing") {
+      saintBlessing += Math.abs(e.value);
+    } else if (e.inputType === "sports_scandal") {
+      countryScandal += Math.abs(e.value);
+    }
+  }
+
+  return {
+    saintName: (team as any).patronSaint || undefined,
+    saintBlessing: saintBlessing > 0 ? saintBlessing : undefined,
+    countryScandal: countryScandal > 0 ? countryScandal : undefined,
+  };
 }
 
 const careerStageMultiplier: Record<string, number> = {
@@ -50,59 +83,119 @@ const careerStageMultiplier: Record<string, number> = {
 };
 
 function computeTeamRatingVector(
-  players: Array<{ isActive: boolean; ratings: Record<string, unknown> | null; careerStage: string }>,
+  players: Array<{
+    isActive: boolean;
+    ratings: Record<string, unknown> | null;
+    careerStage: string;
+    position?: string;
+    id?: string;
+  }>,
   coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }>,
+  sportPresetKey: string = "soccer",
+  formAdjustment = 0
 ): TeamRatingVector {
   const activePlayers = players.filter((p) => p.isActive && p.ratings);
-  const ratingSums: Record<string, number> = {};
-  const ratingCounts: Record<string, number> = {};
+  const preset = getPreset(sportPresetKey as SportPresetKey) || getPreset("soccer");
 
+  // 1. Group players by position
+  const positionGroups: Record<string, typeof activePlayers> = {};
   for (const player of activePlayers) {
-    const mult = careerStageMultiplier[player.careerStage] ?? 0.8;
-    const ratings = player.ratings as Record<string, number>;
-    for (const [key, value] of Object.entries(ratings)) {
-      if (typeof value === "number") {
-        ratingSums[key] = (ratingSums[key] ?? 0) + value * mult;
-        ratingCounts[key] = (ratingCounts[key] ?? 0) + 1;
-      }
+    const pos = player.position || preset.positions[0] || "GK";
+    positionGroups[pos] = positionGroups[pos] || [];
+    positionGroups[pos].push(player);
+  }
+
+  // Sort each group by overall rating descending
+  const getPlayerOverall = (p: any): number => {
+    const ratings = p.ratings as Record<string, number>;
+    if (!ratings) return 50;
+    if (typeof ratings.overall === "number") return ratings.overall;
+    const values = Object.values(ratings).filter((v) => typeof v === "number") as number[];
+    if (values.length === 0) return 50;
+    return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  };
+
+  for (const pos of Object.keys(positionGroups)) {
+    positionGroups[pos].sort((a, b) => getPlayerOverall(b) - getPlayerOverall(a));
+  }
+
+  // 2. Select starters based on startingSlots
+  const starters: typeof activePlayers = [];
+  const bench: typeof activePlayers = [];
+  const slotsConfig = preset.startingSlots || {};
+
+  const assignedPlayerIds = new Set<string>();
+
+  // Assign players to their primary starting positions
+  for (const [pos, count] of Object.entries(slotsConfig)) {
+    const available = positionGroups[pos] || [];
+    const startersForPos = available.slice(0, count as number);
+    starters.push(...startersForPos);
+    startersForPos.forEach((p) => p.id && assignedPlayerIds.add(p.id));
+  }
+
+  // Any active player not assigned is bench
+  for (const player of activePlayers) {
+    if (player.id && !assignedPlayerIds.has(player.id)) {
+      bench.push(player);
     }
   }
 
-  const avg: Record<string, number> = {};
-  for (const key of Object.keys(ratingSums)) {
-    avg[key] = ratingSums[key] / (ratingCounts[key] || 1);
-  }
-
-  for (const coach of coaches) {
-    if (coach.isActive && coach.ratings) {
-      const cRatings = coach.ratings as Record<string, number>;
-      for (const [key, value] of Object.entries(cRatings)) {
-        if (typeof value === "number") {
-          avg[key] = (avg[key] ?? 0) + value * 0.3;
+  // 3. Compute ratings averages
+  const computeAverageAttribute = (
+    playerSet: typeof activePlayers,
+    attributes: string[]
+  ): number => {
+    if (playerSet.length === 0) return 60;
+    let sum = 0;
+    let count = 0;
+    for (const p of playerSet) {
+      const mult = careerStageMultiplier[p.careerStage] ?? 0.8;
+      const ratings = p.ratings as Record<string, number>;
+      for (const attr of attributes) {
+        if (ratings && typeof ratings[attr] === "number") {
+          sum += ratings[attr] * mult;
+          count++;
         }
       }
     }
+    return count > 0 ? Math.round(sum / count) : 60;
+  };
+
+  const computeAverageOverall = (playerSet: typeof activePlayers): number => {
+    if (playerSet.length === 0) return 60;
+    let sum = 0;
+    for (const p of playerSet) {
+      const mult = careerStageMultiplier[p.careerStage] ?? 0.8;
+      sum += getPlayerOverall(p) * mult;
+    }
+    return Math.round(sum / playerSet.length);
+  };
+
+  const overall = computeAverageOverall(starters);
+  const offense = computeAverageAttribute(starters, preset.offenseAttributes);
+  const defense = computeAverageAttribute(starters, preset.defenseAttributes);
+  const depth = computeAverageOverall(bench);
+
+  // Coach rating
+  const activeCoaches = coaches.filter((c) => c.isActive && c.ratings);
+  let coaching = 50;
+  if (activeCoaches.length > 0) {
+    const sum = activeCoaches.reduce((acc, c) => {
+      const r = c.ratings as Record<string, number>;
+      return acc + (r.strategy ?? 50);
+    }, 0);
+    coaching = Math.round(sum / activeCoaches.length);
   }
 
-  const defaultVector: TeamRatingVector = {
-    overall: 60,
-    offense: 60,
-    defense: 60,
-    form: 60,
-    depth: 60,
-    coaching: 60,
+  return {
+    overall,
+    offense,
+    defense,
+    form: 50 + formAdjustment,
+    depth,
+    coaching,
   };
-
-  const finalVector: TeamRatingVector = {
-    overall: typeof avg.overall === "number" && !isNaN(avg.overall) ? avg.overall : defaultVector.overall,
-    offense: typeof avg.offense === "number" && !isNaN(avg.offense) ? avg.offense : defaultVector.offense,
-    defense: typeof avg.defense === "number" && !isNaN(avg.defense) ? avg.defense : defaultVector.defense,
-    form: typeof avg.form === "number" && !isNaN(avg.form) ? avg.form : defaultVector.form,
-    depth: typeof avg.depth === "number" && !isNaN(avg.depth) ? avg.depth : defaultVector.depth,
-    coaching: typeof avg.coaching === "number" && !isNaN(avg.coaching) ? avg.coaching : defaultVector.coaching,
-  };
-
-  return finalVector;
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -117,7 +210,7 @@ export const sportsRouter = createTRPCRouter({
         archetype: z.string().optional(),
         isCanonical: z.boolean().optional(),
         status: z.string().optional(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       try {
@@ -147,34 +240,85 @@ export const sportsRouter = createTRPCRouter({
       }
     }),
 
-  getLeague: publicProcedure
-    .input(z.object({ id: z.string() }))
+  getDraftPicks: publicProcedure
+    .input(z.object({ seasonId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const league = await ctx.db.sportLeague.findUnique({
-          where: { id: input.id },
+        return await (ctx.db as any).sportDraftPick.findMany({
+          where: { seasonId: input.seasonId },
+          orderBy: [{ round: "asc" }, { pickNumber: "asc" }],
           include: {
-            teams: { orderBy: { name: "asc" } },
-            seasons: {
-              include: { champion: { select: { id: true, name: true } } },
-              orderBy: { seasonNumber: "desc" },
+            team: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+              },
+            },
+            player: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                position: true,
+                ratings: true,
+              },
             },
           },
         });
-
-        if (!league) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
-        }
-
-        return league;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
+      } catch (_error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch league",
+          message: "Failed to fetch draft picks",
         });
       }
     }),
+
+  getLeague: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    try {
+      const league = await ctx.db.sportLeague.findUnique({
+        where: { id: input.id },
+        include: {
+          teams: { orderBy: { name: "asc" } },
+          seasons: {
+            include: {
+              champion: { select: { id: true, name: true } },
+              matches: {
+                where: {
+                  season: { status: "in_progress" },
+                },
+                select: { id: true, status: true },
+              },
+              races: {
+                where: {
+                  season: { status: "in_progress" },
+                },
+                select: { id: true, status: true },
+              },
+              _count: {
+                select: {
+                  draftPicks: true,
+                },
+              },
+            },
+            orderBy: { seasonNumber: "desc" },
+          },
+        },
+      });
+
+      if (!league) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
+      }
+
+      return league;
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch league",
+      });
+    }
+  }),
 
   createLeague: protectedProcedure
     .input(
@@ -185,7 +329,7 @@ export const sportsRouter = createTRPCRouter({
         nationAffiliation: z.string().nullable().optional(),
         settings: z.record(z.string(), z.unknown()),
         isCanonical: z.boolean().optional().default(false),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -196,6 +340,14 @@ export const sportsRouter = createTRPCRouter({
             message: `Unknown sport preset: ${input.sportPreset}`,
           });
         }
+
+        await exchangeService.spend(
+          ctx.user.id,
+          500,
+          "CHARTER_FEE",
+          `LEAGUE_CREATE:${input.name}`,
+          ctx.db as any
+        );
 
         const archetype = preset.archetype;
 
@@ -258,7 +410,7 @@ export const sportsRouter = createTRPCRouter({
                 number: j + 1,
                 age: p.age ?? 22,
                 careerStage: p.careerStage ?? "rookie",
-                ratings: p.ratings as any ?? {},
+                ratings: (p.ratings as any) ?? {},
                 isActive: true,
               },
             });
@@ -286,8 +438,10 @@ export const sportsRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().min(1).max(200).optional(),
         status: z.string().optional(),
+        logo: z.string().nullable().optional(),
+        coverImage: z.string().nullable().optional(),
         settings: z.record(z.string(), z.unknown()).optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -357,7 +511,7 @@ export const sportsRouter = createTRPCRouter({
         leagueId: z.string().optional(),
         nationId: z.string().optional(),
         ownerUserId: z.string().optional(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       try {
@@ -382,39 +536,37 @@ export const sportsRouter = createTRPCRouter({
       }
     }),
 
-  getTeam: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.id },
-          include: {
-            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
-            players: { where: { isActive: true }, orderBy: { position: "asc" } },
-            coaches: { where: { isActive: true } },
-            seasons: {
-              include: {
-                season: { select: { id: true, seasonNumber: true, status: true } },
-              },
-              orderBy: { season: { seasonNumber: "desc" } },
+  getTeam: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    try {
+      const team = await ctx.db.sportTeam.findUnique({
+        where: { id: input.id },
+        include: {
+          league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
+          players: { where: { isActive: true }, orderBy: { position: "asc" } },
+          coaches: { where: { isActive: true } },
+          seasons: {
+            include: {
+              season: { select: { id: true, seasonNumber: true, status: true } },
             },
-            nation: { select: { id: true, name: true } },
+            orderBy: { season: { seasonNumber: "desc" } },
           },
-        });
+          nation: { select: { id: true, name: true } },
+        },
+      });
 
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        }
-
-        return team;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch team",
-        });
+      if (!team) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
       }
-    }),
+
+      return team;
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch team",
+      });
+    }
+  }),
 
   updateTeam: protectedProcedure
     .input(
@@ -424,7 +576,7 @@ export const sportsRouter = createTRPCRouter({
         color: z.string().optional(),
         nationId: z.string().optional(),
         logo: z.string().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -461,6 +613,14 @@ export const sportsRouter = createTRPCRouter({
           });
         }
 
+        await exchangeService.spend(
+          ctx.user.id,
+          50,
+          "CHARTER_FEE",
+          `TEAM_CLAIM:${input.teamId}`,
+          ctx.db as any
+        );
+
         return ctx.db.sportTeam.update({
           where: { id: input.teamId },
           data: { ownerUserId: ctx.user.id },
@@ -471,6 +631,179 @@ export const sportsRouter = createTRPCRouter({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to claim team",
         });
+      }
+    }),
+
+  updateTeamTactics: protectedProcedure
+    .input(z.object({ teamId: z.string(), tacticalIntent: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+        }
+        return ctx.db.sportTeam.update({
+          where: { id: input.teamId },
+          data: { tacticalIntent: input.tacticalIntent },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update tactics" });
+      }
+    }),
+
+  selectSponsor: protectedProcedure
+    .input(z.object({ teamId: z.string(), sponsorType: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+        }
+
+        const sponsors: Record<string, { name: string; baseFee: number; winBonus: number }> = {
+          conservative: { name: "SafeState Insurance", baseFee: 100, winBonus: 0 },
+          aggressive: { name: "Apex Energy Drink", baseFee: 10, winBonus: 25 },
+          corporate: { name: "Globex Logistics", baseFee: 50, winBonus: 10 },
+        };
+        const sponsorData = sponsors[input.sponsorType];
+        if (!sponsorData) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid sponsor type" });
+        }
+
+        return ctx.db.sportTeam.update({
+          where: { id: input.teamId },
+          data: { sponsor: sponsorData },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to select sponsor",
+        });
+      }
+    }),
+
+  trainPlayer: protectedProcedure
+    .input(z.object({ playerId: z.string(), attributeFocus: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const player = await ctx.db.sportPlayer.findUnique({
+          where: { id: input.playerId },
+          include: { team: true },
+        });
+        if (!player) throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
+        if (!player.team || player.team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+        }
+
+        await exchangeService.spend(ctx.user.id, 25, "TRAINING_FEE", `PLAYER:${input.playerId}`, ctx.db as any);
+
+        const ratings = (player.ratings as Record<string, number>) ?? {};
+        const current = ratings[input.attributeFocus] ?? 50;
+        const gain = Math.random() < 0.4 ? Math.floor(Math.random() * 3) + 1 : 1;
+        const newVal = Math.min(99, current + gain);
+
+        return ctx.db.sportPlayer.update({
+          where: { id: input.playerId },
+          data: { ratings: { ...ratings, [input.attributeFocus]: newVal } },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Training failed" });
+      }
+    }),
+
+  teamTraining: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+        }
+
+        await exchangeService.spend(ctx.user.id, 100, "TEAM_TRAINING", `TEAM:${input.teamId}`, ctx.db as any);
+
+        const players = await ctx.db.sportPlayer.findMany({
+          where: { teamId: input.teamId, isActive: true },
+        });
+        for (const player of players) {
+          const ratings = (player.ratings as Record<string, number>) ?? {};
+          const keys = Object.keys(ratings).filter((k) => k !== "overall");
+          if (keys.length === 0) continue;
+          const attr = keys[Math.floor(Math.random() * keys.length)];
+          const gain = Math.random() < 0.3 ? 1 : 0;
+          if (gain > 0) {
+            await ctx.db.sportPlayer.update({
+              where: { id: player.id },
+              data: { ratings: { ...ratings, [attr]: Math.min(99, (ratings[attr] ?? 50) + gain) } },
+            });
+          }
+        }
+        return { trained: players.length };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Team training failed" });
+      }
+    }),
+
+  setLineup: protectedProcedure
+    .input(
+      z.object({
+        teamId: z.string(),
+        starters: z.array(z.string()),
+        captainId: z.string().optional(),
+        formation: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+        }
+        const lineup = {
+          starters: input.starters,
+          captainId: input.captainId ?? null,
+          formation: input.formation ?? "4-4-2",
+        };
+        return ctx.db.sportTeam.update({
+          where: { id: input.teamId },
+          data: { lineup },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to set lineup" });
+      }
+    }),
+
+  collectMatchRevenue: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+        }
+
+        const ticketRevenue = (team.stadiumCapacity * team.ticketPrice * 0.6 * (team.popularity / 100));
+        const sponsorIncome = (team.sponsor as any)?.baseFee ?? 0;
+        const totalIncome = Math.round(ticketRevenue + sponsorIncome);
+
+        const currentBudget = team.budget ?? 0;
+        return ctx.db.sportTeam.update({
+          where: { id: input.teamId },
+          data: { budget: currentBudget + totalIncome },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to collect revenue" });
       }
     }),
 
@@ -547,7 +880,9 @@ export const sportsRouter = createTRPCRouter({
           const schedule = generateSchedule({
             archetype: league.archetype as ArchetypeType,
             teamCount: teamIds.length,
-            raceCount: (league.settings as Record<string, unknown> | null)?.raceCount as number | undefined,
+            raceCount: (league.settings as Record<string, unknown> | null)?.raceCount as
+              | number
+              | undefined,
           });
           const races = Array.isArray(schedule) ? schedule : [];
           for (const race of races) {
@@ -564,7 +899,7 @@ export const sportsRouter = createTRPCRouter({
         } else if (league.archetype === "bracket") {
           // Create initial bracket matchups: seed teams by index, pair 1vN, 2v(N-1), etc.
           const shuffled = [...league.teams].sort(() => Math.random() - 0.5);
-          const pairs: Array<[typeof league.teams[0], typeof league.teams[0]]> = [];
+          const pairs: Array<[(typeof league.teams)[0], (typeof league.teams)[0]]> = [];
           for (let i = 0; i < shuffled.length; i += 2) {
             if (i + 1 < shuffled.length) {
               pairs.push([shuffled[i], shuffled[i + 1]]);
@@ -616,54 +951,52 @@ export const sportsRouter = createTRPCRouter({
       }
     }),
 
-  getSeason: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const season = await ctx.db.sportSeason.findUnique({
-          where: { id: input.id },
-          include: {
-            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
-            standings: {
-              include: { team: { select: { id: true, name: true, shortName: true } } },
-              orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
-            },
-            matches: {
-              include: {
-                homeTeam: { select: { id: true, name: true, shortName: true, color: true } },
-                awayTeam: { select: { id: true, name: true, shortName: true, color: true } },
-              },
-              orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
-            },
-            brackets: {
-              orderBy: { round: "asc" },
-            },
-            races: {
-              orderBy: { raceNumber: "asc" },
-            },
-            champion: { select: { id: true, name: true } },
+  getSeason: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    try {
+      const season = await ctx.db.sportSeason.findUnique({
+        where: { id: input.id },
+        include: {
+          league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
+          standings: {
+            include: { team: { select: { id: true, name: true, shortName: true } } },
+            orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
           },
-        });
+          matches: {
+            include: {
+              homeTeam: { select: { id: true, name: true, shortName: true, color: true } },
+              awayTeam: { select: { id: true, name: true, shortName: true, color: true } },
+            },
+            orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
+          },
+          brackets: {
+            orderBy: { round: "asc" },
+          },
+          races: {
+            orderBy: { raceNumber: "asc" },
+          },
+          champion: { select: { id: true, name: true } },
+        },
+      });
 
-        if (!season) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
-        }
-
-        return season;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch season",
-        });
+      if (!season) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
       }
-    }),
+
+      return season;
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch season",
+      });
+    }
+  }),
 
   simulateMatchDay: protectedProcedure
     .input(z.object({ seasonId: z.string(), matchDay: z.number().int().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const season = await ctx.db.sportSeason.findUnique({
+        const season = await (ctx.db as any).sportSeason.findUnique({
           where: { id: input.seasonId },
           include: { league: true },
         });
@@ -672,8 +1005,15 @@ export const sportsRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
         }
 
-        const matches = await ctx.db.sportMatch.findMany({
-          where: { seasonId: input.seasonId, matchDay: input.matchDay, status: "scheduled" },
+        const activeStage = (season as any).activeStage ?? 1;
+
+        const matches = (await (ctx.db as any).sportMatch.findMany({
+          where: {
+            seasonId: input.seasonId,
+            matchDay: input.matchDay,
+            stage: activeStage,
+            status: "scheduled",
+          },
           include: {
             homeTeam: {
               include: {
@@ -688,29 +1028,58 @@ export const sportsRouter = createTRPCRouter({
               },
             },
           },
-        });
+        })) as any[];
 
         if (matches.length === 0) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "No scheduled matches for this match day",
+            message: "No scheduled matches for this match day in this stage",
           });
         }
 
         const results: Array<Record<string, unknown>> = [];
+
+        // Pre-fetch storyteller effects for all involved team nationIds
+        const nationIds = new Set<string>();
+        for (const m of matches) {
+          if (m.homeTeam.nationId) nationIds.add(m.homeTeam.nationId);
+          if (m.awayTeam.nationId) nationIds.add(m.awayTeam.nationId);
+        }
+
+        const effectsMap = new Map<string, any[]>();
+        if (nationIds.size > 0) {
+          const effects = await ctx.db.storytellerEffect.findMany({
+            where: {
+              countryId: { in: Array.from(nationIds) },
+              isActive: true,
+            },
+          });
+          for (const e of effects) {
+            if (e.countryId) {
+              const list = effectsMap.get(e.countryId) ?? [];
+              list.push(e);
+              effectsMap.set(e.countryId, list);
+            }
+          }
+        }
 
         for (let i = 0; i < matches.length; i++) {
           const match = matches[i];
           const seed = simpleHash(input.seasonId, input.matchDay, i);
 
           const homeRatings = computeTeamRatingVector(
-            (match as unknown as { homeTeam: { players: Array<{ isActive: boolean; ratings: Record<string, unknown> | null; careerStage: string }>; coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).homeTeam.players,
-            (match as unknown as { homeTeam: { coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).homeTeam.coaches,
+            match.homeTeam.players as any[],
+            match.homeTeam.coaches as any[],
+            season.league.sportPreset
           );
           const awayRatings = computeTeamRatingVector(
-            (match as unknown as { awayTeam: { players: Array<{ isActive: boolean; ratings: Record<string, unknown> | null; careerStage: string }>; coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).awayTeam.players,
-            (match as unknown as { awayTeam: { coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).awayTeam.coaches,
+            match.awayTeam.players as any[],
+            match.awayTeam.coaches as any[],
+            season.league.sportPreset
           );
+
+          const homeTeamModifiers = await getTeamModifiers(match.homeTeam, ctx.db, effectsMap);
+          const awayTeamModifiers = await getTeamModifiers(match.awayTeam, ctx.db, effectsMap);
 
           const result = resolveMatch({
             sport: season.league.sportPreset,
@@ -718,6 +1087,10 @@ export const sportsRouter = createTRPCRouter({
             awayTeam: awayRatings,
             archetype: season.league.archetype,
             seed,
+            homeTeamModifiers,
+            awayTeamModifiers,
+            homeRoster: match.homeTeam.players as any,
+            awayRoster: match.awayTeam.players as any,
           });
 
           const resRec = result as any;
@@ -728,26 +1101,34 @@ export const sportsRouter = createTRPCRouter({
 
           const homeRatingAfter = {
             ...homeRatings,
-            overall: Math.round(( (homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
+            overall: Math.round(((homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
           };
           const awayRatingAfter = {
             ...awayRatings,
-            overall: Math.round(( (awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
+            overall: Math.round(((awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
           };
 
           const winner =
-            homeScore > awayScore ? match.homeTeamId : awayScore > homeScore ? match.awayTeamId : null;
+            homeScore > awayScore
+              ? match.homeTeamId
+              : awayScore > homeScore
+                ? match.awayTeamId
+                : null;
 
           const status = winner ? (homeScore > awayScore ? "home_win" : "away_win") : "draw";
 
-          await ctx.db.sportMatch.update({
+          await (ctx.db as any).sportMatch.update({
             where: { id: match.id },
             data: {
               homeScore,
               awayScore,
               status: "completed",
               resolvedIxTime: Date.now(),
-              matchStats: resRec.matchStats as any,
+              matchStats: {
+                keyStats: result.keyStats,
+                evaluation: result.evaluation,
+                trace: result.trace,
+              } as any,
               homeRatingBefore: { ...homeRatings },
               awayRatingBefore: { ...awayRatings },
               homeRatingAfter: { ...homeRatingAfter },
@@ -756,18 +1137,18 @@ export const sportsRouter = createTRPCRouter({
           });
 
           // Update team season rating vectors
-          await ctx.db.sportTeamSeason.updateMany({
+          await (ctx.db as any).sportTeamSeason.updateMany({
             where: { seasonId: input.seasonId, teamId: match.homeTeamId },
             data: { ratingVector: { ...homeRatingAfter } },
           });
-          await ctx.db.sportTeamSeason.updateMany({
+          await (ctx.db as any).sportTeamSeason.updateMany({
             where: { seasonId: input.seasonId, teamId: match.awayTeamId },
             data: { ratingVector: { ...awayRatingAfter } },
           });
 
           // Update standings
           if (status === "home_win") {
-            await ctx.db.sportStanding.updateMany({
+            await (ctx.db as any).sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.homeTeamId },
               data: {
                 wins: { increment: 1 },
@@ -776,7 +1157,7 @@ export const sportsRouter = createTRPCRouter({
                 pointsAgainst: { increment: awayScore },
               },
             });
-            await ctx.db.sportStanding.updateMany({
+            await (ctx.db as any).sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.awayTeamId },
               data: {
                 losses: { increment: 1 },
@@ -785,7 +1166,7 @@ export const sportsRouter = createTRPCRouter({
               },
             });
           } else if (status === "away_win") {
-            await ctx.db.sportStanding.updateMany({
+            await (ctx.db as any).sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.awayTeamId },
               data: {
                 wins: { increment: 1 },
@@ -794,7 +1175,7 @@ export const sportsRouter = createTRPCRouter({
                 pointsAgainst: { increment: homeScore },
               },
             });
-            await ctx.db.sportStanding.updateMany({
+            await (ctx.db as any).sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.homeTeamId },
               data: {
                 losses: { increment: 1 },
@@ -804,7 +1185,7 @@ export const sportsRouter = createTRPCRouter({
             });
           } else {
             // Draw
-            await ctx.db.sportStanding.updateMany({
+            await (ctx.db as any).sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.homeTeamId },
               data: {
                 draws: { increment: 1 },
@@ -813,7 +1194,7 @@ export const sportsRouter = createTRPCRouter({
                 pointsAgainst: { increment: awayScore },
               },
             });
-            await ctx.db.sportStanding.updateMany({
+            await (ctx.db as any).sportStanding.updateMany({
               where: { seasonId: input.seasonId, teamId: match.awayTeamId },
               data: {
                 draws: { increment: 1 },
@@ -829,7 +1210,7 @@ export const sportsRouter = createTRPCRouter({
           if (Array.isArray(playerStats)) {
             for (const ps of playerStats) {
               if (ps.playerId) {
-                await ctx.db.sportMatchStat.create({
+                await (ctx.db as any).sportMatchStat.create({
                   data: {
                     matchId: match.id,
                     playerId: ps.playerId as string,
@@ -848,6 +1229,9 @@ export const sportsRouter = createTRPCRouter({
           });
         }
 
+        // Try to transition to next stage if this stage matches are complete
+        await transitionToNextStage(ctx.db as any, input.seasonId);
+
         return { matchDay: input.matchDay, results };
       } catch (error) {
         console.error("Match day simulation error:", error);
@@ -863,7 +1247,7 @@ export const sportsRouter = createTRPCRouter({
     .input(z.object({ seasonId: z.string(), round: z.number().int().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const season = await ctx.db.sportSeason.findUnique({
+        const season = await (ctx.db as any).sportSeason.findUnique({
           where: { id: input.seasonId },
           include: { league: true },
         });
@@ -873,7 +1257,7 @@ export const sportsRouter = createTRPCRouter({
         }
 
         // Find bracket matches for this round that are still scheduled
-        const bracketMatches = await ctx.db.sportBracket.findMany({
+        const bracketMatches = await (ctx.db as any).sportBracket.findMany({
           where: { seasonId: input.seasonId, round: input.round, status: "scheduled" },
         });
 
@@ -886,30 +1270,69 @@ export const sportsRouter = createTRPCRouter({
 
         const results: Array<Record<string, unknown>> = [];
 
+        // Pre-fetch all teams with rosters
+        const teamIds = new Set<string>();
+        for (const bm of bracketMatches) {
+          if (bm.fighter1Id) teamIds.add(bm.fighter1Id);
+          if (bm.fighter2Id) teamIds.add(bm.fighter2Id);
+        }
+
+        const teams = await ctx.db.sportTeam.findMany({
+          where: { id: { in: Array.from(teamIds) } },
+          include: {
+            players: { where: { isActive: true } },
+            coaches: { where: { isActive: true } },
+          },
+        });
+
+        const teamsMap = new Map<string, any>();
+        const nationIds = new Set<string>();
+        for (const t of teams) {
+          teamsMap.set(t.id, t);
+          if (t.nationId) nationIds.add(t.nationId);
+        }
+
+        // Pre-fetch storyteller effects
+        const effectsMap = new Map<string, any[]>();
+        if (nationIds.size > 0) {
+          const effects = await ctx.db.storytellerEffect.findMany({
+            where: {
+              countryId: { in: Array.from(nationIds) },
+              isActive: true,
+            },
+          });
+          for (const e of effects) {
+            if (e.countryId) {
+              const list = effectsMap.get(e.countryId) ?? [];
+              list.push(e);
+              effectsMap.set(e.countryId, list);
+            }
+          }
+        }
+
         for (let i = 0; i < bracketMatches.length; i++) {
           const bm = bracketMatches[i];
           const seed = simpleHash(input.seasonId, input.round * 100, i);
 
-          // Get both teams (fighters) with their rosters
-          const fighter1Team = await ctx.db.sportTeam.findUnique({
-            where: { id: bm.fighter1Id },
-            include: {
-              players: { where: { isActive: true } },
-              coaches: { where: { isActive: true } },
-            },
-          });
-          const fighter2Team = await ctx.db.sportTeam.findUnique({
-            where: { id: bm.fighter2Id },
-            include: {
-              players: { where: { isActive: true } },
-              coaches: { where: { isActive: true } },
-            },
-          });
+          // Get both teams (fighters) with their rosters from pre-fetched map
+          const fighter1Team = teamsMap.get(bm.fighter1Id);
+          const fighter2Team = teamsMap.get(bm.fighter2Id);
 
           if (!fighter1Team || !fighter2Team) continue;
 
-          const f1Ratings = computeTeamRatingVector(fighter1Team.players as any[], fighter1Team.coaches as any[]);
-          const f2Ratings = computeTeamRatingVector(fighter2Team.players as any[], fighter2Team.coaches as any[]);
+          const f1Ratings = computeTeamRatingVector(
+            fighter1Team.players as any[],
+            fighter1Team.coaches as any[],
+            season.league.sportPreset
+          );
+          const f2Ratings = computeTeamRatingVector(
+            fighter2Team.players as any[],
+            fighter2Team.coaches as any[],
+            season.league.sportPreset
+          );
+
+          const homeTeamModifiers = await getTeamModifiers(fighter1Team, ctx.db, effectsMap);
+          const awayTeamModifiers = await getTeamModifiers(fighter2Team, ctx.db, effectsMap);
 
           const result = resolveMatch({
             sport: season.league.sportPreset,
@@ -917,6 +1340,10 @@ export const sportsRouter = createTRPCRouter({
             awayTeam: f2Ratings,
             archetype: "bracket",
             seed,
+            homeTeamModifiers,
+            awayTeamModifiers,
+            homeRoster: fighter1Team.players as any,
+            awayRoster: fighter2Team.players as any,
           });
 
           const resRec = result as any;
@@ -924,7 +1351,7 @@ export const sportsRouter = createTRPCRouter({
           const f2Score = (resRec.awayScore as number) ?? 0;
           const winnerId = f1Score > f2Score ? bm.fighter1Id : bm.fighter2Id;
 
-          await ctx.db.sportBracket.update({
+          await (ctx.db as any).sportBracket.update({
             where: { id: bm.id },
             data: {
               winnerId,
@@ -938,17 +1365,17 @@ export const sportsRouter = createTRPCRouter({
         }
 
         // When all brackets in current round are done, create next round brackets
-        const stillScheduled = await ctx.db.sportBracket.count({
+        const stillScheduled = await (ctx.db as any).sportBracket.count({
           where: { seasonId: input.seasonId, round: input.round, status: "scheduled" },
         });
 
         if (stillScheduled === 0) {
-          const completedBrackets = await ctx.db.sportBracket.findMany({
+          const completedBrackets = await (ctx.db as any).sportBracket.findMany({
             where: { seasonId: input.seasonId, round: input.round, status: "completed" },
             select: { winnerId: true },
           });
 
-          const winners = completedBrackets.map((b) => b.winnerId).filter(Boolean) as string[];
+          const winners = completedBrackets.map((b: any) => b.winnerId).filter(Boolean) as string[];
 
           if (winners.length >= 2) {
             const nextRound = input.round + 1;
@@ -957,9 +1384,9 @@ export const sportsRouter = createTRPCRouter({
             const half = pow2 / 2;
             for (let i = 0; i < half; i++) {
               const a = i < winners.length ? winners[i]! : null;
-              const b = (pow2 - 1 - i) < winners.length ? winners[pow2 - 1 - i]! : null;
+              const b = pow2 - 1 - i < winners.length ? winners[pow2 - 1 - i]! : null;
               if (a && b) {
-                await ctx.db.sportBracket.create({
+                await (ctx.db as any).sportBracket.create({
                   data: {
                     seasonId: input.seasonId,
                     round: nextRound,
@@ -974,7 +1401,7 @@ export const sportsRouter = createTRPCRouter({
             }
           } else if (winners.length === 1) {
             const championTeamId = winners[0]!;
-            await ctx.db.sportSeason.update({
+            await (ctx.db as any).sportSeason.update({
               where: { id: input.seasonId },
               data: {
                 status: "completed",
@@ -1099,30 +1526,68 @@ export const sportsRouter = createTRPCRouter({
       }
     }),
 
+  getMatchDetails: publicProcedure
+    .input(z.object({ matchId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const match = await ctx.db.sportMatch.findUnique({
+          where: { id: input.matchId },
+          include: {
+            homeTeam: {
+              select: { id: true, name: true, shortName: true, logo: true, color: true },
+            },
+            awayTeam: {
+              select: { id: true, name: true, shortName: true, logo: true, color: true },
+            },
+          },
+        });
+
+        if (!match) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
+        }
+
+        const stats = match.matchStats as any;
+        return {
+          ...match,
+          evaluation: stats?.evaluation ?? null,
+          trace: stats?.trace ?? null,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch match details",
+        });
+      }
+    }),
+
   simulateFullSeason: protectedProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const season = await ctx.db.sportSeason.findUnique({
+        let currentSeason = await (ctx.db as any).sportSeason.findUnique({
           where: { id: input.seasonId },
           include: { league: true },
         });
 
-        if (!season) {
+        if (!currentSeason) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
         }
 
-        if (season.league.archetype === "circuit") {
+        if (currentSeason.league.archetype === "circuit") {
           // Simulate all remaining races
-          const races = await ctx.db.sportRace.findMany({
-            where: { seasonId: input.seasonId, status: { in: ["upcoming", "qualifying_complete"] } },
+          const races = await (ctx.db as any).sportRace.findMany({
+            where: {
+              seasonId: input.seasonId,
+              status: { in: ["upcoming", "qualifying_complete"] },
+            },
             orderBy: { raceNumber: "asc" },
           });
 
           // Fetch all drivers for the season's teams
-          const teams = await ctx.db.sportTeam.findMany({
+          const teams = await (ctx.db as any).sportTeam.findMany({
             where: {
-              leagueId: season.leagueId,
+              leagueId: currentSeason.leagueId,
               players: { some: { position: "driver", isActive: true } },
             },
             include: {
@@ -1166,10 +1631,14 @@ export const sportsRouter = createTRPCRouter({
               isWet: false,
             });
 
-            await ctx.db.sportRace.update({
+            await (ctx.db as any).sportRace.update({
               where: { id: race.id },
               data: {
-                grid: allDrivers.map((d, idx) => ({ driverId: d.driverId, teamId: d.teamId, gridPosition: idx + 1 })) as any,
+                grid: allDrivers.map((d, idx) => ({
+                  driverId: d.driverId,
+                  teamId: d.teamId,
+                  gridPosition: idx + 1,
+                })) as any,
                 results: raceResult.positions as any,
                 status: "completed",
                 raceIxTime: Date.now(),
@@ -1181,7 +1650,7 @@ export const sportsRouter = createTRPCRouter({
             if (Array.isArray(results)) {
               for (const r of results) {
                 if (r.teamId && r.points !== undefined) {
-                  await ctx.db.sportStanding.updateMany({
+                  await (ctx.db as any).sportStanding.updateMany({
                     where: { seasonId: input.seasonId, teamId: r.teamId as string },
                     data: { points: { increment: (r.points as number) ?? 0 } },
                   });
@@ -1189,295 +1658,381 @@ export const sportsRouter = createTRPCRouter({
               }
             }
           }
-        } else if (season.league.archetype === "bracket") {
-          // Simulate all bracket rounds iteratively
-          let currentRound = 1;
-          let hasMoreRounds = true;
+        } else {
+          // League, bracket, or multi-stage tournament
+          // Pre-fetch all teams with rosters for the entire league to avoid N+1 queries
+          const leagueTeams = await ctx.db.sportTeam.findMany({
+            where: { leagueId: currentSeason.leagueId },
+            include: {
+              players: { where: { isActive: true } },
+              coaches: { where: { isActive: true } },
+            },
+          });
 
-          while (hasMoreRounds) {
-            const bracketMatches = await ctx.db.sportBracket.findMany({
-              where: { seasonId: input.seasonId, round: currentRound, status: "scheduled" },
+          const teamsMap = new Map<string, any>();
+          const nationIds = new Set<string>();
+          for (const t of leagueTeams) {
+            teamsMap.set(t.id, t);
+            if (t.nationId) nationIds.add(t.nationId);
+          }
+
+          // Pre-fetch storyteller effects
+          const effectsMap = new Map<string, any[]>();
+          if (nationIds.size > 0) {
+            const effects = await ctx.db.storytellerEffect.findMany({
+              where: {
+                countryId: { in: Array.from(nationIds) },
+                isActive: true,
+              },
             });
-
-            if (bracketMatches.length === 0) {
-              const completedInRound = await ctx.db.sportBracket.count({
-                where: { seasonId: input.seasonId, round: currentRound, status: "completed" },
-              });
-              if (completedInRound === 0) {
-                hasMoreRounds = false;
-                break;
-              }
-            } else {
-              for (let i = 0; i < bracketMatches.length; i++) {
-                const bm = bracketMatches[i];
-                const seed = simpleHash(input.seasonId, currentRound * 100, i);
-
-                const f1 = await ctx.db.sportTeam.findUnique({
-                  where: { id: bm.fighter1Id },
-                  include: {
-                    players: { where: { isActive: true } },
-                    coaches: { where: { isActive: true } },
-                  },
-                });
-                const f2 = await ctx.db.sportTeam.findUnique({
-                  where: { id: bm.fighter2Id },
-                  include: {
-                    players: { where: { isActive: true } },
-                    coaches: { where: { isActive: true } },
-                  },
-                });
-
-                if (!f1 || !f2) continue;
-
-                const f1ratings = computeTeamRatingVector(f1.players as any[], f1.coaches as any[]);
-                const f2ratings = computeTeamRatingVector(f2.players as any[], f2.coaches as any[]);
-
-                const result = resolveMatch({
-                  sport: season.league.sportPreset,
-                  homeTeam: f1ratings,
-                  awayTeam: f2ratings,
-                  archetype: "bracket",
-                  seed,
-                });
-                const resRec = result as any;
-                const f1Score = (resRec.homeScore as number) ?? 0;
-                const f2Score = (resRec.awayScore as number) ?? 0;
-                const winnerId = f1Score > f2Score ? bm.fighter1Id : bm.fighter2Id;
-
-                await ctx.db.sportBracket.update({
-                  where: { id: bm.id },
-                  data: {
-                    winnerId,
-                    status: "completed",
-                    resolvedIxTime: Date.now(),
-                    result: result as any,
-                  },
-                });
+            for (const e of effects) {
+              if (e.countryId) {
+                const list = effectsMap.get(e.countryId) ?? [];
+                list.push(e);
+                effectsMap.set(e.countryId, list);
               }
             }
+          }
 
-            const completedBrackets = await ctx.db.sportBracket.findMany({
-              where: { seasonId: input.seasonId, round: currentRound, status: "completed" },
-              select: { winnerId: true },
+          let seasonInProgress = true;
+          while (seasonInProgress) {
+            const activeStage = (currentSeason as any).activeStage ?? 1;
+
+            // 1. Simulate matches of this stage
+            const pendingMatches = await (ctx.db as any).sportMatch.findMany({
+              where: { seasonId: input.seasonId, stage: activeStage, status: "scheduled" },
             });
 
-            const winners = completedBrackets.map((b) => b.winnerId).filter(Boolean) as string[];
+            if (pendingMatches.length > 0) {
+              // Get match days
+              const matchDays = Array.from(
+                new Set(pendingMatches.map((m: any) => m.matchDay))
+              ).sort((a: any, b: any) => a - b) as number[];
+              for (const matchDay of matchDays) {
+                // Simulate all matches on this matchDay in this stage
+                const matches = (await (ctx.db as any).sportMatch.findMany({
+                  where: {
+                    seasonId: input.seasonId,
+                    stage: activeStage,
+                    matchDay,
+                    status: "scheduled",
+                  },
+                  include: {
+                    homeTeam: {
+                      include: {
+                        players: { where: { isActive: true } },
+                        coaches: { where: { isActive: true } },
+                      },
+                    },
+                    awayTeam: {
+                      include: {
+                        players: { where: { isActive: true } },
+                        coaches: { where: { isActive: true } },
+                      },
+                    },
+                  },
+                })) as any[];
 
-            if (winners.length >= 2) {
-              const nextRound = currentRound + 1;
-              const nextRoundCount = await ctx.db.sportBracket.count({
-                where: { seasonId: input.seasonId, round: nextRound },
-              });
+                for (let i = 0; i < matches.length; i++) {
+                  const match = matches[i];
+                  const seed = simpleHash(input.seasonId, matchDay + activeStage * 100, i);
 
-              if (nextRoundCount === 0) {
-                const ixNow = Date.now();
-                const pow2 = Math.pow(2, Math.ceil(Math.log2(winners.length)));
-                const half = pow2 / 2;
-                for (let i = 0; i < half; i++) {
-                  const a = i < winners.length ? winners[i]! : null;
-                  const b = (pow2 - 1 - i) < winners.length ? winners[pow2 - 1 - i]! : null;
-                  if (a && b) {
-                    await ctx.db.sportBracket.create({
+                  const homeRatings = computeTeamRatingVector(
+                    match.homeTeam.players as any[],
+                    match.homeTeam.coaches as any[],
+                    currentSeason.league.sportPreset
+                  );
+                  const awayRatings = computeTeamRatingVector(
+                    match.awayTeam.players as any[],
+                    match.awayTeam.coaches as any[],
+                    currentSeason.league.sportPreset
+                  );
+
+                  const homeTeamModifiers = await getTeamModifiers(match.homeTeam, ctx.db, effectsMap);
+                  const awayTeamModifiers = await getTeamModifiers(match.awayTeam, ctx.db, effectsMap);
+
+                  const result = resolveMatch({
+                    sport: currentSeason.league.sportPreset,
+                    homeTeam: homeRatings,
+                    awayTeam: awayRatings,
+                    archetype: currentSeason.league.archetype,
+                    seed,
+                    homeTeamModifiers,
+                    awayTeamModifiers,
+                    homeRoster: match.homeTeam.players as any,
+                    awayRoster: match.awayTeam.players as any,
+                  });
+
+                  const resRec = result as any;
+                  const homeScore = (resRec.homeScore as number) ?? 0;
+                  const awayScore = (resRec.awayScore as number) ?? 0;
+                  const homeRatingDelta = (resRec.homeRatingDelta as number) ?? 0;
+                  const awayRatingDelta = (resRec.awayRatingDelta as number) ?? 0;
+
+                  const homeRatingAfter = {
+                    ...homeRatings,
+                    overall:
+                      Math.round(((homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
+                  };
+                  const awayRatingAfter = {
+                    ...awayRatings,
+                    overall:
+                      Math.round(((awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
+                  };
+
+                  const winner =
+                    homeScore > awayScore
+                      ? match.homeTeamId
+                      : awayScore > homeScore
+                        ? match.awayTeamId
+                        : null;
+                  const status = winner
+                    ? homeScore > awayScore
+                      ? "home_win"
+                      : "away_win"
+                    : "draw";
+
+                  await (ctx.db as any).sportMatch.update({
+                    where: { id: match.id },
+                    data: {
+                      homeScore,
+                      awayScore,
+                      status: "completed",
+                      resolvedIxTime: Date.now(),
+                      matchStats: {
+                        keyStats: result.keyStats,
+                        evaluation: result.evaluation,
+                        trace: result.trace,
+                      } as any,
+                      homeRatingBefore: { ...homeRatings },
+                      awayRatingBefore: { ...awayRatings },
+                      homeRatingAfter: { ...homeRatingAfter },
+                      awayRatingAfter: { ...awayRatingAfter },
+                    },
+                  });
+
+                  // Update team season rating vectors
+                  await (ctx.db as any).sportTeamSeason.updateMany({
+                    where: { seasonId: input.seasonId, teamId: match.homeTeamId },
+                    data: { ratingVector: { ...homeRatingAfter } },
+                  });
+                  await (ctx.db as any).sportTeamSeason.updateMany({
+                    where: { seasonId: input.seasonId, teamId: match.awayTeamId },
+                    data: { ratingVector: { ...awayRatingAfter } },
+                  });
+
+                  // Update standings (for group stage or round robin)
+                  if (status === "home_win") {
+                    await (ctx.db as any).sportStanding.updateMany({
+                      where: { seasonId: input.seasonId, teamId: match.homeTeamId },
                       data: {
-                        seasonId: input.seasonId,
-                        round: nextRound,
-                        weightClass: "heavyweight",
-                        fighter1Id: a,
-                        fighter2Id: b,
-                        status: "scheduled",
-                        scheduledIxTime: ixNow,
+                        wins: { increment: 1 },
+                        points: { increment: 3 },
+                        pointsFor: { increment: homeScore },
+                        pointsAgainst: { increment: awayScore },
+                      },
+                    });
+                    await (ctx.db as any).sportStanding.updateMany({
+                      where: { seasonId: input.seasonId, teamId: match.awayTeamId },
+                      data: {
+                        losses: { increment: 1 },
+                        pointsFor: { increment: awayScore },
+                        pointsAgainst: { increment: homeScore },
+                      },
+                    });
+                  } else if (status === "away_win") {
+                    await (ctx.db as any).sportStanding.updateMany({
+                      where: { seasonId: input.seasonId, teamId: match.awayTeamId },
+                      data: {
+                        wins: { increment: 1 },
+                        points: { increment: 3 },
+                        pointsFor: { increment: awayScore },
+                        pointsAgainst: { increment: homeScore },
+                      },
+                    });
+                    await (ctx.db as any).sportStanding.updateMany({
+                      where: { seasonId: input.seasonId, teamId: match.homeTeamId },
+                      data: {
+                        losses: { increment: 1 },
+                        pointsFor: { increment: homeScore },
+                        pointsAgainst: { increment: awayScore },
+                      },
+                    });
+                  } else {
+                    await (ctx.db as any).sportStanding.updateMany({
+                      where: { seasonId: input.seasonId, teamId: match.homeTeamId },
+                      data: {
+                        draws: { increment: 1 },
+                        points: { increment: 1 },
+                        pointsFor: { increment: homeScore },
+                        pointsAgainst: { increment: awayScore },
+                      },
+                    });
+                    await (ctx.db as any).sportStanding.updateMany({
+                      where: { seasonId: input.seasonId, teamId: match.awayTeamId },
+                      data: {
+                        draws: { increment: 1 },
+                        points: { increment: 1 },
+                        pointsFor: { increment: awayScore },
+                        pointsAgainst: { increment: homeScore },
                       },
                     });
                   }
                 }
               }
-              currentRound = nextRound;
-            } else {
-              hasMoreRounds = false;
             }
-          }
-        } else {
-          // League / division_conference: simulate all remaining match days
-          const maxMatchDay = await ctx.db.sportMatch.findFirst({
-            where: { seasonId: input.seasonId },
-            orderBy: { matchDay: "desc" },
-            select: { matchDay: true },
-          });
 
-          if (maxMatchDay) {
-            for (let matchDay = 1; matchDay <= maxMatchDay.matchDay; matchDay++) {
-              const pending = await ctx.db.sportMatch.findFirst({
-                where: { seasonId: input.seasonId, matchDay, status: "scheduled" },
-              });
-              if (!pending) continue;
-
-              const matches = await ctx.db.sportMatch.findMany({
-                where: { seasonId: input.seasonId, matchDay, status: "scheduled" },
-                include: {
-                  homeTeam: {
-                    include: {
-                      players: { where: { isActive: true } },
-                      coaches: { where: { isActive: true } },
-                    },
-                  },
-                  awayTeam: {
-                    include: {
-                      players: { where: { isActive: true } },
-                      coaches: { where: { isActive: true } },
-                    },
-                  },
+            // 2. Simulate brackets of this stage (if bracket or golden box)
+            let currentRound = 1;
+            let hasMoreBracketsInStage = true;
+            while (hasMoreBracketsInStage) {
+              const pendingBrackets = await (ctx.db as any).sportBracket.findMany({
+                where: {
+                  seasonId: input.seasonId,
+                  stage: activeStage,
+                  round: currentRound,
+                  status: "scheduled",
                 },
               });
 
-              for (let i = 0; i < matches.length; i++) {
-                const match = matches[i];
-                const seed = simpleHash(input.seasonId, matchDay, i);
-
-                const homeRatings = computeTeamRatingVector(
-                  (match as unknown as { homeTeam: { players: Array<{ isActive: boolean; ratings: Record<string, unknown> | null; careerStage: string }>; coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).homeTeam.players,
-                  (match as unknown as { homeTeam: { coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).homeTeam.coaches,
-                );
-                const awayRatings = computeTeamRatingVector(
-                  (match as unknown as { awayTeam: { players: Array<{ isActive: boolean; ratings: Record<string, unknown> | null; careerStage: string }>; coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).awayTeam.players,
-                  (match as unknown as { awayTeam: { coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }> } }).awayTeam.coaches,
-                );
-
-                const result = resolveMatch({
-                  sport: season.league.sportPreset,
-                  homeTeam: homeRatings,
-                  awayTeam: awayRatings,
-                  archetype: season.league.archetype,
-                  seed,
-                });
-                const resRec = result as any;
-                const homeScore = (resRec.homeScore as number) ?? 0;
-                const awayScore = (resRec.awayScore as number) ?? 0;
-
-                const status =
-                  homeScore > awayScore
-                    ? "home_win"
-                    : awayScore > homeScore
-                      ? "away_win"
-                      : "draw";
-
-                const homeRatingDelta = (resRec.homeRatingDelta as number) ?? 0;
-                const awayRatingDelta = (resRec.awayRatingDelta as number) ?? 0;
-
-                const homeRatingAfter = {
-                  ...homeRatings,
-                  overall: Math.round(( (homeRatings.overall as number) + homeRatingDelta) * 100) / 100,
-                };
-                const awayRatingAfter = {
-                  ...awayRatings,
-                  overall: Math.round(( (awayRatings.overall as number) + awayRatingDelta) * 100) / 100,
-                };
-
-                await ctx.db.sportMatch.update({
-                  where: { id: match.id },
-                  data: {
-                    homeScore,
-                    awayScore,
+              if (pendingBrackets.length === 0) {
+                const completedInRound = await (ctx.db as any).sportBracket.count({
+                  where: {
+                    seasonId: input.seasonId,
+                    stage: activeStage,
+                    round: currentRound,
                     status: "completed",
-                    resolvedIxTime: Date.now(),
-                    matchStats: resRec.matchStats as any,
-                    homeRatingBefore: { ...homeRatings },
-                    awayRatingBefore: { ...awayRatings },
-                    homeRatingAfter: { ...homeRatingAfter },
-                    awayRatingAfter: { ...awayRatingAfter },
                   },
                 });
+                if (completedInRound === 0) {
+                  hasMoreBracketsInStage = false;
+                  break;
+                }
+              } else {
+                for (let i = 0; i < pendingBrackets.length; i++) {
+                  const bm = pendingBrackets[i];
+                  const seed = simpleHash(
+                    input.seasonId,
+                    currentRound * 100 + activeStage * 1000,
+                    i
+                  );
 
-                // Update team season rating vectors
-                await ctx.db.sportTeamSeason.updateMany({
-                  where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                  data: { ratingVector: { ...homeRatingAfter } },
-                });
-                await ctx.db.sportTeamSeason.updateMany({
-                  where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                  data: { ratingVector: { ...awayRatingAfter } },
+                  const f1 = teamsMap.get(bm.fighter1Id);
+                  const f2 = teamsMap.get(bm.fighter2Id);
+
+                  if (!f1 || !f2) continue;
+
+                  const f1ratings = computeTeamRatingVector(
+                    f1.players as any[],
+                    f1.coaches as any[],
+                    currentSeason.league.sportPreset
+                  );
+                  const f2ratings = computeTeamRatingVector(
+                    f2.players as any[],
+                    f2.coaches as any[],
+                    currentSeason.league.sportPreset
+                  );
+
+                  const homeTeamModifiers = await getTeamModifiers(f1, ctx.db, effectsMap);
+                  const awayTeamModifiers = await getTeamModifiers(f2, ctx.db, effectsMap);
+
+                  const result = resolveMatch({
+                    sport: currentSeason.league.sportPreset,
+                    homeTeam: f1ratings,
+                    awayTeam: f2ratings,
+                    archetype: "bracket",
+                    seed,
+                    homeTeamModifiers,
+                    awayTeamModifiers,
+                    homeRoster: f1.players as any,
+                    awayRoster: f2.players as any,
+                  });
+
+                  const resRec = result as any;
+                  const homeScore = (resRec.homeScore as number) ?? 0;
+                  const awayScore = (resRec.awayScore as number) ?? 0;
+                  const winnerId = homeScore > awayScore ? bm.fighter1Id : bm.fighter2Id;
+
+                  await (ctx.db as any).sportBracket.update({
+                    where: { id: bm.id },
+                    data: {
+                      winnerId,
+                      status: "completed",
+                      resolvedIxTime: Date.now(),
+                      result: result as any,
+                    },
+                  });
+                }
+              }
+
+              // After resolving currentRound, check if we can generate the next round's matchups within this stage
+              const completedBrackets = await (ctx.db as any).sportBracket.findMany({
+                where: {
+                  seasonId: input.seasonId,
+                  stage: activeStage,
+                  round: currentRound,
+                  status: "completed",
+                },
+                select: { winnerId: true },
+              });
+
+              const winners = completedBrackets
+                .map((b: any) => b.winnerId)
+                .filter(Boolean) as string[];
+
+              if (winners.length >= 2) {
+                const nextRound = currentRound + 1;
+                const nextRoundCount = await (ctx.db as any).sportBracket.count({
+                  where: { seasonId: input.seasonId, stage: activeStage, round: nextRound },
                 });
 
-                // Create match stats for key player performances
-                const playerStats = resRec.playerStats as Array<Record<string, unknown>> | undefined;
-                if (Array.isArray(playerStats)) {
-                  for (const ps of playerStats) {
-                    if (ps.playerId) {
-                      await ctx.db.sportMatchStat.create({
+                if (nextRoundCount === 0) {
+                  const ixNow = Date.now();
+                  const pow2 = Math.pow(2, Math.ceil(Math.log2(winners.length)));
+                  const half = pow2 / 2;
+                  for (let i = 0; i < half; i++) {
+                    const a = i < winners.length ? winners[i]! : null;
+                    const b = pow2 - 1 - i < winners.length ? winners[pow2 - 1 - i]! : null;
+                    if (a && b) {
+                      await (ctx.db as any).sportBracket.create({
                         data: {
-                          matchId: match.id,
-                          playerId: ps.playerId as string,
-                          stats: ps.stats as any,
+                          seasonId: input.seasonId,
+                          round: nextRound,
+                          stage: activeStage,
+                          weightClass: "heavyweight",
+                          fighter1Id: a,
+                          fighter2Id: b,
+                          status: "scheduled",
+                          scheduledIxTime: ixNow,
                         },
                       });
                     }
                   }
                 }
-
-                // Update standings
-                if (status === "home_win") {
-                  await ctx.db.sportStanding.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                    data: {
-                      wins: { increment: 1 },
-                      points: { increment: 3 },
-                      pointsFor: { increment: homeScore },
-                      pointsAgainst: { increment: awayScore },
-                    },
-                  });
-                  await ctx.db.sportStanding.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                    data: {
-                      losses: { increment: 1 },
-                      pointsFor: { increment: awayScore },
-                      pointsAgainst: { increment: homeScore },
-                    },
-                  });
-                } else if (status === "away_win") {
-                  await ctx.db.sportStanding.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                    data: {
-                      wins: { increment: 1 },
-                      points: { increment: 3 },
-                      pointsFor: { increment: awayScore },
-                      pointsAgainst: { increment: homeScore },
-                    },
-                  });
-                  await ctx.db.sportStanding.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                    data: {
-                      losses: { increment: 1 },
-                      pointsFor: { increment: homeScore },
-                      pointsAgainst: { increment: awayScore },
-                    },
-                  });
-                } else {
-                  await ctx.db.sportStanding.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.homeTeamId },
-                    data: {
-                      draws: { increment: 1 },
-                      points: { increment: 1 },
-                      pointsFor: { increment: homeScore },
-                      pointsAgainst: { increment: awayScore },
-                    },
-                  });
-                  await ctx.db.sportStanding.updateMany({
-                    where: { seasonId: input.seasonId, teamId: match.awayTeamId },
-                    data: {
-                      draws: { increment: 1 },
-                      points: { increment: 1 },
-                      pointsFor: { increment: awayScore },
-                      pointsAgainst: { increment: homeScore },
-                    },
-                  });
-                }
+                currentRound = nextRound;
+              } else {
+                hasMoreBracketsInStage = false;
               }
+            }
+
+            // 3. Evaluate if activeStage has completed and try to transition to the next stage
+            const transitioned = await transitionToNextStage(ctx.db as any, input.seasonId);
+            if (transitioned) {
+              // Fetch updated currentSeason to get new activeStage
+              currentSeason = await (ctx.db as any).sportSeason.findUnique({
+                where: { id: input.seasonId },
+                include: { league: true },
+              });
+            } else {
+              // No more transitions means we are done!
+              seasonInProgress = false;
             }
           }
         }
 
         // Determine champion
         const league = await ctx.db.sportLeague.findUnique({
-          where: { id: season.leagueId },
+          where: { id: currentSeason.leagueId },
           include: {
             teams: { select: { id: true, name: true } },
           },
@@ -1485,14 +2040,14 @@ export const sportsRouter = createTRPCRouter({
 
         let championTeamId: string | null = null;
 
-        if (season.league.archetype === "bracket") {
+        if (currentSeason.league.archetype === "bracket") {
           // Winner of the final round
-          const finalRound = await ctx.db.sportBracket.findFirst({
+          const finalRound = await (ctx.db as any).sportBracket.findFirst({
             where: { seasonId: input.seasonId },
             orderBy: { round: "desc" },
           });
           championTeamId = finalRound?.winnerId ?? null;
-        } else if (season.league.archetype === "circuit") {
+        } else if (currentSeason.league.archetype === "circuit") {
           // Team with most points from race results
           const topStanding = await ctx.db.sportStanding.findFirst({
             where: { seasonId: input.seasonId },
@@ -1508,7 +2063,7 @@ export const sportsRouter = createTRPCRouter({
           championTeamId = topStanding?.teamId ?? null;
         }
 
-        await ctx.db.sportSeason.update({
+        await (ctx.db as any).sportSeason.update({
           where: { id: input.seasonId },
           data: {
             status: "completed",
@@ -1531,6 +2086,21 @@ export const sportsRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to simulate full season: ${error instanceof Error ? error.message : String(error)}`,
+        });
+      }
+    }),
+
+  transitionToNextSeason: protectedProcedure
+    .input(z.object({ seasonId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const result = await transitionSeasonAction(ctx.db as any, input.seasonId);
+        return result;
+      } catch (error) {
+        console.error("Transition to next season error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to transition season",
         });
       }
     }),
@@ -1611,7 +2181,11 @@ export const sportsRouter = createTRPCRouter({
         const updated = await ctx.db.sportRace.update({
           where: { id: race.id },
           data: {
-            grid: allDrivers.map((d, idx) => ({ driverId: d.driverId, teamId: d.teamId, gridPosition: idx + 1 })) as any,
+            grid: allDrivers.map((d, idx) => ({
+              driverId: d.driverId,
+              teamId: d.teamId,
+              gridPosition: idx + 1,
+            })) as any,
             results: raceResult.positions as any,
             status: "completed",
             raceIxTime: Date.now(),
@@ -1679,7 +2253,9 @@ export const sportsRouter = createTRPCRouter({
         const teamSeasons = await ctx.db.sportTeamSeason.findMany({
           where: { teamId: input.teamId },
           include: {
-            season: { select: { id: true, seasonNumber: true, status: true, championTeamId: true } },
+            season: {
+              select: { id: true, seasonNumber: true, status: true, championTeamId: true },
+            },
           },
           orderBy: { season: { seasonNumber: "desc" } },
         });
@@ -1711,7 +2287,7 @@ export const sportsRouter = createTRPCRouter({
               position: position > 0 ? position : null,
               isChampion: ts.season.championTeamId === input.teamId,
             };
-          }),
+          })
         );
 
         return history;
@@ -1762,7 +2338,9 @@ export const sportsRouter = createTRPCRouter({
             teamWins[key].wins += s.wins;
           }
 
-          const mostWins = Object.values(teamWins).sort((a, b) => b.wins - a.wins).slice(0, 5);
+          const mostWins = Object.values(teamWins)
+            .sort((a, b) => b.wins - a.wins)
+            .slice(0, 5);
 
           // Count championships
           const seasons = await ctx.db.sportSeason.findMany({
@@ -1783,9 +2361,7 @@ export const sportsRouter = createTRPCRouter({
           return {
             mostWins,
             mostChampionships,
-            totalSeasons: standings.length > 0
-              ? new Set(standings.map((s) => s.seasonId)).size
-              : 0,
+            totalSeasons: standings.length > 0 ? new Set(standings.map((s) => s.seasonId)).size : 0,
           };
         }
 
@@ -1823,7 +2399,7 @@ export const sportsRouter = createTRPCRouter({
             ...t,
             activeSeason,
           };
-        }),
+        })
       );
 
       return teamsWithSeasons;
@@ -1907,6 +2483,427 @@ export const sportsRouter = createTRPCRouter({
     }),
 
   // ═══ Utility ═════════════════════════════════════════════════════════════════
+
+  upgradeStadium: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({
+          where: { id: input.teamId },
+        });
+        if (!team) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        }
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
+        }
+        await exchangeService.spend(
+          ctx.user.id,
+          1000,
+          "ADMIN_ADJUSTMENT",
+          `STADIUM_UPGRADE:${input.teamId}`,
+          ctx.db as any
+        );
+        return (ctx.db as any).sportTeam.update({
+          where: { id: input.teamId },
+          data: { stadiumCapacity: { increment: 1000 } },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to upgrade stadium",
+        });
+      }
+    }),
+
+  setTicketPrice: protectedProcedure
+    .input(z.object({ teamId: z.string(), price: z.number().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({
+          where: { id: input.teamId },
+        });
+        if (!team) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        }
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
+        }
+        return (ctx.db as any).sportTeam.update({
+          where: { id: input.teamId },
+          data: { ticketPrice: input.price },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to set ticket price",
+        });
+      }
+    }),
+
+  listPlayerForTransfer: protectedProcedure
+    .input(z.object({ playerId: z.string(), price: z.number().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const player = await ctx.db.sportPlayer.findUnique({
+          where: { id: input.playerId },
+          include: { team: true },
+        });
+        if (!player) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
+        }
+        if (player.team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this player" });
+        }
+        return await (ctx.db as any).sportTransferListing.upsert({
+          where: { playerId: input.playerId },
+          update: { price: input.price, status: "open", teamId: player.teamId },
+          create: {
+            playerId: input.playerId,
+            teamId: player.teamId,
+            price: input.price,
+            status: "open",
+          },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to list player",
+        });
+      }
+    }),
+
+  placeTransferBid: protectedProcedure
+    .input(z.object({ listingId: z.string(), amount: z.number().min(1), bidderTeamId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const listing = await (ctx.db as any).sportTransferListing.findUnique({
+          where: { id: input.listingId },
+        });
+        if (!listing || listing.status !== "open") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
+        }
+        const bidderTeam = await ctx.db.sportTeam.findUnique({
+          where: { id: input.bidderTeamId },
+        });
+        if (!bidderTeam || bidderTeam.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own the bidding team" });
+        }
+        await exchangeService.spend(
+          ctx.user.id,
+          input.amount,
+          "SHARE_BUY",
+          `TRANSFER_BID_ESCROW:${input.listingId}`,
+          ctx.db as any
+        );
+        return await (ctx.db as any).sportTransferBid.create({
+          data: {
+            listingId: input.listingId,
+            bidderTeamId: input.bidderTeamId,
+            bidderUserId: ctx.user.id,
+            amount: input.amount,
+            status: "pending",
+          },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to place bid",
+        });
+      }
+    }),
+
+  respondToTransferBid: protectedProcedure
+    .input(z.object({ bidId: z.string(), action: z.enum(["accept", "reject"]) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const bid = await (ctx.db as any).sportTransferBid.findUnique({
+          where: { id: input.bidId },
+          include: {
+            listing: {
+              include: {
+                player: {
+                  include: { team: true },
+                },
+              },
+            },
+          },
+        });
+        if (!bid || bid.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Bid not active" });
+        }
+        const sellerTeam = bid.listing.player.team;
+        if (sellerTeam.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not own this listing's player",
+          });
+        }
+        if (input.action === "accept") {
+          // Pay out seller
+          await exchangeService.earn(
+            ctx.user.id,
+            bid.amount,
+            "SHARE_SELL",
+            `TRANSFER_ACCEPT:${bid.id}`,
+            ctx.db as any
+          );
+          // Transfer player ownership
+          await ctx.db.sportPlayer.update({
+            where: { id: bid.listing.playerId },
+            data: { teamId: bid.bidderTeamId },
+          });
+          // Update listing status
+          await (ctx.db as any).sportTransferListing.update({
+            where: { id: bid.listingId },
+            data: { status: "completed" },
+          });
+          // Accept the bid
+          await (ctx.db as any).sportTransferBid.update({
+            where: { id: bid.id },
+            data: { status: "accepted" },
+          });
+          // Reject other bids and refund escrow
+          const otherBids = await (ctx.db as any).sportTransferBid.findMany({
+            where: { listingId: bid.listingId, id: { not: bid.id }, status: "pending" },
+          });
+          for (const other of otherBids) {
+            await exchangeService.earn(
+              other.bidderUserId,
+              other.amount,
+              "ADMIN_ADJUSTMENT",
+              `TRANSFER_BID_REFUND:${other.id}`,
+              ctx.db as any
+            );
+            await (ctx.db as any).sportTransferBid.update({
+              where: { id: other.id },
+              data: { status: "rejected" },
+            });
+          }
+          return { success: true, message: "Transfer completed successfully." };
+        } else {
+          // Reject bid and refund bidder
+          await (ctx.db as any).sportTransferBid.update({
+            where: { id: bid.id },
+            data: { status: "rejected" },
+          });
+          await exchangeService.earn(
+            bid.bidderUserId,
+            bid.amount,
+            "ADMIN_ADJUSTMENT",
+            `TRANSFER_BID_REFUND:${bid.id}`,
+            ctx.db as any
+          );
+          return { success: true, message: "Bid rejected and bidder refunded." };
+        }
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to respond to bid",
+        });
+      }
+    }),
+
+  getPlayerValuation: publicProcedure
+    .input(z.object({ playerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const player = await ctx.db.sportPlayer.findUnique({
+          where: { id: input.playerId },
+        });
+        if (!player) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
+        }
+        const ratings = (player.ratings as Record<string, any>) || {};
+        const overall = ratings.overall || 50;
+        const form = ratings.form || 50;
+        const value = Math.max(100, Math.min(10000, overall * 50 * (1 + (form - 50) / 100)));
+        return { valuation: Math.round(value) };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to calculate player value",
+        });
+      }
+    }),
+
+  getOpenTransferListings: publicProcedure.query(async ({ ctx }) => {
+    try {
+      return await (ctx.db as any).sportTransferListing.findMany({
+        where: { status: "open" },
+        include: {
+          player: {
+            include: { team: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch transfer listings",
+      });
+    }
+  }),
+
+  getTeamBids: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({
+          where: { id: input.teamId, ownerUserId: ctx.user.id },
+        });
+        if (!team) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
+        }
+        const inboundBids = await (ctx.db as any).sportTransferBid.findMany({
+          where: {
+            listing: {
+              teamId: input.teamId,
+              status: "open",
+            },
+            status: "pending",
+          },
+          include: {
+            listing: {
+              include: {
+                player: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+        const outboundBids = await (ctx.db as any).sportTransferBid.findMany({
+          where: {
+            bidderTeamId: input.teamId,
+          },
+          include: {
+            listing: {
+              include: {
+                player: {
+                  include: {
+                    team: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+        return { inboundBids, outboundBids };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch team bids",
+        });
+      }
+    }),
+
+  searchSportsEntities: publicProcedure
+    .input(z.object({ query: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const players = await (ctx.db as any).sportPlayer.findMany({
+          where: {
+            OR: [
+              { firstName: { contains: input.query, mode: "insensitive" } },
+              { lastName: { contains: input.query, mode: "insensitive" } },
+            ],
+          },
+          include: { team: true, transferListing: true },
+          take: 5,
+        });
+        const teams = await ctx.db.sportTeam.findMany({
+          where: {
+            name: { contains: input.query, mode: "insensitive" },
+          },
+          include: { league: true },
+          take: 5,
+        });
+        return {
+          players: players.map((p: any) => ({
+            id: p.id,
+            name: `${p.firstName} ${p.lastName}`,
+            position: p.position,
+            teamName: p.team.name,
+            listing: p.transferListing
+              ? {
+                id: p.transferListing.id,
+                price: p.transferListing.price,
+                status: p.transferListing.status,
+              }
+              : null,
+          })),
+          teams: teams.map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            leagueName: t.league.name,
+          })),
+        };
+      } catch (error) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Search failed" });
+      }
+    }),
+
+  invokePatronSaint: protectedProcedure
+    .input(z.object({ teamId: z.string(), saintName: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({
+          where: { id: input.teamId },
+        });
+        if (!team) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        }
+        if (team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
+        }
+        // Spend fee
+        await exchangeService.spend(
+          ctx.user.id,
+          100,
+          "CHARTER_FEE",
+          `SAINT_INVOCATION:${input.teamId}:${input.saintName}`,
+          ctx.db as any
+        );
+
+        // Update the team's saint
+        await ctx.db.sportTeam.update({
+          where: { id: input.teamId },
+          data: { patronSaint: input.saintName } as any,
+        });
+
+        // Create storyteller effect targeting country
+        if (team.nationId) {
+          await ctx.db.storytellerEffect.create({
+            data: {
+              countryId: team.nationId,
+              ixTimeTimestamp: new Date(),
+              inputType: "sports_saint_blessing",
+              value: 5.0,
+              description: `The home crowd echoes the Invocation of ${input.saintName}. Blessings descend upon the pitch!`,
+              isActive: true,
+              duration: 1,
+            },
+          });
+        }
+
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to invoke patron saint",
+        });
+      }
+    }),
 
   getSportPresets: publicProcedure.query(async () => {
     try {

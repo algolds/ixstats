@@ -91,7 +91,7 @@ export function useSliderPhysics({
     dragStartX.current = event.clientX;
     dragStartThumbX.current = activeBounds.left;
     dragStartThumbWidth.current = activeBounds.width;
-    
+
     isDragging.current = false;
     lastMoveTime.current = event.timeStamp;
     lastMoveX.current = event.clientX;
@@ -155,7 +155,7 @@ export function useSliderPhysics({
     if (activePointerId.current === null || event.pointerId !== activePointerId.current) {
       return;
     }
-    
+
     event.stopPropagation();
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -224,7 +224,7 @@ export function useSliderPhysics({
     activePointerId.current = null;
     isDragging.current = false;
     grabProgress.set(0);
-    
+
     if (activeBounds) {
       rawX.set(activeBounds.left);
       rawWidth.set(activeBounds.width);

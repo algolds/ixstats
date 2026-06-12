@@ -24,7 +24,10 @@ export function getImageType(mime: string, title: string): "jpg" | "png" | "svg"
   return "other";
 }
 
-export function getImageOrientation(width: number, height: number): "landscape" | "portrait" | "square" {
+export function getImageOrientation(
+  width: number,
+  height: number
+): "landscape" | "portrait" | "square" {
   if (!width || !height) return "landscape";
   const ratio = width / height;
   if (ratio > 1.1) return "landscape";

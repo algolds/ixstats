@@ -119,7 +119,7 @@ export async function validateEquipmentImagesJob(): Promise<ValidationJobResult>
     );
 
     // Send Discord notification if configured
-    if (process.env.DISCORD_WEBHOOK_URL) {
+    if (process.env.NODE_ENV !== "test" && process.env.DISCORD_WEBHOOK_URL) {
       await sendDiscordNotification(result);
     }
 
@@ -197,6 +197,7 @@ async function validateImageUrl(url: string): Promise<boolean> {
  */
 async function sendDiscordNotification(result: ValidationJobResult): Promise<void> {
   try {
+    if (process.env.NODE_ENV === "test") return;
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     if (!webhookUrl) return;
 

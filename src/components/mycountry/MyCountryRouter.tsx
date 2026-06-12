@@ -304,19 +304,20 @@ function MyCountryRouterInner() {
         if (!ability.can("access", "MyCountryFeature", "map-editor")) {
           return (
             <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
-              <div className="glass-panel max-w-md p-8 rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 backdrop-blur-md shadow-xl space-y-6 animate-fade-in">
-                <div className="mx-auto rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 p-4 w-16 h-16 flex items-center justify-center shadow-lg">
-                  <Crown className="h-8 w-8 text-white animate-pulse" />
+              <div className="glass-panel animate-fade-in max-w-md space-y-6 rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 p-8 shadow-xl backdrop-blur-md">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 p-4 shadow-lg">
+                  <Crown className="h-8 w-8 animate-pulse text-white" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-foreground tracking-tight">Map Editor</h3>
+                  <h3 className="text-foreground text-2xl font-bold tracking-tight">Map Editor</h3>
                   <p className="text-muted-foreground text-sm">
-                    Shape your nation's territory, establish subdivisions, build cities, and mark points of interest. This feature is exclusive to MyCountry Premium members.
+                    Shape your nation's territory, establish subdivisions, build cities, and mark
+                    points of interest. This feature is exclusive to MyCountry Premium members.
                   </p>
                 </div>
                 <GlassButton
                   variant="primary"
-                  className="w-full group"
+                  className="group w-full"
                   onClick={() => router.push(withBasePath("/help/getting-started/welcome"))}
                 >
                   <Crown className="mr-2 h-4 w-4" />
@@ -325,7 +326,7 @@ function MyCountryRouterInner() {
                 </GlassButton>
                 <button
                   onClick={() => handleNavigate("overview")}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
+                  className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
                 >
                   Back to Overview
                 </button>

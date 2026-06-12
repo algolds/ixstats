@@ -4,12 +4,12 @@
 
 /* Base container class for Facet Material wrappers */
 .facet-material {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius, 16px);
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: var(--radius, 16px) !important;
   transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -21,14 +21,14 @@
     rgba(255, 255, 255, 0.5) 0%,
     rgba(248, 250, 252, 0.3) 50%,
     rgba(241, 245, 249, 0.4) 100%
-  );
-  backdrop-filter: blur(20px) saturate(190%);
-  -webkit-backdrop-filter: blur(20px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  ) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     0 1px 2px rgba(0, 0, 0, 0.03),
-    0 8px 24px rgba(0, 0, 0, 0.04);
+    0 8px 24px rgba(0, 0, 0, 0.04) !important;
 }
 
 .dark .facet-material-satin {
@@ -37,11 +37,11 @@
     rgba(30, 41, 59, 0.45) 0%,
     rgba(15, 23, 42, 0.35) 50%,
     rgba(30, 41, 59, 0.45) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  ) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 4px 20px rgba(0, 0, 0, 0.25);
+    0 4px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* Satin Pointer Sheen Glow Layer */
@@ -76,41 +76,41 @@
    2. PAPER: Matte warm-white/off-black surface, cast shadow opposite to pointer
    ────────────────────────────────────────────────────────────────────────── */
 .facet-material-paper {
-  background-color: #fafaf9; /* stone-50 warm tone */
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: #fafaf9 !important; /* stone-50 warm tone */
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: 
     0 1px 3px rgba(0, 0, 0, 0.05),
-    var(--pointer-offset-x, 0px) var(--pointer-offset-y, 0px) 16px rgba(0, 0, 0, 0.06);
+    var(--pointer-offset-x, 0px) var(--pointer-offset-y, 0px) 16px rgba(0, 0, 0, 0.06) !important;
 }
 
 .dark .facet-material-paper {
-  background-color: #1c1917; /* stone-900 warm dark tone */
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: #1c1917 !important; /* stone-900 warm dark tone */
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
   box-shadow: 
     0 2px 4px rgba(0, 0, 0, 0.2),
-    var(--pointer-offset-x, 0px) var(--pointer-offset-y, 0px) 24px rgba(0, 0, 0, 0.4);
+    var(--pointer-offset-x, 0px) var(--pointer-offset-y, 0px) 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
    3. RUBBER: High-friction matte texture, chamfered edge borders, deep soft shadows
    ────────────────────────────────────────────────────────────────────────── */
 .facet-material-rubber {
-  background: #27272a; /* zinc-800 */
-  color: #f4f4f5;
-  border: 1px solid #18181b;
+  background: #27272a !important; /* zinc-800 */
+  color: #f4f4f5 !important;
+  border: 1px solid #18181b !important;
   box-shadow: 
     inset 0 1px 1px rgba(255, 255, 255, 0.05),
     inset 0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 6px 20px rgba(0, 0, 0, 0.18);
+    0 6px 20px rgba(0, 0, 0, 0.18) !important;
 }
 
 .dark .facet-material-rubber {
-  background: #18181b; /* zinc-900 */
-  border: 1px solid #09090b;
+  background: #18181b !important; /* zinc-900 */
+  border: 1px solid #09090b !important;
   box-shadow: 
     inset 0 1px 1px rgba(255, 255, 255, 0.03),
     inset 0 -1px 2px rgba(0, 0, 0, 0.4),
-    0 8px 28px rgba(0, 0, 0, 0.35);
+    0 8px 28px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* Rubber Pointer Matte Highlight */
@@ -143,12 +143,12 @@
     #cbd5e1 40%,
     #e2e8f0 60%,
     #cbd5e1 100%
-  );
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  ) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 -1px 0 rgba(0, 0, 0, 0.08),
-    0 4px 16px rgba(0, 0, 0, 0.06);
+    0 4px 16px rgba(0, 0, 0, 0.06) !important;
 }
 
 .dark .facet-material-metal {
@@ -158,12 +158,12 @@
     #0f172a 40%,
     #1e293b 60%,
     #0f172a 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  ) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.3);
+    0 8px 24px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Anisotropic linear reflect band following mouse horizontally */
@@ -198,4 +198,210 @@
 
 .facet-material-metal:hover::before {
   opacity: 1;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   5. GLASS: Clear heavy glass with strong refraction, prismatic edge glow
+   ────────────────────────────────────────────────────────────────────────── */
+.facet-material-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(248, 250, 252, 0.3) 40%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(241, 245, 249, 0.35) 100%
+  ) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 16px 40px rgba(0, 0, 0, 0.06) !important;
+}
+
+.dark .facet-material-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.03) 40%,
+    rgba(255, 255, 255, 0.06) 60%,
+    rgba(255, 255, 255, 0.02) 100%
+  ) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 4px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+.facet-material-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    circle 300px at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .facet-material-glass::before {
+  background: radial-gradient(
+    circle 350px at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.facet-material-glass:hover::before {
+  opacity: 1;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   6. CARBON FIBER: Dark woven texture with diagonal weave pattern
+   ────────────────────────────────────────────────────────────────────────── */
+.facet-material-carbon {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    ),
+    linear-gradient(135deg, #2d2d2d, #1a1a1a) !important;
+  color: #e5e5e5 !important;
+  border: 1px solid rgba(0, 0, 0, 0.3) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark .facet-material-carbon {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.02) 2px,
+      rgba(255, 255, 255, 0.02) 4px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.02) 2px,
+      rgba(255, 255, 255, 0.02) 4px
+    ),
+    linear-gradient(135deg, #1e1e1e, #0d0d0d) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 28px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   7. WOOD: Warm wood grain with rich brown tones
+   20-layer CSS gradient composition simulating organic grain lines,
+   knots, medullary rays, annual rings, and natural color variation.
+   ────────────────────────────────────────────────────────────────────────── */
+.facet-material-wood {
+  background:
+    /* 20: Subtle noise speckle overlay */
+    repeating-radial-gradient(circle at 15% 30%, rgba(0,0,0,0.012) 0, transparent 1px),
+    /* 19: Fine grain texture scatter */
+    repeating-radial-gradient(circle at 85% 70%, rgba(0,0,0,0.008) 0, transparent 1px),
+    /* 18: Secondary knot at upper-left */
+    radial-gradient(ellipse 20px 15px at 25% 30%, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.02) 4px, transparent 12px),
+    /* 17: Primary knot at lower-right */
+    radial-gradient(ellipse 45px 35px at 72% 68%, rgba(0,0,0,0.07) 0%, rgba(0,0,0,0.035) 10px, transparent 22px),
+    /* 16: Wide undulation band — slow wave */
+    repeating-linear-gradient(91deg, transparent 0, transparent 35px, rgba(0,0,0,0.01) 35px, transparent 38px, transparent 70px),
+    /* 15: Medium undulation band */
+    repeating-linear-gradient(88deg, transparent 0, transparent 28px, rgba(0,0,0,0.015) 28px, transparent 30px, transparent 56px),
+    /* 14: Tight undulation band */
+    repeating-linear-gradient(92deg, transparent 0, transparent 18px, rgba(0,0,0,0.012) 18px, transparent 20px, transparent 36px),
+    /* 13: Medullary ray flecks — short horizontal dashes */
+    repeating-linear-gradient(0deg, transparent 0, transparent 40px, rgba(0,0,0,0.008) 40px, transparent 42px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 65px, rgba(0,0,0,0.006) 65px, transparent 67px),
+    /* 12: Fine tertiary grain */
+    repeating-linear-gradient(89deg, transparent 0, transparent 5px, rgba(0,0,0,0.015) 5px, rgba(0,0,0,0.025) 6px, transparent 6px, transparent 9px, rgba(0,0,0,0.01) 9px, transparent 11px),
+    /* 11: Fine secondary grain */
+    repeating-linear-gradient(91deg, transparent 0, transparent 3px, rgba(0,0,0,0.02) 3px, rgba(0,0,0,0.035) 4px, transparent 4px, transparent 7px, rgba(0,0,0,0.015) 7px, transparent 8px),
+    /* 10: Fine primary grain — tightest spacing */
+    repeating-linear-gradient(88deg, transparent 0, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.04) 2.5px, transparent 2.5px, transparent 4px, rgba(0,0,0,0.015) 4px, transparent 5px),
+    /* 9: Primary grain band 5 — widely spaced */
+    repeating-linear-gradient(90deg, transparent 0, transparent 48px, rgba(0,0,0,0.03) 48px, rgba(0,0,0,0.05) 50px, transparent 50px, transparent 55px),
+    /* 8: Primary grain band 4 */
+    repeating-linear-gradient(90deg, transparent 0, transparent 38px, rgba(0,0,0,0.035) 38px, rgba(0,0,0,0.055) 40px, transparent 40px, transparent 44px),
+    /* 7: Primary grain band 3 */
+    repeating-linear-gradient(90deg, transparent 0, transparent 30px, rgba(0,0,0,0.04) 30px, rgba(0,0,0,0.06) 32px, transparent 32px, transparent 36px),
+    /* 6: Primary grain band 2 */
+    repeating-linear-gradient(90deg, transparent 0, transparent 22px, rgba(0,0,0,0.03) 22px, rgba(0,0,0,0.05) 24px, transparent 24px, transparent 28px),
+    /* 5: Primary grain band 1 */
+    repeating-linear-gradient(90deg, transparent 0, transparent 14px, rgba(0,0,0,0.035) 14px, rgba(0,0,0,0.06) 16px, transparent 16px, transparent 20px),
+    /* 4: Dark annual ring — prominent boundary */
+    repeating-linear-gradient(90deg, transparent 0, transparent 60px, rgba(0,0,0,0.05) 60px, rgba(0,0,0,0.09) 62px, transparent 62px, transparent 65px),
+    /* 3: Color variation — lighter growth band */
+    repeating-linear-gradient(90deg, transparent 0, transparent 45px, rgba(255,255,255,0.03) 45px, rgba(255,255,255,0.06) 47px, transparent 47px, transparent 52px),
+    /* 2: Color variation — darker growth band */
+    repeating-linear-gradient(90deg, transparent 0, transparent 52px, rgba(0,0,0,0.025) 52px, rgba(0,0,0,0.05) 54px, transparent 54px, transparent 58px),
+    /* 1: Base warm gradient with vertical tonal shift and color stops */
+    linear-gradient(
+      180deg,
+      #d4a87a 0%, #c4956a 8%, #d0a478 16%, #b88452 25%,
+      #c4956a 35%, #a67748 48%, #b88452 58%, #c99b70 70%,
+      #a67748 82%, #b88452 90%, #c4956a 100%
+    ) !important;
+  color: #3d2b1f !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+.dark .facet-material-wood {
+  background:
+    repeating-radial-gradient(circle at 15% 30%, rgba(255,255,255,0.012) 0, transparent 1px),
+    repeating-radial-gradient(circle at 85% 70%, rgba(255,255,255,0.008) 0, transparent 1px),
+    radial-gradient(ellipse 20px 15px at 25% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.04) 4px, transparent 12px),
+    radial-gradient(ellipse 45px 35px at 72% 68%, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0.07) 10px, transparent 22px),
+    repeating-linear-gradient(91deg, transparent 0, transparent 35px, rgba(255,255,255,0.01) 35px, transparent 38px, transparent 70px),
+    repeating-linear-gradient(88deg, transparent 0, transparent 28px, rgba(255,255,255,0.015) 28px, transparent 30px, transparent 56px),
+    repeating-linear-gradient(92deg, transparent 0, transparent 18px, rgba(255,255,255,0.012) 18px, transparent 20px, transparent 36px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 40px, rgba(255,255,255,0.008) 40px, transparent 42px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 65px, rgba(255,255,255,0.006) 65px, transparent 67px),
+    repeating-linear-gradient(89deg, transparent 0, transparent 5px, rgba(255,255,255,0.015) 5px, rgba(255,255,255,0.025) 6px, transparent 6px, transparent 9px, rgba(255,255,255,0.01) 9px, transparent 11px),
+    repeating-linear-gradient(91deg, transparent 0, transparent 3px, rgba(255,255,255,0.02) 3px, rgba(255,255,255,0.035) 4px, transparent 4px, transparent 7px, rgba(255,255,255,0.015) 7px, transparent 8px),
+    repeating-linear-gradient(88deg, transparent 0, transparent 2px, rgba(255,255,255,0.025) 2px, rgba(255,255,255,0.04) 2.5px, transparent 2.5px, transparent 4px, rgba(255,255,255,0.015) 4px, transparent 5px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 48px, rgba(255,255,255,0.03) 48px, rgba(255,255,255,0.05) 50px, transparent 50px, transparent 55px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 38px, rgba(255,255,255,0.035) 38px, rgba(255,255,255,0.055) 40px, transparent 40px, transparent 44px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 30px, rgba(255,255,255,0.04) 30px, rgba(255,255,255,0.06) 32px, transparent 32px, transparent 36px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 22px, rgba(255,255,255,0.03) 22px, rgba(255,255,255,0.05) 24px, transparent 24px, transparent 28px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 14px, rgba(255,255,255,0.035) 14px, rgba(255,255,255,0.06) 16px, transparent 16px, transparent 20px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 60px, rgba(255,255,255,0.05) 60px, rgba(255,255,255,0.09) 62px, transparent 62px, transparent 65px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 45px, rgba(255,255,255,0.03) 45px, rgba(255,255,255,0.06) 47px, transparent 47px, transparent 52px),
+    repeating-linear-gradient(90deg, transparent 0, transparent 52px, rgba(255,255,255,0.025) 52px, rgba(255,255,255,0.05) 54px, transparent 54px, transparent 58px),
+    linear-gradient(
+      180deg,
+      #6e4d3a 0%, #5c3d2e 8%, #6a4834 16%, #4d3020 25%,
+      #5c3d2e 35%, #3d2518 48%, #4d3020 58%, #634435 70%,
+      #3d2518 82%, #4d3020 90%, #5c3d2e 100%
+    ) !important;
+  color: #d4c5b0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 28px rgba(0, 0, 0, 0.35) !important;
 }

@@ -39,7 +39,10 @@ class DiscordWebhookService {
 
   constructor() {
     this.webhookUrl = env.DISCORD_WEBHOOK_URL;
-    this.enabled = env.DISCORD_WEBHOOK_ENABLED === "true" && !!this.webhookUrl;
+    this.enabled =
+      env.DISCORD_WEBHOOK_ENABLED === "true" &&
+      !!this.webhookUrl &&
+      process.env.NODE_ENV !== "test";
   }
 
   /**

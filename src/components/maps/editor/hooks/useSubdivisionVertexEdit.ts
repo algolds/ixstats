@@ -177,7 +177,12 @@ export function useSubdivisionVertexEdit({
 
     // Snap to visible background layers first
     if (worldMapLayers && editorVisibleLayers) {
-      geo = snapGeometryToBackgroundLayers(geo as Polygon | MultiPolygon, worldMapLayers, editorVisibleLayers, 0.015);
+      geo = snapGeometryToBackgroundLayers(
+        geo as Polygon | MultiPolygon,
+        worldMapLayers,
+        editorVisibleLayers,
+        0.015
+      );
     }
 
     const { geometry: clipped } = clipGeometryToBorder(geo, border);
@@ -349,7 +354,12 @@ export function useSubdivisionVertexEdit({
 
       // Snap to visible background layers first
       if (worldMapLayers && editorVisibleLayers) {
-        target = snapToLayerFeatures(target as [number, number], worldMapLayers, editorVisibleLayers, 0.015);
+        target = snapToLayerFeatures(
+          target as [number, number],
+          worldMapLayers,
+          editorVisibleLayers,
+          0.015
+        );
       }
 
       const border = countryGeometryRef.current;
@@ -519,7 +529,12 @@ export function useSubdivisionVertexEdit({
 
       // Snap to visible background layers first
       if (worldMapLayers && editorVisibleLayers) {
-        target = snapToLayerFeatures(target as [number, number], worldMapLayers, editorVisibleLayers, 0.015);
+        target = snapToLayerFeatures(
+          target as [number, number],
+          worldMapLayers,
+          editorVisibleLayers,
+          0.015
+        );
       }
 
       const border = countryGeometryRef.current;

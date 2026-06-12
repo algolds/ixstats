@@ -187,7 +187,12 @@ export function useNavigationItems({
       if (navigationSettings) {
         if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
         if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
-        if (item.name === "Labs" && !navigationSettings.showLabsTab && process.env.NODE_ENV !== "development") return false;
+        if (
+          item.name === "Labs" &&
+          !navigationSettings.showLabsTab &&
+          process.env.NODE_ENV !== "development"
+        )
+          return false;
         if (item.name === "Maps" && !navigationSettings.showMapsTab) return false;
         if (item.name === "Forum" && !navigationSettings.showForumTab) return false;
         if (item.name === "Help" && !navigationSettings.showHelpTab) return false;

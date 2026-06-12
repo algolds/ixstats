@@ -5,7 +5,12 @@ import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { snapToBorderEdge } from "~/lib/border-editor";
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
-import { getGeoJSONSource, calculateOverlapGeoJson, EMPTY_FC, snapToLayerFeatures } from "../utils/map-helpers";
+import {
+  getGeoJSONSource,
+  calculateOverlapGeoJson,
+  EMPTY_FC,
+  snapToLayerFeatures,
+} from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 
 interface UseSubdivisionDrawProps {
@@ -179,7 +184,17 @@ export function useSubdivisionDraw({
       map.off("click", onClick);
       map.off("dblclick", onDblClick);
     };
-  }, [map, isLoaded, mode, features, countryGeometry, saveDraw, updateDrawVisualization, worldMapLayers, editorVisibleLayers]);
+  }, [
+    map,
+    isLoaded,
+    mode,
+    features,
+    countryGeometry,
+    saveDraw,
+    updateDrawVisualization,
+    worldMapLayers,
+    editorVisibleLayers,
+  ]);
 
   // Keyboard undo listener (Backspace/Delete/Ctrl+Z)
   useEffect(() => {

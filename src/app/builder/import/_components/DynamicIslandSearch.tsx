@@ -364,7 +364,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className={cn(
               "border-border bg-card/80 overflow-hidden rounded-2xl border shadow-lg backdrop-blur-md",
-              isExpanded ? "p-0 border-blue-500/30" : "cursor-pointer"
+              isExpanded ? "border-blue-500/30 p-0" : "cursor-pointer"
             )}
             onClick={!isExpanded ? handleExpand : undefined}
           >
@@ -638,9 +638,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                                 <h3 className="text-foreground text-lg font-semibold">
                                   {previewingCountry.title}
                                 </h3>
-                                <p className="text-muted-foreground text-xs">
-                                  Country Preview
-                                </p>
+                                <p className="text-muted-foreground text-xs">Country Preview</p>
                               </div>
                             </div>
 
@@ -679,9 +677,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                                   <div className="border-border rounded-lg border p-3">
                                     <div className="mb-1 flex items-center gap-1.5">
                                       <MapPin className="text-error h-3 w-3" />
-                                      <span className="text-muted-foreground text-xs">
-                                        Capital
-                                      </span>
+                                      <span className="text-muted-foreground text-xs">Capital</span>
                                     </div>
                                     <p
                                       className="text-foreground truncate text-sm font-semibold"
@@ -781,7 +777,7 @@ function SearchResultItemInline({
       className={cn(
         "group flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-left transition-all duration-150",
         isFocused && "ring-2 ring-blue-500/50",
-        isSelected ? "bg-blue-500/10 border-blue-500/30" : "bg-card border-border"
+        isSelected ? "border-blue-500/30 bg-blue-500/10" : "bg-card border-border"
       )}
     >
       {/* Flag */}
@@ -802,9 +798,7 @@ function SearchResultItemInline({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <h4 className="text-foreground truncate text-sm font-medium">
-            {result.title}
-          </h4>
+          <h4 className="text-foreground truncate text-sm font-medium">{result.title}</h4>
           <ExternalLink className="text-muted-foreground h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
         </div>
 
@@ -821,8 +815,7 @@ function SearchResultItemInline({
             )}
             {result.gdpPerCapita && (
               <span className="flex items-center gap-1">
-                <DollarSign className="text-success h-3 w-3" />$
-                {formatNumber(result.gdpPerCapita)}
+                <DollarSign className="text-success h-3 w-3" />${formatNumber(result.gdpPerCapita)}
               </span>
             )}
             {result.capital && (

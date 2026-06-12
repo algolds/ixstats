@@ -129,7 +129,6 @@ export function WikiVisualEditor({
     localStorage.setItem("wikios-editor-autocomplete", String(val));
   }, []);
 
-
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [stashesOpen, setStashesOpen] = useState(false);
 
@@ -1265,8 +1264,6 @@ export function WikiVisualEditor({
                   Editor Settings
                 </div>
 
-
-
                 {/* Autocomplete */}
                 <div className="flex items-center justify-between select-none">
                   <span className="font-medium">Autocomplete</span>
@@ -1389,8 +1386,6 @@ export function WikiVisualEditor({
           }}
         />
       )}
-
-
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { withBasePath, stripBasePath } from "~/lib/base-path";
 interface AdminNavigationContextType {
   activeSection: string;
   onNavigate: (section: string) => void;
+  sidebarHidden: boolean;
+  setSidebarHidden: (hidden: boolean) => void;
 }
 
 const AdminNavigationContext = createContext<AdminNavigationContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export function AdminNavigationProvider({ children }: { children: React.ReactNod
   const [activeSection, setActiveSection] = useState<string>(() =>
     getSectionFromPathname(pathname)
   );
+  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   // Sync URL popstate events (browser back/forward button)
   useEffect(() => {
@@ -53,32 +56,26 @@ export function AdminNavigationProvider({ children }: { children: React.ReactNod
     window.scrollTo({ top: 0, behavior: "instant" });
 
     // Set document title
-    const formatted = section
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+    const formatted = section.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     document.title =
-      section === "dashboard"
-        ? "Admin Dashboard - IxStats"
-        : `Admin - ${formatted} - IxStats`;
+      section === "dashboard" ? "Admin Dashboard - IxStats" : `Admin - ${formatted} - IxStats`;
   }, []);
 
   return (
-    <AdminNavigationContext.Provider value={{ activeSection, onNavigate }}>
+    <AdminNavigationContext.Provider value={{ activeSection, onNavigate, sidebarHidden, setSidebarHidden }}>
       {children}
     </AdminNavigationContext.Provider>
   );
 }
 
-export function useAdminNavigation(): {
-  activeSection: string;
-  onNavigate?: (section: string) => void;
-} {
+export function useAdminNavigation(): AdminNavigationContextType {
   const context = useContext(AdminNavigationContext);
   if (!context) {
-    // Return a dummy fallback to prevent crashes if used outside layout context
     return {
       activeSection: "dashboard",
-      onNavigate: undefined,
+      onNavigate: undefined as unknown as (section: string) => void,
+      sidebarHidden: false,
+      setSidebarHidden: () => {},
     };
   }
   return context;

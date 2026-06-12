@@ -388,7 +388,9 @@ export function WikiOSMainPage() {
               {randomCountries.map((c) => (
                 <Link
                   key={c.id}
-                  href={withBasePath(`/wiki/${encodeURIComponent((c.name ?? "").replace(/ /g, "_"))}`)}
+                  href={withBasePath(
+                    `/wiki/${encodeURIComponent((c.name ?? "").replace(/ /g, "_"))}`
+                  )}
                   className="wikios-main-world-card glass-hierarchy-child"
                 >
                   {c.flagUrl && (

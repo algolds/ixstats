@@ -13,14 +13,7 @@ import { DatabaseExplorer } from "./DatabaseExplorer";
 import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
-import {
-  Settings,
-  Clock,
-  TrendingUp,
-  HeartPulse,
-  Navigation,
-  Database,
-} from "lucide-react";
+import { Settings, Clock, TrendingUp, HeartPulse, Navigation, Database } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 import { TimeControlCard } from "./platform/TimeControlCard";
@@ -45,10 +38,9 @@ export function GeneralSettingsContent() {
   } = useAdminState();
 
   // tRPC queries
-  const { refetch: refetchStatus } = api.admin.getSystemStatus.useQuery(
-    undefined,
-    { enabled: false }
-  );
+  const { refetch: refetchStatus } = api.admin.getSystemStatus.useQuery(undefined, {
+    enabled: false,
+  });
 
   const { data: botStatus, refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(
     undefined,
@@ -149,7 +141,8 @@ export function GeneralSettingsContent() {
             id: "general",
             label: "Economic Config",
             icon: TrendingUp,
-            color: "text-emerald-500 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/30",
+            color:
+              "text-emerald-500 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/30",
           },
           {
             id: "time",
@@ -173,7 +166,8 @@ export function GeneralSettingsContent() {
             id: "database",
             label: "Database Explorer",
             icon: Database,
-            color: "text-indigo-500 border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/30",
+            color:
+              "text-indigo-500 border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/30",
           },
         ].map((tab) => {
           const TabIcon = tab.icon;

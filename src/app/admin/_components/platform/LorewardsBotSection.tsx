@@ -31,7 +31,14 @@ import {
 } from "lucide-react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandGroup } from "~/components/ui/command";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandItem,
+  CommandGroup,
+} from "~/components/ui/command";
 
 export function LorewardsBotSection() {
   const notify = useNotify();
@@ -742,15 +749,13 @@ export function LorewardsBotSection() {
                     variant="outline"
                     role="combobox"
                     aria-expanded={comboboxOpen}
-                    className="flex h-9 w-full items-center justify-between border-border/50 bg-background px-3 text-xs font-normal text-foreground hover:bg-muted/30 focus:ring-1 focus:ring-primary focus:outline-none"
+                    className="border-border/50 bg-background text-foreground hover:bg-muted/30 focus:ring-primary flex h-9 w-full items-center justify-between px-3 text-xs font-normal focus:ring-1 focus:outline-none"
                   >
-                    <span className="truncate">
-                      {blacklistUser || "Select wiki username..."}
-                    </span>
+                    <span className="truncate">{blacklistUser || "Select wiki username..."}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 p-0 border-border/50 bg-card/95 backdrop-blur-md shadow-2xl z-[100060]">
+                <PopoverContent className="border-border/50 bg-card/95 z-[100060] w-80 p-0 shadow-2xl backdrop-blur-md">
                   <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Search wiki account..."
@@ -761,40 +766,49 @@ export function LorewardsBotSection() {
                     <CommandList className="max-h-60 overflow-y-auto">
                       {isSuggestionsLoading && (
                         <div className="flex items-center justify-center p-4">
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          <span className="text-muted-foreground ml-2 text-xs">Searching wiki...</span>
+                          <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            Searching wiki...
+                          </span>
                         </div>
                       )}
-                      {!isSuggestionsLoading && (!wikiUserSuggestions || wikiUserSuggestions.length === 0) && (
-                        <CommandEmpty className="text-muted-foreground p-4 text-center text-xs">
-                          {searchTerm.trim().length < 2
-                            ? "Type at least 2 characters to search..."
-                            : "No wiki accounts found."}
-                        </CommandEmpty>
-                      )}
-                      {!isSuggestionsLoading && wikiUserSuggestions && wikiUserSuggestions.length > 0 && (
-                        <CommandGroup heading="Wiki Accounts">
-                          {wikiUserSuggestions.map((user) => (
-                            <CommandItem
-                              key={user.username}
-                              value={user.username}
-                              onSelect={() => {
-                                setBlacklistUser(user.username);
-                                setComboboxOpen(false);
-                              }}
-                              className="text-xs hover:bg-muted/50 cursor-pointer flex items-center justify-between px-3 py-2"
-                            >
-                              <div className="flex items-center gap-2 font-medium">
-                                <UnifiedCountryFlag countryName={user.username} size="xs" showTooltip={false} />
-                                {user.username}
-                              </div>
-                              <span className="text-muted-foreground font-mono text-[10px]">
-                                {user.editCount} edits
-                              </span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
+                      {!isSuggestionsLoading &&
+                        (!wikiUserSuggestions || wikiUserSuggestions.length === 0) && (
+                          <CommandEmpty className="text-muted-foreground p-4 text-center text-xs">
+                            {searchTerm.trim().length < 2
+                              ? "Type at least 2 characters to search..."
+                              : "No wiki accounts found."}
+                          </CommandEmpty>
+                        )}
+                      {!isSuggestionsLoading &&
+                        wikiUserSuggestions &&
+                        wikiUserSuggestions.length > 0 && (
+                          <CommandGroup heading="Wiki Accounts">
+                            {wikiUserSuggestions.map((user) => (
+                              <CommandItem
+                                key={user.username}
+                                value={user.username}
+                                onSelect={() => {
+                                  setBlacklistUser(user.username);
+                                  setComboboxOpen(false);
+                                }}
+                                className="hover:bg-muted/50 flex cursor-pointer items-center justify-between px-3 py-2 text-xs"
+                              >
+                                <div className="flex items-center gap-2 font-medium">
+                                  <UnifiedCountryFlag
+                                    countryName={user.username}
+                                    size="xs"
+                                    showTooltip={false}
+                                  />
+                                  {user.username}
+                                </div>
+                                <span className="text-muted-foreground font-mono text-[10px]">
+                                  {user.editCount} edits
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        )}
                       {searchTerm.trim().length > 0 && (
                         <CommandGroup heading="Custom Entry">
                           <CommandItem
@@ -803,7 +817,7 @@ export function LorewardsBotSection() {
                               setBlacklistUser(searchTerm.trim());
                               setComboboxOpen(false);
                             }}
-                            className="text-xs hover:bg-muted/50 cursor-pointer flex items-center gap-2 text-primary font-medium px-3 py-2"
+                            className="hover:bg-muted/50 text-primary flex cursor-pointer items-center gap-2 px-3 py-2 text-xs font-medium"
                           >
                             Use custom: "{searchTerm.trim()}"
                           </CommandItem>

@@ -325,7 +325,11 @@ export const meetingsRouter = createTRPCRouter({
         data: {
           ...rest,
           implementationStatus: "pending",
-          votingResult: JSON.stringify({ for: votesFor ?? 0, against: votesAgainst ?? 0, abstain: votesAbstain ?? 0 }),
+          votingResult: JSON.stringify({
+            for: votesFor ?? 0,
+            against: votesAgainst ?? 0,
+            abstain: votesAbstain ?? 0,
+          }),
         },
       });
     }),

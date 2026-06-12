@@ -48,11 +48,17 @@ describe("defineAbilityFor", () => {
   it("should grant access to dynamic tools", () => {
     // basic_calculator is always unlocked
     const ability1 = defineAbilityFor("user", [], "basic", []);
-    expect(ability1.can("use", { type: "Tool", toolId: "basic_calculator", unlocked: true })).toBe(true);
-    expect(ability1.can("use", { type: "Tool", toolId: "map_measurer", unlocked: true })).toBe(false);
+    expect(ability1.can("use", { type: "Tool", toolId: "basic_calculator", unlocked: true })).toBe(
+      true
+    );
+    expect(ability1.can("use", { type: "Tool", toolId: "map_measurer", unlocked: true })).toBe(
+      false
+    );
 
     // custom tools unlocked
     const ability2 = defineAbilityFor("user", [], "basic", ["map_measurer"]);
-    expect(ability2.can("use", { type: "Tool", toolId: "map_measurer", unlocked: true })).toBe(true);
+    expect(ability2.can("use", { type: "Tool", toolId: "map_measurer", unlocked: true })).toBe(
+      true
+    );
   });
 });

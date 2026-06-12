@@ -89,11 +89,7 @@ export function SwipeableGroup({ children }: { children: React.ReactNode }) {
     [activeRowId, registerRow, unregisterRow]
   );
 
-  return (
-    <SwipeableGroupContext.Provider value={value}>
-      {children}
-    </SwipeableGroupContext.Provider>
-  );
+  return <SwipeableGroupContext.Provider value={value}>{children}</SwipeableGroupContext.Provider>;
 }
 
 // ── Row Internal Context ────────────────────────────────────────────────
@@ -209,9 +205,8 @@ function SwipeableRowRoot({
         const side = physics.activeSide.current;
         if (!side) return;
 
-        const commitAction = side === "leading"
-          ? leadingChild?.props?.commit
-          : trailingChild?.props?.commit;
+        const commitAction =
+          side === "leading" ? leadingChild?.props?.commit : trailingChild?.props?.commit;
 
         if (commitAction) {
           setIsCommitting(true);
@@ -292,7 +287,9 @@ function SwipeableRowRoot({
           if (physics.swipeState.current !== "closed") {
             e.preventDefault();
             // Focus next action button in trailing tray
-            const tray = (e.currentTarget as HTMLElement).querySelector("[data-swipe-tray='trailing']");
+            const tray = (e.currentTarget as HTMLElement).querySelector(
+              "[data-swipe-tray='trailing']"
+            );
             const buttons = tray?.querySelectorAll("button");
             if (buttons?.length) {
               const focused = document.activeElement;
@@ -305,7 +302,9 @@ function SwipeableRowRoot({
         case "ArrowRight":
           if (physics.swipeState.current !== "closed") {
             e.preventDefault();
-            const tray = (e.currentTarget as HTMLElement).querySelector("[data-swipe-tray='leading']");
+            const tray = (e.currentTarget as HTMLElement).querySelector(
+              "[data-swipe-tray='leading']"
+            );
             const buttons = tray?.querySelectorAll("button");
             if (buttons?.length) {
               const focused = document.activeElement;
@@ -464,25 +463,25 @@ function SwipeableRowLeading({ children, commit: _commit, className }: Swipeable
       aria-label="Leading actions"
     >
       {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="absolute inset-0 bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005] rounded-[inherit] overflow-hidden pointer-events-none z-0">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
+          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
           <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
         </div>
       </div>
 
       {/* 2. Frosted glass backdrop blur filter layer (Z-10) */}
-      <div 
-        className="absolute inset-0 z-10 pointer-events-none rounded-[inherit] backdrop-blur-[20px] saturate-[190%]"
+      <div
+        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
         style={{
           WebkitBackdropFilter: "blur(20px) saturate(190%)",
         }}
       />
 
       {/* 3. Action Triggers container (Z-20) */}
-      <div className="relative z-20 flex h-full items-center gap-0.5 px-1 w-full justify-start">
+      <div className="relative z-20 flex h-full w-full items-center justify-start gap-0.5 px-1">
         {processedChildren}
       </div>
     </motion.div>
@@ -530,25 +529,25 @@ function SwipeableRowTrailing({ children, commit: _commit, className }: Swipeabl
       aria-label="Trailing actions"
     >
       {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="absolute inset-0 bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005] rounded-[inherit] overflow-hidden pointer-events-none z-0">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
+          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
           <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
         </div>
       </div>
 
       {/* 2. Frosted glass backdrop blur filter layer (Z-10) */}
-      <div 
-        className="absolute inset-0 z-10 pointer-events-none rounded-[inherit] backdrop-blur-[20px] saturate-[190%]"
+      <div
+        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
         style={{
           WebkitBackdropFilter: "blur(20px) saturate(190%)",
         }}
       />
 
       {/* 3. Action Triggers container (Z-20) */}
-      <div className="relative z-20 flex h-full items-center gap-0.5 px-1 w-full justify-end">
+      <div className="relative z-20 flex h-full w-full items-center justify-end gap-0.5 px-1">
         {processedChildren}
       </div>
     </motion.div>
@@ -625,7 +624,16 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
 
       toggleExpand();
     },
-    [wasDrag, toggleExpand, isCommitting, springX, settle, hasLeading, hasTrailing, thresholdsPx.reveal]
+    [
+      wasDrag,
+      toggleExpand,
+      isCommitting,
+      springX,
+      settle,
+      hasLeading,
+      hasTrailing,
+      thresholdsPx.reveal,
+    ]
   );
 
   // Clamp the actual translation to prevent stretching/visual bugs
@@ -690,7 +698,8 @@ const tailwindColorMap: Record<string, { light: string; dark: string }> = {
     dark: "dark:bg-green-500/15 dark:hover:bg-green-500/25 dark:border-white/10 dark:text-green-300",
   },
   emerald: {
-    light: "bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-700",
+    light:
+      "bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-700",
     dark: "dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25 dark:border-white/10 dark:text-emerald-300",
   },
   blue: {
@@ -738,9 +747,7 @@ export function SwipeActionButton({
       ? `${tailwindColorMap[color].light} ${tailwindColorMap[color].dark}`
       : `bg-${color}-500/10 hover:bg-${color}-500/20 border border-${color}-500/20 text-${color}-700 dark:text-${color}-300 dark:border-white/10 dark:bg-${color}-500/15 dark:hover:bg-${color}-500/25`;
 
-  const inlineStyle = isCssColor
-    ? ({ "--btn-color": color } as React.CSSProperties)
-    : undefined;
+  const inlineStyle = isCssColor ? ({ "--btn-color": color } as React.CSSProperties) : undefined;
 
   const context = useContext(RowInternalContext);
 
@@ -755,7 +762,7 @@ export function SwipeActionButton({
         }}
         className={cn(
           "relative flex h-full flex-col items-center justify-center gap-1 px-3 transition-colors active:brightness-95",
-          "backdrop-blur-sm overflow-hidden whitespace-nowrap",
+          "overflow-hidden whitespace-nowrap backdrop-blur-sm",
           btnClass,
           className
         )}
@@ -766,11 +773,11 @@ export function SwipeActionButton({
         }}
         aria-label={ariaLabel ?? label}
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
 
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="text-[9px] font-bold truncate">{label}</span>
+        <span className="truncate text-[9px] font-bold">{label}</span>
       </button>
     );
   }
@@ -789,9 +796,7 @@ export function SwipeActionButton({
   // Create springX mappings
   const x = useTransform(
     springX,
-    _side === "trailing"
-      ? [0, -revealPx, -commitPx]
-      : [0, revealPx, commitPx],
+    _side === "trailing" ? [0, -revealPx, -commitPx] : [0, revealPx, commitPx],
     [shiftAmount, 0, 0]
   );
 
@@ -805,9 +810,7 @@ export function SwipeActionButton({
       : isPrimary
         ? [0, revealPx, emphasizePx, commitPx]
         : [0, revealPx, emphasizePx, emphasizePx + 20],
-    isPrimary
-      ? [0.5, 1.0, 1.0, 1.15]
-      : [0.5, 1.0, 1.0, 0.0]
+    isPrimary ? [0.5, 1.0, 1.0, 1.15] : [0.5, 1.0, 1.0, 0.0]
   );
 
   const opacity = useTransform(
@@ -819,9 +822,7 @@ export function SwipeActionButton({
       : isPrimary
         ? [0, revealPx * 0.5, revealPx]
         : [0, revealPx * 0.5, revealPx, emphasizePx, emphasizePx + 20],
-    isPrimary
-      ? [0, 0.5, 1.0]
-      : [0, 0.5, 1.0, 1.0, 0.0]
+    isPrimary ? [0, 0.5, 1.0] : [0, 0.5, 1.0, 1.0, 0.0]
   );
 
   // Width and MinWidth mappings (only shrink non-primary buttons to 0, primary expands via flex-grow)
@@ -846,7 +847,7 @@ export function SwipeActionButton({
       }}
       className={cn(
         "relative flex h-full flex-col items-center justify-center gap-1 px-3 transition-colors active:brightness-95",
-        "backdrop-blur-sm overflow-hidden whitespace-nowrap",
+        "overflow-hidden whitespace-nowrap backdrop-blur-sm",
         btnClass,
         className
       )}
@@ -862,11 +863,11 @@ export function SwipeActionButton({
       }}
       aria-label={ariaLabel ?? label}
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6 pointer-events-none" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4 pointer-events-none" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
 
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="text-[9px] font-bold truncate">{label}</span>
+      <span className="truncate text-[9px] font-bold">{label}</span>
     </motion.button>
   );
 }

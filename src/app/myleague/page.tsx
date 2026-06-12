@@ -37,6 +37,8 @@ const STATUS_BADGE_VARIANT: Record<string, "default" | "secondary" | "outline"> 
   archived: "outline",
 };
 
+import { Carousel, Card as CarouselCard } from "~/components/ui/apple-cards-carousel";
+
 export default function MyLeaguePage() {
   usePageTitle({ title: "MyLeague" });
   const router = useRouter();
@@ -45,9 +47,109 @@ export default function MyLeaguePage() {
   const { data: leagues, isLoading } = api.sports.getLeagues.useQuery({});
   const { data: canonicalLeagues } = api.sports.getLeagues.useQuery({ isCanonical: true });
 
+  const featuredCards =
+    canonicalLeagues?.map((league, idx) => (
+      <CarouselCard
+        key={league.id}
+        index={idx}
+        card={{
+          src: (league as any).coverImage || "https://ixwiki.com/trophy-card.png",
+          title: league.name,
+          category: `Featured · ${SPORT_EMOJIS[league.sportPreset] ?? "⚽"} ${ARCHETYPE_LABELS[league.archetype] ?? league.archetype}`,
+          content: (
+            <div className="space-y-4 p-6 text-left dark:text-white">
+              <h4 className="text-xl font-bold">{league.name}</h4>
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                This is a canonical featured league. Compete here to earn system-wide ranking
+                points, diplomatic standing boosts, and exclusive achievements.
+              </p>
+              <div className="grid grid-cols-2 gap-4 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+                <div>
+                  <p className="text-xs text-neutral-400">STATUS</p>
+                  <p className="text-sm font-semibold capitalize">{league.status}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400">TEAM COUNT</p>
+                  <p className="text-sm font-semibold">{league.teamCount} Teams</p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400">SEASONS</p>
+                  <p className="text-sm font-semibold">{league.seasonCount} Simulated</p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400">TYPE</p>
+                  <p className="text-sm font-semibold">{ARCHETYPE_LABELS[league.archetype]}</p>
+                </div>
+              </div>
+              <Button
+                className="mt-6 w-full"
+                onClick={() => {
+                  // close modal override
+                  document.body.style.overflow = "auto";
+                  router.push(withBasePath(`/myleague/${league.id}`));
+                }}
+              >
+                Enter League Hub
+              </Button>
+            </div>
+          ),
+        }}
+      />
+    )) || [];
+
+  const allCards =
+    leagues?.map((league, idx) => (
+      <CarouselCard
+        key={league.id}
+        index={idx}
+        card={{
+          src: (league as any).coverImage || (league as any).logo || "https://ixwiki.com/sports-logo.png",
+          title: league.name,
+          category: `${SPORT_EMOJIS[league.sportPreset] ?? "⚽"} ${ARCHETYPE_LABELS[league.archetype] ?? league.archetype}`,
+          content: (
+            <div className="space-y-4 p-6 text-left dark:text-white">
+              <h4 className="text-xl font-bold">{league.name}</h4>
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                Manage custom club franchises, transfer players, and schedule fixtures in this
+                simulated division.
+              </p>
+              <div className="grid grid-cols-2 gap-4 rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
+                <div>
+                  <p className="text-xs text-neutral-400">STATUS</p>
+                  <p className="text-sm font-semibold capitalize">{league.status}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400">TEAM COUNT</p>
+                  <p className="text-sm font-semibold">{league.teamCount} Teams</p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400">SEASONS</p>
+                  <p className="text-sm font-semibold">{league.seasonCount} Simulated</p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400">TYPE</p>
+                  <p className="text-sm font-semibold">{ARCHETYPE_LABELS[league.archetype]}</p>
+                </div>
+              </div>
+              <Button
+                className="mt-6 w-full"
+                onClick={() => {
+                  // close modal override
+                  document.body.style.overflow = "auto";
+                  router.push(withBasePath(`/myleague/${league.id}`));
+                }}
+              >
+                Enter League Hub
+              </Button>
+            </div>
+          ),
+        }}
+      />
+    )) || [];
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="facet-surface rounded-xl border border-border/40 p-6 mb-8 flex items-center justify-between">
+      <div className="facet-surface border-border/40 mb-8 flex items-center justify-between rounded-xl border p-6">
         <div>
           <h1 className="text-3xl font-bold">MyLeague</h1>
           <p className="text-muted-foreground mt-1">
@@ -68,25 +170,21 @@ export default function MyLeaguePage() {
 
       <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
 
-      {canonicalLeagues && canonicalLeagues.length > 0 && (
+      {featuredCards.length > 0 && (
         <section className="mb-10">
-          <h2 className="facet-hierarchy-parent rounded-lg p-3 mb-4 text-xl font-semibold">
+          <h2 className="facet-hierarchy-parent mb-4 rounded-lg p-3 text-xl font-semibold">
             <Trophy className="mr-2 inline h-5 w-5" />
             Featured Leagues
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {canonicalLeagues.map((league) => (
-              <LeagueCard key={league.id} league={league} router={router} />
-            ))}
-          </div>
+          <Carousel items={featuredCards} />
         </section>
       )}
 
       <section>
-          <h2 className="facet-hierarchy-parent rounded-lg p-3 mb-4 text-xl font-semibold">
-            <Users className="mr-2 inline h-5 w-5" />
-            All Leagues
-          </h2>
+        <h2 className="facet-hierarchy-parent mb-4 rounded-lg p-3 text-xl font-semibold">
+          <Users className="mr-2 inline h-5 w-5" />
+          All Leagues
+        </h2>
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -102,12 +200,8 @@ export default function MyLeaguePage() {
               </Card>
             ))}
           </div>
-        ) : leagues && leagues.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {leagues.map((league) => (
-              <LeagueCard key={league.id} league={league} router={router} />
-            ))}
-          </div>
+        ) : allCards.length > 0 ? (
+          <Carousel items={allCards} />
         ) : (
           <Card className="facet-hierarchy-child">
             <CardContent className="flex flex-col items-center py-12 text-center">
@@ -124,68 +218,5 @@ export default function MyLeaguePage() {
         )}
       </section>
     </div>
-  );
-}
-
-function LeagueCard({
-  league,
-  router,
-}: {
-  league: {
-    id: string;
-    name: string;
-    sportPreset: string;
-    archetype: string;
-    status: string;
-    teamCount: number;
-    seasonCount: number;
-    isCanonical?: boolean;
-  };
-  router: ReturnType<typeof useRouter>;
-}) {
-  const emoji = SPORT_EMOJIS[league.sportPreset] ?? "\u26BD";
-  const archetypeLabel = ARCHETYPE_LABELS[league.archetype] ?? league.archetype;
-  const badgeVariant = STATUS_BADGE_VARIANT[league.status] ?? "outline";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
-    >
-      <Card
-        className="facet-hierarchy-interactive cursor-pointer"
-        onClick={() => router.push(withBasePath(`/myleague/${league.id}`))}
-      >
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{emoji}</span>
-              <CardTitle className="text-lg">{league.name}</CardTitle>
-            </div>
-            {league.isCanonical && (
-              <Badge variant="default">
-                <Trophy className="mr-1 h-3 w-3" />
-                Canonical
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Badge variant={badgeVariant}>{league.status}</Badge>
-            <Badge variant="secondary">{archetypeLabel}</Badge>
-            <span className="text-muted-foreground">
-              <Users className="mr-1 inline h-3.5 w-3.5" />
-              {league.teamCount} teams
-            </span>
-            <span className="text-muted-foreground">
-              {league.seasonCount} season{league.seasonCount !== 1 ? "s" : ""}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
   );
 }

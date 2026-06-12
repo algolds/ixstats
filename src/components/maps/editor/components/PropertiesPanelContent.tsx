@@ -119,7 +119,7 @@ export function PropertiesPanelContent({
         mainContent = (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
+              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 Country Profile
               </span>
               <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500">
@@ -131,11 +131,11 @@ export function PropertiesPanelContent({
                 <img
                   src={featureDetails.flagUrl}
                   alt={`${selectedCountryName} flag`}
-                  className="aspect-video w-full rounded-lg border border-border/50 object-cover shadow-sm"
+                  className="border-border/50 aspect-video w-full rounded-lg border object-cover shadow-sm"
                 />
               )}
               <div>
-                <label className="text-[10px] font-medium text-muted-foreground uppercase">
+                <label className="text-muted-foreground text-[10px] font-medium uppercase">
                   Wiki Linkage
                 </label>
                 <div className="mt-1 flex items-center gap-1.5">
@@ -149,7 +149,7 @@ export function PropertiesPanelContent({
                   <button
                     onClick={handleLinkFeature}
                     disabled={updatePropertiesMutation.isPending}
-                    className="rounded-lg bg-blue-650 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="bg-blue-650 rounded-lg px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                   >
                     Link
                   </button>
@@ -158,7 +158,7 @@ export function PropertiesPanelContent({
 
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-medium text-muted-foreground uppercase">
+                  <label className="text-muted-foreground text-[10px] font-medium uppercase">
                     Custom Properties (JSON)
                   </label>
                   <button
@@ -190,7 +190,7 @@ export function PropertiesPanelContent({
                         value={propertiesJsonString}
                         onChange={(e) => setPropertiesJsonString(e.target.value)}
                         rows={6}
-                        className="font-mono text-[10px] leading-relaxed w-full rounded-lg border border-border bg-background px-3 py-2 focus:border-blue-500 focus:outline-none"
+                        className="border-border bg-background w-full rounded-lg border px-3 py-2 font-mono text-[10px] leading-relaxed focus:border-blue-500 focus:outline-none"
                       />
                       {jsonError && <p className="text-[10px] text-red-500">{jsonError}</p>}
                     </div>
@@ -200,14 +200,14 @@ export function PropertiesPanelContent({
                 </div>
               </div>
 
-              <div className="border-t border-border/30 pt-3">
+              <div className="border-border/30 border-t pt-3">
                 <button
                   onClick={() => {
                     if (mapSelectedCountry?.featureId) {
                       router.push(`/admin/geography?featureId=${mapSelectedCountry.featureId}`);
                     }
                   }}
-                  className="w-full rounded-lg border border-border bg-muted/20 hover:bg-muted/40 py-2 text-center text-xs font-medium text-foreground transition-colors"
+                  className="border-border bg-muted/20 hover:bg-muted/40 text-foreground w-full rounded-lg border py-2 text-center text-xs font-medium transition-colors"
                 >
                   Manage Database Record
                 </button>
@@ -217,7 +217,7 @@ export function PropertiesPanelContent({
         );
       } else {
         mainContent = (
-          <p className="text-center italic text-muted-foreground py-8">
+          <p className="text-muted-foreground py-8 text-center italic">
             Click a country on the map to manage linkages or properties.
           </p>
         );

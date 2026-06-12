@@ -36,12 +36,10 @@ export function BracketView({ brackets, className }: BracketViewProps) {
     return null;
   }
 
-  const rounds = Array.from(new Set(brackets.map((b) => b.round))).sort(
-    (a, b) => b - a,
-  );
+  const rounds = Array.from(new Set(brackets.map((b) => b.round))).sort((a, b) => b - a);
 
   const weightClasses = Array.from(
-    new Set(brackets.map((b) => b.weightClass).filter(Boolean)),
+    new Set(brackets.map((b) => b.weightClass).filter(Boolean))
   ) as string[];
 
   if (weightClasses.length > 0) {
@@ -49,22 +47,13 @@ export function BracketView({ brackets, className }: BracketViewProps) {
       <div className={cn("space-y-6", className)}>
         {weightClasses.map((wc) => {
           const wcBrackets = brackets.filter((b) => b.weightClass === wc);
-          return (
-            <BracketRounds
-              key={wc}
-              rounds={rounds}
-              brackets={wcBrackets}
-              title={wc}
-            />
-          );
+          return <BracketRounds key={wc} rounds={rounds} brackets={wcBrackets} title={wc} />;
         })}
       </div>
     );
   }
 
-  return (
-    <BracketRounds rounds={rounds} brackets={brackets} className={className} />
-  );
+  return <BracketRounds rounds={rounds} brackets={brackets} className={className} />;
 }
 
 function BracketRounds({
@@ -95,9 +84,7 @@ function BracketRounds({
             return (
               <div key={round}>
                 <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
-                  {isFinalRound && (
-                    <Medal className="h-4 w-4 text-yellow-500" />
-                  )}
+                  {isFinalRound && <Medal className="h-4 w-4 text-yellow-500" />}
                   {round === 1
                     ? "First Round"
                     : round === 2
@@ -111,10 +98,8 @@ function BracketRounds({
                 <div className="space-y-2">
                   {roundBrackets.map((b) => {
                     const isCompleted = b.status === "completed";
-                    const fighter1IsWinner =
-                      isCompleted && b.winnerId === b.fighter1Id;
-                    const fighter2IsWinner =
-                      isCompleted && b.winnerId === b.fighter2Id;
+                    const fighter1IsWinner = isCompleted && b.winnerId === b.fighter1Id;
+                    const fighter2IsWinner = isCompleted && b.winnerId === b.fighter2Id;
                     const resultText = isCompleted ? formatResult(b.result) : "";
 
                     return (
@@ -126,7 +111,7 @@ function BracketRounds({
                           <span
                             className={cn(
                               "font-medium",
-                              fighter1IsWinner && "font-bold text-yellow-500",
+                              fighter1IsWinner && "font-bold text-yellow-500"
                             )}
                           >
                             {b.fighter1Name ?? b.fighter1Id}
@@ -137,11 +122,7 @@ function BracketRounds({
                         </div>
 
                         <div className="flex flex-col items-center gap-1">
-                          <Badge
-                            variant={
-                              isCompleted ? "secondary" : "outline"
-                            }
-                          >
+                          <Badge variant={isCompleted ? "secondary" : "outline"}>
                             {isCompleted ? resultText || "Won" : "vs"}
                           </Badge>
                         </div>
@@ -150,7 +131,7 @@ function BracketRounds({
                           <span
                             className={cn(
                               "font-medium",
-                              fighter2IsWinner && "font-bold text-yellow-500",
+                              fighter2IsWinner && "font-bold text-yellow-500"
                             )}
                           >
                             {b.fighter2Name ?? b.fighter2Id}

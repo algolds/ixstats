@@ -11,13 +11,14 @@ import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
 import { resolveMatch, resolveRace, createRNG } from "./resolver";
 import type { TeamRatingVector } from "./resolver";
+import { transitionToNextStage } from "./transition";
 
 type Prisma = PrismaClient;
 
 function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = (hash << 5) - hash + str.charCodeAt(i);
     hash |= 0;
   }
   return Math.abs(hash);
@@ -37,7 +38,7 @@ function defaultRatingVector(): TeamRatingVector {
 
 async function completeSeason(
   prisma: Prisma,
-  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } },
+  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } }
 ): Promise<void> {
   const ixNow = IxTime.getCurrentIxTime();
 
@@ -51,7 +52,15 @@ async function completeSeason(
     const standings = await prisma.sportStanding.findMany({
       where: { seasonId: season.id },
       orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
-      select: { teamId: true, points: true, wins: true, draws: true, losses: true, pointsFor: true, pointsAgainst: true },
+      select: {
+        teamId: true,
+        points: true,
+        wins: true,
+        draws: true,
+        losses: true,
+        pointsFor: true,
+        pointsAgainst: true,
+      },
     });
 
     if (standings.length > 0) {
@@ -102,7 +111,9 @@ async function completeSeason(
 
       if (championTeam) {
         const championPlayer = championTeam.players[0];
-        const fighterName = championPlayer ? `${championPlayer.firstName} ${championPlayer.lastName}` : championTeam.name;
+        const fighterName = championPlayer
+          ? `${championPlayer.firstName} ${championPlayer.lastName}`
+          : championTeam.name;
 
         await prisma.sportSeason.update({
           where: { id: season.id },
@@ -136,7 +147,7 @@ async function completeSeason(
       for (const pos of results) {
         constructorPoints.set(
           pos.teamId,
-          (constructorPoints.get(pos.teamId) ?? 0) + (pos.points ?? 0),
+          (constructorPoints.get(pos.teamId) ?? 0) + (pos.points ?? 0)
         );
       }
     }
@@ -167,17 +178,32 @@ async function completeSeason(
       });
     }
   }
+
+  // Automatically transition to the next season
+  try {
+    const { transitionSeasonAction } = await import("./transition");
+    await transitionSeasonAction(prisma, season.id);
+  } catch (error) {
+    console.error(
+      `[Cron] Sports: Failed to automatically transition completed season ${season.id}:`,
+      error instanceof Error ? error.message : error
+    );
+  }
 }
 
 // ─── League / Division Conference advance ───────────────────────────
 
 async function advanceLeagueMatchDay(
   prisma: Prisma,
-  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } },
+  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } }
 ): Promise<boolean> {
   // Find the earliest match day with scheduled matches
   const scheduledMatches = await prisma.sportMatch.findMany({
-    where: { seasonId: season.id, status: "scheduled" },
+    where: {
+      seasonId: season.id,
+      status: "scheduled",
+      stage: (season as any).activeStage ?? 1,
+    } as any,
     orderBy: { matchDay: "asc" },
     take: 100,
     select: { matchDay: true },
@@ -188,7 +214,12 @@ async function advanceLeagueMatchDay(
   const targetMatchDay = scheduledMatches[0]!.matchDay;
 
   const matches = await prisma.sportMatch.findMany({
-    where: { seasonId: season.id, matchDay: targetMatchDay, status: "scheduled" },
+    where: {
+      seasonId: season.id,
+      matchDay: targetMatchDay,
+      status: "scheduled",
+      stage: (season as any).activeStage ?? 1,
+    } as any,
     include: {
       homeTeam: true,
       awayTeam: true,
@@ -238,7 +269,11 @@ async function advanceLeagueMatchDay(
         awayScore: result.awayScore,
         status: "completed",
         resolvedIxTime: ixNow,
-        matchStats: result.keyStats,
+        matchStats: {
+          keyStats: result.keyStats,
+          evaluation: result.evaluation,
+          trace: result.trace,
+        } as any,
         homeRatingBefore: { ...homeRatings },
         awayRatingBefore: { ...awayRatings },
         homeRatingAfter: {
@@ -255,11 +290,21 @@ async function advanceLeagueMatchDay(
     // Update team season rating vectors
     await prisma.sportTeamSeason.updateMany({
       where: { seasonId: season.id, teamId: m.homeTeamId },
-      data: { ratingVector: { ...homeRatings, overall: Math.round((homeRatings.overall + result.homeRatingDelta) * 100) / 100 } },
+      data: {
+        ratingVector: {
+          ...homeRatings,
+          overall: Math.round((homeRatings.overall + result.homeRatingDelta) * 100) / 100,
+        },
+      },
     });
     await prisma.sportTeamSeason.updateMany({
       where: { seasonId: season.id, teamId: m.awayTeamId },
-      data: { ratingVector: { ...awayRatings, overall: Math.round((awayRatings.overall + result.awayRatingDelta) * 100) / 100 } },
+      data: {
+        ratingVector: {
+          ...awayRatings,
+          overall: Math.round((awayRatings.overall + result.awayRatingDelta) * 100) / 100,
+        },
+      },
     });
 
     // Track result for standings
@@ -329,11 +374,18 @@ async function advanceLeagueMatchDay(
 
   // Check if season is complete
   const remainingScheduled = await prisma.sportMatch.count({
-    where: { seasonId: season.id, status: "scheduled" },
+    where: {
+      seasonId: season.id,
+      status: "scheduled",
+      stage: (season as any).activeStage ?? 1,
+    } as any,
   });
 
   if (remainingScheduled === 0) {
-    await completeSeason(prisma, season);
+    const transitioned = await transitionToNextStage(prisma, season.id);
+    if (!transitioned) {
+      await completeSeason(prisma, season);
+    }
   }
 
   return true;
@@ -343,7 +395,7 @@ async function advanceLeagueMatchDay(
 
 async function advanceCircuitRace(
   prisma: Prisma,
-  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } },
+  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } }
 ): Promise<boolean> {
   // Find the next upcoming or qualifying_complete race
   let race = await prisma.sportRace.findFirst({
@@ -421,7 +473,15 @@ async function advanceCircuitRace(
     data: {
       status: "completed",
       raceIxTime: race.raceIxTime ?? ixNow,
-      grid: race.grid ?? JSON.stringify(allDrivers.map((d, idx) => ({ driverId: d.driverId, teamId: d.teamId, gridPosition: idx + 1 }))),
+      grid:
+        race.grid ??
+        JSON.stringify(
+          allDrivers.map((d, idx) => ({
+            driverId: d.driverId,
+            teamId: d.teamId,
+            gridPosition: idx + 1,
+          }))
+        ),
       results: JSON.stringify(result.positions),
       weather: isWet ? "wet" : "dry",
     },
@@ -443,11 +503,15 @@ async function advanceCircuitRace(
 
 async function advanceBracketRound(
   prisma: Prisma,
-  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } },
+  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } }
 ): Promise<boolean> {
   // Find the earliest round with scheduled brackets
   const scheduledBrackets = await prisma.sportBracket.findMany({
-    where: { seasonId: season.id, status: "scheduled" },
+    where: {
+      seasonId: season.id,
+      status: "scheduled",
+      stage: (season as any).activeStage ?? 1,
+    } as any,
     orderBy: { round: "asc" },
     select: { round: true },
   });
@@ -457,7 +521,12 @@ async function advanceBracketRound(
   const targetRound = scheduledBrackets[0]!.round;
 
   const brackets = await prisma.sportBracket.findMany({
-    where: { seasonId: season.id, round: targetRound, status: "scheduled" },
+    where: {
+      seasonId: season.id,
+      round: targetRound,
+      status: "scheduled",
+      stage: (season as any).activeStage ?? 1,
+    } as any,
   });
 
   for (const bracket of brackets) {
@@ -486,24 +555,31 @@ async function advanceBracketRound(
 
     const homeRatings: TeamRatingVector = {
       overall: computePlayerAvg(r1),
-      offense: (r1.power ?? 50),
-      defense: (r1.defense ?? 50),
+      offense: r1.power ?? 50,
+      defense: r1.defense ?? 50,
       form: 50,
       depth: 50,
       coaching: 50,
     };
     const awayRatings: TeamRatingVector = {
       overall: computePlayerAvg(r2),
-      offense: (r2.power ?? 50),
-      defense: (r2.defense ?? 50),
+      offense: r2.power ?? 50,
+      defense: r2.defense ?? 50,
       form: 50,
       depth: 50,
       coaching: 50,
     };
 
     const matchSeed = hashString(bracket.id) + targetRound * 7919;
-    const isChampionship = bracket.round === Math.max(...scheduledBrackets.map((b) => b.round)) &&
-      (await prisma.sportBracket.count({ where: { seasonId: season.id, round: { gt: targetRound } } })) === 0;
+    const isChampionship =
+      bracket.round === Math.max(...scheduledBrackets.map((b) => b.round)) &&
+      (await prisma.sportBracket.count({
+        where: {
+          seasonId: season.id,
+          round: { gt: targetRound },
+          stage: (season as any).activeStage ?? 1,
+        } as any,
+      })) === 0;
 
     const result = resolveMatch({
       sport: season.league.sportPreset,
@@ -523,20 +599,33 @@ async function advanceBracketRound(
         winnerId,
         status: "completed",
         resolvedIxTime: ixNow,
-        result: { winner: winnerId, method: result.winner === "home" ? "decision" : "decision" } as any,
+        result: {
+          winner: winnerId,
+          method: result.winner === "home" ? "decision" : "decision",
+        } as any,
       },
     });
   }
 
   // When all brackets in current round are done, create next round brackets
   const stillScheduled = await prisma.sportBracket.count({
-    where: { seasonId: season.id, round: targetRound, status: "scheduled" },
+    where: {
+      seasonId: season.id,
+      round: targetRound,
+      status: "scheduled",
+      stage: (season as any).activeStage ?? 1,
+    } as any,
   });
 
   if (stillScheduled === 0) {
     // Get winners from this round
     const completedBrackets = await prisma.sportBracket.findMany({
-      where: { seasonId: season.id, round: targetRound, status: "completed" },
+      where: {
+        seasonId: season.id,
+        round: targetRound,
+        status: "completed",
+        stage: (season as any).activeStage ?? 1,
+      } as any,
       select: { winnerId: true },
     });
 
@@ -552,7 +641,7 @@ async function advanceBracketRound(
       const half = pow2 / 2;
       for (let i = 0; i < half; i++) {
         const a = i < winners.length ? winners[i]! : null;
-        const b = (pow2 - 1 - i) < winners.length ? winners[pow2 - 1 - i]! : null;
+        const b = pow2 - 1 - i < winners.length ? winners[pow2 - 1 - i]! : null;
         if (a && b) {
           await prisma.sportBracket.create({
             data: {
@@ -563,13 +652,17 @@ async function advanceBracketRound(
               fighter2Id: b,
               status: "scheduled",
               scheduledIxTime: ixNow + 2880,
-            },
+              stage: (season as any).activeStage ?? 1,
+            } as any,
           });
         }
       }
     } else {
-      // Season complete
-      await completeSeason(prisma, season);
+      // Season complete check for next stage
+      const transitioned = await transitionToNextStage(prisma, season.id);
+      if (!transitioned) {
+        await completeSeason(prisma, season);
+      }
     }
   }
 
@@ -584,7 +677,7 @@ export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
   const activeSeasons = await prisma.sportSeason.findMany({
     where: { status: "in_progress" },
     include: {
-      league: { select: { id: true, archetype: true, sportPreset: true } },
+      league: { select: { id: true, archetype: true, sportPreset: true, settings: true } },
     },
   });
 
@@ -592,15 +685,27 @@ export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
     try {
       let advancedSeason = false;
 
-      switch (season.league.archetype) {
+      let activeArchetype = season.league.archetype;
+      const settings = (season as any).settings ?? (season.league as any).settings ?? {};
+      const stages = (settings as any).stages;
+      if (stages && Array.isArray(stages)) {
+        const activeStage = stages.find((s: any) => s.id === (season as any).activeStage);
+        if (activeStage && activeStage.type) {
+          activeArchetype = activeStage.type;
+        }
+      }
+
+      switch (activeArchetype) {
         case "league":
         case "division_conference":
+        case "round_robin":
           advancedSeason = await advanceLeagueMatchDay(prisma, season);
           break;
         case "circuit":
           advancedSeason = await advanceCircuitRace(prisma, season);
           break;
         case "bracket":
+        case "golden_box":
           advancedSeason = await advanceBracketRound(prisma, season);
           break;
       }
@@ -611,7 +716,7 @@ export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
     } catch (error) {
       console.error(
         `[Cron] Sports: Failed to advance season ${season.id} (${season.league.archetype}):`,
-        error instanceof Error ? error.message : error,
+        error instanceof Error ? error.message : error
       );
     }
   }

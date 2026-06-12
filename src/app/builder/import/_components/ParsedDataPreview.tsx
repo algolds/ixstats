@@ -49,9 +49,9 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
           <img
             src={parsedData.flagUrl}
             alt={`Flag of ${parsedData.name}`}
-            className="scale-[1.2] saturate-[0.7] brightness-[0.5] absolute inset-0 h-full w-full object-cover opacity-10 blur-3xl"
+            className="absolute inset-0 h-full w-full scale-[1.2] object-cover opacity-10 blur-3xl brightness-[0.5] saturate-[0.7]"
           />
-          <div className="bg-gradient-to-br from-background/90 via-card/95 to-background/90 backdrop-blur absolute inset-0" />
+          <div className="from-background/90 via-card/95 to-background/90 absolute inset-0 bg-gradient-to-br backdrop-blur" />
         </div>
       )}
       <GlassCardHeader className="relative z-10">
@@ -72,7 +72,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
             whileTap={{ scale: 0.95 }}
             onClick={handleContinueWithData}
             className={cn(
-              "bg-brand-primary border-brand-primary flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white border transition-all duration-200"
+              "bg-brand-primary border-brand-primary flex items-center gap-2 rounded-lg border px-6 py-3 font-medium text-white transition-all duration-200"
             )}
           >
             <Import className="h-4 w-4" />
@@ -88,9 +88,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
           >
             <div className="mb-2 flex items-center gap-2">
               <Users className="text-info h-4 w-4" />
-              <span className="text-muted-foreground text-sm font-medium">
-                Population
-              </span>
+              <span className="text-muted-foreground text-sm font-medium">Population</span>
             </div>
             <p className="text-foreground text-lg font-semibold">
               {formatNumber(parsedData.population, 0)}
@@ -103,9 +101,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
           >
             <div className="mb-2 flex items-center gap-2">
               <DollarSign className="text-success h-4 w-4" />
-              <span className="text-muted-foreground text-sm font-medium">
-                GDP per Capita
-              </span>
+              <span className="text-muted-foreground text-sm font-medium">GDP per Capita</span>
             </div>
             <p className="text-foreground text-lg font-semibold">
               ${formatNumber(parsedData.gdpPerCapita)}
@@ -118,9 +114,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
           >
             <div className="mb-2 flex items-center gap-2">
               <MapPin className="text-error h-4 w-4" />
-              <span className="text-muted-foreground text-sm font-medium">
-                Capital
-              </span>
+              <span className="text-muted-foreground text-sm font-medium">Capital</span>
             </div>
             <div
               className="text-foreground [&_a]:text-brand-primary text-lg font-semibold [&_a]:hover:underline"
@@ -137,9 +131,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
           >
             <div className="mb-2 flex items-center gap-2">
               <Building className="text-brand-secondary h-4 w-4" />
-              <span className="text-muted-foreground text-sm font-medium">
-                Government
-              </span>
+              <span className="text-muted-foreground text-sm font-medium">Government</span>
             </div>
             <div
               className="text-foreground [&_a]:text-brand-primary text-lg font-semibold [&_a]:hover:underline"

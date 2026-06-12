@@ -22,12 +22,7 @@ import { BUILD_VERSION } from "./buildVersion.generated";
 // Re-export so other files can import a stable module path.
 export { BUILD_VERSION };
 
-export type ReleaseChannel =
-  | "Developer"
-  | "Alpha"
-  | "Beta"
-  | "Release Candidate"
-  | "Stable";
+export type ReleaseChannel = "Developer" | "Alpha" | "Beta" | "Release Candidate" | "Stable";
 
 export const VERSIONS = {
   platform: {

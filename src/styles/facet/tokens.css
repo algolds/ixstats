@@ -6,9 +6,12 @@
   /* Core Brand & Theme Colors */
   --facet-mycountry: #ca8a04; /* yellow-600 */
   --facet-global: #2563eb;    /* blue-600 */
-  --facet-eci: #4f46e5;       /* indigo-600 */
-  --facet-sdi: #dc2626;       /* red-600 */
-  --facet-builder: #10b981;   /* emerald-500 */
+  --facet-overview: #6366f1;  /* indigo-500 */
+  --facet-economy: #10b981;   /* emerald-500 */
+  --facet-military: #ef4444;  /* red-500 */
+  --facet-cultural: #a855f7;  /* purple-500 */
+  --facet-security: #3b82f6;  /* blue-500 */
+  --facet-builder: #fb923c;   /* orange-400 */
   --facet-forum: #f97316;     /* orange-500 */
 
   /* Volumetric Z-axis Depth Scale */

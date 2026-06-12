@@ -108,7 +108,9 @@ export function MediaSearchModal({
         data-dialog-nested="true"
       >
         <DialogHeader className="border-border/40 shrink-0 border-b px-6 pt-5 pb-3">
-          <DialogTitle className="text-base font-bold text-foreground">Search Image Library</DialogTitle>
+          <DialogTitle className="text-foreground text-base font-bold">
+            Search Image Library
+          </DialogTitle>
         </DialogHeader>
 
         <Tabs
@@ -119,20 +121,23 @@ export function MediaSearchModal({
           <TabsList className="border-border/40 grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="wiki-repository"
-              className="data-[state=active]:bg-black/5 dark:data-[state=active]:bg-white/5 data-[state=active]:text-foreground rounded-none text-xs data-[state=active]:shadow-none py-2.5"
+              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
             >
               Repository
             </TabsTrigger>
             <TabsTrigger
               value="upload"
-              className="data-[state=active]:bg-black/5 dark:data-[state=active]:bg-white/5 data-[state=active]:text-foreground rounded-none text-xs data-[state=active]:shadow-none py-2.5"
+              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
             >
               Upload
             </TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Web Photos (Unsplash) */}
-          <TabsContent value="web-photos" className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
+          <TabsContent
+            value="web-photos"
+            className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          >
             <WebPhotosTab
               selectedImage={selectedImage}
               onSelectImage={setSelectedImage}
@@ -141,7 +146,10 @@ export function MediaSearchModal({
           </TabsContent>
 
           {/* Tab 2: Wiki Repository */}
-          <TabsContent value="wiki-repository" className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
+          <TabsContent
+            value="wiki-repository"
+            className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          >
             <WikiRepositoryTab
               selectedImageObj={selectedImageObj}
               onSelectImage={handleWikiSelectImage}
@@ -152,7 +160,10 @@ export function MediaSearchModal({
           </TabsContent>
 
           {/* Tab 4: Upload */}
-          <TabsContent value="upload" className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
+          <TabsContent
+            value="upload"
+            className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          >
             <UploadTab
               onImageSelect={onImageSelect}
               onClose={onClose}
@@ -165,7 +176,7 @@ export function MediaSearchModal({
 
         {/* Modal Bottom Action Controls */}
         {activeTab !== "upload" && (
-          <div className="border-border/40 shrink-0 flex items-center justify-end gap-3 border-t px-6 py-4 bg-card/10">
+          <div className="border-border/40 bg-card/10 flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
             {isDownloading && (
               <div className="flex items-center gap-2 text-xs text-blue-400">
                 <Download className="h-3.5 w-3.5 animate-bounce" />
@@ -176,7 +187,7 @@ export function MediaSearchModal({
               onClick={handleSelectConfirm}
               disabled={!selectedImage || isDownloading}
               size="sm"
-              className="h-8 text-xs font-semibold px-4"
+              className="h-8 px-4 text-xs font-semibold"
             >
               {isDownloading ? (
                 <>

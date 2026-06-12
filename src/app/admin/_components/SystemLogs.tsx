@@ -14,7 +14,11 @@ export function SystemLogs() {
   const [limit] = useState(100);
 
   // Fetch actual logs from the database
-  const { data: logsData, isLoading, refetch } = api.admin.getSystemLogs.useQuery(
+  const {
+    data: logsData,
+    isLoading,
+    refetch,
+  } = api.admin.getSystemLogs.useQuery(
     { limit },
     {
       refetchInterval: 10000, // Refresh logs every 10 seconds automatically

@@ -20,27 +20,145 @@ export interface GeneratedPlayer {
 }
 
 const FIRST_NAMES: string[] = [
-  "Alex", "Marco", "Yuki", "Dmitri", "Carlos", "Liam", "Jean", "Hiroshi", "Omar", "Viktor",
-  "Andre", "Sven", "Kwame", "Diego", "Boris", "Lars", "Rafael", "Tunde", "Enzo", "Kai",
-  "Sergei", "Pedro", "Emil", "Jin", "Mateo", "Thiago", "Arjun", "Luca", "Niko", "Wei",
-  "Ivan", "Gustav", "Oscar", "Takumi", "Hugo", "Kofi", "Ren", "Ali", "Santiago", "Yann",
-  "Cristian", "Mikhail", "João", "Seung", "Bjorn", "Ahmad", "Piotr", "Tomás", "Kenji", "Zain",
-  "Henrik", "Matteo", "Daisuke", "Erik", "Ravi", "Felipe", "Anton", "Leon", "Sami", "Idris",
+  "Alex",
+  "Marco",
+  "Yuki",
+  "Dmitri",
+  "Carlos",
+  "Liam",
+  "Jean",
+  "Hiroshi",
+  "Omar",
+  "Viktor",
+  "Andre",
+  "Sven",
+  "Kwame",
+  "Diego",
+  "Boris",
+  "Lars",
+  "Rafael",
+  "Tunde",
+  "Enzo",
+  "Kai",
+  "Sergei",
+  "Pedro",
+  "Emil",
+  "Jin",
+  "Mateo",
+  "Thiago",
+  "Arjun",
+  "Luca",
+  "Niko",
+  "Wei",
+  "Ivan",
+  "Gustav",
+  "Oscar",
+  "Takumi",
+  "Hugo",
+  "Kofi",
+  "Ren",
+  "Ali",
+  "Santiago",
+  "Yann",
+  "Cristian",
+  "Mikhail",
+  "João",
+  "Seung",
+  "Bjorn",
+  "Ahmad",
+  "Piotr",
+  "Tomás",
+  "Kenji",
+  "Zain",
+  "Henrik",
+  "Matteo",
+  "Daisuke",
+  "Erik",
+  "Ravi",
+  "Felipe",
+  "Anton",
+  "Leon",
+  "Sami",
+  "Idris",
 ];
 
 const LAST_NAMES: string[] = [
-  "Kozlov", "Dubois", "Tanaka", "Muller", "Santos", "Park", "Okafor", "Ferrari", "Jensen", "Mwangi",
-  "Berg", "Nakamura", "Silva", "Petrov", "Kowalski", "Ito", "Andersen", "Garcia", "Schmidt", "Kim",
-  "Yamamoto", "Rossi", "Lund", "Fernandez", "Sato", "Olsen", "Morales", "Hoffman", "Lee", "Ndiaye",
-  "Vasquez", "Lindberg", "Choi", "Novak", "Martinez", "Watanabe", "Hansen", "Roux", "Costa", "Zhang",
-  "Johansson", "Takahashi", "Moreau", "Popov", "Nygaard", "Alvarez", "Sorensen", "Chen", "Bianchi", "Singh",
-  "Holm", "Kurosawa", "Torres", "Vogel", "Rivera", "Nielsen", "Ibrahim", "Romanov", "Larsson", "Adebayo",
+  "Kozlov",
+  "Dubois",
+  "Tanaka",
+  "Muller",
+  "Santos",
+  "Park",
+  "Okafor",
+  "Ferrari",
+  "Jensen",
+  "Mwangi",
+  "Berg",
+  "Nakamura",
+  "Silva",
+  "Petrov",
+  "Kowalski",
+  "Ito",
+  "Andersen",
+  "Garcia",
+  "Schmidt",
+  "Kim",
+  "Yamamoto",
+  "Rossi",
+  "Lund",
+  "Fernandez",
+  "Sato",
+  "Olsen",
+  "Morales",
+  "Hoffman",
+  "Lee",
+  "Ndiaye",
+  "Vasquez",
+  "Lindberg",
+  "Choi",
+  "Novak",
+  "Martinez",
+  "Watanabe",
+  "Hansen",
+  "Roux",
+  "Costa",
+  "Zhang",
+  "Johansson",
+  "Takahashi",
+  "Moreau",
+  "Popov",
+  "Nygaard",
+  "Alvarez",
+  "Sorensen",
+  "Chen",
+  "Bianchi",
+  "Singh",
+  "Holm",
+  "Kurosawa",
+  "Torres",
+  "Vogel",
+  "Rivera",
+  "Nielsen",
+  "Ibrahim",
+  "Romanov",
+  "Larsson",
+  "Adebayo",
 ];
 
 const COACH_ROLES = [
-  "manager", "head_coach", "assistant", "goalkeeper_coach", "offensive_coordinator",
-  "defensive_coordinator", "special_teams_coach", "pitching_coach", "hitting_coach",
-  "bench_coach", "strength_coach", "scout", "technical_director",
+  "manager",
+  "head_coach",
+  "assistant",
+  "goalkeeper_coach",
+  "offensive_coordinator",
+  "defensive_coordinator",
+  "special_teams_coach",
+  "pitching_coach",
+  "hitting_coach",
+  "bench_coach",
+  "strength_coach",
+  "scout",
+  "technical_director",
 ];
 
 function clamp(value: number, min: number, max: number): number {
@@ -51,7 +169,7 @@ export function advanceCareerStage(
   current: CareerStage,
   age: number,
   coachDevelopment: number,
-  seed: number,
+  seed: number
 ): CareerStage {
   if (current === "retired") return "retired";
 
@@ -67,22 +185,22 @@ export function advanceCareerStage(
       else if (age > 24) baseProbability *= 1.2;
       break;
     case "developing":
-      baseProbability = 0.60;
+      baseProbability = 0.6;
       if (age >= 24 && age <= 29) baseProbability *= 1.3;
       else if (age > 29) baseProbability *= 0.8;
       break;
     case "prime":
-      baseProbability = 0.40;
+      baseProbability = 0.4;
       if (age > 30) baseProbability *= 1.4;
       else if (age > 28) baseProbability *= 1.2;
       break;
     case "plateau":
-      baseProbability = 0.50;
+      baseProbability = 0.5;
       if (age > 33) baseProbability *= 1.4;
       else if (age > 31) baseProbability *= 1.2;
       break;
     case "declining":
-      baseProbability = 0.70;
+      baseProbability = 0.7;
       if (age > 36) baseProbability *= 1.3;
       else if (age > 34) baseProbability *= 1.1;
       break;
@@ -95,11 +213,16 @@ export function advanceCareerStage(
 
   if (roll < adjustedProbability) {
     switch (current) {
-      case "rookie": return "developing";
-      case "developing": return "prime";
-      case "prime": return "plateau";
-      case "plateau": return "declining";
-      case "declining": return "retired";
+      case "rookie":
+        return "developing";
+      case "developing":
+        return "prime";
+      case "prime":
+        return "plateau";
+      case "plateau":
+        return "declining";
+      case "declining":
+        return "retired";
     }
   }
 
@@ -116,14 +239,21 @@ export function generatePlayer(args: {
   const preset = getPreset(args.sport);
   const rng = createRNG(args.seed);
 
-  const position =
-    args.position ?? preset.positions[Math.floor(rng() * preset.positions.length)];
+  const position = args.position ?? preset.positions[Math.floor(rng() * preset.positions.length)];
 
   const age = args.age ?? Math.floor(18 + rng() * 17);
 
   const careerStage =
     args.careerStage ??
-    (age < 21 ? "rookie" : age < 25 ? "developing" : age < 30 ? "prime" : age < 34 ? "plateau" : "declining");
+    (age < 21
+      ? "rookie"
+      : age < 25
+        ? "developing"
+        : age < 30
+          ? "prime"
+          : age < 34
+            ? "plateau"
+            : "declining");
 
   const firstName = FIRST_NAMES[Math.floor(rng() * FIRST_NAMES.length)];
   const lastName = LAST_NAMES[Math.floor(rng() * LAST_NAMES.length)];
@@ -183,40 +313,160 @@ function getPositionModifiers(sport: SportPresetKey, position: string): Record<s
       P: { strength: -10, speed: -15, agility: -10, technique: 15, clutch: 5 },
     },
     hockey: {
-      G: { skating: -10, shooting: -15, passing: -5, checking: -5, positioning: 15, reflexes: 15, physical: 0 },
+      G: {
+        skating: -10,
+        shooting: -15,
+        passing: -5,
+        checking: -5,
+        positioning: 15,
+        reflexes: 15,
+        physical: 0,
+      },
       D: { skating: 5, shooting: 5, passing: 5, checking: 10, positioning: 10, physical: 5 },
       C: { skating: 5, shooting: 10, passing: 15, checking: 0, positioning: 5, physical: 0 },
       LW: { skating: 10, shooting: 10, passing: 5, checking: 0, positioning: 0, physical: 5 },
       RW: { skating: 10, shooting: 10, passing: 5, checking: 0, positioning: 0, physical: 5 },
     },
     basketball: {
-      PG: { shooting: 5, dribbling: 15, passing: 15, defense: -5, rebounding: -15, athleticism: 5, iq: 10 },
-      SG: { shooting: 15, dribbling: 10, passing: 0, defense: 0, rebounding: -10, athleticism: 10, iq: 0 },
-      SF: { shooting: 10, dribbling: 5, passing: 0, defense: 5, rebounding: 5, athleticism: 10, iq: 0 },
-      PF: { shooting: 0, dribbling: -5, passing: -5, defense: 10, rebounding: 15, athleticism: 10, iq: 0 },
-      C: { shooting: -10, dribbling: -15, passing: -5, defense: 15, rebounding: 15, athleticism: 0, iq: 0 },
+      PG: {
+        shooting: 5,
+        dribbling: 15,
+        passing: 15,
+        defense: -5,
+        rebounding: -15,
+        athleticism: 5,
+        iq: 10,
+      },
+      SG: {
+        shooting: 15,
+        dribbling: 10,
+        passing: 0,
+        defense: 0,
+        rebounding: -10,
+        athleticism: 10,
+        iq: 0,
+      },
+      SF: {
+        shooting: 10,
+        dribbling: 5,
+        passing: 0,
+        defense: 5,
+        rebounding: 5,
+        athleticism: 10,
+        iq: 0,
+      },
+      PF: {
+        shooting: 0,
+        dribbling: -5,
+        passing: -5,
+        defense: 10,
+        rebounding: 15,
+        athleticism: 10,
+        iq: 0,
+      },
+      C: {
+        shooting: -10,
+        dribbling: -15,
+        passing: -5,
+        defense: 15,
+        rebounding: 15,
+        athleticism: 0,
+        iq: 0,
+      },
     },
     baseball: {
-      SP: { contact: -15, power: -15, speed: -5, fielding: -5, arm: 5, pitching: 15, discipline: 0 },
-      RP: { contact: -15, power: -15, speed: -5, fielding: -5, arm: 5, pitching: 10, discipline: 0 },
+      SP: {
+        contact: -15,
+        power: -15,
+        speed: -5,
+        fielding: -5,
+        arm: 5,
+        pitching: 15,
+        discipline: 0,
+      },
+      RP: {
+        contact: -15,
+        power: -15,
+        speed: -5,
+        fielding: -5,
+        arm: 5,
+        pitching: 10,
+        discipline: 0,
+      },
       C: { contact: 0, power: 5, speed: -10, fielding: 15, arm: 15, pitching: -15, discipline: 5 },
       "1B": { contact: 5, power: 15, speed: -5, fielding: 5, arm: 0, pitching: -15, discipline: 5 },
-      "2B": { contact: 5, power: -5, speed: 10, fielding: 15, arm: 5, pitching: -15, discipline: 5 },
-      "3B": { contact: 5, power: 10, speed: 5, fielding: 10, arm: 15, pitching: -15, discipline: 5 },
+      "2B": {
+        contact: 5,
+        power: -5,
+        speed: 10,
+        fielding: 15,
+        arm: 5,
+        pitching: -15,
+        discipline: 5,
+      },
+      "3B": {
+        contact: 5,
+        power: 10,
+        speed: 5,
+        fielding: 10,
+        arm: 15,
+        pitching: -15,
+        discipline: 5,
+      },
       SS: { contact: 5, power: 0, speed: 10, fielding: 15, arm: 10, pitching: -15, discipline: 5 },
       LF: { contact: 5, power: 10, speed: 10, fielding: 5, arm: 5, pitching: -15, discipline: 0 },
       CF: { contact: 5, power: 5, speed: 15, fielding: 10, arm: 5, pitching: -15, discipline: 0 },
       RF: { contact: 5, power: 10, speed: 10, fielding: 5, arm: 10, pitching: -15, discipline: 0 },
-      DH: { contact: 10, power: 15, speed: -5, fielding: -15, arm: -15, pitching: -15, discipline: 10 },
+      DH: {
+        contact: 10,
+        power: 15,
+        speed: -5,
+        fielding: -15,
+        arm: -15,
+        pitching: -15,
+        discipline: 10,
+      },
     },
     f1: {
-      driver: { pace: 10, consistency: 5, wetSkill: 5, overtaking: 5, tyreManagement: 5, technicalFeedback: -5, starts: 5 },
-      team_principal: { pace: -15, consistency: -10, wetSkill: -10, overtaking: -10, tyreManagement: -5, technicalFeedback: 15, starts: -5 },
-      race_engineer: { pace: -5, consistency: 5, wetSkill: 5, overtaking: 0, tyreManagement: 10, technicalFeedback: 10, starts: 0 },
+      driver: {
+        pace: 10,
+        consistency: 5,
+        wetSkill: 5,
+        overtaking: 5,
+        tyreManagement: 5,
+        technicalFeedback: -5,
+        starts: 5,
+      },
+      team_principal: {
+        pace: -15,
+        consistency: -10,
+        wetSkill: -10,
+        overtaking: -10,
+        tyreManagement: -5,
+        technicalFeedback: 15,
+        starts: -5,
+      },
+      race_engineer: {
+        pace: -5,
+        consistency: 5,
+        wetSkill: 5,
+        overtaking: 0,
+        tyreManagement: 10,
+        technicalFeedback: 10,
+        starts: 0,
+      },
     },
     boxing: {
       fighter: { power: 10, speed: 5, stamina: 5, defense: 5, chin: 5, footwork: 5, ringIQ: 0 },
-      trainer: { power: -15, speed: -15, stamina: -10, defense: -10, chin: -15, footwork: -10, ringIQ: 15 },
+      trainer: {
+        power: -15,
+        speed: -15,
+        stamina: -10,
+        defense: -10,
+        chin: -15,
+        footwork: -10,
+        ringIQ: 15,
+      },
     },
   };
 
@@ -236,7 +486,7 @@ export function generateRookieClass(args: {
         age: Math.floor(18 + Math.random()),
         careerStage: "rookie",
         seed: args.seed + i * 137,
-      }),
+      })
     );
   }
   return rookies;
@@ -273,7 +523,7 @@ export function generateTeamRoster(args: {
           sport: args.sport,
           position,
           seed: playerSeed + i * 7919,
-        }),
+        })
       );
     }
     playerSeed += 1000;
@@ -282,9 +532,7 @@ export function generateTeamRoster(args: {
   return roster;
 }
 
-export function generateCoach(args: {
-  seed: number;
-}): {
+export function generateCoach(args: { seed: number }): {
   firstName: string;
   lastName: string;
   role: string;

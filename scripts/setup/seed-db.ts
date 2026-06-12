@@ -55,6 +55,18 @@ async function seedDatabase() {
     console.log("🪖 Seeding military equipment catalog...");
     await seedMilitaryEquipmentCatalog();
 
+    // Seed canonical sports leagues
+    const firstCountry = await db.country.findFirst({ select: { id: true } });
+    const firstUser = await db.user.findFirst({ select: { id: true } });
+    if (firstCountry && firstUser) {
+      console.log("⚽ Seeding canonical sports leagues...");
+      const { seedSportsLeagues } = await import("../../src/lib/demo-seed/seed-sports");
+      const sportsCount = await seedSportsLeagues(db, firstCountry.id, firstUser.id);
+      console.log(`🏆 Seeded ${sportsCount} sports records!`);
+    } else {
+      console.warn("⚠️ Could not seed sports: no country or user found.");
+    }
+
     console.log("✅ Database seeding complete!");
   } catch (error) {
     console.error("❌ Database seeding failed:", error);

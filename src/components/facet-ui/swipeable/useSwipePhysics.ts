@@ -30,8 +30,7 @@ import type { SpringPreset, SwipeState, SwipeSide, SwipeThresholds } from "./typ
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 function getDocDir(): "ltr" | "rtl" {
   if (typeof document === "undefined") return "ltr";
@@ -134,18 +133,10 @@ export function useSwipePhysics({
   const springX = useSpring(rawX, spring);
 
   // Trailing progress: how far we've swiped left (0 → 1)
-  const trailingProgress = useTransform(
-    springX,
-    [0, -thresholdsPx.commit || -1],
-    [0, 1]
-  );
+  const trailingProgress = useTransform(springX, [0, -thresholdsPx.commit || -1], [0, 1]);
 
   // Leading progress: how far we've swiped right (0 → 1)
-  const leadingProgress = useTransform(
-    springX,
-    [0, thresholdsPx.commit || 1],
-    [0, 1]
-  );
+  const leadingProgress = useTransform(springX, [0, thresholdsPx.commit || 1], [0, 1]);
 
   // Action tray opacities (fade in during reveal phase)
   const trailingTrayOpacity = useTransform(
@@ -264,7 +255,9 @@ export function useSwipePhysics({
 
       // Clamp with elasticity past commit threshold
       let clampedX: number;
-      const maxTrailing = hasTrailing ? -(containerWidth * DRAG_ELASTICITY + thresholdsPx.commit) : 0;
+      const maxTrailing = hasTrailing
+        ? -(containerWidth * DRAG_ELASTICITY + thresholdsPx.commit)
+        : 0;
       const maxLeading = hasLeading ? containerWidth * DRAG_ELASTICITY + thresholdsPx.commit : 0;
 
       // Apply rubber-band resistance past the commit threshold
@@ -299,7 +292,7 @@ export function useSwipePhysics({
       // Track velocity
       const dt = e.timeStamp - lastMoveTime.current;
       if (dt > 0) {
-        velocity.current = ((e.clientX - lastMoveX.current) * rtlMultiplier) / dt * 1000;
+        velocity.current = (((e.clientX - lastMoveX.current) * rtlMultiplier) / dt) * 1000;
       }
       lastMoveTime.current = e.timeStamp;
       lastMoveX.current = e.clientX;

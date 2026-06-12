@@ -19,7 +19,17 @@ import {
   CalendarDays,
   ListTodo,
 } from "lucide-react";
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
+import {
+  format,
+  addDays,
+  startOfWeek,
+  endOfWeek,
+  isSameDay,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+} from "date-fns";
 import { MeetingScheduler } from "./MeetingScheduler";
 import { MeetingDecisionsModal } from "./MeetingDecisionsModal";
 
@@ -445,7 +455,10 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
                 <div>
                   <div className="mb-2 grid grid-cols-7 gap-1 text-center">
                     {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                      <div key={day} className="text-muted-foreground py-1 text-xs font-semibold uppercase">
+                      <div
+                        key={day}
+                        className="text-muted-foreground py-1 text-xs font-semibold uppercase"
+                      >
                         {day}
                       </div>
                     ))}

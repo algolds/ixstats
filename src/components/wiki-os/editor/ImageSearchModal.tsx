@@ -132,19 +132,13 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
           {/* Tabs */}
           <div className="wikios-img-modal-tabs">
             <button
-              className={cn(
-                "wikios-img-modal-tab-btn",
-                tab === "search" && "tab-search-active"
-              )}
+              className={cn("wikios-img-modal-tab-btn", tab === "search" && "tab-search-active")}
               onClick={() => setTab("search")}
             >
               Search
             </button>
             <button
-              className={cn(
-                "wikios-img-modal-tab-btn",
-                tab === "upload" && "tab-upload-active"
-              )}
+              className={cn("wikios-img-modal-tab-btn", tab === "upload" && "tab-upload-active")}
               onClick={() => setTab("upload")}
             >
               <Upload size={12} /> Upload
@@ -233,10 +227,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
             <div className="wikios-img-modal-upload-container">
               {/* Drop zone / file picker */}
               <div
-                className={cn(
-                  "wikios-img-modal-dropzone",
-                  uploadPreview && "has-preview"
-                )}
+                className={cn("wikios-img-modal-dropzone", uploadPreview && "has-preview")}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <input
@@ -247,11 +238,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                   style={{ display: "none" }}
                 />
                 {uploadPreview ? (
-                  <img
-                    src={uploadPreview}
-                    alt="Preview"
-                    className="wikios-img-modal-preview-img"
-                  />
+                  <img src={uploadPreview} alt="Preview" className="wikios-img-modal-preview-img" />
                 ) : (
                   <>
                     <Upload size={32} className="wikios-img-modal-upload-icon" />

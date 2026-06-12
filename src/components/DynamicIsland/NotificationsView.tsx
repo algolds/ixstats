@@ -109,7 +109,7 @@ function NotificationRow({
   return (
     <SwipeableRow
       id={`notif-${n.source}-${n.id}`}
-      className="rounded-xl mb-1.5 last:mb-0"
+      className="mb-1.5 rounded-xl last:mb-0"
       springPreset="bouncy"
       expanded={isExpanded}
       onExpandedChange={(expanded) => {
@@ -157,25 +157,27 @@ function NotificationRow({
       <SwipeableRow.Content>
         <div
           className={cn(
-            "relative bg-white/[0.16] dark:bg-slate-950/75 backdrop-blur-xl border border-white/[0.18] dark:border-white/10 hover:bg-white/[0.22] dark:hover:bg-slate-900/80 hover:border-white/[0.24] flex flex-col w-full rounded-xl transition-all duration-300 shadow-lg overflow-hidden",
-            !isRead && "bg-gradient-to-r from-white/[0.24] to-white/[0.14] dark:from-slate-900/60 dark:to-slate-950/80 border-blue-500/40 shadow-blue-500/10 shadow-md",
-            isRead && "opacity-80 bg-white/[0.1] dark:bg-slate-950/60 border-white/[0.08] dark:border-white/[0.06] hover:opacity-95"
+            "relative flex w-full flex-col overflow-hidden rounded-xl border border-white/[0.18] bg-white/[0.16] shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-white/[0.24] hover:bg-white/[0.22] dark:border-white/10 dark:bg-slate-950/75 dark:hover:bg-slate-900/80",
+            !isRead &&
+              "border-blue-500/40 bg-gradient-to-r from-white/[0.24] to-white/[0.14] shadow-md shadow-blue-500/10 dark:from-slate-900/60 dark:to-slate-950/80",
+            isRead &&
+              "border-white/[0.08] bg-white/[0.1] opacity-80 hover:opacity-95 dark:border-white/[0.06] dark:bg-slate-950/60"
           )}
         >
           {/* Left Accent Border Strip */}
           <div
             className={cn(
-              "absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl transition-all duration-300",
+              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-all duration-300",
               colors.text.replace("text-", "bg-"),
               isRead ? "opacity-30" : "opacity-100"
             )}
           />
 
           {/* Header Content */}
-          <div className="flex items-center gap-3 p-3.5 text-left cursor-grab active:cursor-grabbing hover:bg-white/[0.02]">
+          <div className="flex cursor-grab items-center gap-3 p-3.5 text-left hover:bg-white/[0.02] active:cursor-grabbing">
             <div
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm border border-white/5",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/5 shadow-sm",
                 colors.bg
               )}
             >
@@ -184,29 +186,24 @@ function NotificationRow({
 
             <div className="min-w-0 flex-1 pl-0.5">
               <div className="flex items-center gap-2">
-                <span className="text-foreground text-xs font-bold block truncate">
-                  {n.title}
-                </span>
+                <span className="text-foreground block truncate text-xs font-bold">{n.title}</span>
                 {!isRead && (
-                  <span className="bg-blue-500 h-1.5 w-1.5 shrink-0 rounded-full animate-pulse shadow-sm shadow-blue-500/50" />
+                  <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
                 )}
               </div>
               {!isExpanded && (n.description || n.message) && (
-                <span className="text-muted-foreground mt-0.5 block truncate text-[11px] font-semibold leading-relaxed">
+                <span className="text-muted-foreground mt-0.5 block truncate text-[11px] leading-relaxed font-semibold">
                   {n.description || n.message}
                 </span>
               )}
             </div>
 
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
               <span className="text-muted-foreground/80 text-[9px] font-semibold">
                 {relTime(n.timestamp || n.createdAt || Date.now())}
               </span>
-              <motion.div
-                animate={{ rotate: isExpanded ? 90 : 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+              <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
+                <ChevronRight className="text-muted-foreground/60 h-3.5 w-3.5" />
               </motion.div>
             </div>
           </div>
@@ -215,8 +212,8 @@ function NotificationRow({
 
       {/* Expanded detail panel */}
       <SwipeableRow.Expanded>
-        <div className="border-t border-slate-200/20 px-3.5 pb-3.5 pt-3 space-y-3 bg-black/[0.02] rounded-b-xl pl-[18px]">
-          <p className="text-[11.5px] text-foreground/95 font-semibold leading-relaxed whitespace-pre-wrap select-text selection:bg-blue-500/30">
+        <div className="space-y-3 rounded-b-xl border-t border-slate-200/20 bg-black/[0.02] px-3.5 pt-3 pb-3.5 pl-[18px]">
+          <p className="text-foreground/95 text-[11.5px] leading-relaxed font-semibold whitespace-pre-wrap select-text selection:bg-blue-500/30">
             {n.description || n.message}
           </p>
 
@@ -227,7 +224,7 @@ function NotificationRow({
                   e.stopPropagation();
                   handleClick(n);
                 }}
-                className="flex-1 py-1.5 px-3 bg-blue-500 hover:bg-blue-600 active:scale-[0.98] text-white text-[10px] font-bold rounded-md flex items-center justify-center gap-1.5 transition-all shadow-sm border border-blue-400/20"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-blue-400/20 bg-blue-500 px-3 py-1.5 text-[10px] font-bold text-white shadow-sm transition-all hover:bg-blue-600 active:scale-[0.98]"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
                 <span>Open</span>
@@ -238,9 +235,9 @@ function NotificationRow({
                 e.stopPropagation();
                 handleDismiss(n);
               }}
-              className="flex-1 py-1.5 px-3 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 active:scale-[0.98] text-muted-foreground hover:text-foreground text-[10px] font-bold rounded-md flex items-center justify-center gap-1.5 transition-all border border-slate-300/30 dark:border-white/10"
+              className="text-muted-foreground hover:text-foreground flex flex-1 items-center justify-center gap-1.5 rounded-md border border-slate-300/30 bg-black/5 px-3 py-1.5 text-[10px] font-bold transition-all hover:bg-black/10 active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
             >
-              <X className="h-3.5 w-3.5 text-muted-foreground/60" />
+              <X className="text-muted-foreground/60 h-3.5 w-3.5" />
               <span>Dismiss</span>
             </button>
           </div>
@@ -530,34 +527,34 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                       transition={{ duration: 0.2 }}
                       className="space-y-1 overflow-hidden"
                     >
-                    <SwipeableGroup>
-                      {group.items.map((n: any, i: number) => {
-                        const Icon = getIcon(n);
-                        const colors = getColors(n);
-                        const isRead = n.status === "read" || n.read;
-                        const key = n.id ? `${n.source}-${n.id}` : `${n.source}-${i}`;
+                      <SwipeableGroup>
+                        {group.items.map((n: any, i: number) => {
+                          const Icon = getIcon(n);
+                          const colors = getColors(n);
+                          const isRead = n.status === "read" || n.read;
+                          const key = n.id ? `${n.source}-${n.id}` : `${n.source}-${i}`;
 
-                        return (
-                          <NotificationRow
-                            key={key}
-                            n={n}
-                            isRead={isRead}
-                            colors={colors}
-                            Icon={Icon}
-                            handleMarkRead={handleMarkRead}
-                            handleDismiss={handleDismiss}
-                            handleClick={handleClick}
-                            relativeTime={relativeTime}
-                            isExpanded={expandedNotificationId === key}
-                            onExpandToggle={() => {
-                              setExpandedNotificationId(
-                                expandedNotificationId === key ? null : key
-                              );
-                            }}
-                          />
-                        );
-                      })}
-                    </SwipeableGroup>
+                          return (
+                            <NotificationRow
+                              key={key}
+                              n={n}
+                              isRead={isRead}
+                              colors={colors}
+                              Icon={Icon}
+                              handleMarkRead={handleMarkRead}
+                              handleDismiss={handleDismiss}
+                              handleClick={handleClick}
+                              relativeTime={relativeTime}
+                              isExpanded={expandedNotificationId === key}
+                              onExpandToggle={() => {
+                                setExpandedNotificationId(
+                                  expandedNotificationId === key ? null : key
+                                );
+                              }}
+                            />
+                          );
+                        })}
+                      </SwipeableGroup>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -579,12 +576,12 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Expand / Minimize DI Size Toggle */}
-      <div className="mt-3 pt-2 border-t border-white/5 flex justify-center">
+      <div className="mt-3 flex justify-center border-t border-white/5 pt-2">
         <button
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-muted-foreground hover:text-foreground hover:bg-white/5 flex h-7 w-7 items-center justify-center rounded-full transition-all border border-white/5 shadow-sm active:scale-[0.98]"
+          className="text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border border-white/5 shadow-sm transition-all hover:bg-white/5 active:scale-[0.98]"
           title={isUltra ? "Standard View" : "Reading View"}
           aria-label={isUltra ? "Standard View" : "Reading View"}
         >

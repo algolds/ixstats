@@ -2,7 +2,12 @@
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { Geometry, Position, Feature, Polygon, MultiPolygon } from "geojson";
 import { intersect, featureCollection } from "@turf/turf";
-import { getAllRings, rebuildGeometry, projectPointToSegment, distanceDeg } from "~/lib/border-editor";
+import {
+  getAllRings,
+  rebuildGeometry,
+  projectPointToSegment,
+  distanceDeg,
+} from "~/lib/border-editor";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
@@ -187,7 +192,11 @@ export function snapToLayerFeatures(
       if (geom.type === "LineString") {
         const coords = geom.coordinates;
         for (let i = 0; i < coords.length - 1; i++) {
-          const proj = projectPointToSegment(point, coords[i] as Position, coords[i + 1] as Position);
+          const proj = projectPointToSegment(
+            point,
+            coords[i] as Position,
+            coords[i + 1] as Position
+          );
           const d = distanceDeg(point, proj);
           if (d < bestDist && d <= tolerance) {
             bestDist = d;
@@ -220,7 +229,11 @@ export function snapToLayerFeatures(
         for (const poly of geom.coordinates) {
           for (const ring of poly) {
             for (let i = 0; i < ring.length - 1; i++) {
-              const proj = projectPointToSegment(point, ring[i] as Position, ring[i + 1] as Position);
+              const proj = projectPointToSegment(
+                point,
+                ring[i] as Position,
+                ring[i + 1] as Position
+              );
               const d = distanceDeg(point, proj);
               if (d < bestDist && d <= tolerance) {
                 bestDist = d;
@@ -253,7 +266,12 @@ export function snapGeometryToBackgroundLayers(
   for (const ring of rings) {
     const newRing: Position[] = [];
     for (const pt of ring) {
-      const snapped = snapToLayerFeatures(pt as [number, number], worldMapLayers, visibleLayers, tolerance);
+      const snapped = snapToLayerFeatures(
+        pt as [number, number],
+        worldMapLayers,
+        visibleLayers,
+        tolerance
+      );
       newRing.push(snapped);
     }
     if (newRing.length > 0) {

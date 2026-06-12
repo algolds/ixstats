@@ -263,8 +263,7 @@ export function WikiOSUnifiedSidebar({
               title: "Lore Awards",
               glowClass:
                 "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
-              isActive:
-                pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
+              isActive: pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
             })}
           </>
         )}
@@ -396,8 +395,7 @@ export function WikiOSUnifiedSidebar({
               title: "Lore Awards",
               glowClass:
                 "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
-              isActive:
-                pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
+              isActive: pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
             })}
 
             {renderRow({

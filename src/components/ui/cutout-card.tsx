@@ -21,9 +21,7 @@ import { TextureOverlay, type TextureType } from "~/components/ui/texture-overla
 // ============================================================================
 
 /** Border + shadow stack using theme tokens so elevation reads in light and dark. */
-export const cutoutCardSurfaceShadowClassName = cn(
-  "facet-cutout-card"
-);
+export const cutoutCardSurfaceShadowClassName = cn("facet-cutout-card");
 
 export const cutoutCardSurfaceClassName = cn(
   "group/cutout relative cursor-pointer overflow-hidden rounded-[28px] bg-card text-card-foreground",

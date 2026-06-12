@@ -2,99 +2,60 @@
    FACET DESIGN SYSTEM — BASE LAYOUTS & DEPTHS
    ========================================================================== */
 
-.facet-base {
-  position: relative;
-  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
-  border: 1px solid var(--facet-border-1);
-  background: var(--facet-bg-1);
-  box-shadow: var(--facet-shadow-1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.facet-base,
+.facet-surface,
+.facet-floating,
+.facet-overlay,
+.facet-depth-1,
+.facet-depth-2,
+.facet-depth-3,
+.facet-depth-4 {
+  position: relative !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.facet-surface {
-  position: relative;
-  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
-  border: 1px solid var(--facet-border-1);
-  background: var(--facet-bg-1);
-  box-shadow: var(--facet-shadow-1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: var(--z-depth-surface);
-}
-
-.facet-floating {
-  position: relative;
-  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  border: 1px solid var(--facet-border-2);
-  background: var(--facet-bg-2);
-  box-shadow: var(--facet-shadow-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: var(--z-depth-floating);
-}
-
-.facet-overlay {
-  position: relative;
-  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
-  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
-  border: 1px solid var(--facet-border-3);
-  background: var(--facet-bg-3);
-  box-shadow: var(--facet-shadow-3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: var(--z-depth-overlay);
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Z-DEPTH SPATIAL LAYERS
-   ────────────────────────────────────────────────────────────────────────── */
+.facet-surface { z-index: var(--z-depth-surface) !important; }
+.facet-floating { z-index: var(--z-depth-floating) !important; }
+.facet-overlay { z-index: var(--z-depth-overlay) !important; }
 
 .facet-depth-1 {
-  position: relative;
-  backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
-  border: 1px solid var(--facet-border-1);
-  background: var(--facet-bg-1);
-  box-shadow: var(--facet-shadow-1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: var(--z-depth-surface);
-  transform: translateZ(0);
+  backdrop-filter: blur(var(--blur-moderate)) saturate(var(--facet-saturate, 180%)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(var(--facet-saturate, 180%)) !important;
+  border: 1px solid var(--facet-border-1) !important;
+  background: var(--facet-bg-1) !important;
+  box-shadow: var(--facet-shadow-1) !important;
+  z-index: var(--z-depth-surface) !important;
+  transform: translateZ(0) !important;
 }
 
 .facet-depth-2 {
-  position: relative;
-  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  border: 1px solid var(--facet-border-2);
-  background: var(--facet-bg-2);
-  box-shadow: var(--facet-shadow-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: var(--z-depth-floating);
-  transform: translateZ(10px);
+  backdrop-filter: blur(var(--blur-prominent)) saturate(var(--facet-saturate, 180%)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(var(--facet-saturate, 180%)) !important;
+  border: 1px solid var(--facet-border-2) !important;
+  background: var(--facet-bg-2) !important;
+  box-shadow: var(--facet-shadow-2) !important;
+  z-index: var(--z-depth-floating) !important;
+  transform: translateZ(10px) !important;
 }
 
 .facet-depth-3 {
-  position: relative;
-  backdrop-filter: blur(var(--blur-intense)) saturate(200%);
-  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
-  border: 1px solid var(--facet-border-3);
-  background: var(--facet-bg-3);
-  box-shadow: var(--facet-shadow-3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: var(--z-depth-overlay);
-  transform: translateZ(20px);
+  backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 200%)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 200%)) !important;
+  border: 1px solid var(--facet-border-3) !important;
+  background: var(--facet-bg-3) !important;
+  box-shadow: var(--facet-shadow-3) !important;
+  z-index: var(--z-depth-overlay) !important;
+  transform: translateZ(20px) !important;
 }
 
 .facet-depth-4 {
-  position: relative;
-  backdrop-filter: blur(var(--blur-intense)) saturate(220%);
-  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
-  border: 1px solid var(--facet-border-4);
-  background: var(--facet-bg-4);
-  box-shadow: var(--facet-shadow-4);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: var(--z-depth-modal);
-  transform: translateZ(30px);
+  backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 220%)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 220%)) !important;
+  border: 1px solid var(--facet-border-4) !important;
+  background: var(--facet-bg-4) !important;
+  box-shadow: var(--facet-shadow-4) !important;
+  z-index: var(--z-depth-modal) !important;
+  transform: translateZ(30px) !important;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

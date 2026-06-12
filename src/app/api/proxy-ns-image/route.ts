@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
 
     // Validate URL parameter
     if (!imageUrl) {
-      return NextResponse.json({ error: "Missing 'url' parameter" }, { status: 400, headers: corsHeaders });
+      return NextResponse.json(
+        { error: "Missing 'url' parameter" },
+        { status: 400, headers: corsHeaders }
+      );
     }
 
     // Security: Only allow NationStates domains
@@ -47,7 +50,10 @@ export async function GET(request: NextRequest) {
     try {
       parsedUrl = new URL(imageUrl);
     } catch {
-      return NextResponse.json({ error: "Invalid URL format" }, { status: 400, headers: corsHeaders });
+      return NextResponse.json(
+        { error: "Invalid URL format" },
+        { status: 400, headers: corsHeaders }
+      );
     }
 
     if (!allowedDomains.includes(parsedUrl.hostname)) {
@@ -80,7 +86,10 @@ export async function GET(request: NextRequest) {
 
       // Return appropriate error
       if (nsResponse.status === 404) {
-        return NextResponse.json({ error: "Image not found" }, { status: 404, headers: corsHeaders });
+        return NextResponse.json(
+          { error: "Image not found" },
+          { status: 404, headers: corsHeaders }
+        );
       }
 
       return NextResponse.json(
@@ -105,6 +114,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("[NS-PROXY] Unexpected error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }

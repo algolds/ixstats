@@ -39,66 +39,7 @@ function ClubCardSkeleton() {
     </Card>
   );
 }
-
-function TeamCard({
-  team,
-  onNavigate,
-}: {
-  team: NonNullable<ReturnType<typeof api.sports.getMyClubs.useQuery>["data"]>[number];
-  onNavigate: (id: string) => void;
-}) {
-  const emoji = SPORT_EMOJIS[team.league?.sportPreset ?? ""] ?? "\uD83C\uDFC6";
-  const hasActiveSeason = !!team.activeSeason;
-
-  return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-    >
-      <Card
-        className="facet-hierarchy-interactive cursor-pointer"
-        onClick={() => onNavigate(team.id)}
-      >
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl"
-                style={{ backgroundColor: `${team.color}20` }}
-              >
-                {emoji}
-              </div>
-              <div className="min-w-0">
-                <CardTitle className="truncate text-lg">{team.name}</CardTitle>
-                <p className="text-muted-foreground truncate text-sm">{team.league?.name}</p>
-              </div>
-            </div>
-            <Badge variant={hasActiveSeason ? "default" : "secondary"}>
-              {hasActiveSeason ? `S${team.activeSeason!.seasonNumber}` : "Off-season"}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="text-muted-foreground flex items-center gap-3 text-sm">
-              <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" />
-                {team.league?.sportPreset ?? "Team"}
-              </span>
-              {hasActiveSeason && (
-                <span className="flex items-center gap-1">
-                  <Trophy className="h-3.5 w-3.5" />
-                  Active
-                </span>
-              )}
-            </div>
-            <ArrowRight className="text-muted-foreground h-4 w-4" />
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
+import { Carousel, Card as CarouselCard } from "~/components/ui/apple-cards-carousel";
 
 export default function MyClubPage() {
   usePageTitle({ title: "MyClub" });
@@ -106,9 +47,66 @@ export default function MyClubPage() {
 
   const { data: clubs, isLoading } = api.sports.getMyClubs.useQuery();
 
+  const clubCards =
+    clubs?.map((team, idx) => {
+      const emoji = SPORT_EMOJIS[team.league?.sportPreset ?? ""] ?? "\uD83C\uDFC6";
+      const hasActiveSeason = !!team.activeSeason;
+
+      return (
+        <CarouselCard
+          key={team.id}
+          index={idx}
+          card={{
+            src: "https://ixwiki.com/sports-logo.png",
+            title: team.name,
+            category: `${emoji} ${team.league?.name ?? "Custom Team"}`,
+            content: (
+              <div className="space-y-4 p-6 text-left text-foreground">
+                <h4 className="text-xl font-bold">{team.name}</h4>
+                <p className="text-sm text-muted-foreground">
+                  Official hub for managing roster details, configuring pricing, scouting active
+                  sponsorships, and playing fixtures.
+                </p>
+                <div className="grid grid-cols-2 gap-4 rounded-xl bg-muted p-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">CITY</p>
+                    <p className="text-sm font-semibold">{team.city || "Local"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">STADIUM CAPACITY</p>
+                    <p className="text-sm font-semibold">{(team as any).stadiumCapacity || 5000}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">TICKET PRICE</p>
+                    <p className="text-sm font-semibold">₷{(team as any).ticketPrice || 15}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">ACTIVE SEASON</p>
+                    <p className="text-sm font-semibold">
+                      {hasActiveSeason ? `Season ${team.activeSeason!.seasonNumber}` : "Off-season"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  className="mt-6 w-full"
+                  onClick={() => {
+                    // close modal override
+                    document.body.style.overflow = "auto";
+                    router.push(withBasePath(`/myclub/${team.id}`));
+                  }}
+                >
+                  Go to Team Dashboard
+                </Button>
+              </div>
+            ),
+          }}
+        />
+      );
+    }) || [];
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="facet-surface rounded-xl border border-border/40 p-6 mb-8 flex items-center justify-between">
+      <div className="facet-surface border-border/40 mb-8 flex items-center justify-between rounded-xl border p-6">
         <div>
           <h1 className="text-3xl font-bold">MyClub</h1>
           <p className="text-muted-foreground mt-1">Manage your sports teams and franchises</p>
@@ -121,33 +119,20 @@ export default function MyClubPage() {
             <ClubCardSkeleton key={i} />
           ))}
         </div>
-      ) : !clubs || clubs.length === 0 ? (
+      ) : clubCards.length === 0 ? (
         <Card className="facet-hierarchy-parent">
           <CardContent className="flex flex-col items-center py-16 text-center">
             <Trophy className="text-muted-foreground mb-4 h-16 w-16" />
             <h3 className="text-xl font-semibold">You don&apos;t own any teams yet</h3>
-            <p className="text-muted-foreground mt-2 max-w-md">
-              Browse leagues and claim a team!
-            </p>
-            <Button
-              className="mt-6"
-              onClick={() => router.push(withBasePath("/myleague"))}
-            >
+            <p className="text-muted-foreground mt-2 max-w-md">Browse leagues and claim a team!</p>
+            <Button className="mt-6" onClick={() => router.push(withBasePath("/myleague"))}>
               Browse Leagues
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {clubs.map((club) => (
-            <TeamCard
-              key={club.id}
-              team={club}
-              onNavigate={(id) => router.push(withBasePath(`/myclub/${id}`))}
-            />
-          ))}
-        </div>
+        <Carousel items={clubCards} />
       )}
     </div>
   );

@@ -415,7 +415,9 @@ const ThinkpagesPostComponent = ({
     onSuccess: () => {
       void utils.thinkpages.getFeed.invalidate();
       if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({
+          clerkUserId: post.account.clerkUserId,
+        });
       }
       void utils.thinkpages.getPost.invalidate({ postId: post.id });
     },
@@ -424,7 +426,9 @@ const ThinkpagesPostComponent = ({
     onSuccess: () => {
       void utils.thinkpages.getFeed.invalidate();
       if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({
+          clerkUserId: post.account.clerkUserId,
+        });
       }
       void utils.thinkpages.getPost.invalidate({ postId: post.id });
     },
@@ -433,7 +437,9 @@ const ThinkpagesPostComponent = ({
     onSuccess: () => {
       void utils.thinkpages.getFeed.invalidate();
       if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({
+          clerkUserId: post.account.clerkUserId,
+        });
       }
       if (post.parentPostId) {
         void utils.thinkpages.getPost.invalidate({ postId: post.parentPostId });
@@ -445,7 +451,9 @@ const ThinkpagesPostComponent = ({
     onSuccess: () => {
       void utils.thinkpages.getFeed.invalidate();
       if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({
+          clerkUserId: post.account.clerkUserId,
+        });
       }
       void utils.thinkpages.getPost.invalidate({ postId: post.id });
     },
@@ -454,7 +462,9 @@ const ThinkpagesPostComponent = ({
     onSuccess: () => {
       void utils.thinkpages.getFeed.invalidate();
       if (post.account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: post.account.clerkUserId });
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({
+          clerkUserId: post.account.clerkUserId,
+        });
       }
       void utils.thinkpages.getPost.invalidate({ postId: post.id });
     },
@@ -599,16 +609,19 @@ const ThinkpagesPostComponent = ({
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-xl shadow-xl space-y-4"
+        className="relative space-y-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl"
       >
         {/* Header section */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => onAccountClick?.(post.account.id)} className="shrink-0 transition-transform hover:scale-105">
+            <button
+              onClick={() => onAccountClick?.(post.account.id)}
+              className="shrink-0 transition-transform hover:scale-105"
+            >
               <Avatar className="h-12 w-12 border border-white/10">
                 <AvatarImage src={proxyDiscordUrl(post.account.profileImageUrl)} />
                 <AvatarFallback
-                  className={`font-semibold text-sm ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+                  className={`text-sm font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
                 >
                   {post.account.displayName
                     .split(" ")
@@ -619,25 +632,30 @@ const ThinkpagesPostComponent = ({
               </Avatar>
             </button>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => onAccountClick?.(post.account.id)}
-                  className="font-bold text-slate-100 hover:underline text-base leading-snug"
+                  className="text-base leading-snug font-bold text-slate-100 hover:underline"
                 >
                   {post.account.displayName}
                 </button>
                 {post.account.verified && (
-                  <span className="inline-flex h-4 w-4 items-center justify-center text-sm" title="Verified">✅</span>
+                  <span
+                    className="inline-flex h-4 w-4 items-center justify-center text-sm"
+                    title="Verified"
+                  >
+                    ✅
+                  </span>
                 )}
                 {post.account.country && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[11px] font-medium text-slate-300">
+                  <span className="inline-flex items-center gap-1 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[11px] font-medium text-slate-300">
                     {post.account.country.flag && (
                       <img
                         src={normalizeFlagUrl(post.account.country.flag)}
                         alt=""
                         className="h-2.5 w-3.5 rounded-sm object-cover"
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.style.display = "none";
                         }}
                       />
                     )}
@@ -645,17 +663,21 @@ const ThinkpagesPostComponent = ({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-slate-400 text-sm">@{post.account.username}</span>
-                <span className="text-slate-600 text-xs">·</span>
+              <div className="mt-0.5 flex items-center gap-2">
+                <span className="text-sm text-slate-400">@{post.account.username}</span>
+                <span className="text-xs text-slate-600">·</span>
                 <div
                   className={cn(
                     "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase",
-                    ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"
+                    ACCOUNT_TYPE_COLORS[
+                      post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS
+                    ] || "bg-gray-500/20 text-gray-500"
                   )}
                 >
                   {React.createElement(
-                    ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS] || Users,
+                    ACCOUNT_TYPE_ICONS[
+                      post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS
+                    ] || Users,
                     { className: "h-2.5 w-2.5" }
                   )}
                   <span>{post.account.accountType}</span>
@@ -668,31 +690,50 @@ const ThinkpagesPostComponent = ({
           <div className="relative">
             <DropdownMenu open={showMoreOptions} onOpenChange={setShowMoreOptions}>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-200">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                >
                   <MoreHorizontal className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 border-white/10 bg-slate-900/90 backdrop-blur-xl">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 border-white/10 bg-slate-900/90 backdrop-blur-xl"
+              >
                 {canEdit && (
-                  <DropdownMenuItem onClick={handleEdit} className="text-slate-200 hover:bg-white/10">
+                  <DropdownMenuItem
+                    onClick={handleEdit}
+                    className="text-slate-200 hover:bg-white/10"
+                  >
                     <Edit className="mr-2 h-4 w-4" />
                     <span>Edit Post</span>
                   </DropdownMenuItem>
                 )}
                 {currentUserAccountId && (
                   <>
-                    <DropdownMenuItem onClick={handlePin} className="text-slate-200 hover:bg-white/10">
+                    <DropdownMenuItem
+                      onClick={handlePin}
+                      className="text-slate-200 hover:bg-white/10"
+                    >
                       <Pin className="mr-2 h-4 w-4" />
                       <span>{post.pinned ? "Unpin Post" : "Pin Post"}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleBookmark} className="text-slate-200 hover:bg-white/10">
+                    <DropdownMenuItem
+                      onClick={handleBookmark}
+                      className="text-slate-200 hover:bg-white/10"
+                    >
                       <Bookmark className="mr-2 h-4 w-4" />
                       <span>Bookmark Post</span>
                     </DropdownMenuItem>
                   </>
                 )}
                 {currentUserAccountId && !isOwnPost && (
-                  <DropdownMenuItem onClick={handleFlag} className="text-red-400 hover:bg-red-500/20 hover:text-red-300">
+                  <DropdownMenuItem
+                    onClick={handleFlag}
+                    className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                  >
                     <Flag className="mr-2 h-4 w-4" />
                     <span>Report Post</span>
                   </DropdownMenuItem>
@@ -700,7 +741,10 @@ const ThinkpagesPostComponent = ({
                 {canDelete && (
                   <>
                     <DropdownMenuSeparator className="bg-white/10" />
-                    <DropdownMenuItem onClick={handleDelete} className="text-red-500 hover:bg-red-500/20 hover:text-red-400 font-medium">
+                    <DropdownMenuItem
+                      onClick={handleDelete}
+                      className="font-medium text-red-500 hover:bg-red-500/20 hover:text-red-400"
+                    >
                       <Trash2 className="mr-2 h-4 w-4" />
                       <span>Delete Post</span>
                     </DropdownMenuItem>
@@ -712,7 +756,7 @@ const ThinkpagesPostComponent = ({
         </div>
 
         {/* Content body */}
-        <div className="text-[20px] leading-relaxed font-normal text-slate-100 whitespace-pre-wrap mt-2 select-text">
+        <div className="mt-2 text-[20px] leading-relaxed font-normal whitespace-pre-wrap text-slate-100 select-text">
           <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanPostContent)} />
         </div>
 
@@ -720,7 +764,7 @@ const ThinkpagesPostComponent = ({
         {mediaAttachments && mediaAttachments.length > 0 && (
           <div
             className={cn(
-              "border border-white/10 mt-3 overflow-hidden rounded-2xl shadow-lg bg-black/20",
+              "mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/20 shadow-lg",
               mediaAttachments.length === 1 && "max-w-full",
               mediaAttachments.length > 1 && "grid grid-cols-2 gap-1.5"
             )}
@@ -734,7 +778,9 @@ const ThinkpagesPostComponent = ({
                     "relative flex items-center justify-center overflow-hidden bg-neutral-950/40",
                     isSingle && "aspect-[16/10] max-h-[420px] w-full",
                     mediaAttachments.length === 2 && "aspect-square",
-                    mediaAttachments.length === 3 && index === 0 ? "col-span-2 aspect-[16/10]" : "aspect-square",
+                    mediaAttachments.length === 3 && index === 0
+                      ? "col-span-2 aspect-[16/10]"
+                      : "aspect-square",
                     mediaAttachments.length === 4 && "aspect-square"
                   )}
                 >
@@ -773,17 +819,19 @@ const ThinkpagesPostComponent = ({
         )}
 
         {/* Embedded Poll */}
-        {post.poll && (
-          <FeedPollWidget poll={post.poll} />
-        )}
+        {post.poll && <FeedPollWidget poll={post.poll} />}
 
         {/* Inline Link Previews */}
         {(() => {
           const content = post.content ?? "";
           const matchedLink = (() => {
-            const wikiMatch = content.match(/(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i);
+            const wikiMatch = content.match(
+              /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
+            );
             if (wikiMatch) return wikiMatch[0];
-            const forumMatch = content.match(/(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i);
+            const forumMatch = content.match(
+              /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
+            );
             if (forumMatch) return forumMatch[0];
             return null;
           })();
@@ -797,7 +845,10 @@ const ThinkpagesPostComponent = ({
         {post.hashtags && post.hashtags.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-1">
             {post.hashtags.map((hashtag: string, index: number) => (
-              <button key={index} className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline">
+              <button
+                key={index}
+                className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline"
+              >
                 #{hashtag}
               </button>
             ))}
@@ -805,26 +856,33 @@ const ThinkpagesPostComponent = ({
         )}
 
         {/* Timestamp Row (Absolute formatted) */}
-        <div className="text-slate-400 text-sm py-1">
-          {new Date(post.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+        <div className="py-1 text-sm text-slate-400">
+          {new Date(post.timestamp).toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
           {" · "}
-          {new Date(post.timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+          {new Date(post.timestamp).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
           {" · ixTime"}
         </div>
 
         {/* Status Counters Row (Likes, Reposts, Replies) */}
         <div className="flex gap-4 border-t border-b border-white/5 py-3 text-sm font-medium text-slate-300">
           <div>
-            <span className="text-slate-100 font-bold">{post.likeCount || 0}</span>
-            <span className="text-slate-400 font-normal ml-1">Likes</span>
+            <span className="font-bold text-slate-100">{post.likeCount || 0}</span>
+            <span className="ml-1 font-normal text-slate-400">Likes</span>
           </div>
           <div>
-            <span className="text-slate-100 font-bold">{post.repostCount || 0}</span>
-            <span className="text-slate-400 font-normal ml-1">Reposts</span>
+            <span className="font-bold text-slate-100">{post.repostCount || 0}</span>
+            <span className="ml-1 font-normal text-slate-400">Reposts</span>
           </div>
           <div>
-            <span className="text-slate-100 font-bold">{post.replyCount || 0}</span>
-            <span className="text-slate-400 font-normal ml-1">Replies</span>
+            <span className="font-bold text-slate-100">{post.replyCount || 0}</span>
+            <span className="ml-1 font-normal text-slate-400">Replies</span>
           </div>
         </div>
 
@@ -875,10 +933,18 @@ const ThinkpagesPostComponent = ({
           <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
             <DialogContent className="border-white/10 bg-slate-950 text-slate-100">
               <h3 className="text-lg font-bold">Delete Post</h3>
-              <p className="text-sm text-slate-400">Are you sure you want to permanently delete this post? This action cannot be undone.</p>
+              <p className="text-sm text-slate-400">
+                Are you sure you want to permanently delete this post? This action cannot be undone.
+              </p>
               <div className="mt-4 flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleConfirmDelete} disabled={deletePostMutation.isPending}>
+                <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleConfirmDelete}
+                  disabled={deletePostMutation.isPending}
+                >
                   {deletePostMutation.isPending ? "Deleting..." : "Delete"}
                 </Button>
               </div>
@@ -897,8 +963,14 @@ const ThinkpagesPostComponent = ({
                 className="mt-2 min-h-[100px] border-white/10 bg-slate-900"
               />
               <div className="mt-4 flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setShowFlagDialog(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleSubmitFlag} disabled={!flagReason.trim() || flagPostMutation.isPending}>
+                <Button variant="ghost" onClick={() => setShowFlagDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleSubmitFlag}
+                  disabled={!flagReason.trim() || flagPostMutation.isPending}
+                >
                   {flagPostMutation.isPending ? "Reporting..." : "Report"}
                 </Button>
               </div>
@@ -924,7 +996,7 @@ const ThinkpagesPostComponent = ({
                 layoutId={lightboxMedia.id}
                 src={proxyDiscordUrl(lightboxMedia.url)}
                 alt="Enlarged view"
-                className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+                className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
                 initial={{ scale: 0.95 }}
                 animate={{ scale: 1 }}
                 onClick={(e) => e.stopPropagation()}
@@ -1204,9 +1276,7 @@ const ThinkpagesPostComponent = ({
           )}
 
           {/* Embedded Poll */}
-          {post.poll && (
-            <FeedPollWidget poll={post.poll} />
-          )}
+          {post.poll && <FeedPollWidget poll={post.poll} />}
 
           {/* Inline Link Previews (Wiki / Forum) */}
           {(() => {
@@ -1581,16 +1651,14 @@ const ThinkpagesPostComponent = ({
           )}
 
           {showThread && showReplies && (
-            <div className="mt-3 space-y-3 pl-4 border-l-2 border-white/10 dark:border-white/10 ml-5 relative">
+            <div className="relative mt-3 ml-5 space-y-3 border-l-2 border-white/10 pl-4 dark:border-white/10">
               {threadQuery.isLoading ? (
-                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
                   <span>Loading replies...</span>
                 </div>
               ) : threadQuery.error ? (
-                <div className="text-xs text-red-500 py-1">
-                  Failed to load replies.
-                </div>
+                <div className="py-1 text-xs text-red-500">Failed to load replies.</div>
               ) : threadQuery.data?.replies && threadQuery.data.replies.length > 0 ? (
                 threadQuery.data.replies.map((reply: any) => (
                   <ThinkpagesPost
@@ -1614,9 +1682,7 @@ const ThinkpagesPostComponent = ({
                   />
                 ))
               ) : (
-                <div className="text-xs text-muted-foreground py-1">
-                  No replies yet.
-                </div>
+                <div className="text-muted-foreground py-1 text-xs">No replies yet.</div>
               )}
             </div>
           )}

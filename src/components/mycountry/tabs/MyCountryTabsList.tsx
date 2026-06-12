@@ -36,9 +36,12 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName: "bg-[var(--tab-executive-bg)] border-[var(--tab-executive-primary)]/30 text-[var(--tab-executive-primary)]",
-      activeTextClassName: "text-[var(--tab-executive-primary)] dark:text-[var(--tab-executive-accent)]",
-      activeIconClassName: "text-[var(--tab-executive-icon)] dark:text-[var(--tab-executive-accent)]",
+      activeIndicatorClassName:
+        "bg-[var(--tab-executive-bg)] border-[var(--tab-executive-primary)]/30 text-[var(--tab-executive-primary)]",
+      activeTextClassName:
+        "text-[var(--tab-executive-primary)] dark:text-[var(--tab-executive-accent)]",
+      activeIconClassName:
+        "text-[var(--tab-executive-icon)] dark:text-[var(--tab-executive-accent)]",
       glowClassName: "bg-[var(--tab-executive-primary)]/20",
     },
     {
@@ -51,8 +54,10 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName: "bg-[var(--tab-economy-bg)] border-[var(--tab-economy-primary)]/30 text-[var(--tab-economy-primary)]",
-      activeTextClassName: "text-[var(--tab-economy-primary)] dark:text-[var(--tab-economy-accent)]",
+      activeIndicatorClassName:
+        "bg-[var(--tab-economy-bg)] border-[var(--tab-economy-primary)]/30 text-[var(--tab-economy-primary)]",
+      activeTextClassName:
+        "text-[var(--tab-economy-primary)] dark:text-[var(--tab-economy-accent)]",
       activeIconClassName: "text-[var(--tab-economy-icon)] dark:text-[var(--tab-economy-accent)]",
       glowClassName: "bg-[var(--tab-economy-primary)]/20",
     },
@@ -66,7 +71,8 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName: "bg-[var(--tab-labor-bg)] border-[var(--tab-labor-primary)]/30 text-[var(--tab-labor-primary)]",
+      activeIndicatorClassName:
+        "bg-[var(--tab-labor-bg)] border-[var(--tab-labor-primary)]/30 text-[var(--tab-labor-primary)]",
       activeTextClassName: "text-[var(--tab-labor-primary)] dark:text-[var(--tab-labor-accent)]",
       activeIconClassName: "text-[var(--tab-labor-icon)] dark:text-[var(--tab-labor-accent)]",
       glowClassName: "bg-[var(--tab-labor-primary)]/20",
@@ -81,9 +87,12 @@ export function MyCountryTabsList({
         </>
       ),
       badge: govBadge,
-      activeIndicatorClassName: "bg-[var(--tab-government-bg)] border-[var(--tab-government-primary)]/30 text-[var(--tab-government-primary)]",
-      activeTextClassName: "text-[var(--tab-government-primary)] dark:text-[var(--tab-government-accent)]",
-      activeIconClassName: "text-[var(--tab-government-icon)] dark:text-[var(--tab-government-accent)]",
+      activeIndicatorClassName:
+        "bg-[var(--tab-government-bg)] border-[var(--tab-government-primary)]/30 text-[var(--tab-government-primary)]",
+      activeTextClassName:
+        "text-[var(--tab-government-primary)] dark:text-[var(--tab-government-accent)]",
+      activeIconClassName:
+        "text-[var(--tab-government-icon)] dark:text-[var(--tab-government-accent)]",
       glowClassName: "bg-[var(--tab-government-primary)]/20",
     },
   ];
@@ -96,7 +105,7 @@ export function MyCountryTabsList({
         onChange={onChangeAction}
         tone="mycountry"
         size="md"
-        className="w-full min-w-fit rounded-xl border border-white/5 p-1 facet-surface facet-refraction"
+        className="facet-surface facet-refraction w-full min-w-fit rounded-xl border border-white/5 p-1"
       />
     </div>
   );

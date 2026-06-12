@@ -19,8 +19,8 @@ import { useAdminNavigation } from "./AdminNavigationContext";
 // Loader skeleton
 const Loader = () => (
   <div className="flex h-[50vh] items-center justify-center">
-    <div className="text-center space-y-2">
-      <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-500" />
+    <div className="space-y-2 text-center">
+      <Loader2 className="mx-auto h-8 w-8 animate-spin text-indigo-500" />
       <p className="text-muted-foreground text-xs">Loading panel components...</p>
     </div>
   </div>
@@ -47,48 +47,53 @@ const WorldConfigsTab = dynamic(
   { loading: Loader, ssr: false }
 );
 
-const CardsPanel = dynamic(
-  () => import("../cards/CardsPanel").then((m) => m.default),
-  { loading: Loader, ssr: false }
-);
+const CardsPanel = dynamic(() => import("../cards/CardsPanel").then((m) => m.default), {
+  loading: Loader,
+  ssr: false,
+});
 
-const VaultPanel = dynamic(
-  () => import("../vault/VaultPanel").then((m) => m.default),
-  { loading: Loader, ssr: false }
-);
+const VaultPanel = dynamic(() => import("../vault/VaultPanel").then((m) => m.default), {
+  loading: Loader,
+  ssr: false,
+});
 
 const ReferenceDataPanel = dynamic(
   () => import("../reference-data/ReferenceDataPanel").then((m) => m.default),
   { loading: Loader, ssr: false }
 );
 
-const BlurbsPanel = dynamic(
-  () => import("../blurbs/BlurbsPanel").then((m) => m.default),
-  { loading: Loader, ssr: false }
-);
+const BlurbsPanel = dynamic(() => import("../blurbs/BlurbsPanel").then((m) => m.default), {
+  loading: Loader,
+  ssr: false,
+});
 
-const PollsPanel = dynamic(
-  () => import("../polls/PollsPanel").then((m) => m.default),
-  { loading: Loader, ssr: false }
-);
+const PollsPanel = dynamic(() => import("../polls/PollsPanel").then((m) => m.default), {
+  loading: Loader,
+  ssr: false,
+});
 
-const WorldStudioPanel = dynamic(
-  () => import("../maps/WorldStudioPanel").then((m) => m.default),
-  { loading: Loader, ssr: false }
-);
+const WorldStudioPanel = dynamic(() => import("../maps/WorldStudioPanel").then((m) => m.default), {
+  loading: Loader,
+  ssr: false,
+});
 
 const CalculationEditor = dynamic(
   () => import("./CalculationEditor").then((m) => m.CalculationEditor),
   { loading: Loader, ssr: false }
 );
 
-const LogsPanel = dynamic(
-  () => import("../logs/LogsPanel").then((m) => m.default),
-  { loading: Loader, ssr: false }
-);
+const LogsPanel = dynamic(() => import("../logs/LogsPanel").then((m) => m.default), {
+  loading: Loader,
+  ssr: false,
+});
 
 const FacetLabPanel = dynamic(
   () => import("../facet-materials-lab/FacetLabPanel").then((m) => m.default),
+  { loading: Loader, ssr: false }
+);
+
+const SportsLabsPanel = dynamic(
+  () => import("../sports-labs/SportsLabsPanel").then((m) => m.default),
   { loading: Loader, ssr: false }
 );
 
@@ -235,6 +240,10 @@ export function AdminRouter() {
             <UnifiedMediaServiceAdmin />
           </div>
         );
+
+      // Labs
+      case "sports-labs":
+        return <SportsLabsPanel />;
 
       // Ungrouped
       case "facet-lab":

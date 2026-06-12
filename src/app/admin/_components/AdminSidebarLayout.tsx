@@ -15,10 +15,15 @@ interface AdminSidebarLayoutProps {
   onNavigate?: (section: string) => void;
 }
 
-export function AdminSidebarLayout({ children, activeSection: propActiveSection, onNavigate: propOnNavigate }: AdminSidebarLayoutProps) {
+export function AdminSidebarLayout({
+  children,
+  activeSection: propActiveSection,
+  onNavigate: propOnNavigate,
+}: AdminSidebarLayoutProps) {
   const ctx = useAdminNavigation();
   const activeSection = propActiveSection ?? ctx.activeSection;
   const onNavigate = propOnNavigate ?? ctx.onNavigate;
+  const sidebarHidden = ctx.sidebarHidden;
   const [isOpen, setIsOpen] = useState(false);
 
   const handleNavigate = (section: string) => {
@@ -66,14 +71,14 @@ export function AdminSidebarLayout({ children, activeSection: propActiveSection,
         {onNavigate ? (
           <button
             onClick={() => onNavigate("dashboard")}
-            className="text-muted-foreground/80 ml-3 text-sm font-bold tracking-wide uppercase hover:text-foreground transition-colors cursor-pointer"
+            className="text-muted-foreground/80 hover:text-foreground ml-3 cursor-pointer text-sm font-bold tracking-wide uppercase transition-colors"
           >
             Admin Console
           </button>
         ) : (
           <Link
             href="/admin"
-            className="text-muted-foreground/80 ml-3 text-sm font-bold tracking-wide uppercase hover:text-foreground transition-colors"
+            className="text-muted-foreground/80 hover:text-foreground ml-3 text-sm font-bold tracking-wide uppercase transition-colors"
           >
             Admin Console
           </Link>
@@ -83,11 +88,13 @@ export function AdminSidebarLayout({ children, activeSection: propActiveSection,
       <div className="relative z-10 container mx-auto px-4 py-4 pt-18 sm:py-6 md:py-8 lg:px-6 lg:pt-8">
         {/* Main Layout — rail + content */}
         <div className="flex gap-6 lg:gap-8">
-          {/* Desktop: Sticky rail */}
-          <div className="sticky top-6 z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
-            <SystemStatusWidget />
-            <AdminSidebarNavWidget onNavigate={onNavigate} activeSection={activeSection} />
-          </div>
+          {/* Desktop: Sticky rail (hidden in fullscreen mode) */}
+          {!sidebarHidden && (
+            <div className="sticky top-6 z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
+              <SystemStatusWidget />
+              <AdminSidebarNavWidget onNavigate={onNavigate} activeSection={activeSection} />
+            </div>
+          )}
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">{children}</div>

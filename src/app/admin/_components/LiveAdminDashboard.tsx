@@ -35,101 +35,104 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
   usePageTitle({ title: "Admin Dashboard" });
   const [quickActionsCollapsed, setQuickActionsCollapsed] = useState(true);
 
-  const { data: systemStatus } = api.admin.getSystemStatus.useQuery(
-    undefined,
-    { refetchInterval: 30000, refetchOnWindowFocus: false }
-  );
+  const { data: systemStatus } = api.admin.getSystemStatus.useQuery(undefined, {
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+  });
 
-  const QUICK_ACTIONS = useMemo(() => [
-    {
-      icon: Settings,
-      label: "General Settings",
-      description: "Time, economy & general parameters",
-      href: "/admin/settings",
-      section: "settings",
-      color: "blue",
-    },
-    {
-      icon: Gamepad2,
-      label: "Storyteller",
-      description: "World events & narrative tools",
-      href: "/admin/storyteller",
-      section: "storyteller",
-      color: "purple",
-    },
-    {
-      icon: Users,
-      label: "User Management",
-      description: "User list & country binders",
-      href: "/admin/user-management",
-      section: "user-management",
-      color: "emerald",
-    },
-    {
-      icon: Users,
-      label: "User Roles",
-      description: "Role assignments & permissions",
-      href: "/admin/user-roles",
-      section: "user-roles",
-      color: "amber",
-    },
-    {
-      icon: Package,
-      label: "Card Settings",
-      description: "Sync, packs, lore & seasons",
-      href: "/admin/cards",
-      section: "cards",
-      color: "amber",
-    },
-    {
-      icon: Layers,
-      label: "Facet Materials Lab",
-      description: "Material configurator & sandbox",
-      href: "/admin/facet-lab",
-      section: "facet-lab",
-      color: "teal",
-    },
-    {
-      icon: Coins,
-      label: "Vault Settings",
-      description: "Balances, streaks & store",
-      href: "/admin/vault",
-      section: "vault",
-      color: "amber",
-    },
-    {
-      icon: BookOpen,
-      label: "WikiOS Settings",
-      description: "Wiki page link configurations",
-      href: "/admin/wikios-settings",
-      section: "wikios-settings",
-      color: "indigo",
-    },
-    {
-      icon: Database,
-      label: "Reference Data",
-      description: "Unified database manager",
-      href: "/admin/reference-data",
-      section: "reference-data",
-      color: "rose",
-    },
-    {
-      icon: Activity,
-      label: "User Logs",
-      description: "Audit trail & terminal outputs",
-      href: "/admin/user-logs",
-      section: "user-logs",
-      color: "indigo",
-    },
-    {
-      icon: Vote,
-      label: "Polls Management",
-      description: "Create and manage active polls",
-      href: "/admin/polls",
-      section: "polls",
-      color: "purple",
-    },
-  ], []);
+  const QUICK_ACTIONS = useMemo(
+    () => [
+      {
+        icon: Settings,
+        label: "General Settings",
+        description: "Time, economy & general parameters",
+        href: "/admin/settings",
+        section: "settings",
+        color: "blue",
+      },
+      {
+        icon: Gamepad2,
+        label: "Storyteller",
+        description: "World events & narrative tools",
+        href: "/admin/storyteller",
+        section: "storyteller",
+        color: "purple",
+      },
+      {
+        icon: Users,
+        label: "User Management",
+        description: "User list & country binders",
+        href: "/admin/user-management",
+        section: "user-management",
+        color: "emerald",
+      },
+      {
+        icon: Users,
+        label: "User Roles",
+        description: "Role assignments & permissions",
+        href: "/admin/user-roles",
+        section: "user-roles",
+        color: "amber",
+      },
+      {
+        icon: Package,
+        label: "Card Settings",
+        description: "Sync, packs, lore & seasons",
+        href: "/admin/cards",
+        section: "cards",
+        color: "amber",
+      },
+      {
+        icon: Layers,
+        label: "Facet Materials Lab",
+        description: "Material configurator & sandbox",
+        href: "/admin/facet-lab",
+        section: "facet-lab",
+        color: "teal",
+      },
+      {
+        icon: Coins,
+        label: "Vault Settings",
+        description: "Balances, streaks & store",
+        href: "/admin/vault",
+        section: "vault",
+        color: "amber",
+      },
+      {
+        icon: BookOpen,
+        label: "WikiOS Settings",
+        description: "Wiki page link configurations",
+        href: "/admin/wikios-settings",
+        section: "wikios-settings",
+        color: "indigo",
+      },
+      {
+        icon: Database,
+        label: "Reference Data",
+        description: "Unified database manager",
+        href: "/admin/reference-data",
+        section: "reference-data",
+        color: "rose",
+      },
+      {
+        icon: Activity,
+        label: "User Logs",
+        description: "Audit trail & terminal outputs",
+        href: "/admin/user-logs",
+        section: "user-logs",
+        color: "indigo",
+      },
+      {
+        icon: Vote,
+        label: "Polls Management",
+        description: "Create and manage active polls",
+        href: "/admin/polls",
+        section: "polls",
+        color: "purple",
+      },
+    ],
+    []
+  );
 
   const handleActionClick = (e: React.MouseEvent, href: string, section: string) => {
     if (onNavigate && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {

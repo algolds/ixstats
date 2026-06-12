@@ -7,13 +7,21 @@ model SportLeague {
   archetype        String        // "league"|"division_conference"|"bracket"|"circuit"
   teamCount        Int
   nationAffiliation String?
+  logo             String?
+  coverImage       String?
   isCanonical      Boolean       @default(false)
   settings         Json?
   createdByUserId  String
   status           String        @default("active") // "active"|"paused"|"completed"|"archived"
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+  tier             Int           @default(1)
+  parentLeagueId   String?
+  relegationCount  Int           @default(3)
+  promotionCount   Int           @default(3)
 
+  parentLeague     SportLeague?  @relation("LeagueHierarchy", fields: [parentLeagueId], references: [id], onDelete: SetNull)
+  subLeagues       SportLeague[] @relation("LeagueHierarchy")
   seasons          SportSeason[]      @relation("LeagueSeasons")
   teams            SportTeam[]        @relation("LeagueTeams")
   records          SportSeasonRecord[] @relation("LeagueRecords")
@@ -38,6 +46,13 @@ model SportTeam {
   foundedIxTime   Float?
   budget          Float?
   ownerUserId     String?
+  tacticalIntent  String            @default("neutral")
+  stadiumCapacity Int               @default(5000)
+  ticketPrice     Float             @default(15.0)
+  popularity      Float             @default(50.0)
+  sponsor         Json?
+  lineup          Json?
+  patronSaint     String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -76,6 +91,7 @@ model SportPlayer {
   team                  SportTeam       @relation("TeamPlayers", fields: [teamId], references: [id], onDelete: Cascade)
   matchStats            SportMatchStat[]
   draftedBy             SportDraftPick[] @relation("DraftedPlayer")
+  transferListing       SportTransferListing? @relation("PlayerTransfers")
 
   @@index([teamId])
   @@index([careerStage])
@@ -111,6 +127,7 @@ model SportSeason {
   endIxTime       Float?
   championTeamId  String?
   settings        Json?
+  activeStage     Int               @default(1)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -147,6 +164,7 @@ model SportMatch {
   awayRatingBefore  Json?
   homeRatingAfter   Json?
   awayRatingAfter   Json?
+  stage             Int             @default(1)
   createdAt         DateTime        @default(now())
 
   season            SportSeason     @relation("SeasonMatches", fields: [seasonId], references: [id], onDelete: Cascade)
@@ -216,6 +234,7 @@ model SportBracket {
   scheduledIxTime  Float
   resolvedIxTime   Float?
   result           Json?
+  stage            Int         @default(1)
   createdAt        DateTime    @default(now())
 
   season           SportSeason @relation("SeasonBrackets", fields: [seasonId], references: [id], onDelete: Cascade)
@@ -312,4 +331,33 @@ model SportSeasonRecord {
   @@index([seasonId])
   @@index([recordType])
   @@map("sport_season_records")
+}
+
+model SportTransferListing {
+  id        String        @id @default(cuid())
+  playerId  String        @unique
+  teamId    String
+  price     Float
+  status    String        @default("open") // open | completed | cancelled
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  player    SportPlayer   @relation("PlayerTransfers", fields: [playerId], references: [id], onDelete: Cascade)
+  bids      SportTransferBid[] @relation("ListingBids")
+
+  @@map("sport_transfer_listings")
+}
+
+model SportTransferBid {
+  id           String      @id @default(cuid())
+  listingId    String
+  bidderTeamId String
+  bidderUserId String
+  amount       Float
+  status       String      @default("pending") // pending | accepted | rejected | expired
+  createdAt    DateTime    @default(now())
+
+  listing      SportTransferListing @relation("ListingBids", fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("sport_transfer_bids")
 }

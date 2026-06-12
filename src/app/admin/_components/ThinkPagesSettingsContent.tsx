@@ -59,7 +59,9 @@ export function ThinkPagesSettingsContent() {
               <MessageSquare className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{stats ? stats.totalPosts.toLocaleString() : "..."}</p>
+              <p className="text-2xl font-bold">
+                {stats ? stats.totalPosts.toLocaleString() : "..."}
+              </p>
               <p className="text-muted-foreground text-xs">Total Social Posts</p>
             </div>
           </CardContent>
@@ -71,7 +73,9 @@ export function ThinkPagesSettingsContent() {
               <Flame className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{stats ? stats.totalAccounts.toLocaleString() : "..."}</p>
+              <p className="text-2xl font-bold">
+                {stats ? stats.totalAccounts.toLocaleString() : "..."}
+              </p>
               <p className="text-muted-foreground text-xs">Registered Social Accounts</p>
             </div>
           </CardContent>
@@ -83,7 +87,9 @@ export function ThinkPagesSettingsContent() {
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{stats ? `${stats.weeklyGrowth > 0 ? "+" : ""}${stats.weeklyGrowth}%` : "..."}</p>
+              <p className="text-2xl font-bold">
+                {stats ? `${stats.weeklyGrowth > 0 ? "+" : ""}${stats.weeklyGrowth}%` : "..."}
+              </p>
               <p className="text-muted-foreground text-xs">Weekly Engagement Growth</p>
             </div>
           </CardContent>
@@ -99,7 +105,9 @@ export function ThinkPagesSettingsContent() {
           <div className="bg-card/10 border-border/20 flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-sm font-medium">Max Accounts Limit per User</Label>
-              <p className="text-muted-foreground text-xs">Cap the maximum number of ThinkPages feed profiles a player can hold</p>
+              <p className="text-muted-foreground text-xs">
+                Cap the maximum number of ThinkPages feed profiles a player can hold
+              </p>
             </div>
             <Input
               type="number"
@@ -113,7 +121,9 @@ export function ThinkPagesSettingsContent() {
           <div className="bg-card/10 border-border/20 flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-sm font-medium">Post Character Length Cap</Label>
-              <p className="text-muted-foreground text-xs">The maximum allowed character length for post content (excluding metadata prefix)</p>
+              <p className="text-muted-foreground text-xs">
+                The maximum allowed character length for post content (excluding metadata prefix)
+              </p>
             </div>
             <Input
               type="number"
@@ -127,7 +137,9 @@ export function ThinkPagesSettingsContent() {
           <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
             <div>
               <Label className="text-sm font-medium">Election Results Auto-News</Label>
-              <p className="text-muted-foreground text-xs">Automatically publish detailed election outcomes to the ThinkPages feed</p>
+              <p className="text-muted-foreground text-xs">
+                Automatically publish detailed election outcomes to the ThinkPages feed
+              </p>
             </div>
             <Switch
               checked={settings.autoNewsElections}
@@ -139,7 +151,9 @@ export function ThinkPagesSettingsContent() {
           <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
             <div>
               <Label className="text-sm font-medium">Executive Policy Auto-News</Label>
-              <p className="text-muted-foreground text-xs">Automatically post new country executive policies and diplomatic warnings</p>
+              <p className="text-muted-foreground text-xs">
+                Automatically post new country executive policies and diplomatic warnings
+              </p>
             </div>
             <Switch
               checked={settings.autoNewsPolicies}
@@ -151,7 +165,9 @@ export function ThinkPagesSettingsContent() {
           <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
             <div>
               <Label className="text-sm font-medium">Allow Rich Media in Comments</Label>
-              <p className="text-muted-foreground text-xs">Allow users to embed stashed wiki links or images directly in comments</p>
+              <p className="text-muted-foreground text-xs">
+                Allow users to embed stashed wiki links or images directly in comments
+              </p>
             </div>
             <Switch
               checked={settings.commentAttachments}

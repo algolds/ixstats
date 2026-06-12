@@ -14,7 +14,12 @@ import {
   MessageSquare,
   AlertTriangle,
 } from "lucide-react";
-import { CutoutCard, CutoutCardContent, CutoutCorner, cutoutCardSurfaceClassName } from "~/components/ui/cutout-card";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { api } from "~/trpc/react";
@@ -164,10 +169,7 @@ export function TrendingSectionWidget() {
 
   return (
     <CutoutCard
-      className={cn(
-        cutoutCardSurfaceClassName,
-        "no-wiki-tooltip overflow-hidden rounded-xl"
-      )}
+      className={cn(cutoutCardSurfaceClassName, "no-wiki-tooltip overflow-hidden rounded-xl")}
       trackPointerHover={false}
       texture="diagonal"
       textureOpacity={0.06}
@@ -179,10 +181,7 @@ export function TrendingSectionWidget() {
           Trending
         </div>
         <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
-        <CutoutCorner
-          className="text-card absolute right-0 -bottom-px -scale-x-100"
-          size={20}
-        />
+        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={20} />
       </div>
       <CutoutCardContent className="space-y-3 px-4 pt-0 pb-4">
         <div className="space-y-1">
@@ -200,9 +199,7 @@ export function TrendingSectionWidget() {
               : {};
 
             const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-            const forumMatch = item.url?.match(
-              /forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/
-            );
+            const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
             const wikiTitle = wikiMatch
               ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
               : null;
@@ -247,11 +244,7 @@ export function TrendingSectionWidget() {
                     <div className="mt-0.5 flex items-center gap-1.5">
                       <Badge
                         variant="outline"
-                        className={cn(
-                          "px-1 py-0 text-[8px]",
-                          src.color,
-                          "border-current/30"
-                        )}
+                        className={cn("px-1 py-0 text-[8px]", src.color, "border-current/30")}
                       >
                         {src.label}
                       </Badge>

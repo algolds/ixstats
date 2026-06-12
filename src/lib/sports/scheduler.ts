@@ -124,7 +124,10 @@ function generateDivisionConferenceSchedule(args: {
   // Inter-division (same conference, different division) games
   for (let divA = 0; divA < divisions.length; divA++) {
     for (let divB = divA + 1; divB < divisions.length; divB++) {
-      if (conferenceMap.get(divisions[divA].teamIndices[0]) !== conferenceMap.get(divisions[divB].teamIndices[0])) {
+      if (
+        conferenceMap.get(divisions[divA].teamIndices[0]) !==
+        conferenceMap.get(divisions[divB].teamIndices[0])
+      ) {
         continue;
       }
       const teamsA = divisions[divA].teamIndices;
@@ -141,7 +144,10 @@ function generateDivisionConferenceSchedule(args: {
   if (confCount > 1) {
     for (let divA = 0; divA < divisions.length; divA++) {
       for (let divB = divA + 1; divB < divisions.length; divB++) {
-        if (conferenceMap.get(divisions[divA].teamIndices[0]) === conferenceMap.get(divisions[divB].teamIndices[0])) {
+        if (
+          conferenceMap.get(divisions[divA].teamIndices[0]) ===
+          conferenceMap.get(divisions[divB].teamIndices[0])
+        ) {
           continue;
         }
         const teamsA = divisions[divA].teamIndices;
@@ -161,7 +167,7 @@ function generateDivisionConferenceSchedule(args: {
 function generateLimitedPairs(
   teamsA: number[],
   teamsB: number[],
-  maxPerTeam: number,
+  maxPerTeam: number
 ): Array<[number, number]> {
   const pairs: Array<[number, number]> = [];
   const aUsed = new Map<number, number>();

@@ -138,14 +138,14 @@ export function GlassCanvasComposer({
   useEffect(() => {
     if (channelTopic) {
       const isDev = process.env.NODE_ENV === "development";
-      const shouldShow = isDev || Math.random() < 0.10;
+      const shouldShow = isDev || Math.random() < 0.1;
       if (shouldShow) {
         setShowDiscordTopic(true);
       }
     }
   }, [channelTopic]);
 
-  const resolvedPlaceholder = (showDiscordTopic && !isEditorFocused) ? channelTopic : placeholder;
+  const resolvedPlaceholder = showDiscordTopic && !isEditorFocused ? channelTopic : placeholder;
 
   const accountAvatarUrl = account
     ? account.profileImageUrl ||
@@ -227,7 +227,9 @@ export function GlassCanvasComposer({
       setPostToDiscord(true);
       void utils.thinkpages.getFeed.invalidate();
       if (account?.clerkUserId) {
-        void utils.thinkpages.getPostsByClerkUserId.invalidate({ clerkUserId: account.clerkUserId });
+        void utils.thinkpages.getPostsByClerkUserId.invalidate({
+          clerkUserId: account.clerkUserId,
+        });
       }
       onPost();
     },
@@ -576,22 +578,23 @@ export function GlassCanvasComposer({
         <TextureOverlay texture="paperGrain" opacity={0.06} />
         <div className="flex items-start justify-between gap-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#ff8a65]/15 border border-[#ff8a65]/20">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/15">
               <Newspaper className="h-5 w-5 text-[#ff8a65]" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <h4 className="text-foreground text-xs font-semibold">
                 Create a ThinkPages Account to post
               </h4>
               <p className="text-muted-foreground mt-0.5 text-[11px] leading-normal">
-                Set up a ThinkPages Account to publish articles and participate in global community discussions.
+                Set up a ThinkPages Account to publish articles and participate in global community
+                discussions.
               </p>
             </div>
           </div>
           <Button
             size="sm"
             onClick={onCreateAccount}
-            className="h-8 shrink-0 text-xs bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white border-0 cursor-pointer"
+            className="h-8 shrink-0 cursor-pointer border-0 bg-[#ff8a65] text-xs text-white hover:bg-[#ff8a65]/90"
           >
             Create Account
           </Button>
@@ -603,16 +606,16 @@ export function GlassCanvasComposer({
   // Conditional render for loading/skeleton state or missing country configuration
   if (!hasCountry || !account) {
     return (
-      <Card className="glass-hierarchy-child relative gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4 animate-pulse">
+      <Card className="glass-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
-        <div className="flex items-center gap-3 mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-white/10" />
-          <div className="space-y-1.5 flex-1">
+          <div className="flex-1 space-y-1.5">
             <div className="h-3 w-24 rounded bg-white/10" />
             <div className="h-2 w-16 rounded bg-white/5" />
           </div>
         </div>
-        <div className="h-16 w-full rounded-lg bg-white/5 mb-3" />
+        <div className="mb-3 h-16 w-full rounded-lg bg-white/5" />
         <div className="flex items-center justify-between">
           <div className="flex gap-2">
             <div className="h-7 w-7 rounded bg-white/5" />
@@ -630,7 +633,7 @@ export function GlassCanvasComposer({
       layout
       ref={composerRef}
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-0 rounded-xl border shadow-sm glass-hierarchy-child relative border-blue-500/30 bg-blue-500/5 p-3"
+        "bg-card text-card-foreground glass-hierarchy-child relative flex flex-col gap-0 rounded-xl border border-blue-500/30 bg-blue-500/5 p-3 shadow-sm"
       )}
       transition={{
         type: "spring",
@@ -640,24 +643,24 @@ export function GlassCanvasComposer({
     >
       <TextureOverlay texture="paperGrain" opacity={0.06} className="rounded-xl" />
 
-      <div className="flex gap-3 relative">
+      <div className="relative flex gap-3">
         {/* Left column: Avatar + Floating Switcher */}
-        <div className="relative flex flex-col items-center shrink-0">
+        <div className="relative flex shrink-0 flex-col items-center">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 onClick={() => setShowAccountManager(!showAccountManager)}
-                className="relative group focus:outline-none cursor-pointer"
+                className="group relative cursor-pointer focus:outline-none"
               >
-                <Avatar className="h-9 w-9 border border-border/50 shadow-sm transition-all duration-200 group-hover:scale-105 active:scale-95">
+                <Avatar className="border-border/50 h-9 w-9 border shadow-sm transition-all duration-200 group-hover:scale-105 active:scale-95">
                   <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-semibold text-white">
                     {account.displayName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 {/* Floating Chevron Down Badge */}
-                <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-popover border border-border text-muted-foreground shadow-md transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                <div className="bg-popover border-border text-muted-foreground group-hover:bg-accent group-hover:text-accent-foreground absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full border shadow-md transition-colors">
                   <ChevronDown className="h-2.5 w-2.5" />
                 </div>
               </button>
@@ -673,10 +676,12 @@ export function GlassCanvasComposer({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 5 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute left-0 top-11 z-50 w-64 rounded-2xl border border-border/50 bg-popover/95 text-popover-foreground backdrop-blur-xl p-2 shadow-2xl"
+                className="border-border/50 bg-popover/95 text-popover-foreground absolute top-11 left-0 z-50 w-64 rounded-2xl border p-2 shadow-2xl backdrop-blur-xl"
               >
-                <div className="mb-2 px-2 py-1 flex items-center justify-between border-b border-border pb-2">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Switch Account</span>
+                <div className="border-border mb-2 flex items-center justify-between border-b px-2 py-1 pb-2">
+                  <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                    Switch Account
+                  </span>
                   {isOwner && accounts.length < 25 && (
                     <Button
                       variant="ghost"
@@ -685,7 +690,7 @@ export function GlassCanvasComposer({
                         onCreateAccount?.();
                         setShowAccountManager(false);
                       }}
-                      className="h-5 px-1.5 text-[9px] text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-accent"
+                      className="hover:bg-accent h-5 px-1.5 text-[9px] text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       <Plus className="mr-0.5 h-2.5 w-2.5" />
                       Add Account
@@ -693,7 +698,7 @@ export function GlassCanvasComposer({
                   )}
                 </div>
 
-                <div className="grid max-h-48 gap-1 overflow-y-auto thin-scrollbar">
+                <div className="thin-scrollbar grid max-h-48 gap-1 overflow-y-auto">
                   {accounts.map((acc) => (
                     <button
                       key={acc.id}
@@ -702,27 +707,30 @@ export function GlassCanvasComposer({
                         setShowAccountManager(false);
                       }}
                       className={cn(
-                        "flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition-all duration-200 border cursor-pointer",
+                        "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border p-2 text-left transition-all duration-200",
                         acc.id === account.id
-                          ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 font-semibold"
+                          ? "border-blue-500/30 bg-blue-500/10 font-semibold text-blue-600 dark:text-blue-400"
                           : "hover:bg-accent text-foreground border-transparent"
                       )}
                     >
-                      <Avatar className="h-7 w-7 border border-border">
+                      <Avatar className="border-border h-7 w-7 border">
                         <AvatarImage src={getAccountAvatar(acc)} />
-                        <AvatarFallback className="text-[0.6rem] bg-muted text-muted-foreground">
+                        <AvatarFallback className="bg-muted text-muted-foreground text-[0.6rem]">
                           {acc.displayName.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-semibold leading-tight">
+                        <div className="truncate text-xs leading-tight font-semibold">
                           {acc.displayName}
                         </div>
-                        <div className="truncate text-[10px] text-muted-foreground mt-0.5">
+                        <div className="text-muted-foreground mt-0.5 truncate text-[10px]">
                           @{acc.username}
                         </div>
                       </div>
-                      <Badge variant="outline" className="h-4 px-1 py-0 text-[8px] border-border text-muted-foreground leading-none">
+                      <Badge
+                        variant="outline"
+                        className="border-border text-muted-foreground h-4 px-1 py-0 text-[8px] leading-none"
+                      >
                         {acc.accountType}
                       </Badge>
                     </button>
@@ -734,9 +742,9 @@ export function GlassCanvasComposer({
         </div>
 
         {/* Right column: Editor + Previews + Actions */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           {repostData && (
-            <Card className="border-green-500/30 bg-green-500/5 p-2.5 mb-1">
+            <Card className="mb-1 border-green-500/30 bg-green-500/5 p-2.5">
               <div className="mb-1.5 flex items-center gap-2 text-xs text-green-500">
                 <Repeat2 className="h-3 w-3" />
                 <span>Reposting</span>
@@ -780,15 +788,15 @@ export function GlassCanvasComposer({
           </div>
 
           {selectedImages.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 mt-1">
+            <div className="mt-1 grid grid-cols-2 gap-2">
               {selectedImages.map((imageUrl, index) => (
                 <div
                   key={imageUrl}
-                  className="relative aspect-video overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 bg-slate-500/5 dark:bg-white/5"
+                  className="relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-500/5 dark:border-white/10 dark:bg-white/5"
                 >
                   <button
                     onClick={() => removeImage(imageUrl)}
-                    className="absolute top-1.5 right-1.5 z-10 rounded-full bg-black/60 p-0.5 transition-colors hover:bg-red-500/80 cursor-pointer"
+                    className="absolute top-1.5 right-1.5 z-10 cursor-pointer rounded-full bg-black/60 p-0.5 transition-colors hover:bg-red-500/80"
                   >
                     <X className="h-3.5 w-3.5 text-white" />
                   </button>
@@ -803,15 +811,15 @@ export function GlassCanvasComposer({
           )}
 
           {selectedVisualizations.length > 0 && (
-            <div className="space-y-1.5 mt-1">
+            <div className="mt-1 space-y-1.5">
               {selectedVisualizations.map((viz) => (
                 <div
                   key={viz.id}
-                  className="relative rounded-lg border border-slate-200 dark:border-white/10 bg-slate-500/5 dark:bg-white/5 p-2.5"
+                  className="relative rounded-lg border border-slate-200 bg-slate-500/5 p-2.5 dark:border-white/10 dark:bg-white/5"
                 >
                   <button
                     onClick={() => removeVisualization(viz.id)}
-                    className="absolute top-1.5 right-1.5 rounded-full p-0.5 transition-colors hover:bg-red-500/20 cursor-pointer"
+                    className="absolute top-1.5 right-1.5 cursor-pointer rounded-full p-0.5 transition-colors hover:bg-red-500/20"
                   >
                     <X className="h-3.5 w-3.5 text-red-400" />
                   </button>
@@ -830,26 +838,27 @@ export function GlassCanvasComposer({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="flex items-center justify-between rounded-xl border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3.5 mt-1.5"
+              className="mt-1.5 flex items-center justify-between rounded-xl border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3.5"
             >
               <div className="flex items-center gap-2">
-                <Vote className="h-4 w-4 text-[#ff8a65] shrink-0" />
+                <Vote className="h-4 w-4 shrink-0 text-[#ff8a65]" />
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">
+                  <p className="text-foreground truncate text-xs font-semibold">
                     {pollDraft.question || "Untitled Poll"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} • {pollDraft.options.filter(o => o.trim()).length} options
+                  <p className="text-muted-foreground text-[10px]">
+                    {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} •{" "}
+                    {pollDraft.options.filter((o) => o.trim()).length} options
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex shrink-0 items-center gap-1.5">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
-                  className="h-7 px-2.5 text-[10px] font-semibold border-[#ff8a65]/30 text-[#ff8a65] dark:text-[#ff8a65] hover:bg-[#ff8a65]/10 cursor-pointer"
+                  className="h-7 cursor-pointer border-[#ff8a65]/30 px-2.5 text-[10px] font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65]"
                 >
                   Edit Poll
                 </Button>
@@ -858,7 +867,7 @@ export function GlassCanvasComposer({
                   variant="ghost"
                   size="icon"
                   onClick={() => setPollDraft(null)}
-                  className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 cursor-pointer"
+                  className="h-7 w-7 cursor-pointer text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -879,12 +888,9 @@ export function GlassCanvasComposer({
               stiffness: 350,
               damping: 35,
             }}
-            className={cn(
-              "overflow-hidden",
-              !showVisualizationPanel && "pointer-events-none"
-            )}
+            className={cn("overflow-hidden", !showVisualizationPanel && "pointer-events-none")}
           >
-            <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-500/5 dark:bg-white/5 p-2.5">
+            <div className="rounded-lg border border-slate-200 bg-slate-500/5 p-2.5 dark:border-white/10 dark:bg-white/5">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-blue-400" />
@@ -906,9 +912,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => addVisualization("economic_chart")}
-                  disabled={
-                    isGeneratingVisualization || isLoadingHistory || !hasHistoricalData
-                  }
+                  disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
                   className="h-auto flex-col p-2"
                 >
                   {isLoadingHistory ? (
@@ -922,9 +926,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => addVisualization("diplomatic_map")}
-                  disabled={
-                    isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData
-                  }
+                  disabled={isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData}
                   className="h-auto flex-col p-2"
                 >
                   {isLoadingDiplomatic ? (
@@ -952,9 +954,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => addVisualization("gdp_growth")}
-                  disabled={
-                    isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
-                  }
+                  disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
                   className="h-auto flex-col p-2"
                 >
                   {isLoadingEconomic ? (
@@ -968,9 +968,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => addVisualization("demographics")}
-                  disabled={
-                    isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
-                  }
+                  disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
                   className="h-auto flex-col p-2"
                 >
                   {isLoadingEconomic ? (
@@ -984,9 +982,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => addVisualization("budget_debt")}
-                  disabled={
-                    isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
-                  }
+                  disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
                   className="h-auto flex-col p-2"
                 >
                   {isLoadingEconomic ? (
@@ -1000,9 +996,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => addVisualization("labor_market")}
-                  disabled={
-                    isGeneratingVisualization || isLoadingEconomic || !hasEconomicData
-                  }
+                  disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
                   className="h-auto flex-col p-2"
                 >
                   {isLoadingEconomic ? (
@@ -1016,9 +1010,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => addVisualization("national_vitality")}
-                  disabled={
-                    isGeneratingVisualization || isLoadingVitality || !hasVitalityData
-                  }
+                  disabled={isGeneratingVisualization || isLoadingVitality || !hasVitalityData}
                   className="h-auto flex-col p-2"
                 >
                   {isLoadingVitality ? (
@@ -1045,10 +1037,7 @@ export function GlassCanvasComposer({
               stiffness: 350,
               damping: 35,
             }}
-            className={cn(
-              "overflow-hidden",
-              !showActionBar && "pointer-events-none"
-            )}
+            className={cn("overflow-hidden", !showActionBar && "pointer-events-none")}
           >
             <div className="space-y-2 pt-1">
               <div className="flex justify-end text-[0.65rem]">
@@ -1075,7 +1064,7 @@ export function GlassCanvasComposer({
                         size="sm"
                         onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
                         className={cn(
-                          "h-8 w-8 p-0 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-slate-500/5 dark:hover:bg-white/5 transition-colors cursor-pointer",
+                          "h-8 w-8 cursor-pointer p-0 text-blue-600 transition-colors hover:bg-slate-500/5 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-white/5 dark:hover:text-blue-300",
                           showVisualizationPanel && "bg-slate-500/10 dark:bg-white/10"
                         )}
                       >
@@ -1096,7 +1085,7 @@ export function GlassCanvasComposer({
                         size="sm"
                         onClick={() => setShowMediaModal(true)}
                         disabled={isUploadingImage || selectedImages.length >= 4}
-                        className="h-8 w-8 p-0 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-slate-500/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                        className="h-8 w-8 cursor-pointer p-0 text-emerald-600 transition-colors hover:bg-slate-500/5 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-white/5 dark:hover:text-emerald-300"
                       >
                         {isUploadingImage ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1106,7 +1095,7 @@ export function GlassCanvasComposer({
                             {selectedImages.length > 0 && (
                               <Badge
                                 variant="secondary"
-                                className="absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border border-background bg-green-500 p-0 text-[7px] font-bold text-white leading-none"
+                                className="border-background absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border bg-green-500 p-0 text-[7px] leading-none font-bold text-white"
                               >
                                 {selectedImages.length}
                               </Badge>
@@ -1147,7 +1136,7 @@ export function GlassCanvasComposer({
                           setShowPollModal(true);
                         }}
                         className={cn(
-                          "h-8 w-8 p-0 text-[#ff8a65] dark:text-[#ff8a65] hover:text-[#ff8a65] dark:hover:text-[#ff8a65]/90 hover:bg-slate-500/5 dark:hover:bg-white/5 transition-colors cursor-pointer",
+                          "h-8 w-8 cursor-pointer p-0 text-[#ff8a65] transition-colors hover:bg-slate-500/5 hover:text-[#ff8a65] dark:text-[#ff8a65] dark:hover:bg-white/5 dark:hover:text-[#ff8a65]/90",
                           pollDraft && "bg-slate-500/10 dark:bg-white/10"
                         )}
                       >
@@ -1157,7 +1146,7 @@ export function GlassCanvasComposer({
                     <TooltipContent side="top">Add Poll</TooltipContent>
                   </Tooltip>
 
-                  <div className="flex h-5 items-center gap-2 border-l border-slate-200 dark:border-white/10 px-2">
+                  <div className="flex h-5 items-center gap-2 border-l border-slate-200 px-2 dark:border-white/10">
                     <Switch
                       id="share-to-discord-toggle"
                       checked={postToDiscord}
@@ -1167,7 +1156,7 @@ export function GlassCanvasComposer({
                     />
                     <label
                       htmlFor="share-to-discord-toggle"
-                      className="flex cursor-pointer items-center gap-1.5 text-[10px] text-slate-500 dark:text-neutral-400 transition-colors select-none hover:text-slate-700 dark:hover:text-neutral-300"
+                      className="flex cursor-pointer items-center gap-1.5 text-[10px] text-slate-500 transition-colors select-none hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-300"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -1193,7 +1182,7 @@ export function GlassCanvasComposer({
                       selectedVisualizations.length === 0 &&
                       selectedImages.length === 0)
                   }
-                  className="h-7 bg-blue-600 px-3 text-xs text-white hover:bg-blue-700 cursor-pointer"
+                  className="h-7 cursor-pointer bg-blue-600 px-3 text-xs text-white hover:bg-blue-700"
                 >
                   {createPostMutation.isPending ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -1216,228 +1205,228 @@ export function GlassCanvasComposer({
 
       {/* Poll Configuration Modal */}
       {/* Poll Configuration Modal */}
-      {typeof window !== "undefined" && createPortal(
-        <AnimatePresence>
-          {showPollModal && pollDraft && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowPollModal(false)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-md"
-              />
+      {typeof window !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {showPollModal && pollDraft && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowPollModal(false)}
+                  className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                />
 
-              {/* Modal Container */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-900/95 dark:bg-neutral-900/95 p-5 space-y-4 shadow-2xl backdrop-blur-xl z-10 text-foreground"
-              >
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
-                  <div className="flex items-center gap-2 text-sm font-bold text-[#ff8a65]">
-                    <Vote className="h-4 w-4" />
-                    <span>Configure Poll Draft</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowPollModal(false)}
-                    className="h-7 w-7 rounded-full text-slate-400 hover:bg-slate-500/10 hover:text-slate-200 cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Poll Question */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Question / Topic *
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="Ask a question..."
-                    value={pollDraft.question}
-                    onChange={(e) =>
-                      setPollDraft({ ...pollDraft, question: e.target.value })
-                    }
-                    className="w-full bg-background/50 focus-visible:ring-[#ff8a65]/50"
-                    required
-                  />
-                </div>
-
-                {/* Poll Type & Multiple Options */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                      Poll Type
-                    </label>
-                    <Select
-                      value={pollDraft.pollType}
-                      onValueChange={(val: "choice" | "feature-poll") =>
-                        setPollDraft({
-                          ...pollDraft,
-                          pollType: val,
-                        })
-                      }
+                {/* Modal Container */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="text-foreground relative z-10 w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-slate-900/95 p-5 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/95"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-white/10">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#ff8a65]">
+                      <Vote className="h-4 w-4" />
+                      <span>Configure Poll Draft</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowPollModal(false)}
+                      className="h-7 w-7 cursor-pointer rounded-full text-slate-400 hover:bg-slate-500/10 hover:text-slate-200"
                     >
-                      <SelectTrigger className="w-full bg-background/50 border border-slate-200 dark:border-white/10 text-xs h-8 focus:border-[#ff8a65]/50">
-                        <SelectValue placeholder="Select Poll Type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border border-slate-200 dark:border-slate-800 text-xs z-[100020]">
-                        <SelectItem value="choice">Choice Poll</SelectItem>
-                        {!isRegularUser && (
-                          <SelectItem value="feature-poll">Feature Poll</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
 
-                  <div className="flex flex-col justify-end pb-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="modal-poll-multiple-toggle"
-                        checked={pollDraft.multiple}
-                        onCheckedChange={(checked) =>
-                          setPollDraft({ ...pollDraft, multiple: checked })
-                        }
-                        className="scale-90"
-                      />
-                      <label
-                        htmlFor="modal-poll-multiple-toggle"
-                        className="cursor-pointer text-[11px] font-semibold text-slate-650 dark:text-neutral-300"
-                      >
-                        Multiple Selection
+                  {/* Poll Question */}
+                  <div className="space-y-1">
+                    <label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      Question / Topic *
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Ask a question..."
+                      value={pollDraft.question}
+                      onChange={(e) => setPollDraft({ ...pollDraft, question: e.target.value })}
+                      className="bg-background/50 w-full focus-visible:ring-[#ff8a65]/50"
+                      required
+                    />
+                  </div>
+
+                  {/* Poll Type & Multiple Options */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                        Poll Type
                       </label>
+                      <Select
+                        value={pollDraft.pollType}
+                        onValueChange={(val: "choice" | "feature-poll") =>
+                          setPollDraft({
+                            ...pollDraft,
+                            pollType: val,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="bg-background/50 h-8 w-full border border-slate-200 text-xs focus:border-[#ff8a65]/50 dark:border-white/10">
+                          <SelectValue placeholder="Select Poll Type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-[100020] border border-slate-200 text-xs dark:border-slate-800">
+                          <SelectItem value="choice">Choice Poll</SelectItem>
+                          {!isRegularUser && (
+                            <SelectItem value="feature-poll">Feature Poll</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-col justify-end space-y-1 pb-1">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="modal-poll-multiple-toggle"
+                          checked={pollDraft.multiple}
+                          onCheckedChange={(checked) =>
+                            setPollDraft({ ...pollDraft, multiple: checked })
+                          }
+                          className="scale-90"
+                        />
+                        <label
+                          htmlFor="modal-poll-multiple-toggle"
+                          className="text-slate-650 cursor-pointer text-[11px] font-semibold dark:text-neutral-300"
+                        >
+                          Multiple Selection
+                        </label>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Blurb Prompt Notice for Regular Users */}
-                {isRegularUser && (
-                  <div className="rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-[11px] text-[#ff8a65] flex items-start gap-2 leading-relaxed">
-                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>
-                      Citizen accounts can only launch Choice Polls. To prioritize features, create a structured roadmap, or run custom campaigns, submit a{" "}
-                      <a
-                        href={withBasePath("/blurbs")}
-                        className="underline font-bold hover:text-[#ff8a65]/80"
-                        onClick={() => setShowPollModal(false)}
-                      >
-                        Blurb prompt
-                      </a>{" "}
-                      instead.
-                    </span>
-                  </div>
-                )}
+                  {/* Blurb Prompt Notice for Regular Users */}
+                  {isRegularUser && (
+                    <div className="flex items-start gap-2 rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-[11px] leading-relaxed text-[#ff8a65]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        Citizen accounts can only launch Choice Polls. To prioritize features,
+                        create a structured roadmap, or run custom campaigns, submit a{" "}
+                        <a
+                          href={withBasePath("/blurbs")}
+                          className="font-bold underline hover:text-[#ff8a65]/80"
+                          onClick={() => setShowPollModal(false)}
+                        >
+                          Blurb prompt
+                        </a>{" "}
+                        instead.
+                      </span>
+                    </div>
+                  )}
 
-                {/* Poll Options */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                      Options * (min 2)
-                    </label>
-                    <span className="text-[9px] text-muted-foreground/60 font-medium">
-                      {pollDraft.options.filter(o => o.trim()).length} / 10
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
-                    {pollDraft.options.map((option, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-muted-foreground/60 w-4 text-center">
-                          {idx + 1}
-                        </span>
-                        <Input
-                          type="text"
-                          placeholder={`Option ${idx + 1}`}
-                          value={option}
-                          onChange={(e) => {
-                            const updated = [...pollDraft.options];
-                            updated[idx] = e.target.value;
-                            setPollDraft({ ...pollDraft, options: updated });
-                          }}
-                          className="flex-1 bg-background/50 text-xs focus-visible:ring-[#ff8a65]/50"
-                          required
-                        />
-                        {pollDraft.options.length > 2 && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setPollDraft({
-                                ...pollDraft,
-                                options: pollDraft.options.filter((_, i) => i !== idx),
-                              });
+                  {/* Poll Options */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
+                        Options * (min 2)
+                      </label>
+                      <span className="text-muted-foreground/60 text-[9px] font-medium">
+                        {pollDraft.options.filter((o) => o.trim()).length} / 10
+                      </span>
+                    </div>
+
+                    <div className="max-h-[180px] space-y-2 overflow-y-auto pr-1">
+                      {pollDraft.options.map((option, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-muted-foreground/60 w-4 text-center text-[10px] font-bold">
+                            {idx + 1}
+                          </span>
+                          <Input
+                            type="text"
+                            placeholder={`Option ${idx + 1}`}
+                            value={option}
+                            onChange={(e) => {
+                              const updated = [...pollDraft.options];
+                              updated[idx] = e.target.value;
+                              setPollDraft({ ...pollDraft, options: updated });
                             }}
-                            className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 cursor-pointer shrink-0"
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                            className="bg-background/50 flex-1 text-xs focus-visible:ring-[#ff8a65]/50"
+                            required
+                          />
+                          {pollDraft.options.length > 2 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setPollDraft({
+                                  ...pollDraft,
+                                  options: pollDraft.options.filter((_, i) => i !== idx),
+                                });
+                              }}
+                              className="h-7 w-7 shrink-0 cursor-pointer text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {pollDraft.options.length < 10 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setPollDraft({
+                            ...pollDraft,
+                            options: [...pollDraft.options, ""],
+                          });
+                        }}
+                        className="mt-1 h-8 w-full cursor-pointer border-dashed border-[#ff8a65]/35 text-[10px] font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65]"
+                      >
+                        <Plus className="mr-1 h-3 w-3" /> Add Option
+                      </Button>
+                    )}
                   </div>
-                  
-                  {pollDraft.options.length < 10 && (
+
+                  {/* Actions */}
+                  <div className="mt-2 flex justify-end gap-2 border-t border-slate-200 pt-3.5 dark:border-white/10">
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
                       onClick={() => {
-                        setPollDraft({
-                          ...pollDraft,
-                          options: [...pollDraft.options, ""],
-                        });
+                        setPollDraft(null);
+                        setShowPollModal(false);
                       }}
-                      className="h-8 w-full border-dashed border-[#ff8a65]/35 text-[#ff8a65] dark:text-[#ff8a65] hover:bg-[#ff8a65]/10 mt-1 cursor-pointer text-[10px] font-semibold"
+                      className="h-8 cursor-pointer px-3 text-xs font-semibold text-rose-500 hover:bg-rose-500/10"
                     >
-                      <Plus className="h-3 w-3 mr-1" /> Add Option
+                      Discard Poll
                     </Button>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-white/10 pt-3.5 mt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setPollDraft(null);
-                      setShowPollModal(false);
-                    }}
-                    className="h-8 px-3 text-xs text-rose-500 hover:bg-rose-500/10 cursor-pointer font-semibold"
-                  >
-                    Discard Poll
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const validOpts = pollDraft.options.map(o => o.trim()).filter(Boolean);
-                      if (!pollDraft.question.trim()) {
-                        notify.error("Please enter a question");
-                        return;
-                      }
-                      if (validOpts.length < 2) {
-                        notify.error("At least 2 non-empty options are required");
-                        return;
-                      }
-                      setShowPollModal(false);
-                      notify.success("Poll configured successfully!");
-                    }}
-                    className="h-8 px-4 text-xs bg-[#ff8a65] hover:bg-[#ff8a65]/90 text-white cursor-pointer font-bold"
-                  >
-                    Save & Apply
-                  </Button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const validOpts = pollDraft.options.map((o) => o.trim()).filter(Boolean);
+                        if (!pollDraft.question.trim()) {
+                          notify.error("Please enter a question");
+                          return;
+                        }
+                        if (validOpts.length < 2) {
+                          notify.error("At least 2 non-empty options are required");
+                          return;
+                        }
+                        setShowPollModal(false);
+                        notify.success("Poll configured successfully!");
+                      }}
+                      className="h-8 cursor-pointer bg-[#ff8a65] px-4 text-xs font-bold text-white hover:bg-[#ff8a65]/90"
+                    >
+                      Save & Apply
+                    </Button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </motion.div>
   );
 }

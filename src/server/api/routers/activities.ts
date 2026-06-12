@@ -207,7 +207,7 @@ export const activitiesRouter = createTRPCRouter({
                     reposts: true,
                   },
                 },
-              } as any
+              } as any,
             })
           : [];
 

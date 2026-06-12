@@ -175,8 +175,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                       className="text-muted-foreground mt-1 text-[10px]"
                       style={{ color: storyline.color ?? color }}
                     >
-                      {storyline.title} · Event {currentStorylineIdx + 1} of{" "}
-                      {storyline.pins.length}
+                      {storyline.title} · Event {currentStorylineIdx + 1} of {storyline.pins.length}
                     </p>
                   )}
                 </div>
@@ -359,7 +358,9 @@ export const StoryPinModal = memo(function StoryPinModal({
               {/* Storyline prev/next */}
               {hasStoryline && currentStorylineIdx > 0 && (
                 <button
-                  onClick={() => state.handleNavigatePin(storyline.pins[currentStorylineIdx - 1].id)}
+                  onClick={() =>
+                    state.handleNavigatePin(storyline.pins[currentStorylineIdx - 1].id)
+                  }
                   className="bg-muted text-foreground hover:bg-muted/80 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 >
                   <ChevronLeft className="h-3 w-3" />
@@ -368,7 +369,9 @@ export const StoryPinModal = memo(function StoryPinModal({
               )}
               {hasStoryline && currentStorylineIdx < storyline.pins.length - 1 && (
                 <button
-                  onClick={() => state.handleNavigatePin(storyline.pins[currentStorylineIdx + 1].id)}
+                  onClick={() =>
+                    state.handleNavigatePin(storyline.pins[currentStorylineIdx + 1].id)
+                  }
                   className="bg-muted text-foreground hover:bg-muted/80 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 >
                   Next
