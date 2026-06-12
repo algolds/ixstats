@@ -10,6 +10,7 @@ import {
   Globe,
   MessageSquare,
   Settings,
+  Trophy,
 } from "lucide-react";
 import { FaLanguage, FaWikipediaW } from "react-icons/fa";
 import { GiCardRandom, GiFamilyTree } from "react-icons/gi";
@@ -46,7 +47,7 @@ export function useNavigationItems({
   user,
   isAdmin,
   isPremium,
-  isStandalone,
+  isStandalone: _isStandalone,
   setupStatus,
   navigationSettings,
 }: UseNavigationItemsParams): NavigationItem[] {
@@ -115,6 +116,12 @@ export function useNavigationItems({
         isDropdown: true,
         dropdownItems: [
           {
+            name: "MyLeague",
+            href: "/myleague",
+            icon: Trophy,
+            description: "Sports league simulation",
+          },
+          {
             name: "Vexel",
             href: "/labs/vexel",
             icon: GiVibratingShield,
@@ -156,7 +163,7 @@ export function useNavigationItems({
     ];
 
     return items;
-  }, [isStandalone]);
+  }, []);
 
   // Filter visible navigation items based on user state and admin settings
   const visibleNavItems = navigationItems
@@ -180,7 +187,7 @@ export function useNavigationItems({
       if (navigationSettings) {
         if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
         if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
-        if (item.name === "Labs" && !navigationSettings.showLabsTab) return false;
+        if (item.name === "Labs" && !navigationSettings.showLabsTab && process.env.NODE_ENV !== "development") return false;
         if (item.name === "Maps" && !navigationSettings.showMapsTab) return false;
         if (item.name === "Forum" && !navigationSettings.showForumTab) return false;
         if (item.name === "Help" && !navigationSettings.showHelpTab) return false;

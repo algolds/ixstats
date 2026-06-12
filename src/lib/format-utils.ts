@@ -582,6 +582,9 @@ export function safeFormatCurrency(
   fallbackCurrency: string = "USD"
 ): string {
   try {
+    if (!isValidCurrency(currency)) {
+      throw new Error(`Invalid currency code: ${currency}`);
+    }
     return formatCurrency(amount, currency, forceDecimals);
   } catch (error) {
     console.warn(

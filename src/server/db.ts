@@ -259,6 +259,21 @@ const createPrismaClient = () => {
     "Poll",
     "PollOption",
     "PollVote",
+    // Sports / MyLeague / MyClub — full league simulation lifecycle
+    "SportLeague",
+    "SportTeam",
+    "SportPlayer",
+    "SportCoach",
+    "SportSeason",
+    "SportMatch",
+    "SportMatchStat",
+    "SportStanding",
+    "SportBracket",
+    "SportRace",
+    "SportDraftPick",
+    "SportRookieClass",
+    "SportTeamSeason",
+    "SportSeasonRecord",
   ]);
 
   // In read-only mode, extend the client to block write operations

@@ -167,6 +167,7 @@ model Country {
   mapFeatures                 MapLayer[]                   @relation("CountryMapFeatures")
   mapEditRequests             MapEditRequest[]             @relation("CountryMapEdits")
   sovereignOf                 CountrySovereignty[]         @relation("SovereignOf")
+  sportTeams                  SportTeam[]                  @relation("CountrySportTeams")
   subjectOf                   CountrySovereignty[]         @relation("SubjectOf")
   geoProfile                  CountryGeoProfile?           @relation("CountryGeoProfile")
   geographicResources         GeographicResource[]         @relation("CountryGeographicResources")

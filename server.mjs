@@ -9,6 +9,7 @@ import { parse } from "url";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import next from "next";
+import { advanceSportsSeasons } from "./src/lib/sports/season-cron.js";
 
 function loadEnvVariables() {
   const envFiles = [];
@@ -276,6 +277,21 @@ app
           await processExpiredTrades();
         } catch (error) {
           console.error("[Cron] Trade expiry failed:", error);
+        }
+      });
+
+      // 8. Sports season auto-advance (every 6 hours)
+      scheduleCron("Sports Season Auto-Advance", "0 */6 * * *", async () => {
+        try {
+          const { PrismaClient } = await import("@prisma/client");
+          const db = new PrismaClient();
+          const advanced = await advanceSportsSeasons(db);
+          if (advanced > 0) {
+            console.log(`[Cron] Sports: Advanced ${advanced} seasons`);
+          }
+          await db.$disconnect();
+        } catch (error) {
+          console.error("[Cron] Sports season advance failed:", error.message);
         }
       });
 

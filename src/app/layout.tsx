@@ -8,6 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
+import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
@@ -66,40 +67,42 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
     <TRPCReactProvider>
       <GlobalLinkTooltipProvider>
         <ThemeProvider>
-          <IxTimeProvider>
-            <ExecutiveNotificationProvider>
-              <ToastProvider>
-                <NotificationBadgeProvider>
-                  <GlobalNotificationSystem>
-                    <DIPluginProvider>
-                      <WikiContextProvider>
-                        <WebGLErrorHandler />
-                        <MapPrefetcher />
-                        <NavigationTransitionHandler />
-                        {isStandalone ? (
-                          <div className="flex min-h-screen flex-col">
-                            <Navigation />
-                            <main className="flex-1 flex flex-col">
-                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                            </main>
-                          </div>
-                        ) : (
-                          <div className="flex min-h-screen flex-col">
-                            <Navigation />
-                            {/* <GlobalActivityMarquee /> */}
-                            <SetupRedirect />
-                            <main className="flex-1 flex flex-col">
-                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                            </main>
-                          </div>
-                        )}
-                      </WikiContextProvider>
-                    </DIPluginProvider>
-                  </GlobalNotificationSystem>
-                </NotificationBadgeProvider>
-              </ToastProvider>
-            </ExecutiveNotificationProvider>
-          </IxTimeProvider>
+          <AbilityProvider>
+            <IxTimeProvider>
+              <ExecutiveNotificationProvider>
+                <ToastProvider>
+                  <NotificationBadgeProvider>
+                    <GlobalNotificationSystem>
+                      <DIPluginProvider>
+                        <WikiContextProvider>
+                          <WebGLErrorHandler />
+                          <MapPrefetcher />
+                          <NavigationTransitionHandler />
+                          {isStandalone ? (
+                            <div className="flex min-h-screen flex-col">
+                              <Navigation />
+                              <main className="flex-1 flex flex-col">
+                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                              </main>
+                            </div>
+                          ) : (
+                            <div className="flex min-h-screen flex-col">
+                              <Navigation />
+                              {/* <GlobalActivityMarquee /> */}
+                              <SetupRedirect />
+                              <main className="flex-1 flex flex-col">
+                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                              </main>
+                            </div>
+                          )}
+                        </WikiContextProvider>
+                      </DIPluginProvider>
+                    </GlobalNotificationSystem>
+                  </NotificationBadgeProvider>
+                </ToastProvider>
+              </ExecutiveNotificationProvider>
+            </IxTimeProvider>
+          </AbilityProvider>
         </ThemeProvider>
       </GlobalLinkTooltipProvider>
     </TRPCReactProvider>

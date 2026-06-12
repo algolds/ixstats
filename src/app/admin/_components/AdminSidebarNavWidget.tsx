@@ -18,6 +18,14 @@ import {
   Vote,
   Coins,
   Layers,
+  Cpu,
+  Bookmark,
+  FolderHeart,
+  Award,
+  Shield,
+  Terminal,
+  Trophy,
+  Search,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
@@ -29,117 +37,249 @@ interface NavItem {
   exact?: boolean;
   description?: string;
   activeColor: string;
+  section: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
-    exact: true,
-    activeColor: "text-blue-500 dark:text-blue-400 border-l-blue-500",
+    title: "System Control",
+    items: [
+      {
+        label: "General Settings",
+        href: "/admin/settings",
+        icon: Settings,
+        description: "General system parameters & time",
+        activeColor: "text-indigo-500 dark:text-indigo-400 border-l-indigo-500",
+        section: "settings",
+      },
+      {
+        label: "Bot Settings",
+        href: "/admin/bot",
+        icon: Cpu,
+        description: "Bot controls, logs & schedules",
+        activeColor: "text-emerald-500 dark:text-emerald-400 border-l-emerald-500",
+        section: "bot",
+      },
+      {
+        label: "Notification Settings",
+        href: "/admin/notifications",
+        icon: Bell,
+        description: "Rules, logs & test alerts",
+        activeColor: "text-rose-500 dark:text-rose-400 border-l-rose-500",
+        section: "notifications",
+      },
+      {
+        label: "Stash Settings",
+        href: "/admin/stash",
+        icon: FolderHeart,
+        description: "Offline sync & default stashes",
+        activeColor: "text-blue-500 dark:text-blue-400 border-l-blue-500",
+        section: "stash",
+      },
+      {
+        label: "ThinkPages Settings",
+        href: "/admin/thinkpages",
+        icon: Globe,
+        description: "Social feeds & posting rules",
+        activeColor: "text-sky-500 dark:text-sky-400 border-l-sky-500",
+        section: "thinkpages",
+      },
+      {
+        label: "Blurbs",
+        href: "/admin/blurbs",
+        icon: MessageCircle,
+        description: "Topic prompts & moderation",
+        activeColor: "text-violet-500 dark:text-violet-400 border-l-violet-500",
+        section: "blurbs",
+      },
+    ],
   },
   {
-    label: "Platform",
-    href: "/admin/platform",
-    icon: Settings,
-    description: "Time, Economy, Bot & System",
-    activeColor: "text-indigo-500 dark:text-indigo-400 border-l-indigo-500",
+    title: "World Config",
+    items: [
+      {
+        label: "Settings",
+        href: "/admin/world-settings",
+        icon: Settings,
+        description: "Active gameworld settings",
+        activeColor: "text-cyan-500 dark:text-cyan-400 border-l-cyan-500",
+        section: "world-settings",
+      },
+      {
+        label: "Storyteller™",
+        href: "/admin/storyteller",
+        icon: Gamepad2,
+        description: "Events & live interventions",
+        activeColor: "text-purple-500 dark:text-purple-400 border-l-purple-500",
+        section: "storyteller",
+      },
+      {
+        label: "Realms™",
+        href: "/admin/realms",
+        icon: Sparkles,
+        description: "Realm list & user assignments",
+        activeColor: "text-pink-500 dark:text-pink-400 border-l-pink-500",
+        section: "realms",
+      },
+      {
+        label: "WorldStudio™",
+        href: "/admin/worldstudio",
+        icon: Map,
+        description: "World map editor & assignments",
+        activeColor: "text-teal-500 dark:text-teal-400 border-l-teal-500",
+        section: "worldstudio",
+      },
+      {
+        label: "Card Settings",
+        href: "/admin/cards",
+        icon: Package,
+        description: "Sync, packs, lore & seasons",
+        activeColor: "text-orange-500 dark:text-orange-400 border-l-orange-500",
+        section: "cards",
+      },
+      {
+        label: "Vault Settings",
+        href: "/admin/vault",
+        icon: Coins,
+        description: "Balances, streaks & store",
+        activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
+        section: "vault",
+      },
+      {
+        label: "Achievements & Awards",
+        href: "/admin/achievements",
+        icon: Award,
+        description: "Custom awards & system points",
+        activeColor: "text-yellow-500 dark:text-yellow-400 border-l-yellow-500",
+        section: "achievements",
+      },
+      {
+        label: "Reference Data",
+        href: "/admin/reference-data",
+        icon: Database,
+        description: "Manage database data types",
+        activeColor: "text-cyan-500 dark:text-cyan-400 border-l-cyan-500",
+        section: "reference-data",
+      },
+    ],
   },
   {
-    label: "Storyteller™",
-    href: "/admin/storyteller",
-    icon: Gamepad2,
-    description: "World Events & Simulation",
-    activeColor: "text-purple-500 dark:text-purple-400 border-l-purple-500",
+    title: "Users",
+    items: [
+      {
+        label: "User Management",
+        href: "/admin/user-management",
+        icon: Users,
+        description: "User list & country binders",
+        activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
+        section: "user-management",
+      },
+      {
+        label: "User Roles",
+        href: "/admin/user-roles",
+        icon: Shield,
+        description: "Role assignments & permissions",
+        activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
+        section: "user-roles",
+      },
+      {
+        label: "User Logs",
+        href: "/admin/user-logs",
+        icon: Terminal,
+        description: "Database queries & audit logs",
+        activeColor: "text-indigo-500 dark:text-indigo-400 border-l-indigo-500",
+        section: "user-logs",
+      },
+    ],
   },
   {
-    label: "Countries",
-    href: "/admin/countries",
-    icon: Globe,
-    description: "Live Grid & Analytics",
-    activeColor: "text-emerald-500 dark:text-emerald-400 border-l-emerald-500",
+    title: "WikiOS",
+    items: [
+      {
+        label: "Settings",
+        href: "/admin/wikios-settings",
+        icon: BookOpen,
+        description: "Base link configurations",
+        activeColor: "text-sky-500 dark:text-sky-400 border-l-sky-500",
+        section: "wikios-settings",
+      },
+      {
+        label: "LoreScanner",
+        href: "/admin/lorescanner",
+        icon: Search,
+        description: "Automatic wiki links scanner",
+        activeColor: "text-blue-500 dark:text-blue-400 border-l-blue-500",
+        section: "lorescanner",
+      },
+      {
+        label: "Image Repository",
+        href: "/admin/image-repo",
+        icon: Layers,
+        description: "WikiOS Commons image explorer",
+        activeColor: "text-teal-500 dark:text-teal-400 border-l-teal-500",
+        section: "image-repo",
+      },
+    ],
   },
-  {
-    label: "Maps",
-    href: "/admin/maps",
-    icon: Map,
-    description: "World Map & Assignments",
-    activeColor: "text-teal-500 dark:text-teal-400 border-l-teal-500",
-  },
-  {
-    label: "World Studio",
-    href: "/admin/studio",
-    icon: Sparkles,
-    description: "Realms & World Configs",
-    activeColor: "text-pink-500 dark:text-pink-400 border-l-pink-500",
-  },
+];
+
+const UNGROUPED_ITEMS: NavItem[] = [
   {
     label: "Facet Materials Lab",
-    href: "/admin/facet-materials-lab",
+    href: "/admin/facet-lab",
     icon: Layers,
-    description: "Material & UI Configurator",
+    description: "Material configurator & configurations",
     activeColor: "text-teal-500 dark:text-teal-400 border-l-teal-500",
-  },
-  {
-    label: "Users & Roles",
-    href: "/admin/users",
-    icon: Users,
-    description: "Management & Permissions",
-    activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
-  },
-  {
-    label: "Notifications",
-    href: "/admin/notifications",
-    icon: Bell,
-    description: "Events, Logs & Alert Rules",
-    activeColor: "text-rose-500 dark:text-rose-400 border-l-rose-500",
-  },
-  {
-    label: "Card Management",
-    href: "/admin/cards",
-    icon: Package,
-    description: "Sync, Packs, Lore & Vaults",
-    activeColor: "text-orange-500 dark:text-orange-400 border-l-orange-500",
-  },
-  {
-    label: "Vault & Economy",
-    href: "/admin/vault",
-    icon: Coins,
-    description: "Balances, Streaks & Store",
-    activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
-  },
-  {
-    label: "Reference Data",
-    href: "/admin/reference-data",
-    icon: Database,
-    description: "Data Manager",
-    activeColor: "text-cyan-500 dark:text-cyan-400 border-l-cyan-500",
-  },
-  {
-    label: "WikiOS Settings",
-    href: "/admin/wiki",
-    icon: BookOpen,
-    description: "LoreScanner, Awards & Links",
-    activeColor: "text-sky-500 dark:text-sky-400 border-l-sky-500",
-  },
-  {
-    label: "Blurbs",
-    href: "/admin/blurbs",
-    icon: MessageCircle,
-    description: "Topic Prompts",
-    activeColor: "text-violet-500 dark:text-violet-400 border-l-violet-500",
+    section: "facet-lab",
   },
   {
     label: "Polls",
     href: "/admin/polls",
     icon: Vote,
-    description: "Create & Manage Polls",
+    description: "Create & manage polls",
     activeColor: "text-purple-500 dark:text-purple-400 border-l-purple-500",
+    section: "polls",
   },
 ];
 
-function isActive(pathname: string, href: string, exact?: boolean): boolean {
+function getSectionFromPathname(rawPathname: string): string {
+  const pathname = rawPathname.replace(/\/$/, "");
+  if (pathname === "/admin") return "dashboard";
+  
+  // Find in groups
+  for (const group of NAV_GROUPS) {
+    for (const item of group.items) {
+      if (pathname === withBasePath(item.href) || pathname.startsWith(withBasePath(item.href) + "/")) {
+        return item.section;
+      }
+    }
+  }
+  
+  // Find in ungrouped
+  for (const item of UNGROUPED_ITEMS) {
+    if (pathname === withBasePath(item.href) || pathname.startsWith(withBasePath(item.href) + "/")) {
+      return item.section;
+    }
+  }
+  
+  return "dashboard";
+}
+
+function isActive(
+  pathname: string,
+  href: string,
+  exact?: boolean,
+  activeSection?: string,
+  sectionId?: string
+): boolean {
+  if (activeSection && sectionId) {
+    return activeSection === sectionId;
+  }
   const normalizedPath = pathname.replace(/\/$/, "") || "/admin";
   const normalizedHref = href.replace(/\/$/, "");
   if (exact) return normalizedPath === normalizedHref;
@@ -147,46 +287,75 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
 }
 
 interface AdminSidebarNavWidgetProps {
-  onNavigate?: () => void;
+  onNavigate?: (section: string) => void;
+  activeSection?: string;
 }
 
-export function AdminSidebarNavWidget({ onNavigate }: AdminSidebarNavWidgetProps) {
+export function AdminSidebarNavWidget({ onNavigate, activeSection }: AdminSidebarNavWidgetProps) {
   const pathname = usePathname();
+  const currentSection = activeSection ?? getSectionFromPathname(pathname);
+  const isControlled = !!onNavigate;
+
+  const renderItem = (item: NavItem) => {
+    const active = isActive(pathname, withBasePath(item.href), item.exact, currentSection, item.section);
+
+    const handleClick = (e: React.MouseEvent) => {
+      // Middle click, Cmd+click, Ctrl+click, Shift+click should behave normally (open in new tab/window)
+      if (isControlled && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+        e.preventDefault();
+        onNavigate(item.section);
+      }
+    };
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={handleClick}
+        className={cn(
+          "flex items-center gap-2.5 rounded-lg border-l-2 border-l-transparent px-2.5 py-2 text-left transition-all duration-200",
+          active
+            ? cn("bg-muted/60 border-l-2 shadow-inner backdrop-blur-sm", item.activeColor)
+            : "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
+        )}
+      >
+        <item.icon className="h-4.5 w-4.5 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[11px] leading-tight font-semibold tracking-wide whitespace-nowrap">
+            {item.label}
+          </div>
+          {item.description && !active && (
+            <div className="text-muted-foreground/60 truncate text-[9px]">
+              {item.description}
+            </div>
+          )}
+        </div>
+      </Link>
+    );
+  };
 
   return (
     <nav className="border-border/30 bg-card/40 flex max-h-[calc(100vh-320px)] w-full flex-col rounded-xl border p-2 shadow-sm backdrop-blur-md">
-      <div className="text-muted-foreground/80 shrink-0 px-3 py-1.5 text-[9px] font-bold tracking-wider uppercase">
-        Admin Control Suite
-      </div>
-      <div className="thin-scrollbar mt-1 flex-1 [scrollbar-width:thin] space-y-1 overflow-y-auto pr-1.5">
-        {NAV_ITEMS.map((item) => {
-          const active = isActive(pathname, withBasePath(item.href), item.exact);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-2.5 rounded-lg border-l-2 border-l-transparent px-2.5 py-2 text-left transition-all duration-200",
-                active
-                  ? cn("bg-muted/60 border-l-2 shadow-inner backdrop-blur-sm", item.activeColor)
-                  : "text-muted-foreground hover:bg-muted/20 hover:text-foreground"
-              )}
-            >
-              <item.icon className="h-4.5 w-4.5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[11px] leading-tight font-semibold tracking-wide whitespace-nowrap">
-                  {item.label}
-                </div>
-                {item.description && !active && (
-                  <div className="text-muted-foreground/60 truncate text-[9px]">
-                    {item.description}
-                  </div>
-                )}
-              </div>
-            </Link>
-          );
-        })}
+     
+      <div className="thin-scrollbar mt-2 flex-1 [scrollbar-width:thin] space-y-2.5 overflow-y-auto pr-1">
+        {/* Render grouped links */}
+        {NAV_GROUPS.map((group) => (
+          <div key={group.title} className="space-y-1">
+            <div className="text-muted-foreground/50 px-2.5 text-[8px] font-bold tracking-wider uppercase select-none">
+              {group.title}
+            </div>
+            <div className="space-y-0.5 pl-0.5">
+              {group.items.map(renderItem)}
+            </div>
+          </div>
+        ))}
+
+        {/* Render ungrouped items */}
+        <div className="space-y-1 border-t border-white/5 pt-2">
+          <div className="space-y-0.5">
+            {UNGROUPED_ITEMS.map(renderItem)}
+          </div>
+        </div>
       </div>
     </nav>
   );

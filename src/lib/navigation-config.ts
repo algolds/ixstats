@@ -120,6 +120,16 @@ export const NAV_COLORS: Record<string, { shine: string[]; glow: string; hover: 
     glow: "text-orange-400",
     hover: "group-hover:text-orange-400",
   },
+  MyLeague: {
+    shine: ["#f59e0b", "#d97706", "#fbbf24"],
+    glow: "text-amber-400",
+    hover: "group-hover:text-amber-400",
+  },
+  MyClub: {
+    shine: ["#10b981", "#059669", "#34d399"],
+    glow: "text-emerald-400",
+    hover: "group-hover:text-emerald-400",
+  },
 };
 export const DEFAULT_NAV = {
   shine: ["#3b82f6", "#8b5cf6", "#06b6d4"],
@@ -497,12 +507,94 @@ export const contextualMenus: Record<string, ContextualMenuDefinition> = {
       },
     ],
   },
+  myleague: {
+    title: "MyLeague",
+    description: "Sports league simulation and management.",
+    groups: [
+      {
+        title: "League Operations",
+        items: [
+          {
+            name: "League Dashboard",
+            href: "/myleague",
+            icon: Trophy,
+            description: "Overview of your leagues and competitions.",
+          },
+          {
+            name: "Create League",
+            href: "/myleague/create",
+            icon: Layers,
+            description: "Start a new league from scratch.",
+          },
+        ],
+      },
+      {
+        title: "Competition",
+        items: [
+          {
+            name: "Leaderboards",
+            href: "/leaderboards",
+            icon: BarChart3,
+            description: "See how leagues rank globally.",
+          },
+          {
+            name: "Explore Countries",
+            href: "/countries",
+            icon: Globe,
+            description: "Research nations participating in leagues.",
+          },
+        ],
+      },
+    ],
+  },
+  myclub: {
+    title: "MyClub",
+    description: "Manage your sports franchises.",
+    groups: [
+      {
+        title: "Franchise Hub",
+        items: [
+          {
+            name: "Club Dashboard",
+            href: "/myclub",
+            icon: Users,
+            description: "Your sports franchises at a glance.",
+          },
+          {
+            name: "Create Club",
+            href: "/myclub/create",
+            icon: Layers,
+            description: "Establish a new sports franchise.",
+          },
+        ],
+      },
+      {
+        title: "League Access",
+        items: [
+          {
+            name: "MyLeague",
+            href: "/myleague",
+            icon: Trophy,
+            description: "Explore and join active leagues.",
+          },
+          {
+            name: "Messages",
+            href: "/messages",
+            icon: MessageSquare,
+            description: "Coordinate with league members.",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 export function getContextKey(path: string): keyof typeof contextualMenus {
   if (path.startsWith("/mycountry")) return "mycountry";
   if (path.startsWith("/thinkpages")) return "thinkpages";
   if (path.startsWith("/forum")) return "forum";
+  if (path.startsWith("/myleague")) return "myleague";
+  if (path.startsWith("/myclub")) return "myclub";
   if (path.startsWith("/admin")) return "admin";
   if (path.startsWith("/builder")) return "builder";
   if (path.startsWith("/countries")) return "explore";

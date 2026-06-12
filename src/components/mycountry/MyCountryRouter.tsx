@@ -13,6 +13,9 @@ import { MyCountryComplianceModal } from "./MyCountryComplianceModal";
 import { useMyCountryNotifications } from "~/hooks/useMyCountryNotifications";
 import { usePremium } from "~/hooks/usePremium";
 import { PremiumPreviewFrame } from "~/components/mycountry/primitives";
+import { useAbility } from "~/components/providers/AbilityProvider";
+import { Crown, ArrowRight } from "lucide-react";
+import { GlassButton } from "~/components/ui/glass-button";
 import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
@@ -133,7 +136,8 @@ function MyCountryRouterInner() {
   useNationalIssuesToast(country?.id);
 
   // Premium feature access
-  const { features: premiumFeatures, isLoading: premiumLoading } = usePremium();
+  const { features: _premiumFeatures, isLoading: _premiumLoading } = usePremium();
+  const ability = useAbility();
 
   // Compliance modal (overview only)
   const {
@@ -266,7 +270,7 @@ function MyCountryRouterInner() {
         return (
           <PremiumPreviewFrame
             feature="intelligence"
-            locked={!premiumLoading && !premiumFeatures.intelligence}
+            locked={!ability.can("access", "MyCountryFeature", "intelligence")}
           >
             <EnhancedIntelligenceContent
               activeSection={activeSection}
@@ -279,7 +283,7 @@ function MyCountryRouterInner() {
         return (
           <PremiumPreviewFrame
             feature="defense"
-            locked={!premiumLoading && !premiumFeatures.defense}
+            locked={!ability.can("access", "MyCountryFeature", "defense")}
           >
             <EnhancedDefenseContent
               activeSection={activeSection}
@@ -297,6 +301,38 @@ function MyCountryRouterInner() {
           />
         );
       case "map-editor":
+        if (!ability.can("access", "MyCountryFeature", "map-editor")) {
+          return (
+            <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
+              <div className="glass-panel max-w-md p-8 rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 backdrop-blur-md shadow-xl space-y-6 animate-fade-in">
+                <div className="mx-auto rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 p-4 w-16 h-16 flex items-center justify-center shadow-lg">
+                  <Crown className="h-8 w-8 text-white animate-pulse" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold text-foreground tracking-tight">Map Editor</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Shape your nation's territory, establish subdivisions, build cities, and mark points of interest. This feature is exclusive to MyCountry Premium members.
+                  </p>
+                </div>
+                <GlassButton
+                  variant="primary"
+                  className="w-full group"
+                  onClick={() => router.push(withBasePath("/help/getting-started/welcome"))}
+                >
+                  <Crown className="mr-2 h-4 w-4" />
+                  Upgrade to Premium
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </GlassButton>
+                <button
+                  onClick={() => handleNavigate("overview")}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
+                >
+                  Back to Overview
+                </button>
+              </div>
+            </div>
+          );
+        }
         return (
           <EnhancedMapEditorContent
             activeSection={activeSection}

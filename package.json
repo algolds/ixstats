@@ -157,6 +157,8 @@
     "@c15t/dev-tools": "^2.1.0",
     "@c15t/nextjs": "^2.1.0",
     "@c15t/scripts": "^2.1.0",
+    "@casl/ability": "^7.0.0",
+    "@casl/react": "^7.0.0",
     "@chenglou/pretext": "^0.0.7",
     "@clerk/clerk-react": "^5.61.8",
     "@clerk/nextjs": "^6.39.5",

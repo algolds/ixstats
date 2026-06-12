@@ -172,6 +172,55 @@ export const usersRouter = createTRPCRouter({
     }
   }),
 
+  // Get current user's abilities and role permissions for CASL
+  getCurrentUserAbilities: rateLimitedPublicProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.auth?.userId) {
+        return {
+          role: "guest",
+          permissions: [],
+          membershipTier: "basic",
+          unlockedTools: [],
+        };
+      }
+
+      const clerkUserId = ctx.auth.userId;
+
+      // Fetch user from DB with roles and nested permissions
+      const userRecord = await ctx.db.user.findUnique({
+        where: { clerkUserId },
+        include: {
+          role: {
+            include: {
+              rolePermissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const permissions = userRecord?.role?.rolePermissions?.map((rp) => rp.permission.name) ?? [];
+
+      return {
+        role: userRecord?.role?.name ?? "user",
+        permissions,
+        membershipTier: userRecord?.membershipTier ?? "basic",
+        unlockedTools: ["basic_calculator"], // Can be extended dynamically in the future
+      };
+    } catch (error) {
+      console.error("Error fetching user abilities:", error);
+      return {
+        role: "guest",
+        permissions: [],
+        membershipTier: "basic",
+        unlockedTools: [],
+      };
+    }
+  }),
+
   // Get user profile by ID (for admin use)
   getProfileById: rateLimitedPublicProcedure
     .input(

@@ -1,0 +1,315 @@
+// IxStates — Sports, Competition & League models
+
+model SportLeague {
+  id               String        @id @default(cuid())
+  name             String
+  sportPreset      String        // "soccer"|"football"|"hockey"|"basketball"|"baseball"|"f1"|"boxing"
+  archetype        String        // "league"|"division_conference"|"bracket"|"circuit"
+  teamCount        Int
+  nationAffiliation String?
+  isCanonical      Boolean       @default(false)
+  settings         Json?
+  createdByUserId  String
+  status           String        @default("active") // "active"|"paused"|"completed"|"archived"
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  seasons          SportSeason[]      @relation("LeagueSeasons")
+  teams            SportTeam[]        @relation("LeagueTeams")
+  records          SportSeasonRecord[] @relation("LeagueRecords")
+
+  @@index([sportPreset])
+  @@index([archetype])
+  @@index([isCanonical])
+  @@index([status])
+  @@index([createdByUserId])
+  @@map("sport_leagues")
+}
+
+model SportTeam {
+  id              String            @id @default(cuid())
+  leagueId        String
+  name            String
+  shortName       String?
+  city            String?
+  nationId        String?
+  color           String            @default("#3b82f6")
+  logo            String?
+  foundedIxTime   Float?
+  budget          Float?
+  ownerUserId     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  league          SportLeague       @relation("LeagueTeams", fields: [leagueId], references: [id], onDelete: Cascade)
+  nation          Country?          @relation("CountrySportTeams", fields: [nationId], references: [id], onDelete: SetNull)
+  players         SportPlayer[]     @relation("TeamPlayers")
+  coaches         SportCoach[]      @relation("TeamCoaches")
+  seasons         SportTeamSeason[] @relation("TeamSeasons")
+  championOf      SportSeason[]     @relation("SeasonChampion")
+  homeMatches     SportMatch[]      @relation("HomeMatches")
+  awayMatches     SportMatch[]      @relation("AwayMatches")
+  standings       SportStanding[]   @relation("StandingTeam")
+  draftPicks      SportDraftPick[]  @relation("DraftTeam")
+
+  @@index([leagueId])
+  @@index([nationId])
+  @@index([ownerUserId])
+  @@map("sport_teams")
+}
+
+model SportPlayer {
+  id                    String          @id @default(cuid())
+  teamId                String
+  firstName             String
+  lastName              String
+  position              String
+  number                Int?
+  age                   Int
+  careerStage           String          @default("rookie") // "rookie"|"developing"|"prime"|"plateau"|"declining"|"retired"
+  ratings               Json?
+  contractExpiresIxTime Float?
+  isActive              Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  team                  SportTeam       @relation("TeamPlayers", fields: [teamId], references: [id], onDelete: Cascade)
+  matchStats            SportMatchStat[]
+  draftedBy             SportDraftPick[] @relation("DraftedPlayer")
+
+  @@index([teamId])
+  @@index([careerStage])
+  @@index([isActive])
+  @@map("sport_players")
+}
+
+model SportCoach {
+  id          String    @id @default(cuid())
+  teamId      String
+  firstName   String
+  lastName    String
+  role        String
+  age         Int
+  careerStage String    @default("prime")
+  ratings     Json?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  team        SportTeam @relation("TeamCoaches", fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@map("sport_coaches")
+}
+
+model SportSeason {
+  id              String            @id @default(cuid())
+  leagueId        String
+  seasonNumber    Int
+  status          String            @default("upcoming") // "upcoming"|"in_progress"|"completed"
+  startIxTime     Float
+  endIxTime       Float?
+  championTeamId  String?
+  settings        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  league          SportLeague       @relation("LeagueSeasons", fields: [leagueId], references: [id], onDelete: Cascade)
+  champion        SportTeam?        @relation("SeasonChampion", fields: [championTeamId], references: [id], onDelete: SetNull)
+  matches         SportMatch[]      @relation("SeasonMatches")
+  standings       SportStanding[]   @relation("SeasonStandings")
+  brackets        SportBracket[]    @relation("SeasonBrackets")
+  races           SportRace[]       @relation("SeasonRaces")
+  draftPicks      SportDraftPick[]   @relation("SeasonDraftPicks")
+  rookieClasses   SportRookieClass[] @relation("SeasonRookieClasses")
+  teamSeasons     SportTeamSeason[]  @relation("SeasonTeamAssignments")
+  records         SportSeasonRecord[] @relation("SeasonRecords")
+
+  @@index([leagueId])
+  @@index([status])
+  @@index([seasonNumber])
+  @@map("sport_seasons")
+}
+
+model SportMatch {
+  id                String          @id @default(cuid())
+  seasonId          String
+  matchDay          Int
+  homeTeamId        String
+  awayTeamId        String
+  homeScore         Int?
+  awayScore         Int?
+  status            String          @default("scheduled") // "scheduled"|"in_progress"|"completed"
+  scheduledIxTime   Float
+  resolvedIxTime    Float?
+  matchStats        Json?
+  homeRatingBefore  Json?
+  awayRatingBefore  Json?
+  homeRatingAfter   Json?
+  awayRatingAfter   Json?
+  createdAt         DateTime        @default(now())
+
+  season            SportSeason     @relation("SeasonMatches", fields: [seasonId], references: [id], onDelete: Cascade)
+  homeTeam          SportTeam       @relation("HomeMatches", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeam          SportTeam       @relation("AwayMatches", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  playerStats       SportMatchStat[]
+
+  @@index([seasonId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([status])
+  @@index([matchDay])
+  @@map("sport_matches")
+}
+
+model SportMatchStat {
+  id        String     @id @default(cuid())
+  matchId   String
+  playerId  String
+  stats     Json?
+  createdAt DateTime   @default(now())
+
+  match     SportMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player    SportPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([playerId])
+  @@map("sport_match_stats")
+}
+
+model SportStanding {
+  id             String      @id @default(cuid())
+  seasonId       String
+  teamId         String
+  wins           Int         @default(0)
+  losses         Int         @default(0)
+  draws          Int         @default(0)
+  points         Int         @default(0)
+  pointsFor      Int         @default(0)
+  pointsAgainst  Int         @default(0)
+  division       String?
+  conference     String?
+  rank           Int?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  season         SportSeason @relation("SeasonStandings", fields: [seasonId], references: [id], onDelete: Cascade)
+  team           SportTeam   @relation("StandingTeam", fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonId, teamId])
+  @@index([seasonId])
+  @@index([teamId])
+  @@index([division])
+  @@index([conference])
+  @@map("sport_standings")
+}
+
+model SportBracket {
+  id               String      @id @default(cuid())
+  seasonId         String
+  round            Int
+  weightClass      String?
+  fighter1Id       String
+  fighter2Id       String
+  winnerId         String?
+  status           String      @default("scheduled") // "scheduled"|"completed"
+  scheduledIxTime  Float
+  resolvedIxTime   Float?
+  result           Json?
+  createdAt        DateTime    @default(now())
+
+  season           SportSeason @relation("SeasonBrackets", fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@index([seasonId])
+  @@index([weightClass])
+  @@index([status])
+  @@map("sport_brackets")
+}
+
+model SportRace {
+  id              String      @id @default(cuid())
+  seasonId        String
+  raceNumber      Int
+  circuitName     String
+  qualifyingIxTime Float?
+  raceIxTime       Float?
+  status          String      @default("upcoming") // "upcoming"|"qualifying_complete"|"completed"
+  grid            Json?
+  results         Json?
+  weather         String?
+  createdAt       DateTime    @default(now())
+
+  season          SportSeason @relation("SeasonRaces", fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@index([seasonId])
+  @@index([raceNumber])
+  @@index([status])
+  @@map("sport_races")
+}
+
+model SportDraftPick {
+  id          String      @id @default(cuid())
+  seasonId    String
+  teamId      String
+  round       Int
+  pickNumber  Int
+  playerId    String?
+  createdAt   DateTime    @default(now())
+
+  season      SportSeason @relation("SeasonDraftPicks", fields: [seasonId], references: [id], onDelete: Cascade)
+  team        SportTeam   @relation("DraftTeam", fields: [teamId], references: [id], onDelete: Cascade)
+  player      SportPlayer? @relation("DraftedPlayer", fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@index([seasonId])
+  @@index([teamId])
+  @@map("sport_draft_picks")
+}
+
+model SportRookieClass {
+  id                String      @id @default(cuid())
+  seasonId          String
+  players           Json?
+  generatedIxTime   Float
+  createdAt         DateTime    @default(now())
+
+  season            SportSeason @relation("SeasonRookieClasses", fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@index([seasonId])
+  @@map("sport_rookie_classes")
+}
+
+model SportTeamSeason {
+  id            String      @id @default(cuid())
+  seasonId      String
+  teamId        String
+  ratingVector  Json?
+  finalRecord   Json?
+  createdAt     DateTime    @default(now())
+
+  season        SportSeason @relation("SeasonTeamAssignments", fields: [seasonId], references: [id], onDelete: Cascade)
+  team          SportTeam   @relation("TeamSeasons", fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonId, teamId])
+  @@index([seasonId])
+  @@index([teamId])
+  @@map("sport_team_seasons")
+}
+
+model SportSeasonRecord {
+  id          String      @id @default(cuid())
+  leagueId    String
+  seasonId    String
+  recordType  String
+  holderId    String
+  value       String
+  context     Json?
+  createdAt   DateTime    @default(now())
+
+  league      SportLeague @relation("LeagueRecords", fields: [leagueId], references: [id], onDelete: Cascade)
+  season      SportSeason @relation("SeasonRecords", fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId])
+  @@index([seasonId])
+  @@index([recordType])
+  @@map("sport_season_records")
+}

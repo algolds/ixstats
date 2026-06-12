@@ -1,23 +1,40 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { SystemStatusWidget } from "./SystemStatusWidget";
 import { AdminSidebarNavWidget } from "./AdminSidebarNavWidget";
+import { useAdminNavigation } from "./AdminNavigationContext";
 
 interface AdminSidebarLayoutProps {
   children: ReactNode;
+  activeSection?: string;
+  onNavigate?: (section: string) => void;
 }
 
-export function AdminSidebarLayout({ children }: AdminSidebarLayoutProps) {
+export function AdminSidebarLayout({ children, activeSection: propActiveSection, onNavigate: propOnNavigate }: AdminSidebarLayoutProps) {
+  const ctx = useAdminNavigation();
+  const activeSection = propActiveSection ?? ctx.activeSection;
+  const onNavigate = propOnNavigate ?? ctx.onNavigate;
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleNavigate = (section: string) => {
+    if (onNavigate) {
+      onNavigate(section);
+    }
+    setIsOpen(false);
+  };
 
   const sidebarContent = (
     <div className="flex min-h-full flex-col space-y-4 p-4">
       <SystemStatusWidget />
-      <AdminSidebarNavWidget onNavigate={() => setIsOpen(false)} />
+      <AdminSidebarNavWidget
+        onNavigate={onNavigate ? handleNavigate : undefined}
+        activeSection={activeSection}
+      />
     </div>
   );
 
@@ -46,9 +63,21 @@ export function AdminSidebarLayout({ children }: AdminSidebarLayoutProps) {
             {sidebarContent}
           </SheetContent>
         </Sheet>
-        <span className="text-muted-foreground/80 ml-3 text-sm font-bold tracking-wide uppercase">
-          Admin Console
-        </span>
+        {onNavigate ? (
+          <button
+            onClick={() => onNavigate("dashboard")}
+            className="text-muted-foreground/80 ml-3 text-sm font-bold tracking-wide uppercase hover:text-foreground transition-colors cursor-pointer"
+          >
+            Admin Console
+          </button>
+        ) : (
+          <Link
+            href="/admin"
+            className="text-muted-foreground/80 ml-3 text-sm font-bold tracking-wide uppercase hover:text-foreground transition-colors"
+          >
+            Admin Console
+          </Link>
+        )}
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-4 pt-18 sm:py-6 md:py-8 lg:px-6 lg:pt-8">
@@ -57,7 +86,7 @@ export function AdminSidebarLayout({ children }: AdminSidebarLayoutProps) {
           {/* Desktop: Sticky rail */}
           <div className="sticky top-6 z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
             <SystemStatusWidget />
-            <AdminSidebarNavWidget />
+            <AdminSidebarNavWidget onNavigate={onNavigate} activeSection={activeSection} />
           </div>
 
           {/* Main Content */}

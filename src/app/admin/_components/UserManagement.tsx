@@ -63,17 +63,21 @@ import {
 } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
+import { useAbility, Can } from "~/components/providers/AbilityProvider";
+import { CountryAdminPanel } from "./CountryAdminPanel";
 
 interface UserManagementProps {
   className?: string;
+  mode?: "users" | "roles";
 }
 
-export function UserManagement({ className }: UserManagementProps) {
+export function UserManagement({ className, mode }: UserManagementProps) {
   const notify = useNotify();
+  const ability = useAbility();
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState(mode === "roles" ? "roles" : "users");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [showCreateRole, setShowCreateRole] = useState(false);
@@ -288,36 +292,66 @@ export function UserManagement({ className }: UserManagementProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            User & Role Management
+            {mode === "users"
+              ? "User Directory"
+              : mode === "roles"
+              ? "Role Configuration"
+              : "User & Role Management"}
           </CardTitle>
 
           {(!roles || roles.length === 0) && (
-            <Button
-              onClick={() => initializeSystem.mutate()}
-              disabled={initializeSystem.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {initializeSystem.isPending ? "Initializing..." : "Initialize Role System"}
-            </Button>
+            <Can I="manage" a="Role">
+              <Button
+                onClick={() => initializeSystem.mutate()}
+                disabled={initializeSystem.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {initializeSystem.isPending ? "Initializing..." : "Initialize Role System"}
+              </Button>
+            </Can>
           )}
         </div>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Users & Countries
-            </TabsTrigger>
-            <TabsTrigger value="roles" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Roles & Permissions
-            </TabsTrigger>
-            <TabsTrigger value="assignments" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Role Assignments
-            </TabsTrigger>
-          </TabsList>
+          {mode === "users" ? (
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Users Directory
+              </TabsTrigger>
+              <TabsTrigger value="countries-editor" className="flex items-center gap-2">
+                <Map className="h-4 w-4" />
+                Country Metrics Editor
+              </TabsTrigger>
+            </TabsList>
+          ) : mode === "roles" ? (
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="roles" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Roles & Permissions
+              </TabsTrigger>
+              <TabsTrigger value="assignments" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Role Assignments
+              </TabsTrigger>
+            </TabsList>
+          ) : (
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Users & Countries
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Roles & Permissions
+              </TabsTrigger>
+              <TabsTrigger value="assignments" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Role Assignments
+              </TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="users" className="mt-6 space-y-6">
             {/* Quick Stats */}
@@ -353,67 +387,69 @@ export function UserManagement({ className }: UserManagementProps) {
             </div>
 
             {/* Assign User to Country */}
-            <div className="border-t pt-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Assign User to Country</h3>
-                <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <LinkIcon className="mr-2 h-4 w-4" />
-                      Assign User
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Assign User to Country</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="user-select">Select User</Label>
-                        <Select value={selectedUser} onValueChange={setSelectedUser}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a user..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {usersWithCountries?.map((user) => (
-                              <SelectItem key={user.id} value={user.clerkUserId}>
-                                {user.clerkUserId} {user.country && "(Currently linked)"}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="country-select">Select Country</Label>
-                        <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a country..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {countriesWithUsers?.map((country) => (
-                              <SelectItem key={country.id} value={country.id}>
-                                {country.name} {country.user && "(Currently claimed)"}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
-                        Cancel
+            <Can I="manage" a="User">
+              <div className="border-t pt-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Assign User to Country</h3>
+                  <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <LinkIcon className="mr-2 h-4 w-4" />
+                        Assign User
                       </Button>
-                      <Button onClick={handleAssignUser} disabled={assignUserMutation.isPending}>
-                        {assignUserMutation.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Assign
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Assign User to Country</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="user-select">Select User</Label>
+                          <Select value={selectedUser} onValueChange={setSelectedUser}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a user..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {usersWithCountries?.map((user) => (
+                                <SelectItem key={user.id} value={user.clerkUserId}>
+                                  {user.clerkUserId} {user.country && "(Currently linked)"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="country-select">Select Country</Label>
+                          <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a country..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {countriesWithUsers?.map((country) => (
+                                <SelectItem key={country.id} value={country.id}>
+                                  {country.name} {country.user && "(Currently claimed)"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleAssignUser} disabled={assignUserMutation.isPending}>
+                          {assignUserMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Assign
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
-            </div>
+            </Can>
 
             {/* Linked Users */}
             <div className="border-t pt-6">
@@ -463,43 +499,45 @@ export function UserManagement({ className }: UserManagementProps) {
                             onCheckedChange={() =>
                               handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
                             }
-                            disabled={updateMembershipTier.isPending}
+                            disabled={updateMembershipTier.isPending || !ability.can("manage", "User")}
                           />
                         </div>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
-                            <Unlink className="mr-2 h-4 w-4" />
-                            Unlink
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Unlink User from Country</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to unlink <strong>{user.clerkUserId}</strong>{" "}
-                                from <strong>{user.country?.name}</strong>? This action will remove
-                                their access to country-specific features.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogClose>Cancel</AlertDialogClose>
-                              <AlertDialogClose
-                                onClick={() =>
-                                  user.country &&
-                                  handleUnlinkUser(user.clerkUserId, user.country.id)
-                                }
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                disabled={unassignUserMutation.isPending}
-                              >
-                                {unassignUserMutation.isPending ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Unlink className="mr-2 h-4 w-4" />
-                                )}
-                                Unlink
-                              </AlertDialogClose>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Can I="manage" a="User">
+                          <AlertDialog>
+                            <AlertDialogTrigger className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
+                              <Unlink className="mr-2 h-4 w-4" />
+                              Unlink
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Unlink User from Country</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to unlink <strong>{user.clerkUserId}</strong>{" "}
+                                  from <strong>{user.country?.name}</strong>? This action will remove
+                                  their access to country-specific features.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogClose>Cancel</AlertDialogClose>
+                                <AlertDialogClose
+                                  onClick={() =>
+                                    user.country &&
+                                    handleUnlinkUser(user.clerkUserId, user.country.id)
+                                  }
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  disabled={unassignUserMutation.isPending}
+                                >
+                                  {unassignUserMutation.isPending ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Unlink className="mr-2 h-4 w-4" />
+                                  )}
+                                  Unlink
+                                </AlertDialogClose>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </Can>
                       </div>
                     </div>
                   ))
@@ -552,7 +590,7 @@ export function UserManagement({ className }: UserManagementProps) {
                             onCheckedChange={() =>
                               handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
                             }
-                            disabled={updateMembershipTier.isPending}
+                            disabled={updateMembershipTier.isPending || !ability.can("manage", "User")}
                           />
                         </div>
                         <Badge variant="outline" className="border-amber-600 text-amber-600">
@@ -572,124 +610,126 @@ export function UserManagement({ className }: UserManagementProps) {
                 <h3 className="text-lg font-semibold">System Roles</h3>
                 <p className="text-muted-foreground text-sm">Manage roles and their permissions</p>
               </div>
-              <Dialog open={showCreateRole} onOpenChange={setShowCreateRole}>
-                <DialogTrigger asChild>
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Role
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Create New Role</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium">Role Name</label>
-                        <Input
-                          value={roleForm.name}
-                          onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
-                          placeholder="e.g., moderator"
-                          pattern="^[a-z_]+$"
-                        />
-                        <p className="mt-1 text-xs text-gray-500">
-                          Lowercase letters and underscores only
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Display Name</label>
-                        <Input
-                          value={roleForm.displayName}
-                          onChange={(e) =>
-                            setRoleForm({ ...roleForm, displayName: e.target.value })
-                          }
-                          placeholder="e.g., Content Moderator"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Priority Level</label>
-                      <Input
-                        type="number"
-                        value={roleForm.level}
-                        onChange={(e) =>
-                          setRoleForm({ ...roleForm, level: parseInt(e.target.value) })
-                        }
-                        min={0}
-                        max={1000}
-                      />
-                      <p className="mt-1 text-xs text-gray-500">
-                        Lower numbers = higher priority (0 = highest)
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Description</label>
-                      <Textarea
-                        value={roleForm.description}
-                        onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
-                        placeholder="Brief description of the role's responsibilities"
-                      />
-                    </div>
-
-                    {permissions && (
-                      <div>
-                        <label className="text-sm font-medium">Permissions</label>
-                        <div className="max-h-60 overflow-y-auto rounded-lg border p-4">
-                          {Object.entries(permissions).map(([category, categoryPermissions]) => (
-                            <div key={category} className="mb-4">
-                              <h4 className="mb-2 font-medium text-gray-800 capitalize">
-                                {category}
-                              </h4>
-                              <div className="space-y-2">
-                                {categoryPermissions.map((permission: any) => (
-                                  <div key={permission.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={permission.id}
-                                      checked={roleForm.permissionIds.includes(permission.id)}
-                                      onCheckedChange={(checked) => {
-                                        if (checked) {
-                                          setRoleForm({
-                                            ...roleForm,
-                                            permissionIds: [
-                                              ...roleForm.permissionIds,
-                                              permission.id,
-                                            ],
-                                          });
-                                        } else {
-                                          setRoleForm({
-                                            ...roleForm,
-                                            permissionIds: roleForm.permissionIds.filter(
-                                              (id) => id !== permission.id
-                                            ),
-                                          });
-                                        }
-                                      }}
-                                    />
-                                    <label htmlFor={permission.id} className="text-sm">
-                                      {permission.displayName}
-                                    </label>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+              <Can I="manage" a="Role">
+                <Dialog open={showCreateRole} onOpenChange={setShowCreateRole}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Role
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create New Role</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium">Role Name</label>
+                          <Input
+                            value={roleForm.name}
+                            onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
+                            placeholder="e.g., moderator"
+                            pattern="^[a-z_]+$"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Lowercase letters and underscores only
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Display Name</label>
+                          <Input
+                            value={roleForm.displayName}
+                            onChange={(e) =>
+                              setRoleForm({ ...roleForm, displayName: e.target.value })
+                            }
+                            placeholder="e.g., Content Moderator"
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowCreateRole(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreateRole} disabled={createRole.isPending}>
-                      {createRole.isPending ? "Creating..." : "Create Role"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+
+                      <div>
+                        <label className="text-sm font-medium">Priority Level</label>
+                        <Input
+                          type="number"
+                          value={roleForm.level}
+                          onChange={(e) =>
+                            setRoleForm({ ...roleForm, level: parseInt(e.target.value) })
+                          }
+                          min={0}
+                          max={1000}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Lower numbers = higher priority (0 = highest)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <Textarea
+                          value={roleForm.description}
+                          onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
+                          placeholder="Brief description of the role's responsibilities"
+                        />
+                      </div>
+
+                      {permissions && (
+                        <div>
+                          <label className="text-sm font-medium">Permissions</label>
+                          <div className="max-h-60 overflow-y-auto rounded-lg border p-4">
+                            {Object.entries(permissions).map(([category, categoryPermissions]) => (
+                              <div key={category} className="mb-4">
+                                <h4 className="mb-2 font-medium text-gray-800 capitalize">
+                                  {category}
+                                </h4>
+                                <div className="space-y-2">
+                                  {categoryPermissions.map((permission: any) => (
+                                    <div key={permission.id} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={permission.id}
+                                        checked={roleForm.permissionIds.includes(permission.id)}
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            setRoleForm({
+                                              ...roleForm,
+                                              permissionIds: [
+                                                ...roleForm.permissionIds,
+                                                permission.id,
+                                              ],
+                                            });
+                                          } else {
+                                            setRoleForm({
+                                              ...roleForm,
+                                              permissionIds: roleForm.permissionIds.filter(
+                                                (id) => id !== permission.id
+                                              ),
+                                            });
+                                          }
+                                        }}
+                                      />
+                                      <label htmlFor={permission.id} className="text-sm">
+                                        {permission.displayName}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowCreateRole(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateRole} disabled={createRole.isPending}>
+                        {createRole.isPending ? "Creating..." : "Create Role"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </Can>
             </div>
 
             <Table>
@@ -734,59 +774,61 @@ export function UserManagement({ className }: UserManagementProps) {
                 <h3 className="text-lg font-semibold">User Role Assignments</h3>
                 <p className="text-muted-foreground text-sm">Assign and manage user roles</p>
               </div>
-              <Dialog open={showUserAssignment} onOpenChange={setShowUserAssignment}>
-                <DialogTrigger asChild>
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Assign Role
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Assign Role to User</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div>
-                      <label className="text-sm font-medium">User ID (Clerk)</label>
-                      <Input
-                        value={userAssignment.clerkUserId}
-                        onChange={(e) =>
-                          setUserAssignment({ ...userAssignment, clerkUserId: e.target.value })
-                        }
-                        placeholder="Enter Clerk User ID"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Role</label>
-                      <Select
-                        value={userAssignment.roleId}
-                        onValueChange={(value) =>
-                          setUserAssignment({ ...userAssignment, roleId: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {roles?.map((role) => (
-                            <SelectItem key={role.id} value={role.id}>
-                              {role.displayName} (Level {role.level})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowUserAssignment(false)}>
-                      Cancel
+              <Can I="manage" a="Role">
+                <Dialog open={showUserAssignment} onOpenChange={setShowUserAssignment}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Assign Role
                     </Button>
-                    <Button onClick={handleAssignRole} disabled={assignRole.isPending}>
-                      {assignRole.isPending ? "Assigning..." : "Assign Role"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Assign Role to User</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div>
+                        <label className="text-sm font-medium">User ID (Clerk)</label>
+                        <Input
+                          value={userAssignment.clerkUserId}
+                          onChange={(e) =>
+                            setUserAssignment({ ...userAssignment, clerkUserId: e.target.value })
+                          }
+                          placeholder="Enter Clerk User ID"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Role</label>
+                        <Select
+                          value={userAssignment.roleId}
+                          onValueChange={(value) =>
+                            setUserAssignment({ ...userAssignment, roleId: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roles?.map((role) => (
+                              <SelectItem key={role.id} value={role.id}>
+                                {role.displayName} (Level {role.level})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowUserAssignment(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAssignRole} disabled={assignRole.isPending}>
+                        {assignRole.isPending ? "Assigning..." : "Assign Role"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </Can>
             </div>
 
             <div className="mb-4 grid grid-cols-2 gap-4">
@@ -867,7 +909,7 @@ export function UserManagement({ className }: UserManagementProps) {
                           onCheckedChange={() =>
                             handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
                           }
-                          disabled={updateMembershipTier.isPending}
+                          disabled={updateMembershipTier.isPending || !ability.can("manage", "User")}
                         />
                         <Badge
                           variant={
@@ -885,20 +927,25 @@ export function UserManagement({ className }: UserManagementProps) {
                     </TableCell>
                     <TableCell>
                       {user.role && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveUserRole(user.clerkUserId)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Remove Role
-                        </Button>
+                        <Can I="manage" a="Role">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveUserRole(user.clerkUserId)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Remove Role
+                          </Button>
+                        </Can>
                       )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+          </TabsContent>
+          <TabsContent value="countries-editor" className="mt-6 space-y-6">
+            <CountryAdminPanel />
           </TabsContent>
         </Tabs>
       </CardContent>

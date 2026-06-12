@@ -12,3 +12,4 @@ export { UserManagement } from "./UserManagement";
 export { AdminSidebar } from "./AdminSidebar";
 export { AdminHeader } from "./AdminHeader";
 export { SystemValidationDashboard } from "./SystemValidationDashboard";
+export { AdminNavigationProvider, useAdminNavigation } from "./AdminNavigationContext";

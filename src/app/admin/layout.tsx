@@ -5,6 +5,7 @@
 
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";
+import { AdminNavigationProvider } from "./_components";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
@@ -82,7 +83,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <AdminErrorBoundary>
-      <AdminSidebarLayout>{children}</AdminSidebarLayout>
+      <AdminNavigationProvider>
+        <AdminSidebarLayout>{children}</AdminSidebarLayout>
+      </AdminNavigationProvider>
     </AdminErrorBoundary>
   );
 }

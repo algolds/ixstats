@@ -130,6 +130,9 @@ import { pollsRouter } from "./routers/polls";
 import { forumRouter } from "./routers/forum";
 import { ixnayidRouter } from "./routers/ixnayid";
 
+// ─── Sports ──────────────────────────────────────────────────────────────────
+import { sportsRouter } from "./routers/sports";
+
 // ─── MyCountry ───────────────────────────────────────────────────────────────
 import { myCountryRouter } from "./routers/mycountry";
 import { historicalRouter } from "./routers/historical";
@@ -251,6 +254,9 @@ export const appRouter = createTRPCRouter({
   // ─── Forum & Identity ──────────────────────────────────────────────────────
   forum: safeRouter("forum", () => forumRouter),
   ixnayid: safeRouter("ixnayid", () => ixnayidRouter),
+
+  // ─── Sports ────────────────────────────────────────────────────────────────
+  sports: safeRouter("sports", () => sportsRouter),
 
   // ─── MyCountry ─────────────────────────────────────────────────────────────
   mycountry: safeRouter("mycountry", () => myCountryRouter),
