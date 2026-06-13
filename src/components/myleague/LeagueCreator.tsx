@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { Loader2, ArrowLeft, ArrowRight, Check, Trophy, RotateCcw } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRight, Check, Trophy, RotateCcw, ImageIcon, Trash2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -18,6 +19,12 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import type { ArchetypeType } from "~/lib/sports";
+
+const MediaSearchModal = dynamic(
+  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
+  { ssr: false }
+);
+
 
 const archetypeLabels: Record<ArchetypeType, string> = {
   league: "League",
@@ -50,6 +57,16 @@ const cardVariants = {
   tap: { scale: 0.98 },
 };
 
+const SPORT_COMMONS_CATEGORIES: Record<string, string> = {
+  soccer: "Association football stadiums",
+  football: "American football stadiums",
+  hockey: "Ice hockey arenas",
+  basketball: "Basketball venues",
+  baseball: "Baseball stadiums",
+  f1: "Formula One circuits",
+  boxing: "Boxing matches",
+};
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function LeagueCreator({
@@ -80,6 +97,68 @@ export function LeagueCreator({
   const [divisions, setDivisions] = useState(2);
   const [weightClassesRaw, setWeightClassesRaw] = useState("");
   const [raceCount, setRaceCount] = useState(20);
+
+  // Cover image suggestion states
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [autoSelectedForPreset, setAutoSelectedForPreset] = useState<string | null>(null);
+  const [mediaSearchOpen, setMediaSearchOpen] = useState(false);
+
+  // Commons category query
+  const activeCategory = selectedPresetKey ? SPORT_COMMONS_CATEGORIES[selectedPresetKey] : null;
+  const { data: commonsData, isLoading: commonsLoading } = api.commons.getCategoryFiles.useQuery(
+    {
+      category: activeCategory ?? "",
+      limit: 35,
+    },
+    {
+      enabled: !!open && !!activeCategory && currentStep >= 2,
+    }
+  );
+
+  useEffect(() => {
+    if (selectedPresetKey !== autoSelectedForPreset) {
+      setAutoSelectedForPreset(null);
+    }
+  }, [selectedPresetKey, autoSelectedForPreset]);
+
+  useEffect(() => {
+    if (
+      commonsData?.images &&
+      commonsData.images.length > 0 &&
+      selectedPresetKey &&
+      autoSelectedForPreset !== selectedPresetKey &&
+      !coverImage
+    ) {
+      const randomIndex = Math.floor(Math.random() * commonsData.images.length);
+      const suggestedImage = commonsData.images[randomIndex]?.url ?? null;
+      if (suggestedImage) {
+        setCoverImage(suggestedImage);
+        setAutoSelectedForPreset(selectedPresetKey);
+      }
+    }
+  }, [commonsData, selectedPresetKey, autoSelectedForPreset, coverImage]);
+
+  const handleShuffleCover = useCallback(() => {
+    if (!commonsData?.images || commonsData.images.length === 0) return;
+    const available = commonsData.images.filter((img) => img.url !== coverImage);
+    if (available.length > 0) {
+      const randomIndex = Math.floor(Math.random() * available.length);
+      const newUrl = available[randomIndex]?.url;
+      if (newUrl) {
+        setCoverImage(newUrl);
+      }
+    } else {
+      const randomIndex = Math.floor(Math.random() * commonsData.images.length);
+      const newUrl = commonsData.images[randomIndex]?.url;
+      if (newUrl) {
+        setCoverImage(newUrl);
+      }
+    }
+  }, [commonsData, coverImage]);
+
+  const handleRemoveCover = useCallback(() => {
+    setCoverImage(null);
+  }, []);
 
   // ── Derived ─────────────────────────────────────────────────────────────
   const selectedPreset = useMemo(() => {
@@ -125,6 +204,9 @@ export function LeagueCreator({
     setDivisions(2);
     setWeightClassesRaw("");
     setRaceCount(20);
+    setCoverImage(null);
+    setAutoSelectedForPreset(null);
+    setMediaSearchOpen(false);
   }, []);
 
   const handleCreateAnother = useCallback(() => {
@@ -166,6 +248,7 @@ export function LeagueCreator({
         nationAffiliation: null,
         settings,
         isCanonical,
+        coverImage: coverImage || null,
       });
 
       setCreatedLeagueId(result.id);
@@ -188,6 +271,7 @@ export function LeagueCreator({
     createMutation,
     notify,
     onCreated,
+    coverImage,
   ]);
 
   const handleOpenChange = useCallback(
@@ -411,6 +495,89 @@ export function LeagueCreator({
         </div>
       )}
 
+      {/* League Cover Image */}
+      <div className="space-y-2">
+        <Label>League Cover Image</Label>
+
+        {commonsLoading && !coverImage ? (
+          <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-xs text-muted-foreground">Fetching suggestion...</span>
+          </div>
+        ) : coverImage ? (
+          <div className="group relative h-40 w-full overflow-hidden rounded-lg border border-border">
+            <img
+              src={coverImage}
+              alt="Suggested Cover"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-8 text-xs gap-1"
+                onClick={handleShuffleCover}
+                disabled={!commonsData?.images || commonsData.images.length <= 1}
+              >
+                <RotateCcw className="h-3 w-3" />
+                Shuffle
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-8 text-xs gap-1"
+                onClick={() => setMediaSearchOpen(true)}
+              >
+                <ImageIcon className="h-3 w-3" />
+                Browse
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="h-8 text-xs gap-1"
+                onClick={handleRemoveCover}
+              >
+                <Trash2 className="h-3 w-3" />
+                Remove
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex h-40 w-full flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 p-4">
+            <ImageIcon className="h-8 w-8 text-muted-foreground/60 mb-2" />
+            <p className="text-xs text-muted-foreground mb-3">No cover image selected</p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1"
+                onClick={() => setMediaSearchOpen(true)}
+              >
+                <ImageIcon className="h-3 w-3" />
+                Browse Media
+              </Button>
+              {commonsData?.images && commonsData.images.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1"
+                  onClick={handleShuffleCover}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Suggest Image
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Archetype preview */}
       {archetypeLabel && (
         <div className="border-border/50 bg-muted/50 rounded-lg border px-3 py-2.5">
@@ -456,7 +623,17 @@ export function LeagueCreator({
       >
         <DialogDescription>Review your league configuration before creating it.</DialogDescription>
 
-        <Card className="facet-hierarchy-child border-border/60 bg-card/50">
+        <Card className="facet-hierarchy-child overflow-hidden border-border/60 bg-card/50">
+          {coverImage && (
+            <div className="relative h-36 w-full overflow-hidden">
+              <img
+                src={coverImage}
+                alt="League Cover"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/45 to-transparent" />
+            </div>
+          )}
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
               <span className="text-3xl">{selectedPreset?.icon}</span>
@@ -590,34 +767,47 @@ export function LeagueCreator({
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        showCloseButton={!createMutation.isPending}
-        className={cn(currentStep === 1 ? "sm:max-w-xl" : "sm:max-w-lg")}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          padding: 0,
-          maxHeight: "85vh",
-          overflow: "hidden",
-        }}
-      >
-        <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
-          <DialogTitle>{currentStep === 4 ? "All Set!" : "Create a League"}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent
+          showCloseButton={!createMutation.isPending}
+          className={cn(currentStep === 1 ? "sm:max-w-xl" : "sm:max-w-lg")}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 0,
+            padding: 0,
+            maxHeight: "85vh",
+            overflow: "hidden",
+          }}
+        >
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
+            <DialogTitle>{currentStep === 4 ? "All Set!" : "Create a League"}</DialogTitle>
+          </DialogHeader>
 
-        <div className="shrink-0 px-6 pt-4 pb-0">{stepIndicator}</div>
+          <div className="shrink-0 px-6 pt-4 pb-0">{stepIndicator}</div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-          <AnimatePresence mode="wait">
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
-          </AnimatePresence>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <AnimatePresence mode="wait">
+              {currentStep === 1 && renderStep1()}
+              {currentStep === 2 && renderStep2()}
+              {currentStep === 3 && renderStep3()}
+              {currentStep === 4 && renderStep4()}
+            </AnimatePresence>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {mediaSearchOpen && (
+        <MediaSearchModal
+          isOpen={mediaSearchOpen}
+          onClose={() => setMediaSearchOpen(false)}
+          onImageSelect={(url) => {
+            setCoverImage(url);
+            setMediaSearchOpen(false);
+          }}
+        />
+      )}
+    </>
   );
 }

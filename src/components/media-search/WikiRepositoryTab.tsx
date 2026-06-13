@@ -212,7 +212,12 @@ export function WikiRepositoryTab({
 
   // Client-side dynamic filtering of wiki results
   const filteredWikiImages = useMemo(() => {
+    const seenKeys = new Set<string>();
     return wikiImages.filter((img) => {
+      const uniqueKey = `${img.pageid}-${img.title}`;
+      if (seenKeys.has(uniqueKey)) return false;
+      seenKeys.add(uniqueKey);
+
       if (fileTypeFilter !== "all") {
         const type = getImageType(img.mime ?? "", img.title);
         if (type !== fileTypeFilter) return false;
@@ -453,13 +458,13 @@ export function WikiRepositoryTab({
             ) : filteredWikiImages.length > 0 ? (
               <div className="wikios-commons-results flex-1">
                 <div className="wikios-commons-grid">
-                  {filteredWikiImages.map((img) => {
+                  {filteredWikiImages.map((img, index) => {
                     const isSelected = selectedImageObj?.pageid === img.pageid;
                     const cleanTitle = img.title.replace(/^File:/, "").replace(/_/g, " ");
 
                     return (
                       <button
-                        key={`${img.pageid}-${img.title}`}
+                        key={`${img.pageid}-${img.title}-${index}`}
                         onClick={() => onSelectImage(img)}
                         onDoubleClick={onDoubleClickConfirm}
                         className={cn(

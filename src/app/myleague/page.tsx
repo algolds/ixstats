@@ -8,19 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Plus, Trophy, Users } from "lucide-react";
+import { Plus, Trophy, Users, Star } from "lucide-react";
 import { motion } from "motion/react";
 import { LeagueCreator } from "~/components/myleague/LeagueCreator";
 import { withBasePath } from "~/lib/base-path";
 
-const SPORT_EMOJIS: Record<string, string> = {
-  soccer: "\u26BD",
-  football: "\uD83C\uDFC8",
-  hockey: "\uD83C\uDFD2",
-  basketball: "\uD83C\uDFC0",
-  baseball: "\u26BE",
-  f1: "\uD83C\uDFCE\uFE0F",
-  boxing: "\uD83E\uDD4A",
+const SPORT_LABELS: Record<string, string> = {
+  soccer: "Soccer",
+  football: "American Football",
+  hockey: "Ice Hockey",
+  basketball: "Basketball",
+  baseball: "Baseball",
+  f1: "Formula 1",
+  boxing: "Boxing",
 };
 
 const ARCHETYPE_LABELS: Record<string, string> = {
@@ -55,7 +55,19 @@ export default function MyLeaguePage() {
         card={{
           src: (league as any).coverImage || "https://ixwiki.com/trophy-card.png",
           title: league.name,
-          category: `Featured · ${SPORT_EMOJIS[league.sportPreset] ?? "⚽"} ${ARCHETYPE_LABELS[league.archetype] ?? league.archetype}`,
+          category: (
+            <div className="flex flex-col items-start gap-1.5">
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1 border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 uppercase shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+              >
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Featured League
+              </Badge>
+              <span className="opacity-80">
+                {SPORT_LABELS[league.sportPreset] ?? league.sportPreset} · {ARCHETYPE_LABELS[league.archetype] ?? league.archetype}
+              </span>
+            </div>
+          ),
           content: (
             <div className="space-y-4 p-6 text-left dark:text-white">
               <h4 className="text-xl font-bold">{league.name}</h4>
@@ -105,7 +117,7 @@ export default function MyLeaguePage() {
         card={{
           src: (league as any).coverImage || (league as any).logo || "https://ixwiki.com/sports-logo.png",
           title: league.name,
-          category: `${SPORT_EMOJIS[league.sportPreset] ?? "⚽"} ${ARCHETYPE_LABELS[league.archetype] ?? league.archetype}`,
+          category: `${SPORT_LABELS[league.sportPreset] ?? league.sportPreset} · ${ARCHETYPE_LABELS[league.archetype] ?? league.archetype}`,
           content: (
             <div className="space-y-4 p-6 text-left dark:text-white">
               <h4 className="text-xl font-bold">{league.name}</h4>

@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 
 interface PlayerStats1Props {
   player: {
@@ -83,7 +84,7 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
   }
 
   const fallbackPhoto = "/images/sportyblocks/player-1.png";
-  const playerPhoto = player.imageUrl ?? fallbackPhoto;
+  const playerPhoto = getPlayerPhotoUrl(player);
 
   return (
     <div className={cn("mx-auto w-full px-2", className)}>

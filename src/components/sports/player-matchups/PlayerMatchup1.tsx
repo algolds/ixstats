@@ -73,7 +73,7 @@ export default function PlayerMatchup1({
               }}
             >
               <img
-                src={playerA.imageUrl ?? fallbackPhoto}
+                src={getPlayerPhotoUrl(playerA)}
                 alt={`${playerA.firstName} ${playerA.lastName}`}
                 className="w-full h-full object-contain rounded-full drop-shadow-md"
                 onError={(e) => {
@@ -113,7 +113,7 @@ export default function PlayerMatchup1({
               }}
             >
               <img
-                src={playerB.imageUrl ?? fallbackPhoto}
+                src={getPlayerPhotoUrl(playerB)}
                 alt={`${playerB.firstName} ${playerB.lastName}`}
                 className="w-full h-full object-contain rounded-full drop-shadow-md"
                 onError={(e) => {

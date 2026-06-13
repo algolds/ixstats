@@ -35,6 +35,7 @@ import {
 } from "~/components/ui/sheet";
 import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
 import PlayerStats from "~/components/sports/player-stats/PlayerStats1";
+import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -274,11 +275,35 @@ export function TeamRosterModal({
           )}
         >
           {/* # Number */}
-          {player.number && (
-            <span className="w-7 text-center text-xs font-bold text-foreground/15 tabular-nums">
+          {player.number ? (
+            <span className="w-7 text-center text-xs font-bold text-foreground/15 tabular-nums shrink-0">
               #{player.number}
             </span>
+          ) : (
+            <span className="w-7 shrink-0" />
           )}
+
+          {/* Avatar Thumbnail */}
+          <div
+            className="h-8 w-8 shrink-0 rounded-full border border-border/30 overflow-hidden flex items-center justify-center bg-muted/30"
+            style={{
+              background: team.color ? `linear-gradient(135deg, ${team.color}20, ${team.color}05)` : undefined,
+            }}
+          >
+            <img
+              src={getPlayerPhotoUrl({
+                id: player.id,
+                firstName: player.firstName,
+                lastName: player.lastName,
+                imageUrl: player.imageUrl,
+              })}
+              alt=""
+              className="h-full w-full object-contain drop-shadow-sm"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/images/sportyblocks/player-placeholder.png";
+              }}
+            />
+          </div>
 
           {/* Name + meta */}
           <div className="min-w-0 flex-1">
@@ -439,9 +464,9 @@ export function TeamRosterModal({
                   <img
                     src={team.coverImage}
                     alt=""
-                    className="h-full w-full object-cover opacity-10 filter blur-[1px]"
+                    className="h-full w-full object-cover opacity-40 filter blur-[0.5px]"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
                 </div>
               )}
               <div className="relative z-10">
@@ -490,7 +515,7 @@ export function TeamRosterModal({
             </div>
 
             {/* Team metadata row */}
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground px-5">
               {team.city && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3 w-3" /> {team.city}
@@ -519,7 +544,7 @@ export function TeamRosterModal({
             </div>
 
             {/* ELO / Budget summary */}
-            <div className="mt-3 flex gap-3">
+            <div className="mt-3 flex gap-3 px-5 pb-3">
               <div className="border-border/30 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5">
                 <Trophy className="h-3.5 w-3.5 text-amber-400" />
                 <span className="text-xs text-muted-foreground">Rating</span>
@@ -544,184 +569,184 @@ export function TeamRosterModal({
                 </div>
               )}
             </div>
-          </div>
 
-          {/* ── 2. Contextual Actions Bar ──────────────────────────────── */}
-          <div className="shrink-0 border-b border-border/30 px-5 py-3">
-            {!team.ownerUserId && (
-              <Button
-                onClick={handleClaim}
-                disabled={isClaiming || claimTeam.isPending || !user}
-                className="w-full gap-2 hover:opacity-95 transition-all"
-                style={{
-                  backgroundColor: team.color ? `${team.color}15` : undefined,
-                  color: team.color ?? undefined,
-                  border: team.color ? `1px solid ${team.color}30` : undefined,
-                }}
-                size="sm"
-              >
-                {isClaiming || claimTeam.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <BadgeCheck className="h-4 w-4" />
-                )}
-                Claim Franchise (50 Credits)
-              </Button>
-            )}
-
-            {isOwner && (
-              <div className="space-y-2">
+            {/* ── 2. Contextual Actions Bar ──────────────────────────────── */}
+            <div className="shrink-0 border-b border-border/30 px-5 py-3">
+              {!team.ownerUserId && (
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowInvokeSaint(!showInvokeSaint)}
-                  className="w-full hover:opacity-95 transition-all"
+                  onClick={handleClaim}
+                  disabled={isClaiming || claimTeam.isPending || !user}
+                  className="w-full gap-2 hover:opacity-95 transition-all"
                   style={{
-                    border: team.color ? `1px solid ${team.color}20` : undefined,
-                    backgroundColor: team.color ? `${team.color}0d` : undefined,
+                    backgroundColor: team.color ? `${team.color}15` : undefined,
                     color: team.color ?? undefined,
+                    border: team.color ? `1px solid ${team.color}30` : undefined,
                   }}
+                  size="sm"
                 >
-                  <Flame className="mr-1.5 h-4 w-4" />
-                  Invoke Patron Saint
-                </Button>
-
-                <AnimatePresence>
-                  {showInvokeSaint && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div
-                        className="flex items-center gap-2 rounded-lg bg-muted/20 p-3"
-                        style={{
-                          boxShadow: team.color ? `0 0 0 1px ${team.color}20` : undefined,
-                        }}
-                      >
-                        <Input
-                          value={saintName}
-                          onChange={(e) => setSaintName(e.target.value)}
-                          placeholder="Enter saint name..."
-                          className="h-8 flex-1 border-border/50 bg-muted/50 text-xs text-foreground placeholder:text-muted-foreground/40"
-                          onKeyDown={(e) => e.key === "Enter" && handleInvokeSaint()}
-                        />
-                        <Button
-                          size="sm"
-                          onClick={handleInvokeSaint}
-                          disabled={invokePatronSaint.isPending || !saintName.trim()}
-                          className="h-8 text-xs"
-                        >
-                          {invokePatronSaint.isPending ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : null}
-                          Invoke (100c)
-                        </Button>
-                      </div>
-                    </motion.div>
+                  {isClaiming || claimTeam.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <BadgeCheck className="h-4 w-4" />
                   )}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
+                  Claim Franchise (50 Credits)
+                </Button>
+              )}
 
-          {/* ── 3. Interactive Roster List ─────────────────────────────── */}
-          <div className="flex-1 overflow-y-auto">
-            {/* Starters */}
-            {starters.length > 0 && (
-              <div className="px-5 pt-4 pb-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                  Starters
-                </h4>
-              </div>
-            )}
-            <div className="divide-y divide-border/10">
-              {starters.map((player, i) => renderPlayerRow(player, i))}
-            </div>
+              {isOwner && (
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowInvokeSaint(!showInvokeSaint)}
+                    className="w-full hover:opacity-95 transition-all"
+                    style={{
+                      border: team.color ? `1px solid ${team.color}20` : undefined,
+                      backgroundColor: team.color ? `${team.color}0d` : undefined,
+                      color: team.color ?? undefined,
+                    }}
+                  >
+                    <Flame className="mr-1.5 h-4 w-4" />
+                    Invoke Patron Saint
+                  </Button>
 
-            {/* Bench */}
-            {bench.length > 0 && (
-              <div className="px-5 pt-5 pb-2">
-                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                  Bench
-                </h4>
-              </div>
-            )}
-            <div className="divide-y divide-border/10">
-              {bench.map((player, i) => renderPlayerRow(player, starters.length + i))}
-            </div>
-
-            {/* Coaches section */}
-            {team.coaches && team.coaches.length > 0 && (
-              <>
-                <div className="px-5 pt-5 pb-2">
-                  <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                    Coaching Staff
-                  </h4>
-                </div>
-                <div className="divide-y divide-border/10">
-                  {team.coaches.map((coach) => (
-                    <div
-                      key={coach.id}
-                      className="flex items-center gap-3 px-5 py-2.5 text-sm"
-                    >
-                      <span className="text-xs font-medium text-muted-foreground">{coach.role}</span>
-                      <span className="text-foreground">
-                        {coach.firstName} {coach.lastName}
-                      </span>
-                      {coach.age && (
-                        <span className="ml-auto text-xs text-muted-foreground/70">Age {coach.age}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Season history summary */}
-            {team.seasons && team.seasons.length > 0 && (
-              <>
-                <div className="px-5 pt-5 pb-2">
-                  <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                    Season History
-                  </h4>
-                </div>
-                <div className="divide-y divide-border/10 pb-4">
-                  {team.seasons.slice(0, 5).map((ts) => (
-                    <div
-                      key={ts.season.id}
-                      className="flex items-center gap-3 px-5 py-2 text-sm"
-                    >
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground/40" />
-                      <span className="text-foreground">Season {ts.season.seasonNumber}</span>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "rounded px-1.5 py-0 text-[10px]",
-                          ts.season.status === "in_progress"
-                            ? "border-green-500/30 bg-green-500/10 text-green-400"
-                            : ts.season.status === "completed"
-                              ? "border-slate-500/30 bg-muted/60 text-muted-foreground"
-                              : "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                        )}
+                  <AnimatePresence>
+                    {showInvokeSaint && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
                       >
-                        {ts.season.status}
-                      </Badge>
-                    </div>
-                  ))}
+                        <div
+                          className="flex items-center gap-2 rounded-lg bg-muted/20 p-3"
+                          style={{
+                            boxShadow: team.color ? `0 0 0 1px ${team.color}20` : undefined,
+                          }}
+                        >
+                          <Input
+                            value={saintName}
+                            onChange={(e) => setSaintName(e.target.value)}
+                            placeholder="Enter saint name..."
+                            className="h-8 flex-1 border-border/50 bg-muted/50 text-xs text-foreground placeholder:text-muted-foreground/40"
+                            onKeyDown={(e) => e.key === "Enter" && handleInvokeSaint()}
+                          />
+                          <Button
+                            size="sm"
+                            onClick={handleInvokeSaint}
+                            disabled={invokePatronSaint.isPending || !saintName.trim()}
+                            className="h-8 text-xs"
+                          >
+                            {invokePatronSaint.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : null}
+                            Invoke (100c)
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
-            {/* Empty roster */}
-            {starters.length === 0 && bench.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-2 px-5 py-12 text-center">
-                <Users className="h-8 w-8 text-muted-foreground/30" />
-                <span className="text-sm text-muted-foreground/70">No active players on roster</span>
+            {/* ── 3. Interactive Roster List ─────────────────────────────── */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Starters */}
+              {starters.length > 0 && (
+                <div className="px-5 pt-4 pb-2">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    Starters
+                  </h4>
+                </div>
+              )}
+              <div className="divide-y divide-border/10">
+                {starters.map((player, i) => renderPlayerRow(player, i))}
               </div>
-            )}
+
+              {/* Bench */}
+              {bench.length > 0 && (
+                <div className="px-5 pt-5 pb-2">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    Bench
+                  </h4>
+                </div>
+              )}
+              <div className="divide-y divide-border/10">
+                {bench.map((player, i) => renderPlayerRow(player, starters.length + i))}
+              </div>
+
+              {/* Coaches section */}
+              {team.coaches && team.coaches.length > 0 && (
+                <>
+                  <div className="px-5 pt-5 pb-2">
+                    <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                      Coaching Staff
+                  </h4>
+                  </div>
+                  <div className="divide-y divide-border/10">
+                    {team.coaches.map((coach) => (
+                      <div
+                        key={coach.id}
+                        className="flex items-center gap-3 px-5 py-2.5 text-sm"
+                      >
+                        <span className="text-xs font-medium text-muted-foreground">{coach.role}</span>
+                        <span className="text-foreground">
+                          {coach.firstName} {coach.lastName}
+                        </span>
+                        {coach.age && (
+                          <span className="ml-auto text-xs text-muted-foreground/70">Age {coach.age}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Season history summary */}
+              {team.seasons && team.seasons.length > 0 && (
+                <>
+                  <div className="px-5 pt-5 pb-2">
+                    <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                      Season History
+                  </h4>
+                  </div>
+                  <div className="divide-y divide-border/10 pb-4">
+                    {team.seasons.slice(0, 5).map((ts) => (
+                      <div
+                        key={ts.season.id}
+                        className="flex items-center gap-3 px-5 py-2 text-sm"
+                      >
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        <span className="text-foreground">Season {ts.season.seasonNumber}</span>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded px-1.5 py-0 text-[10px]",
+                            ts.season.status === "in_progress"
+                              ? "border-green-500/30 bg-green-500/10 text-green-400"
+                              : ts.season.status === "completed"
+                                ? "border-slate-500/30 bg-muted/60 text-muted-foreground"
+                                : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                          )}
+                        >
+                          {ts.season.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Empty roster */}
+              {starters.length === 0 && bench.length === 0 && (
+                <div className="flex flex-col items-center justify-center gap-2 px-5 py-12 text-center">
+                  <Users className="h-8 w-8 text-muted-foreground/30" />
+                  <span className="text-sm text-muted-foreground/70">No active players on roster</span>
+                </div>
+              )}
+            </div>
           </div>
         </SheetContent>
       </Sheet>

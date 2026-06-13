@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState, createContext, useContext } from "react";
+import { createPortal } from "react-dom";
 import { IconArrowNarrowLeft, IconArrowNarrowRight, IconX } from "@tabler/icons-react";
 import { cn } from "~/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
@@ -14,8 +15,12 @@ interface CarouselProps {
 type Card = {
   src: string;
   title: string;
-  category: string;
+  category: React.ReactNode;
   content: React.ReactNode;
+  logo?: string;
+  description?: React.ReactNode;
+  footer?: React.ReactNode;
+  quickActions?: React.ReactNode;
 };
 
 export const CarouselContext = createContext<{
@@ -152,6 +157,11 @@ export const Card = ({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { onCardClose, currentIndex } = useContext(CarouselContext);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -181,67 +191,119 @@ export const Card = ({
     onCardClose(index);
   };
 
+  const modalContent = (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[var(--z-modal,100005)] h-screen overflow-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 h-full w-full bg-black/80 backdrop-blur-lg"
+          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            ref={containerRef}
+            layoutId={layout ? `card-${card.title}` : undefined}
+            className="relative z-[60] mx-auto my-10 h-fit max-w-5xl overflow-hidden rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900"
+          >
+            {/* Modal Background Image with Fade Overlay */}
+            {card.src && (
+              <div className="pointer-events-none absolute inset-0 -z-10 h-full w-full overflow-hidden">
+                <img
+                  src={card.src}
+                  alt=""
+                  className="h-full w-full object-cover opacity-15 blur-[2px] transition-all duration-300 dark:opacity-25"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/80 to-white dark:from-neutral-900/20 dark:via-neutral-900/85 dark:to-neutral-900" />
+              </div>
+            )}
+            <button
+              className="sticky top-4 right-0 ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-black dark:bg-white"
+              onClick={handleClose}
+            >
+              <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
+            </button>
+            <motion.p
+              layoutId={layout ? `category-${card.title}` : undefined}
+              className="text-base font-medium text-black dark:text-white"
+            >
+              {card.category}
+            </motion.p>
+            <motion.div
+              layoutId={layout ? `title-${card.title}` : undefined}
+              className="mt-4 flex items-center gap-3 text-2xl font-semibold text-neutral-700 md:text-5xl dark:text-white"
+            >
+              {card.logo && (
+                <img src={card.logo} alt="" className="h-10 w-10 md:h-14 md:w-14 rounded-xl object-cover border border-neutral-200 dark:border-neutral-700 shrink-0" />
+              )}
+              <span>{card.title}</span>
+            </motion.div>
+            {card.description && (
+              <div className="mt-2 text-left">
+                {card.description}
+              </div>
+            )}
+            {card.footer && (
+              <div className="mt-4 text-left border-t border-neutral-100 dark:border-neutral-800 pt-4">
+                {card.footer}
+              </div>
+            )}
+            <div className="py-10">{card.content}</div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <>
-      <AnimatePresence>
-        {open && (
-          <div className="fixed inset-0 z-50 h-screen overflow-auto">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 h-full w-full bg-black/80 backdrop-blur-lg"
-            />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              ref={containerRef}
-              layoutId={layout ? `card-${card.title}` : undefined}
-              className="relative z-[60] mx-auto my-10 h-fit max-w-5xl rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900"
-            >
-              <button
-                className="sticky top-4 right-0 ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-black dark:bg-white"
-                onClick={handleClose}
-              >
-                <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
-              </button>
-              <motion.p
-                layoutId={layout ? `category-${card.title}` : undefined}
-                className="text-base font-medium text-black dark:text-white"
-              >
-                {card.category}
-              </motion.p>
-              <motion.p
-                layoutId={layout ? `title-${card.title}` : undefined}
-                className="mt-4 text-2xl font-semibold text-neutral-700 md:text-5xl dark:text-white"
-              >
-                {card.title}
-              </motion.p>
-              <div className="py-10">{card.content}</div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-      <motion.button
+      {mounted && typeof document !== "undefined"
+        ? createPortal(modalContent, document.body)
+        : null}
+      <motion.div
         layoutId={layout ? `card-${card.title}` : undefined}
         onClick={handleOpen}
-        className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            handleOpen();
+          }
+        }}
+        className="relative z-10 flex h-80 w-56 flex-col items-stretch justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900 cursor-pointer"
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-        <div className="relative z-40 p-8">
-          <motion.p
-            layoutId={layout ? `category-${card.category}` : undefined}
-            className="text-left font-sans text-sm font-medium text-white md:text-base"
-          >
-            {card.category}
-          </motion.p>
-          <motion.p
-            layoutId={layout ? `title-${card.title}` : undefined}
-            className="mt-2 max-w-xs text-left font-sans text-xl font-semibold [text-wrap:balance] text-white md:text-3xl"
-          >
-            {card.title}
-          </motion.p>
+        <div className="relative z-40 p-8 h-full w-full flex flex-col justify-between items-start">
+          <div className="flex flex-col items-start">
+            <motion.p
+              layoutId={layout ? `category-${card.title}` : undefined}
+              className="text-left font-sans text-sm font-medium text-white md:text-base"
+            >
+              {card.category}
+            </motion.p>
+            <motion.div
+              layoutId={layout ? `title-${card.title}` : undefined}
+              className="mt-2 flex items-center gap-2 max-w-xs text-left font-sans text-xl font-semibold [text-wrap:balance] text-white md:text-3xl"
+            >
+              {card.logo && (
+                <img src={card.logo} alt="" className="h-7 w-7 md:h-9 md:w-9 rounded-lg object-cover border border-white/20 shrink-0" />
+              )}
+              <span>{card.title}</span>
+            </motion.div>
+            {card.description && (
+              <div className="mt-2 text-left">
+                {card.description}
+              </div>
+            )}
+          </div>
+          {card.footer && (
+            <div className="w-full mt-auto">
+              {card.footer}
+            </div>
+          )}
         </div>
         <BlurImage
           src={card.src}
@@ -249,7 +311,7 @@ export const Card = ({
           fill
           className="absolute inset-0 z-10 object-cover"
         />
-      </motion.button>
+      </motion.div>
     </>
   );
 };

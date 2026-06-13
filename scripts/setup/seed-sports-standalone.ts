@@ -27,6 +27,7 @@ async function run() {
     console.log("🌱 Seeding sports leagues...");
     const count = await seedSportsLeagues(db, firstCountry.id, firstUser.id);
     console.log(`✅ Sports seeding complete! Created ${count} records.`);
+
   } catch (error) {
     console.error("❌ Standalone sports seeding failed:", error);
     process.exit(1);

@@ -11,6 +11,13 @@ import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { SPORT_PRESETS } from "~/lib/sports/presets";
@@ -275,13 +282,22 @@ export default function MyClubTeamDetailPage() {
 
         <div className="facet-hierarchy-parent mb-6 flex items-center gap-4">
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-3xl"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-3xl overflow-hidden border border-border/30"
             style={{ backgroundColor: `${teamPublic.color}20` }}
           >
-            {publicEmoji}
+            {teamPublic.logo ? (
+              <img src={teamPublic.logo} alt={teamPublic.name} className="h-full w-full object-cover" />
+            ) : (
+              publicEmoji
+            )}
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-3xl font-bold">{teamPublic.name}</h1>
+            <div className="flex items-center gap-2">
+              {teamPublic.logo && (
+                <img src={teamPublic.logo} alt="" className="h-8 w-8 rounded-lg object-cover border" />
+              )}
+              <h1 className="truncate text-3xl font-bold">{teamPublic.name}</h1>
+            </div>
             <p className="text-muted-foreground">{teamPublic.league?.name}</p>
           </div>
         </div>
@@ -669,53 +685,52 @@ export default function MyClubTeamDetailPage() {
             </div>
 
             {/* List overlay dialog */}
-            {selectedPlayer && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
-                <Card className="facet-modal w-full max-w-md rounded-3xl border-border p-6 backdrop-blur-xl">
-                  <CardHeader className="px-0">
-                    <CardTitle className="text-lg font-bold">
-                      List {selectedPlayer.firstName} {selectedPlayer.lastName}
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      Put this player on the Transfer marketplace.
-                    </CardDescription>
-                  </CardHeader>
-                  <div className="my-4 space-y-4">
-                    <div>
-                      <label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase">
-                        Asking Price (Sovereigns)
-                      </label>
-                      <Input
-                        type="number"
-                        min={10}
-                        value={listPrice}
-                        onChange={(e) => setListPrice(Number(e.target.value))}
-                        className="border-border bg-background/40"
-                      />
-                    </div>
+            <Dialog open={!!selectedPlayer} onOpenChange={(open) => !open && setSelectedPlayer(null)}>
+              <DialogContent className="max-w-md border-border bg-background/95 p-6 backdrop-blur-xl rounded-3xl z-[var(--z-modal,100005)] [&>button]:text-muted-foreground [&>button]:hover:text-foreground">
+                <DialogHeader className="px-0">
+                  <DialogTitle className="text-lg font-bold">
+                    List {selectedPlayer?.firstName} {selectedPlayer?.lastName}
+                  </DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Put this player on the Transfer marketplace.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="my-4 space-y-4">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase">
+                      Asking Price (Sovereigns)
+                    </label>
+                    <Input
+                      type="number"
+                      min={10}
+                      value={listPrice}
+                      onChange={(e) => setListPrice(Number(e.target.value))}
+                      className="border-border bg-background/40"
+                    />
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      className="text-muted-foreground hover:text-foreground"
-                      onClick={() => setSelectedPlayer(null)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() =>
-                        listPlayer.mutate({ playerId: selectedPlayer.id, price: listPrice })
-                      }
-                      disabled={listPlayer.isPending}
-                      style={{ backgroundColor: team.color }}
-                      className="hover:opacity-90 transition-all font-semibold"
-                    >
-                      {listPlayer.isPending ? "Listing..." : "Confirm List"}
-                    </Button>
-                  </div>
-                </Card>
-              </div>
-            )}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    onClick={() => setSelectedPlayer(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      selectedPlayer &&
+                      listPlayer.mutate({ playerId: selectedPlayer.id, price: listPrice })
+                    }
+                    disabled={listPlayer.isPending}
+                    style={{ backgroundColor: team.color }}
+                    className="hover:opacity-90 transition-all font-semibold text-white"
+                  >
+                    {listPlayer.isPending ? "Listing..." : "Confirm List"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Coaching Staff */}
             {team.coaches && team.coaches.length > 0 && (
@@ -1306,9 +1321,9 @@ export default function MyClubTeamDetailPage() {
                 <img
                   src={team.coverImage}
                   alt=""
-                  className="h-full w-full object-cover opacity-15 filter blur-[2px]"
+                  className="h-full w-full object-cover opacity-45 filter blur-[1px]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/85 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
               </div>
             )}
             <div className="relative z-10 p-4 sm:p-5">
@@ -1334,6 +1349,9 @@ export default function MyClubTeamDetailPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
+                    {team.logo && (
+                      <img src={team.logo} alt="" className="h-8 w-8 rounded-lg object-cover border" />
+                    )}
                     <h1 className="truncate text-2xl font-bold text-foreground">{team.name}</h1>
                     <Button
                       variant="ghost"

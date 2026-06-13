@@ -57,12 +57,100 @@ export default function MyClubPage() {
           key={team.id}
           index={idx}
           card={{
-            src: "https://ixwiki.com/sports-logo.png",
+            src: team.coverImage || team.logo || "https://ixwiki.com/sports-logo.png",
             title: team.name,
-            category: `${emoji} ${team.league?.name ?? "Custom Team"}`,
+            category: team.league?.name ?? "Custom Team",
+            description: (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1 select-none">
+                <Badge
+                  variant="outline"
+                  className="border-white/10 bg-black/50 text-[10px] font-bold text-white px-2 py-0.5 rounded-md shadow-sm"
+                >
+                  Record: {(team as any).currentStandings ? (
+                    `${(team as any).currentStandings.wins}-${(team as any).currentStandings.losses}${(team as any).currentStandings.draws > 0 ? `-${(team as any).currentStandings.draws}` : ""}`
+                  ) : (
+                    "0-0"
+                  )}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="border-white/10 bg-black/50 text-[10px] font-bold text-white px-2 py-0.5 rounded-md shadow-sm"
+                >
+                  {team.city || "Local"}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="border-white/10 bg-black/50 text-[10px] font-bold text-white px-2 py-0.5 rounded-md shadow-sm"
+                >
+                  Cap: {((team as any).stadiumCapacity || 5000).toLocaleString()}
+                </Badge>
+              </div>
+            ),
+            footer: (
+              <div className="flex items-center justify-between w-[calc(100%+4rem)] border-t border-white/10 pt-3 mt-auto bg-black/40 backdrop-blur-sm -mx-8 -mb-8 p-4 rounded-b-3xl select-none">
+                <div className="text-left">
+                  <span className="text-[10px] uppercase font-bold text-white/50 block tracking-wider leading-none mb-1">
+                    Current Season
+                  </span>
+                  <span className="text-xs font-semibold text-white">
+                    {hasActiveSeason ? `Season ${team.activeSeason!.seasonNumber}` : "Off-season"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {hasActiveSeason && (team as any).currentStandings && (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/30 bg-amber-500/20 text-amber-300 text-[9px] font-bold uppercase py-0.5 px-2 rounded-md shadow-sm"
+                    >
+                      Rank: {((team as any).currentStandings.position)} ({((team as any).currentStandings.points)} pts)
+                    </Badge>
+                  )}
+                  {!hasActiveSeason && (
+                    <Badge
+                      variant="outline"
+                      className="border-neutral-500/30 bg-neutral-500/20 text-neutral-300 text-[9px] font-bold uppercase py-0.5 px-2 rounded-md shadow-sm"
+                    >
+                      Ready
+                    </Badge>
+                  )}
+                  <div className="flex gap-1.5 ml-1">
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-cyan-400 backdrop-blur-md shadow-sm transition-all hover:scale-105"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        document.body.style.overflow = "auto";
+                        router.push(withBasePath(`/myclub/${team.id}?tab=roster`));
+                      }}
+                      title="Team Roster"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white backdrop-blur-md shadow-sm transition-all hover:scale-105"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        document.body.style.overflow = "auto";
+                        router.push(withBasePath(`/myclub/${team.id}`));
+                      }}
+                      title="Team Dashboard"
+                    >
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ),
+            logo: team.logo || undefined,
             content: (
               <div className="space-y-4 p-6 text-left text-foreground">
-                <h4 className="text-xl font-bold">{team.name}</h4>
+                <div className="flex items-center gap-3">
+                  {team.logo && (
+                    <img src={team.logo} alt="" className="h-10 w-10 rounded-lg object-cover border" />
+                  )}
+                  <h4 className="text-xl font-bold">{team.name}</h4>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Official hub for managing roster details, configuring pricing, scouting active
                   sponsorships, and playing fixtures.
@@ -73,18 +161,32 @@ export default function MyClubPage() {
                     <p className="text-sm font-semibold">{team.city || "Local"}</p>
                   </div>
                   <div>
+                    <p className="text-xs text-muted-foreground font-semibold">ACTIVE SEASON</p>
+                    <p className="text-sm font-semibold">
+                      {hasActiveSeason ? `Season ${team.activeSeason!.seasonNumber}` : "Off-season"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">CHAMPIONSHIPS</p>
+                    <p className="text-sm font-semibold">{(team as any).championships || 0}x</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">CURRENT RECORD</p>
+                    <p className="text-sm font-semibold">
+                      {(team as any).currentStandings ? (
+                        `${(team as any).currentStandings.wins}-${(team as any).currentStandings.losses}${(team as any).currentStandings.draws > 0 ? `-${(team as any).currentStandings.draws}` : ""}`
+                      ) : (
+                        "N/A"
+                      )}
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-xs text-muted-foreground font-semibold">STADIUM CAPACITY</p>
                     <p className="text-sm font-semibold">{(team as any).stadiumCapacity || 5000}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground font-semibold">TICKET PRICE</p>
                     <p className="text-sm font-semibold">₷{(team as any).ticketPrice || 15}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-semibold">ACTIVE SEASON</p>
-                    <p className="text-sm font-semibold">
-                      {hasActiveSeason ? `Season ${team.activeSeason!.seasonNumber}` : "Off-season"}
-                    </p>
                   </div>
                 </div>
                 <Button
@@ -110,6 +212,12 @@ export default function MyClubPage() {
         <div>
           <h1 className="text-3xl font-bold">MyClub</h1>
           <p className="text-muted-foreground mt-1">Manage your sports teams and franchises</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => router.push(withBasePath("/myleague"))}>
+            <Trophy className="mr-2 h-4 w-4 text-amber-500" />
+            MyLeague
+          </Button>
         </div>
       </div>
 

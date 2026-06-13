@@ -250,13 +250,15 @@ export default function LeagueDetailPage() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Leagues Lobby
       </button>
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setSettingsOpen(true)}
-        className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-colors hover:bg-muted/50"
-        title="League settings"
+        className="h-8 text-xs font-medium"
       >
-        <Settings className="h-4 w-4" />
-      </button>
+        <Settings className="mr-1.5 h-3.5 w-3.5" />
+        Manage MyLeague
+      </Button>
     </div>
   );
 

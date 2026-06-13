@@ -55,7 +55,9 @@ export function TeamSettingsModal({
   const [coverUrl, setCoverUrl] = useState(team.coverImage ?? "");
   const [color, setColor] = useState(team.color);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadingType, setUploadingType] = useState<"logo" | "cover">("logo");
+  const [uploadedLogoFile, setUploadedLogoFile] = useState<File | null>(null);
+  const [uploadedCoverFile, setUploadedCoverFile] = useState<File | null>(null);
   const [mediaSearchFor, setMediaSearchFor] = useState<"logo" | "cover" | null>(null);
 
   useEffect(() => {
@@ -64,7 +66,8 @@ export function TeamSettingsModal({
       setLogoUrl(team.logo ?? "");
       setCoverUrl(team.coverImage ?? "");
       setColor(team.color);
-      setUploadedFile(null);
+      setUploadedLogoFile(null);
+      setUploadedCoverFile(null);
     }
   }, [open, team]);
 
@@ -106,8 +109,13 @@ export function TeamSettingsModal({
         throw new Error(err.error ?? "Upload failed");
       }
       const result = (await response.json()) as { url: string };
-      setLogoUrl(result.url);
-      setUploadedFile(file);
+      if (uploadingType === "cover") {
+        setCoverUrl(result.url);
+        setUploadedCoverFile(file);
+      } else {
+        setLogoUrl(result.url);
+        setUploadedLogoFile(file);
+      }
     } catch (err) {
       notify.error("Upload Failed", err instanceof Error ? err.message : "Could not upload image.");
     } finally {
@@ -118,7 +126,12 @@ export function TeamSettingsModal({
 
   const handleRemoveLogo = () => {
     setLogoUrl("");
-    setUploadedFile(null);
+    setUploadedLogoFile(null);
+  };
+
+  const handleRemoveCover = () => {
+    setCoverUrl("");
+    setUploadedCoverFile(null);
   };
 
   const handleSave = () => {
@@ -135,7 +148,8 @@ export function TeamSettingsModal({
     });
   };
 
-  const previewSrc = uploadedFile ? URL.createObjectURL(uploadedFile) : logoUrl || null;
+  const logoPreviewSrc = uploadedLogoFile ? URL.createObjectURL(uploadedLogoFile) : logoUrl || null;
+  const coverPreviewSrc = uploadedCoverFile ? URL.createObjectURL(uploadedCoverFile) : coverUrl || null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,14 +200,14 @@ export function TeamSettingsModal({
               <div
                 className={cn(
                   "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed",
-                  previewSrc
+                  logoPreviewSrc
                     ? "border-border bg-muted/50"
                     : "border-border/50 bg-muted/30"
                 )}
               >
-                {previewSrc ? (
+                {logoPreviewSrc ? (
                   <img
-                    src={previewSrc}
+                    src={logoPreviewSrc}
                     alt="Logo preview"
                     className="h-full w-full object-cover"
                   />
@@ -207,16 +221,19 @@ export function TeamSettingsModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    setUploadingType("logo");
+                    fileInputRef.current?.click();
+                  }}
                   disabled={isUploading}
                   className="text-xs"
                 >
-                  {isUploading ? (
+                  {isUploading && uploadingType === "logo" ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Upload className="mr-1.5 h-3.5 w-3.5" />
                   )}
-                  {isUploading ? "Uploading..." : "Upload Image"}
+                  {isUploading && uploadingType === "logo" ? "Uploading..." : "Upload Image"}
                 </Button>
                 <Button
                   type="button"
@@ -228,7 +245,7 @@ export function TeamSettingsModal({
                   <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
                   Browse Media
                 </Button>
-                {previewSrc && (
+                {logoPreviewSrc && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -261,18 +278,36 @@ export function TeamSettingsModal({
               <div
                 className={cn(
                   "flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed",
-                  coverUrl
+                  coverPreviewSrc
                     ? "border-border bg-muted/50"
                     : "border-border/50 bg-muted/30"
                 )}
               >
-                {coverUrl ? (
-                  <img src={coverUrl} alt="Cover preview" className="h-full w-full object-cover" />
+                {coverPreviewSrc ? (
+                  <img src={coverPreviewSrc} alt="Cover preview" className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-muted-foreground text-[10px] font-medium">No cover</span>
                 )}
               </div>
               <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setUploadingType("cover");
+                    fileInputRef.current?.click();
+                  }}
+                  disabled={isUploading}
+                  className="text-xs"
+                >
+                  {isUploading && uploadingType === "cover" ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {isUploading && uploadingType === "cover" ? "Uploading..." : "Upload Image"}
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -283,12 +318,12 @@ export function TeamSettingsModal({
                   <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
                   Browse Media
                 </Button>
-                {coverUrl && (
+                {coverPreviewSrc && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setCoverUrl("")}
+                    onClick={handleRemoveCover}
                     className="text-xs text-destructive hover:text-destructive"
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
@@ -307,9 +342,10 @@ export function TeamSettingsModal({
             onImageSelect={(url) => {
               if (mediaSearchFor === "logo") {
                 setLogoUrl(url);
-                setUploadedFile(null);
+                setUploadedLogoFile(null);
               } else {
                 setCoverUrl(url);
+                setUploadedCoverFile(null);
               }
               setMediaSearchFor(null);
             }}

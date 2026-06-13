@@ -18,8 +18,51 @@ import {
   type SportPresetKey,
   type TeamRatingVector,
 } from "../sports";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 
 type Prisma = PrismaClient;
+
+async function downloadImageForSeed(imageUrl: string): Promise<string> {
+  try {
+    const hash = crypto.createHash("md5").update(imageUrl).digest("hex");
+    const ext = imageUrl.split(".").pop()?.split(/[?#]/)[0] || "jpg";
+    const fileName = `seeded_${hash}.${ext}`;
+    const imagesDir = path.join(process.cwd(), "public", "images", "downloaded");
+    
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+    
+    const filePath = path.join(imagesDir, fileName);
+    const publicUrl = `/images/downloaded/${fileName}`;
+    
+    if (fs.existsSync(filePath)) {
+      return publicUrl;
+    }
+    
+    console.log(`[SeedImageDownload] Downloading: ${imageUrl}`);
+    const res = await fetch(imageUrl, {
+      headers: {
+        "User-Agent": "IxStats/2.0 (https://ixwiki.com; contact@ixwiki.com)",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to fetch image: HTTP ${res.status}`);
+    }
+    
+    const buffer = Buffer.from(await res.arrayBuffer());
+    fs.writeFileSync(filePath, buffer);
+    console.log(`[SeedImageDownload] Saved image to ${publicUrl}`);
+    return publicUrl;
+  } catch (err) {
+    console.error(`[SeedImageDownload] Failed to download ${imageUrl}, using original URL. Error:`, err);
+    return imageUrl;
+  }
+}
 
 function hashString(str: string): number {
   let hash = 0;
@@ -304,6 +347,7 @@ async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: 
   });
   const caphCountryId = caphiriaCountry?.id ?? null;
 
+  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/1/16/Wembley_Stadium_interior.jpg");
   const league = await prisma.sportLeague.create({
     data: {
       name: "Caphirian Imperial League",
@@ -314,6 +358,7 @@ async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: 
       createdByUserId: userId,
       status: "active",
       nationAffiliation: caphCountryId,
+      coverImage,
     },
   });
   count++;
@@ -563,6 +608,7 @@ async function seedYonderreSoccerLeague(prisma: Prisma, userId: string, ixNow: n
   });
   const yondCountryId = yonderreCountry?.id ?? null;
 
+  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/4/46/Maracana_Stadium.jpg");
   const league = await prisma.sportLeague.create({
     data: {
       name: "Ligue Yonderre",
@@ -573,6 +619,7 @@ async function seedYonderreSoccerLeague(prisma: Prisma, userId: string, ixNow: n
       createdByUserId: userId,
       status: "active",
       nationAffiliation: yondCountryId,
+      coverImage,
     },
   });
   count++;
@@ -824,6 +871,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
     return match?.id ?? null;
   };
 
+  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/9/92/Scotiabank_Saddledome.jpg");
   const league = await prisma.sportLeague.create({
     data: {
       name: "Orixtal Hockey League",
@@ -833,6 +881,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
       isCanonical: true,
       createdByUserId: userId,
       status: "active",
+      coverImage,
       settings: {
         divisions: 4,
         conferences: 2
@@ -1134,6 +1183,7 @@ async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Prom
   const leagueSeed = hashString("IRF World Championship");
   const raceCount = 20;
 
+  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/9/92/Monaco_Grand_Prix.jpg");
   const league = await prisma.sportLeague.create({
     data: {
       name: "IRF World Championship",
@@ -1143,6 +1193,7 @@ async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Prom
       isCanonical: true,
       createdByUserId: userId,
       status: "active",
+      coverImage,
     },
   });
   count++;
@@ -1489,6 +1540,7 @@ async function seedBoxingLeague(prisma: Prisma, userId: string, ixNow: number): 
   let count = 0;
   const leagueSeed = hashString("ICC Heavyweight Grand Prix");
 
+  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/7/7e/Boxing_ring.jpg");
   const league = await prisma.sportLeague.create({
     data: {
       name: "ICC Heavyweight Grand Prix",
@@ -1498,6 +1550,7 @@ async function seedBoxingLeague(prisma: Prisma, userId: string, ixNow: number): 
       isCanonical: true,
       createdByUserId: userId,
       status: "active",
+      coverImage,
     },
   });
   count++;
