@@ -3,14 +3,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  adminProcedure,
-} from "~/server/api/trpc";
-import {
-  invalidateConfigCache,
-} from "~/lib/config-service";
-
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { invalidateConfigCache } from "~/lib/config-service";
 
 import { generateSlug } from "~/lib/slug-utils";
 import { invalidateCache } from "~/lib/trpc-cache";
@@ -54,7 +48,6 @@ export const adminWikiRouter = createTRPCRouter({
 
   // --- Clerk User-Country Mapping Endpoints ---
   // Note: User procedures are commented out until User model is properly configured
-
 
   // Sync with Discord bot
 
@@ -774,7 +767,7 @@ export const adminWikiRouter = createTRPCRouter({
         console.error("Failed to search MediaWiki users:", err);
         return [];
       }
-    })
+    }),
 });
 
 // getWikiDbPool is now imported from "~/lib/wiki-bridge"

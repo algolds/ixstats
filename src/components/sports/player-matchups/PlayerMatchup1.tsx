@@ -23,11 +23,7 @@ interface PlayerMatchup1Props {
   className?: string;
 }
 
-export default function PlayerMatchup1({
-  playerA,
-  playerB,
-  className,
-}: PlayerMatchup1Props) {
+export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMatchup1Props) {
   const fallbackPhoto = "/images/sportyblocks/player-1.png";
 
   const colorA = playerA.teamColor ?? "#3b82f6";
@@ -35,11 +31,10 @@ export default function PlayerMatchup1({
 
   // Combine and de-duplicate stat keys to compare
   const statKeys = Array.from(
-    new Set([
-      ...Object.keys(playerA.ratings),
-      ...Object.keys(playerB.ratings),
-    ])
-  ).filter((k) => k !== "overall" && k !== "form" && k !== "injuredUntil").slice(0, 5);
+    new Set([...Object.keys(playerA.ratings), ...Object.keys(playerB.ratings)])
+  )
+    .filter((k) => k !== "overall" && k !== "form" && k !== "injuredUntil")
+    .slice(0, 5);
 
   if (statKeys.length === 0) {
     // Fallback comparison keys
@@ -51,23 +46,23 @@ export default function PlayerMatchup1({
       depth={2}
       interactive="hover"
       className={cn(
-        "mx-auto w-full max-w-[550px] p-6 rounded-3xl border border-border/40 bg-card/90 shadow-xl overflow-hidden",
+        "border-border/40 bg-card/90 mx-auto w-full max-w-[550px] overflow-hidden rounded-3xl border p-6 shadow-xl",
         className
       )}
     >
       {/* Title / Header */}
       <div className="mb-6 text-center">
-        <h3 className="text-base font-extrabold tracking-wider uppercase text-muted-foreground">
+        <h3 className="text-muted-foreground text-base font-extrabold tracking-wider uppercase">
           Head to Head Comparison
         </h3>
       </div>
 
-      <div className="grid grid-cols-[1fr_120px_1fr] gap-4 items-center mb-8">
+      <div className="mb-8 grid grid-cols-[1fr_120px_1fr] items-center gap-4">
         {/* Player A Details */}
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-3">
             <div
-              className="w-20 h-20 rounded-full border border-border/30 overflow-hidden shadow-md flex items-center justify-center p-1"
+              className="border-border/30 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border p-1 shadow-md"
               style={{
                 background: `linear-gradient(135deg, ${colorA}dd, ${colorA}44)`,
               }}
@@ -75,30 +70,30 @@ export default function PlayerMatchup1({
               <img
                 src={getPlayerPhotoUrl(playerA)}
                 alt={`${playerA.firstName} ${playerA.lastName}`}
-                className="w-full h-full object-contain rounded-full drop-shadow-md"
+                className="h-full w-full rounded-full object-contain drop-shadow-md"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = fallbackPhoto;
                 }}
               />
             </div>
             <div
-              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-xs font-black text-white shadow-md"
+              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-black text-white shadow-md"
               style={{ backgroundColor: colorA }}
             >
               {playerA.overallRating}
             </div>
           </div>
-          <h4 className="text-sm font-extrabold text-foreground leading-tight">
+          <h4 className="text-foreground text-sm leading-tight font-extrabold">
             {playerA.firstName} {playerA.lastName}
           </h4>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase mt-1">
+          <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase">
             {playerA.position}
           </span>
         </div>
 
         {/* VS Indicator */}
         <div className="flex flex-col items-center justify-center">
-          <span className="text-xl font-black text-muted-foreground/30 dark:text-muted-foreground/20 uppercase tracking-widest">
+          <span className="text-muted-foreground/30 dark:text-muted-foreground/20 text-xl font-black tracking-widest uppercase">
             VS
           </span>
         </div>
@@ -107,7 +102,7 @@ export default function PlayerMatchup1({
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-3">
             <div
-              className="w-20 h-20 rounded-full border border-border/30 overflow-hidden shadow-md flex items-center justify-center p-1"
+              className="border-border/30 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border p-1 shadow-md"
               style={{
                 background: `linear-gradient(135deg, ${colorB}dd, ${colorB}44)`,
               }}
@@ -115,23 +110,23 @@ export default function PlayerMatchup1({
               <img
                 src={getPlayerPhotoUrl(playerB)}
                 alt={`${playerB.firstName} ${playerB.lastName}`}
-                className="w-full h-full object-contain rounded-full drop-shadow-md"
+                className="h-full w-full rounded-full object-contain drop-shadow-md"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = fallbackPhoto;
                 }}
               />
             </div>
             <div
-              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-xs font-black text-white shadow-md"
+              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-black text-white shadow-md"
               style={{ backgroundColor: colorB }}
             >
               {playerB.overallRating}
             </div>
           </div>
-          <h4 className="text-sm font-extrabold text-foreground leading-tight">
+          <h4 className="text-foreground text-sm leading-tight font-extrabold">
             {playerB.firstName} {playerB.lastName}
           </h4>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase mt-1">
+          <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase">
             {playerB.position}
           </span>
         </div>
@@ -148,20 +143,26 @@ export default function PlayerMatchup1({
 
           return (
             <div key={key} className="space-y-1">
-              <div className="flex justify-between items-center text-xs font-extrabold uppercase text-foreground/80">
-                <span className={cn(isAHigher && "font-black")} style={{ color: isAHigher ? colorA : undefined }}>
+              <div className="text-foreground/80 flex items-center justify-between text-xs font-extrabold uppercase">
+                <span
+                  className={cn(isAHigher && "font-black")}
+                  style={{ color: isAHigher ? colorA : undefined }}
+                >
                   {valA}
                 </span>
-                <span className="text-[10px] tracking-wider text-muted-foreground font-bold">
+                <span className="text-muted-foreground text-[10px] font-bold tracking-wider">
                   {key}
                 </span>
-                <span className={cn(isBHigher && "font-black")} style={{ color: isBHigher ? colorB : undefined }}>
+                <span
+                  className={cn(isBHigher && "font-black")}
+                  style={{ color: isBHigher ? colorB : undefined }}
+                >
                   {valB}
                 </span>
               </div>
-              <div className="grid grid-cols-[1fr_8px_1fr] gap-x-2 items-center h-2">
+              <div className="grid h-2 grid-cols-[1fr_8px_1fr] items-center gap-x-2">
                 {/* Left Bar (Player A) */}
-                <div className="flex justify-end h-full bg-muted rounded-full overflow-hidden">
+                <div className="bg-muted flex h-full justify-end overflow-hidden rounded-full">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
@@ -172,10 +173,10 @@ export default function PlayerMatchup1({
                   />
                 </div>
 
-                <div className="h-2 w-2 rounded-full bg-border/40 shrink-0" />
+                <div className="bg-border/40 h-2 w-2 shrink-0 rounded-full" />
 
                 {/* Right Bar (Player B) */}
-                <div className="flex h-full bg-muted rounded-full overflow-hidden">
+                <div className="bg-muted flex h-full overflow-hidden rounded-full">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{

@@ -13,47 +13,47 @@ export const NAV_ITEMS: {
   activeGlow: string;
   activeLine: string;
 }[] = [
-    {
-      id: "overview",
-      icon: LayoutDashboard,
-      title: "Overview",
-      gradient: "from-slate-500/80 to-slate-600/80",
-      activeGlow: "shadow-slate-500/20",
-      activeLine: "bg-slate-300",
-    },
-    {
-      id: "roster",
-      icon: Users,
-      title: "Roster",
-      gradient: "from-blue-500/80 to-blue-600/80",
-      activeGlow: "shadow-blue-500/20",
-      activeLine: "bg-blue-300",
-    },
-    {
-      id: "tactics",
-      icon: Shield,
-      title: "Tactics",
-      gradient: "from-red-500/80 to-red-600/80",
-      activeGlow: "shadow-red-500/20",
-      activeLine: "bg-red-300",
-    },
-    {
-      id: "transfers",
-      icon: ArrowLeftRight,
-      title: "Transfers",
-      gradient: "from-cyan-500/80 to-cyan-600/80",
-      activeGlow: "shadow-cyan-500/20",
-      activeLine: "bg-cyan-300",
-    },
-    {
-      id: "management",
-      icon: Landmark,
-      title: "Management",
-      gradient: "from-amber-500/80 to-amber-600/80",
-      activeGlow: "shadow-amber-500/20",
-      activeLine: "bg-amber-300",
-    },
-  ];
+  {
+    id: "overview",
+    icon: LayoutDashboard,
+    title: "Overview",
+    gradient: "from-slate-500/80 to-slate-600/80",
+    activeGlow: "shadow-slate-500/20",
+    activeLine: "bg-slate-300",
+  },
+  {
+    id: "roster",
+    icon: Users,
+    title: "Roster",
+    gradient: "from-blue-500/80 to-blue-600/80",
+    activeGlow: "shadow-blue-500/20",
+    activeLine: "bg-blue-300",
+  },
+  {
+    id: "tactics",
+    icon: Shield,
+    title: "Tactics",
+    gradient: "from-red-500/80 to-red-600/80",
+    activeGlow: "shadow-red-500/20",
+    activeLine: "bg-red-300",
+  },
+  {
+    id: "transfers",
+    icon: ArrowLeftRight,
+    title: "Transfers",
+    gradient: "from-cyan-500/80 to-cyan-600/80",
+    activeGlow: "shadow-cyan-500/20",
+    activeLine: "bg-cyan-300",
+  },
+  {
+    id: "management",
+    icon: Landmark,
+    title: "Management",
+    gradient: "from-amber-500/80 to-amber-600/80",
+    activeGlow: "shadow-amber-500/20",
+    activeLine: "bg-amber-300",
+  },
+];
 
 interface MyLeagueSidebarNavProps {
   activeSection: MyLeagueSection;
@@ -90,12 +90,13 @@ export function MyLeagueSidebarNav({
               <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
             );
 
-            const activeStyle = isActive && teamColor
-              ? {
-                  background: `linear-gradient(to right, ${teamColor}e6, ${teamColor}b3)`,
-                  boxShadow: `0 4px 12px ${teamColor}33`,
-                }
-              : undefined;
+            const activeStyle =
+              isActive && teamColor
+                ? {
+                    background: `linear-gradient(to right, ${teamColor}e6, ${teamColor}b3)`,
+                    boxShadow: `0 4px 12px ${teamColor}33`,
+                  }
+                : undefined;
 
             return (
               <button
@@ -136,7 +137,11 @@ export function MyLeagueSidebarNav({
           const cls = cn(
             "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
             isActive
-              ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", !teamColor && item.gradient, !teamColor && item.activeGlow)
+              ? cn(
+                  "bg-gradient-to-r text-white shadow-lg pl-3.5",
+                  !teamColor && item.gradient,
+                  !teamColor && item.activeGlow
+                )
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           );
           const badge = noteCount > 0 && (
@@ -150,12 +155,13 @@ export function MyLeagueSidebarNav({
             </span>
           );
 
-          const activeStyle = isActive && teamColor
-            ? {
-                background: `linear-gradient(to right, ${teamColor}e6, ${teamColor}b3)`,
-                boxShadow: `0 4px 12px ${teamColor}33`,
-              }
-            : undefined;
+          const activeStyle =
+            isActive && teamColor
+              ? {
+                  background: `linear-gradient(to right, ${teamColor}e6, ${teamColor}b3)`,
+                  boxShadow: `0 4px 12px ${teamColor}33`,
+                }
+              : undefined;
 
           return (
             <button
@@ -192,12 +198,13 @@ export function MyLeagueSidebarNav({
         const isActive = item.id === activeId;
         const noteCount = notifications?.[item.id] ?? 0;
 
-        const activeStyle = isActive && teamColor
-          ? {
-              background: `linear-gradient(to right, ${teamColor}e6, ${teamColor}b3)`,
-              boxShadow: `0 4px 12px ${teamColor}33`,
-            }
-          : undefined;
+        const activeStyle =
+          isActive && teamColor
+            ? {
+                background: `linear-gradient(to right, ${teamColor}e6, ${teamColor}b3)`,
+                boxShadow: `0 4px 12px ${teamColor}33`,
+              }
+            : undefined;
 
         return (
           <button
@@ -213,10 +220,10 @@ export function MyLeagueSidebarNav({
                 "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-all duration-200",
                 isActive
                   ? cn(
-                    "bg-gradient-to-br pl-1 text-white shadow-lg",
-                    !teamColor && item.gradient,
-                    !teamColor && item.activeGlow
-                  )
+                      "bg-gradient-to-br pl-1 text-white shadow-lg",
+                      !teamColor && item.gradient,
+                      !teamColor && item.activeGlow
+                    )
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               style={activeStyle}

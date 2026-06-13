@@ -46,9 +46,7 @@ export function LineupBuilder({
   const preset = presets.find((p) => p.key === sportPreset);
 
   const [starters, setStarters] = useState<string[]>(currentLineup?.starters ?? []);
-  const [captainId, setCaptainId] = useState<string | null>(
-    currentLineup?.captainId ?? null
-  );
+  const [captainId, setCaptainId] = useState<string | null>(currentLineup?.captainId ?? null);
 
   const starterPlayersMapped = useMemo(() => {
     return players
@@ -74,9 +72,7 @@ export function LineupBuilder({
 
   const handleToggleStarter = (playerId: string) => {
     setStarters((prev) =>
-      prev.includes(playerId)
-        ? prev.filter((id) => id !== playerId)
-        : [...prev, playerId]
+      prev.includes(playerId) ? prev.filter((id) => id !== playerId) : [...prev, playerId]
     );
   };
 
@@ -92,13 +88,16 @@ export function LineupBuilder({
   const starterCount = starters.length;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px] items-start">
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px]">
       <Card className="facet-hierarchy-child bg-card/40 border-border h-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base font-bold">
             <Shirt className="h-5 w-5" style={{ color: teamColor }} />
             Starting XI
-            <Badge variant="outline" className="ml-2 text-[10px] border-border text-muted-foreground">
+            <Badge
+              variant="outline"
+              className="border-border text-muted-foreground ml-2 text-[10px]"
+            >
               {starterCount} selected
             </Badge>
           </CardTitle>
@@ -117,16 +116,20 @@ export function LineupBuilder({
                   <button
                     key={player.id}
                     onClick={() => handleToggleStarter(player.id)}
-                    style={isStarter ? { borderColor: `${teamColor}60`, backgroundColor: `${teamColor}15` } : {}}
+                    style={
+                      isStarter
+                        ? { borderColor: `${teamColor}60`, backgroundColor: `${teamColor}15` }
+                        : {}
+                    }
                     className={cn(
                       "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all",
                       isStarter
-                        ? "border-transparent text-foreground"
+                        ? "text-foreground border-transparent"
                         : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
                     )}
                   >
                     {player.number && (
-                      <span className="w-5 text-center text-[10px] font-bold text-muted-foreground tabular-nums">
+                      <span className="text-muted-foreground w-5 text-center text-[10px] font-bold tabular-nums">
                         #{player.number}
                       </span>
                     )}
@@ -135,14 +138,12 @@ export function LineupBuilder({
                         <span className="truncate text-sm font-medium">
                           {player.firstName} {player.lastName}
                         </span>
-                        {isCaptain && (
-                          <Star className="h-3 w-3 shrink-0 text-amber-400" />
-                        )}
+                        {isCaptain && <Star className="h-3 w-3 shrink-0 text-amber-400" />}
                       </div>
                       <div className="mt-0.5 flex items-center gap-2">
                         <Badge
                           variant="outline"
-                          className="rounded px-1 py-0 text-[9px] border-border text-muted-foreground"
+                          className="border-border text-muted-foreground rounded px-1 py-0 text-[9px]"
                         >
                           {player.position}
                         </Badge>
@@ -173,7 +174,7 @@ export function LineupBuilder({
                         className={cn(
                           "rounded p-1 text-xs transition",
                           isCaptain
-                            ? "text-amber-400 bg-amber-500/10"
+                            ? "bg-amber-500/10 text-amber-400"
                             : "text-muted-foreground hover:text-amber-400"
                         )}
                         title={isCaptain ? "Remove captain" : "Set as captain"}
@@ -189,13 +190,11 @@ export function LineupBuilder({
           <Button
             onClick={handleSave}
             disabled={setLineup.isPending}
-            className="w-full text-xs hover:opacity-90 transition-all font-semibold"
+            className="w-full text-xs font-semibold transition-all hover:opacity-90"
             size="sm"
             style={{ backgroundColor: teamColor, color: "#ffffff" }}
           >
-            {setLineup.isPending ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : null}
+            {setLineup.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             Save Lineup
           </Button>
         </CardContent>

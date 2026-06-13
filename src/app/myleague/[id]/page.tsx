@@ -297,7 +297,7 @@ export default function LeagueDetailPage() {
 
           <TabsContent value="overview">
             <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-6">
+              <div className="space-y-6 lg:col-span-2">
                 <Card className="facet-hierarchy-child">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -316,7 +316,7 @@ export default function LeagueDetailPage() {
                           <button
                             key={team.id}
                             onClick={() => handleTeamClick(team.id)}
-                            className="flex items-center gap-3 rounded-lg border px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                            className="hover:bg-muted/50 flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors"
                           >
                             <div
                               className="h-4 w-4 shrink-0 rounded-full"
@@ -331,10 +331,7 @@ export default function LeagueDetailPage() {
                 </Card>
 
                 {latestResultsMatches.length > 0 && (
-                  <LatestResults
-                    matches={latestResultsMatches}
-                    onTeamClick={handleTeamClick}
-                  />
+                  <LatestResults matches={latestResultsMatches} onTeamClick={handleTeamClick} />
                 )}
               </div>
 
@@ -511,7 +508,7 @@ export default function LeagueDetailPage() {
                         <button
                           key={team.id}
                           onClick={() => handleTeamClick(team.id)}
-                          className="facet-hierarchy-interactive flex items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                          className="facet-hierarchy-interactive hover:bg-muted/50 flex items-center gap-3 rounded-lg border p-3 text-left transition-colors"
                         >
                           <div
                             className="h-6 w-6 shrink-0 rounded-full border-2 border-white/20"
@@ -522,7 +519,7 @@ export default function LeagueDetailPage() {
                             {team.ownerUserId ? (
                               <p className="text-muted-foreground text-[10px]">Managed</p>
                             ) : (
-                              <p className="text-amber-500 text-[10px]">Unclaimed</p>
+                              <p className="text-[10px] text-amber-500">Unclaimed</p>
                             )}
                           </div>
                         </button>
@@ -536,11 +533,7 @@ export default function LeagueDetailPage() {
 
           <TabsContent value="history">
             {tab === "history" && (
-              <HistoryTab
-                leagueId={league.id}
-                router={router}
-                onTeamClick={handleTeamClick}
-              />
+              <HistoryTab leagueId={league.id} router={router} onTeamClick={handleTeamClick} />
             )}
           </TabsContent>
 
@@ -572,11 +565,7 @@ export default function LeagueDetailPage() {
         onClose={() => setActiveTeamId(null)}
       />
 
-      <LeagueSettingsModal
-        league={league}
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-      />
+      <LeagueSettingsModal league={league} open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }

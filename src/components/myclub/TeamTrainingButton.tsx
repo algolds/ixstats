@@ -10,11 +10,7 @@ interface TeamTrainingButtonProps {
   onTrained?: () => void;
 }
 
-export function TeamTrainingButton({
-  teamId,
-  playerCount,
-  onTrained,
-}: TeamTrainingButtonProps) {
+export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrainingButtonProps) {
   const utils = api.useUtils();
 
   const teamTraining = api.sports.teamTraining.useMutation({
@@ -38,7 +34,7 @@ export function TeamTrainingButton({
         <Dumbbell className="h-3.5 w-3.5" />
       )}
       Team Training Session
-      <span className="ml-auto text-muted-foreground">
+      <span className="text-muted-foreground ml-auto">
         <Users className="mr-0.5 inline h-3 w-3" />
         {playerCount} &middot; 100c
       </span>

@@ -38,7 +38,7 @@ export default function LatestResults1({
 
   if (completedMatches.length === 0) {
     return (
-      <div className={cn("mx-auto w-full px-5 text-center py-8 text-muted-foreground", className)}>
+      <div className={cn("text-muted-foreground mx-auto w-full px-5 py-8 text-center", className)}>
         No results simulated yet.
       </div>
     );
@@ -63,23 +63,21 @@ export default function LatestResults1({
       <FacetCard
         depth={2}
         interactive="hover"
-        className="rounded-3xl border border-border/40 bg-card/90 shadow-xl overflow-hidden p-6"
+        className="border-border/40 bg-card/90 overflow-hidden rounded-3xl border p-6 shadow-xl"
       >
         <div className="mb-4">
-          <h3 className="text-lg font-extrabold text-foreground">
-            {title}
-          </h3>
+          <h3 className="text-foreground text-lg font-extrabold">{title}</h3>
         </div>
-        <div className="overflow-hidden rounded-2xl flex flex-col gap-4">
+        <div className="flex flex-col gap-4 overflow-hidden rounded-2xl">
           {sortedMatchDays.slice(0, 3).map((matchDay) => (
             <div
               key={matchDay}
-              className="rounded-2xl bg-muted/30 border border-border/20 dark:bg-slate-950/20 overflow-hidden"
+              className="bg-muted/30 border-border/20 overflow-hidden rounded-2xl border dark:bg-slate-950/20"
             >
-              <h4 className="bg-muted/50 dark:bg-slate-900/40 px-5 py-3 text-center text-xs font-bold tracking-wider text-muted-foreground uppercase">
+              <h4 className="bg-muted/50 text-muted-foreground px-5 py-3 text-center text-xs font-bold tracking-wider uppercase dark:bg-slate-900/40">
                 Matchday {matchDay}
               </h4>
-              <div className="bg-transparent divide-y divide-border/20">
+              <div className="divide-border/20 divide-y bg-transparent">
                 {groupedByMatchDay[matchDay].map((match) => {
                   const hScore = match.homeScore ?? 0;
                   const aScore = match.awayScore ?? 0;
@@ -92,14 +90,14 @@ export default function LatestResults1({
                   return (
                     <div
                       key={match.id}
-                      className="grid grid-cols-2 gap-x-4 px-5 py-3.5 hover:bg-muted/40 dark:hover:bg-slate-900/20 transition-colors"
+                      className="hover:bg-muted/40 grid grid-cols-2 gap-x-4 px-5 py-3.5 transition-colors dark:hover:bg-slate-900/20"
                     >
                       {/* Home Team */}
-                      <div className="flex items-center justify-between min-w-0 pr-2">
+                      <div className="flex min-w-0 items-center justify-between pr-2">
                         <button
                           type="button"
                           onClick={() => onTeamClick?.(match.homeTeamId)}
-                          className="flex items-center gap-2 min-w-0 text-left hover:underline cursor-pointer group"
+                          className="group flex min-w-0 cursor-pointer items-center gap-2 text-left hover:underline"
                         >
                           <svg
                             viewBox="0 0 420 420"
@@ -113,25 +111,29 @@ export default function LatestResults1({
                               fill="currentColor"
                             />
                           </svg>
-                          <div className="truncate text-xs font-bold text-foreground">
+                          <div className="text-foreground truncate text-xs font-bold">
                             <span className="hidden sm:inline">{match.homeTeamName}</span>
-                            <span className="inline sm:hidden">{match.homeShortName ?? match.homeTeamName.slice(0, 3).toUpperCase()}</span>
+                            <span className="inline sm:hidden">
+                              {match.homeShortName ?? match.homeTeamName.slice(0, 3).toUpperCase()}
+                            </span>
                           </div>
                         </button>
-                        <div className="flex items-center gap-1.5 text-xs font-extrabold text-foreground shrink-0 ml-1">
+                        <div className="text-foreground ml-1 flex shrink-0 items-center gap-1.5 text-xs font-extrabold">
                           {homeOutcome === "win" && (
-                            <div className="h-0 w-0 border-[4px] border-custom-blue border-y-transparent border-e-0"></div>
+                            <div className="border-custom-blue h-0 w-0 border-[4px] border-e-0 border-y-transparent"></div>
                           )}
-                          <span className={cn(homeOutcome !== "win" && "opacity-75 font-semibold")}>{hScore}</span>
+                          <span className={cn(homeOutcome !== "win" && "font-semibold opacity-75")}>
+                            {hScore}
+                          </span>
                         </div>
                       </div>
 
                       {/* Away Team */}
-                      <div className="flex items-center justify-between min-w-0 pl-2 flex-row-reverse border-l border-border/20">
+                      <div className="border-border/20 flex min-w-0 flex-row-reverse items-center justify-between border-l pl-2">
                         <button
                           type="button"
                           onClick={() => onTeamClick?.(match.awayTeamId)}
-                          className="flex items-center gap-2 min-w-0 text-left hover:underline cursor-pointer group flex-row-reverse"
+                          className="group flex min-w-0 cursor-pointer flex-row-reverse items-center gap-2 text-left hover:underline"
                         >
                           <svg
                             viewBox="0 0 420 420"
@@ -145,16 +147,20 @@ export default function LatestResults1({
                               fill="currentColor"
                             />
                           </svg>
-                          <div className="truncate text-xs font-bold text-foreground">
+                          <div className="text-foreground truncate text-xs font-bold">
                             <span className="hidden sm:inline">{match.awayTeamName}</span>
-                            <span className="inline sm:hidden">{match.awayShortName ?? match.awayTeamName.slice(0, 3).toUpperCase()}</span>
+                            <span className="inline sm:hidden">
+                              {match.awayShortName ?? match.awayTeamName.slice(0, 3).toUpperCase()}
+                            </span>
                           </div>
                         </button>
-                        <div className="flex items-center gap-1.5 text-xs font-extrabold text-foreground shrink-0 mr-1 flex-row-reverse">
+                        <div className="text-foreground mr-1 flex shrink-0 flex-row-reverse items-center gap-1.5 text-xs font-extrabold">
                           {awayOutcome === "win" && (
-                            <div className="h-0 w-0 border-[4px] border-custom-blue border-y-transparent border-s-0"></div>
+                            <div className="border-custom-blue h-0 w-0 border-[4px] border-s-0 border-y-transparent"></div>
                           )}
-                          <span className={cn(awayOutcome !== "win" && "opacity-75 font-semibold")}>{aScore}</span>
+                          <span className={cn(awayOutcome !== "win" && "font-semibold opacity-75")}>
+                            {aScore}
+                          </span>
                         </div>
                       </div>
                     </div>

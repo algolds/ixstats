@@ -38,7 +38,7 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
 
 async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
   if (!team.nationId) return undefined;
-  
+
   let effects: any[] = [];
   if (effectsMap) {
     effects = effectsMap.get(team.nationId) ?? [];
@@ -210,7 +210,8 @@ export const sportsSeasonsRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
-        const ticketRevenue = (team.stadiumCapacity * team.ticketPrice * 0.6 * (team.popularity / 100));
+        const ticketRevenue =
+          team.stadiumCapacity * team.ticketPrice * 0.6 * (team.popularity / 100);
         const sponsorIncome = (team.sponsor as any)?.baseFee ?? 0;
         const totalIncome = Math.round(ticketRevenue + sponsorIncome);
 
@@ -221,7 +222,10 @@ export const sportsSeasonsRouter = createTRPCRouter({
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to collect revenue" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to collect revenue",
+        });
       }
     }),
 
@@ -1063,8 +1067,16 @@ export const sportsSeasonsRouter = createTRPCRouter({
                     currentSeason.league.sportPreset
                   );
 
-                  const homeTeamModifiers = await getTeamModifiers(match.homeTeam, ctx.db, effectsMap);
-                  const awayTeamModifiers = await getTeamModifiers(match.awayTeam, ctx.db, effectsMap);
+                  const homeTeamModifiers = await getTeamModifiers(
+                    match.homeTeam,
+                    ctx.db,
+                    effectsMap
+                  );
+                  const awayTeamModifiers = await getTeamModifiers(
+                    match.awayTeam,
+                    ctx.db,
+                    effectsMap
+                  );
 
                   const result = resolveMatch({
                     sport: currentSeason.league.sportPreset,

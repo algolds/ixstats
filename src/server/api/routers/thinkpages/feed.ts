@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 // Import the wiki search service
 import { validateNoXSS } from "~/lib/sanitize-html";

@@ -34,17 +34,35 @@ function getDeterministicPlayerBio(id: string) {
   }
   hash = Math.abs(hash);
 
-  const cities = ["Portland, OR", "Austin, TX", "London, UK", "Berlin, DE", "Paris, FR", "Tokyo, JP", "Sydney, AU", "Toronto, CA"];
-  const nationalities = ["United States", "Canada", "United Kingdom", "Germany", "France", "Japan", "Australia", "Brazil"];
-  
+  const cities = [
+    "Portland, OR",
+    "Austin, TX",
+    "London, UK",
+    "Berlin, DE",
+    "Paris, FR",
+    "Tokyo, JP",
+    "Sydney, AU",
+    "Toronto, CA",
+  ];
+  const nationalities = [
+    "United States",
+    "Canada",
+    "United Kingdom",
+    "Germany",
+    "France",
+    "Japan",
+    "Australia",
+    "Brazil",
+  ];
+
   const hometown = cities[hash % cities.length];
   const nationality = nationalities[(hash >> 2) % nationalities.length];
-  
+
   // Height: 5'9" to 6'6"
   const heightFt = 5 + (hash % 2);
   const heightIn = heightFt === 5 ? 9 + (hash % 3) : hash % 7;
   const height = `${heightFt}'${heightIn}"`;
-  
+
   const weight = 165 + (hash % 56);
   const expSeasons = Math.max(1, (hash % 6) + 1);
   const experience = expSeasons === 1 ? "Rookie" : `${expSeasons}th Season`;
@@ -65,9 +83,9 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
 
   // Map ratings from the JSON block, filtering out metadata
   const ratings = player.ratings ?? {};
-  const statsKeys = Object.keys(ratings).filter(
-    (k) => k !== "overall" && k !== "form" && k !== "injuredUntil"
-  ).slice(0, 6);
+  const statsKeys = Object.keys(ratings)
+    .filter((k) => k !== "overall" && k !== "form" && k !== "injuredUntil")
+    .slice(0, 6);
 
   const statistics = statsKeys.map((key) => ({
     label: key.toUpperCase(),
@@ -91,10 +109,10 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
       <FacetCard
         depth={2}
         interactive="hover"
-        className="rounded-3xl border border-border/40 bg-card/90 shadow-xl overflow-hidden p-1"
+        className="border-border/40 bg-card/90 overflow-hidden rounded-3xl border p-1 shadow-xl"
       >
-        <div 
-          className="grid min-h-[300px] gap-y-6 px-6 py-6 md:grid-cols-[30%_1fr_auto] md:gap-x-6 md:py-0 md:ps-0 md:pe-5 lg:gap-x-0 rounded-2xl border border-border/10 backdrop-blur-md"
+        <div
+          className="border-border/10 grid min-h-[300px] gap-y-6 rounded-2xl border px-6 py-6 backdrop-blur-md md:grid-cols-[30%_1fr_auto] md:gap-x-6 md:py-0 md:ps-0 md:pe-5 lg:gap-x-0"
           style={{
             background: `linear-gradient(135deg, ${teamColor}d0, ${teamColor}20)`,
           }}
@@ -116,7 +134,7 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
               <img
                 src={playerPhoto}
                 alt={`${player.firstName} ${player.lastName}`}
-                className="absolute start-1/2 bottom-0 max-h-[90%] object-contain -translate-x-1/2 drop-shadow-[0_12px_20px_rgba(0,0,0,0.5)]"
+                className="absolute start-1/2 bottom-0 max-h-[90%] -translate-x-1/2 object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.5)]"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = fallbackPhoto;
                 }}
@@ -125,14 +143,16 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
           </div>
 
           {/* Identity details */}
-          <div className="order-1 mx-auto md:order-none md:mx-0 md:py-10 text-white flex flex-col justify-center">
-            <div className="mb-2 flex flex-col items-center md:items-start text-center md:text-left">
-              <span className="text-xl font-bold tracking-tight opacity-90">{player.firstName}</span>
-              <span className="text-4xl font-extrabold tracking-tight uppercase leading-none md:text-5xl lg:text-6xl">
+          <div className="order-1 mx-auto flex flex-col justify-center text-white md:order-none md:mx-0 md:py-10">
+            <div className="mb-2 flex flex-col items-center text-center md:items-start md:text-left">
+              <span className="text-xl font-bold tracking-tight opacity-90">
+                {player.firstName}
+              </span>
+              <span className="text-4xl leading-none font-extrabold tracking-tight uppercase md:text-5xl lg:text-6xl">
                 {player.lastName}
               </span>
             </div>
-            
+
             <div className="mb-4 flex items-center justify-center gap-2 md:justify-start">
               <span className="inline-flex rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold tracking-wider uppercase">
                 {player.position}
@@ -150,37 +170,44 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
 
             <div className="flex items-center justify-center gap-x-2 md:justify-start">
               <div className="h-2 w-2 rounded-full" style={{ backgroundColor: teamColor }}></div>
-              <div className="text-sm font-bold opacity-90">{team?.name ?? "Independent Agent"}</div>
+              <div className="text-sm font-bold opacity-90">
+                {team?.name ?? "Independent Agent"}
+              </div>
             </div>
           </div>
 
           {/* Biography Credentials */}
-          <div className="order-2 flex flex-col justify-center gap-y-2 text-white border-t md:border-t-0 border-white/10 pt-4 md:pt-0">
+          <div className="order-2 flex flex-col justify-center gap-y-2 border-t border-white/10 pt-4 text-white md:border-t-0 md:pt-0">
             {metrics.map((metric) => (
-              <div key={metric.label} className="grid grid-cols-[80px_1fr] md:grid-cols-[100px_1fr] text-xs uppercase items-center">
-                <span className="opacity-60 font-semibold">{metric.label}:</span>
-                <span className="font-bold truncate">{metric.value}</span>
+              <div
+                key={metric.label}
+                className="grid grid-cols-[80px_1fr] items-center text-xs uppercase md:grid-cols-[100px_1fr]"
+              >
+                <span className="font-semibold opacity-60">{metric.label}:</span>
+                <span className="truncate font-bold">{metric.value}</span>
               </div>
             ))}
-            <div className="grid grid-cols-[80px_1fr] md:grid-cols-[100px_1fr] text-xs uppercase items-center">
-              <span className="opacity-60 font-semibold">Physical:</span>
-              <span className="font-bold">{bio.height} / {bio.weight} lbs</span>
+            <div className="grid grid-cols-[80px_1fr] items-center text-xs uppercase md:grid-cols-[100px_1fr]">
+              <span className="font-semibold opacity-60">Physical:</span>
+              <span className="font-bold">
+                {bio.height} / {bio.weight} lbs
+              </span>
             </div>
           </div>
         </div>
 
         {/* Detailed Stats Grid */}
-        <div className="rounded-2xl bg-muted/30 dark:bg-slate-950/20 py-6 mt-1 border-t border-border/20">
-          <div className="grid grid-cols-2 gap-4 px-6 md:grid-cols-4 lg:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-border/20">
+        <div className="bg-muted/30 border-border/20 mt-1 rounded-2xl border-t py-6 dark:bg-slate-950/20">
+          <div className="divide-border/20 grid grid-cols-2 gap-4 divide-y px-6 md:grid-cols-4 md:divide-x md:divide-y-0 lg:grid-cols-6">
             {statistics.map((statistic) => (
               <div
                 key={statistic.label}
                 className="flex flex-col items-center justify-center p-2 text-center uppercase first:pt-2 md:first:pt-2"
               >
-                <div className="text-2xl font-black text-foreground tabular-nums">
+                <div className="text-foreground text-2xl font-black tabular-nums">
                   {statistic.value}
                 </div>
-                <div className="text-[10px] font-bold text-muted-foreground mt-1">
+                <div className="text-muted-foreground mt-1 text-[10px] font-bold">
                   {statistic.label}
                 </div>
               </div>

@@ -38,7 +38,7 @@ export default function MatchSchedule1({
 }: MatchSchedule1Props) {
   if (!matches || matches.length === 0) {
     return (
-      <div className={cn("mx-auto w-full text-center py-8 text-muted-foreground", className)}>
+      <div className={cn("text-muted-foreground mx-auto w-full py-8 text-center", className)}>
         No matches scheduled for this round.
       </div>
     );
@@ -49,16 +49,14 @@ export default function MatchSchedule1({
       depth={2}
       interactive="hover"
       className={cn(
-        "mx-auto w-full max-w-[550px] p-6 rounded-3xl border border-border/40 bg-card/90 shadow-xl overflow-hidden",
+        "border-border/40 bg-card/90 mx-auto w-full max-w-[550px] overflow-hidden rounded-3xl border p-6 shadow-xl",
         className
       )}
     >
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-extrabold text-foreground">
-          {title}
-        </h3>
-        <span className="rounded-full bg-muted border border-border/20 px-3 py-1 text-xs font-bold text-muted-foreground uppercase">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-foreground text-lg font-extrabold">{title}</h3>
+        <span className="bg-muted border-border/20 text-muted-foreground rounded-full border px-3 py-1 text-xs font-bold uppercase">
           Matchday {matchday}
         </span>
       </div>
@@ -72,16 +70,28 @@ export default function MatchSchedule1({
 
           const hScore = match.homeScore ?? 0;
           const aScore = match.awayScore ?? 0;
-          const homeOutcome = isCompleted ? (hScore > aScore ? "win" : hScore < aScore ? "loss" : "draw") : null;
-          const awayOutcome = isCompleted ? (aScore > hScore ? "win" : aScore < hScore ? "loss" : "draw") : null;
+          const homeOutcome = isCompleted
+            ? hScore > aScore
+              ? "win"
+              : hScore < aScore
+                ? "loss"
+                : "draw"
+            : null;
+          const awayOutcome = isCompleted
+            ? aScore > hScore
+              ? "win"
+              : aScore < hScore
+                ? "loss"
+                : "draw"
+            : null;
           const isExpanded = expandedMatchId === match.id;
 
           return (
             <div key={match.id} className="space-y-1">
               <div
                 className={cn(
-                  "grid grid-cols-[1fr_80px_1fr] gap-4 items-center px-4 py-3 rounded-2xl bg-muted/30 dark:bg-slate-950/20 border border-border/10 transition-colors",
-                  isCompleted ? "hover:bg-muted/40 dark:hover:bg-slate-900/20 cursor-pointer" : ""
+                  "bg-muted/30 border-border/10 grid grid-cols-[1fr_80px_1fr] items-center gap-4 rounded-2xl border px-4 py-3 transition-colors dark:bg-slate-950/20",
+                  isCompleted ? "hover:bg-muted/40 cursor-pointer dark:hover:bg-slate-900/20" : ""
                 )}
                 onClick={() => {
                   if (isCompleted) {
@@ -96,14 +106,14 @@ export default function MatchSchedule1({
                     e.stopPropagation();
                     onTeamClick?.(match.homeTeam.id);
                   }}
-                  className="flex items-center gap-2 min-w-0 text-left hover:underline cursor-pointer group justify-start"
+                  className="group flex min-w-0 cursor-pointer items-center justify-start gap-2 text-left hover:underline"
                 >
-                  <div className="aspect-square w-6 shrink-0 rounded-full border border-border/40 bg-background p-0.5 flex items-center justify-center shadow-xs">
+                  <div className="border-border/40 bg-background flex aspect-square w-6 shrink-0 items-center justify-center rounded-full border p-0.5 shadow-xs">
                     {match.homeTeam.logo ? (
                       <img
                         src={match.homeTeam.logo}
                         alt={match.homeTeam.name}
-                        className="h-full w-full object-contain rounded-full"
+                        className="h-full w-full rounded-full object-contain"
                       />
                     ) : (
                       <svg
@@ -120,7 +130,7 @@ export default function MatchSchedule1({
                       </svg>
                     )}
                   </div>
-                  <span className="truncate text-xs font-bold text-foreground">
+                  <span className="text-foreground truncate text-xs font-bold">
                     {match.homeTeam.name}
                   </span>
                 </button>
@@ -128,18 +138,22 @@ export default function MatchSchedule1({
                 {/* Center Match State / Score */}
                 <div className="flex flex-col items-center justify-center">
                   {isCompleted ? (
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-muted border border-border/20 text-xs font-extrabold text-foreground tabular-nums">
-                      <span className={cn(homeOutcome !== "win" && "opacity-75 font-semibold")}>{hScore}</span>
+                    <div className="bg-muted border-border/20 text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-extrabold tabular-nums">
+                      <span className={cn(homeOutcome !== "win" && "font-semibold opacity-75")}>
+                        {hScore}
+                      </span>
                       <span className="opacity-40">-</span>
-                      <span className={cn(awayOutcome !== "win" && "opacity-75 font-semibold")}>{aScore}</span>
+                      <span className={cn(awayOutcome !== "win" && "font-semibold opacity-75")}>
+                        {aScore}
+                      </span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                      <span className="text-muted-foreground text-[10px] font-black tracking-wider uppercase">
                         {match.time ?? "TBD"}
                       </span>
                       {match.date && (
-                        <span className="text-[9px] text-muted-foreground font-semibold mt-0.5 whitespace-nowrap">
+                        <span className="text-muted-foreground mt-0.5 text-[9px] font-semibold whitespace-nowrap">
                           {match.date}
                         </span>
                       )}
@@ -154,14 +168,14 @@ export default function MatchSchedule1({
                     e.stopPropagation();
                     onTeamClick?.(match.awayTeam.id);
                   }}
-                  className="flex items-center gap-2 min-w-0 text-left hover:underline cursor-pointer group justify-end flex-row-reverse"
+                  className="group flex min-w-0 cursor-pointer flex-row-reverse items-center justify-end gap-2 text-left hover:underline"
                 >
-                  <div className="aspect-square w-6 shrink-0 rounded-full border border-border/40 bg-background p-0.5 flex items-center justify-center shadow-xs">
+                  <div className="border-border/40 bg-background flex aspect-square w-6 shrink-0 items-center justify-center rounded-full border p-0.5 shadow-xs">
                     {match.awayTeam.logo ? (
                       <img
                         src={match.awayTeam.logo}
                         alt={match.awayTeam.name}
-                        className="h-full w-full object-contain rounded-full"
+                        className="h-full w-full rounded-full object-contain"
                       />
                     ) : (
                       <svg
@@ -178,7 +192,7 @@ export default function MatchSchedule1({
                       </svg>
                     )}
                   </div>
-                  <span className="truncate text-xs font-bold text-foreground text-right">
+                  <span className="text-foreground truncate text-right text-xs font-bold">
                     {match.awayTeam.name}
                   </span>
                 </button>

@@ -23,5 +23,5 @@ export const thinkpagesRouter = mergeRouters(
   thinkpagesPostsRouter,
   thinkpagesFeedRouter,
   thinkpagesThinktanksRouter,
-  thinkpagesMessagingRouter,
+  thinkpagesMessagingRouter
 );

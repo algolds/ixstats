@@ -27,7 +27,7 @@ interface SimulationHubTabProps {
 }
 
 function findNextScheduledMatchDay(
-  season: NonNullable<ReturnType<typeof api.sports.getSeason.useQuery>["data"]>,
+  season: NonNullable<ReturnType<typeof api.sports.getSeason.useQuery>["data"]>
 ): number | null {
   const scheduledMatches = season.matches.filter((m) => m.status === "scheduled");
   if (scheduledMatches.length === 0) return null;
@@ -51,7 +51,7 @@ export function SimulationHubTab({
 
   const { data: draftPicks } = api.sports.getDraftPicks.useQuery(
     { seasonId },
-    { enabled: !!seasonId },
+    { enabled: !!seasonId }
   );
 
   const simulateMatchDay = api.sports.simulateMatchDay.useMutation({
@@ -284,9 +284,7 @@ export function SimulationHubTab({
           <BracketView brackets={mappedBrackets} />
         )}
 
-        {archetype === "circuit" && mappedRaces.length > 0 && (
-          <RaceResults races={mappedRaces} />
-        )}
+        {archetype === "circuit" && mappedRaces.length > 0 && <RaceResults races={mappedRaces} />}
 
         {mappedMatches.length > 0 && (
           <Card className="facet-hierarchy-child">

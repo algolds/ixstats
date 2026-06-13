@@ -15,10 +15,14 @@ export function SnippetExporter({ config, generatedClassNames }: SnippetExporter
   // Generate TSX Snippet code
   const getSnippetCode = () => {
     const styleObj = `{
-  ${lightInteraction ? `"--pointer-x": "50%",
+  ${
+    lightInteraction
+      ? `"--pointer-x": "50%",
           "--pointer-y": "50%",
           "--pointer-offset-x": "0px",
-          "--pointer-offset-y": "0px",` : ""}
+          "--pointer-offset-y": "0px",`
+      : ""
+  }
           "--facet-lab-accent": "${customAccent}",
         } as React.CSSProperties`;
 
@@ -77,7 +81,7 @@ export default function CustomFacetWidget() {
       </div>
 
       <div className="relative">
-        <pre className="bg-muted/90 border-border max-h-[280px] overflow-x-auto rounded-xl border p-4 font-mono text-xs leading-relaxed text-foreground shadow-inner">
+        <pre className="bg-muted/90 border-border text-foreground max-h-[280px] overflow-x-auto rounded-xl border p-4 font-mono text-xs leading-relaxed shadow-inner">
           <code>{getSnippetCode()}</code>
         </pre>
       </div>

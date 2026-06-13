@@ -47,8 +47,8 @@ export function PlayerTrainingButton({
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-border bg-card p-3 shadow-xl backdrop-blur-xl">
-          <p className="mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="border-border bg-card absolute top-full right-0 z-50 mt-1 w-52 rounded-xl border p-3 shadow-xl backdrop-blur-xl">
+          <p className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-wider uppercase">
             Focus Attribute
           </p>
           <div className="max-h-40 space-y-1 overflow-y-auto">
@@ -63,7 +63,7 @@ export function PlayerTrainingButton({
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs transition hover:bg-muted",
+                    "hover:bg-muted flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs transition",
                     trainPlayer.isPending && "opacity-50"
                   )}
                 >
@@ -93,7 +93,7 @@ export function PlayerTrainingButton({
           </div>
           {trainPlayer.isPending && (
             <div className="mt-2 flex items-center justify-center">
-              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
             </div>
           )}
         </div>

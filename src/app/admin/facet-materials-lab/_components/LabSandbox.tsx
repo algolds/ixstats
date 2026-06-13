@@ -18,13 +18,9 @@ function getBgClasses(style: BgStyleType, theme: "light" | "dark") {
         ? "dark border-zinc-800 bg-zinc-950 text-white"
         : "light border-zinc-200 bg-zinc-50 text-zinc-900";
     case "gradient":
-      return isDark
-        ? "dark border-zinc-800 text-white"
-        : "light border-zinc-200 text-zinc-900";
+      return isDark ? "dark border-zinc-800 text-white" : "light border-zinc-200 text-zinc-900";
     case "solid":
-      return isDark
-        ? "dark border-zinc-800 text-white"
-        : "light border-zinc-200 text-zinc-900";
+      return isDark ? "dark border-zinc-800 text-white" : "light border-zinc-200 text-zinc-900";
     case "pattern":
       return isDark
         ? "dark border-zinc-800 bg-zinc-950 text-white"
@@ -37,8 +33,7 @@ function getBgClasses(style: BgStyleType, theme: "light" | "dark") {
 }
 
 function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor: string) {
-  const gridColor =
-    theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+  const gridColor = theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
   const textColor = theme === "dark" ? "opacity-25" : "opacity-20";
 
   switch (style) {
@@ -120,7 +115,20 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
 }
 
 export function LabSandbox({ config, onChange, generatedClassNames }: LabSandboxProps) {
-  const { simulatedTheme, lightInteraction, template, bgStyle, bgCustomColor, depth, material, blurStrength, saturationBoost, glowIntensity, refractionEnabled, dofStrength } = config;
+  const {
+    simulatedTheme,
+    lightInteraction,
+    template,
+    bgStyle,
+    bgCustomColor,
+    depth,
+    material,
+    blurStrength,
+    saturationBoost,
+    glowIntensity,
+    refractionEnabled,
+    dofStrength,
+  } = config;
 
   const [showDebug, setShowDebug] = React.useState(false);
 
@@ -209,9 +217,9 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       setComputed({
         "backdrop-filter": style.backdropFilter || style.webkitBackdropFilter || "none",
         "box-shadow": style.boxShadow,
-        "background": style.background,
+        background: style.background,
         "z-index": style.zIndex,
-        "transform": style.transform,
+        transform: style.transform,
         "border-radius": style.borderRadius,
         "--blur-moderate": style.getPropertyValue("--blur-moderate") || "not set",
         "--facet-saturate": style.getPropertyValue("--facet-saturate") || "not set",
@@ -222,7 +230,16 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
     };
     rafRef.current = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [showDebug, template, depth, material, blurStrength, saturationBoost, glowIntensity, refractionEnabled]);
+  }, [
+    showDebug,
+    template,
+    depth,
+    material,
+    blurStrength,
+    saturationBoost,
+    glowIntensity,
+    refractionEnabled,
+  ]);
 
   const dynamicStyles: React.CSSProperties = {
     "--pointer-x": pointerState.x,
@@ -300,14 +317,15 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <>
             {/* Background element — shifts backward with depth */}
             <div
-              className="pointer-events-none absolute z-[2] select-none transition-all duration-500"
+              className="pointer-events-none absolute z-[2] transition-all duration-500 select-none"
               style={{
                 top: `${15 - dofStrength * 0.08}%`,
                 left: `${10 - dofStrength * 0.05}%`,
                 width: `${40 + dofStrength * 0.3}px`,
                 height: `${40 + dofStrength * 0.3}px`,
                 borderRadius: "9999px",
-                background: simulatedTheme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
+                background:
+                  simulatedTheme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
                 border: `1px solid ${simulatedTheme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
                 filter: `blur(${dofStrength * 0.15}px)`,
                 opacity: Math.max(0, 0.5 - dofStrength * 0.004),
@@ -315,14 +333,15 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[2] select-none transition-all duration-500"
+              className="pointer-events-none absolute z-[2] transition-all duration-500 select-none"
               style={{
                 bottom: `${12 - dofStrength * 0.06}%`,
                 right: `${8 - dofStrength * 0.04}%`,
                 width: `${56 + dofStrength * 0.4}px`,
                 height: `${20 + dofStrength * 0.2}px`,
                 borderRadius: "8px",
-                background: simulatedTheme === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+                background:
+                  simulatedTheme === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
                 border: `1px solid ${simulatedTheme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
                 filter: `blur(${dofStrength * 0.12}px)`,
                 opacity: Math.max(0, 0.6 - dofStrength * 0.005),
@@ -332,7 +351,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
             {/* Foreground element — shifts forward with depth */}
             <div
-              className="pointer-events-none absolute z-[15] select-none transition-all duration-500"
+              className="pointer-events-none absolute z-[15] transition-all duration-500 select-none"
               style={{
                 top: `${75 + dofStrength * 0.05}%`,
                 left: `${80 + dofStrength * 0.08}%`,
@@ -348,7 +367,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[15] select-none transition-all duration-500"
+              className="pointer-events-none absolute z-[15] transition-all duration-500 select-none"
               style={{
                 top: `${20 - dofStrength * 0.03}%`,
                 right: `${5 + dofStrength * 0.06}%`,
@@ -391,13 +410,11 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
       {/* Debug panel */}
       {showDebug && (
-        <div className="bg-background/80 border-border/20 font-mono space-y-2 rounded-xl border p-4 text-[10px] leading-relaxed backdrop-blur-sm">
+        <div className="bg-background/80 border-border/20 space-y-2 rounded-xl border p-4 font-mono text-[10px] leading-relaxed backdrop-blur-sm">
           <div className="text-muted-foreground mb-1.5 flex items-center gap-2 border-b pb-1.5 text-[9px] font-bold tracking-wider uppercase">
             <Bug className="h-3 w-3" />
             Computed CSS
-            <span className="text-muted-foreground/50 ml-auto font-normal normal-case">
-              live
-            </span>
+            <span className="text-muted-foreground/50 ml-auto font-normal normal-case">live</span>
           </div>
           <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
             {[
@@ -407,7 +424,9 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
             ].map(([label, val]) => (
               <React.Fragment key={label}>
                 <span className="text-muted-foreground">{label}</span>
-                <span className="text-foreground truncate" title={val}>{val}</span>
+                <span className="text-foreground truncate" title={val}>
+                  {val}
+                </span>
               </React.Fragment>
             ))}
           </div>
@@ -423,7 +442,10 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
                     className="text-foreground truncate font-normal"
                     title={val}
                     style={{
-                      color: val === "none" || val === "not set" ? "var(--color-error, #ef4444)" : undefined,
+                      color:
+                        val === "none" || val === "not set"
+                          ? "var(--color-error, #ef4444)"
+                          : undefined,
                       fontStyle: val === "not set" ? "italic" : undefined,
                     }}
                   >

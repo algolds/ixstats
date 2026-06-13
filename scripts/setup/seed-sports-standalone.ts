@@ -13,21 +13,22 @@ async function run() {
   try {
     console.log("🧹 Cleaning existing canonical sports leagues...");
     await db.sportLeague.deleteMany({
-      where: { isCanonical: true }
+      where: { isCanonical: true },
     });
 
     const firstCountry = await db.country.findFirst({ select: { id: true } });
     const firstUser = await db.user.findFirst({ select: { id: true } });
 
     if (!firstCountry || !firstUser) {
-      console.error("❌ Could not seed sports: No country or user found in the database. Please seed the main DB first.");
+      console.error(
+        "❌ Could not seed sports: No country or user found in the database. Please seed the main DB first."
+      );
       process.exit(1);
     }
 
     console.log("🌱 Seeding sports leagues...");
     const count = await seedSportsLeagues(db, firstCountry.id, firstUser.id);
     console.log(`✅ Sports seeding complete! Created ${count} records.`);
-
   } catch (error) {
     console.error("❌ Standalone sports seeding failed:", error);
     process.exit(1);

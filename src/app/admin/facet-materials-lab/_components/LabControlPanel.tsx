@@ -117,13 +117,22 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
                 <SelectItem value="satin" description="Frosted glass backing with dynamic sheen">
                   Satin (Glass)
                 </SelectItem>
-                <SelectItem value="paper" description="Warm matte surface with tactile displacement cast shadow">
+                <SelectItem
+                  value="paper"
+                  description="Warm matte surface with tactile displacement cast shadow"
+                >
                   Paper (Matte Warm)
                 </SelectItem>
-                <SelectItem value="rubber" description="High-friction chamfered dark plate with deep soft shadow">
+                <SelectItem
+                  value="rubber"
+                  description="High-friction chamfered dark plate with deep soft shadow"
+                >
                   Rubber (Matte Dark)
                 </SelectItem>
-                <SelectItem value="metal" description="Metallic brushed layout with linear reflections">
+                <SelectItem
+                  value="metal"
+                  description="Metallic brushed layout with linear reflections"
+                >
                   Metal (Brushed Steel)
                 </SelectItem>
                 <SelectItem value="glass" description="Clear heavy glass with prismatic edge glow">
@@ -223,12 +232,24 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
                 <SelectItem value="paperGrain">Organic Paper Grain</SelectItem>
                 <SelectItem value="horizontalLines">Horizontal Brushed</SelectItem>
                 <SelectItem value="verticalLines">Vertical Brushed</SelectItem>
-                <SelectItem value="waves" description="Concentric wave ring pattern">Waves</SelectItem>
-                <SelectItem value="zigzag" description="Alternating zigzag lines">Zigzag</SelectItem>
-                <SelectItem value="woven" description="Cross-woven fabric texture">Woven</SelectItem>
-                <SelectItem value="brick" description="Offset brick wall pattern">Brick</SelectItem>
-                <SelectItem value="herringbone" description="Herringbone chevron pattern">Herringbone</SelectItem>
-                <SelectItem value="shimmer" description="Animated shimmer sweep">Shimmer</SelectItem>
+                <SelectItem value="waves" description="Concentric wave ring pattern">
+                  Waves
+                </SelectItem>
+                <SelectItem value="zigzag" description="Alternating zigzag lines">
+                  Zigzag
+                </SelectItem>
+                <SelectItem value="woven" description="Cross-woven fabric texture">
+                  Woven
+                </SelectItem>
+                <SelectItem value="brick" description="Offset brick wall pattern">
+                  Brick
+                </SelectItem>
+                <SelectItem value="herringbone" description="Herringbone chevron pattern">
+                  Herringbone
+                </SelectItem>
+                <SelectItem value="shimmer" description="Animated shimmer sweep">
+                  Shimmer
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -288,7 +309,9 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Backdrop Blur
               </label>
-              <span className="text-primary font-mono text-xs font-bold">{config.blurStrength}px</span>
+              <span className="text-primary font-mono text-xs font-bold">
+                {config.blurStrength}px
+              </span>
             </div>
             <Slider
               min={0}
@@ -305,7 +328,9 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Saturation Boost
               </label>
-              <span className="text-primary font-mono text-xs font-bold">{config.saturationBoost}%</span>
+              <span className="text-primary font-mono text-xs font-bold">
+                {config.saturationBoost}%
+              </span>
             </div>
             <Slider
               min={100}
@@ -319,9 +344,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
-              <span className="text-foreground text-xs font-semibold">
-                Edge Refraction
-              </span>
+              <span className="text-foreground text-xs font-semibold">Edge Refraction</span>
               <span className="text-muted-foreground text-[10px]">
                 Gradient sheen at material borders
               </span>
@@ -347,7 +370,9 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Glow Intensity
               </label>
-              <span className="text-primary font-mono text-xs font-bold">{config.glowIntensity}%</span>
+              <span className="text-primary font-mono text-xs font-bold">
+                {config.glowIntensity}%
+              </span>
             </div>
             <Slider
               min={0}
@@ -363,7 +388,10 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         {/* ── Depth of Field ── */}
         <div className="border-border/10 space-y-3 border-t pt-4">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: config.customAccent }}>
+            <span
+              className="text-[10px] font-bold tracking-wider uppercase"
+              style={{ color: config.customAccent }}
+            >
               Depth of Field
             </span>
           </div>
@@ -372,7 +400,9 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Fore/Background Shift
               </label>
-              <span className="text-primary font-mono text-xs font-bold">{config.dofStrength}%</span>
+              <span className="text-primary font-mono text-xs font-bold">
+                {config.dofStrength}%
+              </span>
             </div>
             <Slider
               min={0}
@@ -383,7 +413,8 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               className="py-2"
             />
             <p className="text-muted-foreground text-[9px]">
-              Moves foreground content forward and background elements backward to visualize depth layering.
+              Moves foreground content forward and background elements backward to visualize depth
+              layering.
             </p>
           </div>
         </div>
@@ -450,12 +481,8 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
                 <SelectItem value="hierarchy-interactive">
                   Hierarchical Stack Interactive (Saturate + Hover)
                 </SelectItem>
-                <SelectItem value="magnetic-3d">
-                  3D Magnetic Tilt (Perspective Shift)
-                </SelectItem>
-                <SelectItem value="glow-accent">
-                  Accent Glow Pulse (Vibrant Hover Glow)
-                </SelectItem>
+                <SelectItem value="magnetic-3d">3D Magnetic Tilt (Perspective Shift)</SelectItem>
+                <SelectItem value="glow-accent">Accent Glow Pulse (Vibrant Hover Glow)</SelectItem>
               </SelectContent>
             </Select>
           </div>

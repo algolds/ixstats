@@ -58,14 +58,17 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       id: 0,
       title: "Sovereign Wallet & Budget",
       description: "Manage club balances and pricing structures",
-      color: "from-card/90 to-card/60 border-border dark:from-slate-800 dark:to-slate-900 dark:border-slate-700/50",
+      color:
+        "from-card/90 to-card/60 border-border dark:from-slate-800 dark:to-slate-900 dark:border-slate-700/50",
       icon: Landmark,
       content: (
         <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-4">
+          <div className="border-border bg-muted/40 flex items-center justify-between rounded-xl border p-4">
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase">Current Ticket Price</p>
-              <p className="text-2xl font-bold text-foreground">₷{team.ticketPrice}</p>
+              <p className="text-muted-foreground text-[10px] font-bold uppercase">
+                Current Ticket Price
+              </p>
+              <p className="text-foreground text-2xl font-bold">₷{team.ticketPrice}</p>
             </div>
             <div className="flex items-center gap-2">
               <Input
@@ -74,7 +77,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                 max={100}
                 value={newPrice}
                 onChange={(e) => setNewPrice(Number(e.target.value))}
-                className="h-8 w-16 border-border bg-background/50 text-center"
+                className="border-border bg-background/50 h-8 w-16 text-center"
               />
               <Button
                 size="sm"
@@ -84,7 +87,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                 }}
                 disabled={updatingPrice || setTicketPrice.isPending}
                 style={{ backgroundColor: team.color, color: "#ffffff" }}
-                className="hover:opacity-90 transition-all font-semibold"
+                className="font-semibold transition-all hover:opacity-90"
               >
                 {setTicketPrice.isPending ? "..." : "Save"}
               </Button>
@@ -102,13 +105,16 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       id: 1,
       title: "Stadium & Expansion Vouchers",
       description: "Expand seating capacity to maximize ticketing limits",
-      color: "from-emerald-500/10 to-emerald-600/5 border-emerald-500/30 dark:from-emerald-950 dark:to-teal-900 dark:border-emerald-800/40",
+      color:
+        "from-emerald-500/10 to-emerald-600/5 border-emerald-500/30 dark:from-emerald-950 dark:to-teal-900 dark:border-emerald-800/40",
       icon: ArrowUpRight,
       content: (
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
             <div>
-              <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Current Capacity</p>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase dark:text-emerald-400">
+                Current Capacity
+              </p>
               <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                 {team.stadiumCapacity?.toLocaleString() ?? "5,000"} seats
               </p>
@@ -116,7 +122,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
             <Button
               size="sm"
               variant="outline"
-              className="border-emerald-500/30 bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-500/30"
+              className="border-emerald-500/30 bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/30 dark:text-emerald-200"
               onClick={() => upgradeStadium.mutate({ teamId: team.id })}
               disabled={upgradeStadium.isPending}
             >
@@ -134,24 +140,31 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       id: 2,
       title: "Sponsorship Contracts",
       description: "Configure sponsorship packages for baseline and win bonuses",
-      color: "from-amber-500/10 to-amber-600/5 border-amber-500/30 dark:from-amber-950 dark:to-orange-950 dark:border-amber-800/40",
+      color:
+        "from-amber-500/10 to-amber-600/5 border-amber-500/30 dark:from-amber-950 dark:to-orange-950 dark:border-amber-800/40",
       icon: Trophy,
       content: (
         <div className="space-y-4 pt-2">
           {currentSponsor ? (
             <div className="mb-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <Badge className="mb-1 font-bold text-white" style={{ backgroundColor: team.color }}>Active Partner</Badge>
-              <h5 className="font-bold text-amber-900 dark:text-amber-200">{currentSponsor.name}</h5>
+              <Badge className="mb-1 font-bold text-white" style={{ backgroundColor: team.color }}>
+                Active Partner
+              </Badge>
+              <h5 className="font-bold text-amber-900 dark:text-amber-200">
+                {currentSponsor.name}
+              </h5>
               <div className="mt-2 grid grid-cols-2 gap-2 border-t border-amber-500/20 pt-2 text-xs">
                 <div>
-                  <span className="block text-[9px] text-muted-foreground uppercase">Base Fee</span>
-                  <span className="font-semibold text-foreground">
+                  <span className="text-muted-foreground block text-[9px] uppercase">Base Fee</span>
+                  <span className="text-foreground font-semibold">
                     ₷{currentSponsor.baseFee} / season
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] text-muted-foreground uppercase">Win Bonus</span>
-                  <span className="font-semibold text-foreground">
+                  <span className="text-muted-foreground block text-[9px] uppercase">
+                    Win Bonus
+                  </span>
+                  <span className="text-foreground font-semibold">
                     ₷{currentSponsor.winBonus} / match
                   </span>
                 </div>
@@ -190,7 +203,11 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   selectSponsor.mutate({ teamId: team.id, sponsorType: s.type as any })
                 }
                 disabled={selectSponsor.isPending}
-                style={currentSponsor?.name === s.name ? { borderColor: team.color, backgroundColor: `${team.color}20` } : {}}
+                style={
+                  currentSponsor?.name === s.name
+                    ? { borderColor: team.color, backgroundColor: `${team.color}20` }
+                    : {}
+                }
                 className={cn(
                   "flex items-center justify-between rounded-lg border p-3 text-left transition-all",
                   currentSponsor?.name === s.name
@@ -200,9 +217,12 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               >
                 <div>
                   <p className="text-xs font-bold">{s.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.desc}</p>
+                  <p className="text-muted-foreground text-[10px]">{s.desc}</p>
                 </div>
-                <Badge variant="outline" className="border-amber-500/30 text-[10px] text-amber-600 dark:text-amber-400">
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/30 text-[10px] text-amber-600 dark:text-amber-400"
+                >
                   {s.payout}
                 </Badge>
               </button>
@@ -214,7 +234,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   ];
 
   return (
-    <Card className="facet-hierarchy-child overflow-hidden rounded-3xl border-border bg-card/45 backdrop-blur-lg">
+    <Card className="facet-hierarchy-child border-border bg-card/45 overflow-hidden rounded-3xl backdrop-blur-lg">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl font-bold">
           <Sparkles className="h-5 w-5 text-amber-500" />
@@ -253,7 +273,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                     <div>
                       <h4 className="text-sm leading-none font-bold">{card.title}</h4>
                       {!isExpanded && (
-                        <p className="mt-1 text-[10px] leading-none text-muted-foreground">
+                        <p className="text-muted-foreground mt-1 text-[10px] leading-none">
                           {card.description}
                         </p>
                       )}
@@ -263,7 +283,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground h-6 w-6"
                       onClick={(e) => {
                         e.stopPropagation();
                         setActiveCard(null);

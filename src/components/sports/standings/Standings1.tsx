@@ -43,7 +43,7 @@ export default function Standings1({
 }: Standings1Props) {
   if (!standings || standings.length === 0) {
     return (
-      <div className={cn("mx-auto w-full text-center py-8 text-muted-foreground", className)}>
+      <div className={cn("text-muted-foreground mx-auto w-full py-8 text-center", className)}>
         No standings data yet.
       </div>
     );
@@ -76,14 +76,14 @@ export default function Standings1({
     const relegLimit = relegationCount ?? 0;
 
     return (
-      <div className="overflow-x-auto rounded-2xl border border-border/20 bg-muted/30 dark:bg-slate-950/20">
+      <div className="border-border/20 bg-muted/30 overflow-x-auto rounded-2xl border dark:bg-slate-950/20">
         <table className="min-w-full table-auto border-collapse border-spacing-px text-sm">
-          <thead className="bg-muted/50 dark:bg-slate-900/40 text-xs font-bold text-foreground uppercase tracking-wider">
+          <thead className="bg-muted/50 text-foreground text-xs font-bold tracking-wider uppercase dark:bg-slate-900/40">
             <tr>
-              <th scope="col" className="py-3 px-4 text-start w-16">
+              <th scope="col" className="w-16 px-4 py-3 text-start">
                 #
               </th>
-              <th scope="col" className="py-3 px-4 text-start">
+              <th scope="col" className="px-4 py-3 text-start">
                 Team
               </th>
               <th scope="col" className="px-2.5 py-3 text-center">
@@ -98,12 +98,12 @@ export default function Standings1({
               <th scope="col" className="px-2.5 py-3 text-center font-extrabold">
                 PTS
               </th>
-              <th scope="col" className="py-3 px-4 text-end">
+              <th scope="col" className="px-4 py-3 text-end">
                 DIFF
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/20 text-foreground bg-transparent">
+          <tbody className="divide-border/20 text-foreground divide-y bg-transparent">
             {rows.map((team, index) => {
               const isPromotionZone = index < promoLimit && hasParentLeague;
               const isRelegationZone = index >= totalTeams - relegLimit && hasSubLeagues;
@@ -115,19 +115,21 @@ export default function Standings1({
                 <tr
                   key={team.id}
                   className={cn(
-                    "hover:bg-muted/40 dark:hover:bg-slate-900/20 transition-colors",
-                    isPromotionZone && "border-l-4 border-l-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/5 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/10",
-                    isRelegationZone && "border-l-4 border-l-red-500 bg-red-500/5 dark:bg-red-500/5 hover:bg-red-500/10 dark:hover:bg-red-500/10"
+                    "hover:bg-muted/40 transition-colors dark:hover:bg-slate-900/20",
+                    isPromotionZone &&
+                      "border-l-4 border-l-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-500/5 dark:hover:bg-emerald-500/10",
+                    isRelegationZone &&
+                      "border-l-4 border-l-red-500 bg-red-500/5 hover:bg-red-500/10 dark:bg-red-500/5 dark:hover:bg-red-500/10"
                   )}
                 >
-                  <td className="py-3 px-4 font-bold whitespace-nowrap">
+                  <td className="px-4 py-3 font-bold whitespace-nowrap">
                     {team.rank ?? index + 1}
                   </td>
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onTeamClick?.(team.teamId)}
-                        className="flex items-center gap-2 hover:underline cursor-pointer font-bold text-left group"
+                        className="group flex cursor-pointer items-center gap-2 text-left font-bold hover:underline"
                       >
                         <svg
                           viewBox="0 0 420 420"
@@ -144,22 +146,26 @@ export default function Standings1({
                         <span className="truncate">{team.teamName ?? team.teamId}</span>
                       </button>
                       {isPromotionZone && (
-                        <span className="rounded bg-emerald-500/10 dark:bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                           P
                         </span>
                       )}
                       {isRelegationZone && (
-                        <span className="rounded bg-red-500/10 dark:bg-red-500/20 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400 whitespace-nowrap">
+                        <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap text-red-600 dark:bg-red-500/20 dark:text-red-400">
                           R
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="px-2.5 py-3 text-center whitespace-nowrap">{team.wins}</td>
-                  <td className="px-2.5 py-3 text-center whitespace-nowrap text-muted-foreground">{team.losses}</td>
+                  <td className="text-muted-foreground px-2.5 py-3 text-center whitespace-nowrap">
+                    {team.losses}
+                  </td>
                   <td className="px-2.5 py-3 text-center whitespace-nowrap">{team.draws}</td>
-                  <td className="px-2.5 py-3 text-center font-bold whitespace-nowrap">{team.points}</td>
-                  <td className="py-3 px-4 text-end text-muted-foreground font-semibold whitespace-nowrap">
+                  <td className="px-2.5 py-3 text-center font-bold whitespace-nowrap">
+                    {team.points}
+                  </td>
+                  <td className="text-muted-foreground px-4 py-3 text-end font-semibold whitespace-nowrap">
                     {diffStr}
                   </td>
                 </tr>
@@ -171,38 +177,34 @@ export default function Standings1({
     );
   };
 
-  const grouped = (hasConferences || hasDivisions) ? groupByConferenceDivision(standings) : null;
+  const grouped = hasConferences || hasDivisions ? groupByConferenceDivision(standings) : null;
 
   return (
     <FacetCard
       depth={2}
       interactive="hover"
       className={cn(
-        "mx-auto w-full max-w-[650px] p-6 rounded-3xl border border-border/40 bg-card/90 shadow-xl",
+        "border-border/40 bg-card/90 mx-auto w-full max-w-[650px] rounded-3xl border p-6 shadow-xl",
         className
       )}
     >
       <div className="mb-4">
-        <h3 className="text-lg font-extrabold text-foreground">
-          {title}
-        </h3>
+        <h3 className="text-foreground text-lg font-extrabold">{title}</h3>
       </div>
 
       <div className="space-y-6">
-        {grouped ? (
-          grouped.map((group) => (
-            <div key={group.key} className="space-y-2">
-              {group.label && (
-                <h4 className="text-xs font-extrabold tracking-wider uppercase text-muted-foreground">
-                  {group.label}
-                </h4>
-              )}
-              {renderTable(group.standings)}
-            </div>
-          ))
-        ) : (
-          renderTable(standings)
-        )}
+        {grouped
+          ? grouped.map((group) => (
+              <div key={group.key} className="space-y-2">
+                {group.label && (
+                  <h4 className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
+                    {group.label}
+                  </h4>
+                )}
+                {renderTable(group.standings)}
+              </div>
+            ))
+          : renderTable(standings)}
       </div>
     </FacetCard>
   );

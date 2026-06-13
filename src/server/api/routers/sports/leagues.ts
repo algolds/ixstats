@@ -36,7 +36,7 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
 
 async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
   if (!team.nationId) return undefined;
-  
+
   let effects: any[] = [];
   if (effectsMap) {
     effects = effectsMap.get(team.nationId) ?? [];
@@ -578,10 +578,10 @@ export const sportsLeaguesRouter = createTRPCRouter({
             teamName: p.team.name,
             listing: p.transferListing
               ? {
-                id: p.transferListing.id,
-                price: p.transferListing.price,
-                status: p.transferListing.status,
-              }
+                  id: p.transferListing.id,
+                  price: p.transferListing.price,
+                  status: p.transferListing.status,
+                }
               : null,
           })),
           teams: teams.map((t: any) => ({

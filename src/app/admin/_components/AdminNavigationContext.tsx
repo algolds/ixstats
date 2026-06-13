@@ -62,7 +62,9 @@ export function AdminNavigationProvider({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <AdminNavigationContext.Provider value={{ activeSection, onNavigate, sidebarHidden, setSidebarHidden }}>
+    <AdminNavigationContext.Provider
+      value={{ activeSection, onNavigate, sidebarHidden, setSidebarHidden }}
+    >
       {children}
     </AdminNavigationContext.Provider>
   );

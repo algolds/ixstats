@@ -1,8 +1,23 @@
 import { type TextureType } from "~/components/ui/texture-overlay";
 
 export type MaterialType = "satin" | "paper" | "rubber" | "metal" | "glass" | "carbon" | "wood";
-export type VariantType = "base" | "mycountry" | "global" | "overview" | "economy" | "military" | "cultural" | "security" | "forum" | "builder";
-export type InteractivityType = "none" | "interactive" | "hierarchy-interactive" | "magnetic-3d" | "glow-accent";
+export type VariantType =
+  | "base"
+  | "mycountry"
+  | "global"
+  | "overview"
+  | "economy"
+  | "military"
+  | "cultural"
+  | "security"
+  | "forum"
+  | "builder";
+export type InteractivityType =
+  | "none"
+  | "interactive"
+  | "hierarchy-interactive"
+  | "magnetic-3d"
+  | "glow-accent";
 export type TemplateType =
   | "material-block"
   | "facet-card"

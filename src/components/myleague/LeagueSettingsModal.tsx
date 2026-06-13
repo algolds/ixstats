@@ -82,9 +82,7 @@ export function LeagueSettingsModal({
   const [divisions, setDivisions] = useState<number>(initialSettings.divisions ?? 2);
   const [raceCount, setRaceCount] = useState<number>(initialSettings.raceCount ?? 20);
   const [weightClassesRaw, setWeightClassesRaw] = useState<string>(
-    Array.isArray(initialSettings.weightClasses)
-      ? initialSettings.weightClasses.join(", ")
-      : ""
+    Array.isArray(initialSettings.weightClasses) ? initialSettings.weightClasses.join(", ") : ""
   );
 
   const isDivisionConference = league.archetype === "division_conference";
@@ -106,9 +104,7 @@ export function LeagueSettingsModal({
       setDivisions(currentSettings.divisions ?? 2);
       setRaceCount(currentSettings.raceCount ?? 20);
       setWeightClassesRaw(
-        Array.isArray(currentSettings.weightClasses)
-          ? currentSettings.weightClasses.join(", ")
-          : ""
+        Array.isArray(currentSettings.weightClasses) ? currentSettings.weightClasses.join(", ") : ""
       );
     }
   }, [open, league]);
@@ -210,7 +206,9 @@ export function LeagueSettingsModal({
             <Settings className="h-5 w-5" />
             League Settings
           </DialogTitle>
-          <DialogDescription>Edit name, branding, and competition rules for this league.</DialogDescription>
+          <DialogDescription>
+            Edit name, branding, and competition rules for this league.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="branding" className="w-full">
@@ -237,9 +235,7 @@ export function LeagueSettingsModal({
                 <div
                   className={cn(
                     "flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed",
-                    previewSrc
-                      ? "border-border bg-muted/50"
-                      : "border-border/50 bg-muted/30"
+                    previewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
                   )}
                 >
                   {previewSrc ? (
@@ -285,7 +281,7 @@ export function LeagueSettingsModal({
                       variant="ghost"
                       size="sm"
                       onClick={handleRemoveLogo}
-                      className="text-xs text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive text-xs"
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                       Remove
@@ -315,13 +311,15 @@ export function LeagueSettingsModal({
                 <div
                   className={cn(
                     "flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed",
-                    coverUrl
-                      ? "border-border bg-muted/50"
-                      : "border-border/50 bg-muted/30"
+                    coverUrl ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
                   )}
                 >
                   {coverUrl ? (
-                    <img src={coverUrl} alt="Cover preview" className="h-full w-full object-cover" />
+                    <img
+                      src={coverUrl}
+                      alt="Cover preview"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <span className="text-muted-foreground text-[10px] font-medium">No cover</span>
                   )}
@@ -343,7 +341,7 @@ export function LeagueSettingsModal({
                       variant="ghost"
                       size="sm"
                       onClick={() => setCoverUrl("")}
-                      className="text-xs text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive text-xs"
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                       Remove
@@ -412,7 +410,7 @@ export function LeagueSettingsModal({
 
             {/* Archetype / Preset Specific Settings */}
             {isDivisionConference && (
-              <div className="space-y-2 border-t border-border/30 pt-3">
+              <div className="border-border/30 space-y-2 border-t pt-3">
                 <Label htmlFor="divisions-count">Divisions Count</Label>
                 <Input
                   id="divisions-count"
@@ -429,7 +427,7 @@ export function LeagueSettingsModal({
             )}
 
             {isCircuit && (
-              <div className="space-y-2 border-t border-border/30 pt-3">
+              <div className="border-border/30 space-y-2 border-t pt-3">
                 <Label htmlFor="race-count">Race Count</Label>
                 <Input
                   id="race-count"
@@ -446,7 +444,7 @@ export function LeagueSettingsModal({
             )}
 
             {isBoxing && (
-              <div className="space-y-2 border-t border-border/30 pt-3">
+              <div className="border-border/30 space-y-2 border-t pt-3">
                 <Label htmlFor="weight-classes">Weight Classes (Comma Separated)</Label>
                 <Input
                   id="weight-classes"

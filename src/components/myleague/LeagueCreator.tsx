@@ -3,7 +3,16 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { Loader2, ArrowLeft, ArrowRight, Check, Trophy, RotateCcw, ImageIcon, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Trophy,
+  RotateCcw,
+  ImageIcon,
+  Trash2,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -18,13 +27,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
+import { withBasePath } from "~/lib/base-path";
 import type { ArchetypeType } from "~/lib/sports";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
-
 
 const archetypeLabels: Record<ArchetypeType, string> = {
   league: "League",
@@ -41,7 +50,6 @@ interface LeagueCreatorProps {
   onCreated?: (leagueId: string) => void;
   isCanonical?: boolean;
 }
-
 
 // ─── Animation variants ─────────────────────────────────────────────────────
 
@@ -500,24 +508,24 @@ export function LeagueCreator({
         <Label>League Cover Image</Label>
 
         {commonsLoading && !coverImage ? (
-          <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-xs text-muted-foreground">Fetching suggestion...</span>
+          <div className="border-border bg-muted/30 flex h-40 w-full items-center justify-center rounded-lg border border-dashed">
+            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+            <span className="text-muted-foreground ml-2 text-xs">Fetching suggestion...</span>
           </div>
         ) : coverImage ? (
-          <div className="group relative h-40 w-full overflow-hidden rounded-lg border border-border">
+          <div className="group border-border relative h-40 w-full overflow-hidden rounded-lg border">
             <img
-              src={coverImage}
+              src={withBasePath(coverImage)}
               alt="Suggested Cover"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="absolute right-3 bottom-3 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="h-8 text-xs gap-1"
+                className="h-8 gap-1 text-xs"
                 onClick={handleShuffleCover}
                 disabled={!commonsData?.images || commonsData.images.length <= 1}
               >
@@ -528,7 +536,7 @@ export function LeagueCreator({
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="h-8 text-xs gap-1"
+                className="h-8 gap-1 text-xs"
                 onClick={() => setMediaSearchOpen(true)}
               >
                 <ImageIcon className="h-3 w-3" />
@@ -538,7 +546,7 @@ export function LeagueCreator({
                 type="button"
                 variant="destructive"
                 size="sm"
-                className="h-8 text-xs gap-1"
+                className="h-8 gap-1 text-xs"
                 onClick={handleRemoveCover}
               >
                 <Trash2 className="h-3 w-3" />
@@ -547,15 +555,15 @@ export function LeagueCreator({
             </div>
           </div>
         ) : (
-          <div className="flex h-40 w-full flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 p-4">
-            <ImageIcon className="h-8 w-8 text-muted-foreground/60 mb-2" />
-            <p className="text-xs text-muted-foreground mb-3">No cover image selected</p>
+          <div className="border-border bg-muted/30 flex h-40 w-full flex-col items-center justify-center rounded-lg border border-dashed p-4">
+            <ImageIcon className="text-muted-foreground/60 mb-2 h-8 w-8" />
+            <p className="text-muted-foreground mb-3 text-xs">No cover image selected</p>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1"
+                className="h-8 gap-1 text-xs"
                 onClick={() => setMediaSearchOpen(true)}
               >
                 <ImageIcon className="h-3 w-3" />
@@ -566,7 +574,7 @@ export function LeagueCreator({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs gap-1"
+                  className="h-8 gap-1 text-xs"
                   onClick={handleShuffleCover}
                 >
                   <RotateCcw className="h-3 w-3" />
@@ -623,15 +631,15 @@ export function LeagueCreator({
       >
         <DialogDescription>Review your league configuration before creating it.</DialogDescription>
 
-        <Card className="facet-hierarchy-child overflow-hidden border-border/60 bg-card/50">
+        <Card className="facet-hierarchy-child border-border/60 bg-card/50 overflow-hidden">
           {coverImage && (
             <div className="relative h-36 w-full overflow-hidden">
               <img
-                src={coverImage}
+                src={withBasePath(coverImage)}
                 alt="League Cover"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/45 to-transparent" />
+              <div className="from-background/90 via-background/45 absolute inset-0 bg-gradient-to-t to-transparent" />
             </div>
           )}
           <CardHeader className="pb-3">

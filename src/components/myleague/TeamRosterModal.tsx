@@ -36,6 +36,7 @@ import {
 import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
 import PlayerStats from "~/components/sports/player-stats/PlayerStats1";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { withBasePath } from "~/lib/base-path";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -56,7 +57,8 @@ interface PlayerAttributes {
 
 function attributeBadgeClass(value: number): string {
   if (value >= 90) return "bg-amber-400/20 text-amber-600 dark:text-amber-400 border-amber-400/40";
-  if (value >= 80) return "bg-emerald-400/20 text-emerald-600 dark:text-emerald-400 border-emerald-400/40";
+  if (value >= 80)
+    return "bg-emerald-400/20 text-emerald-600 dark:text-emerald-400 border-emerald-400/40";
   if (value >= 70) return "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40";
   return "bg-muted/60 text-muted-foreground border-border";
 }
@@ -72,7 +74,10 @@ function attributeProgressColor(value: number): string {
 
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
   rookie: { label: "Rookie", className: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
-  developing: { label: "Developing", className: "border-green-500/30 bg-green-500/10 text-green-400" },
+  developing: {
+    label: "Developing",
+    className: "border-green-500/30 bg-green-500/10 text-green-400",
+  },
   prime: { label: "Prime", className: "border-amber-500/30 bg-amber-500/10 text-amber-400" },
   plateau: { label: "Plateau", className: "border-slate-500/30 bg-muted/60 text-muted-foreground" },
   declining: { label: "Declining", className: "border-red-500/30 bg-red-500/10 text-red-400" },
@@ -159,9 +164,7 @@ export function TeamRosterModal({
 
   const coachName = useMemo(() => {
     if (!team?.coaches || team.coaches.length === 0) return null;
-    const headCoach = team.coaches.find(
-      (c) => c.role === "head_coach" || c.role === "manager"
-    );
+    const headCoach = team.coaches.find((c) => c.role === "head_coach" || c.role === "manager");
     const c = headCoach ?? team.coaches[0];
     return c ? `${c.firstName} ${c.lastName}` : null;
   }, [team]);
@@ -244,7 +247,7 @@ export function TeamRosterModal({
         animate="expanded"
         exit="collapsed"
         transition={{ duration: 0.25, ease: "easeInOut" }}
-        className="overflow-hidden mb-3"
+        className="mb-3 overflow-hidden"
       >
         <PlayerStats player={player} team={team} />
       </motion.div>
@@ -276,7 +279,7 @@ export function TeamRosterModal({
         >
           {/* # Number */}
           {player.number ? (
-            <span className="w-7 text-center text-xs font-bold text-foreground/15 tabular-nums shrink-0">
+            <span className="text-foreground/15 w-7 shrink-0 text-center text-xs font-bold tabular-nums">
               #{player.number}
             </span>
           ) : (
@@ -285,9 +288,11 @@ export function TeamRosterModal({
 
           {/* Avatar Thumbnail */}
           <div
-            className="h-8 w-8 shrink-0 rounded-full border border-border/30 overflow-hidden flex items-center justify-center bg-muted/30"
+            className="border-border/30 bg-muted/30 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border"
             style={{
-              background: team.color ? `linear-gradient(135deg, ${team.color}20, ${team.color}05)` : undefined,
+              background: team.color
+                ? `linear-gradient(135deg, ${team.color}20, ${team.color}05)`
+                : undefined,
             }}
           >
             <img
@@ -307,17 +312,17 @@ export function TeamRosterModal({
 
           {/* Name + meta */}
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-foreground">
+            <div className="text-foreground truncate text-sm font-medium">
               {player.firstName} {player.lastName}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="rounded px-1 py-0 text-[10px] font-medium border-border/30 bg-muted/50 text-muted-foreground"
+                className="border-border/30 bg-muted/50 text-muted-foreground rounded px-1 py-0 text-[10px] font-medium"
               >
                 {player.position}
               </Badge>
-              <span className="text-[10px] text-muted-foreground/70">Age {player.age}</span>
+              <span className="text-muted-foreground/70 text-[10px]">Age {player.age}</span>
             </div>
           </div>
 
@@ -330,10 +335,10 @@ export function TeamRosterModal({
                   e.stopPropagation();
                   setListingPlayer(isListing ? null : player.id);
                 }}
-                className="rounded p-1 opacity-0 transition group-hover:opacity-100 hover:bg-muted"
+                className="hover:bg-muted rounded p-1 opacity-0 transition group-hover:opacity-100"
                 title="List on transfer market"
               >
-                <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+                <UserPlus className="text-muted-foreground h-3.5 w-3.5" />
               </button>
             )}
             <span
@@ -371,9 +376,9 @@ export function TeamRosterModal({
                   min={1}
                   value={listPrice}
                   onChange={(e) => setListPrice(Number(e.target.value) || 1)}
-                  className="h-8 w-24 border-border/50 bg-muted/50 text-xs text-foreground"
+                  className="border-border/50 bg-muted/50 text-foreground h-8 w-24 text-xs"
                 />
-                <span className="text-xs text-muted-foreground">credits</span>
+                <span className="text-muted-foreground text-xs">credits</span>
                 <Button
                   size="sm"
                   onClick={() => handleListPlayer(player.id)}
@@ -411,12 +416,12 @@ export function TeamRosterModal({
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <SheetContent
           side="right"
-          className="w-full border-border/50 bg-background/95 p-0 backdrop-blur-2xl sm:max-w-lg"
+          className="border-border/50 bg-background/95 w-full p-0 backdrop-blur-2xl sm:max-w-lg"
         >
           <SheetTitle className="sr-only">Team Roster</SheetTitle>
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/70" />
-            <span className="text-sm text-muted-foreground/70">Loading roster...</span>
+            <Loader2 className="text-muted-foreground/70 h-6 w-6 animate-spin" />
+            <span className="text-muted-foreground/70 text-sm">Loading roster...</span>
           </div>
         </SheetContent>
       </Sheet>
@@ -430,12 +435,12 @@ export function TeamRosterModal({
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <SheetContent
           side="right"
-          className="w-full border-border/50 bg-background/95 p-0 backdrop-blur-2xl sm:max-w-lg"
+          className="border-border/50 bg-background/95 w-full p-0 backdrop-blur-2xl sm:max-w-lg"
         >
           <SheetTitle className="sr-only">Team Roster</SheetTitle>
           <div className="flex h-full flex-col items-center justify-center gap-3 p-6">
-            <Shield className="h-8 w-8 text-muted-foreground/40" />
-            <span className="text-sm text-muted-foreground/70">Team not found</span>
+            <Shield className="text-muted-foreground/40 h-8 w-8" />
+            <span className="text-muted-foreground/70 text-sm">Team not found</span>
           </div>
         </SheetContent>
       </Sheet>
@@ -451,54 +456,58 @@ export function TeamRosterModal({
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <SheetContent
           side="right"
-          className="w-full border-border/50 bg-background/95 p-0 backdrop-blur-2xl sm:max-w-lg [&>button]:hidden"
+          className="border-border/50 bg-background/95 w-full p-0 backdrop-blur-2xl sm:max-w-lg [&>button]:hidden"
         >
           <div className="flex h-full flex-col">
             {/* ── 1. Dynamic Team Header ─────────────────────────────────── */}
             <div
-              className="relative shrink-0 border-b border-border/30 px-5 py-5 overflow-hidden"
+              className="border-border/30 relative shrink-0 overflow-hidden border-b px-5 py-5"
               style={{ borderLeft: `3px solid ${teamColor}` }}
             >
               {team.coverImage && (
                 <div className="absolute inset-0 z-0">
                   <img
-                    src={team.coverImage}
+                    src={withBasePath(team.coverImage)}
                     alt=""
-                    className="h-full w-full object-cover opacity-40 filter blur-[0.5px]"
+                    className="h-full w-full object-cover opacity-40 blur-[0.5px] filter"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
+                  <div className="from-background via-background/55 absolute inset-0 bg-gradient-to-t to-transparent" />
                 </div>
               )}
               <div className="relative z-10">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="absolute top-0 right-0 rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-0 right-0 rounded-full p-1.5 transition"
                 >
                   <X className="h-4 w-4" />
                 </button>
 
                 <div className="flex items-center gap-3">
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black shadow-lg overflow-hidden"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-lg font-black shadow-lg"
                     style={{ backgroundColor: `${teamColor}20`, color: teamColor }}
                   >
                     {team.logo ? (
-                      <img src={team.logo} alt="Club logo" className="h-full w-full object-cover" />
+                      <img
+                        src={withBasePath(team.logo)}
+                        alt="Club logo"
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
-                      team.shortName?.slice(0, 2) ?? team.name.slice(0, 2).toUpperCase()
+                      (team.shortName?.slice(0, 2) ?? team.name.slice(0, 2).toUpperCase())
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <SheetTitle className="truncate text-lg font-bold text-foreground">
+                      <SheetTitle className="text-foreground truncate text-lg font-bold">
                         {team.name}
                       </SheetTitle>
                       {isOwner && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted/50 h-6 w-6 rounded-full"
                           onClick={() => setSettingsOpen(true)}
                           title="Club Settings"
                         >
@@ -507,7 +516,7 @@ export function TeamRosterModal({
                       )}
                     </div>
                     {team.shortName && (
-                      <span className="text-xs text-muted-foreground/70">{team.shortName}</span>
+                      <span className="text-muted-foreground/70 text-xs">{team.shortName}</span>
                     )}
                   </div>
                 </div>
@@ -515,7 +524,7 @@ export function TeamRosterModal({
             </div>
 
             {/* Team metadata row */}
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground px-5">
+            <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 px-5 text-xs">
               {team.city && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3 w-3" /> {team.city}
@@ -547,14 +556,14 @@ export function TeamRosterModal({
             <div className="mt-3 flex gap-3 px-5 pb-3">
               <div className="border-border/30 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5">
                 <Trophy className="h-3.5 w-3.5 text-amber-400" />
-                <span className="text-xs text-muted-foreground">Rating</span>
-                <span className="text-sm font-bold text-foreground">{teamElo}</span>
+                <span className="text-muted-foreground text-xs">Rating</span>
+                <span className="text-foreground text-sm font-bold">{teamElo}</span>
               </div>
               {team.popularity != null && (
                 <div className="border-border/30 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5">
                   <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-xs text-muted-foreground">Popularity</span>
-                  <span className="text-sm font-bold text-foreground">
+                  <span className="text-muted-foreground text-xs">Popularity</span>
+                  <span className="text-foreground text-sm font-bold">
                     {Math.round(team.popularity)}
                   </span>
                 </div>
@@ -562,8 +571,8 @@ export function TeamRosterModal({
               {team.budget != null && (
                 <div className="border-border/30 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5">
                   <Wallet className="h-3.5 w-3.5 text-blue-400" />
-                  <span className="text-xs text-muted-foreground">Budget</span>
-                  <span className="text-sm font-bold text-foreground">
+                  <span className="text-muted-foreground text-xs">Budget</span>
+                  <span className="text-foreground text-sm font-bold">
                     {team.budget.toLocaleString()}
                   </span>
                 </div>
@@ -571,12 +580,12 @@ export function TeamRosterModal({
             </div>
 
             {/* ── 2. Contextual Actions Bar ──────────────────────────────── */}
-            <div className="shrink-0 border-b border-border/30 px-5 py-3">
+            <div className="border-border/30 shrink-0 border-b px-5 py-3">
               {!team.ownerUserId && (
                 <Button
                   onClick={handleClaim}
                   disabled={isClaiming || claimTeam.isPending || !user}
-                  className="w-full gap-2 hover:opacity-95 transition-all"
+                  className="w-full gap-2 transition-all hover:opacity-95"
                   style={{
                     backgroundColor: team.color ? `${team.color}15` : undefined,
                     color: team.color ?? undefined,
@@ -599,7 +608,7 @@ export function TeamRosterModal({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowInvokeSaint(!showInvokeSaint)}
-                    className="w-full hover:opacity-95 transition-all"
+                    className="w-full transition-all hover:opacity-95"
                     style={{
                       border: team.color ? `1px solid ${team.color}20` : undefined,
                       backgroundColor: team.color ? `${team.color}0d` : undefined,
@@ -620,7 +629,7 @@ export function TeamRosterModal({
                         className="overflow-hidden"
                       >
                         <div
-                          className="flex items-center gap-2 rounded-lg bg-muted/20 p-3"
+                          className="bg-muted/20 flex items-center gap-2 rounded-lg p-3"
                           style={{
                             boxShadow: team.color ? `0 0 0 1px ${team.color}20` : undefined,
                           }}
@@ -629,7 +638,7 @@ export function TeamRosterModal({
                             value={saintName}
                             onChange={(e) => setSaintName(e.target.value)}
                             placeholder="Enter saint name..."
-                            className="h-8 flex-1 border-border/50 bg-muted/50 text-xs text-foreground placeholder:text-muted-foreground/40"
+                            className="border-border/50 bg-muted/50 text-foreground placeholder:text-muted-foreground/40 h-8 flex-1 text-xs"
                             onKeyDown={(e) => e.key === "Enter" && handleInvokeSaint()}
                           />
                           <Button
@@ -656,24 +665,24 @@ export function TeamRosterModal({
               {/* Starters */}
               {starters.length > 0 && (
                 <div className="px-5 pt-4 pb-2">
-                  <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  <h4 className="text-muted-foreground/70 text-[11px] font-semibold tracking-widest uppercase">
                     Starters
                   </h4>
                 </div>
               )}
-              <div className="divide-y divide-border/10">
+              <div className="divide-border/10 divide-y">
                 {starters.map((player, i) => renderPlayerRow(player, i))}
               </div>
 
               {/* Bench */}
               {bench.length > 0 && (
                 <div className="px-5 pt-5 pb-2">
-                  <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  <h4 className="text-muted-foreground/70 text-[11px] font-semibold tracking-widest uppercase">
                     Bench
                   </h4>
                 </div>
               )}
-              <div className="divide-y divide-border/10">
+              <div className="divide-border/10 divide-y">
                 {bench.map((player, i) => renderPlayerRow(player, starters.length + i))}
               </div>
 
@@ -681,22 +690,23 @@ export function TeamRosterModal({
               {team.coaches && team.coaches.length > 0 && (
                 <>
                   <div className="px-5 pt-5 pb-2">
-                    <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    <h4 className="text-muted-foreground/70 text-[11px] font-semibold tracking-widest uppercase">
                       Coaching Staff
-                  </h4>
+                    </h4>
                   </div>
-                  <div className="divide-y divide-border/10">
+                  <div className="divide-border/10 divide-y">
                     {team.coaches.map((coach) => (
-                      <div
-                        key={coach.id}
-                        className="flex items-center gap-3 px-5 py-2.5 text-sm"
-                      >
-                        <span className="text-xs font-medium text-muted-foreground">{coach.role}</span>
+                      <div key={coach.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+                        <span className="text-muted-foreground text-xs font-medium">
+                          {coach.role}
+                        </span>
                         <span className="text-foreground">
                           {coach.firstName} {coach.lastName}
                         </span>
                         {coach.age && (
-                          <span className="ml-auto text-xs text-muted-foreground/70">Age {coach.age}</span>
+                          <span className="text-muted-foreground/70 ml-auto text-xs">
+                            Age {coach.age}
+                          </span>
                         )}
                       </div>
                     ))}
@@ -708,17 +718,14 @@ export function TeamRosterModal({
               {team.seasons && team.seasons.length > 0 && (
                 <>
                   <div className="px-5 pt-5 pb-2">
-                    <h4 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    <h4 className="text-muted-foreground/70 text-[11px] font-semibold tracking-widest uppercase">
                       Season History
-                  </h4>
+                    </h4>
                   </div>
-                  <div className="divide-y divide-border/10 pb-4">
+                  <div className="divide-border/10 divide-y pb-4">
                     {team.seasons.slice(0, 5).map((ts) => (
-                      <div
-                        key={ts.season.id}
-                        className="flex items-center gap-3 px-5 py-2 text-sm"
-                      >
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground/40" />
+                      <div key={ts.season.id} className="flex items-center gap-3 px-5 py-2 text-sm">
+                        <Calendar className="text-muted-foreground/40 h-3.5 w-3.5" />
                         <span className="text-foreground">Season {ts.season.seasonNumber}</span>
                         <Badge
                           variant="outline"
@@ -727,7 +734,7 @@ export function TeamRosterModal({
                             ts.season.status === "in_progress"
                               ? "border-green-500/30 bg-green-500/10 text-green-400"
                               : ts.season.status === "completed"
-                                ? "border-slate-500/30 bg-muted/60 text-muted-foreground"
+                                ? "bg-muted/60 text-muted-foreground border-slate-500/30"
                                 : "border-amber-500/30 bg-amber-500/10 text-amber-400"
                           )}
                         >
@@ -742,8 +749,10 @@ export function TeamRosterModal({
               {/* Empty roster */}
               {starters.length === 0 && bench.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-2 px-5 py-12 text-center">
-                  <Users className="h-8 w-8 text-muted-foreground/30" />
-                  <span className="text-sm text-muted-foreground/70">No active players on roster</span>
+                  <Users className="text-muted-foreground/30 h-8 w-8" />
+                  <span className="text-muted-foreground/70 text-sm">
+                    No active players on roster
+                  </span>
                 </div>
               )}
             </div>

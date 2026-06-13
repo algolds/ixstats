@@ -191,7 +191,8 @@ for (const n of allNames) {
 // ── Guard 3: ALL-COVERED — every router procedure must be in some group (prevents silent drops).
 const groupedSet = new Set(allNames);
 const uncovered = allProps.filter((n) => !groupedSet.has(n));
-if (uncovered.length) throw new Error(`Uncovered procedures (not in any group): ${uncovered.join(", ")}`);
+if (uncovered.length)
+  throw new Error(`Uncovered procedures (not in any group): ${uncovered.join(", ")}`);
 
 let totalKept = 0;
 for (const [groupName, names] of Object.entries(groups)) {

@@ -3,10 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import {
   CONFIG_CONSTANTS,
   getEconomicConfigFromDB,
@@ -14,10 +11,7 @@ import {
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { IxStatsCalculator } from "~/lib/calculations";
-import type {
-  SystemStatus,
-  BaseCountryData,
-} from "~/types/ixstats";
+import type { SystemStatus, BaseCountryData } from "~/types/ixstats";
 
 export const adminSystemRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -622,7 +616,6 @@ export const adminSystemRouter = createTRPCRouter({
 
   // --- Clerk User-Country Mapping Endpoints ---
   // Note: User procedures are commented out until User model is properly configured
-
 
   // Sync with Discord bot
 

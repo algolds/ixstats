@@ -239,7 +239,10 @@ export function getSportEmoji(key: string): string {
   return SPORT_EMOJIS[key as SportPresetKey] ?? "⚽";
 }
 
-export function getSportColors(key: SportPresetKey): { accentColor: string; highlightColor: string } {
+export function getSportColors(key: SportPresetKey): {
+  accentColor: string;
+  highlightColor: string;
+} {
   const preset = getPreset(key);
   return { accentColor: preset.accentColor, highlightColor: preset.highlightColor };
 }

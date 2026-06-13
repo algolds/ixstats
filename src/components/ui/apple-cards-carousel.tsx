@@ -6,6 +6,7 @@ import { cn } from "~/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import Image, { type ImageProps } from "next/image";
 import { useOutsideClick } from "~/hooks/use-outside-click";
+import { withBasePath } from "~/lib/base-path";
 
 interface CarouselProps {
   items: React.ReactElement[];
@@ -213,7 +214,7 @@ export const Card = ({
             {card.src && (
               <div className="pointer-events-none absolute inset-0 -z-10 h-full w-full overflow-hidden">
                 <img
-                  src={card.src}
+                  src={withBasePath(card.src)}
                   alt=""
                   className="h-full w-full object-cover opacity-15 blur-[2px] transition-all duration-300 dark:opacity-25"
                 />
@@ -226,28 +227,28 @@ export const Card = ({
             >
               <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
             </button>
-            <motion.p
+            <motion.div
               layoutId={layout ? `category-${card.title}` : undefined}
               className="text-base font-medium text-black dark:text-white"
             >
               {card.category}
-            </motion.p>
+            </motion.div>
             <motion.div
               layoutId={layout ? `title-${card.title}` : undefined}
               className="mt-4 flex items-center gap-3 text-2xl font-semibold text-neutral-700 md:text-5xl dark:text-white"
             >
               {card.logo && (
-                <img src={card.logo} alt="" className="h-10 w-10 md:h-14 md:w-14 rounded-xl object-cover border border-neutral-200 dark:border-neutral-700 shrink-0" />
+                <img
+                  src={withBasePath(card.logo)}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-xl border border-neutral-200 object-cover md:h-14 md:w-14 dark:border-neutral-700"
+                />
               )}
               <span>{card.title}</span>
             </motion.div>
-            {card.description && (
-              <div className="mt-2 text-left">
-                {card.description}
-              </div>
-            )}
+            {card.description && <div className="mt-2 text-left">{card.description}</div>}
             {card.footer && (
-              <div className="mt-4 text-left border-t border-neutral-100 dark:border-neutral-800 pt-4">
+              <div className="mt-4 border-t border-neutral-100 pt-4 text-left dark:border-neutral-800">
                 {card.footer}
               </div>
             )}
@@ -273,37 +274,33 @@ export const Card = ({
             handleOpen();
           }
         }}
-        className="relative z-10 flex h-80 w-56 flex-col items-stretch justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900 cursor-pointer"
+        className="relative z-10 flex h-80 w-56 cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900"
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-        <div className="relative z-40 p-8 h-full w-full flex flex-col justify-between items-start">
+        <div className="relative z-40 flex h-full w-full flex-col items-start justify-between p-8">
           <div className="flex flex-col items-start">
-            <motion.p
+            <motion.div
               layoutId={layout ? `category-${card.title}` : undefined}
               className="text-left font-sans text-sm font-medium text-white md:text-base"
             >
               {card.category}
-            </motion.p>
+            </motion.div>
             <motion.div
               layoutId={layout ? `title-${card.title}` : undefined}
-              className="mt-2 flex items-center gap-2 max-w-xs text-left font-sans text-xl font-semibold [text-wrap:balance] text-white md:text-3xl"
+              className="mt-2 flex max-w-xs items-center gap-2 text-left font-sans text-xl font-semibold [text-wrap:balance] text-white md:text-3xl"
             >
               {card.logo && (
-                <img src={card.logo} alt="" className="h-7 w-7 md:h-9 md:w-9 rounded-lg object-cover border border-white/20 shrink-0" />
+                <img
+                  src={withBasePath(card.logo)}
+                  alt=""
+                  className="h-7 w-7 shrink-0 rounded-lg border border-white/20 object-cover md:h-9 md:w-9"
+                />
               )}
               <span>{card.title}</span>
             </motion.div>
-            {card.description && (
-              <div className="mt-2 text-left">
-                {card.description}
-              </div>
-            )}
+            {card.description && <div className="mt-2 text-left">{card.description}</div>}
           </div>
-          {card.footer && (
-            <div className="w-full mt-auto">
-              {card.footer}
-            </div>
-          )}
+          {card.footer && <div className="mt-auto w-full">{card.footer}</div>}
         </div>
         <BlurImage
           src={card.src}

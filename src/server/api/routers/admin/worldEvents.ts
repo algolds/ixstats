@@ -4,14 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { AppError } from "~/lib/app-error";
-import {
-  createTRPCRouter,
-  adminProcedure,
-} from "~/server/api/trpc";
-
-
-
-
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
 export const adminWorldEventsRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -47,7 +40,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
 
   // --- Clerk User-Country Mapping Endpoints ---
   // Note: User procedures are commented out until User model is properly configured
-
 
   // Sync with Discord bot
 

@@ -2,15 +2,8 @@
 // FIXED: Complete admin router with proper functionality
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/system-owner-constants";
-
-
-
 
 import { invalidateCache } from "~/lib/trpc-cache";
 import { globalCache } from "~/lib/advanced-cache-system";
@@ -49,7 +42,6 @@ export const adminUsersRouter = createTRPCRouter({
 
   // --- Clerk User-Country Mapping Endpoints ---
   // Note: User procedures are commented out until User model is properly configured
-
 
   // Sync with Discord bot
 

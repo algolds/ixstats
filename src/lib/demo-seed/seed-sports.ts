@@ -25,43 +25,8 @@ import crypto from "crypto";
 type Prisma = PrismaClient;
 
 async function downloadImageForSeed(imageUrl: string): Promise<string> {
-  try {
-    const hash = crypto.createHash("md5").update(imageUrl).digest("hex");
-    const ext = imageUrl.split(".").pop()?.split(/[?#]/)[0] || "jpg";
-    const fileName = `seeded_${hash}.${ext}`;
-    const imagesDir = path.join(process.cwd(), "public", "images", "downloaded");
-    
-    if (!fs.existsSync(imagesDir)) {
-      fs.mkdirSync(imagesDir, { recursive: true });
-    }
-    
-    const filePath = path.join(imagesDir, fileName);
-    const publicUrl = `/images/downloaded/${fileName}`;
-    
-    if (fs.existsSync(filePath)) {
-      return publicUrl;
-    }
-    
-    console.log(`[SeedImageDownload] Downloading: ${imageUrl}`);
-    const res = await fetch(imageUrl, {
-      headers: {
-        "User-Agent": "IxStats/2.0 (https://ixwiki.com; contact@ixwiki.com)",
-      },
-      signal: AbortSignal.timeout(15000),
-    });
-    
-    if (!res.ok) {
-      throw new Error(`Failed to fetch image: HTTP ${res.status}`);
-    }
-    
-    const buffer = Buffer.from(await res.arrayBuffer());
-    fs.writeFileSync(filePath, buffer);
-    console.log(`[SeedImageDownload] Saved image to ${publicUrl}`);
-    return publicUrl;
-  } catch (err) {
-    console.error(`[SeedImageDownload] Failed to download ${imageUrl}, using original URL. Error:`, err);
-    return imageUrl;
-  }
+  // Always return the remote URL directly to use dynamic Wikimedia Commons files
+  return imageUrl;
 }
 
 function hashString(str: string): number {
@@ -224,7 +189,7 @@ const CAPHIRIAN_TEAMS = [
   { name: "Venatores", patronSaint: "Saint Hubertus", color: "#be123c" },
   { name: "Mero Pantherae", patronSaint: "Saint Mero", color: "#db2777" },
   { name: "Arzercavalli Tauri", patronSaint: "Saint Anthony", color: "#0d9488" },
-  { name: "Faber Ferraruis", patronSaint: "Saint Eloi", color: "#374151" }
+  { name: "Faber Ferraruis", patronSaint: "Saint Eloi", color: "#374151" },
 ];
 
 const YONDERRE_TEAMS = [
@@ -245,45 +210,301 @@ const YONDERRE_TEAMS = [
   { name: "Sainte-Jule-du-Mont AS", color: "#059669" },
   { name: "SC Sainte-Cataline", color: "#1d4ed8" },
   { name: "Toubourg FC", color: "#a21caf" },
-  { name: "Vallonbourg AS", color: "#b91c1c" }
+  { name: "Vallonbourg AS", color: "#b91c1c" },
 ];
 
 const OHL_TEAMS = [
-  { name: "Auqali Shockers", city: "Atlomaha, Auqali", conference: "Eastern", division: "Southeast", color: "#eab308", coach: { firstName: "Aphío", lastName: "Antonov" }, nationName: "Tierrador" },
-  { name: "Porto Alegre Tubarões", city: "Porto Alegre, Ceylonia", conference: "Eastern", division: "Southeast", color: "#06b6d4", coach: { firstName: "Petró", lastName: "Kiropiki" }, nationName: "Ceylonia" },
-  { name: "Porvaos Condors", city: "Porvaos City, Porvaos", conference: "Eastern", division: "Southeast", color: "#3b82f6", coach: { firstName: "Lars", lastName: "Nygaard" }, nationName: "Porlos" },
-  { name: "Sačia Tropics", city: "Sačia, Aracadó", conference: "Eastern", division: "Southeast", color: "#f97316", coach: { firstName: "Lazón", lastName: "Ašota" }, nationName: "Tierrador" },
-  { name: "Santa Maria Blazers", city: "Santa Maria, Ceylonia", conference: "Eastern", division: "Southeast", color: "#ef4444", coach: { firstName: "Ahmad", lastName: "Ibrahim" }, nationName: "Ceylonia" },
-  { name: "Tansher Spirit", city: "Tuwaheekee, Tansher", conference: "Eastern", division: "Southeast", color: "#8b5cf6", coach: { firstName: "Daisuke", lastName: "Sato" }, nationName: "Tierrador" },
-  { name: "Tawakee Hurricanes", city: "San Cristóbal, Tawakee", conference: "Eastern", division: "Southeast", color: "#10b981", coach: { firstName: "Pamia", lastName: "Monteriya" }, nationName: "Tawakee" },
-  { name: "Suqovia Phantoms", city: "Suqovia, Las Rozas", conference: "Eastern", division: "Southeast", color: "#a855f7", coach: { firstName: "Levar", lastName: "Xirótin" }, nationName: "Tierrador" },
+  {
+    name: "Auqali Shockers",
+    city: "Atlomaha, Auqali",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#eab308",
+    coach: { firstName: "Aphío", lastName: "Antonov" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Porto Alegre Tubarões",
+    city: "Porto Alegre, Ceylonia",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#06b6d4",
+    coach: { firstName: "Petró", lastName: "Kiropiki" },
+    nationName: "Ceylonia",
+  },
+  {
+    name: "Porvaos Condors",
+    city: "Porvaos City, Porvaos",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#3b82f6",
+    coach: { firstName: "Lars", lastName: "Nygaard" },
+    nationName: "Porlos",
+  },
+  {
+    name: "Sačia Tropics",
+    city: "Sačia, Aracadó",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#f97316",
+    coach: { firstName: "Lazón", lastName: "Ašota" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Santa Maria Blazers",
+    city: "Santa Maria, Ceylonia",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#ef4444",
+    coach: { firstName: "Ahmad", lastName: "Ibrahim" },
+    nationName: "Ceylonia",
+  },
+  {
+    name: "Tansher Spirit",
+    city: "Tuwaheekee, Tansher",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#8b5cf6",
+    coach: { firstName: "Daisuke", lastName: "Sato" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Tawakee Hurricanes",
+    city: "San Cristóbal, Tawakee",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#10b981",
+    coach: { firstName: "Pamia", lastName: "Monteriya" },
+    nationName: "Tawakee",
+  },
+  {
+    name: "Suqovia Phantoms",
+    city: "Suqovia, Las Rozas",
+    conference: "Eastern",
+    division: "Southeast",
+    color: "#a855f7",
+    coach: { firstName: "Levar", lastName: "Xirótin" },
+    nationName: "Tierrador",
+  },
 
-  { name: "Bogocía Bluewave", city: "Holčaq, Bogocía", conference: "Eastern", division: "Central", color: "#2563eb", coach: { firstName: "Kil", lastName: "Faxanen" }, nationName: "Tierrador" },
-  { name: "Karaba Ocelots", city: "Karaba, Istrenya", conference: "Eastern", division: "Central", color: "#ea580c", coach: { firstName: "Sven", lastName: "Schmidt" }, nationName: "Istrenya" },
-  { name: "Hugo Hitmen", city: "Hugo, Qaleqa", conference: "Eastern", division: "Central", color: "#dc2626", coach: { firstName: "Pavlos", lastName: "Depátaí" }, nationName: "Tierrador" },
-  { name: "Qabór Phoenix", city: "Qabór, Las Rozas", conference: "Eastern", division: "Central", color: "#eab308", coach: { firstName: "Timê", lastName: "Qistaanat" }, nationName: "Tierrador" },
-  { name: "Moscakee Pioneers", city: "Puerto Rosario, Moscakee", conference: "Eastern", division: "Central", color: "#16a34a", coach: { firstName: "Tomás", lastName: "Morales" }, nationName: "Tierrador" },
-  { name: "Taisgol Spires", city: "Woderq, Taisgol", conference: "Eastern", division: "Central", color: "#4f46e5", coach: { firstName: "Petr", lastName: "Tolakov" }, nationName: "Tierrador" },
-  { name: "Taisgol Marksmen", city: "Eastern Bend, Taisgol", conference: "Eastern", division: "Central", color: "#0891b2", coach: { firstName: "Luca", lastName: "Bianchi" }, nationName: "Tierrador" },
-  { name: "Topaqoí Wahoo", city: "Topaqoí, Telohakee", conference: "Eastern", division: "Central", color: "#ca8a04", coach: { firstName: "Arjun", lastName: "Singh" }, nationName: "Tierrador" },
+  {
+    name: "Bogocía Bluewave",
+    city: "Holčaq, Bogocía",
+    conference: "Eastern",
+    division: "Central",
+    color: "#2563eb",
+    coach: { firstName: "Kil", lastName: "Faxanen" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Karaba Ocelots",
+    city: "Karaba, Istrenya",
+    conference: "Eastern",
+    division: "Central",
+    color: "#ea580c",
+    coach: { firstName: "Sven", lastName: "Schmidt" },
+    nationName: "Istrenya",
+  },
+  {
+    name: "Hugo Hitmen",
+    city: "Hugo, Qaleqa",
+    conference: "Eastern",
+    division: "Central",
+    color: "#dc2626",
+    coach: { firstName: "Pavlos", lastName: "Depátaí" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Qabór Phoenix",
+    city: "Qabór, Las Rozas",
+    conference: "Eastern",
+    division: "Central",
+    color: "#eab308",
+    coach: { firstName: "Timê", lastName: "Qistaanat" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Moscakee Pioneers",
+    city: "Puerto Rosario, Moscakee",
+    conference: "Eastern",
+    division: "Central",
+    color: "#16a34a",
+    coach: { firstName: "Tomás", lastName: "Morales" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Taisgol Spires",
+    city: "Woderq, Taisgol",
+    conference: "Eastern",
+    division: "Central",
+    color: "#4f46e5",
+    coach: { firstName: "Petr", lastName: "Tolakov" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Taisgol Marksmen",
+    city: "Eastern Bend, Taisgol",
+    conference: "Eastern",
+    division: "Central",
+    color: "#0891b2",
+    coach: { firstName: "Luca", lastName: "Bianchi" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Topaqoí Wahoo",
+    city: "Topaqoí, Telohakee",
+    conference: "Eastern",
+    division: "Central",
+    color: "#ca8a04",
+    coach: { firstName: "Arjun", lastName: "Singh" },
+    nationName: "Tierrador",
+  },
 
-  { name: "Alcosky Prairie Dogs", city: "Tarhogun, Alcosky", conference: "Western", division: "Mountain", color: "#b45309", coach: { firstName: "Pedro", lastName: "Torres" }, nationName: "Tierrador" },
-  { name: "Anloiya Blizzard", city: "Anloiya, Ulunkheria", conference: "Western", division: "Mountain", color: "#0ea5e9", coach: { firstName: "Phoenix", lastName: "Simmons" }, nationName: "Tierrador" },
-  { name: "Miccubo Heartlanders", city: "Miccubo, Telohakee", conference: "Western", division: "Mountain", color: "#be123c", coach: { firstName: "Oscar", lastName: "Morales" }, nationName: "Tierrador" },
-  { name: "St. Gerónimo Outlaws", city: "St. Gerónimo, Alcosky", conference: "Western", division: "Mountain", color: "#ea580c", coach: { firstName: "Sapalina", lastName: "Wapaakojòò" }, nationName: "Tierrador" },
-  { name: "Prisamarina Mystics", city: "Prisamarina, Ulunkheria", conference: "Western", division: "Mountain", color: "#db2777", coach: { firstName: "Ranger", lastName: "Pauliinet" }, nationName: "Tierrador" },
-  { name: "Telohakee Wheatmen", city: "Qatólotay, Telohakee", conference: "Western", division: "Mountain", color: "#ca8a04", coach: { firstName: "Maté", lastName: "Utnalat" }, nationName: "Tierrador" },
-  { name: "Tulangia Centurions", city: "Sevier, Ulunkheria", conference: "Western", division: "Mountain", color: "#dc2626", coach: { firstName: "Barry", lastName: "Adriza" }, nationName: "Tierrador" },
-  { name: "Vernaza Titans", city: "Vernaza, Telohakee", conference: "Western", division: "Mountain", color: "#6366f1", coach: { firstName: "Jason", lastName: "Saunders" }, nationName: "Tierrador" },
+  {
+    name: "Alcosky Prairie Dogs",
+    city: "Tarhogun, Alcosky",
+    conference: "Western",
+    division: "Mountain",
+    color: "#b45309",
+    coach: { firstName: "Pedro", lastName: "Torres" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Anloiya Blizzard",
+    city: "Anloiya, Ulunkheria",
+    conference: "Western",
+    division: "Mountain",
+    color: "#0ea5e9",
+    coach: { firstName: "Phoenix", lastName: "Simmons" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Miccubo Heartlanders",
+    city: "Miccubo, Telohakee",
+    conference: "Western",
+    division: "Mountain",
+    color: "#be123c",
+    coach: { firstName: "Oscar", lastName: "Morales" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "St. Gerónimo Outlaws",
+    city: "St. Gerónimo, Alcosky",
+    conference: "Western",
+    division: "Mountain",
+    color: "#ea580c",
+    coach: { firstName: "Sapalina", lastName: "Wapaakojòò" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Prisamarina Mystics",
+    city: "Prisamarina, Ulunkheria",
+    conference: "Western",
+    division: "Mountain",
+    color: "#db2777",
+    coach: { firstName: "Ranger", lastName: "Pauliinet" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Telohakee Wheatmen",
+    city: "Qatólotay, Telohakee",
+    conference: "Western",
+    division: "Mountain",
+    color: "#ca8a04",
+    coach: { firstName: "Maté", lastName: "Utnalat" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Tulangia Centurions",
+    city: "Sevier, Ulunkheria",
+    conference: "Western",
+    division: "Mountain",
+    color: "#dc2626",
+    coach: { firstName: "Barry", lastName: "Adriza" },
+    nationName: "Tierrador",
+  },
+  {
+    name: "Vernaza Titans",
+    city: "Vernaza, Telohakee",
+    conference: "Western",
+    division: "Mountain",
+    color: "#6366f1",
+    coach: { firstName: "Jason", lastName: "Saunders" },
+    nationName: "Tierrador",
+  },
 
-  { name: "Alstin Sentinels", city: "Alstin, CDA", conference: "Western", division: "Southwest", color: "#2563eb", coach: { firstName: "Frederic", lastName: "Lalonde" }, nationName: "Alstin" },
-  { name: "Cuzco Beserkers", city: "Cuzco City, Cuzco", conference: "Western", division: "Southwest", color: "#dc2626", coach: { firstName: "Karl", lastName: "Muller" }, nationName: "Alstin" },
-  { name: "Naqili Hornets", city: "Naqili, Porlos", conference: "Western", division: "Southwest", color: "#ca8a04", coach: { firstName: "Kofi", lastName: "Okafor" }, nationName: "Porlos" },
-  { name: "Pacuí Mammoth", city: "Pacuí, Porlos", conference: "Western", division: "Southwest", color: "#4b5563", coach: { firstName: "Sven", lastName: "Hansen" }, nationName: "Porlos" },
-  { name: "Sedem Regni Thrones", city: "Sedem Regni, Betlands", conference: "Western", division: "Southwest", color: "#7c3aed", coach: { firstName: "Ivan", lastName: "Kozlov" }, nationName: "Betlands" },
-  { name: "Utopia Rouges", city: "Utopia City, Utopia", conference: "Western", division: "Southwest", color: "#be123c", coach: { firstName: "Julius", lastName: "Roberts" }, nationName: "Alstin" },
-  { name: "Veraise Raiders", city: "Gastineau, Veraise", conference: "Western", division: "Southwest", color: "#059669", coach: { firstName: "Tim", lastName: "Terrie" }, nationName: "Veraise" },
-  { name: "Wallace Clerics", city: "Wallace, Omepra", conference: "Western", division: "Southwest", color: "#0891b2", coach: { firstName: "Tomás", lastName: "Roux" }, nationName: "Alstin" }
+  {
+    name: "Alstin Sentinels",
+    city: "Alstin, CDA",
+    conference: "Western",
+    division: "Southwest",
+    color: "#2563eb",
+    coach: { firstName: "Frederic", lastName: "Lalonde" },
+    nationName: "Alstin",
+  },
+  {
+    name: "Cuzco Beserkers",
+    city: "Cuzco City, Cuzco",
+    conference: "Western",
+    division: "Southwest",
+    color: "#dc2626",
+    coach: { firstName: "Karl", lastName: "Muller" },
+    nationName: "Alstin",
+  },
+  {
+    name: "Naqili Hornets",
+    city: "Naqili, Porlos",
+    conference: "Western",
+    division: "Southwest",
+    color: "#ca8a04",
+    coach: { firstName: "Kofi", lastName: "Okafor" },
+    nationName: "Porlos",
+  },
+  {
+    name: "Pacuí Mammoth",
+    city: "Pacuí, Porlos",
+    conference: "Western",
+    division: "Southwest",
+    color: "#4b5563",
+    coach: { firstName: "Sven", lastName: "Hansen" },
+    nationName: "Porlos",
+  },
+  {
+    name: "Sedem Regni Thrones",
+    city: "Sedem Regni, Betlands",
+    conference: "Western",
+    division: "Southwest",
+    color: "#7c3aed",
+    coach: { firstName: "Ivan", lastName: "Kozlov" },
+    nationName: "Betlands",
+  },
+  {
+    name: "Utopia Rouges",
+    city: "Utopia City, Utopia",
+    conference: "Western",
+    division: "Southwest",
+    color: "#be123c",
+    coach: { firstName: "Julius", lastName: "Roberts" },
+    nationName: "Alstin",
+  },
+  {
+    name: "Veraise Raiders",
+    city: "Gastineau, Veraise",
+    conference: "Western",
+    division: "Southwest",
+    color: "#059669",
+    coach: { firstName: "Tim", lastName: "Terrie" },
+    nationName: "Veraise",
+  },
+  {
+    name: "Wallace Clerics",
+    city: "Wallace, Omepra",
+    conference: "Western",
+    division: "Southwest",
+    color: "#0891b2",
+    coach: { firstName: "Tomás", lastName: "Roux" },
+    nationName: "Alstin",
+  },
 ];
 
 const HISTORIC_OHL_RECORDS = [
@@ -299,7 +520,7 @@ const HISTORIC_OHL_RECORDS = [
   { year: 2024, champion: "Alstin Sentinels", score: "4–1", runnerUp: "Sačia Tropics" },
   { year: 2022, champion: "Tulangia Centurions", score: "4–2", runnerUp: "Sačia Tropics" },
   { year: 2021, champion: "Sačia Tropics", score: "4–1", runnerUp: "Alstin Sentinels" },
-  { year: 2020, champion: "Sačia Tropics", score: "4–3", runnerUp: "Anloiya Blizzard" }
+  { year: 2020, champion: "Sačia Tropics", score: "4–3", runnerUp: "Anloiya Blizzard" },
 ];
 
 function generateCulturallyAppropriateRoster(
@@ -316,18 +537,144 @@ function generateCulturallyAppropriateRoster(
     const rng = createRNG(itemSeed);
 
     if (culture === "caphiria") {
-      const firsts = ["Lucius", "Gaius", "Marcus", "Aulus", "Flavius", "Tiberius", "Publius", "Servius", "Decimus", "Spurius", "Julius", "Augustus", "Cassius", "Cornelius", "Claudius", "Fabius", "Valerius", "Antonius", "Quintus", "Titus"];
-      const lasts = ["Aetius", "Decimus", "Aurelius", "Agrippa", "Germanicus", "Severus", "Gracchus", "Cicero", "Venceia", "Previcatus", "Lupus", "Militaris", "Navalius", "Ferrarius", "Bellator", "Aquila", "Taurus", "Sierivi", "Genatus", "Casterratus"];
+      const firsts = [
+        "Lucius",
+        "Gaius",
+        "Marcus",
+        "Aulus",
+        "Flavius",
+        "Tiberius",
+        "Publius",
+        "Servius",
+        "Decimus",
+        "Spurius",
+        "Julius",
+        "Augustus",
+        "Cassius",
+        "Cornelius",
+        "Claudius",
+        "Fabius",
+        "Valerius",
+        "Antonius",
+        "Quintus",
+        "Titus",
+      ];
+      const lasts = [
+        "Aetius",
+        "Decimus",
+        "Aurelius",
+        "Agrippa",
+        "Germanicus",
+        "Severus",
+        "Gracchus",
+        "Cicero",
+        "Venceia",
+        "Previcatus",
+        "Lupus",
+        "Militaris",
+        "Navalius",
+        "Ferrarius",
+        "Bellator",
+        "Aquila",
+        "Taurus",
+        "Sierivi",
+        "Genatus",
+        "Casterratus",
+      ];
       p.firstName = firsts[Math.floor(rng() * firsts.length)]!;
       p.lastName = lasts[Math.floor(rng() * lasts.length)]!;
     } else if (culture === "yonderre") {
-      const firsts = ["Joanus", "Rachet", "Edouard", "Franz", "Otto", "Karl", "Wilhelm", "Heinrich", "Ludwig", "Hans", "Dieter", "Fritz", "Gottfried", "Gustav", "Emil", "Paul", "Albert", "Walter", "Rudolf", "Ulrich"];
-      const lasts = ["Charpentier", "d'Agostino", "Gabion", "Vandarcôte", "Chevalier", "Donnebourg", "Stahl", "Willing", "Zwischen", "Falcsbourg", "Toubourg", "Vallonbourg", "Castruppe", "Famichez", "Lance", "Sainte-Catherine", "Sainte-Cataline", "Schmid", "Weber", "Müller"];
+      const firsts = [
+        "Joanus",
+        "Rachet",
+        "Edouard",
+        "Franz",
+        "Otto",
+        "Karl",
+        "Wilhelm",
+        "Heinrich",
+        "Ludwig",
+        "Hans",
+        "Dieter",
+        "Fritz",
+        "Gottfried",
+        "Gustav",
+        "Emil",
+        "Paul",
+        "Albert",
+        "Walter",
+        "Rudolf",
+        "Ulrich",
+      ];
+      const lasts = [
+        "Charpentier",
+        "d'Agostino",
+        "Gabion",
+        "Vandarcôte",
+        "Chevalier",
+        "Donnebourg",
+        "Stahl",
+        "Willing",
+        "Zwischen",
+        "Falcsbourg",
+        "Toubourg",
+        "Vallonbourg",
+        "Castruppe",
+        "Famichez",
+        "Lance",
+        "Sainte-Catherine",
+        "Sainte-Cataline",
+        "Schmid",
+        "Weber",
+        "Müller",
+      ];
       p.firstName = firsts[Math.floor(rng() * firsts.length)]!;
       p.lastName = lasts[Math.floor(rng() * lasts.length)]!;
     } else if (culture === "ohl") {
-      const firsts = ["Barry", "Lazón", "Sapalina", "Pamia", "Aphío", "Petró", "Tim", "Levar", "Frederic", "Xavier", "Mike", "Vicente", "Hectór", "Pyotr", "Kasperi", "Jason", "Phoenix", "Kil", "Julius", "Kessok"];
-      const lasts = ["Adriza", "Ašota", "Wapaakojòò", "Monteriya", "Antonov", "Kiropiki", "Terrie", "Xirótin", "Lalonde", "Cristobál", "DeSoto", "Valdueza", "Qosnan", "Časqon", "Aikala", "Saunders", "Simmons", "Faxanen", "Roberts", "Korentin"];
+      const firsts = [
+        "Barry",
+        "Lazón",
+        "Sapalina",
+        "Pamia",
+        "Aphío",
+        "Petró",
+        "Tim",
+        "Levar",
+        "Frederic",
+        "Xavier",
+        "Mike",
+        "Vicente",
+        "Hectór",
+        "Pyotr",
+        "Kasperi",
+        "Jason",
+        "Phoenix",
+        "Kil",
+        "Julius",
+        "Kessok",
+      ];
+      const lasts = [
+        "Adriza",
+        "Ašota",
+        "Wapaakojòò",
+        "Monteriya",
+        "Antonov",
+        "Kiropiki",
+        "Terrie",
+        "Xirótin",
+        "Lalonde",
+        "Cristobál",
+        "DeSoto",
+        "Valdueza",
+        "Qosnan",
+        "Časqon",
+        "Aikala",
+        "Saunders",
+        "Simmons",
+        "Faxanen",
+        "Roberts",
+        "Korentin",
+      ];
       p.firstName = firsts[Math.floor(rng() * firsts.length)]!;
       p.lastName = lasts[Math.floor(rng() * lasts.length)]!;
     }
@@ -337,17 +684,23 @@ function generateCulturallyAppropriateRoster(
 
 // ─── Caphirian Imperial League (Soccer) ───────────────────────────────────
 
-async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: number): Promise<number> {
+async function seedCaphirianSoccerLeague(
+  prisma: Prisma,
+  userId: string,
+  ixNow: number
+): Promise<number> {
   let count = 0;
   const leagueSeed = hashString("Caphirian Imperial League");
 
   const caphiriaCountry = await prisma.country.findFirst({
     where: { name: { contains: "Caphiria", mode: "insensitive" } },
-    select: { id: true }
+    select: { id: true },
   });
   const caphCountryId = caphiriaCountry?.id ?? null;
 
-  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/1/16/Wembley_Stadium_interior.jpg");
+  const coverImage = await downloadImageForSeed(
+    "https://upload.wikimedia.org/wikipedia/commons/1/16/Wembley_Stadium_interior.jpg"
+  );
   const league = await prisma.sportLeague.create({
     data: {
       name: "Caphirian Imperial League",
@@ -367,7 +720,13 @@ async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: 
     id: string;
     name: string;
     players: ReturnType<typeof generateTeamRoster>;
-    createdPlayers: Array<{ id: string; firstName: string; lastName: string; position: string; ratings: any }>;
+    createdPlayers: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      position: string;
+      ratings: any;
+    }>;
     coach: ReturnType<typeof generateCoach>;
   }> = [];
   const teamRecords: Array<{ id: string; name: string }> = [];
@@ -399,7 +758,7 @@ async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: 
     coach.lastName = lasts[Math.floor(coachRng() * lasts.length)]!;
 
     // Create players
-    const createdPlayers: typeof teams[number]["createdPlayers"] = [];
+    const createdPlayers: (typeof teams)[number]["createdPlayers"] = [];
     for (const player of players) {
       const pRecord = await prisma.sportPlayer.create({
         data: {
@@ -420,7 +779,7 @@ async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: 
         firstName: pRecord.firstName,
         lastName: pRecord.lastName,
         position: pRecord.position,
-        ratings: pRecord.ratings
+        ratings: pRecord.ratings,
       });
     }
 
@@ -501,7 +860,7 @@ async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: 
       archetype: "league",
       seed: matchSeed,
       homeRoster: homeTeam.createdPlayers,
-      awayRoster: awayTeam.createdPlayers
+      awayRoster: awayTeam.createdPlayers,
     });
 
     const matchIxTime = seasonStart + fixture.matchDay * 1440;
@@ -598,17 +957,23 @@ async function seedCaphirianSoccerLeague(prisma: Prisma, userId: string, ixNow: 
 
 // ─── Ligue Yonderre (Soccer) ──────────────────────────────────────────────
 
-async function seedYonderreSoccerLeague(prisma: Prisma, userId: string, ixNow: number): Promise<number> {
+async function seedYonderreSoccerLeague(
+  prisma: Prisma,
+  userId: string,
+  ixNow: number
+): Promise<number> {
   let count = 0;
   const leagueSeed = hashString("Ligue Yonderre");
 
   const yonderreCountry = await prisma.country.findFirst({
     where: { name: { contains: "Yonderre", mode: "insensitive" } },
-    select: { id: true }
+    select: { id: true },
   });
   const yondCountryId = yonderreCountry?.id ?? null;
 
-  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/4/46/Maracana_Stadium.jpg");
+  const coverImage = await downloadImageForSeed(
+    "https://upload.wikimedia.org/wikipedia/commons/4/46/Maracana_Stadium.jpg"
+  );
   const league = await prisma.sportLeague.create({
     data: {
       name: "Ligue Yonderre",
@@ -628,7 +993,13 @@ async function seedYonderreSoccerLeague(prisma: Prisma, userId: string, ixNow: n
     id: string;
     name: string;
     players: ReturnType<typeof generateTeamRoster>;
-    createdPlayers: Array<{ id: string; firstName: string; lastName: string; position: string; ratings: any }>;
+    createdPlayers: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      position: string;
+      ratings: any;
+    }>;
     coach: ReturnType<typeof generateCoach>;
   }> = [];
   const teamRecords: Array<{ id: string; name: string }> = [];
@@ -654,12 +1025,20 @@ async function seedYonderreSoccerLeague(prisma: Prisma, userId: string, ixNow: n
     const coach = generateCoach({ seed: teamSeed + 1 });
     const coachRng = createRNG(teamSeed + 2);
     const firsts = ["Joanus", "Franz", "Karl", "Dieter", "Fritz", "Gustav", "Hans"];
-    const lasts = ["Charpentier", "Gabion", "Vandarcôte", "Donnebourg", "Stahl", "Willing", "Toubourg"];
+    const lasts = [
+      "Charpentier",
+      "Gabion",
+      "Vandarcôte",
+      "Donnebourg",
+      "Stahl",
+      "Willing",
+      "Toubourg",
+    ];
     coach.firstName = firsts[Math.floor(coachRng() * firsts.length)]!;
     coach.lastName = lasts[Math.floor(coachRng() * lasts.length)]!;
 
     // Create players
-    const createdPlayers: typeof teams[number]["createdPlayers"] = [];
+    const createdPlayers: (typeof teams)[number]["createdPlayers"] = [];
     for (const player of players) {
       const pRecord = await prisma.sportPlayer.create({
         data: {
@@ -680,7 +1059,7 @@ async function seedYonderreSoccerLeague(prisma: Prisma, userId: string, ixNow: n
         firstName: pRecord.firstName,
         lastName: pRecord.lastName,
         position: pRecord.position,
-        ratings: pRecord.ratings
+        ratings: pRecord.ratings,
       });
     }
 
@@ -761,7 +1140,7 @@ async function seedYonderreSoccerLeague(prisma: Prisma, userId: string, ixNow: n
       archetype: "league",
       seed: matchSeed,
       homeRoster: homeTeam.createdPlayers,
-      awayRoster: awayTeam.createdPlayers
+      awayRoster: awayTeam.createdPlayers,
     });
 
     const matchIxTime = seasonStart + fixture.matchDay * 1440;
@@ -864,14 +1243,16 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
 
   // Lookup countries first for speed
   const countries = await prisma.country.findMany({
-    select: { id: true, name: true }
+    select: { id: true, name: true },
   });
   const findCountryId = (name: string) => {
-    const match = countries.find(c => c.name.toLowerCase() === name.toLowerCase());
+    const match = countries.find((c) => c.name.toLowerCase() === name.toLowerCase());
     return match?.id ?? null;
   };
 
-  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/9/92/Scotiabank_Saddledome.jpg");
+  const coverImage = await downloadImageForSeed(
+    "https://upload.wikimedia.org/wikipedia/commons/9/92/Scotiabank_Saddledome.jpg"
+  );
   const league = await prisma.sportLeague.create({
     data: {
       name: "Orixtal Hockey League",
@@ -884,8 +1265,8 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
       coverImage,
       settings: {
         divisions: 4,
-        conferences: 2
-      } as any
+        conferences: 2,
+      } as any,
     },
   });
   count++;
@@ -896,7 +1277,13 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
     conference: string;
     division: string;
     players: ReturnType<typeof generateTeamRoster>;
-    createdPlayers: Array<{ id: string; firstName: string; lastName: string; position: string; ratings: any }>;
+    createdPlayers: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      position: string;
+      ratings: any;
+    }>;
     coach: ReturnType<typeof generateCoach>;
   }> = [];
   const teamRecords: Array<{ id: string; name: string }> = [];
@@ -925,7 +1312,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
     coach.lastName = config.coach.lastName;
 
     // Create players
-    const createdPlayers: typeof teams[number]["createdPlayers"] = [];
+    const createdPlayers: (typeof teams)[number]["createdPlayers"] = [];
     for (const player of players) {
       const pRecord = await prisma.sportPlayer.create({
         data: {
@@ -946,7 +1333,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
         firstName: pRecord.firstName,
         lastName: pRecord.lastName,
         position: pRecord.position,
-        ratings: pRecord.ratings
+        ratings: pRecord.ratings,
       });
     }
 
@@ -973,7 +1360,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
       division: config.division,
       players,
       createdPlayers,
-      coach
+      coach,
     });
   }
 
@@ -995,7 +1382,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
     { name: "Southeast", teamIndices: [0, 1, 2, 3, 4, 5, 6, 7] },
     { name: "Central", teamIndices: [8, 9, 10, 11, 12, 13, 14, 15] },
     { name: "Mountain", teamIndices: [16, 17, 18, 19, 20, 21, 22, 23] },
-    { name: "Southwest", teamIndices: [24, 25, 26, 27, 28, 29, 30, 31] }
+    { name: "Southwest", teamIndices: [24, 25, 26, 27, 28, 29, 30, 31] },
   ];
 
   const fixtures = generateSchedule({
@@ -1003,7 +1390,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
     teamCount: 32,
     divisions: divisionsConfig,
     conferenceCount: 2,
-    divisionCount: 2
+    divisionCount: 2,
   });
 
   const ratingVectors = teams.map((t) =>
@@ -1045,7 +1432,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
       archetype: "division_conference",
       seed: matchSeed,
       homeRoster: homeTeam.createdPlayers,
-      awayRoster: awayTeam.createdPlayers
+      awayRoster: awayTeam.createdPlayers,
     });
 
     const matchIxTime = seasonStart + fixture.matchDay * 1440;
@@ -1099,20 +1486,20 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
   // Create standings with conference/division ranks
   const standingsArr = Array.from(standings.entries()).map(([teamId, s]) => {
     const points = s.wins * 2 + s.draws; // Win is 2 points, Draw/OTL is 1 point in hockey
-    const teamMeta = teams.find(t => t.id === teamId)!;
+    const teamMeta = teams.find((t) => t.id === teamId)!;
     return {
       teamId,
       points,
       conference: teamMeta.conference,
       division: teamMeta.division,
-      ...s
+      ...s,
     };
   });
 
   // Sort within each division to assign local rank
   const divisions = ["Southeast", "Central", "Mountain", "Southwest"];
   for (const divName of divisions) {
-    const divStandings = standingsArr.filter(s => s.division === divName);
+    const divStandings = standingsArr.filter((s) => s.division === divName);
     divStandings.sort((a, b) => b.points - a.points || b.gf - b.ga - (a.gf - a.ga));
     for (let r = 0; r < divStandings.length; r++) {
       const s = divStandings[r]!;
@@ -1156,7 +1543,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
 
   // Add historical Watson Cup champions
   for (const record of HISTORIC_OHL_RECORDS) {
-    const champTeam = teams.find(t => t.name === record.champion);
+    const champTeam = teams.find((t) => t.name === record.champion);
     if (champTeam) {
       await prisma.sportSeasonRecord.create({
         data: {
@@ -1165,7 +1552,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
           recordType: "watson_cup_historic",
           holderId: champTeam.id,
           value: `${record.year} Watson Cup Winner: ${record.champion} defeat ${record.runnerUp} (${record.score})`,
-        }
+        },
       });
       count++;
     }
@@ -1173,7 +1560,6 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
 
   return count;
 }
-
 
 // ─── F1 / Motorsport ────────────────────────────────────────────────
 
@@ -1183,7 +1569,9 @@ async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Prom
   const leagueSeed = hashString("IRF World Championship");
   const raceCount = 20;
 
-  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/9/92/Monaco_Grand_Prix.jpg");
+  const coverImage = await downloadImageForSeed(
+    "https://upload.wikimedia.org/wikipedia/commons/9/92/Monaco_Grand_Prix.jpg"
+  );
   const league = await prisma.sportLeague.create({
     data: {
       name: "IRF World Championship",
@@ -1540,7 +1928,9 @@ async function seedBoxingLeague(prisma: Prisma, userId: string, ixNow: number): 
   let count = 0;
   const leagueSeed = hashString("ICC Heavyweight Grand Prix");
 
-  const coverImage = await downloadImageForSeed("https://upload.wikimedia.org/wikipedia/commons/7/7e/Boxing_ring.jpg");
+  const coverImage = await downloadImageForSeed(
+    "https://upload.wikimedia.org/wikipedia/commons/7/7e/Boxing_ring.jpg"
+  );
   const league = await prisma.sportLeague.create({
     data: {
       name: "ICC Heavyweight Grand Prix",

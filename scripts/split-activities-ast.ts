@@ -35,10 +35,7 @@ const groups: Record<string, string[]> = {
     "getUserEngagement",
     "getActivityStats",
   ],
-  trending: [
-    "getTrendingTopics",
-    "getUnifiedTrending",
-  ],
+  trending: ["getTrendingTopics", "getUnifiedTrending"],
   follows: [
     "followCountry",
     "unfollowCountry",
@@ -77,7 +74,8 @@ for (const n of allNames) {
 // ALL-COVERED guard: throw if any allProps name is NOT in some group (prevents silent drops).
 const groupedSet = new Set(allNames);
 const uncovered = allProps.filter((n) => !groupedSet.has(n));
-if (uncovered.length) throw new Error(`Ungrouped procedures (would be dropped): ${uncovered.join(", ")}`);
+if (uncovered.length)
+  throw new Error(`Ungrouped procedures (would be dropped): ${uncovered.join(", ")}`);
 
 // Drop the original source file from the project so the per-group copies are independent.
 project.removeSourceFile(origSf);

@@ -8,11 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import {
-  getPreset,
-  type SportPresetKey,
-  type TeamRatingVector,
-} from "~/lib/sports";
+import { getPreset, type SportPresetKey, type TeamRatingVector } from "~/lib/sports";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,7 +28,7 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
 
 async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
   if (!team.nationId) return undefined;
-  
+
   let effects: any[] = [];
   if (effectsMap) {
     effects = effectsMap.get(team.nationId) ?? [];

@@ -23,6 +23,19 @@ const SPORT_LABELS: Record<string, string> = {
   boxing: "Boxing",
 };
 
+const SPORT_FALLBACK_IMAGES: Record<string, string> = {
+  soccer:
+    "https://upload.wikimedia.org/wikipedia/commons/e/e6/Stade_V%C3%A9lodrome_interior_2018.jpg",
+  football: "https://upload.wikimedia.org/wikipedia/commons/4/46/Maracana_Stadium.jpg",
+  hockey: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Bell_Centre_interior_view.jpg",
+  basketball:
+    "https://upload.wikimedia.org/wikipedia/commons/e/ee/Madison_Square_Garden_interior.jpg",
+  baseball: "https://upload.wikimedia.org/wikipedia/commons/9/92/Scotiabank_Saddledome.jpg",
+  f1: "https://upload.wikimedia.org/wikipedia/commons/e/ee/Monaco_Grand_Prix_stretching_past_the_harbour_in_Monte_Carlo%2C_Monaco.jpg",
+  boxing:
+    "https://upload.wikimedia.org/wikipedia/commons/0/07/2021_CISM_Military_World_Games_Boxing.jpg",
+};
+
 const ARCHETYPE_LABELS: Record<string, string> = {
   league: "League",
   division_conference: "Division / Conference",
@@ -53,7 +66,10 @@ export default function MyLeaguePage() {
         key={league.id}
         index={idx}
         card={{
-          src: (league as any).coverImage || "https://ixwiki.com/trophy-card.png",
+          src:
+            (league as any).coverImage ||
+            SPORT_FALLBACK_IMAGES[league.sportPreset] ||
+            "https://upload.wikimedia.org/wikipedia/commons/e/e6/Stade_V%C3%A9lodrome_interior_2018.jpg",
           title: league.name,
           category: (
             <div className="flex flex-col items-start gap-1.5">
@@ -64,7 +80,8 @@ export default function MyLeaguePage() {
                 <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Featured League
               </Badge>
               <span className="opacity-80">
-                {SPORT_LABELS[league.sportPreset] ?? league.sportPreset} · {ARCHETYPE_LABELS[league.archetype] ?? league.archetype}
+                {SPORT_LABELS[league.sportPreset] ?? league.sportPreset} ·{" "}
+                {ARCHETYPE_LABELS[league.archetype] ?? league.archetype}
               </span>
             </div>
           ),
@@ -115,7 +132,11 @@ export default function MyLeaguePage() {
         key={league.id}
         index={idx}
         card={{
-          src: (league as any).coverImage || (league as any).logo || "https://ixwiki.com/sports-logo.png",
+          src:
+            (league as any).coverImage ||
+            (league as any).logo ||
+            SPORT_FALLBACK_IMAGES[league.sportPreset] ||
+            "https://upload.wikimedia.org/wikipedia/commons/d/de/Stadion_Luzhniki_Moskva_July_2018.jpg",
           title: league.name,
           category: `${SPORT_LABELS[league.sportPreset] ?? league.sportPreset} · ${ARCHETYPE_LABELS[league.archetype] ?? league.archetype}`,
           content: (

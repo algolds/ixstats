@@ -70,11 +70,7 @@ const groups: Record<string, string[]> = {
     "getOpenTransferListings",
     "getTeamBids",
   ],
-  club: [
-    "upgradeStadium",
-    "setTicketPrice",
-    "invokePatronSaint",
-  ],
+  club: ["upgradeStadium", "setTicketPrice", "invokePatronSaint"],
 };
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -104,7 +100,8 @@ for (const n of allNames) {
 // ALL-COVERED guard: every router procedure must be assigned to some group.
 const allNamesSet = new Set(allNames);
 const uncovered = allProps.filter((n) => !allNamesSet.has(n));
-if (uncovered.length) throw new Error(`Uncovered procedures (would be silently dropped): ${uncovered.join(", ")}`);
+if (uncovered.length)
+  throw new Error(`Uncovered procedures (would be silently dropped): ${uncovered.join(", ")}`);
 
 // Drop the base file from the project before writing per-group copies.
 project.removeSourceFile(baseFile);

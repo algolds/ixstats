@@ -1,7 +1,23 @@
 import * as React from "react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
-import { Layers, Sparkles, Shield, Activity, BarChart3, Globe, Menu, Star, Hexagon, Box, Heart, Zap, Bell, ChevronRight, Code } from "lucide-react";
+import {
+  Layers,
+  Sparkles,
+  Shield,
+  Activity,
+  BarChart3,
+  Globe,
+  Menu,
+  Star,
+  Hexagon,
+  Box,
+  Heart,
+  Zap,
+  Bell,
+  ChevronRight,
+  Code,
+} from "lucide-react";
 import { type LabConfig } from "./types";
 
 interface TemplateRendererProps {
@@ -65,8 +81,8 @@ export function LabTemplates({
             <Layers className="text-primary mx-auto h-8 w-8 opacity-75" />
             <h4 className="text-base font-bold capitalize">{material} Material</h4>
             <p className="text-muted-foreground max-w-[200px] text-[11px] leading-relaxed">
-              Depth Level {depth} with theme class &apos;{variant}&apos; and overlay texture
-              &apos;{texture}&apos;.
+              Depth Level {depth} with theme class &apos;{variant}&apos; and overlay texture &apos;
+              {texture}&apos;.
             </p>
           </div>
         </div>
@@ -93,7 +109,7 @@ export function LabTemplates({
             </div>
             <button
               onClick={() => setSecureStatus(!secureStatus)}
-              className="rounded border px-2 py-0.5 text-[8px] font-bold tracking-wider uppercase transition-colors cursor-pointer"
+              className="cursor-pointer rounded border px-2 py-0.5 text-[8px] font-bold tracking-wider uppercase transition-colors"
               style={{
                 borderColor: secureStatus ? `${customAccent}4D` : "#ef44444D",
                 backgroundColor: secureStatus ? `${customAccent}33` : "#ef444433",
@@ -108,7 +124,11 @@ export function LabTemplates({
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Active Nodes:</span>
               <span className="font-mono font-bold">
-                {secureStatus ? (linkEstablished ? "12 / 12 Online" : "11 / 12 Online") : "0 / 12 Offline"}
+                {secureStatus
+                  ? linkEstablished
+                    ? "12 / 12 Online"
+                    : "11 / 12 Online"
+                  : "0 / 12 Offline"}
               </span>
             </div>
             <div className="flex justify-between text-xs">
@@ -122,14 +142,14 @@ export function LabTemplates({
             <button
               onClick={handleLinkClick}
               disabled={linking || !secureStatus}
-              className="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
+              className="flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40"
               style={{ backgroundColor: customAccent }}
             >
               {linking ? "Establishing..." : linkEstablished ? "Disconnect Link" : "Establish Link"}
             </button>
             <button
               onClick={() => setButtonClickCount((c) => c + 1)}
-              className="bg-muted hover:bg-muted/80 text-muted-foreground border-border/20 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer"
+              className="bg-muted hover:bg-muted/80 text-muted-foreground border-border/20 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
             >
               Details {buttonClickCount > 0 && `(${buttonClickCount})`}
             </button>
@@ -196,8 +216,8 @@ export function LabTemplates({
               <button
                 onClick={() => setActiveNode(activeNode === 1 ? null : 1)}
                 className={cn(
-                  "facet-hierarchy-interactive flex-1 px-3 py-2 text-center text-xs font-semibold transition-all relative z-20 cursor-pointer",
-                  activeNode === 1 ? "text-foreground font-bold border-2" : "text-muted-foreground"
+                  "facet-hierarchy-interactive relative z-20 flex-1 cursor-pointer px-3 py-2 text-center text-xs font-semibold transition-all",
+                  activeNode === 1 ? "text-foreground border-2 font-bold" : "text-muted-foreground"
                 )}
                 style={{
                   borderColor: activeNode === 1 ? customAccent : `${customAccent}4D`,
@@ -209,8 +229,8 @@ export function LabTemplates({
               <button
                 onClick={() => setActiveNode(activeNode === 2 ? null : 2)}
                 className={cn(
-                  "facet-hierarchy-interactive flex-1 px-3 py-2 text-center text-xs font-semibold transition-all relative z-20 cursor-pointer",
-                  activeNode === 2 ? "text-foreground font-bold border-2" : "text-muted-foreground"
+                  "facet-hierarchy-interactive relative z-20 flex-1 cursor-pointer px-3 py-2 text-center text-xs font-semibold transition-all",
+                  activeNode === 2 ? "text-foreground border-2 font-bold" : "text-muted-foreground"
                 )}
                 style={{
                   borderColor: activeNode === 2 ? customAccent : `${customAccent}4D`,
@@ -236,24 +256,24 @@ export function LabTemplates({
             opacity={textureOpacity}
             className="z-0 rounded-[inherit]"
           />
-          <div className="relative z-10 flex items-center justify-between pointer-events-auto">
-            <div className="flex items-center gap-2 pointer-events-none">
+          <div className="pointer-events-auto relative z-10 flex items-center justify-between">
+            <div className="pointer-events-none flex items-center gap-2">
               <Shield className="h-4 w-4" style={{ color: customAccent }} />
               <span className="text-sm font-bold">IxStats</span>
             </div>
-            <div className="flex items-center gap-3 relative z-20">
+            <div className="relative z-20 flex items-center gap-3">
               {["Dashboard", "Analytics", "Settings"].map((item) => (
                 <span
                   key={item}
                   onClick={() => setActiveNav(item)}
                   className={cn(
-                    "cursor-pointer text-xs font-semibold transition-all px-2 py-0.5 rounded-md",
+                    "cursor-pointer rounded-md px-2 py-0.5 text-xs font-semibold transition-all",
                     activeNav === item
-                      ? "text-foreground bg-white/10 dark:bg-black/25 shadow-xs font-bold"
+                      ? "text-foreground bg-white/10 font-bold shadow-xs dark:bg-black/25"
                       : "text-muted-foreground hover:text-foreground hover:bg-white/5 dark:hover:bg-black/10"
                   )}
                   style={{
-                    color: activeNav === item ? customAccent : undefined
+                    color: activeNav === item ? customAccent : undefined,
                   }}
                 >
                   {item}
@@ -261,7 +281,7 @@ export function LabTemplates({
               ))}
               <div
                 onClick={() => setButtonClickCount((c) => c + 1)}
-                className="ml-2 flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer active:scale-95 transition-transform"
+                className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-[10px] font-bold text-white transition-transform active:scale-95"
                 style={{ backgroundColor: customAccent }}
                 title={`Profile clicked ${buttonClickCount} times`}
               >
@@ -297,19 +317,13 @@ export function LabTemplates({
             </div>
           </div>
           <div className="pointer-events-none relative z-10 grid grid-cols-2 gap-2">
-            <div
-              className="rounded-lg border p-2.5"
-              style={{ borderColor: `${customAccent}20` }}
-            >
+            <div className="rounded-lg border p-2.5" style={{ borderColor: `${customAccent}20` }}>
               <span className="text-muted-foreground block text-[9px] font-semibold uppercase">
                 CPU
               </span>
               <span className="font-mono text-sm font-bold">64%</span>
             </div>
-            <div
-              className="rounded-lg border p-2.5"
-              style={{ borderColor: `${customAccent}20` }}
-            >
+            <div className="rounded-lg border p-2.5" style={{ borderColor: `${customAccent}20` }}>
               <span className="text-muted-foreground block text-[9px] font-semibold uppercase">
                 Memory
               </span>
@@ -331,7 +345,8 @@ export function LabTemplates({
             opacity={textureOpacity}
             className="z-0 rounded-[inherit]"
           />
-          <div className="pointer-events-none relative z-10 flex h-20 items-center justify-center rounded-lg border border-dashed"
+          <div
+            className="pointer-events-none relative z-10 flex h-20 items-center justify-center rounded-lg border border-dashed"
             style={{ borderColor: `${customAccent}30` }}
           >
             <BarChart3 className="h-6 w-6 opacity-40" style={{ color: customAccent }} />
@@ -343,7 +358,7 @@ export function LabTemplates({
             </p>
           </div>
           <div className="pointer-events-none relative z-10 flex items-center gap-2 text-[10px]">
-            <Globe className="h-3 w-3 text-muted-foreground" />
+            <Globe className="text-muted-foreground h-3 w-3" />
             <span className="text-muted-foreground font-semibold">Updated 2m ago</span>
           </div>
         </div>
@@ -434,17 +449,17 @@ export function LabTemplates({
               Hover to reveal anisotropic glare reflection across the surface.
             </p>
           </div>
-          <div className="relative z-10 flex gap-2 pointer-events-auto">
+          <div className="pointer-events-auto relative z-10 flex gap-2">
             <button
               onClick={() => setButtonClickCount((c) => c + 1)}
-              className="rounded-md px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
+              className="cursor-pointer rounded-md px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: customAccent }}
             >
               Action {buttonClickCount > 0 && `(${buttonClickCount})`}
             </button>
             <button
               onClick={() => setButtonClickCount(0)}
-              className="border-border/20 hover:bg-muted/50 text-muted-foreground rounded-md border px-3 py-1.5 text-[10px] font-semibold transition-colors cursor-pointer"
+              className="border-border/20 hover:bg-muted/50 text-muted-foreground cursor-pointer rounded-md border px-3 py-1.5 text-[10px] font-semibold transition-colors"
             >
               Reset
             </button>
@@ -458,7 +473,7 @@ export function LabTemplates({
           ref={previewRef}
           className={cn(
             generatedClassNames,
-            "group/cutout flex w-full cursor-pointer flex-col overflow-hidden rounded-[28px] text-left",
+            "group/cutout flex w-full cursor-pointer flex-col overflow-hidden rounded-[28px] text-left"
           )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
@@ -469,15 +484,12 @@ export function LabTemplates({
           />
           {/* Cutout corner decorative SVG */}
           <svg
-            className="pointer-events-none absolute top-0 right-0 z-[2] h-48 w-48 select-none opacity-20"
+            className="pointer-events-none absolute top-0 right-0 z-[2] h-48 w-48 opacity-20 select-none"
             viewBox="0 0 200 200"
             fill="none"
             style={{ color: customAccent }}
           >
-            <path
-              d="M0 200C155.996 199.961 200.029 156.308 200 0V200H0Z"
-              fill="currentColor"
-            />
+            <path d="M0 200C155.996 199.961 200.029 156.308 200 0V200H0Z" fill="currentColor" />
           </svg>
           <div className="pointer-events-none relative z-10 flex flex-col gap-3 p-6">
             <div className="flex items-start justify-between">
@@ -501,8 +513,8 @@ export function LabTemplates({
             <div>
               <h4 className="text-base font-bold">Cutout Card</h4>
               <p className="text-muted-foreground mt-0.5 text-[11px] leading-relaxed">
-                Distinctive corner cutout geometry with the {material} material finish and
-                elevation depth {depth}.
+                Distinctive corner cutout geometry with the {material} material finish and elevation
+                depth {depth}.
               </p>
             </div>
           </div>
@@ -513,8 +525,14 @@ export function LabTemplates({
             <span className="text-muted-foreground text-[10px] font-semibold">Learn More</span>
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: customAccent }} />
-              <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: `${customAccent}60` }} />
-              <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: `${customAccent}30` }} />
+              <div
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: `${customAccent}60` }}
+              />
+              <div
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: `${customAccent}30` }}
+              />
             </div>
           </div>
         </div>
@@ -526,7 +544,7 @@ export function LabTemplates({
           ref={previewRef}
           className={cn(
             generatedClassNames,
-            "flex w-full flex-col gap-4 overflow-hidden p-6 text-left",
+            "flex w-full flex-col gap-4 overflow-hidden p-6 text-left"
           )}
           style={{
             ...dynamicStyles,
@@ -567,13 +585,13 @@ export function LabTemplates({
           </div>
           <div className="pointer-events-none relative z-10 grid grid-cols-2 gap-2">
             <div className="rounded-lg border p-2.5" style={{ borderColor: `${customAccent}15` }}>
-              <span className="text-muted-foreground block text-[8px] font-bold uppercase tracking-wider">
+              <span className="text-muted-foreground block text-[8px] font-bold tracking-wider uppercase">
                 Rotation
               </span>
               <span className="font-mono text-sm font-bold">17.5°</span>
             </div>
             <div className="rounded-lg border p-2.5" style={{ borderColor: `${customAccent}15` }}>
-              <span className="text-muted-foreground block text-[8px] font-bold uppercase tracking-wider">
+              <span className="text-muted-foreground block text-[8px] font-bold tracking-wider uppercase">
                 Depth
               </span>
               <span className="font-mono text-sm font-bold">Level {depth}</span>
@@ -587,8 +605,11 @@ export function LabTemplates({
 
     case "texture-card":
       return (
-        <div ref={previewRef} className={cn(generatedClassNames, "flex w-full flex-col text-left")}
-          style={{ ...dynamicStyles, ...accentVars }}>
+        <div
+          ref={previewRef}
+          className={cn(generatedClassNames, "flex w-full flex-col text-left")}
+          style={{ ...dynamicStyles, ...accentVars }}
+        >
           <TextureOverlay
             texture={texture}
             opacity={textureOpacity}
@@ -596,13 +617,13 @@ export function LabTemplates({
           />
           {/* Multi-border nested structure mimicking TextureCard */}
           <div
-            className="facet-texture-card relative w-full pointer-events-none"
+            className="facet-texture-card pointer-events-none relative w-full"
             style={{ "--radius": "24px" } as React.CSSProperties}
           >
             <div className="facet-texture-card-level-1">
               <div className="facet-texture-card-level-2">
                 <div className="facet-texture-card-level-3">
-                  <div className="facet-texture-card-inner flex flex-col gap-4 from-card/70 to-secondary/50 bg-gradient-to-b p-6">
+                  <div className="facet-texture-card-inner from-card/70 to-secondary/50 flex flex-col gap-4 bg-gradient-to-b p-6">
                     <div className="relative z-10">
                       <div className="flex items-center gap-2">
                         <Box className="h-4 w-4" style={{ color: customAccent }} />
@@ -647,10 +668,7 @@ export function LabTemplates({
       return (
         <div
           ref={previewRef}
-          className={cn(
-            generatedClassNames,
-            "flex w-full flex-col gap-5 p-6 text-center",
-          )}
+          className={cn(generatedClassNames, "flex w-full flex-col gap-5 p-6 text-center")}
           style={{ ...dynamicStyles, ...accentVars }}
         >
           <TextureOverlay
@@ -660,7 +678,9 @@ export function LabTemplates({
           />
           <div className="pointer-events-none relative z-10">
             <h4 className="text-sm font-bold">National Vitality</h4>
-            <p className="text-muted-foreground text-[10px]">{material} · depth {depth}</p>
+            <p className="text-muted-foreground text-[10px]">
+              {material} · depth {depth}
+            </p>
           </div>
           <div className="pointer-events-none relative z-10 flex items-center justify-center gap-4">
             {[
@@ -674,16 +694,32 @@ export function LabTemplates({
               return (
                 <div key={ring.label} className="flex flex-col items-center gap-1.5">
                   <svg width="72" height="72" className="-rotate-90">
-                    <circle cx="36" cy="36" r="28" fill="none" stroke="currentColor" strokeWidth="5"
-                      className="text-border" />
-                    <circle cx="36" cy="36" r="28" fill="none" stroke={ring.color} strokeWidth="5"
-                      strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-                      className="transition-all duration-700" />
+                    <circle
+                      cx="36"
+                      cy="36"
+                      r="28"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="5"
+                      className="text-border"
+                    />
+                    <circle
+                      cx="36"
+                      cy="36"
+                      r="28"
+                      fill="none"
+                      stroke={ring.color}
+                      strokeWidth="5"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={offset}
+                      className="transition-all duration-700"
+                    />
                   </svg>
                   <span className="font-mono text-xs font-bold" style={{ color: ring.color }}>
                     {ring.value}%
                   </span>
-                  <span className="text-muted-foreground text-[8px] font-semibold uppercase tracking-wider">
+                  <span className="text-muted-foreground text-[8px] font-semibold tracking-wider uppercase">
                     {ring.label}
                   </span>
                 </div>
@@ -697,10 +733,7 @@ export function LabTemplates({
       return (
         <div
           ref={previewRef}
-          className={cn(
-            generatedClassNames,
-            "flex w-full flex-col gap-4 p-6 text-left",
-          )}
+          className={cn(generatedClassNames, "flex w-full flex-col gap-4 p-6 text-left")}
           style={{ ...dynamicStyles, ...accentVars }}
         >
           <TextureOverlay
@@ -711,10 +744,12 @@ export function LabTemplates({
           <div className="pointer-events-none relative z-10">
             <h4 className="text-sm font-bold">Glass Button Variants</h4>
             <p className="text-muted-foreground text-[10px]">
-              {material} · {depth === 1 ? "shallow" : depth === 2 ? "medium" : depth === 3 ? "deep" : "modal"} depth
+              {material} ·{" "}
+              {depth === 1 ? "shallow" : depth === 2 ? "medium" : depth === 3 ? "deep" : "modal"}{" "}
+              depth
             </p>
           </div>
-          <div className="relative z-10 flex flex-col gap-2 pointer-events-auto">
+          <div className="pointer-events-auto relative z-10 flex flex-col gap-2">
             {[
               { label: "Primary Action", color: customAccent },
               { label: "Secondary", color: "#3b82f6" },
@@ -725,13 +760,15 @@ export function LabTemplates({
               return (
                 <button
                   key={btn.label}
-                  onClick={() => setGlassClickStates(prev => ({ ...prev, [btn.label]: !isClicked }))}
+                  onClick={() =>
+                    setGlassClickStates((prev) => ({ ...prev, [btn.label]: !isClicked }))
+                  }
                   className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold tracking-wide backdrop-blur-sm transition-all hover:opacity-90 active:scale-98"
                   style={{
                     backgroundColor: isClicked ? `${btn.color}33` : `${btn.color}18`,
                     borderColor: isClicked ? btn.color : `${btn.color}30`,
                     color: btn.color,
-                    boxShadow: isClicked 
+                    boxShadow: isClicked
                       ? `inset 0 1px 0 ${btn.color}40, 0 0 12px ${btn.color}25`
                       : `inset 0 1px 0 ${btn.color}20, 0 4px 12px ${btn.color}10`,
                   }}
@@ -751,7 +788,7 @@ export function LabTemplates({
           ref={previewRef}
           className={cn(
             generatedClassNames,
-            "flex w-full flex-col gap-4 overflow-hidden p-6 text-center",
+            "flex w-full flex-col gap-4 overflow-hidden p-6 text-center"
           )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
@@ -809,10 +846,7 @@ export function LabTemplates({
       return (
         <div
           ref={previewRef}
-          className={cn(
-            generatedClassNames,
-            "flex w-full flex-col gap-4 p-6 text-left",
-          )}
+          className={cn(generatedClassNames, "flex w-full flex-col gap-4 p-6 text-left")}
           style={{ ...dynamicStyles, ...accentVars }}
         >
           <TextureOverlay
@@ -849,7 +883,7 @@ export function LabTemplates({
                 >
                   <div className="flex items-center gap-2">
                     <Icon className="h-3 w-3" style={{ color: customAccent }} />
-                    <span className="text-muted-foreground text-[8px] font-semibold uppercase tracking-wider">
+                    <span className="text-muted-foreground text-[8px] font-semibold tracking-wider uppercase">
                       {metric.label}
                     </span>
                   </div>
@@ -861,10 +895,12 @@ export function LabTemplates({
               );
             })}
           </div>
-          <div className="pointer-events-none relative z-10 flex items-center justify-between border-t pt-3"
-            style={{ borderColor: `${customAccent}10` }}>
+          <div
+            className="pointer-events-none relative z-10 flex items-center justify-between border-t pt-3"
+            style={{ borderColor: `${customAccent}10` }}
+          >
             <span className="text-muted-foreground text-[9px]">Last updated 2m ago</span>
-            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+            <ChevronRight className="text-muted-foreground h-3 w-3" />
           </div>
         </div>
       );
@@ -875,25 +911,25 @@ export function LabTemplates({
           ref={previewRef}
           className={cn(
             generatedClassNames,
-            "flex w-full flex-col gap-3 overflow-hidden p-0 text-left",
+            "flex w-full flex-col gap-3 overflow-hidden p-0 text-left"
           )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
-          <TextureOverlay
-            texture={texture}
-            opacity={textureOpacity}
-            className="z-0"
-          />
-          <div className="pointer-events-none relative z-10 flex items-center justify-between gap-3 border-b px-4 py-3"
-            style={{ borderColor: `${customAccent}15` }}>
+          <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
+          <div
+            className="pointer-events-none relative z-10 flex items-center justify-between gap-3 border-b px-4 py-3"
+            style={{ borderColor: `${customAccent}15` }}
+          >
             <div className="flex items-center gap-2">
               <Code className="h-3.5 w-3.5" style={{ color: customAccent }} />
               <span className="text-[10px] font-bold tracking-wide uppercase">Exported Code</span>
             </div>
-            <span className="text-muted-foreground text-[8px] font-mono">.{'{'} material: {material}, depth: {depth} {'}'}</span>
+            <span className="text-muted-foreground font-mono text-[8px]">
+              .{"{"} material: {material}, depth: {depth} {"}"}
+            </span>
           </div>
           <pre
-            className="bg-muted/90 max-h-[260px] overflow-x-auto px-4 pb-4 pt-1 font-mono text-[10px] leading-relaxed text-foreground"
+            className="bg-muted/90 text-foreground max-h-[260px] overflow-x-auto px-4 pt-1 pb-4 font-mono text-[10px] leading-relaxed"
             style={{
               borderColor: `${customAccent}10`,
               tabSize: 2,

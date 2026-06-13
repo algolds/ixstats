@@ -580,7 +580,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
               data: {
                 title: cardTitle,
                 description: cardDescription,
-                artwork: "https://ixwiki.com/trophy-card.png",
+                artwork:
+                  "https://upload.wikimedia.org/wikipedia/commons/e/e6/Stade_V%C3%A9lodrome_interior_2018.jpg",
                 rarity: "EPIC",
                 cardType: "SPECIAL",
                 season: season.seasonNumber,

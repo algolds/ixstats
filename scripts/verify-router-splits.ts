@@ -36,7 +36,10 @@ let allGood = true;
 for (const r of routers) {
   let origText: string;
   try {
-    origText = execSync(`git show HEAD:${base}/${r}.ts`, { encoding: "utf8", maxBuffer: 50 * 1024 * 1024 });
+    origText = execSync(`git show HEAD:${base}/${r}.ts`, {
+      encoding: "utf8",
+      maxBuffer: 50 * 1024 * 1024,
+    });
   } catch {
     console.log(`${r}: ⚠️  not in git HEAD (was it uncommitted? skipping orig comparison)`);
     continue;
@@ -60,7 +63,7 @@ for (const r of routers) {
       `${ok ? "✓ IDENTICAL" : "✗"}` +
       (missing.length ? ` MISSING:[${missing.join(",")}]` : "") +
       (extra.length ? ` EXTRA:[${extra.join(",")}]` : "") +
-      (dups.length ? ` DUP:[${dups.join(",")}]` : ""),
+      (dups.length ? ` DUP:[${dups.join(",")}]` : "")
   );
 }
 console.log(allGood ? "\nALL ROUTERS: parity verified ✓" : "\nPARITY FAILURE — investigate above");

@@ -2,15 +2,8 @@
 // Comprehensive Security & Defense System Router
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  premiumProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-
-
-
 
 import { notificationAPI } from "~/lib/notification-api";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";

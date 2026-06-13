@@ -31,9 +31,7 @@ export function getPlayerPhotoUrl(player: {
   // Distribute based on gender estimation to different subsets of the 14 files
   // Odd photos (1, 3, 5, 7, 9, 11, 13) represent male/neutral avatars
   // Even photos (2, 4, 6, 8, 10, 12, 14) represent female/neutral avatars
-  const indexSubset = isFemale
-    ? [2, 4, 6, 8, 10, 12, 14]
-    : [1, 3, 5, 7, 9, 11, 13];
+  const indexSubset = isFemale ? [2, 4, 6, 8, 10, 12, 14] : [1, 3, 5, 7, 9, 11, 13];
 
   const index = indexSubset[Math.abs(hash % indexSubset.length)];
   return `/images/sportyblocks/player-${index}.png`;
@@ -41,20 +39,48 @@ export function getPlayerPhotoUrl(player: {
 
 function isProbablyFemale(firstName: string): boolean {
   const name = firstName.toLowerCase().trim();
-  
+
   // Guard for known male or neutral names in the FIRST_NAMES array
   const maleOrNeutralGuards = [
-    "yuki", "kai", "carlos", "omar", "andre", "sergei", "wei", "takumi",
-    "ren", "ali", "sami", "idris", "mateo", "luca", "felipe", "dmitri",
-    "gustav", "oscar", "kofi", "enzo", "pedro", "emil", "jin", "tomás",
-    "kenji", "zain", "henrik", "matteo", "daisuke", "erik", "ravi", "anton",
-    "leon"
+    "yuki",
+    "kai",
+    "carlos",
+    "omar",
+    "andre",
+    "sergei",
+    "wei",
+    "takumi",
+    "ren",
+    "ali",
+    "sami",
+    "idris",
+    "mateo",
+    "luca",
+    "felipe",
+    "dmitri",
+    "gustav",
+    "oscar",
+    "kofi",
+    "enzo",
+    "pedro",
+    "emil",
+    "jin",
+    "tomás",
+    "kenji",
+    "zain",
+    "henrik",
+    "matteo",
+    "daisuke",
+    "erik",
+    "ravi",
+    "anton",
+    "leon",
   ];
-  
+
   if (maleOrNeutralGuards.includes(name)) {
     return false;
   }
-  
+
   // Common female name suffixes (a, ia, ie, y, e)
   if (
     name.endsWith("a") ||
@@ -65,6 +91,6 @@ function isProbablyFemale(firstName: string): boolean {
   ) {
     return true;
   }
-  
+
   return false;
 }

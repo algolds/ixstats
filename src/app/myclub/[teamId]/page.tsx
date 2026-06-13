@@ -102,11 +102,11 @@ function PlayerCard({
     <div className="flex flex-col items-center gap-3">
       <SportyPlayerCard player={player} team={team} />
       {onList && (
-        <div className="flex gap-1 w-[320px] px-2 relative z-10">
+        <div className="relative z-10 flex w-[320px] gap-1 px-2">
           <Button
             size="sm"
             variant="outline"
-            className="h-8 w-full border-border bg-muted/40 text-[10px] text-foreground hover:bg-muted/80"
+            className="border-border bg-muted/40 text-foreground hover:bg-muted/80 h-8 w-full text-[10px]"
             onClick={() => onList(player)}
           >
             Manage Listing
@@ -259,7 +259,11 @@ export default function MyClubTeamDetailPage() {
       (p: any) => p.position && p.position.toUpperCase() === comparePos.toUpperCase()
     );
     if (samePos.length === 0) return players[0] || null;
-    return [...samePos].sort((a: any, b: any) => (b.ratings?.overall ?? 0) - (a.ratings?.overall ?? 0))[0] || null;
+    return (
+      [...samePos].sort(
+        (a: any, b: any) => (b.ratings?.overall ?? 0) - (a.ratings?.overall ?? 0)
+      )[0] || null
+    );
   }, [comparePlayer, overview?.team?.players]);
 
   if (overviewLoading) return <OverviewSkeleton />;
@@ -282,11 +286,15 @@ export default function MyClubTeamDetailPage() {
 
         <div className="facet-hierarchy-parent mb-6 flex items-center gap-4">
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-3xl overflow-hidden border border-border/30"
+            className="border-border/30 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border text-3xl"
             style={{ backgroundColor: `${teamPublic.color}20` }}
           >
             {teamPublic.logo ? (
-              <img src={teamPublic.logo} alt={teamPublic.name} className="h-full w-full object-cover" />
+              <img
+                src={teamPublic.logo}
+                alt={teamPublic.name}
+                className="h-full w-full object-cover"
+              />
             ) : (
               publicEmoji
             )}
@@ -294,7 +302,11 @@ export default function MyClubTeamDetailPage() {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               {teamPublic.logo && (
-                <img src={teamPublic.logo} alt="" className="h-8 w-8 rounded-lg object-cover border" />
+                <img
+                  src={teamPublic.logo}
+                  alt=""
+                  className="h-8 w-8 rounded-lg border object-cover"
+                />
               )}
               <h1 className="truncate text-3xl font-bold">{teamPublic.name}</h1>
             </div>
@@ -400,7 +412,11 @@ export default function MyClubTeamDetailPage() {
                         minute: 34,
                         commentary: `WHAT A STRIKE! ${team.name} takes the lead!`,
                       },
-                      { t: 45, type: "tactic_shift", commentary: "Half time adjustments underway." },
+                      {
+                        t: 45,
+                        type: "tactic_shift",
+                        commentary: "Half time adjustments underway.",
+                      },
                       {
                         t: 62,
                         type: "card",
@@ -428,10 +444,10 @@ export default function MyClubTeamDetailPage() {
                     <div className="grid gap-4 sm:grid-cols-3">
                       <Card className="facet-hierarchy-child bg-card/45 border-border">
                         <CardContent className="pt-6 text-center">
-                          <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                             Record
                           </p>
-                          <p className="mt-1 text-3xl font-extrabold tabular-nums text-foreground">
+                          <p className="text-foreground mt-1 text-3xl font-extrabold tabular-nums">
                             {currentStandings.wins}-{currentStandings.losses}
                             {currentStandings.draws > 0 ? `-${currentStandings.draws}` : ""}
                           </p>
@@ -439,20 +455,20 @@ export default function MyClubTeamDetailPage() {
                       </Card>
                       <Card className="facet-hierarchy-child bg-card/45 border-border">
                         <CardContent className="pt-6 text-center">
-                          <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                             League Points
                           </p>
-                          <p className="mt-1 text-3xl font-extrabold tabular-nums text-foreground">
+                          <p className="text-foreground mt-1 text-3xl font-extrabold tabular-nums">
                             {currentStandings.points}
                           </p>
                         </CardContent>
                       </Card>
                       <Card className="facet-hierarchy-child bg-card/45 border-border">
                         <CardContent className="pt-6 text-center">
-                          <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                             Scored / Conceded
                           </p>
-                          <p className="mt-1 text-3xl font-extrabold tabular-nums text-foreground">
+                          <p className="text-foreground mt-1 text-3xl font-extrabold tabular-nums">
                             {currentStandings.pointsFor} : {currentStandings.pointsAgainst}
                           </p>
                         </CardContent>
@@ -472,51 +488,58 @@ export default function MyClubTeamDetailPage() {
                           <Calendar className="h-6 w-6" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg font-bold text-foreground">Off-Season Status</CardTitle>
-                          <CardDescription className="text-xs text-muted-foreground">
-                            The league is currently in the off-season. Make the most of this time to optimize your squad.
+                          <CardTitle className="text-foreground text-lg font-bold">
+                            Off-Season Status
+                          </CardTitle>
+                          <CardDescription className="text-muted-foreground text-xs">
+                            The league is currently in the off-season. Make the most of this time to
+                            optimize your squad.
                           </CardDescription>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-2xl border border-border bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
+                        <div className="mb-2 flex items-center gap-2">
                           <Users className="h-4 w-4" style={{ color: team.color }} />
-                          <h4 className="text-sm font-semibold text-foreground">Train Roster</h4>
+                          <h4 className="text-foreground text-sm font-semibold">Train Roster</h4>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Boost specific player attributes by conducting daily drills or initiating team-wide training camps.
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          Boost specific player attributes by conducting daily drills or initiating
+                          team-wide training camps.
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-border bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
+                        <div className="mb-2 flex items-center gap-2">
                           <ArrowLeftRight className="h-4 w-4" style={{ color: team.color }} />
-                          <h4 className="text-sm font-semibold text-foreground">Scout Transfers</h4>
+                          <h4 className="text-foreground text-sm font-semibold">Scout Transfers</h4>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Explore the transfer market to sign promising athletes or put your own players up for sale.
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          Explore the transfer market to sign promising athletes or put your own
+                          players up for sale.
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-border bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
+                        <div className="mb-2 flex items-center gap-2">
                           <BarChart3 className="h-4 w-4" style={{ color: team.color }} />
-                          <h4 className="text-sm font-semibold text-foreground">Tweak Tactics</h4>
+                          <h4 className="text-foreground text-sm font-semibold">Tweak Tactics</h4>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Adjust tactical layouts, team shapes, and player roles to outclass your rivals in upcoming fixtures.
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          Adjust tactical layouts, team shapes, and player roles to outclass your
+                          rivals in upcoming fixtures.
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-border bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
+                        <div className="mb-2 flex items-center gap-2">
                           <DollarSign className="h-4 w-4" style={{ color: team.color }} />
-                          <h4 className="text-sm font-semibold text-foreground">Collect Revenue</h4>
+                          <h4 className="text-foreground text-sm font-semibold">Collect Revenue</h4>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Manage commercial deals, collect gate receipts, and ensure stadium operations align with financial goals.
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          Manage commercial deals, collect gate receipts, and ensure stadium
+                          operations align with financial goals.
                         </p>
                       </div>
                     </CardContent>
@@ -526,24 +549,26 @@ export default function MyClubTeamDetailPage() {
                   <div className="grid gap-4 sm:grid-cols-3">
                     <Card className="facet-hierarchy-child bg-card/45 border-border">
                       <CardContent className="pt-6 text-center">
-                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Squad Members
                         </p>
-                        <p className="mt-1 text-3xl font-extrabold tabular-nums text-foreground">
+                        <p className="text-foreground mt-1 text-3xl font-extrabold tabular-nums">
                           {team.players?.length ?? 0}
                         </p>
                       </CardContent>
                     </Card>
                     <Card className="facet-hierarchy-child bg-card/45 border-border">
                       <CardContent className="pt-6 text-center">
-                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Avg Roster OVR
                         </p>
-                        <p className="mt-1 text-3xl font-extrabold tabular-nums text-foreground">
+                        <p className="text-foreground mt-1 text-3xl font-extrabold tabular-nums">
                           {team.players && team.players.length > 0
                             ? Math.round(
-                                team.players.reduce((acc: number, p: any) => acc + (p.ratings?.overall ?? 0), 0) /
-                                  team.players.length
+                                team.players.reduce(
+                                  (acc: number, p: any) => acc + (p.ratings?.overall ?? 0),
+                                  0
+                                ) / team.players.length
                               )
                             : 0}
                         </p>
@@ -551,10 +576,10 @@ export default function MyClubTeamDetailPage() {
                     </Card>
                     <Card className="facet-hierarchy-child bg-card/45 border-border">
                       <CardContent className="pt-6 text-center">
-                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Available Budget
                         </p>
-                        <p className="mt-1 text-3xl font-extrabold tabular-nums text-foreground">
+                        <p className="text-foreground mt-1 text-3xl font-extrabold tabular-nums">
                           ₷{team.budget ?? 0}
                         </p>
                       </CardContent>
@@ -574,7 +599,7 @@ export default function MyClubTeamDetailPage() {
               {upcomingMatches && upcomingMatches.length > 0 && (
                 <Card className="facet-hierarchy-child bg-card/45 border-border">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+                    <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
                       <Calendar className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
                       Upcoming Fixtures
                     </CardTitle>
@@ -618,12 +643,12 @@ export default function MyClubTeamDetailPage() {
               {/* History list */}
               <Card className="facet-hierarchy-child bg-card/45 border-border">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+                  <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
                     <BarChart3 className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
                     Season Performance
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="divide-y divide-border">
+                <CardContent className="divide-border divide-y">
                   {history && history.length > 0 ? (
                     history.map((entry: any) => (
                       <div
@@ -631,10 +656,10 @@ export default function MyClubTeamDetailPage() {
                         className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0"
                       >
                         <div>
-                          <p className="text-xs font-bold text-foreground">
+                          <p className="text-foreground text-xs font-bold">
                             Season {entry.seasonNumber}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-muted-foreground text-[10px]">
                             {entry.wins}W - {entry.losses}L
                           </p>
                         </div>
@@ -661,7 +686,7 @@ export default function MyClubTeamDetailPage() {
           <div className="space-y-6">
             {/* Player binder card grid */}
             <div>
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
+              <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-bold">
                 <Users className="h-5 w-5" style={{ color: team.color }} />
                 Active Squad Binder
               </h3>
@@ -685,8 +710,11 @@ export default function MyClubTeamDetailPage() {
             </div>
 
             {/* List overlay dialog */}
-            <Dialog open={!!selectedPlayer} onOpenChange={(open) => !open && setSelectedPlayer(null)}>
-              <DialogContent className="max-w-md border-border bg-background/95 p-6 backdrop-blur-xl rounded-3xl z-[var(--z-modal,100005)] [&>button]:text-muted-foreground [&>button]:hover:text-foreground">
+            <Dialog
+              open={!!selectedPlayer}
+              onOpenChange={(open) => !open && setSelectedPlayer(null)}
+            >
+              <DialogContent className="border-border bg-background/95 [&>button]:text-muted-foreground [&>button]:hover:text-foreground z-[var(--z-modal,100005)] max-w-md rounded-3xl p-6 backdrop-blur-xl">
                 <DialogHeader className="px-0">
                   <DialogTitle className="text-lg font-bold">
                     List {selectedPlayer?.firstName} {selectedPlayer?.lastName}
@@ -697,7 +725,7 @@ export default function MyClubTeamDetailPage() {
                 </DialogHeader>
                 <div className="my-4 space-y-4">
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-muted-foreground uppercase">
+                    <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">
                       Asking Price (Sovereigns)
                     </label>
                     <Input
@@ -724,7 +752,7 @@ export default function MyClubTeamDetailPage() {
                     }
                     disabled={listPlayer.isPending}
                     style={{ backgroundColor: team.color }}
-                    className="hover:opacity-90 transition-all font-semibold text-white"
+                    className="font-semibold text-white transition-all hover:opacity-90"
                   >
                     {listPlayer.isPending ? "Listing..." : "Confirm List"}
                   </Button>
@@ -734,11 +762,11 @@ export default function MyClubTeamDetailPage() {
 
             {/* Coaching Staff */}
             {team.coaches && team.coaches.length > 0 && (
-              <Card className="facet-hierarchy-child bg-card/40 mt-6 border-border">
+              <Card className="facet-hierarchy-child bg-card/40 border-border mt-6">
                 <CardHeader>
                   <CardTitle className="text-base font-bold">Coaching & Strategy Staff</CardTitle>
                 </CardHeader>
-                <CardContent className="divide-y divide-border">
+                <CardContent className="divide-border divide-y">
                   {team.coaches.map((c: any) => {
                     const cStage = CAREER_STAGE_STYLES[c.careerStage] ?? CAREER_STAGE_STYLES.prime;
                     return (
@@ -750,7 +778,7 @@ export default function MyClubTeamDetailPage() {
                           <p className="text-sm font-bold">
                             {c.firstName} {c.lastName}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             {c.role} &middot; Age {c.age}
                           </p>
                         </div>
@@ -812,7 +840,15 @@ export default function MyClubTeamDetailPage() {
                     return (
                       <div
                         key={tactic.key}
-                        style={isActive ? { borderColor: team.color, backgroundColor: `${team.color}15`, boxShadow: `0 0 0 2px ${team.color}20` } : {}}
+                        style={
+                          isActive
+                            ? {
+                                borderColor: team.color,
+                                backgroundColor: `${team.color}15`,
+                                boxShadow: `0 0 0 2px ${team.color}20`,
+                              }
+                            : {}
+                        }
                         className={cn(
                           "cursor-pointer rounded-2xl border p-4 transition-all duration-300",
                           isActive
@@ -830,14 +866,19 @@ export default function MyClubTeamDetailPage() {
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-bold">{tactic.name}</h4>
                           {isActive && (
-                            <Badge style={{ backgroundColor: team.color }} className="font-bold text-white">Active</Badge>
+                            <Badge
+                              style={{ backgroundColor: team.color }}
+                              className="font-bold text-white"
+                            >
+                              Active
+                            </Badge>
                           )}
                         </div>
-                        <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                        <p className="text-muted-foreground mt-2 text-[10px] leading-relaxed">
                           {tactic.description}
                         </p>
-                        <div className="mt-3 border-t border-border/50 pt-2">
-                          <p className="text-[8px] font-bold tracking-wider text-muted-foreground uppercase">
+                        <div className="border-border/50 mt-3 border-t pt-2">
+                          <p className="text-muted-foreground text-[8px] font-bold tracking-wider uppercase">
                             Simulation adjustments
                           </p>
                           <p className="mt-0.5 font-mono text-xs font-medium">{tactic.stats}</p>
@@ -864,7 +905,7 @@ export default function MyClubTeamDetailPage() {
                           cx="32"
                           cy="32"
                           r="26"
-                          className="fill-none stroke-muted/30"
+                          className="stroke-muted/30 fill-none"
                           strokeWidth="6"
                         />
                         <circle
@@ -898,7 +939,7 @@ export default function MyClubTeamDetailPage() {
                     </div>
                     <div>
                       <h5 className="text-sm leading-none font-bold">Offense Bias</h5>
-                      <p className="mt-1 text-[10px] leading-tight text-muted-foreground">
+                      <p className="text-muted-foreground mt-1 text-[10px] leading-tight">
                         Adjusts match scoring chances
                       </p>
                     </div>
@@ -912,7 +953,7 @@ export default function MyClubTeamDetailPage() {
                           cx="32"
                           cy="32"
                           r="26"
-                          className="fill-none stroke-muted/30"
+                          className="stroke-muted/30 fill-none"
                           strokeWidth="6"
                         />
                         <circle
@@ -946,7 +987,7 @@ export default function MyClubTeamDetailPage() {
                     </div>
                     <div>
                       <h5 className="text-sm leading-none font-bold">Defense Bias</h5>
-                      <p className="mt-1 text-[10px] leading-tight text-muted-foreground">
+                      <p className="text-muted-foreground mt-1 text-[10px] leading-tight">
                         Concede probability coefficient
                       </p>
                     </div>
@@ -985,7 +1026,7 @@ export default function MyClubTeamDetailPage() {
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+                      <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
                       <Input
                         placeholder="Search player name..."
                         value={searchQuery}
@@ -996,12 +1037,12 @@ export default function MyClubTeamDetailPage() {
                   </div>
 
                   {searchResults && (
-                    <div className="divide-y divide-border pt-2">
+                    <div className="divide-border divide-y pt-2">
                       {searchResults.players?.map((p: any) => (
                         <div key={p.id} className="flex items-center justify-between py-3">
                           <div>
                             <p className="text-sm font-bold">{p.name}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               {p.position} &middot; {p.teamName}
                             </p>
                             {p.listing && (
@@ -1015,7 +1056,7 @@ export default function MyClubTeamDetailPage() {
                               <>
                                 <Input
                                   type="number"
-                                  className="h-8 w-16 border-border bg-background/40 text-center text-xs"
+                                  className="border-border bg-background/40 h-8 w-16 text-center text-xs"
                                   placeholder="Bid"
                                   value={bidAmount}
                                   onChange={(e) => setBidAmount(Number(e.target.value))}
@@ -1023,7 +1064,7 @@ export default function MyClubTeamDetailPage() {
                                 <Button
                                   size="sm"
                                   style={{ backgroundColor: team.color }}
-                                  className="h-8 text-xs hover:opacity-90 transition-all font-semibold text-white"
+                                  className="h-8 text-xs font-semibold text-white transition-all hover:opacity-90"
                                   onClick={() => {
                                     setBiddingTeamId(teamId);
                                     placeBid.mutate({
@@ -1040,7 +1081,7 @@ export default function MyClubTeamDetailPage() {
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="border-border/50 text-[10px] text-muted-foreground"
+                                className="border-border/50 text-muted-foreground text-[10px]"
                               >
                                 Not Listed
                               </Badge>
@@ -1049,7 +1090,7 @@ export default function MyClubTeamDetailPage() {
                         </div>
                       ))}
                       {searchResults.players?.length === 0 && (
-                        <p className="py-4 text-center text-xs text-muted-foreground">
+                        <p className="text-muted-foreground py-4 text-center text-xs">
                           No athletes found matching query.
                         </p>
                       )}
@@ -1066,7 +1107,7 @@ export default function MyClubTeamDetailPage() {
                     All players currently listed for transfer in the league.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="divide-y divide-border">
+                <CardContent className="divide-border divide-y">
                   {listingsData && listingsData.length > 0 ? (
                     listingsData.map((l: any) => (
                       <div key={l.id} className="flex items-center justify-between py-3">
@@ -1074,7 +1115,7 @@ export default function MyClubTeamDetailPage() {
                           <p className="text-sm font-bold">
                             {l.player.firstName} {l.player.lastName}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             {l.player.position} &middot; {l.player.team.name} &middot; OVR{" "}
                             {l.player.ratings?.overall ?? 50}
                           </p>
@@ -1087,14 +1128,14 @@ export default function MyClubTeamDetailPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 border-border text-xs text-muted-foreground hover:bg-muted/80"
+                              className="border-border text-muted-foreground hover:bg-muted/80 h-8 text-xs"
                               onClick={() => setComparePlayer(l.player)}
                             >
                               Compare
                             </Button>
                             <Input
                               type="number"
-                              className="h-8 w-16 border-border bg-background/40 text-center text-xs"
+                              className="border-border bg-background/40 h-8 w-16 text-center text-xs"
                               placeholder="Bid"
                               defaultValue={l.price}
                               id={`bid-amount-${l.id}`}
@@ -1102,7 +1143,7 @@ export default function MyClubTeamDetailPage() {
                             <Button
                               size="sm"
                               style={{ backgroundColor: team.color }}
-                              className="h-8 text-xs hover:opacity-90 transition-all font-semibold text-white"
+                              className="h-8 text-xs font-semibold text-white transition-all hover:opacity-90"
                               onClick={() => {
                                 const inputVal = (
                                   document.getElementById(`bid-amount-${l.id}`) as HTMLInputElement
@@ -1122,7 +1163,7 @@ export default function MyClubTeamDetailPage() {
                         ) : (
                           <Badge
                             variant="outline"
-                            className="border-border text-[10px] text-muted-foreground"
+                            className="border-border text-muted-foreground text-[10px]"
                           >
                             My Player
                           </Badge>
@@ -1130,7 +1171,7 @@ export default function MyClubTeamDetailPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="py-4 text-center text-xs text-muted-foreground">
+                    <p className="text-muted-foreground py-4 text-center text-xs">
                       No active listings on the market.
                     </p>
                   )}
@@ -1142,14 +1183,14 @@ export default function MyClubTeamDetailPage() {
             <div className="space-y-6">
               {comparePlayer && squadComparePlayer && (
                 <Card className="facet-hierarchy-child bg-card/45 border-border">
-                  <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                    <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
                       Comparison Detail
                     </CardTitle>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-[10px] h-6 px-2 text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground h-6 px-2 text-[10px]"
                       onClick={() => setComparePlayer(null)}
                     >
                       Clear
@@ -1177,7 +1218,7 @@ export default function MyClubTeamDetailPage() {
                         teamColor: comparePlayer.team?.color ?? "#ef4444",
                         ratings: (comparePlayer.ratings as Record<string, number>) ?? {},
                       }}
-                      className="bg-transparent border-none p-0 shadow-none dark:bg-transparent"
+                      className="border-none bg-transparent p-0 shadow-none dark:bg-transparent"
                     />
                   </CardContent>
                 </Card>
@@ -1195,16 +1236,18 @@ export default function MyClubTeamDetailPage() {
                     bidsData.inboundBids.map((b: any) => (
                       <div
                         key={b.id}
-                        className="space-y-2 rounded-xl border border-border bg-muted/40 p-3"
+                        className="border-border bg-muted/40 space-y-2 rounded-xl border p-3"
                       >
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-bold">
                               {b.listing.player.firstName} {b.listing.player.lastName}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">Bid amount: ₷{b.amount}</p>
+                            <p className="text-muted-foreground text-[10px]">
+                              Bid amount: ₷{b.amount}
+                            </p>
                           </div>
-                          <Badge className="border border-amber-500/20 bg-amber-500/20 text-[9px] font-bold text-amber-500 dark:text-amber-400 uppercase">
+                          <Badge className="border border-amber-500/20 bg-amber-500/20 text-[9px] font-bold text-amber-500 uppercase dark:text-amber-400">
                             {b.status}
                           </Badge>
                         </div>
@@ -1212,7 +1255,7 @@ export default function MyClubTeamDetailPage() {
                           <Button
                             size="sm"
                             style={{ backgroundColor: team.color }}
-                            className="h-7 flex-1 text-xs hover:opacity-90 transition-all font-semibold text-white"
+                            className="h-7 flex-1 text-xs font-semibold text-white transition-all hover:opacity-90"
                             onClick={() => respondToBid.mutate({ bidId: b.id, action: "accept" })}
                             disabled={respondToBid.isPending}
                           >
@@ -1231,7 +1274,7 @@ export default function MyClubTeamDetailPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="py-4 text-center text-xs text-muted-foreground">
+                    <p className="text-muted-foreground py-4 text-center text-xs">
                       No pending offers on your roster.
                     </p>
                   )}
@@ -1251,13 +1294,13 @@ export default function MyClubTeamDetailPage() {
                     bidsData.outboundBids.map((b: any) => (
                       <div
                         key={b.id}
-                        className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-3"
+                        className="border-border bg-muted/40 flex items-center justify-between rounded-xl border p-3"
                       >
                         <div>
                           <p className="text-xs font-bold">
                             {b.listing.player.firstName} {b.listing.player.lastName}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">Bid: ₷{b.amount}</p>
+                          <p className="text-muted-foreground text-[10px]">Bid: ₷{b.amount}</p>
                         </div>
                         <Badge
                           variant="outline"
@@ -1276,7 +1319,7 @@ export default function MyClubTeamDetailPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="py-4 text-center text-xs text-muted-foreground">
+                    <p className="text-muted-foreground py-4 text-center text-xs">
                       You have no active outbound bids.
                     </p>
                   )}
@@ -1315,22 +1358,22 @@ export default function MyClubTeamDetailPage() {
         onNavigate={setActiveSection}
         teamColor={team.color}
         heroSection={
-          <div className="facet-hierarchy-parent mb-4 relative overflow-hidden rounded-xl border border-border bg-card">
+          <div className="facet-hierarchy-parent border-border bg-card relative mb-4 overflow-hidden rounded-xl border">
             {team.coverImage && (
               <div className="absolute inset-0 z-0">
                 <img
-                  src={team.coverImage}
+                  src={withBasePath(team.coverImage)}
                   alt=""
-                  className="h-full w-full object-cover opacity-45 filter blur-[1px]"
+                  className="h-full w-full object-cover opacity-45 blur-[1px] filter"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                <div className="from-card via-card/50 absolute inset-0 bg-gradient-to-t to-transparent" />
               </div>
             )}
             <div className="relative z-10 p-4 sm:p-5">
               <Button
                 variant="ghost"
                 onClick={() => router.push(withBasePath("/myclub"))}
-                className="mb-4 text-muted-foreground hover:text-foreground h-8 px-2"
+                className="text-muted-foreground hover:text-foreground mb-4 h-8 px-2"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to MyClub
@@ -1338,11 +1381,18 @@ export default function MyClubTeamDetailPage() {
 
               <div className="flex flex-wrap items-center gap-4">
                 <div
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl overflow-hidden"
-                  style={{ backgroundColor: `${team.color}20`, border: `1px solid ${team.color}40` }}
+                  className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl"
+                  style={{
+                    backgroundColor: `${team.color}20`,
+                    border: `1px solid ${team.color}40`,
+                  }}
                 >
                   {team.logo ? (
-                    <img src={team.logo} alt="Club logo" className="h-full w-full object-cover" />
+                    <img
+                      src={withBasePath(team.logo)}
+                      alt="Club logo"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     emoji
                   )}
@@ -1350,20 +1400,24 @@ export default function MyClubTeamDetailPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {team.logo && (
-                      <img src={team.logo} alt="" className="h-8 w-8 rounded-lg object-cover border" />
+                      <img
+                        src={withBasePath(team.logo)}
+                        alt=""
+                        className="h-8 w-8 rounded-lg border object-cover"
+                      />
                     )}
-                    <h1 className="truncate text-2xl font-bold text-foreground">{team.name}</h1>
+                    <h1 className="text-foreground truncate text-2xl font-bold">{team.name}</h1>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted/50 h-8 w-8 rounded-full"
                       onClick={() => setSettingsOpen(true)}
                       title="Club Settings"
                     >
                       <Settings className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{team.league?.name}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">{team.league?.name}</p>
                 </div>
               </div>
 
@@ -1371,7 +1425,7 @@ export default function MyClubTeamDetailPage() {
                 {team.city && (
                   <Badge
                     variant="outline"
-                    className="flex items-center gap-1 border-border text-muted-foreground"
+                    className="border-border text-muted-foreground flex items-center gap-1"
                   >
                     <MapPin className="h-2.5 w-2.5" />
                     {team.city}
@@ -1380,7 +1434,7 @@ export default function MyClubTeamDetailPage() {
                 {team.nation && (
                   <Badge
                     variant="outline"
-                    className="flex items-center gap-1 border-border text-muted-foreground"
+                    className="border-border text-muted-foreground flex items-center gap-1"
                   >
                     <Flag className="h-2.5 w-2.5" />
                     {(team.nation as Record<string, string>).name}
@@ -1388,7 +1442,7 @@ export default function MyClubTeamDetailPage() {
                 )}
                 <Badge
                   variant="secondary"
-                  className="flex items-center gap-1 border-border bg-muted/60 text-muted-foreground"
+                  className="border-border bg-muted/60 text-muted-foreground flex items-center gap-1"
                 >
                   <Trophy className="h-2.5 w-2.5 text-amber-500" />
                   {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
@@ -1396,7 +1450,7 @@ export default function MyClubTeamDetailPage() {
                 {championships > 0 && (
                   <Badge
                     variant="default"
-                    className="flex items-center gap-1 bg-amber-500 font-bold hover:bg-amber-500 text-white"
+                    className="flex items-center gap-1 bg-amber-500 font-bold text-white hover:bg-amber-500"
                   >
                     <Trophy className="h-2.5 w-2.5" />
                     {championships}x Champion

@@ -84,7 +84,12 @@ const SPORTS_ABBREVIATIONS: Record<string, string> = {
   trainer: "Trainer",
 };
 
-export function DraftPicksView({ picks, isSoccer = false, onTeamClick, className }: DraftPicksViewProps) {
+export function DraftPicksView({
+  picks,
+  isSoccer = false,
+  onTeamClick,
+  className,
+}: DraftPicksViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRound, setSelectedRound] = useState<number | "all">("all");
 
@@ -224,7 +229,7 @@ export function DraftPicksView({ picks, isSoccer = false, onTeamClick, className
                       />
                       <button
                         onClick={() => onTeamClick?.(pick.team.id)}
-                        className="text-left hover:underline cursor-pointer font-medium"
+                        className="cursor-pointer text-left font-medium hover:underline"
                       >
                         {pick.team.name}
                       </button>

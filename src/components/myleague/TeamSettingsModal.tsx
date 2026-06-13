@@ -40,12 +40,7 @@ interface TeamSettingsModalProps {
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
-export function TeamSettingsModal({
-  team,
-  open,
-  onOpenChange,
-  onSaved,
-}: TeamSettingsModalProps) {
+export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSettingsModalProps) {
   const notify = useNotify();
   const utils = api.useUtils();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -149,7 +144,9 @@ export function TeamSettingsModal({
   };
 
   const logoPreviewSrc = uploadedLogoFile ? URL.createObjectURL(uploadedLogoFile) : logoUrl || null;
-  const coverPreviewSrc = uploadedCoverFile ? URL.createObjectURL(uploadedCoverFile) : coverUrl || null;
+  const coverPreviewSrc = uploadedCoverFile
+    ? URL.createObjectURL(uploadedCoverFile)
+    : coverUrl || null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,9 +197,7 @@ export function TeamSettingsModal({
               <div
                 className={cn(
                   "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed",
-                  logoPreviewSrc
-                    ? "border-border bg-muted/50"
-                    : "border-border/50 bg-muted/30"
+                  logoPreviewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
                 )}
               >
                 {logoPreviewSrc ? (
@@ -251,7 +246,7 @@ export function TeamSettingsModal({
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveLogo}
-                    className="text-xs text-destructive hover:text-destructive"
+                    className="text-destructive hover:text-destructive text-xs"
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                     Remove
@@ -278,13 +273,15 @@ export function TeamSettingsModal({
               <div
                 className={cn(
                   "flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed",
-                  coverPreviewSrc
-                    ? "border-border bg-muted/50"
-                    : "border-border/50 bg-muted/30"
+                  coverPreviewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
                 )}
               >
                 {coverPreviewSrc ? (
-                  <img src={coverPreviewSrc} alt="Cover preview" className="h-full w-full object-cover" />
+                  <img
+                    src={coverPreviewSrc}
+                    alt="Cover preview"
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <span className="text-muted-foreground text-[10px] font-medium">No cover</span>
                 )}
@@ -324,7 +321,7 @@ export function TeamSettingsModal({
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveCover}
-                    className="text-xs text-destructive hover:text-destructive"
+                    className="text-destructive hover:text-destructive text-xs"
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                     Remove
@@ -357,9 +354,7 @@ export function TeamSettingsModal({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={updateTeam.isPending} className="text-xs">
-            {updateTeam.isPending ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : null}
+            {updateTeam.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             Save Changes
           </Button>
         </DialogFooter>

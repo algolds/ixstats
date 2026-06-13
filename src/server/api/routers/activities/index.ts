@@ -20,5 +20,5 @@ export const activitiesRouter = mergeRouters(
   activitiesFeedRouter,
   activitiesActivitiesRouter,
   activitiesTrendingRouter,
-  activitiesFollowsRouter,
+  activitiesFollowsRouter
 );

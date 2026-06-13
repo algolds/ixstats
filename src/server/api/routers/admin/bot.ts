@@ -3,16 +3,10 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  adminProcedure,
-} from "~/server/api/trpc";
-
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
 import { IxTime } from "~/lib/ixtime";
-import type {
-  AdminPageBotStatusView,
-} from "~/types/ixstats";
+import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 export const adminBotRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -321,7 +315,6 @@ export const adminBotRouter = createTRPCRouter({
 
   // --- Clerk User-Country Mapping Endpoints ---
   // Note: User procedures are commented out until User model is properly configured
-
 
   // Sync with Discord bot
   syncWithBot: adminProcedure.mutation(async () => {

@@ -8,11 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import {
-  getPreset,
-  type SportPresetKey,
-  type TeamRatingVector,
-} from "~/lib/sports";
+import { getPreset, type SportPresetKey, type TeamRatingVector } from "~/lib/sports";
 import { exchangeService } from "~/lib/exchange-service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,7 +29,7 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
 
 async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
   if (!team.nationId) return undefined;
-  
+
   let effects: any[] = [];
   if (effectsMap) {
     effects = effectsMap.get(team.nationId) ?? [];
@@ -390,7 +386,13 @@ export const sportsTeamsRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
-        await exchangeService.spend(ctx.user.id, 25, "TRAINING_FEE", `PLAYER:${input.playerId}`, ctx.db as any);
+        await exchangeService.spend(
+          ctx.user.id,
+          25,
+          "TRAINING_FEE",
+          `PLAYER:${input.playerId}`,
+          ctx.db as any
+        );
 
         const ratings = (player.ratings as Record<string, number>) ?? {};
         const current = ratings[input.attributeFocus] ?? 50;
@@ -417,7 +419,13 @@ export const sportsTeamsRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
-        await exchangeService.spend(ctx.user.id, 100, "TEAM_TRAINING", `TEAM:${input.teamId}`, ctx.db as any);
+        await exchangeService.spend(
+          ctx.user.id,
+          100,
+          "TEAM_TRAINING",
+          `TEAM:${input.teamId}`,
+          ctx.db as any
+        );
 
         const players = await ctx.db.sportPlayer.findMany({
           where: { teamId: input.teamId, isActive: true },

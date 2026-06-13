@@ -243,5 +243,5 @@ export const activitiesFollowsRouter = createTRPCRouter({
         following: followingCount,
         followers: followersCount,
       };
-    })
+    }),
 });

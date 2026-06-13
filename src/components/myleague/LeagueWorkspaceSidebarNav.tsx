@@ -152,14 +152,15 @@ export function LeagueWorkspaceSidebarNav({
               <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
             );
 
-            const activeStyle = isActive && sportAccent
-              ? {
-                  background: sportHighlight
-                    ? `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportHighlight} / 0.8))`
-                    : `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportAccent} / 0.6))`,
-                  boxShadow: `0 4px 12px hsl(${sportAccent} / 0.25)`,
-                }
-              : undefined;
+            const activeStyle =
+              isActive && sportAccent
+                ? {
+                    background: sportHighlight
+                      ? `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportHighlight} / 0.8))`
+                      : `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportAccent} / 0.6))`,
+                    boxShadow: `0 4px 12px hsl(${sportAccent} / 0.25)`,
+                  }
+                : undefined;
 
             return (
               <button
@@ -200,7 +201,11 @@ export function LeagueWorkspaceSidebarNav({
           const cls = cn(
             "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
             isActive
-              ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", !sportAccent && item.gradient, !sportAccent && item.activeGlow)
+              ? cn(
+                  "bg-gradient-to-r text-white shadow-lg pl-3.5",
+                  !sportAccent && item.gradient,
+                  !sportAccent && item.activeGlow
+                )
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           );
           const badge = noteCount > 0 && (
@@ -214,14 +219,15 @@ export function LeagueWorkspaceSidebarNav({
             </span>
           );
 
-          const activeStyle = isActive && sportAccent
-            ? {
-                background: sportHighlight
-                  ? `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportHighlight} / 0.8))`
-                  : `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportAccent} / 0.6))`,
-                boxShadow: `0 4px 12px hsl(${sportAccent} / 0.25)`,
-              }
-            : undefined;
+          const activeStyle =
+            isActive && sportAccent
+              ? {
+                  background: sportHighlight
+                    ? `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportHighlight} / 0.8))`
+                    : `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportAccent} / 0.6))`,
+                  boxShadow: `0 4px 12px hsl(${sportAccent} / 0.25)`,
+                }
+              : undefined;
 
           return (
             <button
@@ -258,14 +264,15 @@ export function LeagueWorkspaceSidebarNav({
         const isActive = item.id === activeId;
         const noteCount = notifications?.[item.id] ?? 0;
 
-        const activeStyle = isActive && sportAccent
-          ? {
-              background: sportHighlight
-                ? `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportHighlight} / 0.8))`
-                : `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportAccent} / 0.6))`,
-              boxShadow: `0 4px 12px hsl(${sportAccent} / 0.25)`,
-            }
-          : undefined;
+        const activeStyle =
+          isActive && sportAccent
+            ? {
+                background: sportHighlight
+                  ? `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportHighlight} / 0.8))`
+                  : `linear-gradient(to right, hsl(${sportAccent} / 0.8), hsl(${sportAccent} / 0.6))`,
+                boxShadow: `0 4px 12px hsl(${sportAccent} / 0.25)`,
+              }
+            : undefined;
 
         return (
           <button
@@ -344,20 +351,16 @@ export function LeagueBrandCard({
     <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
       <div className="mb-2 flex items-center gap-2">
         {logo ? (
-          <img
-            src={logo}
-            alt={leagueName}
-            className="h-10 w-10 shrink-0 rounded-lg object-cover"
-          />
+          <img src={logo} alt={leagueName} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
         ) : (
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl">
+          <span className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl">
             {emoji}
           </span>
         )}
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold">{leagueName}</h3>
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
-            <span className="text-muted-foreground rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+            <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-[10px] font-medium">
               {archetype}
             </span>
           </div>
@@ -389,7 +392,7 @@ export function SeasonProgressWidget({
 
   return (
     <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
-      <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <h4 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase">
         Season {seasonNumber} Progress
       </h4>
       <div className="mb-1.5 flex items-baseline justify-between">
@@ -422,7 +425,7 @@ export function ReigningChampionWidget({
       <div className="relative">
         <div className="mb-1 flex items-center gap-1.5">
           <Trophy className="h-3.5 w-3.5 text-amber-500" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+          <span className="text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
             Season {seasonNumber} Title
           </span>
         </div>
@@ -448,7 +451,7 @@ export function RewardsBannerWidget({ packCount }: RewardsBannerWidgetProps) {
     >
       <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/10 via-fuchsia-500/10 to-cyan-400/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="relative flex items-center gap-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white text-sm font-bold shadow-lg shadow-purple-500/25">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-500 text-sm font-bold text-white shadow-lg shadow-purple-500/25">
           {packCount}
         </span>
         <div>

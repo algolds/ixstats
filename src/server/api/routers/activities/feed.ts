@@ -1631,5 +1631,5 @@ export const activitiesFeedRouter = createTRPCRouter({
         headlines: headlines.slice(0, input.limit),
         generatedAt: now.toISOString(),
       };
-    })
+    }),
 });

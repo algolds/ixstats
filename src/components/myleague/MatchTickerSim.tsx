@@ -78,7 +78,7 @@ export function MatchTickerSim({
   const currentMinute = currentStep ? currentStep.t : 90;
 
   return (
-    <Card className="facet-hierarchy-child relative overflow-hidden rounded-3xl border-border">
+    <Card className="facet-hierarchy-child border-border relative overflow-hidden rounded-3xl">
       {/* Background glow highlights dynamically using home & away team colors */}
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
@@ -90,7 +90,7 @@ export function MatchTickerSim({
       <CardContent className="relative z-10 space-y-6 p-6">
         {/* Header Live / Sim control panel */}
         <div className="flex items-center justify-between">
-          <Badge className="flex animate-pulse items-center gap-1 bg-red-600 dark:bg-red-500 px-2 py-0.5 font-bold text-white">
+          <Badge className="flex animate-pulse items-center gap-1 bg-red-600 px-2 py-0.5 font-bold text-white dark:bg-red-500">
             <span className="h-1.5 w-1.5 rounded-full bg-white" />
             LIVE SIMULATOR
           </Badge>
@@ -139,7 +139,9 @@ export function MatchTickerSim({
                   <Flame className="h-4 w-4 animate-bounce text-emerald-600 dark:text-emerald-400" />
                 )}
                 {alertEvent.type === "card" && <Shield className="h-4 w-4" />}
-                {alertEvent.type === "injury" && <Activity className="h-4 w-4 text-rose-600 dark:text-rose-400" />}
+                {alertEvent.type === "injury" && (
+                  <Activity className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                )}
                 {alertEvent.type === "tactic_shift" && <Users className="h-4 w-4" />}
                 <span>
                   {alertEvent.type === "goal" && `GOAL! (${alertEvent.minute}')`}
@@ -176,7 +178,10 @@ export function MatchTickerSim({
               <span className="text-foreground/20">:</span>
               <span>{awayScore}</span>
             </div>
-            <Badge variant="outline" className="border-border bg-muted/40 font-mono text-muted-foreground">
+            <Badge
+              variant="outline"
+              className="border-border bg-muted/40 text-muted-foreground font-mono"
+            >
               {currentMinute}' min
             </Badge>
           </div>
@@ -197,8 +202,8 @@ export function MatchTickerSim({
         </div>
 
         {/* Live commentary feeds banner */}
-        <div className="border-t border-border pt-4">
-          <p className="mb-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+        <div className="border-border border-t pt-4">
+          <p className="text-muted-foreground mb-2 text-[10px] font-bold tracking-wider uppercase">
             Live Commentary
           </p>
           <div className="relative h-12 overflow-hidden">
@@ -209,7 +214,7 @@ export function MatchTickerSim({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="text-xs leading-relaxed text-muted-foreground italic"
+                  className="text-muted-foreground text-xs leading-relaxed italic"
                 >
                   {currentStep.commentary || "Both squads vying for possession."}
                 </motion.p>

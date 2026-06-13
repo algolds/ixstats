@@ -8,11 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import {
-  getPreset,
-  type SportPresetKey,
-  type TeamRatingVector,
-} from "~/lib/sports";
+import { getPreset, type SportPresetKey, type TeamRatingVector } from "~/lib/sports";
 import { exchangeService } from "~/lib/exchange-service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,7 +29,7 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
 
 async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
   if (!team.nationId) return undefined;
-  
+
   let effects: any[] = [];
   if (effectsMap) {
     effects = effectsMap.get(team.nationId) ?? [];
@@ -313,5 +309,5 @@ export const sportsClubRouter = createTRPCRouter({
           message: "Failed to invoke patron saint",
         });
       }
-    })
+    }),
 });

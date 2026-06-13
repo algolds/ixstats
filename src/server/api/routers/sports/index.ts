@@ -26,5 +26,5 @@ export const sportsRouter = mergeRouters(
   sportsSeasonsRouter,
   sportsStandingsRouter,
   sportsTransfersRouter,
-  sportsClubRouter,
+  sportsClubRouter
 );

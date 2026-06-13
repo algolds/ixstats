@@ -216,7 +216,7 @@ function StandingsTableInner({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onTeamClick?.(s.teamId)}
-                    className="text-left hover:underline cursor-pointer"
+                    className="cursor-pointer text-left hover:underline"
                   >
                     {s.teamName ?? s.teamId}
                   </button>

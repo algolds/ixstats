@@ -26,5 +26,5 @@ export const securityRouter = mergeRouters(
   securityDefenseRouter,
   securityStabilityRouter,
   securityBordersRouter,
-  securityOperationsRouter,
+  securityOperationsRouter
 );

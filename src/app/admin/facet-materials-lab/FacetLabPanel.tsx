@@ -80,7 +80,13 @@ export default function FacetMaterialsLabPage() {
     }
 
     return classes.join(" ");
-  }, [config.material, config.depth, config.variant, config.interactivity, config.refractionEnabled]);
+  }, [
+    config.material,
+    config.depth,
+    config.variant,
+    config.interactivity,
+    config.refractionEnabled,
+  ]);
 
   // Custom CSS variables for material effects
   const customVars = React.useMemo(() => {
@@ -93,7 +99,15 @@ export default function FacetMaterialsLabPage() {
       "--facet-lab-bg": config.bgCustomColor,
       "--facet-dof": `${config.dofStrength}`,
     } as React.CSSProperties;
-  }, [config.blurStrength, config.saturationBoost, config.glowIntensity, config.patternScale, config.bgCustomColor, config.customAccent, config.dofStrength]);
+  }, [
+    config.blurStrength,
+    config.saturationBoost,
+    config.glowIntensity,
+    config.patternScale,
+    config.bgCustomColor,
+    config.customAccent,
+    config.dofStrength,
+  ]);
 
   return (
     <div className="w-full pb-16" style={customVars}>
@@ -138,7 +152,7 @@ export default function FacetMaterialsLabPage() {
 
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         {/* 1. Controls — scrollable within viewport */}
-        <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-10rem)] lg:w-[42%] lg:shrink-0 lg:overflow-y-auto lg:pb-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/40">
+        <div className="[&::-webkit-scrollbar-thumb]:bg-border/40 flex flex-col gap-6 lg:max-h-[calc(100vh-10rem)] lg:w-[42%] lg:shrink-0 lg:overflow-y-auto lg:pb-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full">
           <LabControlPanel config={config} onChange={handleConfigChange} />
         </div>
 

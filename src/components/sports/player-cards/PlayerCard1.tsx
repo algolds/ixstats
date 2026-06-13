@@ -5,6 +5,7 @@ import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { withBasePath } from "~/lib/base-path";
 
 interface PlayerCard1Props {
   player: {
@@ -27,12 +28,7 @@ interface PlayerCard1Props {
   className?: string;
 }
 
-export default function PlayerCard1({
-  player,
-  team,
-  statistics,
-  className,
-}: PlayerCard1Props) {
+export default function PlayerCard1({ player, team, statistics, className }: PlayerCard1Props) {
   const teamColor = team?.color ?? "#3b82f6";
   const overallRating = player.ratings?.overall ?? 50;
 
@@ -53,13 +49,13 @@ export default function PlayerCard1({
     <FacetCard
       depth={2}
       interactive="hover"
-      className={cn("mx-auto w-[340px] p-1 rounded-3xl", className)}
+      className={cn("mx-auto w-[340px] rounded-3xl p-1", className)}
     >
-      <div className="rounded-[22px] bg-card/95 p-3.5 border border-border/40 backdrop-blur-md">
+      <div className="bg-card/95 border-border/40 rounded-[22px] border p-3.5 backdrop-blur-md">
         <div className="relative overflow-hidden pb-3">
           <div className="overflow-hidden [filter:url('#rounded')]">
             <div
-              className="relative h-[320px] rounded-2xl border border-border/30 flex items-end justify-center"
+              className="border-border/30 relative flex h-[320px] items-end justify-center rounded-2xl border"
               style={gradientStyle}
             >
               {/* Big Name Background Overlay */}
@@ -72,7 +68,7 @@ export default function PlayerCard1({
               <img
                 src={playerPhoto}
                 alt={`${player.firstName} ${player.lastName}`}
-                className="absolute bottom-0 h-[85%] object-contain max-w-full drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
+                className="absolute bottom-0 h-[85%] max-w-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/images/sportyblocks/player-1.png";
                 }}
@@ -82,19 +78,19 @@ export default function PlayerCard1({
 
           {/* Bottom Badge for Number / Overall */}
           <div
-            className="absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-2xl text-2xl/none font-black tracking-tighter text-white shadow-lg border border-white/20"
+            className="absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-2xl border border-white/20 text-2xl/none font-black tracking-tighter text-white shadow-lg"
             style={{ backgroundColor: teamColor }}
           >
             {player.number ?? overallRating}
           </div>
 
           {/* Top-Left Crest */}
-          <div className="absolute start-0 top-0 aspect-square w-[64px] -translate-x-1/3 -translate-y-1/3 rounded-full border border-border/40 bg-card p-1 shadow-md">
+          <div className="border-border/40 bg-card absolute start-0 top-0 aspect-square w-[64px] -translate-x-1/3 -translate-y-1/3 rounded-full border p-1 shadow-md">
             {team?.logo ? (
               <img
-                src={team.logo}
+                src={withBasePath(team.logo)}
                 alt={team.name}
-                className="h-full w-full object-contain rounded-full"
+                className="h-full w-full rounded-full object-contain"
               />
             ) : (
               <svg
@@ -113,7 +109,7 @@ export default function PlayerCard1({
           </div>
 
           {/* Top-Right Badge */}
-          <div className="absolute end-0 top-0 aspect-square w-[44px] translate-x-1/4 -translate-y-1/4 rounded-full border border-border/40 bg-card flex items-center justify-center shadow-md">
+          <div className="border-border/40 bg-card absolute end-0 top-0 flex aspect-square w-[44px] translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full border shadow-md">
             <span className="text-sm font-black" style={{ color: teamColor }}>
               {overallRating}
             </span>
@@ -121,20 +117,20 @@ export default function PlayerCard1({
         </div>
 
         <div className="pt-3 pb-1 text-center">
-          <h2 className="mt-0! text-lg font-extrabold tracking-tight truncate text-foreground">
+          <h2 className="text-foreground mt-0! truncate text-lg font-extrabold tracking-tight">
             {player.firstName} {player.lastName}
           </h2>
-          <div className="text-xs text-muted-foreground font-semibold capitalize mt-0.5">
+          <div className="text-muted-foreground mt-0.5 text-xs font-semibold capitalize">
             {player.position} {player.careerStage && `• ${player.careerStage}`}
           </div>
         </div>
       </div>
 
-      <div className="mx-auto grid grid-cols-3 divide-x divide-border/30 py-3 text-foreground bg-muted/30 dark:bg-slate-950/20 rounded-b-3xl mt-1 border-t border-border/20">
+      <div className="divide-border/30 text-foreground bg-muted/30 border-border/20 mx-auto mt-1 grid grid-cols-3 divide-x rounded-b-3xl border-t py-3 dark:bg-slate-950/20">
         {defaultStats.map((statistic) => (
           <div key={statistic.label} className="px-3 text-center">
             <div className="mb-0.5 text-xs font-bold tabular-nums">{statistic.value}</div>
-            <div className="text-[10px] uppercase text-muted-foreground leading-none font-bold">
+            <div className="text-muted-foreground text-[10px] leading-none font-bold uppercase">
               {statistic.label}
             </div>
           </div>

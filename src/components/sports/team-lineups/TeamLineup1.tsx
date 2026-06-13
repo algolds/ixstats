@@ -44,10 +44,26 @@ export default function TeamLineup1({
       let y = 50;
 
       // Group and arrange players by position
-      const gks = players.filter(p => p.position.toUpperCase().includes("GK") || p.position.toUpperCase().includes("GOAL"));
-      const defs = players.filter(p => ["D", "CB", "LB", "RB", "DF", "SW"].some(suffix => p.position.toUpperCase().includes(suffix)));
-      const mids = players.filter(p => ["M", "CM", "LM", "RM", "DM", "AM", "MF"].some(suffix => p.position.toUpperCase().includes(suffix)) && !p.position.toUpperCase().includes("GK"));
-      const fwds = players.filter(p => ["F", "ST", "CF", "LW", "RW", "FW"].some(suffix => p.position.toUpperCase().includes(suffix)) && !["D", "M", "GK"].some(s => p.position.toUpperCase().includes(s)));
+      const gks = players.filter(
+        (p) => p.position.toUpperCase().includes("GK") || p.position.toUpperCase().includes("GOAL")
+      );
+      const defs = players.filter((p) =>
+        ["D", "CB", "LB", "RB", "DF", "SW"].some((suffix) =>
+          p.position.toUpperCase().includes(suffix)
+        )
+      );
+      const mids = players.filter(
+        (p) =>
+          ["M", "CM", "LM", "RM", "DM", "AM", "MF"].some((suffix) =>
+            p.position.toUpperCase().includes(suffix)
+          ) && !p.position.toUpperCase().includes("GK")
+      );
+      const fwds = players.filter(
+        (p) =>
+          ["F", "ST", "CF", "LW", "RW", "FW"].some((suffix) =>
+            p.position.toUpperCase().includes(suffix)
+          ) && !["D", "M", "GK"].some((s) => p.position.toUpperCase().includes(s))
+      );
 
       if (pos.includes("GK") || pos.includes("GOAL")) {
         const gkIdx = gks.indexOf(player);
@@ -83,30 +99,28 @@ export default function TeamLineup1({
       depth={2}
       interactive="hover"
       className={cn(
-        "mx-auto w-full max-w-[550px] p-6 rounded-3xl border border-border/40 bg-card/90 shadow-xl overflow-hidden",
+        "border-border/40 bg-card/90 mx-auto w-full max-w-[550px] overflow-hidden rounded-3xl border p-6 shadow-xl",
         className
       )}
     >
       {/* Header */}
       <div className="mb-4 text-center">
-        <h3 className="text-lg font-extrabold text-foreground leading-none">
-          {teamName} Lineup
-        </h3>
-        <span className="text-[10px] font-bold text-muted-foreground uppercase mt-1 inline-block">
+        <h3 className="text-foreground text-lg leading-none font-extrabold">{teamName} Lineup</h3>
+        <span className="text-muted-foreground mt-1 inline-block text-[10px] font-bold uppercase">
           Active Formation • {sportPreset}
         </span>
       </div>
 
       {/* Field Area */}
-      <div className="relative aspect-[4/5] w-full rounded-2xl border border-border/30 bg-gradient-to-b from-emerald-800/80 to-emerald-950/90 dark:from-emerald-900/40 dark:to-emerald-950/60 overflow-hidden shadow-inner">
+      <div className="border-border/30 relative aspect-[4/5] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-emerald-800/80 to-emerald-950/90 shadow-inner dark:from-emerald-900/40 dark:to-emerald-950/60">
         {/* Pitch markings */}
         <svg
           viewBox="0 0 400 500"
-          className="absolute inset-0 w-full h-full stroke-white/20 fill-none stroke-[2px] pointer-events-none"
+          className="pointer-events-none absolute inset-0 h-full w-full fill-none stroke-white/20 stroke-[2px]"
         >
           {/* Outer Border */}
           <rect x="15" y="15" width="370" height="470" />
-          
+
           {/* Halfway Line */}
           <line x1="15" y1="250" x2="385" y2="250" />
           <circle cx="200" cy="250" r="60" />
@@ -125,12 +139,13 @@ export default function TeamLineup1({
         {/* Player Badges */}
         <TooltipProvider delayDuration={150}>
           {positionedPlayers.map((player) => {
-            const initials = `${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`.toUpperCase();
+            const initials =
+              `${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`.toUpperCase();
 
             return (
               <div
                 key={player.id}
-                className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10"
+                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{ left: `${player.x}%`, top: `${player.y}%` }}
               >
                 <Tooltip>
@@ -138,34 +153,36 @@ export default function TeamLineup1({
                     <div className="flex flex-col items-center">
                       {/* Player Circle Token */}
                       <div
-                        className="relative w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-xs font-black text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
+                        className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-black text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
                         style={{ backgroundColor: teamColor }}
                       >
                         {player.number ?? initials}
-                        
+
                         {/* Rating Overlay Badge */}
-                        <div className="absolute -top-1.5 -right-1.5 bg-slate-950 border border-white/20 text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center text-white">
+                        <div className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/20 bg-slate-950 text-[8px] font-black text-white">
                           {player.overallRating}
                         </div>
                       </div>
 
                       {/* Mini Name underneath */}
-                      <span className="mt-1 bg-black/60 backdrop-blur-xs px-1.5 py-0.5 rounded text-[8px] font-bold text-white tracking-tight leading-none shadow-xs truncate max-w-[70px]">
+                      <span className="mt-1 max-w-[70px] truncate rounded bg-black/60 px-1.5 py-0.5 text-[8px] leading-none font-bold tracking-tight text-white shadow-xs backdrop-blur-xs">
                         {player.lastName}
                       </span>
                     </div>
                   </TooltipTrigger>
-                  
-                  <TooltipContent className="p-3 bg-popover text-popover-foreground rounded-xl border border-border shadow-xl max-w-[180px]">
-                    <div className="text-xs font-black leading-tight text-popover-foreground">
+
+                  <TooltipContent className="bg-popover text-popover-foreground border-border max-w-[180px] rounded-xl border p-3 shadow-xl">
+                    <div className="text-popover-foreground text-xs leading-tight font-black">
                       {player.firstName} {player.lastName}
                     </div>
-                    <div className="text-[10px] text-muted-foreground font-bold mt-0.5 uppercase tracking-wide">
+                    <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wide uppercase">
                       {player.position} #{player.number ?? "--"}
                     </div>
-                    <div className="mt-2 pt-1.5 border-t border-white/10 flex justify-between items-center text-[10px]">
+                    <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-1.5 text-[10px]">
                       <span className="text-muted-foreground font-bold">RATING:</span>
-                      <span className="font-extrabold text-emerald-400">{player.overallRating} Overall</span>
+                      <span className="font-extrabold text-emerald-400">
+                        {player.overallRating} Overall
+                      </span>
                     </div>
                   </TooltipContent>
                 </Tooltip>

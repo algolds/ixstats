@@ -31,7 +31,8 @@ export interface LoggedError {
  */
 export class ErrorLogger {
   private static discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
-  private static discordEnabled = process.env.DISCORD_WEBHOOK_ENABLED === "true" && process.env.NODE_ENV !== "test";
+  private static discordEnabled =
+    process.env.DISCORD_WEBHOOK_ENABLED === "true" && process.env.NODE_ENV !== "test";
   private static environment = process.env.NODE_ENV || "development";
 
   /**

@@ -26,5 +26,5 @@ export const adminRouter = mergeRouters(
   adminUsersRouter,
   adminCountriesRouter,
   adminWorldEventsRouter,
-  adminWikiRouter,
+  adminWikiRouter
 );
