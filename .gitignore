@@ -143,7 +143,6 @@ scripts/world-roster-data.json
 # IDE / Tool Settings
 # --------------------------------------------------------------------------------
 .claude/
-CLAUDE.md
 .antigravitycli/
 .antigravityignore
 .cursor/
@@ -197,7 +196,6 @@ economy-builder-refactor-plan.md
 /tests/
 /traces/
 /WIKIOS.md
-/AGENTS.md
 
 # Untracked local planning docs
 /plans/
