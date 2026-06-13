@@ -176,19 +176,21 @@ export function ColorPicker({
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-[200px] justify-start text-left font-normal"
-        >
-          <div
-            className="w-4 h-4 rounded-full mr-2 shadow-sm"
-            style={{ backgroundColor: colorInput }}
-          />
-          <span className="flex-grow">{trimColorString(colorInput)}</span>
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            className="w-[200px] justify-start text-left font-normal"
+          >
+            <div
+              className="w-4 h-4 rounded-full mr-2 shadow-sm"
+              style={{ backgroundColor: colorInput }}
+            />
+            <span className="flex-grow">{trimColorString(colorInput)}</span>
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </Button>
+        }
+      />
       <PopoverContent className="w-[240px] p-3">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

@@ -51,6 +51,35 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   DARK MODE SPECIFIC HIERARCHY OVERRIDES
+   ────────────────────────────────────────────────────────────────────────── */
+
+.dark .facet-hierarchy-parent,
+[data-theme="dark"] .facet-hierarchy-parent {
+  background: linear-gradient(135deg, rgba(24, 24, 27, 0.4) 0%, rgba(24, 24, 27, 0.2) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dark .facet-hierarchy-child,
+[data-theme="dark"] .facet-hierarchy-child {
+  background: linear-gradient(135deg, rgba(9, 9, 11, 0.5) 0%, rgba(9, 9, 11, 0.3) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .facet-hierarchy-interactive,
+[data-theme="dark"] .facet-hierarchy-interactive {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark .facet-hierarchy-interactive:hover,
+[data-theme="dark"] .facet-hierarchy-interactive:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
 /* Contextual popovers respond dynamically to the depth of parent containers */
 .facet-contextual-popover {
   position: relative;

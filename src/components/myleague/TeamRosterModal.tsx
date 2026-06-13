@@ -15,6 +15,7 @@ import {
   BadgeCheck,
   UserPlus,
   Wallet,
+  Settings,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -23,6 +24,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
+import { TeamSettingsModal } from "./TeamSettingsModal";
 import { Label } from "~/components/ui/label";
 import {
   Sheet,
@@ -124,6 +126,7 @@ export function TeamRosterModal({
   const [listingPlayer, setListingPlayer] = useState<string | null>(null);
   const [listPrice, setListPrice] = useState(100);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // ── Derived ─────────────────────────────────────────────────────────────
 
@@ -419,39 +422,70 @@ export function TeamRosterModal({
   const teamColor = team.color ?? "#3b82f6";
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent
-        side="right"
-        className="w-full border-border/50 bg-background/95 p-0 backdrop-blur-2xl sm:max-w-lg [&>button]:hidden"
-      >
-        <div className="flex h-full flex-col">
-          {/* ── 1. Dynamic Team Header ─────────────────────────────────── */}
-          <div
-            className="relative shrink-0 border-b border-border/30 px-5 py-5"
-            style={{ borderLeft: `3px solid ${teamColor}` }}
-          >
-            <button
-              type="button"
-              onClick={onClose}
-              className="absolute top-4 right-4 rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+    <>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent
+          side="right"
+          className="w-full border-border/50 bg-background/95 p-0 backdrop-blur-2xl sm:max-w-lg [&>button]:hidden"
+        >
+          <div className="flex h-full flex-col">
+            {/* ── 1. Dynamic Team Header ─────────────────────────────────── */}
+            <div
+              className="relative shrink-0 border-b border-border/30 px-5 py-5 overflow-hidden"
+              style={{ borderLeft: `3px solid ${teamColor}` }}
             >
-              <X className="h-4 w-4" />
-            </button>
+              {team.coverImage && (
+                <div className="absolute inset-0 z-0">
+                  <img
+                    src={team.coverImage}
+                    alt=""
+                    className="h-full w-full object-cover opacity-10 filter blur-[1px]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-transparent" />
+                </div>
+              )}
+              <div className="relative z-10">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="absolute top-0 right-0 rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
 
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black shadow-lg"
-                style={{ backgroundColor: `${teamColor}20`, color: teamColor }}
-              >
-                {team.shortName?.slice(0, 2) ?? team.name.slice(0, 2).toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <SheetTitle className="truncate text-lg font-bold text-foreground">
-                  {team.name}
-                </SheetTitle>
-                {team.shortName && (
-                  <span className="text-xs text-muted-foreground/70">{team.shortName}</span>
-                )}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black shadow-lg overflow-hidden"
+                    style={{ backgroundColor: `${teamColor}20`, color: teamColor }}
+                  >
+                    {team.logo ? (
+                      <img src={team.logo} alt="Club logo" className="h-full w-full object-cover" />
+                    ) : (
+                      team.shortName?.slice(0, 2) ?? team.name.slice(0, 2).toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <SheetTitle className="truncate text-lg font-bold text-foreground">
+                        {team.name}
+                      </SheetTitle>
+                      {isOwner && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          onClick={() => setSettingsOpen(true)}
+                          title="Club Settings"
+                        >
+                          <Settings className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    {team.shortName && (
+                      <span className="text-xs text-muted-foreground/70">{team.shortName}</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -689,9 +723,21 @@ export function TeamRosterModal({
               </div>
             )}
           </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+
+      <TeamSettingsModal
+        team={{
+          id: team.id,
+          name: team.name,
+          logo: team.logo,
+          coverImage: team.coverImage,
+          color: team.color ?? "#3b82f6",
+        }}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
+    </>
   );
 }
 

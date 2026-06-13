@@ -118,12 +118,18 @@ export function MediaSearchModal({
           onValueChange={(val) => setActiveTab(val as MainTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="border-border/40 grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
+          <TabsList className="border-border/40 grid w-full grid-cols-3 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="wiki-repository"
               className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
             >
               Repository
+            </TabsTrigger>
+            <TabsTrigger
+              value="web-photos"
+              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
+            >
+              Web Photos
             </TabsTrigger>
             <TabsTrigger
               value="upload"

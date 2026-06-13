@@ -124,7 +124,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: "Logs",
-    href: "/admin/logs",
+    href: "/admin/user-logs",
     icon: Terminal,
     description: "System & Server Audit Trail",
   },

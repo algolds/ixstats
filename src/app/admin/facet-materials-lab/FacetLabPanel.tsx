@@ -69,6 +69,10 @@ export default function FacetMaterialsLabPage() {
       classes.push("facet-interactive");
     } else if (config.interactivity === "hierarchy-interactive") {
       classes.push("facet-hierarchy-interactive");
+    } else if (config.interactivity === "magnetic-3d") {
+      classes.push("facet-magnetic-3d");
+    } else if (config.interactivity === "glow-accent") {
+      classes.push("facet-glow-accent");
     }
 
     if (config.refractionEnabled) {

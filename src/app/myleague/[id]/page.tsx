@@ -571,12 +571,7 @@ export default function LeagueDetailPage() {
       />
 
       <LeagueSettingsModal
-        league={{
-          id: league.id,
-          name: league.name,
-          logo: league.logo,
-          coverImage: league.coverImage,
-        }}
+        league={league}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />

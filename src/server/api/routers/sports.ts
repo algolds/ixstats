@@ -441,6 +441,9 @@ export const sportsRouter = createTRPCRouter({
         logo: z.string().nullable().optional(),
         coverImage: z.string().nullable().optional(),
         settings: z.record(z.string(), z.unknown()).optional(),
+        tier: z.number().int().min(1).optional(),
+        promotionCount: z.number().int().min(0).optional(),
+        relegationCount: z.number().int().min(0).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -575,7 +578,8 @@ export const sportsRouter = createTRPCRouter({
         name: z.string().min(1).max(200).optional(),
         color: z.string().optional(),
         nationId: z.string().optional(),
-        logo: z.string().optional(),
+        logo: z.string().nullable().optional(),
+        coverImage: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

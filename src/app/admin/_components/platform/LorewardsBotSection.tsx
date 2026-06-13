@@ -744,17 +744,19 @@ export function LorewardsBotSection() {
                 Username
               </label>
               <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={comboboxOpen}
-                    className="border-border/50 bg-background text-foreground hover:bg-muted/30 focus:ring-primary flex h-9 w-full items-center justify-between px-3 text-xs font-normal focus:ring-1 focus:outline-none"
-                  >
-                    <span className="truncate">{blacklistUser || "Select wiki username..."}</span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={comboboxOpen}
+                      className="border-border/50 bg-background text-foreground hover:bg-muted/30 focus:ring-primary flex h-9 w-full items-center justify-between px-3 text-xs font-normal focus:ring-1 focus:outline-none"
+                    >
+                      <span className="truncate">{blacklistUser || "Select wiki username..."}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  }
+                />
                 <PopoverContent className="border-border/50 bg-card/95 z-[100060] w-80 p-0 shadow-2xl backdrop-blur-md">
                   <Command shouldFilter={false}>
                     <CommandInput

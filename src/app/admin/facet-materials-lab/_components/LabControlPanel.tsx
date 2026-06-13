@@ -450,6 +450,12 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
                 <SelectItem value="hierarchy-interactive">
                   Hierarchical Stack Interactive (Saturate + Hover)
                 </SelectItem>
+                <SelectItem value="magnetic-3d">
+                  3D Magnetic Tilt (Perspective Shift)
+                </SelectItem>
+                <SelectItem value="glow-accent">
+                  Accent Glow Pulse (Vibrant Hover Glow)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

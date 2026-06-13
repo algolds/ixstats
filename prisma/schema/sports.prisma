@@ -43,6 +43,7 @@ model SportTeam {
   nationId        String?
   color           String            @default("#3b82f6")
   logo            String?
+  coverImage      String?
   foundedIxTime   Float?
   budget          Float?
   ownerUserId     String?

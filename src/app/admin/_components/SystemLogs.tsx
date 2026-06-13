@@ -76,7 +76,7 @@ export function SystemLogs() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild className="h-8 gap-1 text-xs">
-            <Link href="/admin/logs">
+            <Link href="/admin/user-logs">
               <ExternalLink className="h-3.5 w-3.5" />
               Dedicated View
             </Link>

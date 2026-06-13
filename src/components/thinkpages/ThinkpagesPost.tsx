@@ -689,15 +689,17 @@ const ThinkpagesPostComponent = ({
           {/* More options dropdown menu */}
           <div className="relative">
             <DropdownMenu open={showMoreOptions} onOpenChange={setShowMoreOptions}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-200"
-                >
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                  >
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                }
+              />
               <DropdownMenuContent
                 align="end"
                 className="w-56 border-white/10 bg-slate-900/90 backdrop-blur-xl"

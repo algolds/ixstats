@@ -24,6 +24,27 @@ export function LabTemplates({
     "--accent": customAccent,
   } as React.CSSProperties;
 
+  // Live component states for previews
+  const [activeNode, setActiveNode] = React.useState<number | null>(null);
+  const [secureStatus, setSecureStatus] = React.useState(true);
+  const [linkEstablished, setLinkEstablished] = React.useState(false);
+  const [linking, setLinking] = React.useState(false);
+  const [activeNav, setActiveNav] = React.useState("Dashboard");
+  const [buttonClickCount, setButtonClickCount] = React.useState(0);
+  const [glassClickStates, setGlassClickStates] = React.useState<Record<string, boolean>>({});
+
+  const handleLinkClick = () => {
+    if (linkEstablished) {
+      setLinkEstablished(false);
+      return;
+    }
+    setLinking(true);
+    setTimeout(() => {
+      setLinking(false);
+      setLinkEstablished(true);
+    }, 1000);
+  };
+
   switch (template) {
     case "material-block":
       return (
@@ -63,28 +84,32 @@ export function LabTemplates({
             opacity={textureOpacity}
             className="z-0 rounded-[inherit]"
           />
-          <div className="pointer-events-none relative z-10 flex items-start justify-between">
+          <div className="relative z-10 flex items-start justify-between">
             <div>
               <h4 className="text-base leading-tight font-bold">MyCountry Security Core</h4>
               <p className="text-muted-foreground mt-0.5 text-[10px]">
                 Integrity & Threat Profile Validation
               </p>
             </div>
-            <span
-              className="rounded border px-2 py-0.5 text-[8px] font-bold tracking-wider uppercase"
+            <button
+              onClick={() => setSecureStatus(!secureStatus)}
+              className="rounded border px-2 py-0.5 text-[8px] font-bold tracking-wider uppercase transition-colors cursor-pointer"
               style={{
-                borderColor: `${customAccent}4D`,
-                backgroundColor: `${customAccent}33`,
-                color: customAccent,
+                borderColor: secureStatus ? `${customAccent}4D` : "#ef44444D",
+                backgroundColor: secureStatus ? `${customAccent}33` : "#ef444433",
+                color: secureStatus ? customAccent : "#ef4444",
               }}
+              title="Click to toggle security status"
             >
-              Secure
-            </span>
+              {secureStatus ? "Secure" : "Breached"}
+            </button>
           </div>
           <div className="border-border/10 pointer-events-none relative z-10 space-y-2 border-t pt-3.5">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Active Nodes:</span>
-              <span className="font-mono font-bold">12 / 12 Online</span>
+              <span className="font-mono font-bold">
+                {secureStatus ? (linkEstablished ? "12 / 12 Online" : "11 / 12 Online") : "0 / 12 Offline"}
+              </span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Material Status:</span>
@@ -95,13 +120,18 @@ export function LabTemplates({
           </div>
           <div className="relative z-10 mt-2 flex gap-2">
             <button
-              className="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              onClick={handleLinkClick}
+              disabled={linking || !secureStatus}
+              className="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40 cursor-pointer"
               style={{ backgroundColor: customAccent }}
             >
-              Establish Link
+              {linking ? "Establishing..." : linkEstablished ? "Disconnect Link" : "Establish Link"}
             </button>
-            <button className="bg-muted hover:bg-muted/80 text-muted-foreground border-border/20 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors">
-              Details
+            <button
+              onClick={() => setButtonClickCount((c) => c + 1)}
+              className="bg-muted hover:bg-muted/80 text-muted-foreground border-border/20 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              Details {buttonClickCount > 0 && `(${buttonClickCount})`}
             </button>
           </div>
         </div>
@@ -151,7 +181,7 @@ export function LabTemplates({
             <h4 className="text-base leading-tight font-bold">System Core Hub</h4>
           </div>
 
-          <div className="facet-hierarchy-child relative z-10 flex flex-col gap-3 rounded-xl border bg-white/5 p-4 dark:bg-black/5">
+          <div className="facet-hierarchy-child relative z-10 flex flex-col gap-3 p-4">
             <div className="pointer-events-none">
               <span className="text-muted-foreground mb-0.5 block text-[8px] font-bold tracking-widest uppercase">
                 Nested Child (Depth 2)
@@ -164,16 +194,30 @@ export function LabTemplates({
 
             <div className="flex gap-2">
               <button
-                className="facet-hierarchy-interactive flex-1 rounded-lg border bg-muted/30 px-3 py-2 text-center text-xs font-semibold text-muted-foreground transition-all"
-                style={{ borderColor: `${customAccent}4D` }}
+                onClick={() => setActiveNode(activeNode === 1 ? null : 1)}
+                className={cn(
+                  "facet-hierarchy-interactive flex-1 px-3 py-2 text-center text-xs font-semibold transition-all relative z-20 cursor-pointer",
+                  activeNode === 1 ? "text-foreground font-bold border-2" : "text-muted-foreground"
+                )}
+                style={{
+                  borderColor: activeNode === 1 ? customAccent : `${customAccent}4D`,
+                  boxShadow: activeNode === 1 ? `0 0 12px ${customAccent}40` : undefined,
+                }}
               >
-                Node Admin 1
+                Node Admin 1 {activeNode === 1 && "🟢"}
               </button>
               <button
-                className="facet-hierarchy-interactive flex-1 rounded-lg border bg-muted/30 px-3 py-2 text-center text-xs font-semibold text-muted-foreground transition-all"
-                style={{ borderColor: `${customAccent}4D` }}
+                onClick={() => setActiveNode(activeNode === 2 ? null : 2)}
+                className={cn(
+                  "facet-hierarchy-interactive flex-1 px-3 py-2 text-center text-xs font-semibold transition-all relative z-20 cursor-pointer",
+                  activeNode === 2 ? "text-foreground font-bold border-2" : "text-muted-foreground"
+                )}
+                style={{
+                  borderColor: activeNode === 2 ? customAccent : `${customAccent}4D`,
+                  boxShadow: activeNode === 2 ? `0 0 12px ${customAccent}40` : undefined,
+                }}
               >
-                Node Admin 2
+                Node Admin 2 {activeNode === 2 && "🟢"}
               </button>
             </div>
           </div>
@@ -192,25 +236,36 @@ export function LabTemplates({
             opacity={textureOpacity}
             className="z-0 rounded-[inherit]"
           />
-          <div className="pointer-events-none relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="relative z-10 flex items-center justify-between pointer-events-auto">
+            <div className="flex items-center gap-2 pointer-events-none">
               <Shield className="h-4 w-4" style={{ color: customAccent }} />
               <span className="text-sm font-bold">IxStats</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative z-20">
               {["Dashboard", "Analytics", "Settings"].map((item) => (
                 <span
                   key={item}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-semibold transition-colors"
+                  onClick={() => setActiveNav(item)}
+                  className={cn(
+                    "cursor-pointer text-xs font-semibold transition-all px-2 py-0.5 rounded-md",
+                    activeNav === item
+                      ? "text-foreground bg-white/10 dark:bg-black/25 shadow-xs font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5 dark:hover:bg-black/10"
+                  )}
+                  style={{
+                    color: activeNav === item ? customAccent : undefined
+                  }}
                 >
                   {item}
                 </span>
               ))}
               <div
-                className="ml-2 flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                onClick={() => setButtonClickCount((c) => c + 1)}
+                className="ml-2 flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white cursor-pointer active:scale-95 transition-transform"
                 style={{ backgroundColor: customAccent }}
+                title={`Profile clicked ${buttonClickCount} times`}
               >
-                A
+                {buttonClickCount > 0 ? buttonClickCount : "A"}
               </div>
             </div>
           </div>
@@ -379,15 +434,19 @@ export function LabTemplates({
               Hover to reveal anisotropic glare reflection across the surface.
             </p>
           </div>
-          <div className="pointer-events-none relative z-10 flex gap-2">
+          <div className="relative z-10 flex gap-2 pointer-events-auto">
             <button
-              className="rounded-md px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
+              onClick={() => setButtonClickCount((c) => c + 1)}
+              className="rounded-md px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
               style={{ backgroundColor: customAccent }}
             >
-              Action
+              Action {buttonClickCount > 0 && `(${buttonClickCount})`}
             </button>
-            <button className="border-border/20 hover:bg-muted/50 text-muted-foreground rounded-md border px-3 py-1.5 text-[10px] font-semibold transition-colors">
-              Dismiss
+            <button
+              onClick={() => setButtonClickCount(0)}
+              className="border-border/20 hover:bg-muted/50 text-muted-foreground rounded-md border px-3 py-1.5 text-[10px] font-semibold transition-colors cursor-pointer"
+            >
+              Reset
             </button>
           </div>
         </div>
@@ -655,27 +714,33 @@ export function LabTemplates({
               {material} · {depth === 1 ? "shallow" : depth === 2 ? "medium" : depth === 3 ? "deep" : "modal"} depth
             </p>
           </div>
-          <div className="pointer-events-none relative z-10 flex flex-col gap-2">
+          <div className="relative z-10 flex flex-col gap-2 pointer-events-auto">
             {[
               { label: "Primary Action", color: customAccent },
               { label: "Secondary", color: "#3b82f6" },
               { label: "Neutral", color: "#6b7280" },
               { label: "Danger", color: "#ef4444" },
-            ].map((btn) => (
-              <div
-                key={btn.label}
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold tracking-wide backdrop-blur-sm transition-all hover:opacity-90"
-                style={{
-                  backgroundColor: `${btn.color}18`,
-                  borderColor: `${btn.color}30`,
-                  color: btn.color,
-                  boxShadow: `inset 0 1px 0 ${btn.color}20, 0 4px 12px ${btn.color}10`,
-                }}
-              >
-                <Zap className="h-3.5 w-3.5" />
-                {btn.label}
-              </div>
-            ))}
+            ].map((btn) => {
+              const isClicked = glassClickStates[btn.label] || false;
+              return (
+                <button
+                  key={btn.label}
+                  onClick={() => setGlassClickStates(prev => ({ ...prev, [btn.label]: !isClicked }))}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold tracking-wide backdrop-blur-sm transition-all hover:opacity-90 active:scale-98"
+                  style={{
+                    backgroundColor: isClicked ? `${btn.color}33` : `${btn.color}18`,
+                    borderColor: isClicked ? btn.color : `${btn.color}30`,
+                    color: btn.color,
+                    boxShadow: isClicked 
+                      ? `inset 0 1px 0 ${btn.color}40, 0 0 12px ${btn.color}25`
+                      : `inset 0 1px 0 ${btn.color}20, 0 4px 12px ${btn.color}10`,
+                  }}
+                >
+                  <Zap className={cn("h-3.5 w-3.5", isClicked && "fill-current")} />
+                  {btn.label} {isClicked && "✓"}
+                </button>
+              );
+            })}
           </div>
         </div>
       );

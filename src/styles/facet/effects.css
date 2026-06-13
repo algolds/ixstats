@@ -501,6 +501,70 @@ select.glass-refraction-none::after,
   content: none !important;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   NEW INTERACTIVITY PROFILES (3D MAGNETIC & ACCENT GLOW)
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 3D Magnetic Tilt Profile */
+.facet-magnetic-3d {
+  position: relative;
+  transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.facet-magnetic-3d:hover {
+  transform: perspective(1000px) rotateX(calc(var(--pointer-offset-y) * -1.5deg)) rotateY(calc(var(--pointer-offset-x) * 1.5deg)) translateZ(10px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.25),
+    0 10px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.dark .facet-magnetic-3d:hover,
+[data-theme="dark"] .facet-magnetic-3d:hover {
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.5),
+    0 12px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.facet-magnetic-3d:active {
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(2px);
+  transition: transform 0.08s ease;
+}
+
+/* Accent Glow Profile */
+.facet-glow-accent {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.facet-glow-accent:hover {
+  transform: translateY(-2px);
+  border-color: var(--facet-lab-accent, hsl(var(--primary))) !important;
+  box-shadow:
+    0 0 20px calc(var(--facet-lab-glow, 0.5) * 12px) var(--facet-lab-accent, rgba(99, 102, 241, 0.35)),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.dark .facet-glow-accent:hover,
+[data-theme="dark"] .facet-glow-accent:hover {
+  box-shadow:
+    0 0 25px calc(var(--facet-lab-glow, 0.5) * 16px) var(--facet-lab-accent, rgba(99, 102, 241, 0.5)),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.facet-glow-accent:active {
+  transform: translateY(0);
+  box-shadow:
+    0 0 10px calc(var(--facet-lab-glow, 0.5) * 6px) var(--facet-lab-accent, rgba(99, 102, 241, 0.25)),
+    0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+
 
 
 

@@ -16,6 +16,8 @@ import { cn } from "~/lib/utils";
 import { SPORT_PRESETS } from "~/lib/sports/presets";
 import { MyLeagueSidebarLayout } from "~/components/myleague/MyLeagueSidebarLayout";
 import { type MyLeagueSection } from "~/components/myleague/MyLeagueSidebarNav";
+import { TeamSettingsModal } from "~/components/myleague/TeamSettingsModal";
+import { Settings } from "lucide-react";
 import { GlareCard } from "~/components/ui/glare-card";
 import SportyPlayerCard from "~/components/sports/player-cards/PlayerCard1";
 import Scoreboard from "~/components/sports/scoreboards/Scoreboard1";
@@ -142,6 +144,7 @@ export default function MyClubTeamDetailPage() {
   const router = useRouter();
   const { user } = useUser();
   const [activeSection, setActiveSection] = useState<MyLeagueSection>("overview");
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Transfer Board states
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
@@ -1291,74 +1294,115 @@ export default function MyClubTeamDetailPage() {
   };
 
   return (
-    <MyLeagueSidebarLayout
-      activeSection={activeSection}
-      onNavigate={setActiveSection}
-      teamColor={team.color}
-      heroSection={
-        <div className="facet-hierarchy-parent mb-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(withBasePath("/myclub"))}
-            className="mb-4 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to MyClub
-          </Button>
+    <>
+      <MyLeagueSidebarLayout
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+        teamColor={team.color}
+        heroSection={
+          <div className="facet-hierarchy-parent mb-4 relative overflow-hidden rounded-xl border border-border bg-card">
+            {team.coverImage && (
+              <div className="absolute inset-0 z-0">
+                <img
+                  src={team.coverImage}
+                  alt=""
+                  className="h-full w-full object-cover opacity-15 filter blur-[2px]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/85 to-transparent" />
+              </div>
+            )}
+            <div className="relative z-10 p-4 sm:p-5">
+              <Button
+                variant="ghost"
+                onClick={() => router.push(withBasePath("/myclub"))}
+                className="mb-4 text-muted-foreground hover:text-foreground h-8 px-2"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to MyClub
+              </Button>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl"
-              style={{ backgroundColor: `${team.color}20`, border: `1px solid ${team.color}40` }}
-            >
-              {emoji}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-2xl font-bold text-foreground">{team.name}</h1>
-              <p className="mt-0.5 text-xs text-muted-foreground">{team.league?.name}</p>
+              <div className="flex flex-wrap items-center gap-4">
+                <div
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl overflow-hidden"
+                  style={{ backgroundColor: `${team.color}20`, border: `1px solid ${team.color}40` }}
+                >
+                  {team.logo ? (
+                    <img src={team.logo} alt="Club logo" className="h-full w-full object-cover" />
+                  ) : (
+                    emoji
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h1 className="truncate text-2xl font-bold text-foreground">{team.name}</h1>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      onClick={() => setSettingsOpen(true)}
+                      title="Club Settings"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{team.league?.name}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {team.city && (
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-1 border-border text-muted-foreground"
+                  >
+                    <MapPin className="h-2.5 w-2.5" />
+                    {team.city}
+                  </Badge>
+                )}
+                {team.nation && (
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-1 border-border text-muted-foreground"
+                  >
+                    <Flag className="h-2.5 w-2.5" />
+                    {(team.nation as Record<string, string>).name}
+                  </Badge>
+                )}
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1 border-border bg-muted/60 text-muted-foreground"
+                >
+                  <Trophy className="h-2.5 w-2.5 text-amber-500" />
+                  {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
+                </Badge>
+                {championships > 0 && (
+                  <Badge
+                    variant="default"
+                    className="flex items-center gap-1 bg-amber-500 font-bold hover:bg-amber-500 text-white"
+                  >
+                    <Trophy className="h-2.5 w-2.5" />
+                    {championships}x Champion
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
+        }
+      >
+        {renderSectionContent()}
+      </MyLeagueSidebarLayout>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {team.city && (
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 border-border text-muted-foreground"
-              >
-                <MapPin className="h-2.5 w-2.5" />
-                {team.city}
-              </Badge>
-            )}
-            {team.nation && (
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 border-border text-muted-foreground"
-              >
-                <Flag className="h-2.5 w-2.5" />
-                {(team.nation as Record<string, string>).name}
-              </Badge>
-            )}
-            <Badge
-              variant="secondary"
-              className="flex items-center gap-1 border-border bg-muted text-muted-foreground"
-            >
-              <Trophy className="h-2.5 w-2.5 text-amber-500" />
-              {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
-            </Badge>
-            {championships > 0 && (
-              <Badge
-                variant="default"
-                className="flex items-center gap-1 bg-amber-500 font-bold hover:bg-amber-500"
-              >
-                <Trophy className="h-2.5 w-2.5" />
-                {championships}x Champion
-              </Badge>
-            )}
-          </div>
-        </div>
-      }
-    >
-      {renderSectionContent()}
-    </MyLeagueSidebarLayout>
+      <TeamSettingsModal
+        team={{
+          id: team.id,
+          name: team.name,
+          logo: team.logo,
+          coverImage: team.coverImage,
+          color: team.color,
+        }}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
+    </>
   );
 }
