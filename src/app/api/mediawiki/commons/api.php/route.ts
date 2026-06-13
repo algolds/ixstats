@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(commonsUrl, {
       method: "GET",
       headers: {
-        "User-Agent": "IxStats/2.0 (WikiOS Commons Proxy)",
+        "User-Agent": "IxStats-Builder",
         Accept: "application/json",
       },
       signal: AbortSignal.timeout(15000),

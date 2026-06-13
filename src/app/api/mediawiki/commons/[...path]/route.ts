@@ -63,7 +63,7 @@ export async function GET(
         try {
           const apiResponse = await fetch(apiUrl.toString(), {
             headers: {
-              "User-Agent": "IxStats/2.0 (WikiOS Commons Proxy)",
+              "User-Agent": "IxStats-Builder",
               Accept: "application/json",
             },
             signal: AbortSignal.timeout(10000),
@@ -112,7 +112,7 @@ export async function GET(
     const response = await fetch(targetUrl, {
       method: "GET",
       headers: {
-        "User-Agent": "IxStats/2.0 (WikiOS Commons Proxy)",
+        "User-Agent": "IxStats-Builder",
       },
       signal: AbortSignal.timeout(15000),
     });

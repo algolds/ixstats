@@ -15,8 +15,9 @@ import { cn } from "~/lib/utils";
 import { getSportEmoji } from "~/lib/sports/presets";
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 
-export type LeagueWorkspaceSection =
+export type LeagueSection =
   | "overview"
   | "standings"
   | "schedule"
@@ -28,7 +29,7 @@ export type LeagueWorkspaceSection =
   | "history";
 
 export const NAV_ITEMS: {
-  id: LeagueWorkspaceSection;
+  id: LeagueSection;
   icon: typeof LayoutDashboard;
   title: string;
   gradient: string;
@@ -83,14 +84,7 @@ export const NAV_ITEMS: {
     activeGlow: "shadow-emerald-500/20",
     activeLine: "bg-emerald-300",
   },
-  {
-    id: "sim",
-    icon: PlayCircle,
-    title: "Sim",
-    gradient: "from-purple-500/80 to-purple-600/80",
-    activeGlow: "shadow-purple-500/20",
-    activeLine: "bg-purple-300",
-  },
+
   {
     id: "teams",
     icon: Shield,
@@ -109,17 +103,17 @@ export const NAV_ITEMS: {
   },
 ];
 
-interface LeagueWorkspaceSidebarNavProps {
-  activeSection: LeagueWorkspaceSection;
-  onNavigate: (section: LeagueWorkspaceSection) => void;
+interface LeagueSidebarNavProps {
+  activeSection: LeagueSection;
+  onNavigate: (section: LeagueSection) => void;
   variant?: "desktop" | "expanded" | "mobile";
-  notifications?: Partial<Record<LeagueWorkspaceSection, number>>;
-  visibleSections?: LeagueWorkspaceSection[];
+  notifications?: Partial<Record<LeagueSection, number>>;
+  visibleSections?: LeagueSection[];
   sportAccent?: string;
   sportHighlight?: string;
 }
 
-export function LeagueWorkspaceSidebarNav({
+export function LeagueSidebarNav({
   activeSection,
   onNavigate,
   variant = "desktop",
@@ -127,7 +121,7 @@ export function LeagueWorkspaceSidebarNav({
   visibleSections,
   sportAccent,
   sportHighlight,
-}: LeagueWorkspaceSidebarNavProps) {
+}: LeagueSidebarNavProps) {
   const activeId = activeSection;
 
   const filteredItems = visibleSections
@@ -472,4 +466,53 @@ export function RewardsBanner() {
   const packCount = data?.packs?.length ?? 0;
 
   return <RewardsBannerWidget packCount={packCount} />;
+}
+
+import { Loader2 } from "lucide-react";
+
+export function QuickSimWidget({
+  seasonId,
+  onSimulated,
+}: {
+  seasonId: string;
+  onSimulated?: () => void;
+}) {
+  const utils = api.useUtils();
+  const simulateMatchDay = api.sports.simulateMatchDay.useMutation({
+    onSuccess: () => {
+      utils.sports.getLeague.invalidate();
+      onSimulated?.();
+    },
+  });
+
+  return (
+    <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
+      <h4 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase flex items-center gap-1.5">
+        <PlayCircle className="h-3.5 w-3.5 text-purple-400" /> QuickSim
+      </h4>
+      <p className="text-muted-foreground text-[10px] mb-3 leading-relaxed">
+        Advance the league schedule by simulating the next match day/round instantly from any page.
+      </p>
+      <Button
+        onClick={() => simulateMatchDay.mutate({
+          seasonId,
+          matchDay: 0
+        })}
+        disabled={simulateMatchDay.isPending}
+        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 h-8 text-xs rounded-lg shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
+      >
+        {simulateMatchDay.isPending ? (
+          <>
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Simulating...</span>
+          </>
+        ) : (
+          <>
+            <PlayCircle className="h-3.5 w-3.5" />
+            <span>Simulate Match Day</span>
+          </>
+        )}
+      </Button>
+    </div>
+  );
 }

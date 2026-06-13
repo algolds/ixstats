@@ -1,5 +1,5 @@
 import React from "react";
 
-export default function LeagueWorkspaceLayout({ children }: { children: React.ReactNode }) {
+export default function LeagueLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

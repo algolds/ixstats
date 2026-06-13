@@ -531,6 +531,7 @@ export const sportsTeamsRouter = createTRPCRouter({
           include: {
             players: { where: { isActive: true }, orderBy: { position: "asc" } },
             coaches: { where: { isActive: true } },
+            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
           },
         });
 

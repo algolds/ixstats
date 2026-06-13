@@ -4,6 +4,7 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { PositionTooltip } from "~/components/sports/PositionTooltip";
 
 interface PlayerStats1Props {
   player: {
@@ -154,9 +155,11 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
             </div>
 
             <div className="mb-4 flex items-center justify-center gap-2 md:justify-start">
-              <span className="inline-flex rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold tracking-wider uppercase">
-                {player.position}
-              </span>
+              <PositionTooltip position={player.position}>
+                <span className="inline-flex rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold tracking-wider uppercase cursor-help hover:bg-white/30 transition-colors">
+                  {player.position}
+                </span>
+              </PositionTooltip>
               <span className="inline-flex items-center gap-x-1 rounded-full bg-black/40 px-3 py-0.5 text-xs font-bold tracking-wider uppercase">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
                 {player.careerStage}

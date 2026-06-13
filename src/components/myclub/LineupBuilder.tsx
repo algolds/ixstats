@@ -9,6 +9,8 @@ import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import type { SportPreset } from "~/lib/sports/presets";
 import TeamLineup1 from "~/components/sports/team-lineups/TeamLineup1";
+import { useNotify } from "~/hooks/useNotify";
+import { PositionTooltip } from "~/components/sports/PositionTooltip";
 
 interface LineupBuilderProps {
   teamId: string;
@@ -43,6 +45,7 @@ export function LineupBuilder({
   onSaved,
 }: LineupBuilderProps) {
   const utils = api.useUtils();
+  const notify = useNotify();
   const preset = presets.find((p) => p.key === sportPreset);
 
   const [starters, setStarters] = useState<string[]>(currentLineup?.starters ?? []);
@@ -57,7 +60,7 @@ export function LineupBuilder({
         lastName: p.lastName,
         position: p.position,
         number: p.number,
-        overallRating: p.ratings.overall ?? 50,
+        overallRating: (p.ratings as any)?.overall ?? 50,
       }));
   }, [players, starters]);
 
@@ -70,9 +73,44 @@ export function LineupBuilder({
 
   const startingSlots = preset?.startingSlots ?? {};
 
+  const maxStarters = useMemo(() => {
+    return Object.values(startingSlots).reduce((sum, val) => sum + val, 0);
+  }, [startingSlots]);
+
   const handleToggleStarter = (playerId: string) => {
+    const player = players.find((p) => p.id === playerId);
+    if (!player) return;
+
+    const isCurrentlyStarter = starters.includes(playerId);
+
+    if (!isCurrentlyStarter) {
+      // 1. Check total starters limit
+      if (starters.length >= maxStarters) {
+        notify.error(
+          "Lineup Limit Reached",
+          `You can only select up to ${maxStarters} starters for this sport.`
+        );
+        return;
+      }
+
+      // 2. Check position-specific limit
+      const pos = player.position;
+      const slotsLimit = startingSlots[pos] ?? 0;
+      const currentPosCount = players.filter(
+        (p) => starters.includes(p.id) && p.position === pos
+      ).length;
+
+      if (currentPosCount >= slotsLimit) {
+        notify.error(
+          "Position Limit Reached",
+          `You can only select up to ${slotsLimit} starters for the ${pos} position.`
+        );
+        return;
+      }
+    }
+
     setStarters((prev) =>
-      prev.includes(playerId) ? prev.filter((id) => id !== playerId) : [...prev, playerId]
+      isCurrentlyStarter ? prev.filter((id) => id !== playerId) : [...prev, playerId]
     );
   };
 
@@ -103,14 +141,17 @@ export function LineupBuilder({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {players
-              .filter((p) => p.ratings.overall != null)
-              .sort((a, b) => (b.ratings.overall ?? 0) - (a.ratings.overall ?? 0))
+          <div className="grid gap-2 sm:grid-cols-2 max-h-[460px] overflow-y-auto pr-1">
+            {[...players]
+              .sort((a, b) => {
+                const ovrA = (a.ratings as any)?.overall ?? 50;
+                const ovrB = (b.ratings as any)?.overall ?? 50;
+                return ovrB - ovrA;
+              })
               .map((player) => {
                 const isStarter = starters.includes(player.id);
                 const isCaptain = captainId === player.id;
-                const ovr = player.ratings.overall ?? 50;
+                const ovr = (player.ratings as any)?.overall ?? 50;
 
                 return (
                   <button
@@ -141,12 +182,14 @@ export function LineupBuilder({
                         {isCaptain && <Star className="h-3 w-3 shrink-0 text-amber-400" />}
                       </div>
                       <div className="mt-0.5 flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="border-border text-muted-foreground rounded px-1 py-0 text-[9px]"
-                        >
-                          {player.position}
-                        </Badge>
+                        <PositionTooltip position={player.position}>
+                          <Badge
+                            variant="outline"
+                            className="border-border text-muted-foreground cursor-help rounded px-1 py-0 text-[9px]"
+                          >
+                            {player.position}
+                          </Badge>
+                        </PositionTooltip>
                         <span
                           className={cn(
                             "text-[10px] font-bold",

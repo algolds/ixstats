@@ -62,7 +62,7 @@
       ]
     },
     /* Performance Optimizations */
-    "types": [],
+"types": ["node"],
     "assumeChangesOnlyAffectDirectDependencies": true,
     "disableSourceOfProjectReferenceRedirect": true,
     "skipDefaultLibCheck": true,
@@ -70,9 +70,7 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": [
-    "src",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    "src"
   ],
   "exclude": [
     "**/node_modules",
@@ -95,5 +93,6 @@
     "playwright.config.ts",
     "jest.config.js",
     "odysseus"
-  ]
+  ],
+  "typescript.disableAutomaticTypeAcquisition": true
 }

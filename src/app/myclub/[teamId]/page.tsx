@@ -33,6 +33,7 @@ import { SponsorWalletDeck } from "~/components/myclub/SponsorWalletDeck";
 import { MatchTickerSim } from "~/components/myleague/MatchTickerSim";
 import { PlayerTrainingButton } from "~/components/myclub/PlayerTrainingButton";
 import { LineupBuilder } from "~/components/myclub/LineupBuilder";
+import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { RevenueCollector } from "~/components/myclub/RevenueCollector";
 import { TeamTrainingButton } from "~/components/myclub/TeamTrainingButton";
 import {
@@ -714,7 +715,7 @@ export default function MyClubTeamDetailPage() {
               open={!!selectedPlayer}
               onOpenChange={(open) => !open && setSelectedPlayer(null)}
             >
-              <DialogContent className="border-border bg-background/95 [&>button]:text-muted-foreground [&>button]:hover:text-foreground z-[var(--z-modal,100005)] max-w-md rounded-3xl p-6 backdrop-blur-xl">
+              <DialogContent className="border-border bg-background/95 [&>button]:text-muted-foreground [&>button]:hover:text-foreground max-w-md rounded-3xl p-6 backdrop-blur-xl">
                 <DialogHeader className="px-0">
                   <DialogTitle className="text-lg font-bold">
                     List {selectedPlayer?.firstName} {selectedPlayer?.lastName}
@@ -877,12 +878,6 @@ export default function MyClubTeamDetailPage() {
                         <p className="text-muted-foreground mt-2 text-[10px] leading-relaxed">
                           {tactic.description}
                         </p>
-                        <div className="border-border/50 mt-3 border-t pt-2">
-                          <p className="text-muted-foreground text-[8px] font-bold tracking-wider uppercase">
-                            Simulation adjustments
-                          </p>
-                          <p className="mt-0.5 font-mono text-xs font-medium">{tactic.stats}</p>
-                        </div>
                       </div>
                     );
                   })}
@@ -1043,7 +1038,12 @@ export default function MyClubTeamDetailPage() {
                           <div>
                             <p className="text-sm font-bold">{p.name}</p>
                             <p className="text-muted-foreground text-xs">
-                              {p.position} &middot; {p.teamName}
+                              <PositionTooltip position={p.position}>
+                                <span className="cursor-help hover:text-foreground font-medium transition-colors">
+                                  {p.position}
+                                </span>
+                              </PositionTooltip>{" "}
+                              &middot; {p.teamName}
                             </p>
                             {p.listing && (
                               <p className="mt-0.5 text-[10px] font-semibold text-cyan-400">
@@ -1116,7 +1116,12 @@ export default function MyClubTeamDetailPage() {
                             {l.player.firstName} {l.player.lastName}
                           </p>
                           <p className="text-muted-foreground text-xs">
-                            {l.player.position} &middot; {l.player.team.name} &middot; OVR{" "}
+                            <PositionTooltip position={l.player.position}>
+                              <span className="cursor-help hover:text-foreground font-medium transition-colors">
+                                {l.player.position}
+                              </span>
+                            </PositionTooltip>{" "}
+                            &middot; {l.player.team.name} &middot; OVR{" "}
                             {l.player.ratings?.overall ?? 50}
                           </p>
                           <p className="mt-0.5 text-[10px] font-semibold text-cyan-500 dark:text-cyan-400">
@@ -1456,6 +1461,66 @@ export default function MyClubTeamDetailPage() {
                     {championships}x Champion
                   </Badge>
                 )}
+              </div>
+
+              {/* Quick Stats Grid */}
+              <div className="mt-5 border-t border-border/20 pt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div className="relative overflow-hidden rounded-xl border border-border/30 bg-muted/20 p-3 backdrop-blur-md">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Current Record
+                  </span>
+                  <span className="text-lg font-black text-foreground mt-1 block">
+                    {currentStandings ? (
+                      `${currentStandings.wins}W - ${currentStandings.losses}L${
+                        currentStandings.draws > 0 ? ` - ${currentStandings.draws}D` : ""
+                      }`
+                    ) : (
+                      "0W - 0L (Offseason)"
+                    )}
+                  </span>
+                  {currentStandings?.rank && (
+                    <span className="text-[10px] text-muted-foreground/80 mt-1 block">
+                      League Rank: #{currentStandings.rank}
+                      {currentStandings.points !== undefined && ` (${currentStandings.points} pts)`}
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative overflow-hidden rounded-xl border border-border/30 bg-muted/20 p-3 backdrop-blur-md">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Championships
+                  </span>
+                  <span className="text-lg font-black text-foreground mt-1 block flex items-center gap-1">
+                    <Trophy className="h-4 w-4 text-amber-500 inline" /> {championships}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/80 mt-1 block">
+                    Over {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="relative overflow-hidden rounded-xl border border-border/30 bg-muted/20 p-3 backdrop-blur-md">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Club Budget
+                  </span>
+                  <span className="text-lg font-black text-foreground mt-1 block">
+                    ₷{team.budget?.toLocaleString() ?? "0"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/80 mt-1 block truncate">
+                    Sponsor: {(team.sponsor as any)?.name ?? "None"}
+                  </span>
+                </div>
+
+                <div className="relative overflow-hidden rounded-xl border border-border/30 bg-muted/20 p-3 backdrop-blur-md">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Stadium & Fans
+                  </span>
+                  <span className="text-lg font-black text-foreground mt-1 block">
+                    {team.stadiumCapacity?.toLocaleString() ?? "5,000"} cap
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/80 mt-1 block">
+                    Popularity: {team.popularity ?? 50}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>

@@ -3,25 +3,25 @@
 import type { ReactNode } from "react";
 import { cn } from "~/lib/utils";
 import {
-  LeagueWorkspaceSidebarNav,
-  type LeagueWorkspaceSection,
-} from "./LeagueWorkspaceSidebarNav";
+  LeagueSidebarNav,
+  type LeagueSection,
+} from "./LeagueSidebarNav";
 
-interface LeagueWorkspaceSidebarLayoutProps {
+interface LeagueSidebarLayoutProps {
   children: ReactNode;
   heroSection?: ReactNode;
   alerts?: ReactNode;
   sidebarExtra?: ReactNode;
-  activeSection: LeagueWorkspaceSection;
-  onNavigate: (section: LeagueWorkspaceSection) => void;
-  notifications?: Partial<Record<LeagueWorkspaceSection, number>>;
-  visibleSections?: LeagueWorkspaceSection[];
+  activeSection: LeagueSection;
+  onNavigate: (section: LeagueSection) => void;
+  notifications?: Partial<Record<LeagueSection, number>>;
+  visibleSections?: LeagueSection[];
   sportAccent?: string;
   sportHighlight?: string;
 }
 
 const SECTION_THEMES: Record<
-  LeagueWorkspaceSection,
+  LeagueSection,
   {
     borderClass: string;
     shadowClass: string;
@@ -70,7 +70,7 @@ function sportAccentShadow(accent: string | undefined): string {
   return `0_-8px_25px_-8px_hsl(var(--myleague-accent)/0.2)`;
 }
 
-export function LeagueWorkspaceSidebarLayout({
+export function LeagueSidebarLayout({
   children,
   heroSection,
   alerts,
@@ -81,7 +81,7 @@ export function LeagueWorkspaceSidebarLayout({
   visibleSections,
   sportAccent,
   sportHighlight,
-}: LeagueWorkspaceSidebarLayoutProps) {
+}: LeagueSidebarLayoutProps) {
   const theme = SECTION_THEMES[activeSection] ?? SECTION_THEMES.overview;
 
   const contentFrameStyle = {
@@ -116,7 +116,7 @@ export function LeagueWorkspaceSidebarLayout({
             )}
           >
             <div className="sticky top-6 space-y-3">
-              <LeagueWorkspaceSidebarNav
+              <LeagueSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}
                 variant={hasSidebarExtra ? "expanded" : "desktop"}
@@ -133,7 +133,7 @@ export function LeagueWorkspaceSidebarLayout({
           <div className="min-w-0 flex-1">
             {/* Mobile Viewports: horizontal navigator tabs */}
             <div className="mb-3 lg:hidden">
-              <LeagueWorkspaceSidebarNav
+              <LeagueSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}
                 variant="mobile"

@@ -149,6 +149,48 @@ export function isExternalImageUrl(url: string): boolean {
 }
 
 /**
+ * Detects if a URL is a Wikimedia Commons / Wikipedia image URL
+ */
+export function isWikimediaCommonsUrl(url: string): boolean {
+  if (!url) return false;
+  return url.includes("wikimedia.org") || url.includes("wikipedia.org");
+}
+
+/**
+ * Converts a Wikimedia Commons / Wikipedia URL to our local mediawiki commons proxy URL
+ */
+export function getCommonsProxyUrl(url: string): string {
+  if (!url) return url;
+  
+  if (url.includes("/api/mediawiki/commons/")) {
+    return url;
+  }
+
+  try {
+    const decodedUrl = decodeURIComponent(url);
+    
+    // Pattern to match /wikipedia/commons/... or /wikipedia/en/... and extract filename
+    const commonsMatch = decodedUrl.match(/\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^\/]+)/i);
+    if (commonsMatch && commonsMatch[1]) {
+      const filename = commonsMatch[1];
+      return `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`;
+    }
+    
+    // Fallback: extract last segment
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    const lastSegment = pathname.split("/").pop();
+    if (lastSegment && /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(lastSegment)) {
+      return `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(lastSegment.replace(/ /g, "_"))}`;
+    }
+  } catch (e) {
+    console.error("[ImageDownloadService] Error parsing Wikimedia URL:", e);
+  }
+  
+  return url;
+}
+
+/**
  * Smart image handler that downloads external URLs and passes through data URLs
  * Use this wrapper around image selection callbacks
  */
@@ -160,6 +202,14 @@ export async function processImageSelection(
   }
 ): Promise<string> {
   try {
+    // If it is a Wikimedia Commons image, route it from the repository proxy
+    if (isWikimediaCommonsUrl(imageUrl)) {
+      options?.onProgress?.("Routing from image repository...");
+      const proxyUrl = getCommonsProxyUrl(imageUrl);
+      options?.onProgress?.("Routed from image repository successfully");
+      return proxyUrl;
+    }
+
     // Check if URL needs downloading
     if (isExternalImageUrl(imageUrl)) {
       options?.onProgress?.("Downloading image...");
@@ -190,8 +240,20 @@ export async function downloadMultipleImages(urls: string[]): Promise<Downloaded
   for (const url of urls) {
     if (isExternalImageUrl(url)) {
       try {
-        const downloaded = await downloadAndConvertImage(url);
-        results.push(downloaded);
+        if (isWikimediaCommonsUrl(url)) {
+          const proxyUrl = getCommonsProxyUrl(url);
+          results.push({
+            url: proxyUrl,
+            originalUrl: url,
+            fileName: url.split("/").pop() || "image",
+            fileSize: 0,
+            fileType: "image/jpeg",
+            downloadedAt: Date.now(),
+          });
+        } else {
+          const downloaded = await downloadAndConvertImage(url);
+          results.push(downloaded);
+        }
       } catch (error) {
         console.error(`[ImageDownloadService] Failed to download ${url}:`, error);
         // Continue with other downloads even if one fails

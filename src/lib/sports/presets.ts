@@ -329,3 +329,54 @@ export function getArchetypeConfig(type: ArchetypeType): ArchetypeConfig {
   }
   return config;
 }
+
+export const SPORTS_ABBREVIATIONS: Record<string, string> = {
+  // Soccer
+  GK: "Goalkeeper",
+  CB: "Center Back",
+  FB: "Fullback",
+  CM: "Central Midfielder",
+  AM: "Attacking Midfielder",
+  W: "Winger",
+  ST: "Striker",
+  // Football
+  QB: "Quarterback",
+  RB: "Running Back",
+  WR: "Wide Receiver",
+  TE: "Tight End",
+  OL: "Offensive Line",
+  DL: "Defensive Line",
+  LB: "Linebacker",
+  S: "Safety",
+  K: "Kicker",
+  P: "Punter",
+  // Hockey
+  G: "Goalie",
+  D: "Defenseman / Driver",
+  C: "Center / Catcher",
+  LW: "Left Wing",
+  RW: "Right Wing",
+  // Basketball
+  PG: "Point Guard",
+  SG: "Shooting Guard",
+  SF: "Small Forward",
+  PF: "Power Forward",
+  // Baseball
+  SP: "Starting Pitcher",
+  RP: "Relief Pitcher",
+  "1B": "First Baseman",
+  "2B": "Second Baseman",
+  "3B": "Third Baseman",
+  SS: "Shortstop",
+  LF: "Left Fielder",
+  CF: "Center Fielder",
+  RF: "Right Fielder",
+  DH: "Designated Hitter",
+  // F1 / Racing
+  driver: "Driver",
+  team_principal: "Team Principal",
+  race_engineer: "Race Engineer",
+  // Boxing
+  fighter: "Fighter",
+  trainer: "Trainer",
+};

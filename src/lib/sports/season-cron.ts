@@ -205,13 +205,19 @@ async function advanceLeagueMatchDay(
       stage: (season as any).activeStage ?? 1,
     } as any,
     orderBy: { matchDay: "asc" },
-    take: 100,
-    select: { matchDay: true },
+    take: 1,
+    select: { matchDay: true, scheduledIxTime: true },
   });
 
   if (scheduledMatches.length === 0) return false;
 
   const targetMatchDay = scheduledMatches[0]!.matchDay;
+  const scheduledTime = scheduledMatches[0]!.scheduledIxTime;
+
+  // Only advance if the scheduled IxTime has arrived
+  if (scheduledTime > IxTime.getCurrentIxTime()) {
+    return false;
+  }
 
   const matches = await prisma.sportMatch.findMany({
     where: {
@@ -413,6 +419,11 @@ async function advanceCircuitRace(
 
   if (!race) return false;
 
+  // Only advance if the scheduled IxTime has arrived
+  if (race.raceIxTime && race.raceIxTime > IxTime.getCurrentIxTime()) {
+    return false;
+  }
+
   // Get all drivers for the season's teams
   const teams = await prisma.sportTeam.findMany({
     where: {
@@ -513,12 +524,19 @@ async function advanceBracketRound(
       stage: (season as any).activeStage ?? 1,
     } as any,
     orderBy: { round: "asc" },
-    select: { round: true },
+    take: 1,
+    select: { round: true, scheduledIxTime: true },
   });
 
   if (scheduledBrackets.length === 0) return false;
 
   const targetRound = scheduledBrackets[0]!.round;
+  const scheduledTime = scheduledBrackets[0]!.scheduledIxTime;
+
+  // Only advance if the scheduled IxTime has arrived
+  if (scheduledTime > IxTime.getCurrentIxTime()) {
+    return false;
+  }
 
   const brackets = await prisma.sportBracket.findMany({
     where: {
@@ -651,7 +669,7 @@ async function advanceBracketRound(
               fighter1Id: a,
               fighter2Id: b,
               status: "scheduled",
-              scheduledIxTime: ixNow + 2880,
+              scheduledIxTime: ixNow + 2 * 24 * 60 * 60 * 1000,
               stage: (season as any).activeStage ?? 1,
             } as any,
           });

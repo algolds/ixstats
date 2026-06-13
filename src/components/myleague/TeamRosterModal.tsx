@@ -16,7 +16,9 @@ import {
   UserPlus,
   Wallet,
   Settings,
+  ArrowRight,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useUser } from "~/context/auth-context";
@@ -37,6 +39,7 @@ import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
 import PlayerStats from "~/components/sports/player-stats/PlayerStats1";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { withBasePath } from "~/lib/base-path";
+import { PositionTooltip } from "~/components/sports/PositionTooltip";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -112,6 +115,7 @@ export function TeamRosterModal({
   const { user } = useUser();
   const notify = useNotify();
   const utils = api.useUtils();
+  const router = useRouter();
 
   // ── Data ────────────────────────────────────────────────────────────────
 
@@ -134,6 +138,21 @@ export function TeamRosterModal({
   const [isClaiming, setIsClaiming] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // ── Mutations (Partial) ─────────────────────────────────────────────────
+
+  const claimTeam = api.sports.claimTeam.useMutation({
+    onSuccess: () => {
+      notify.success("Franchise Claimed", "You are now the owner of this team!");
+      utils.sports.getTeam.invalidate({ id: teamId });
+      utils.sports.getMyClubs.invalidate();
+      setIsClaiming(false);
+    },
+    onError: (err) => {
+      notify.error("Claim Failed", err.message);
+      setIsClaiming(false);
+    },
+  });
+
   // ── Derived ─────────────────────────────────────────────────────────────
 
   const preset = useMemo<SportPreset | undefined>(
@@ -141,7 +160,21 @@ export function TeamRosterModal({
     [sportPreset]
   );
 
-  const isOwner = team && user ? team.ownerUserId === user.id : false;
+  const isOwnedInMyClubs = useMemo(() => {
+    return myClubs ? myClubs.some((c) => c.id === teamId) : false;
+  }, [myClubs, teamId]);
+
+  const isOwner = useMemo(() => {
+    return (
+      (team && user ? team.ownerUserId === user.id : false) ||
+      isOwnedInMyClubs ||
+      claimTeam.isSuccess
+    );
+  }, [team, user, isOwnedInMyClubs, claimTeam.isSuccess]);
+
+  const isClaimed = useMemo(() => {
+    return !!team?.ownerUserId || isOwnedInMyClubs || claimTeam.isSuccess;
+  }, [team, isOwnedInMyClubs, claimTeam.isSuccess]);
 
   const { starters, bench } = useMemo(() => {
     if (!team?.players || !preset) return { starters: [], bench: [] };
@@ -179,19 +212,6 @@ export function TeamRosterModal({
   }, [team]);
 
   // ── Mutations ───────────────────────────────────────────────────────────
-
-  const claimTeam = api.sports.claimTeam.useMutation({
-    onSuccess: () => {
-      notify.success("Franchise Claimed", "You are now the owner of this team!");
-      utils.sports.getTeam.invalidate({ id: teamId });
-      utils.sports.getMyClubs.invalidate();
-      setIsClaiming(false);
-    },
-    onError: (err) => {
-      notify.error("Claim Failed", err.message);
-      setIsClaiming(false);
-    },
-  });
 
   const invokePatronSaint = api.sports.invokePatronSaint.useMutation({
     onSuccess: () => {
@@ -269,11 +289,18 @@ export function TeamRosterModal({
         animate="visible"
         className="group"
       >
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => handlePlayerClick(player.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handlePlayerClick(player.id);
+            }
+          }}
           className={cn(
-            "hover:bg-muted/40 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition",
+            "hover:bg-muted/40 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition cursor-pointer select-none outline-none focus-visible:ring-1 focus-visible:ring-ring",
             isExpanded && "bg-muted/50"
           )}
         >
@@ -316,12 +343,14 @@ export function TeamRosterModal({
               {player.firstName} {player.lastName}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5">
-              <Badge
-                variant="outline"
-                className="border-border/30 bg-muted/50 text-muted-foreground rounded px-1 py-0 text-[10px] font-medium"
-              >
-                {player.position}
-              </Badge>
+              <PositionTooltip position={player.position}>
+                <Badge
+                  variant="outline"
+                  className="border-border/30 bg-muted/50 text-muted-foreground cursor-help rounded px-1 py-0 text-[10px] font-medium"
+                >
+                  {player.position}
+                </Badge>
+              </PositionTooltip>
               <span className="text-muted-foreground/70 text-[10px]">Age {player.age}</span>
             </div>
           </div>
@@ -354,7 +383,7 @@ export function TeamRosterModal({
               {overall}
             </span>
           </div>
-        </button>
+        </div>
 
         {/* Inline listing form */}
         <AnimatePresence>
@@ -581,11 +610,11 @@ export function TeamRosterModal({
 
             {/* ── 2. Contextual Actions Bar ──────────────────────────────── */}
             <div className="border-border/30 shrink-0 border-b px-5 py-3">
-              {!team.ownerUserId && (
+              {!isClaimed ? (
                 <Button
                   onClick={handleClaim}
                   disabled={isClaiming || claimTeam.isPending || !user}
-                  className="w-full gap-2 transition-all hover:opacity-95"
+                  className="w-full gap-2 transition-all hover:opacity-95 font-semibold"
                   style={{
                     backgroundColor: team.color ? `${team.color}15` : undefined,
                     color: team.color ?? undefined,
@@ -600,10 +629,27 @@ export function TeamRosterModal({
                   )}
                   Claim Franchise (50 Credits)
                 </Button>
-              )}
+              ) : isOwner ? (
+                <Button
+                  onClick={() => {
+                    onClose();
+                    router.push(withBasePath(`/myclub/${team.id}`));
+                  }}
+                  className="w-full gap-2 font-semibold transition-all hover:opacity-95 shadow-sm"
+                  style={{
+                    backgroundColor: team.color ? `${team.color}15` : undefined,
+                    color: team.color ?? undefined,
+                    border: team.color ? `1px solid ${team.color}30` : undefined,
+                  }}
+                  size="sm"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Go to MyClub
+                </Button>
+              ) : null}
 
               {isOwner && (
-                <div className="space-y-2">
+                <div className="mt-2 space-y-2">
                   <Button
                     variant="outline"
                     size="sm"

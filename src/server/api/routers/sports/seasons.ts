@@ -8,6 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { IxTime } from "~/lib/ixtime";
 import {
   getPreset,
   resolveMatch,
@@ -269,7 +270,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
         });
         const seasonNumber = (maxSeason?.seasonNumber ?? 0) + 1;
 
-        const startIxTime = Date.now();
+        const startIxTime = IxTime.getCurrentIxTime();
 
         const season = await ctx.db.sportSeason.create({
           data: {
@@ -315,6 +316,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
                 raceNumber: rRec.raceNumber as number,
                 circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
                 status: "upcoming",
+                raceIxTime: startIxTime + (rRec.raceNumber as number) * 3 * 86400000,
               },
             });
           }
@@ -545,7 +547,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
               homeScore,
               awayScore,
               status: "completed",
-              resolvedIxTime: Date.now(),
+              resolvedIxTime: IxTime.getCurrentIxTime(),
               matchStats: {
                 keyStats: result.keyStats,
                 evaluation: result.evaluation,
@@ -778,7 +780,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
             data: {
               winnerId,
               status: "completed",
-              resolvedIxTime: Date.now(),
+              resolvedIxTime: IxTime.getCurrentIxTime(),
               result: result as any,
             },
           });
@@ -801,7 +803,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
 
           if (winners.length >= 2) {
             const nextRound = input.round + 1;
-            const ixNow = Date.now();
+            const ixNow = IxTime.getCurrentIxTime();
             const pow2 = Math.pow(2, Math.ceil(Math.log2(winners.length)));
             const half = pow2 / 2;
             for (let i = 0; i < half; i++) {
@@ -827,7 +829,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
               where: { id: input.seasonId },
               data: {
                 status: "completed",
-                endIxTime: Date.now(),
+                endIxTime: IxTime.getCurrentIxTime(),
                 championTeamId,
               },
             });
@@ -960,7 +962,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
                 })) as any,
                 results: raceResult.positions as any,
                 status: "completed",
-                raceIxTime: Date.now(),
+                raceIxTime: IxTime.getCurrentIxTime(),
               },
             });
 
@@ -1125,7 +1127,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
                       homeScore,
                       awayScore,
                       status: "completed",
-                      resolvedIxTime: Date.now(),
+                      resolvedIxTime: IxTime.getCurrentIxTime(),
                       matchStats: {
                         keyStats: result.keyStats,
                         evaluation: result.evaluation,
@@ -1285,7 +1287,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
                     data: {
                       winnerId,
                       status: "completed",
-                      resolvedIxTime: Date.now(),
+                      resolvedIxTime: IxTime.getCurrentIxTime(),
                       result: result as any,
                     },
                   });
@@ -1314,7 +1316,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
                 });
 
                 if (nextRoundCount === 0) {
-                  const ixNow = Date.now();
+                  const ixNow = IxTime.getCurrentIxTime();
                   const pow2 = Math.pow(2, Math.ceil(Math.log2(winners.length)));
                   const half = pow2 / 2;
                   for (let i = 0; i < half; i++) {
@@ -1394,7 +1396,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
           where: { id: input.seasonId },
           data: {
             status: "completed",
-            endIxTime: Date.now(),
+            endIxTime: IxTime.getCurrentIxTime(),
             championTeamId,
           },
         });
@@ -1515,7 +1517,7 @@ export const sportsSeasonsRouter = createTRPCRouter({
             })) as any,
             results: raceResult.positions as any,
             status: "completed",
-            raceIxTime: Date.now(),
+            raceIxTime: IxTime.getCurrentIxTime(),
           },
         });
 

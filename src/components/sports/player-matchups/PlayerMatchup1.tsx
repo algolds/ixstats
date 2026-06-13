@@ -4,6 +4,7 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { PositionTooltip } from "~/components/sports/PositionTooltip";
 
 export interface MatchupPlayer {
   id: string;
@@ -86,9 +87,11 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
           <h4 className="text-foreground text-sm leading-tight font-extrabold">
             {playerA.firstName} {playerA.lastName}
           </h4>
-          <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase">
-            {playerA.position}
-          </span>
+          <PositionTooltip position={playerA.position}>
+            <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase cursor-help hover:underline decoration-dotted">
+              {playerA.position}
+            </span>
+          </PositionTooltip>
         </div>
 
         {/* VS Indicator */}
@@ -126,9 +129,11 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
           <h4 className="text-foreground text-sm leading-tight font-extrabold">
             {playerB.firstName} {playerB.lastName}
           </h4>
-          <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase">
-            {playerB.position}
-          </span>
+          <PositionTooltip position={playerB.position}>
+            <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase cursor-help hover:underline decoration-dotted">
+              {playerB.position}
+            </span>
+          </PositionTooltip>
         </div>
       </div>
 

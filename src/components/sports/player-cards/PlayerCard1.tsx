@@ -6,6 +6,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { withBasePath } from "~/lib/base-path";
+import { PositionTooltip } from "~/components/sports/PositionTooltip";
 
 interface PlayerCard1Props {
   player: {
@@ -120,8 +121,16 @@ export default function PlayerCard1({ player, team, statistics, className }: Pla
           <h2 className="text-foreground mt-0! truncate text-lg font-extrabold tracking-tight">
             {player.firstName} {player.lastName}
           </h2>
-          <div className="text-muted-foreground mt-0.5 text-xs font-semibold capitalize">
-            {player.position} {player.careerStage && `• ${player.careerStage}`}
+          <div className="text-muted-foreground mt-0.5 text-xs font-semibold capitalize flex items-center justify-center gap-1">
+            <PositionTooltip position={player.position}>
+              <span className="cursor-help hover:underline decoration-dotted">{player.position}</span>
+            </PositionTooltip>
+            {player.careerStage && (
+              <>
+                <span>•</span>
+                <span>{player.careerStage}</span>
+              </>
+            )}
           </div>
         </div>
       </div>

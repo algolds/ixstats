@@ -22,16 +22,13 @@ const SPORT_EMOJIS: Record<string, string> = {
 };
 
 const SPORT_FALLBACK_IMAGES: Record<string, string> = {
-  soccer:
-    "https://upload.wikimedia.org/wikipedia/commons/e/e6/Stade_V%C3%A9lodrome_interior_2018.jpg",
-  football: "https://upload.wikimedia.org/wikipedia/commons/4/46/Maracana_Stadium.jpg",
-  hockey: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Bell_Centre_interior_view.jpg",
-  basketball:
-    "https://upload.wikimedia.org/wikipedia/commons/e/ee/Madison_Square_Garden_interior.jpg",
-  baseball: "https://upload.wikimedia.org/wikipedia/commons/9/92/Scotiabank_Saddledome.jpg",
-  f1: "https://upload.wikimedia.org/wikipedia/commons/e/ee/Monaco_Grand_Prix_stretching_past_the_harbour_in_Monte_Carlo%2C_Monaco.jpg",
-  boxing:
-    "https://upload.wikimedia.org/wikipedia/commons/0/07/2021_CISM_Military_World_Games_Boxing.jpg",
+  soccer: "/api/mediawiki/commons/Special:Filepath/Stade_V%C3%A9lodrome_interior_2018.jpg",
+  football: "/api/mediawiki/commons/Special:Filepath/Maracana_Stadium.jpg",
+  hockey: "/api/mediawiki/commons/Special:Filepath/Bell_Centre_interior_view.jpg",
+  basketball: "/api/mediawiki/commons/Special:Filepath/Madison_Square_Garden_interior.jpg",
+  baseball: "/api/mediawiki/commons/Special:Filepath/Scotiabank_Saddledome.jpg",
+  f1: "/api/mediawiki/commons/Special:Filepath/Monaco_Grand_Prix_stretching_past_the_harbour_in_Monte_Carlo%2C_Monaco.jpg",
+  boxing: "/api/mediawiki/commons/Special:Filepath/2021_CISM_Military_World_Games_Boxing.jpg",
 };
 
 function ClubCardSkeleton() {
@@ -70,11 +67,12 @@ export default function MyClubPage() {
           key={team.id}
           index={idx}
           card={{
-            src:
+            src: withBasePath(
               team.coverImage ||
               team.logo ||
               SPORT_FALLBACK_IMAGES[team.league?.sportPreset ?? ""] ||
-              "https://upload.wikimedia.org/wikipedia/commons/d/de/Stadion_Luzhniki_Moskva_July_2018.jpg",
+              "/api/mediawiki/commons/Special:Filepath/Stadion_Luzhniki_Moskva_July_2018.jpg"
+            ),
             title: team.name,
             category: team.league?.name ?? "Custom Team",
             description: (

@@ -20,6 +20,7 @@ import {
   Activity,
   TrendingUp,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import { useState } from "react";
 import { api } from "~/trpc/react";
@@ -205,6 +206,7 @@ function MatchCommentary({ matchId }: { matchId: string }) {
 
 export function ScheduleView({ matches, archetype, onTeamClick, className }: ScheduleViewProps) {
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
+  const [collapsedDays, setCollapsedDays] = useState<Record<number, boolean>>({});
 
   if (archetype === "circuit") {
     const races = matches.map((m) => ({
@@ -224,11 +226,16 @@ export function ScheduleView({ matches, archetype, onTeamClick, className }: Sch
   }
 
   const sortedDays = Array.from(matchDays.keys()).sort((a, b) => a - b);
+  
+  // Default to expanding the first matchday that has scheduled (not completed) matches
+  const activeDay = sortedDays.find(day => matchDays.get(day)!.some(m => m.status === "scheduled")) ?? sortedDays[0];
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-3", className)}>
       {sortedDays.map((day) => {
         const dayMatches = matchDays.get(day)!;
+        const isCollapsed = collapsedDays[day] ?? (day !== activeDay);
+        
         const mappedMatches = dayMatches.map((m: any) => ({
           id: m.id,
           homeTeam: {
@@ -248,23 +255,50 @@ export function ScheduleView({ matches, archetype, onTeamClick, className }: Sch
           status: m.status,
         }));
 
+        const completedCount = dayMatches.filter((m) => m.status === "completed").length;
+
         return (
-          <MatchSchedule1
-            key={day}
-            matchday={day}
-            matches={mappedMatches}
-            title={`Match Day ${day}`}
-            onTeamClick={onTeamClick}
-            expandedMatchId={expandedMatchId}
-            onMatchClick={(matchId) => {
-              setExpandedMatchId(expandedMatchId === matchId ? null : matchId);
-            }}
-            renderMatchExtension={(match) => (
-              <div className="mt-1 px-1">
-                <MatchCommentary matchId={match.id} />
+          <div 
+            key={day} 
+            className="border border-border/40 rounded-2xl overflow-hidden bg-card/60 backdrop-blur-md shadow-sm transition"
+          >
+            <button
+              onClick={() => setCollapsedDays(prev => ({ ...prev, [day]: !isCollapsed }))}
+              className="w-full flex items-center justify-between p-4 font-bold text-sm cursor-pointer select-none bg-muted/20 hover:bg-muted/30 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-cyan-400" />
+                <span className="text-foreground">Match Day {day}</span>
+                <span className="text-[10px] text-muted-foreground bg-muted border border-border/20 px-2 py-0.5 rounded-full font-bold">
+                  {completedCount}/{dayMatches.length} Completed
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold">
+                <span>{isCollapsed ? "Expand" : "Collapse"}</span>
+                {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              </div>
+            </button>
+            
+            {!isCollapsed && (
+              <div className="p-4 bg-transparent border-t border-border/10">
+                <MatchSchedule1
+                  matchday={day}
+                  matches={mappedMatches}
+                  title=""
+                  onTeamClick={onTeamClick}
+                  expandedMatchId={expandedMatchId}
+                  onMatchClick={(matchId) => {
+                    setExpandedMatchId(expandedMatchId === matchId ? null : matchId);
+                  }}
+                  renderMatchExtension={(match) => (
+                    <div className="mt-1 px-1">
+                      <MatchCommentary matchId={match.id} />
+                    </div>
+                  )}
+                />
               </div>
             )}
-          />
+          </div>
         );
       })}
     </div>

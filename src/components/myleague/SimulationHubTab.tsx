@@ -9,7 +9,7 @@ import { ScheduleView } from "~/components/myleague/ScheduleView";
 import { BracketView } from "~/components/myleague/BracketView";
 import { RaceResults } from "~/components/myleague/RaceResults";
 import { DraftPicksView } from "~/components/myleague/DraftPicksView";
-import { ArrowLeft, Play, FastForward, Trophy, Calendar } from "lucide-react";
+import { ArrowLeft, Play, FastForward, Trophy, Calendar, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -177,74 +177,141 @@ export function SimulationHubTab({
         </motion.div>
       )}
 
-      <div className="facet-surface border-border/40 rounded-xl border p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="border border-purple-500/25 bg-card/60 backdrop-blur-md rounded-2xl p-6 relative overflow-hidden shadow-lg shadow-purple-500/5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
-            <h2 className="text-xl font-bold">Season {season.seasonNumber} Hub</h2>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", isInProgress ? "bg-purple-400" : "bg-slate-400")} />
+                <span className={cn("relative inline-flex rounded-full h-2 w-2", isInProgress ? "bg-purple-500" : "bg-slate-500")} />
+              </span>
+              <h2 className="text-xl font-black text-foreground">Simulation Control Deck</h2>
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <span>Season {season.seasonNumber}</span>
+              <span>•</span>
               <Badge
                 variant={isInProgress ? "default" : isCompleted ? "secondary" : "outline"}
-                className="font-semibold"
+                className={cn("font-bold text-[9px] uppercase px-2 py-0.5 rounded shadow-sm border", isInProgress ? "bg-purple-500/10 border-purple-500/20 text-purple-400 hover:bg-purple-500/15" : "bg-muted text-muted-foreground border-border")}
               >
                 {season.status}
               </Badge>
               {season.startIxTime && (
-                <span className="text-muted-foreground">
-                  Started {new Date(season.startIxTime).toLocaleDateString()}
-                </span>
+                <>
+                  <span>•</span>
+                  <span>Started {new Date(season.startIxTime).toLocaleDateString()}</span>
+                </>
               )}
             </div>
           </div>
 
-          {isInProgress && (
-            <div className="flex flex-wrap items-center gap-2">
-              {nextMatchDay && (
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs font-semibold">
-                    Next: Day {nextMatchDay}
-                  </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {isInProgress && (
+              <div className="flex flex-wrap items-center gap-2.5">
+                {nextMatchDay && (
                   <Button
-                    size="sm"
                     onClick={() =>
                       simulateMatchDay.mutate({
                         seasonId: season.id,
                         matchDay: nextMatchDay,
                       })
                     }
-                    disabled={simulateMatchDay.isPending}
-                    className="h-8 text-xs font-semibold"
+                    disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
+                    className="bg-purple-600 hover:bg-purple-500 text-white font-bold h-9 text-xs rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Play className="mr-1 h-3.5 w-3.5" />
-                    {simulateMatchDay.isPending ? "Simulating..." : "Simulate Day"}
+                    {simulateMatchDay.isPending ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Simulating Day {nextMatchDay}...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-3.5 w-3.5 fill-white" />
+                        <span>Simulate Day {nextMatchDay}</span>
+                      </>
+                    )}
                   </Button>
-                </div>
-              )}
+                )}
 
+                <Button
+                  variant="outline"
+                  onClick={() => simulateFullSeason.mutate({ seasonId: season.id })}
+                  disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
+                  className="border-purple-500/30 hover:bg-purple-500/10 text-purple-400 font-bold h-9 text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  {simulateFullSeason.isPending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Simulating Season...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FastForward className="h-3.5 w-3.5" />
+                      <span>Simulate Remaining</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {isCompleted && (
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => simulateFullSeason.mutate({ seasonId: season.id })}
-                disabled={simulateFullSeason.isPending}
-                className="border-border/60 hover:bg-muted/50 h-8 text-xs font-semibold"
+                onClick={() => transitionToNextSeason.mutate({ seasonId: season.id })}
+                disabled={transitionToNextSeason.isPending}
+                className="bg-purple-600 hover:bg-purple-500 text-white font-bold h-9 text-xs rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
               >
-                <FastForward className="mr-1 h-3.5 w-3.5" />
-                {simulateFullSeason.isPending ? "Simulating..." : "Simulate Remaining"}
+                {transitionToNextSeason.isPending ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Transitioning...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-3.5 w-3.5 fill-white" />
+                    <span>Transition Season</span>
+                  </>
+                )}
               </Button>
-            </div>
-          )}
-
-          {isCompleted && (
-            <Button
-              size="sm"
-              onClick={() => transitionToNextSeason.mutate({ seasonId: season.id })}
-              disabled={transitionToNextSeason.isPending}
-              className="h-8 text-xs font-semibold"
-            >
-              <Play className="mr-1 h-3.5 w-3.5" />
-              {transitionToNextSeason.isPending ? "Transitioning..." : "Transition Season"}
-            </Button>
-          )}
+            )}
+          </div>
         </div>
+
+        {/* Dynamic Sim Progress Bar */}
+        {isInProgress && (
+          <div className="mt-6 border-t border-border/10 pt-4 space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <span>Season Simulation Progress</span>
+              <span>
+                {(() => {
+                  const completedMatches = season.matches.filter(m => m.status === 'completed').length;
+                  const pct = season.matches.length > 0 ? Math.round((completedMatches / season.matches.length) * 100) : 0;
+                  return `${pct}% (${completedMatches}/${season.matches.length} Matches)`;
+                })()}
+              </span>
+            </div>
+            <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden relative border border-border/20 shadow-inner">
+              <motion.div
+                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                initial={{ width: 0 }}
+                animate={{
+                  width: `${
+                    season.matches.length > 0
+                      ? (season.matches.filter(m => m.status === 'completed').length / season.matches.length) * 100
+                      : 0
+                  }%`
+                }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+              {(simulateMatchDay.isPending || simulateFullSeason.isPending) && (
+                <motion.div
+                  className="absolute inset-0 bg-white/20"
+                  animate={{ opacity: [0.1, 0.4, 0.1] }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {(simulateMatchDay.error || simulateFullSeason.error || transitionToNextSeason.error) && (
           <p className="text-destructive mt-4 text-xs font-semibold">

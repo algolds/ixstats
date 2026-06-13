@@ -10,6 +10,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { getPreset, type SportPresetKey, type TeamRatingVector } from "~/lib/sports";
 import { exchangeService } from "~/lib/exchange-service";
+import { IxTime } from "~/lib/ixtime";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -291,7 +292,7 @@ export const sportsClubRouter = createTRPCRouter({
           await ctx.db.storytellerEffect.create({
             data: {
               countryId: team.nationId,
-              ixTimeTimestamp: new Date(),
+              ixTimeTimestamp: IxTime.timestampToDate(IxTime.getCurrentIxTime()),
               inputType: "sports_saint_blessing",
               value: 5.0,
               description: `The home crowd echoes the Invocation of ${input.saintName}. Blessings descend upon the pitch!`,

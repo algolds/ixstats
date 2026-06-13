@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -487,8 +488,13 @@ export function SportsLabsInspector({
                       <p className="font-semibold">
                         {p.firstName} {p.lastName}
                       </p>
-                      <p className="text-muted-foreground text-[10px]">
-                        {p.position} &middot; Age {p.age} &middot; {p.careerStage}
+                      <p className="text-muted-foreground text-[10px] flex items-center gap-1">
+                        <PositionTooltip position={p.position}>
+                          <span className="cursor-help hover:text-foreground transition-colors font-medium">
+                            {p.position}
+                          </span>
+                        </PositionTooltip>{" "}
+                        &middot; Age {p.age} &middot; {p.careerStage}
                       </p>
                     </div>
                     <Badge variant="outline" className="font-bold">
@@ -626,8 +632,13 @@ export function SportsLabsInspector({
                       <p className="font-semibold">
                         {p.firstName} {p.lastName}
                       </p>
-                      <p className="text-muted-foreground text-[10px]">
-                        {p.position} &middot; Age {p.age} &middot; {p.careerStage}
+                      <p className="text-muted-foreground text-[10px] flex items-center gap-1">
+                        <PositionTooltip position={p.position}>
+                          <span className="cursor-help hover:text-foreground transition-colors font-medium">
+                            {p.position}
+                          </span>
+                        </PositionTooltip>{" "}
+                        &middot; Age {p.age} &middot; {p.careerStage}
                       </p>
                     </div>
                     <Badge variant="outline" className="font-mono">
@@ -1426,8 +1437,17 @@ export function SportsLabsInspector({
                   <span className="text-foreground font-semibold">
                     {p.player?.firstName} {p.player?.lastName}
                   </span>
-                  <p className="text-muted-foreground text-[9px]">
-                    {p.player?.position} &middot; Rating:{" "}
+                  <p className="text-muted-foreground text-[9px] flex items-center gap-1">
+                    {p.player?.position ? (
+                      <PositionTooltip position={p.player.position}>
+                        <span className="cursor-help hover:text-foreground transition-colors font-medium">
+                          {p.player.position}
+                        </span>
+                      </PositionTooltip>
+                    ) : (
+                      "-"
+                    )}{" "}
+                    &middot; Rating:{" "}
                     {p.player ? getPlayerOverall(p.player.ratings) : "-"}
                   </p>
                 </div>
