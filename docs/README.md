@@ -52,6 +52,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/dynamic-island.md`](systems/dynamic-island.md) – **Halo** (formerly Dynamic Island) plugin-driven system architecture, registry, and custom layouts (Core System)
 
 ### Operations
+- [`operations/local-dev-setup.md`](operations/local-dev-setup.md) – comprehensive WSL2 local development environment setup, database syncing, and automation workflow
 - [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
 - [`operations/deployment.md`](operations/deployment.md) – build pipeline, base paths, server scripts, and rollback tools
 - [`operations/monitoring.md`](operations/monitoring.md) – logging, webhook alerts, and runtime health checks
@@ -75,7 +76,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md) – comprehensive rate limiting configuration and Redis setup
 - [`ADMIN_ENDPOINT_SECURITY_MAP.md`](ADMIN_ENDPOINT_SECURITY_MAP.md) – admin endpoint security mappings and authentication requirements
 - [`USER_PROFILE_UTILS_USAGE.md`](USER_PROFILE_UTILS_USAGE.md) – user profile utilities and display name implementation
-- [`DEV_DATABASE_SETUP.md`](DEV_DATABASE_SETUP.md) – development database setup and management guide
+- [`operations/local-dev-setup.md`](operations/local-dev-setup.md) – comprehensive WSL2 local dev environment setup guide
 - [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) – comprehensive API documentation and usage patterns
 
 ### Tax System Reference

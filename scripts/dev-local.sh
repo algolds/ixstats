@@ -29,6 +29,10 @@ if ssh -q -o ConnectTimeout=3 ixwiki "true" 2>/dev/null; then
     ssh ixwiki "docker exec ixstats-postgres pg_dump -U postgres -Fc ixstats" > /tmp/ixstats-prod.dump
     docker exec -i ixstats-postgres pg_restore -U postgres -d ixstats --clean --if-exists --no-owner --no-privileges < /tmp/ixstats-prod.dump
     echo "✓ Local database refreshed from production dump."
+    
+    echo "🖼️  Syncing gitignored static assets (images, flags, textures, sounds)..."
+    rsync -avz --exclude="images/uploads/" --exclude="images/downloaded/" --exclude="images/uploads_backup/" ixwiki:/ixwiki/public/projects/ixstats/public/ public/
+    echo "✓ Static assets synced."
 else
     echo "⚠️  Warning: Production server (ixwiki) is not reachable. Skipping database sync and using existing local data."
 fi

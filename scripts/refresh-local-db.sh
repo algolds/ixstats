@@ -9,6 +9,10 @@ docker exec -i ixstats-postgres pg_restore -U postgres -d ixstats --clean --if-e
 
 echo "Local DB refreshed ($(du -h /tmp/ixstats-prod.dump | cut -f1))"
 
+echo "🖼️  Syncing gitignored static assets (images, flags, textures, sounds)..."
+rsync -avz --exclude="images/uploads/" --exclude="images/downloaded/" --exclude="images/uploads_backup/" ixwiki:/ixwiki/public/projects/ixstats/public/ public/
+echo "✓ Static assets synced."
+
 # Ensure local database schema is aligned with the codebase (Prisma 6 CLI doesn't autoload env with config files)
 echo "🚀 Syncing database schema with codebase..."
 if [ -f ".env" ]; then

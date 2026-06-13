@@ -91,6 +91,8 @@ bun run dev            # launches Next.js on http://localhost:3000
 
 ### Installation (WSL2 / Local Development Automation)
 
+For a detailed step-by-step walkthrough on setting up your local WSL2 environment from scratch (including keys, SSH configuration, and environment overrides), see the setup guide in [plans/local-dev-windows-setup.md](file:///ixwiki/public/projects/ixstats/plans/local-dev-windows-setup.md).
+
 If you are developing locally inside WSL2 and syncing from the production VPS (e.g. `ixwiki`), you can boot the entire local stack—including Docker database/Redis, background SSH tunnels, production database dump restoration, schema synchronization, and the Next.js development server—with a single command:
 
 ```bash
@@ -109,6 +111,27 @@ To safely push and deploy your changes to the VPS:
 bun run deploy:local
 ```
 This runs Prettier, ESLint, and Jest unit tests locally, pushes your active branch to GitHub, and triggers the remote VPS deployment script over SSH.
+
+### WSL2 Environment Configuration & Database Modes
+
+The application dev server determines its database access mode based on which environment file it loads:
+
+1. **Read-Only Mode (Production Replica Inspection):**
+   If `.env.local.dev` is loaded and contains `DATABASE_READONLY="true"`, the application will start in **Read-Only Mode**. All database write operations, schema updates, user creation, and audit logging are blocked.
+
+2. **Read-Write Mode (Local Development & Testing - Recommended):**
+   To enable writing to your local database (e.g., managing your sports clubs, editing countries, or saving stashes):
+   - Modify `.env.local.dev` (or create/edit `.env.local` to override it) and change the variables to:
+     ```ini
+     DATABASE_READONLY="false"
+     DATABASE_URL="postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connection_limit=5"
+     ```
+     *(Note: The URL-encoded password matches the local Docker Postgres container superuser credentials)*
+   - When `DATABASE_READONLY` is set to `false`, startup scripts will automatically sync any codebase schema changes (like `v2` additions) to your local DB.
+
+> [!TIP]
+> **SSH Tunnel Port Conflicts:** If you see `bind [127.0.0.1]:13001: Address already in use` warnings on startup, it means background SSH tunnels are already active on those ports (either from another WSL terminal or a Windows SSH client like PuTTY). The local development server will still run successfully and leverage the existing active tunnels.
+
 
 
 The dev script loads `.env.local.dev` or `.env.local`. At minimum set:
