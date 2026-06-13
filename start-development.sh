@@ -204,6 +204,16 @@ if [ -n "$DB_CHECK_PID" ]; then
     wait $DB_CHECK_PID || echo "   ⚠️  Warning: Database connection verification failed"
 fi
 
+if [ "${DATABASE_READONLY:-}" != "true" ]; then
+    echo "🔄 Syncing database schema with codebase..."
+    if [ -f ".env" ]; then
+        set -a
+        source .env
+        set +a
+    fi
+    bun run db:push:force
+fi
+
 # Start Next.js development server with Turbopack
 # Use 'bun run next' instead of 'bunx next' to avoid overhead
 exec bun run next dev --port "$DEVELOPMENT_PORT"

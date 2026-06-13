@@ -36,3 +36,4 @@ fi
 # Execute start-development.sh to run Next.js and Redis
 echo "🚀 Booting development server..."
 ./start-development.sh
+

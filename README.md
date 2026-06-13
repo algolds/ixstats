@@ -81,13 +81,35 @@ Each tier carries an independent version where noted — see the **[Versioning &
 - PostgreSQL database (port 5433, database `ixstats`)
 - Optional: Clerk credentials for authentication (demo mode works without)
 
-### Installation
+### Installation (Standard / Manual)
 
 ```bash
 bun install
 bun run db:setup       # prisma generate + db push + seed
 bun run dev            # launches Next.js on http://localhost:3000
 ```
+
+### Installation (WSL2 / Local Development Automation)
+
+If you are developing locally inside WSL2 and syncing from the production VPS (e.g. `ixwiki`), you can boot the entire local stack—including Docker database/Redis, background SSH tunnels, production database dump restoration, schema synchronization, and the Next.js development server—with a single command:
+
+```bash
+bun run dev:local
+```
+
+This script will automatically:
+1. Establish SSH tunnels to the production VPS (Discord-bot on `13001`, DB inspector on `15433`, MediaWiki DB on `13306`).
+2. Spin up local Docker containers (`ixstats-postgres` on port `5433` and `ixstats-redis-cache` on port `6379`).
+3. Restore the latest production database dump to your local Postgres container.
+4. Synchronize the database schema with your active branch's Prisma definitions (`db:push:force`).
+5. Start the Next.js development server on `http://localhost:3000` (Turbopack).
+
+To safely push and deploy your changes to the VPS:
+```bash
+bun run deploy:local
+```
+This runs Prettier, ESLint, and Jest unit tests locally, pushes your active branch to GitHub, and triggers the remote VPS deployment script over SSH.
+
 
 The dev script loads `.env.local.dev` or `.env.local`. At minimum set:
 
