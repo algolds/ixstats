@@ -13,7 +13,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus, type Prisma } from "@prisma/client";
-import { syncUserToForum } from "~/modules/forum";
+import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
 import { getVaultConfig } from "~/lib/vault-service";
 import { grantCardXp } from "~/lib/card-xp-utils";

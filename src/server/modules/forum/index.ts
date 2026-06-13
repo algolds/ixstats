@@ -1,9 +1,8 @@
 /**
  * Forum Module — XenForo integration, BBCode rendering, and caching.
  *
- * This module encapsulates all forum-related services, utilities, and types.
- * Non-forum code should import from this barrel export rather than reaching
- * into the module's internal directories.
+ * Server-side only. Pure client formatting utilities (rarity colors, formatValue, etc.)
+ * live in ~/shared/forum-utils so client components don't pull in this module.
  */
 
 // ─── Services ────────────────────────────────────────────────────────────────
@@ -51,11 +50,3 @@ export {
   cachedFetch,
   FORUM_CACHE_TTL,
 } from "./lib/cache";
-export {
-  RARITY_INLINE_COLORS,
-  rarityRank,
-  getRarityColors,
-  formatValue,
-  resolveArtworkUrl,
-  computeRarityCounts,
-} from "./lib/forum-widget-utils";

@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-bridge";
-import { getForumActivity } from "~/modules/forum";
+import { getForumActivity } from "~/server/modules/forum";
 import { globalCache } from "~/lib/advanced-cache-system";
 
 // Input schemas

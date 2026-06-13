@@ -30,7 +30,7 @@
         "name": "next"
       }
     ],
-    "incremental": false,
+    "incremental": true,
     "tsBuildInfoFile": ".next/cache/tsbuildinfo",
     "importHelpers": true,
     /* Path Aliases */

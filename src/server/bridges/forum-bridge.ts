@@ -7,7 +7,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
-import { xfFetchAsUser, xfPostAsUser } from "~/modules/forum";
+import { xfFetchAsUser, xfPostAsUser } from "~/server/modules/forum";
 
 // ─── XenForo Response Types ──────────────────────────────────────
 

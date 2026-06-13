@@ -1,28 +1,12 @@
 import type { FeatureCollection } from "geojson";
 import type { CompressOptions } from "~/lib/geojson-compress";
+import { layerCache, clearLayerCache } from "~/server/shared/layer-cache";
 
-// ──────────────────────────────────────────────
-// In-memory cache for assembled FeatureCollections
-// ──────────────────────────────────────────────
+// The shared cache primitive lives in src/server/shared/layer-cache.ts so the
+// countries router can invalidate it without importing this geo router. Re-export
+// for geo siblings that import { layerCache, clearLayerCache } from "./core".
+export { layerCache, clearLayerCache };
 
-export const layerCache = new Map<string, { data: FeatureCollection; timestamp: number }>();
-
-/**
- * Clear entries from the shared layerCache.
- * If layerType is provided, deletes all zoom-level keys for that layer (e.g. "political", "political:z0", "political:z1", "political:z2").
- * If no layerType is provided, clears the entire cache.
- */
-export function clearLayerCache(layerType?: string): void {
-  if (layerType) {
-    for (const key of layerCache.keys()) {
-      if (key === layerType || key.startsWith(`${layerType}:`)) {
-        layerCache.delete(key);
-      }
-    }
-  } else {
-    layerCache.clear();
-  }
-}
 /** Per-layer cache TTL — static layers imported from SVGs rarely change */
 const CACHE_TTLS: Record<string, number> = {
   political: 15 * 60 * 1000, // 15 min (editable)

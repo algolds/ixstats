@@ -3,7 +3,7 @@
  * Uses inline CSS for rarity-colored borders and glow effects.
  */
 
-import { getRarityColors, formatValue, resolveArtworkUrl } from "~/modules/forum";
+import { getRarityColors, formatValue, resolveArtworkUrl } from "~/shared/forum-utils";
 import { styles } from "./widget-styles";
 import { withBasePath } from "~/lib/base-path";
 

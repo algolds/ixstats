@@ -5,7 +5,7 @@ import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { fetchWikiIntro } from "./utils";
 import { invalidateCache } from "~/lib/trpc-cache";
-import { clearLayerCache } from "~/server/api/routers/geo/core";
+import { clearLayerCache } from "~/server/shared/layer-cache";
 
 export const identityProcedures = {
   getByIdBasic: rateLimitedPublicProcedure

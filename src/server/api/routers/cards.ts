@@ -14,7 +14,7 @@ import {
   getCardMarketValue,
 } from "~/lib/card-service";
 import { CardRarity, CardType } from "@prisma/client";
-import { searchForumThreads } from "~/modules/forum";
+import { searchForumThreads } from "~/server/modules/forum";
 import { vaultService } from "~/lib/vault-service";
 import { globalCache } from "~/lib/advanced-cache-system";
 

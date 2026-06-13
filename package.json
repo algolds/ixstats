@@ -99,6 +99,8 @@
     "audit:flags": "tsx scripts/audit-flag-urls.ts",
     "audit:flags:prod": "BASE_PATH=/projects/ixstates tsx scripts/audit-flag-urls.ts",
     "audit:v1:prod": "NODE_ENV=production tsx scripts/audit/audit-v1.ts",
+    "audit:arch": "tsx scripts/audit/audit-arch.ts",
+    "audit:arch:update": "tsx scripts/audit/audit-arch.ts --update",
     "audit:wiring": "tsx scripts/audit/audit-trpc-wiring.ts",
     "audit:wiring:json": "tsx scripts/audit/audit-trpc-wiring.ts --json-only",
     "audit:country-links": "tsx scripts/audit/verify-country-links.ts",

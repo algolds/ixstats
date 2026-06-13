@@ -174,7 +174,7 @@ export const wikiRouter = createTRPCRouter({
   getForumThreadPreview: cachedPublicProcedure
     .input(z.object({ threadId: z.number().int().positive() }))
     .query(async ({ input }) => {
-      const { getXfApiKey, getXfApiUrl } = await import("~/modules/forum");
+      const { getXfApiKey, getXfApiUrl } = await import("~/server/modules/forum");
       const apiKey = getXfApiKey();
       if (!apiKey) return null;
 

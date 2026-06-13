@@ -1,8 +1,11 @@
 /**
  * Forum Widget Utilities
  *
- * Shared constants and helpers for server-rendered forum widget pages.
+ * Pure client-side formatting constants and helpers for forum widget pages.
  * Uses inline CSS values (not Tailwind) since widgets run outside the main app shell.
+ *
+ * Kept in src/shared so client components can import without pulling in the
+ * server-side XenForo API integration from src/server/modules/forum.
  */
 
 export const RARITY_INLINE_COLORS: Record<
@@ -82,7 +85,6 @@ export function resolveArtworkUrl(artwork: string | null, basePath = ""): string
   return `${basePath}${artwork}`;
 }
 
-/** Compute rarity breakdown from a list of cards */
 export function computeRarityCounts(cards: Array<{ rarity: string }>): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const c of cards) {

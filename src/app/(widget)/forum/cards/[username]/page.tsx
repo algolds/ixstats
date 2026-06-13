@@ -6,7 +6,7 @@
  */
 
 import { db } from "~/server/db";
-import { rarityRank, computeRarityCounts, formatValue } from "~/modules/forum";
+import { rarityRank, computeRarityCounts, formatValue } from "~/shared/forum-utils";
 import { ForumMiniCard } from "./ForumMiniCard";
 import { ForumRarityBar } from "./ForumRarityBar";
 import { styles } from "./widget-styles";

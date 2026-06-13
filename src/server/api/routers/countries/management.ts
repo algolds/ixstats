@@ -6,7 +6,7 @@ import { checkComponentSynergy } from "~/lib/government-synergy";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache } from "~/lib/trpc-cache";
 import { globalCache } from "~/lib/advanced-cache-system";
-import { clearLayerCache } from "~/server/api/routers/geo/core";
+import { clearLayerCache } from "~/server/shared/layer-cache";
 import {
   type CoreEconomicIndicators,
   type LaborEmploymentData,

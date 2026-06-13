@@ -16,7 +16,7 @@
 import { type PrismaClient } from "@prisma/client";
 import { type VaultTransactionType } from "@prisma/client";
 import { budgetVaultCalculator } from "./budget-vault-calculator";
-import { syncUserToForum } from "~/modules/forum";
+import { syncUserToForum } from "~/server/modules/forum";
 import { Cache } from "~/lib/cache";
 import { grantCardXp } from "./card-xp-utils";
 

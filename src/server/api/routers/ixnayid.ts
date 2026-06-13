@@ -8,7 +8,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { lookupWikiUser, linkWikiAccount } from "~/lib/wiki-user-sync";
 import { linkDiscordAccount } from "~/lib/discord-user-sync";
-import { linkForumAccount } from "~/modules/forum";
+import { linkForumAccount } from "~/server/modules/forum";
 
 export const ixnayidRouter = createTRPCRouter({
   // =========================================================================
@@ -160,7 +160,7 @@ export const ixnayidRouter = createTRPCRouter({
   lookupForumUser: protectedProcedure
     .input(z.object({ username: z.string().min(1).max(100) }))
     .query(async ({ input }) => {
-      const { lookupForumUser } = await import("~/modules/forum");
+      const { lookupForumUser } = await import("~/server/modules/forum");
       return lookupForumUser(input.username);
     }),
 });
