@@ -16,6 +16,8 @@
     "build:ixworld": "./scripts/deploy-ixworld.sh",
     "check": "bun run typecheck && echo '✓ Type checking complete. Run bun run build for full validation.'",
     "dev": "./start-development.sh",
+    "dev:local": "./scripts/dev-local.sh",
+    "deploy:local": "./scripts/deploy-local.sh",
     "dev:ixworld": "NEXT_PUBLIC_IXWORLD_STANDALONE=true ./start-development.sh",
     "redis:start": "./scripts/setup-redis.sh start",
     "redis:stop": "./scripts/setup-redis.sh stop",
