@@ -50,8 +50,16 @@ export default function GameplayOverviewArticle() {
               >
                 national issues
               </Link>
-              , crisis events, and diplomatic scenarios as they arise -- each decision has real
-              consequences
+              , crisis events, and diplomatic scenarios as they arise, or take proactive
+              action with{" "}
+              <Link
+                href="/help/mycountry/executive"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                executive actions
+              </Link>{" "}
+              like stimulus packages, infrastructure projects, and diplomatic missions -- each
+              decision has real economic consequences and narrative output
             </li>
             <li>
               <TrendingUp className="inline h-4 w-4 text-emerald-500" /> <strong>Grow:</strong>{" "}
@@ -127,8 +135,9 @@ export default function GameplayOverviewArticle() {
                 </Link>
               </li>
               <li>
-                <strong>Government:</strong> Over 20 components with synergy and conflict mechanics
-                that determine how effective your governance is.{" "}
+                <strong>Government:</strong> 56 components across 10 categories with synergy and conflict
+                mechanics that determine how effective your governance is, plus real-time
+                StorytellerEffect computation that impacts your nation's stats.{" "}
                 <Link
                   href="/help/government/atomic"
                   className="text-blue-600 hover:underline dark:text-blue-400"

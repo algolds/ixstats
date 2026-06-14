@@ -208,6 +208,75 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 - `useUnifiedFlags.ts` – Media and identity assets for display
 - `src/app/mycountry/utils` – Data transformers for executive summaries
 
+## Executive Actions
+
+The Executive Command panel exposes **9 actions** with real economic effects, cooldowns, and costs:
+
+| Action | Category | Cooldown | Cost | Effect |
+|--------|----------|----------|------|--------|
+| Economic Stimulus Package | economic | 48h | $5,000 budget | GDP +2-4% (2 IxTime years) |
+| Population Growth Incentives | social | 72h | $3,000 budget | Population +1-2% (4 IxTime years) |
+| Tax Policy Reform | economic | 96h | $2,000 budget | GDP growth +1-3% (4 IxTime years) |
+| Diplomatic Mission | diplomatic | 48h | $4,000 budget | Improves global influence (2 IxTime years) |
+| Emergency Response Protocol | emergency | 24h | $10,000 budget | Stabilizes crisis, pop & economy |
+| Budget Reallocation | economic | 72h | $1,000 budget | GDP growth +0.5-1.5% (4 IxTime years) |
+| Infrastructure Project | economic | 120h | $15,000 budget | GDP growth +1-2% (4 IxTime years) |
+| Education Reform | social | 168h | $8,000 budget | GDP growth +0.5-1% (8 IxTime years) |
+| Healthcare Investment | social | 96h | $10,000 budget | Population +0.5-1% (4 IxTime years) |
+
+Each action:
+- Creates a `StorytellerEffect` record with a computed value (±35% variance on base) that the IxStatsCalculator applies on the next tick.
+- Enforces cooldowns tracked via execution history in storytellerEffect records.
+- Posts narrative output to ThinkPages via `generateDiplomaticNews` (template varies by category).
+- Invalidates relevant MyCountry caches (intelligence, achievements, rankings, dashboard, summary).
+- Parameters are sanitized (allowed: `amount`, `duration`, `target`, `scope`, `priority`).
+
+**Router:** `src/server/api/routers/mycountry/actions.ts` — `getExecutiveActions` (query) and `executeAction` (mutation, executiveProcedure).
+
+## Narrative Feed
+
+The **NewsFeedWidget** (`src/components/mycountry/NewsFeedWidget.tsx`) displays player-visible narrative output on the MyCountry dashboard. It queries `api.mycountry.getNewsFeed`, which surfaces `storytellerEffect` records (active or <7 days old) with category-coded icons:
+
+- **diplomatic** (Globe, cyan) — embassy activity, treaties
+- **economic** (Landmark, emerald) — GDP/trade effects
+- **military** (Swords, red) — defense/security
+- **social** (Heart, pink) — population/demographic
+- **emergency** (AlertTriangle, amber) — crisis/emergency
+
+The widget shows the 8 most recent items with relative timestamps. Category is resolved by inspecting `inputType` and `description` fields.
+
+## Government Component Effects
+
+**`src/lib/government-component-effects.ts`** wires 56 atomic government components to game state via two outputs:
+
+1. **StorytellerEffect records** — per-category economic modifiers keyed by `CATEGORY_EFFECTS` (10 government categories). Previous `[GovComponent]` effects are deactivated before new ones are created to prevent stacking. The effectiveness multiplier (based on overall component synergy) scales base values between -0.1 and +0.1.
+
+2. **GovernmentStructure political metrics** — `politicalStability`, `democracyIndex`, `governmentEffectiveness`, and `ruleOfLaw` are updated based on which component types are active (e.g. democratic processes boost democracyIndex; autocratic processes reduce it).
+
+Called by `applyGovernmentComponentEffects(db, countryId)` which returns `{ effectsCreated, politicalMetricsUpdated, overallEffectiveness }`.
+
+## Shared Helpers
+
+**`src/server/shared/mycountry-helpers.ts`** (496 lines) was extracted from `dashboard.ts`, `intelligence.ts`, and `actions.ts` on 2026-06-14, eliminating ~900 lines of duplicated code. Lives in `src/server/shared/` following the `layer-cache.ts` pattern so routers can import without cross-router dependencies.
+
+Shared exports:
+- `getMyCountryCache<T>(key)` / `setMyCountryCache(key, data, ttl)` — cache helpers wrapping `globalCache`
+- `calculateVitalityScores(country)` — computes Economic Vitality, Population Wellbeing, Diplomatic Standing, Governmental Efficiency, and overall score from country data
+- `generateIntelligenceFeed(countryId)` — aggregates economic/population intel + db `IntelligenceItem` records (2-min cache)
+- `calculateAchievements(countryId)` — milestone-based achievements (5-min cache)
+- `generateRankings(countryId)` — GDP per capita and Population rankings (global/regional/tier) (10-min cache)
+- `generateMilestones(countryId)` — historical population and economic milestones from `HistoricalDataPoint` (15-min cache)
+
+## Vitality Tracking
+
+Vitality scores are **computed server-side** from authoritative country data — the client never submits scores, preventing fabricated values. `updateVitalityTracking` (`myCountryIntelligenceRouter`) fetches the country, computes `calculateVitalityScores`, and:
+
+- Persists a `VitalitySnapshot` record for each of the 4 vitality areas (ECONOMIC, SOCIAL, DIPLOMATIC, GOVERNANCE).
+- Compares against the previous snapshot batch (the 4 records prior to the current insert) to detect significant changes.
+- Sends notifications via `notificationHooks` when the overall vitality score shifts by more than 5 points.
+
+The snapshots serve as an auditable time-series of national vitality.
+
 ## Actions & Mutations
 
 - Quick actions orchestrated through `src/components/mycountry/QuickActionIntegration.tsx`

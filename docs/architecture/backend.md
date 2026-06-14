@@ -16,7 +16,7 @@ IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **87 r
 - Shared procedures follow consistent naming: `get*` for queries, imperative verbs for mutations.
 - Role-aware or protected endpoints leverage `protectedProcedure`/`adminProcedure` wrappers defined alongside context.
 - **Domain splitting pattern** (since 1.0.6): large flat routers are split into same-named subdirectories (e.g. `wikios.ts` → `wikios/{articles,media,search-categories,editing,stash,watchlist-annotations,user-talk,index}.ts`). The sub-router variables are recombined via `mergeRouters` from `~/server/api/trpc` in the new `index.ts`, so every `api.<router>.<key>` path is byte-identical to the original — zero call-site changes. The single canonical splitter is `scripts/split-router-template.ts` (pre-flight, copy-whole-file, AST parity, see header for full recipe).
-- **Cross-router sharing**: a few helpers (e.g. `evaluateThresholds` from `intelligence/alerts/`, `syncResourcePoolModifiers` from `geo/features/`, `resolveWikiPlaceholdersInternal` from `wiki/`) are re-exported from the helper-owner's `index.ts` so external consumers don't have to know the internal group structure. This is the one allowed exception to the "no cross-router imports" rule; shared primitives that are used across router boundaries belong in `src/server/shared/` (e.g. `layer-cache.ts`).
+- **Cross-router sharing**: a few helpers (e.g. `evaluateThresholds` from `intelligence/alerts/`, `syncResourcePoolModifiers` from `geo/features/`, `resolveWikiPlaceholdersInternal` from `wiki/`) are re-exported from the helper-owner's `index.ts` so external consumers don't have to know the internal group structure. This is the one allowed exception to the "no cross-router imports" rule; shared primitives that are used across router boundaries belong in `src/server/shared/` (e.g. `layer-cache.ts`, `mycountry-helpers.ts`).
 
 ## Notable Routers
 - `countries.ts` – Central country data access, historical metrics, forecasts.
@@ -26,6 +26,8 @@ IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **87 r
 - `thinkpages.ts` – Social platform feeds, comments, and curation.
 - `wikiImporter.ts` – MediaWiki integrations for country data ingest.
 - `elections.ts` – D'Hondt/FPTP electoral systems, political parties, legislature management.
+- `mycountry/` – MyCountry executive dashboard, vitality tracking, intelligence feeds, and 9 executive actions with real StorytellerEffect impacts.
+- `government-component-effects.ts` (`src/lib/`) – Wires 56 atomic government components to GameState via StorytellerEffect records and GovernmentStructure political metrics.
 - `cardImages.ts` – Card background image management for 13 card types.
 - `vault.ts` – IxVault wallet/economy (incl IxCredits), balances, transactions, daily bonuses.
 - `cards.ts` / `card-packs.ts` / `lore-cards.ts` – IxCards trading card system (part of IxVault).

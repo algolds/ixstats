@@ -154,6 +154,15 @@ export default function AtomicGovernmentArticle() {
             </li>
           </ul>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
+            The <strong>applyGovernmentComponentEffects</strong> engine processes your component
+            configuration and computes real numerical effects on your nation&apos;s game state.
+            Every component you add or remove triggers this engine, updating GDP, population growth,
+            political stability, and other metrics based on the component&apos;s type, tier, and
+            synergy/conflict interactions. These effects are recorded as StorytellerEffect records
+            so you can trace how each governance decision shaped your country&apos;s development
+            over time.
+          </p>
+          <p className="mt-3 text-slate-700 dark:text-slate-300">
             You can view your effectiveness score and a breakdown of these factors on your{" "}
             <strong>My Country</strong> dashboard under the Government section. The Intelligence tab
             also provides deeper analytics on how your government configuration affects other areas

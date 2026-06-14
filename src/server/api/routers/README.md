@@ -1,8 +1,8 @@
 # tRPC Router Overview
 
-**Last updated:** May 2026
+**Last updated:** June 2026
 
-Routers live under `src/server/api/routers` and expose the typed API surface for IxStats. The current codebase contains **83 routers** with **1,329 procedures**. Some routers are split into subdirectory modules (geo, diplomacy, intelligence, countries). All routers are registered in `src/server/api/root.ts`.
+Routers live under `src/server/api/routers` and expose the typed API surface for IxStats. The current codebase contains **87 routers** with **1,332+ procedures**. Some routers are split into subdirectory modules (geo, diplomacy, intelligence, countries, mycountry, government, thinkpages). All routers are registered in `src/server/api/root.ts`.
 
 ## Request Flow
 1. Client calls `api.<router>.<procedure>` generated in `src/trpc/react.tsx`
@@ -30,6 +30,11 @@ Routers live under `src/server/api/routers` and expose the typed API surface for
 | Cards & Vault | `ixcards`, `vault`, `crafting`, `packs` |
 | Admin & Operations | `admin`, `users`, `roles`, `user-logging`, `scheduledChanges` |
 | Integrations | `wikiImporter`, `wikiCache`, `archetypes`, `customTypes` |
+
+## Recent Changes
+- **`mycountry`** router now has `getNewsFeed` in the dashboard sub-router — returns recent StorytellerEffect records for the player-visible narrative feed.
+- **`government`** router now has `recalculateEffects` in the components sub-router — recalculates and re-applies atomic government component effects on demand (protected mutation).
+- **`thinkpages`** procedures `getFeed`, `getPost`, and `getPostsByClerkUserId` restored from git — paginated feed, single post with replies/reactions, and per-user post listing.
 
 ## Subdirectory Routers
 Some domains are split into multiple files under a subdirectory with an `index.ts` barrel:

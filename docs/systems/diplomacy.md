@@ -31,12 +31,13 @@ The diplomacy domain handles relationships, embassy networks, missions, cultural
 ## Workflows
 1. **Embassy Lifecycle** – Create via `api.diplomatic.createEmbassy`, monitor with `api.diplomatic.getEmbassies`
 2. **Missions** – Launch with `api.diplomatic.createMission`, track status updates and success probability
-3. **Cultural Programs** – Configure exchanges, monitor engagement and benefits
+3. **Cultural Programs** – Configure exchanges, monitor engagement and benefits. NPC auto-participation is driven by `NPCPersonalitySystem.predictResponse()`.
 4. **Intelligence Briefings** – `api.diplomaticIntelligence.getIntelligenceBriefing` merges relations, missions, notifications, and events into command-ready packets
-
 5. **Alliances** – Create alliances via `AllianceCreationWizard`, manage via `AllianceDashboard`, coordinate collective actions
-6. **Foreign Policy** – Propose policies via `ProposePolicyModal`, track active policies, analyze trade impact
+6. **Foreign Policy** – Mutations (`proposeForeignPolicyAction`, `liftForeignPolicyAction`) are wrapped in `$transaction` for atomicity — foreign policy action creation, StorytellerEffect records, relationship strength updates, and bilateral trade multiplier adjustments all commit or roll back together. Policy CRUD produces narrative output via `generateDiplomaticNews` (`embargo_imposed`, `sanction_imposed`, `free_trade_signed`, `military_alliance_signed`, `blockade_imposed`). Lifting an action atomically recovers 30% of relationship damage and deactivates associated storyteller effects.
 7. **News Auto-Generation** – `src/lib/diplomatic-news-generator.ts` automatically generates diplomatic headlines for the social feed
+8. **Diplomatic Scenarios & Incidents** – Scenario generation via `api.diplomaticScenarios.getAllScenarios`. Types include `diplomatic_incident`, `border_dispute`, `trade_renegotiation`, `intelligence_breach`, `humanitarian_crisis`, `alliance_pressure`, and more. Filterable by relationship level, difficulty (trivial → legendary), and time frame (urgent → long_term). Player choices recorded via `api.diplomaticScenarios.recordPlayerChoice`.
+9. **NPC Auto-Response** — NPC countries react to player diplomatic actions based on `NPCPersonalitySystem` trait calculations. The `npcPersonalities` router exposes `predictScenarioResponse` (returns predicted action, confidence, reasoning, and alternative actions) and `getToneForContext` (formal/casual tone matrix). Personality traits are data-driven — calculated from embassy counts, relationship strengths, trade volume, and cultural activity rather than hardcoded.
 
 ## Realtime & Alerts
 - Diplomatic events (`DiplomaticEvent` records) push through Socket.IO and the notification router
@@ -166,6 +167,16 @@ The AI infers NPC country personalities from observable behavior:
 - **No Events Generating:** Check relationships length, recent actions data, event fatigue thresholds, relationship strengths
 - **Events Feel Repetitive:** Increase event fatigue coefficient (currently 0.05), add diverse relationship types, vary player actions
 - **Events Not Contextually Relevant:** Verify economicData is current, check globalTensions calculation, ensure recentActions includes last 20 actions
+
+## NPC Personality-Driven Auto-Response
+
+NPC countries respond automatically to player diplomatic actions based on their personality archetypes. The system is backed by two core libraries:
+
+- **`src/lib/diplomatic-npc-personality.ts`** (1,511 lines) — `NPCPersonalitySystem` class calculates 8 core traits (assertiveness, cooperativeness, economicFocus, culturalOpenness, riskTolerance, ideologicalRigidity, militarism, isolationism) from observable database data (embassies, relationships, trade, cultural exchanges). Traits are measured 0-100 and map to 6 archetypes: aggressive_exansionist, peaceful_merchant, cautious_isolationist, cultural_diplomat, pragmatic_realist, ideological_hardliner. Personality drifts over time (max ±2 points per IxTime year) based on experiences.
+
+- **`src/lib/npc-cultural-participation.ts`** (920 lines) — Drives NPC participation in cultural exchanges using `NPCPersonalitySystem.predictResponse()`. Personality traits determine participation enthusiasm, resource commitment, and predicted actions in response to diplomatic invitations.
+
+**NPC Personalities Router** (`src/server/api/routers/npcPersonalities/`): Split into query, diplomacy, and admin sub-routers. The diplomacy sub-router exposes `predictScenarioResponse` (predicts NPC response based on personality + relationship context), `getToneForContext` (formal/casual tone matrix), and `incrementUsage` (tracks personality usage stats).
 
 ## Unified Messaging (ThinkShare)
 

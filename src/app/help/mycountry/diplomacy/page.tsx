@@ -94,6 +94,40 @@ export default function MyCountryDiplomacyArticle() {
               relationships
             </li>
           </ul>
+          <p className="mt-3 text-slate-700 dark:text-slate-300">
+            All foreign policy actions now execute <strong>atomically in database
+            transactions</strong>, ensuring that policy enactment and its side effects &mdash;
+            including relationship changes, economic impacts, and narrative generation &mdash; either
+            succeed together or roll back entirely.
+          </p>
+        </Section>
+
+        <Section title="Diplomatic Consequences & AI Response">
+          <p className="mb-3 text-slate-700 dark:text-slate-300">
+            Your foreign policy decisions carry real weight. Target countries can now{" "}
+            <strong>respond or retaliate</strong> through the respondToForeignPolicy system. When
+            you enact a policy, the affected nation evaluates it based on their interests,
+            relationship strength, and current diplomatic posture.
+          </p>
+          <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
+            <li>
+              <strong>Diplomatic Incidents:</strong> Policy actions can generate diplomatic
+              incidents &mdash; unexpected crises ranging from minor protocol breaches to major
+              international disputes. Incidents appear in your national issues feed and may require
+              immediate executive attention.
+            </li>
+            <li>
+              <strong>NPC Personalities:</strong> AI-controlled countries make diplomatic decisions
+              based on defined personality profiles. An aggressive militaristic NPC will react
+              differently to your policies than a cooperative trading nation. NPC traits influence
+              their tolerance, willingness to negotiate, and likelihood of escalation.
+            </li>
+            <li>
+              <strong>Narrative Feed:</strong> Diplomatic events are surfaced in your narrative
+              feed alongside executive actions and issues, giving you a cohesive timeline of your
+              nation&apos;s international story.
+            </li>
+          </ul>
         </Section>
 
         <InfoBox title="Related Documentation">

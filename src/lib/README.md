@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | Time & Simulation | `ixtime.ts`, `ixtime-sync.ts`, `ixtime-economic-utils.ts` | Custom IxTime system, synchronization helpers, economic time-scaling |
 | Economic & Policy Calculators | `calculations.ts`, `enhanced-economic-calculations.ts`, `predictive-analytics-engine.ts`, `tax-calculator.ts` | Core economic formulas, projections, tax calculations, impact modelling |
-| Atomic & Builder Utilities | `atomic-builder-state.ts`, `atomic-economic-integration.ts`, `atomic-tax-integration.ts`, `builder-policy-integration.ts` | Supports atomic governance/economic components and builder flows |
+| Atomic & Builder Utilities | `atomic-builder-state.ts`, `atomic-economic-integration.ts`, `atomic-tax-integration.ts`, `builder-policy-integration.ts`, `government-component-effects.ts` | Supports atomic governance/economic components and builder flows (gov component effects wires atomic components to game state) |
 | Intelligence & Defense | `intelligence-engine.ts`, `vitality-calculator.ts`, `defense-integration.ts`, `stability-formulas.ts` | Intelligence scoring, vitality metrics, defense readiness |
 | Social & Notifications | `notification-api.ts`, `notification-hooks.ts`, `activity-generator.ts`, `user-activity-analytics.ts` | Notification pipeline, activity feeds, analytics |
 | Media & Wiki Integration | `mediawiki-service.ts`, `wiki-search-service.ts`, `unified-flag-service.ts`, `flag-color-extractor.ts` | MediaWiki clients, wiki parsing, flag retrieval/caching |
@@ -26,5 +26,6 @@
 - `src/lib/services/` – Higher-level service orchestrators
 - `src/lib/transformers/` – Data transformation helpers for API responses
 - `src/lib/websocket/` – Client helpers for realtime channels (production only)
+- `src/server/shared/` – Shared server-side utilities (e.g. `mycountry-helpers.ts` for MyCountry routers)
 
 Treat this README as the map for shared utilities. Keep it in sync as modules are added, renamed, or retired.

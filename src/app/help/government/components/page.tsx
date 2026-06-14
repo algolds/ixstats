@@ -10,7 +10,7 @@ export default function AtomicComponentCatalogArticle() {
   return (
     <ArticleLayout
       title="Component Catalog"
-      description="Browse 106 building blocks you can mix and match to shape your nation's government, economy, and tax system."
+      description="Browse 56 components across 10 categories to shape your nation's government, economy, and tax system with real gameplay effects."
       icon={ListTree}
     >
       <ContentCard>
@@ -21,34 +21,38 @@ export default function AtomicComponentCatalogArticle() {
             <Link href="/help/gameplay/country-building" className={linkClass}>
               Country Builder
             </Link>
-            , you pick from a library of 106 pre-designed components across three categories. Each
+            , you pick from a library of 56 pre-designed components across ten categories. Each
             component represents a real-world policy, institution, or system that defines how your
-            country operates.
+            country operates, and each carries real mechanical weight on your nation's stats.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
               <h3 className="mb-1 font-semibold text-amber-900 dark:text-amber-300">
-                24 Government
+                10 Government Categories
               </h3>
               <p className="text-sm text-amber-800 dark:text-amber-100/80">
-                Power distribution, decision-making processes, legitimacy sources, political
-                institutions, and oversight mechanisms.
+                Power distribution, decision processes, legitimacy sources, political institutions,
+                oversight mechanisms, civil service, legal frameworks, electoral systems, regional
+                governance, and constitutional design.
               </p>
             </div>
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
               <h3 className="mb-1 font-semibold text-emerald-900 dark:text-emerald-300">
-                40+ Economic
+                Economic + Tax Components
               </h3>
               <p className="text-sm text-emerald-800 dark:text-emerald-100/80">
                 Trade policy, labor market regulations, investment climate, innovation programs,
-                infrastructure, and environmental standards.
+                infrastructure, environmental standards, income tax, corporate tax, VAT, and
+                specialized levies.
               </p>
             </div>
             <div className="rounded-lg border border-violet-200 bg-violet-50 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
-              <h3 className="mb-1 font-semibold text-violet-900 dark:text-violet-300">42 Tax</h3>
+              <h3 className="mb-1 font-semibold text-violet-900 dark:text-violet-300">
+                Effect Types
+              </h3>
               <p className="text-sm text-violet-800 dark:text-violet-100/80">
-                Income tax, corporate tax, VAT, property tax, capital gains, and specialized taxes,
-                each with configurable rate settings.
+                Components produce effects on GDP growth, population, political stability,
+                compliance rate, administrative cost, tax revenue, trade balance, and more.
               </p>
             </div>
           </div>
@@ -109,8 +113,8 @@ export default function AtomicComponentCatalogArticle() {
       <ContentCard>
         <Section title="How Components Affect Gameplay">
           <p className="mb-3 text-slate-700 dark:text-slate-300">
-            Your component choices directly shape your nation&apos;s stats and standing. Here is
-            how:
+            Your component choices directly shape your nation&apos;s stats and standing through
+            real-time mechanical effects. Here is how:
           </p>
           <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
             <li>
@@ -132,9 +136,18 @@ export default function AtomicComponentCatalogArticle() {
             <li>
               <strong>Synergy bonuses</strong> reward thoughtful combinations. For example, pairing
               a strong education system with innovation-focused economic policies can unlock bonus
-              growth multipliers.
+              growth multipliers. Conversely, conflicting components incur penalties to
+              effectiveness.
             </li>
           </ul>
+          <p className="mt-3 text-slate-700 dark:text-slate-300">
+            Adding or removing a component is not cosmetic &mdash; it creates{" "}
+            <strong>StorytellerEffect</strong> records that apply computed changes to your GDP,
+            population, political stability, and other metrics. The system calculates synergy and
+            conflict interactions that modify each component&apos;s overall effectiveness. Use the{" "}
+            <strong>recalculateEffects</strong> procedure to see the projected impact of your
+            configuration on demand, before committing changes.
+          </p>
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
             To learn more about how components combine into a complete government system, see the{" "}
             <Link href="/help/government/atomic" className={linkClass}>

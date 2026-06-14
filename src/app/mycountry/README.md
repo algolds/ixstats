@@ -1,6 +1,6 @@
 # MyCountry Command Suite
 
-**Last updated:** May 2026
+**Last updated:** June 2026
 
 The MyCountry route (`/mycountry`) provides the executive command suite for nation owners. It uses a **single-page router pattern** (via `MyCountryRouter`) to manage all sections without full page navigations.
 
@@ -15,7 +15,7 @@ MyCountry uses the single-page router pattern found across the application:
 | Section | Key Components |
 | --- | --- |
 | **Overview** | Country metrics, activity rings, compliance summary |
-| **Executive** | National issues inbox, crisis management, government metrics |
+| **Executive** | National issues inbox, crisis management, government metrics, **9 executive actions** (economic/social/diplomatic/emergency) with real economic impact, cooldowns, and budget costs |
 | **Diplomacy** | Diplomatic operations hub, embassy management, treaty negotiations |
 | **Intelligence** | Intelligence briefings, live feeds, unified command view |
 | **Defense** | Strategic defense initiative, military readiness, equipment management |
@@ -42,12 +42,17 @@ MyCountry uses the single-page router pattern found across the application:
 - Defense: `api.unifiedIntelligence.getModules`, `api.security.getThreatStatus`
 - Elections: `api.elections.getElections`, `api.elections.simulateElection`
 - National Issues: `api.nationalIssues.getMyIssues`, `api.nationalIssues.respond`
+- Executive Actions: `api.mycountry.getExecutiveActions` (lists 9 available actions with cooldown status), `api.mycountry.executeAction` (applies real StorytellerEffect and generates narrative output)
+- News Feed: `api.mycountry.getNewsFeed` (surfaces narrative output from executive actions, government effects, and diplomatic events)
+- Government Components: `api.government.getComponents` (56 atomic components now affect game state via `src/lib/government-component-effects.ts` — political metrics and economic StorytellerEffects)
 
 ## Implementation Notes
 - Section switching is client-side via `MyCountryRouter` — no full page reloads
 - Core sections are eagerly imported; less-visited sections use `lazy()` with `SectionSkeleton` fallback
 - Error boundaries per section (`SectionErrorFallback`) with retry capability
 - Live feeds subscribe to Socket.IO channels when available (production runtime)
+- **Shared helpers** (`src/server/shared/mycountry-helpers.ts`) were extracted from 3 routers to eliminate ~900 lines of duplicated code. Exports `calculateVitalityScores`, `generateIntelligenceFeed`, `calculateAchievements`, `generateRankings`, `generateMilestones`, and cache helpers. Follows the `layer-cache.ts` pattern for cross-router shared primitives.
+- **NewsFeedWidget** (`src/components/mycountry/NewsFeedWidget.tsx`) renders the player-facing narrative output from executive actions, government effects, and diplomatic events. Queries `api.mycountry.getNewsFeed` and resolves category icons (economic/diplomatic/military/social/emergency) from `inputType` and `description` fields.
 
 ## Documentation
 - Keep `docs/systems/mycountry.md` and `/help/mycountry/*` synced with new functionality

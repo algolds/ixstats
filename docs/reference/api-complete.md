@@ -2,9 +2,9 @@
 
 **Last updated:** June 2026 (patch 1.0.6 — router-refactor)
 
-Comprehensive reference for all **87 tRPC routers** with **1,376 procedures** across the IxStates (IxStats) platform.
+Comprehensive reference for all **87 tRPC routers** with **1,382 procedures** across the IxStates (IxStats) platform.
 
-> ⚠️ **Regeneration needed.** The per-router procedure counts and the per-section totals below were captured pre-1.0.6 and reflect the pre-split monoliths. They are out of date by ≈ 5–10% per split router. To regenerate, walk the live `src/server/api/routers/` tree with ts-morph and rebuild the Router Summary Table. (The total procedure count in the header above — 1,376 — and the per-group numbers in the Quick Navigation have been hand-recomputed against the current tree.)
+> ⚠️ **Regeneration needed.** The per-router procedure counts and the per-section totals below were captured pre-1.0.6 and reflect the pre-split monoliths. They are out of date by ≈ 5–10% per split router. To regenerate, walk the live `src/server/api/routers/` tree with ts-morph and rebuild the Router Summary Table. (The total procedure count in the header above — 1,382 — and the per-group numbers in the Quick Navigation have been hand-recomputed against the current tree.)
 
 ## Quick Navigation
 *(Approximate; regen needed — see warning above.)*
@@ -39,7 +39,7 @@ Comprehensive reference for all **87 tRPC routers** with **1,376 procedures** ac
 | atomicEconomic | 2 | 4 | 6 | Atomic economic components |
 | atomicTax | 2 | 4 | 6 | Atomic tax components |
 | unifiedAtomic | 5 | 1 | 6 | Cross-builder synergy system |
-| government | 6 | 8 | 14 | Government structure, budgets |
+| government | 6 | 9 | 15 | Government structure, budgets, component effects |
 | governmentComponents | 4 | 8 | 12 | Component library (Phase 4) |
 | economics | 8 | 11 | 19 | Economy builder, economic data |
 | economicComponents | 4 | 7 | 11 | Economic component library (Phase 5) |
@@ -54,6 +54,7 @@ Comprehensive reference for all **87 tRPC routers** with **1,376 procedures** ac
 | sdi | 17 | 16 | 33 | Strategic Defense Initiative |
 | diplomatic | 13 | 13 | 26 | Embassies, missions, relations |
 | diplomatic-intelligence | 4 | 1 | 5 | Diplomatic intel overlays |
+| diplomaticPolicies | 6 | 9 | 15 | Foreign policy actions, alliances, blocs |
 | diplomaticScenarios | 6 | 9 | 15 | Dynamic scenario management (Phase 7B) |
 | npcPersonalities | 4 | 6 | 10 | NPC personality system (Phase 8) |
 | archetypes | 5 | 5 | 10 | Country filtering archetypes |
@@ -63,13 +64,13 @@ Comprehensive reference for all **87 tRPC routers** with **1,376 procedures** ac
 | smallArmsEquipment | 5 | 7 | 12 | Infantry weapons catalog (Phase 9) |
 | crisisEvents | 6 | 9 | 15 | Crisis management system |
 | **SOCIAL & COLLAB** | | | | |
-| thinkpages | 21 | 35 | 56 | Social platform (posts, accounts, groups) |
+| thinkpages | 24 | 35 | 59 | Social platform (posts, accounts, groups) |
 | activities | 6 | 4 | 10 | Live activity feed |
 | meetings | 9 | 18 | 27 | Cabinet meetings, officials |
 | policies | 8 | 15 | 23 | Policy management, tracking |
 | achievements | 3 | 1 | 4 | Achievement system |
 | **OPERATIONS** | | | | |
-| mycountry | 5 | 1 | 6 | MyCountry specialized endpoints |
+| mycountry | 6 | 1 | 7 | MyCountry specialized endpoints |
 | notifications | 4 | 2 | 6 | Notification management |
 | quickactions | 8 | 13 | 21 | Quick actions orchestration |
 | scheduledChanges | 3 | 4 | 7 | Delayed impact changes |
@@ -96,7 +97,7 @@ Comprehensive reference for all **87 tRPC routers** with **1,376 procedures** ac
 | **AUTOSAVE SYSTEM** | | | | |
 | autosaveHistory | 5 | 0 | 5 | Autosave history, stats, timeline |
 | autosaveMonitoring | 5 | 0 | 5 | Global autosave monitoring (admin) |
-| **TOTAL** | **—** | **—** | **~1,432** | |
+| **TOTAL** | **—** | **—** | **~1,447** | |
 
 **Legend:** Q = Queries, M = Mutations
 
@@ -217,6 +218,31 @@ api.taxSystem.getTaxBurden.useQuery({ countryId: string })
 api.taxSystem.getRevenueProjections.useQuery()
 ```
 
+### government Router (15 procedures)
+
+```typescript
+// Government structure
+api.government.getStructure.useQuery({ countryId: string })
+api.government.updateStructure.useMutation()
+api.government.autosave.useMutation()
+
+// Budget management
+api.government.getBudget.useQuery({ countryId: string })
+api.government.updateBudget.useMutation()
+
+// Department operations
+api.government.getDepartments.useQuery({ countryId: string })
+api.government.createDepartment.useMutation()
+api.government.updateDepartment.useMutation()
+api.government.deleteDepartment.useMutation()
+
+// Component effects (on-demand recalculation)
+api.government.recalculateEffects.useMutation({ countryId: string })
+// Recalculates and re-applies atomic government component effects on demand.
+// Applies economic effects, updates political metrics, generates notifications.
+// Returns: { overallEffectiveness, effectsCreated, politicalMetricsUpdated }
+```
+
 ---
 
 ## Intelligence & Diplomacy
@@ -257,6 +283,43 @@ api.diplomatic.updateRelationship.useMutation()
 // Cultural exchanges
 api.diplomatic.getCulturalExchanges.useQuery()
 api.diplomatic.createExchange.useMutation()
+```
+
+### diplomaticPolicies Router (15 procedures)
+
+**Foreign Policy Actions:**
+```typescript
+// Active policies
+api.diplomaticPolicies.getActiveForeignPolicies.useQuery({ countryId: string })
+api.diplomaticPolicies.getBilateralTrade.useQuery({ country1Id: string, country2Id: string })
+api.diplomaticPolicies.previewForeignPolicyImpact.useQuery({ ... })
+
+// Propose / lift foreign policy actions
+api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({ ... })
+// Wrapped in $transaction for atomicity; generates diplomatic news on success.
+api.diplomaticPolicies.liftForeignPolicyAction.useMutation({ actionId: string })
+// Wrapped in $transaction; reverts policy effects, generates diplomatic news.
+
+// Response
+api.diplomaticPolicies.respondToForeignPolicy.useMutation({
+  actionId: string,
+  response: "retaliate" | "escalate" | "de-escalate" | "accept"
+})
+// Allows targeted countries to retaliate, escalate, or de-escalate foreign policy
+// actions proposed against them. Updates bilateral relationship scores accordingly.
+```
+
+**Alliances & Blocs:**
+```typescript
+api.diplomaticPolicies.getAlliances.useQuery({ countryId: string })
+api.diplomaticPolicies.getAllianceDashboard.useQuery({ countryId: string })
+api.diplomaticPolicies.createAlliance.useMutation()
+api.diplomaticPolicies.inviteMember.useMutation()
+api.diplomaticPolicies.leaveAlliance.useMutation()
+api.diplomaticPolicies.proposeAllianceAction.useMutation()
+api.diplomaticPolicies.voteOnAllianceAction.useMutation()
+api.diplomaticPolicies.createAllianceDocument.useMutation()
+api.diplomaticPolicies.getAllianceDocuments.useQuery()
 ```
 
 ### npcPersonalities Router (10 procedures)
@@ -351,7 +414,7 @@ api.crisisEvents.adminResolve.useMutation()
 
 ## Social & Collaboration
 
-### thinkpages Router (56 procedures)
+### thinkpages Router (59 procedures)
 
 **Accounts:**
 ```typescript
@@ -363,6 +426,15 @@ api.thinkpages.deleteAccount.useMutation()
 
 **Posts:**
 ```typescript
+// Feed & browsing
+api.thinkpages.getFeed.useQuery({ filter?, hashtag?, countryId?, limit?, cursor? })
+// Paginated feed with full includes (account, country, reactions, media, poll, repost).
+api.thinkpages.getPost.useQuery({ postId: string })
+// Single post with replies, reactions, and media attachments.
+api.thinkpages.getPostsByClerkUserId.useQuery({ clerkUserId: string, limit?, cursor? })
+// All public posts across all accounts owned by a Clerk user.
+
+// CRUD
 api.thinkpages.getPosts.useQuery({ filters, pagination })
 api.thinkpages.getPostById.useQuery({ id: string })
 api.thinkpages.createPost.useMutation()
@@ -398,13 +470,54 @@ api.thinkpages.sendMessage.useMutation()
 
 ## Operations
 
-### mycountry Router (6 procedures)
+### mycountry Router (7 procedures)
 
+**Dashboard:**
 ```typescript
-// Compliance & overview
-api.mycountry.getComplianceSummary.useQuery({ countryId: string })
-api.mycountry.getDashboardData.useQuery({ countryId: string })
-api.mycountry.getAlerts.useQuery({ countryId: string })
+// Executive dashboard data
+api.mycountry.getCountryDashboard.useQuery({ countryId: string, includeHistory?: boolean })
+// Returns comprehensive country data with vitality scores, achievements, rankings, milestones.
+
+// Player-visible narrative feed
+api.mycountry.getNewsFeed.useQuery({ countryId: string })
+// Returns recent StorytellerEffect records for the player-visible narrative feed.
+// Each record: { id, description, inputType, value, ixTimeTimestamp, createdAt }
+
+// Rankings & milestones
+api.mycountry.getRankings.useQuery({ countryId: string })
+api.mycountry.getMilestones.useQuery({ countryId: string })
+api.mycountry.getNationalSummary.useQuery({ countryId: string })
+```
+
+**Executive Actions:**
+```typescript
+// List available executive actions (9 action types) with cooldowns, costs, requirements
+api.mycountry.getExecutiveActions.useQuery({ countryId: string })
+// Returns: { actions: Array<{ name, category, description, estimatedImpact, cooldownHours, 
+//   cooldownRemaining, cost, urgency }> }
+
+// Execute an executive action — creates real StorytellerEffect with computed values,
+// enforces per-action cooldowns, and logs audit trail
+api.mycountry.executeAction.useMutation({ 
+  countryId: string,
+  actionName: string 
+})
+// Action types: stimulus_package, population_incentives, tax_policy, diplomatic_mission,
+// military_exercise, public_infrastructure, emergency_powers, cultural_initiative, sanctions
+```
+
+**Intelligence & Vitality:**
+```typescript
+// Intelligence feed aggregation
+api.mycountry.getIntelligenceFeed.useQuery({ countryId: string })
+
+// Vitality tracking — computes scores server-side (no client-submitted values accepted)
+api.mycountry.updateVitalityTracking.useMutation({ countryId: string })
+// Computes economic, social, political, and military vitality scores server-side.
+// Updates trend analysis and generates notifications on significant changes.
+
+// Achievements
+api.mycountry.getAchievements.useQuery({ countryId: string })
 ```
 
 ### quickactions Router (21 procedures)
@@ -431,7 +544,12 @@ api.scheduledChanges.create.useMutation({
   changes: object
 })
 api.scheduledChanges.cancel.useMutation({ id: string })
-api.scheduledChanges.apply.useMutation({ id: string }) // Force early application
+
+// Apply a specific scheduled change — validates field paths, creates StorytellerEffect
+api.scheduledChanges.applyScheduledChange.useMutation({ id: string })
+
+// Apply all due scheduled changes — same field validation + StorytellerEffect creation
+api.scheduledChanges.applyDueChanges.useMutation()
 ```
 
 ---

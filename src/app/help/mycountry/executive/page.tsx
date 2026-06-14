@@ -61,6 +61,30 @@ export default function ExecutiveArticle() {
                 development plans with milestones and progress tracking.
               </p>
             </div>
+
+            <div>
+              <h4 className="flex items-center gap-2 font-semibold">
+                <Target className="h-4 w-4 text-rose-600" />
+                Executive Actions
+              </h4>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Execute high-impact national directives from your command suite. Nine executive
+                actions are available: <strong>stimulus package</strong>,{" "}
+                <strong>population incentives</strong>, <strong>tax policy</strong>,{" "}
+                <strong>diplomatic mission</strong>, <strong>emergency response</strong>,{" "}
+                <strong>budget allocation</strong>, <strong>infrastructure project</strong>,{" "}
+                <strong>education reform</strong>, and <strong>healthcare investment</strong>.
+              </p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Every action produces real economic effects through the StorytellerEffect system,
+                with computed changes to GDP, population, political stability, and other metrics
+                based on the specific action and its input parameters. Each action has a cooldown
+                ranging from <strong>24 to 168 hours</strong> depending on the action type, and
+                costs are deducted from your national budget upon execution. The{" "}
+                <strong>NewsFeedWidget</strong> displays narrative output describing the outcome of
+                each action, immersing you in the story of your nation&apos;s development.
+              </p>
+            </div>
           </div>
         </Section>
       </ContentCard>
