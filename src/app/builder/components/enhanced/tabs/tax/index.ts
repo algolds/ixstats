@@ -1,1 +1,0 @@
-export { TaxTab } from "./TaxTab";

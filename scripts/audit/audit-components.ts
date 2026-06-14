@@ -67,6 +67,15 @@ function resolveSpecifier(spec: string, fromFile: string): string | null {
   else if (spec.startsWith(".")) base = path.resolve(path.dirname(fromFile), spec);
   else return null; // bare module (node_modules) — external
 
+  // TS-style imports written with a .js-family extension actually resolve to the
+  // .ts-family source (e.g. server.mjs: import "./src/lib/foo.js" -> foo.ts).
+  const jsExt = base.match(/\.(js|jsx|mjs|cjs)$/);
+  if (jsExt) {
+    const stem = base.slice(0, -jsExt[0].length);
+    for (const ext of [".ts", ".tsx", ".mts", ".cts", jsExt[0]])
+      if (fs.existsSync(stem + ext)) return stem + ext;
+  }
+
   // already has a resolvable extension?
   if (fs.existsSync(base) && fs.statSync(base).isFile()) return base;
   for (const ext of EXTS) if (fs.existsSync(base + ext)) return base + ext;
