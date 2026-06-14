@@ -1,9 +1,7 @@
 name: Verify Prod-Clone
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
+  workflow_dispatch: # disabled auto-run: verify:prodclone script + playwright config are not in this repo
 
 jobs:
   verify:

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [v2, master, main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Generate Prisma client
+        run: bun run db:generate
+      # The checks below are intentionally non-blocking (continue-on-error)
+      # until the baseline is green. Flip to required per plans/002 maintenance notes.
+      - name: Unit tests
+        run: bun run test
+        continue-on-error: true
+      - name: Architecture guard
+        run: bun run audit:arch
+        continue-on-error: true
+      - name: Lint
+        run: bun run lint
+        continue-on-error: true
+      - name: Typecheck (tRPC layer)
+        run: bun run typecheck:trpc
+        continue-on-error: true
