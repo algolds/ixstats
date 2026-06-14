@@ -12,6 +12,8 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **PR verification gate workflow**: Added a CI workflow (`.github/workflows/ci.yml`) to automatically run linting, typechecking, architecture audits, and testing on pull requests and pushes to protect the `v2` branch.
+- **Role-authorization boundaries tests**: Added a regression test suite (`src/server/api/routers/__tests__/roles-auth.test.ts`) to ensure critical administrative role-checking procedures remain protected.
 - **Storyteller™ Country Calculation Inspector**: Added a new visual tab to select any country and inspect the step-by-step math of its population and economic progression calculations using React Flow nodes.
   - Implemented the `CountryInspector` component modeling the data pipeline (baseline, config/multipliers, active storyteller events, effective growth rates, max growth caps, compounding, and final outputs).
   - Added sandbox override controls to dynamically drag target year offset (0-20 years), adjust local growth factor multipliers (0.5x to 2.0x), and inject mock storyteller events to simulate hypothetical impacts.
@@ -22,6 +24,11 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Changed
 
+- **Administrative endpoint security**: Secured 10 role-management and lorewards-admin endpoints behind the `adminProcedure` check in `assignments.ts`, `management.ts`, and `admin.ts` to enforce appropriate access controls.
+- **Atomic transaction for lore cards**: Wrapped the `requestLoreCard` credit deduction logic in a database transaction to ensure atomicity and prevent partial failure states.
+- **Production clone pipeline restriction**: Changed the `.github/workflows/verify-prodclone.yml` workflow triggers to manual dispatch only (`workflow_dispatch`), disabling automated push runs to conserve runner resources.
+- **Secure message parsing protection**: Guarded stored secure message JSON parsing inside `intelligence.ts` using a newly added `safeJsonParse` utility to prevent runtime crashes.
+- **HTML sanitization**: Integrated HTML sanitization for forum post rendering in `PostCard.tsx` (using `sanitizeHtml`) and user stash notes in `stashes/page.tsx` (using `sanitizeUserContent`) to defend against XSS vulnerabilities.
 - **Map editor default layer visibilities**: Changed the default map editor overlay visibility settings to initialize `pois`, `stories`, and `routes` to `false` (toggled off by default) on editor entry to keep the default editor canvas clean.
 - **Storyteller Panel Tab integration**: Registered the `"inspector"` tab with a `Calculator` icon and rendered the `<CountryInspector />` component in the main control panel.
 - **tRPC router modularization** (continued from prior session): 44 additional routers split into domain sub-directories via `mergeRouters`, preserving every `api.*` path byte-identically (zero call-site changes). Splits were applied to:
@@ -88,6 +95,9 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Removed
 
+- **Unused dependencies**: Pruned the unused `node-schedule` package and its `@types/node-schedule` type definitions from `package.json` and generated lockfile.
+- **Obsolete test suites**: Deleted orphaned and broken test files `useBuilderValidation.test.ts` and `real-time-atomic-effects.test.ts`.
+- **Deprecated premium flags**: Removed references to deprecated `sdi` and `eci` features from `usePremium.tsx` and user profile hooks.
 - **Dead router monoliths** (~9,360 lines of unreachable code): `diplomatic.ts` (6,006 lines; already superseded by the `diplomacy/` directory) and `unified-intelligence.ts` (3,352 lines; unregistered, zero call sites).
 - **Dead mega-type file** `src/types/unified-intelligence.ts` (1,552 lines, 0 importers): orphaned after the `unified-intelligence.ts` router was deleted. Confirmed no barrel re-exports; safe to delete outright.
 - **Cross-router import**: the only remaining violation — `src/server/api/routers/countries/{identity,management}.ts` importing `clearLayerCache` from `~/server/api/routers/geo/core` — was eliminated by extracting the helper to `src/server/shared/layer-cache.ts` (see Added). The arch guard's cross-router-import check is now expected to always pass.
@@ -95,6 +105,7 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Fixed
 
+- **Policy test database context mock**: Fixed database context validation failures in `policies.test.ts` by introducing the missing `country` mock model.
 - **PopoverTrigger Slot runtime crash**: Fixed a runtime error where `Primitive.button failed to slot onto its children` by making the `asChild` prop conditional on the trigger. When no React element is present or when multiple children are rendered, it gracefully defaults to rendering the trigger container.
 - **tRPC namespace and validation errors in map state hooks**: Fixed outdated procedure namespaces in `useMapState.ts`, updating legacy `geo` queries to `geoCore.getNeighbors` and `geoSovereignty.getCountrySovereignty`. Guarded the prefetches with a null-check on `countryId` to prevent Zod validation crashes when no country is loaded.
 - **WikiBridge MySQL connection spam**: Suppressed MySQL `ECONNREFUSED` connection dumps on port 13306 in local development environments by wrapping the DB pool in a Proxy. This logs a single friendly warning to open an SSH tunnel and caches connection failures, silencing further error traces for 5 minutes.
