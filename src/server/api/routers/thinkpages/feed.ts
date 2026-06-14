@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 // Import the wiki search service
 import { validateNoXSS } from "~/lib/sanitize-html";
@@ -18,7 +19,6 @@ const invalidateFeeds = async () => {
   }
 };
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const hydratePostDates = (post: any) => {
   if (!post) return post;
   return {
@@ -81,7 +81,6 @@ const thinkpagesAccountBaseSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function formatPollForClient(poll: any) {
   if (!poll) return null;
   const votes: Record<string, number> = {};
@@ -113,7 +112,6 @@ function formatPollForClient(poll: any) {
   };
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const pollInclude = {
   poll: {
     include: {
@@ -221,7 +219,6 @@ const AddReactionSchema = z.object({
   ]),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
   hashtag: z.string().optional(),
@@ -385,6 +382,172 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Remove reaction
 
   // Get feed
+  getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
+    try {
+      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
+
+      const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
+      if (cached) {
+        const hydratedPosts = cached.posts.map((post) => hydratePostDates(post));
+        return {
+          posts: hydratedPosts,
+          nextCursor: cached.nextCursor,
+        };
+      }
+
+      const { db } = ctx;
+
+      const whereClause: any = {
+        visibility: "public",
+      };
+
+      if ((input as any).countryId) {
+        whereClause.account = {
+          countryId: (input as any).countryId,
+        };
+      }
+
+      if (input.filter === "trending") {
+        whereClause.trending = true;
+      }
+
+      if (input.hashtag) {
+        whereClause.hashtags = {
+          contains: `"${input.hashtag}"`,
+        };
+      }
+
+      const posts = await db.thinkpagesPost.findMany({
+        where: whereClause,
+        include: {
+          account: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              profileImageUrl: true,
+              accountType: true,
+              verified: true,
+              clerkUserId: true,
+              countryId: true,
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  flag: true,
+                },
+              },
+            },
+          },
+          parentPost: {
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                  clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          repostOf: {
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                  clerkUserId: true,
+                  countryId: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          reactions: true,
+          mediaAttachments: true,
+          ...pollInclude,
+          reposts: {
+            select: { accountId: true },
+          },
+          _count: {
+            select: {
+              replies: true,
+              reposts: true,
+            },
+          },
+        },
+        orderBy: [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }],
+        take: input.limit,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        skip: input.cursor ? 1 : 0,
+      });
+
+      const transformedPosts = posts.map((post) => ({
+        ...post,
+        poll: formatPollForClient((post as any).poll),
+        hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
+        reactionCounts: (() => {
+          let baseline: Record<string, number> = {};
+          try {
+            if (post.reactionCounts) {
+              baseline =
+                typeof post.reactionCounts === "string"
+                  ? JSON.parse(post.reactionCounts)
+                  : post.reactionCounts;
+            }
+          } catch {
+            // ignore
+          }
+          return (post as any).reactions.reduce((acc: any, reaction: any) => {
+            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+            return acc;
+          }, baseline);
+        })(),
+        timestamp: post.isAutoGenerated
+          ? post.ixTimeTimestamp.toISOString()
+          : post.createdAt.toISOString(),
+      }));
+
+      const nextCursor = posts.length === input.limit ? posts[posts.length - 1]?.id : null;
+
+      const result = {
+        posts: transformedPosts,
+        nextCursor,
+      };
+
+      await globalCache.set(cacheKey, result, { ttl: 15 });
+
+      return result;
+    } catch (error) {
+      console.error("Error fetching thinkpages feed:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch thinkpages feed",
+      });
+    }
+  }),
 
   // Get trending topics
 

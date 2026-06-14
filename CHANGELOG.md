@@ -35,12 +35,44 @@ capability integer. Each release entry below lists which components advanced and
 
 - **Previously listed splits** (5 routers from the prior session, kept for context): `thinkpages` (55 procs), `admin` (79 procs), `sports` (44 procs), `activities` (20 procs), `security` (41 procs).
 
+- **MyCountry shared helpers extraction**: deduplicated ~450 lines of copied code across `dashboard.ts`, `intelligence.ts`, and `actions.ts` into `src/server/shared/mycountry-helpers.ts` — cache helpers, `calculateVitalityScores`, `generateIntelligenceFeed`, `calculateAchievements`, `generateRankings`, and `generateMilestones` now live in a single shared file (follows the `layer-cache.ts` cross-router shared-primitive pattern). The routers slimmed from 617→175, 639→213, and 670→248 lines respectively.
+
+- **MyCountry executive actions overhaul**: expanded from 2 conditional actions to 9 always-available actions (`stimulus_package`, `population_incentives`, `tax_policy`, `diplomatic_mission`, `emergency_response`, `budget_allocation`, `infrastructure_project`, `education_reform`, `healthcare_investment`). Each action now creates real `StorytellerEffect` records with computed values (randomized ±35% around base), proper `inputType` mapping (`GDP_ADJUSTMENT`, `GROWTH_RATE_MODIFIER`, `POPULATION_ADJUSTMENT`, etc.), durations (1-8 IxTime years), cooldown enforcement, and narrative output via `generateDiplomaticNews`.
+
+- **Policy CRUD now produces narrative output**: `activatePolicy`, `suspendPolicy`, and `repealPolicy` all fire `generateDiplomaticNews` for ThinkPages visibility. Previously only notifications were sent.
+
+- **Foreign policy mutations wrapped in `$transaction`**: `proposeForeignPolicyAction` and `liftForeignPolicyAction` now atomically create/update `ForeignPolicyAction` + `StorytellerEffect` + `DiplomaticRelation` + `BilateralTrade` — no more partial-failure dangling records.
+
+- **`updateVitalityTracking` refactored to compute server-side**: the mutation no longer accepts client-submitted vitality scores; it fetches country data and calls `calculateVitalityScores` internally, then persists `VitalitySnapshot` records with proper IxTime timestamps.
+
+- **`generateMilestones` now uses bounded queries**: replaced unbounded `historicalData` include with targeted `findFirst` per threshold (6 population + 5 economic thresholds) — O(1) per threshold instead of loading all history.
+
+- **Intelligence feed matches by country ID, not name**: `{ affectedCountries: { contains: country.id } }` replaces the old `country.name` substring match that could cross-match similarly-named nations.
+
+- **Autosave prefix fixed**: `autosaveHistory.ts` queried `AuditLog` for `AUTOSAVE_` (UPPER_SNAKE) but government autosave writes `autosave:` (lowercase colon). All 6 queries fixed to match the canonical prefix.
+
+- **PopoverTrigger `render` → `asChild`**: 5 call sites (`color-picker`, `poll-widget`, `ArticleRenderer`, `WikiDIPlugin`, `LorewardsBotSection`) converted from the deprecated `render` prop pattern to Radix-native `asChild`.
+
+- **Eliminated ~380 lines of dead code** across 5 MyCountry section components (`EnhancedExecutiveContent`, `EnhancedDiplomacyContent`, `EnhancedPoliticsContent`, `EnhancedIntelligenceContent`, `EnhancedDefenseContent`): removed unused hero stats, health scores, status badges, flag imports, and `@ts-nocheck`-guarded computations.
+
+- **Eliminated ~144 lines of duplicated election functions**: `dHondtAllocation`, `fptpAllocation`, `ChamberConfig`, and `parseChambers` were copied into all three of `elections.ts`, `legislature.ts`, and `parties.ts` — only used in `elections.ts`. Cleaned from the two unused files.
+
+- **Comment-only procedure placeholders cleaned** from 12+ government and diplomacy sub-routers: ~500 lines of `// Get diplomatic relationships for a country`-style stubs left over from the monolith splits were removed.
+
 ### Added
 
 - **`mergeRouters` export** in `src/server/api/trpc.ts` — lets a router be split across files without changing its API paths.
 - **Architecture guard** (`scripts/audit/audit-arch.ts`, invoked via `bun run audit:arch`): enforces a ≤700-line per-file ceiling on every `src/server/api/routers/**` file (relaxed to 900 for `RELAXED_FILES`: `src/types/ixstats.ts`, `src/types/economy-builder.ts`). Uses a ratcheted baseline (`scripts/audit/arch-baseline.json`) that records current offenders at their exact line count — they may only shrink, never grow. New files must be under the ceiling. Also blocks new cross-router imports. Wired into the dev workflow via `bun run audit:arch` and `bun run audit:arch:update` (re-ratchet after a split).
 - **Canonical router splitter** (`scripts/split-router-template.ts`): a single, well-documented tool (~250 lines, 100-line header comment) that encapsulates the proven recipe — pre-flight relative-import scans (static + dynamic), copy-whole-file strategy, `mergeRouters` recombination in the new `index.ts`, built-in AST parity verification, optional `--pattern=spread` mode for procedure-bag routers (e.g. `countries/management`). Replaces ~95+ one-off `scripts/split-*-ast.ts` scripts that were generated during the refactor.
 - **Shared primitive** `src/server/shared/layer-cache.ts`: extracted `clearLayerCache` / `layerCache` out of `geo/core/cache.ts` so `countries/*` can invalidate the geo layer cache without importing the `geo` router. The new file re-exports the helpers, so `geo/core/cache.ts` keeps working unchanged.
+
+- **Government component effects engine** (`src/lib/government-component-effects.ts`): wires the 56 atomic government components (across 10 categories: Power Distribution, Decision Process, Legitimacy, Institutions, Control, Admin Efficiency, Social Policy, International Relations, Innovation, Crisis Management) to actual game state. When a player adds or removes a component, the engine creates `StorytellerEffect` records (`GDP_ADJUSTMENT`, `GROWTH_RATE_MODIFIER`, `POPULATION_ADJUSTMENT`, `ECONOMIC_POLICY`) and updates political metrics (`politicalStability`, `democracyIndex`, `governmentEffectiveness`, `ruleOfLaw`) on the `GovernmentStructure`. Components now have real gameplay impact — previously they were a catalog browser with zero effect.
+
+- **MyCountry News Feed widget** (`src/components/mycountry/NewsFeedWidget.tsx` + `api.mycountry.getNewsFeed` procedure): surfaces the player's auto-generated narrative output (StorytellerEffect descriptions from executive actions, foreign policy, policy changes) as a visible feed in the MyCountry executive section. Previously these were generated but invisible to the player (fire-and-forget ThinkPages posts).
+
+- **ThinkPages procedure restoration**: `getFeed`, `getPost`, and `getPostsByClerkUserId` were restored from git history into their proper sub-routers (`feed.ts` + new `posts/posts/queries.ts`). These three critical query procedures were lost during the monolith router split in 1.0.6, causing TS2339 errors across 5 UI files.
+
+- **`MapLayerData` interface re-exported** from `IxWorldMap.tsx` — accidentally deleted during the map architecture overhaul, causing TS2614 errors in 7 consumer files.
 
 ### Removed
 
@@ -55,6 +87,14 @@ capability integer. Each release entry below lists which components advanced and
 - **2,687 pre-existing ESLint warnings** suppressed via `// eslint-disable-next-line <rule>` comments. Most are `unused-imports/no-unused-vars` for variables the code is in the middle of refactoring, and `react-hooks/exhaustive-deps` for effects that intentionally read outer-scope values. None introduced by the router refactor.
 - **`@ts-nocheck` / `@ts-ignore` directives** (143): added `// eslint-disable-next-line @typescript-eslint/ban-ts-comment` comments so `lint:strict` no longer fails on them. The directives themselves remain in place — they are intentional, file-level type-skip markers for now.
 - **`@typescript-eslint/no-unused-vars` rule** in `eslint.config.js` is now the canonical "vars" rule (was already off, but `unused-imports/no-unused-vars` is the warning source). No config change needed.
+
+- **TypeScript strict: 0 errors across all 4 sub-projects** (`typecheck:ui`, `typecheck:server`, `typecheck:trpc`, `typecheck:db`). Fixed 26+ pre-existing errors including: `db.ts` type-recursion depth (changed `ReturnType<typeof createPrismaClient>` to `PrismaClient`), `trpc/react.tsx` Headers-assignability (replaced `new Headers()` with `Record<string,string>`), 5 PopoverTrigger `render`→`asChild` conversions, `MapLayerData` re-export, restored ThinkPages procedures, plus ~15 one-off type mismatches across maps, myleague, cards, wiki, and thinkpages components.
+
+- **Commons image proxy 502 fix** (`src/app/api/mediawiki/commons/[...path]/route.ts`): added direct-fetch fallback when `wsrv.nl` fails (matching the iiwiki/althistory proxy pattern), and returns 404 instead of misleading 502 when a file truly doesn't exist on Wikimedia Commons.
+
+- **`ScheduledChanges` now validates and uses StorytellerEffect**: replaced blind `Country.update(fieldPath, newValue)` with a field-path whitelist (8 fields) + `StorytellerEffect` creation (mapped `inputType` + `value` + `duration` + `notificationAPI` alert). The old pattern accepted any field path and wrote directly to the database with zero validation or narrative output.
+
+- **`LoreScoreBadge` gracefully handles missing endpoint**: removed the call to non-existent `api.countries.getLoreScore` (which produced a perpetual loading state or null); the component now returns null with a comment noting the endpoint needs future implementation.
 
 ### Changed
 

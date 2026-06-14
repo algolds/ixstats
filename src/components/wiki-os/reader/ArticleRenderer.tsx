@@ -367,40 +367,38 @@ function WikiOSHeader({
               <div className="flex items-center gap-2">
                 {awardsData?.hasAwards && primaryAward && badgeConfig && (
                   <Popover open={showPopover} onOpenChange={setShowPopover}>
-                    <PopoverTrigger
-                      render={
-                        <button
-                          className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
-                            badgeConfig.classes
-                          } ${
-                            showCelebration && primaryAward.category === "LOREWARD"
-                              ? "loreward-badge-celebrate"
-                              : ""
-                          }`}
-                        >
-                          {showCelebration && primaryAward.category === "LOREWARD" && (
-                            <div className="pointer-events-none absolute inset-0 overflow-visible">
-                              {[...Array(8)].map((_, i) => (
-                                <span
-                                  key={i}
-                                  className={`loreward-particle loreward-particle-${i + 1}`}
-                                />
-                              ))}
-                            </div>
-                          )}
-                          <badgeConfig.Icon
-                            className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
-                          />
+                    <PopoverTrigger asChild>
+                      <button
+                        className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-95 ${
+                          badgeConfig.classes
+                        } ${
+                          showCelebration && primaryAward.category === "LOREWARD"
+                            ? "loreward-badge-celebrate"
+                            : ""
+                        }`}
+                      >
+                        {showCelebration && primaryAward.category === "LOREWARD" && (
+                          <div className="pointer-events-none absolute inset-0 overflow-visible">
+                            {[...Array(8)].map((_, i) => (
+                              <span
+                                key={i}
+                                className={`loreward-particle loreward-particle-${i + 1}`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <badgeConfig.Icon
+                          className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
+                        />
 
-                          {awardsData.awards.length > 1 && (
-                            <span className="text-[10px] leading-none font-black opacity-80">
-                              +{awardsData.awards.length - 1}
-                            </span>
-                          )}
-                          <span className="tracking-wider uppercase">{badgeConfig.text}</span>
-                        </button>
-                      }
-                    />
+                        {awardsData.awards.length > 1 && (
+                          <span className="text-[10px] leading-none font-black opacity-80">
+                            +{awardsData.awards.length - 1}
+                          </span>
+                        )}
+                        <span className="tracking-wider uppercase">{badgeConfig.text}</span>
+                      </button>
+                    </PopoverTrigger>
 
                     <PopoverContent
                       side="bottom"

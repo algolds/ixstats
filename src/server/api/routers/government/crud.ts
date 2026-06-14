@@ -222,10 +222,6 @@ export const governmentCrudRouter = createTRPCRouter({
       return { warnings };
     }),
 
-  // Create complete government structure
-
-  // Update government structure
-
   // Delete government structure
   delete: protectedProcedure
     .input(z.object({ countryId: z.string() }))
@@ -236,16 +232,6 @@ export const governmentCrudRouter = createTRPCRouter({
 
       return { success: true, id: deleted.id };
     }),
-
-  // Get budget summary
-
-  // Get revenue summary
-
-  // Update budget allocation
-
-  // Add sub-budget categories
-
-  // Get department hierarchy
 
   // Autosave government structure (partial updates)
   autosave: protectedProcedure
@@ -346,12 +332,4 @@ export const governmentCrudRouter = createTRPCRouter({
         throw error;
       }
     }),
-
-  // Get atomic government components for a country
-
-  // Add atomic government component
-
-  // Remove atomic government component
-
-  // Get effectiveness analysis for atomic components
 });

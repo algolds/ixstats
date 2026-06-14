@@ -66,28 +66,25 @@ function WikiBreadcrumb() {
         <>
           <span className="text-foreground/25 shrink-0 text-[10px]">›</span>
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-            <PopoverTrigger
-              nativeButton={false}
-              render={
-                <span
-                  className="hover:text-foreground relative z-[60] inline-block max-w-[110px] min-w-[60px] flex-1 cursor-pointer overflow-hidden rounded px-1 py-0.5 text-left transition-all duration-200 hover:bg-white/20 active:scale-95"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPopoverOpen((prev) => !prev);
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
+            <PopoverTrigger asChild>
+              <span
+                className="hover:text-foreground relative z-[60] inline-block max-w-[110px] min-w-[60px] flex-1 cursor-pointer overflow-hidden rounded px-1 py-0.5 text-left transition-all duration-200 hover:bg-white/20 active:scale-95"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPopoverOpen((prev) => !prev);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                <PreText
+                  className="text-foreground/50 text-[10px] font-medium"
+                  whiteSpace="nowrap"
                 >
-                  <PreText
-                    className="text-foreground/50 text-[10px] font-medium"
-                    whiteSpace="nowrap"
-                  >
-                    {activeSectionName}
-                  </PreText>
-                </span>
-              }
-            />
+                  {activeSectionName}
+                </PreText>
+              </span>
+            </PopoverTrigger>
             <PopoverContent
               side="bottom"
               align="start"

@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { StorytellerEffectType } from "~/types/ixstats";
+import { IxTime } from "~/lib/ixtime";
+import { notificationAPI } from "~/lib/notification-api";
 
 /**
  * Scheduled Changes Router
@@ -11,6 +14,61 @@ import { TRPCError } from "@trpc/server";
  * - short_term: Applied in 3-5 IxDays (medium impact)
  * - long_term: Applied in 1 IxWeek (major changes)
  */
+
+const ALLOWED_FIELD_PATHS = [
+  "currentGdpPerCapita",
+  "currentTotalGdp",
+  "currentPopulation",
+  "adjustedGdpGrowth",
+  "populationGrowthRate",
+  "unemploymentRate",
+  "inflationRate",
+  "taxRevenueGDPPercent",
+] as const;
+
+type AllowedFieldPath = (typeof ALLOWED_FIELD_PATHS)[number];
+
+function validateFieldPath(fieldPath: string): asserts fieldPath is AllowedFieldPath {
+  if (!ALLOWED_FIELD_PATHS.includes(fieldPath as AllowedFieldPath)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Invalid field path: "${fieldPath}". Allowed: ${ALLOWED_FIELD_PATHS.join(", ")}`,
+    });
+  }
+}
+
+const FIELD_TO_EFFECT_TYPE: Record<AllowedFieldPath, StorytellerEffectType> = {
+  currentGdpPerCapita: StorytellerEffectType.GDP_ADJUSTMENT,
+  currentTotalGdp: StorytellerEffectType.GDP_ADJUSTMENT,
+  currentPopulation: StorytellerEffectType.POPULATION_ADJUSTMENT,
+  adjustedGdpGrowth: StorytellerEffectType.GROWTH_RATE_MODIFIER,
+  populationGrowthRate: StorytellerEffectType.GROWTH_RATE_MODIFIER,
+  unemploymentRate: StorytellerEffectType.ECONOMIC_POLICY,
+  inflationRate: StorytellerEffectType.ECONOMIC_POLICY,
+  taxRevenueGDPPercent: StorytellerEffectType.ECONOMIC_POLICY,
+};
+
+const IMPACT_TO_DURATION: Record<string, number> = {
+  none: 0,
+  low: 1,
+  medium: 2,
+  high: 4,
+};
+
+const IMPACT_TO_PRIORITY: Record<string, "low" | "medium" | "high"> = {
+  none: "low",
+  low: "medium",
+  medium: "high",
+  high: "high",
+};
+
+async function fireAndForgetNotify(promise: Promise<unknown>): Promise<void> {
+  try {
+    await promise;
+  } catch {
+    // fire-and-forget — notification failure must not fail the operation
+  }
+}
 
 export const scheduledChangesRouter = createTRPCRouter({
   /**
@@ -83,6 +141,8 @@ export const scheduledChangesRouter = createTRPCRouter({
           message: "You don't have permission to modify this country",
         });
       }
+
+      validateFieldPath(input.fieldPath);
 
       const scheduledChange = await ctx.db.scheduledChange.create({
         data: {
@@ -260,19 +320,39 @@ export const scheduledChangesRouter = createTRPCRouter({
         });
       }
 
-      // Parse the field path and new value
       const fieldPath = change.fieldPath;
-      const newValue = JSON.parse(change.newValue) as unknown;
+      validateFieldPath(fieldPath);
+      const newValue = JSON.parse(change.newValue) as number;
+      const effectType = FIELD_TO_EFFECT_TYPE[fieldPath];
+      const duration = IMPACT_TO_DURATION[change.impactLevel] ?? 0;
+      const priority = IMPACT_TO_PRIORITY[change.impactLevel] ?? "medium";
 
-      // Update the country with the new value
-      // This is a simplified version - you'd need to handle different field paths
-      const updateData: Record<string, unknown> = {};
-      updateData[fieldPath] = newValue;
-
-      await ctx.db.country.update({
-        where: { id: change.countryId },
-        data: updateData,
+      // Create StorytellerEffect (the validated, narrative-wired write path)
+      await ctx.db.storytellerEffect.create({
+        data: {
+          countryId: change.countryId,
+          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime() * 1000),
+          inputType: effectType,
+          value: newValue,
+          description: `Scheduled change: ${fieldPath} → ${newValue} (impact: ${change.impactLevel})`,
+          duration,
+          isActive: true,
+          createdBy: change.userId,
+        },
       });
+
+      // Notify the country (fire-and-forget)
+      fireAndForgetNotify(
+        notificationAPI.create({
+          title: "Scheduled Change Applied",
+          message: `${fieldPath} updated to ${newValue} (${change.impactLevel} impact)`,
+          countryId: change.countryId,
+          category: "economic",
+          type: "update",
+          priority,
+          source: "scheduled-changes",
+        })
+      );
 
       // Mark change as applied
       const applied = await ctx.db.scheduledChange.update({
@@ -349,38 +429,76 @@ export const scheduledChangesRouter = createTRPCRouter({
       },
     });
 
+    // Filter to only valid field paths before writing
+    const validChanges = dueChanges.filter((c) =>
+      ALLOWED_FIELD_PATHS.includes(c.fieldPath as AllowedFieldPath)
+    );
+
     const appliedChanges: string[] = [];
     const errors: Array<{ changeId: string; error: string }> = [];
 
-    for (const change of dueChanges) {
+    for (const change of validChanges) {
       try {
-        // Parse field path and new value
-        const fieldPath = change.fieldPath;
-        const newValue = JSON.parse(change.newValue) as unknown;
+        const fieldPath = change.fieldPath as AllowedFieldPath;
+        const newValue = JSON.parse(change.newValue) as number;
+        const effectType = FIELD_TO_EFFECT_TYPE[fieldPath];
+        const duration = IMPACT_TO_DURATION[change.impactLevel] ?? 0;
+        const priority = IMPACT_TO_PRIORITY[change.impactLevel] ?? "medium";
+        const ixTimeTimestamp = new Date(IxTime.getCurrentIxTime() * 1000);
 
-        // Update country
-        const updateData: Record<string, unknown> = {};
-        updateData[fieldPath] = newValue;
+        await ctx.db.$transaction(async (tx) => {
+          // Create StorytellerEffect
+          await tx.storytellerEffect.create({
+            data: {
+              countryId: change.countryId,
+              ixTimeTimestamp,
+              inputType: effectType,
+              value: newValue,
+              description: `Scheduled change: ${fieldPath} → ${newValue} (impact: ${change.impactLevel})`,
+              duration,
+              isActive: true,
+              createdBy: change.userId,
+            },
+          });
 
-        await ctx.db.country.update({
-          where: { id: change.countryId },
-          data: updateData,
+          // Mark as applied
+          await tx.scheduledChange.update({
+            where: { id: change.id },
+            data: {
+              status: "applied",
+              appliedAt: now,
+            },
+          });
         });
 
-        // Mark as applied
-        await ctx.db.scheduledChange.update({
-          where: { id: change.id },
-          data: {
-            status: "applied",
-            appliedAt: new Date(),
-          },
-        });
+        // Fire-and-forget notification
+        fireAndForgetNotify(
+          notificationAPI.create({
+            title: "Scheduled Change Applied",
+            message: `${fieldPath} updated to ${newValue} (${change.impactLevel} impact)`,
+            countryId: change.countryId,
+            category: "economic",
+            type: "update",
+            priority,
+            source: "scheduled-changes",
+          })
+        );
 
         appliedChanges.push(change.id);
       } catch (error) {
         errors.push({
           changeId: change.id,
           error: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+    }
+
+    // Log invalid field paths as errors without applying
+    for (const change of dueChanges) {
+      if (!ALLOWED_FIELD_PATHS.includes(change.fieldPath as AllowedFieldPath)) {
+        errors.push({
+          changeId: change.id,
+          error: `Invalid field path: "${change.fieldPath}"`,
         });
       }
     }

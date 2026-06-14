@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
  * AutosaveHistory Router
  *
  * Provides endpoints to query autosave history from the AuditLog table.
- * Autosave actions are stored with action patterns like 'AUTOSAVE_IDENTITY_SAVED', 'AUTOSAVE_GOVERNMENT_FAILED', etc.
+ * Autosave actions are stored with action patterns like 'autosave:nationalIdentity', 'autosave:government', etc.
  */
 export const autosaveHistoryRouter = createTRPCRouter({
   /**
@@ -45,7 +45,7 @@ export const autosaveHistoryRouter = createTRPCRouter({
         where: {
           target: countryId,
           action: {
-            startsWith: "AUTOSAVE_",
+            startsWith: "autosave:",
           },
         },
       });
@@ -55,7 +55,7 @@ export const autosaveHistoryRouter = createTRPCRouter({
         where: {
           target: countryId,
           action: {
-            startsWith: "AUTOSAVE_",
+            startsWith: "autosave:",
           },
         },
         orderBy: {
@@ -100,17 +100,17 @@ export const autosaveHistoryRouter = createTRPCRouter({
       }
 
       // Aggregate at the DB layer instead of loading every autosave row and scanning
-      // it 4+ times in JS. AUTOSAVE_ actions are a small set of distinct strings
-      // (e.g. AUTOSAVE_IDENTITY_SAVED, AUTOSAVE_GOVERNMENT_FAILED), so grouping by
+      // it 4+ times in JS. autosave: actions are a small set of distinct strings
+      // (e.g. autosave:nationalIdentity, autosave:government), so grouping by
       // `action` returns only a handful of rows regardless of history size. (audit B2)
       const baseWhere = {
         target: countryId,
-        action: { startsWith: "AUTOSAVE_" },
+        action: { startsWith: "autosave:" },
       };
 
       const [grouped, last] = await Promise.all([
         ctx.db.auditLog.groupBy({
-          by: ["action"],
+          by: ["action", "success"],
           where: baseWhere,
           _count: { _all: true },
         }),
@@ -130,16 +130,17 @@ export const autosaveHistoryRouter = createTRPCRouter({
         const count = group._count._all;
         totalAutosaves += count;
 
-        if (group.action.includes("_FAILED")) {
-          failureCount += count;
-        } else {
+        if (group.success) {
           successCount += count;
+        } else {
+          failureCount += count;
         }
 
-        if (group.action.includes("IDENTITY")) sectionBreakdown.identity += count;
-        else if (group.action.includes("GOVERNMENT")) sectionBreakdown.government += count;
-        else if (group.action.includes("TAX")) sectionBreakdown.tax += count;
-        else if (group.action.includes("ECONOMY")) sectionBreakdown.economy += count;
+        const actionLower = group.action.toLowerCase();
+        if (actionLower.includes("identity")) sectionBreakdown.identity += count;
+        else if (actionLower.includes("government")) sectionBreakdown.government += count;
+        else if (actionLower.includes("tax")) sectionBreakdown.tax += count;
+        else if (actionLower.includes("economy")) sectionBreakdown.economy += count;
       }
 
       return {
@@ -171,7 +172,7 @@ export const autosaveHistoryRouter = createTRPCRouter({
         where: {
           userId: ctx.auth.userId,
           action: {
-            startsWith: "AUTOSAVE_",
+            startsWith: "autosave:",
           },
         },
         orderBy: {
@@ -218,9 +219,9 @@ export const autosaveHistoryRouter = createTRPCRouter({
         where: {
           target: countryId,
           action: {
-            contains: "_FAILED",
-            startsWith: "AUTOSAVE_",
+            startsWith: "autosave:",
           },
+          success: false,
         },
         orderBy: {
           timestamp: "desc",
@@ -272,7 +273,7 @@ export const autosaveHistoryRouter = createTRPCRouter({
       } = {
         target: countryId,
         action: {
-          startsWith: "AUTOSAVE_",
+          startsWith: "autosave:",
         },
       };
 
@@ -299,12 +300,13 @@ export const autosaveHistoryRouter = createTRPCRouter({
       autosaves.forEach((log) => {
         const dateKey = log.timestamp.toISOString().split("T")[0]!;
 
-        // Extract section from action (e.g., "AUTOSAVE_IDENTITY_SAVED" -> "identity")
+        // Extract section from action (e.g., "autosave:nationalIdentity" -> "identity")
         let section = "unknown";
-        if (log.action.includes("IDENTITY")) section = "identity";
-        else if (log.action.includes("GOVERNMENT")) section = "government";
-        else if (log.action.includes("TAX")) section = "tax";
-        else if (log.action.includes("ECONOMY")) section = "economy";
+        const actionLower = log.action.toLowerCase();
+        if (actionLower.includes("identity")) section = "identity";
+        else if (actionLower.includes("government")) section = "government";
+        else if (actionLower.includes("tax")) section = "tax";
+        else if (actionLower.includes("economy")) section = "economy";
 
         if (!timelineMap.has(dateKey)) {
           timelineMap.set(dateKey, new Map());

@@ -322,8 +322,8 @@ export function TeamRosterModal({
           <div
             className="border-border/30 bg-muted/30 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border"
             style={{
-              background: team.color
-                ? `linear-gradient(135deg, ${team.color}20, ${team.color}05)`
+              background: team!.color
+                ? `linear-gradient(135deg, ${team!.color}20, ${team!.color}05)`
                 : undefined,
             }}
           >

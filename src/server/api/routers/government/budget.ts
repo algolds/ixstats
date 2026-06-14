@@ -121,19 +121,6 @@ const revenueSourceInputSchema = z.object({
 const governmentBuilderStateSchema = GovernmentBuilderStateSchema;
 
 export const governmentBudgetRouter = createTRPCRouter({
-  // Get government structure by country ID with configurable includes
-  // Phase 1 optimization: Added limits to prevent unbounded data fetching
-
-  // Get full government structure without limits (admin/export use cases)
-
-  // Check for conflicts before creating/updating
-
-  // Create complete government structure
-
-  // Update government structure
-
-  // Delete government structure
-
   // Get budget summary
   getBudgetSummary: publicProcedure
     .input(
@@ -347,16 +334,4 @@ export const governmentBudgetRouter = createTRPCRouter({
 
       return subBudget;
     }),
-
-  // Get department hierarchy
-
-  // Autosave government structure (partial updates)
-
-  // Get atomic government components for a country
-
-  // Add atomic government component
-
-  // Remove atomic government component
-
-  // Get effectiveness analysis for atomic components
 });

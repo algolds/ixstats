@@ -62,7 +62,9 @@
       ]
     },
     /* Performance Optimizations */
-"types": ["node"],
+    "types": [
+      "node"
+    ],
     "assumeChangesOnlyAffectDirectDependencies": true,
     "disableSourceOfProjectReferenceRedirect": true,
     "skipDefaultLibCheck": true,
@@ -70,7 +72,9 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": [
-    "src"
+    "src",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "**/node_modules",

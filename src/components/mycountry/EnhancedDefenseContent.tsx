@@ -5,8 +5,6 @@ import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { Sword, Target, Activity } from "lucide-react";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { ShieldCheckIcon } from "~/components/ui/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
 import { OperationsPanel } from "~/components/defense/OperationsPanel";
@@ -16,9 +14,7 @@ import {
   SectionShell,
   InlineWiki,
   TabHeroBanner,
-  type StatusBadgeConfig,
 } from "./primitives";
-import { useFlag } from "~/hooks/useUnifiedFlags";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { DefenseSidebarWidget } from "./sidebar-widgets/DefenseSidebarWidget";
 
@@ -54,34 +50,11 @@ export function EnhancedDefenseContent({
     { enabled: !!country?.id }
   );
 
-  // Get military branches
-  const { data: militaryBranches } = api.security.getMilitaryBranches.useQuery(
-    { countryId: country?.id ?? "" },
-    { enabled: !!country?.id }
-  );
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const { flagUrl } = useFlag(country?.name ?? "");
-
-  const branchCount = militaryBranches?.length ?? 0;
-  const avgReadiness =
-    branchCount > 0
-      ? Math.round(
-          militaryBranches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount
-        )
-      : 0;
-  const securityScore = securityData?.overallSecurityScore ?? 0;
-
   if (isLoading || !country) {
     return null;
   }
 
   const activeThreatCount = securityData?.activeThreatCount ?? 0;
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const defenseHealth = Math.max(
-    0,
-    Math.min(100, Math.round(securityScore * 0.6 + avgReadiness * 0.4))
-  );
 
   const tabs = [
     {
@@ -99,25 +72,6 @@ export function EnhancedDefenseContent({
       shortLabel: "Ops",
       badge: 0,
     },
-  ];
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const statusBadges: StatusBadgeConfig[] =
-    activeThreatCount > 0
-      ? [
-          {
-            icon: Sword,
-            count: activeThreatCount,
-            colorClass: "border-red-500/40 text-red-600 dark:text-red-400",
-          },
-        ]
-      : [];
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const heroStats = [
-    { label: "Security", value: `${securityScore}/100`, accentText: true },
-    { label: "Branches", value: branchCount, accentText: true },
-    { label: "Readiness", value: `${avgReadiness}%`, accentText: true },
   ];
 
   return (

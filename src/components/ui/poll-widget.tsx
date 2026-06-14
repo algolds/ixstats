@@ -511,7 +511,7 @@ export function PollWidgetTrigger({
     return <DialogTrigger asChild>{button}</DialogTrigger>;
   }
 
-  return <PopoverTrigger render={button} />;
+  return <PopoverTrigger asChild>{button}</PopoverTrigger>;
 }
 
 // ============================================================================

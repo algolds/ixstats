@@ -7,6 +7,8 @@ import { COMPONENT_TYPE_VALUES } from "~/types/government";
 
 import { GovernmentBuilderStateSchema } from "~/types/validation/government";
 import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationAPI } from "~/lib/notification-api";
+import { applyGovernmentComponentEffects } from "~/lib/government-component-effects";
 
 // Input validation schemas
 // eslint-disable-next-line unused-imports/no-unused-vars
@@ -123,27 +125,6 @@ const revenueSourceInputSchema = z.object({
 const governmentBuilderStateSchema = GovernmentBuilderStateSchema;
 
 export const governmentComponentsRouter = createTRPCRouter({
-  // Get government structure by country ID with configurable includes
-  // Phase 1 optimization: Added limits to prevent unbounded data fetching
-
-  // Get full government structure without limits (admin/export use cases)
-
-  // Check for conflicts before creating/updating
-
-  // Create complete government structure
-
-  // Update government structure
-
-  // Delete government structure
-
-  // Get budget summary
-
-  // Get revenue summary
-
-  // Update budget allocation
-
-  // Add sub-budget categories
-
   // Get department hierarchy
   getDepartmentHierarchy: publicProcedure
     .input(z.object({ countryId: z.string() }))
@@ -194,8 +175,6 @@ export const governmentComponentsRouter = createTRPCRouter({
 
       return governmentStructure.departments.map(buildHierarchy);
     }),
-
-  // Autosave government structure (partial updates)
 
   updatePoliticalMetrics: protectedProcedure
     .input(
@@ -302,6 +281,29 @@ export const governmentComponentsRouter = createTRPCRouter({
         },
       });
 
+      // Apply component effects to game state
+      try {
+        const result = await applyGovernmentComponentEffects(ctx.db, input.countryId);
+        await notificationAPI.create({
+          title: "Government Component Added",
+          message: `Added ${input.componentType}. Government effectiveness: ${result.overallEffectiveness.toFixed(1)}%. ${result.effectsCreated} economic effect(s) applied.`,
+          countryId: input.countryId,
+          category: "governance",
+          priority: "medium",
+          type: "info",
+          href: "/mycountry/government/builder",
+          source: "government-components",
+          actionable: false,
+          metadata: {
+            componentType: input.componentType,
+            overallEffectiveness: result.overallEffectiveness,
+            effectsCreated: result.effectsCreated,
+          },
+        });
+      } catch (error) {
+        console.error("[Government] Failed to apply component effects:", error);
+      }
+
       // Notify about component addition
       try {
         await notificationHooks.onGovernmentStructureChange({
@@ -332,6 +334,31 @@ export const governmentComponentsRouter = createTRPCRouter({
           componentType: input.componentType,
         },
       });
+
+      // Apply component effects to game state after removal
+      if (deleted.count > 0) {
+        try {
+          const result = await applyGovernmentComponentEffects(ctx.db, input.countryId);
+          await notificationAPI.create({
+            title: "Government Component Removed",
+            message: `Removed ${input.componentType}. Government effectiveness: ${result.overallEffectiveness.toFixed(1)}%. ${result.effectsCreated} economic effect(s) active.`,
+            countryId: input.countryId,
+            category: "governance",
+            priority: "medium",
+            type: "info",
+            href: "/mycountry/government/builder",
+            source: "government-components",
+            actionable: false,
+            metadata: {
+              componentType: input.componentType,
+              overallEffectiveness: result.overallEffectiveness,
+              effectsCreated: result.effectsCreated,
+            },
+          });
+        } catch (error) {
+          console.error("[Government] Failed to apply component effects after removal:", error);
+        }
+      }
 
       // Notify about component removal
       try {
@@ -444,5 +471,37 @@ export const governmentComponentsRouter = createTRPCRouter({
           effectivenessScore: c.effectivenessScore,
         })),
       };
+    }),
+
+  // Recalculate and apply government component effects on demand
+  recalculateEffects: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+      });
+      if (!userProfile || userProfile.countryId !== input.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to edit this country.",
+        });
+      }
+
+      const result = await applyGovernmentComponentEffects(ctx.db, input.countryId);
+
+      await notificationAPI.create({
+        title: "Government Effects Recalculated",
+        message: `Government effectiveness: ${result.overallEffectiveness.toFixed(1)}%. ${result.effectsCreated} economic effect(s) applied. Political metrics ${result.politicalMetricsUpdated ? "updated" : "unchanged"}.`,
+        countryId: input.countryId,
+        category: "governance",
+        priority: "low",
+        type: "info",
+        href: "/mycountry/government/builder",
+        source: "government-components",
+        actionable: false,
+        metadata: result,
+      });
+
+      return result;
     }),
 });

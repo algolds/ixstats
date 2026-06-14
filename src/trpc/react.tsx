@@ -72,14 +72,15 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           transformer: SuperJSON,
           url: getBaseUrl() + "/api/trpc",
           headers: async () => {
-            const headers = new Headers();
-            headers.set("x-trpc-source", "nextjs-react");
+            const headers: Record<string, string> = {
+              "x-trpc-source": "nextjs-react",
+            };
 
             // Add Clerk authentication token
             if (getToken) {
               const token = await getToken();
               if (token) {
-                headers.set("authorization", `Bearer ${token}`);
+                headers["authorization"] = `Bearer ${token}`;
               }
             }
 

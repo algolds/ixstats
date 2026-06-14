@@ -23,7 +23,7 @@ export function MessagesEmptyState({ activeFolder, onNewConversation }: Messages
       <p className="text-muted-foreground mb-6 max-w-sm text-sm">
         Choose a conversation from the sidebar, or start a new one to begin messaging.
       </p>
-      {activeFolder === "personal" && onNewConversation && (
+      {activeFolder === "conversations" && onNewConversation && (
         <Button
           onClick={onNewConversation}
           className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"

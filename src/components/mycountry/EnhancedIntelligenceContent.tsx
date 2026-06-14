@@ -1,12 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { AlertTriangle } from "lucide-react";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { BrainIcon } from "~/components/ui/icons";
-import { useCountryData, SectionShell, InlineWiki, type StatusBadgeConfig } from "./primitives";
+import { useCountryData, SectionShell, InlineWiki } from "./primitives";
 import { api } from "~/trpc/react";
-import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { IntelligenceSidebarWidget } from "./sidebar-widgets/IntelligenceSidebarWidget";
 import { IntelligenceWarRoom } from "~/components/intelligence/IntelligenceWarRoom";
@@ -34,11 +30,6 @@ export function EnhancedIntelligenceContent({
 }: EnhancedIntelligenceContentProps) {
   const { country, isLoading } = useCountryData();
 
-  // Queries needed for stats & status computation
-  const { data: defenseOverview } = api.security.getDefenseOverview.useQuery(
-    { countryId: country?.id ?? "" },
-    { enabled: !!country?.id }
-  );
   const { data: intelligenceOverview } = api.intelCore.getOverview.useQuery(
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
@@ -47,8 +38,6 @@ export function EnhancedIntelligenceContent({
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const { flagUrl } = useFlag(country?.name ?? "");
 
   const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
   const activeEmbassiesCount =
@@ -62,40 +51,6 @@ export function EnhancedIntelligenceContent({
   if (isLoading || !country) {
     return null;
   }
-
-  const criticalAlerts = intelligenceOverview?.alerts?.critical ?? 0;
-  const otherAlerts = Math.max(totalAlerts - criticalAlerts, 0);
-  const defOverviewScore = defenseOverview?.overallScore ?? 50;
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const intelligenceHealth = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        defOverviewScore - Math.min(criticalAlerts * 10, 20) - Math.min(otherAlerts * 2, 10)
-      )
-    )
-  );
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const statusBadges: StatusBadgeConfig[] =
-    criticalAlerts > 0
-      ? [
-          {
-            icon: AlertTriangle,
-            count: criticalAlerts,
-            colorClass: "border-red-500/40 text-red-600 dark:text-red-400",
-          },
-        ]
-      : [];
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const heroStats = [
-    { label: "Security", value: `${defOverviewScore}/100`, accentText: true },
-    { label: "Alerts", value: criticalAlerts, accentText: true },
-    { label: "Network", value: `${activeEmbassiesCount} active`, accentText: true },
-  ];
 
   return (
     <SectionShell

@@ -2,18 +2,14 @@
 
 import { useMemo } from "react";
 import { Landmark, Users, BarChart3 } from "lucide-react";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { VoteIcon } from "~/components/ui/icons";
 import {
   useCountryData,
   VitalityRings,
   SectionShell,
   InlineWiki,
   type RingConfig,
-  type StatusBadgeConfig,
 } from "./primitives";
 import { api } from "~/trpc/react";
-import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { PoliticsSidebarWidget } from "./sidebar-widgets/PoliticsSidebarWidget";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
@@ -51,8 +47,6 @@ export function EnhancedPoliticsContent({
   );
 
   const totalSeats = legislature?.totalSeats ?? 0;
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const { flagUrl } = useFlag(country?.name ?? "");
 
   const { isGuided } = useSectionDensity({
     items: (parties?.length ?? 0) + (totalSeats > 0 ? 1 : 0) + (elections?.length ?? 0),
@@ -111,51 +105,6 @@ export function EnhancedPoliticsContent({
   if (isLoading || !country) {
     return null;
   }
-
-  const pendingElections =
-    elections?.filter(
-      (e: any) =>
-        e.status === "SCHEDULED" ||
-        e.status === "scheduled" ||
-        e.status === "IN_PROGRESS" ||
-        e.status === "in_progress"
-    ).length ?? 0;
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const statusBadges: StatusBadgeConfig[] =
-    pendingElections > 0
-      ? [
-          {
-            icon: BarChart3,
-            count: pendingElections,
-            colorClass: "border-indigo-500/40 text-indigo-600 dark:text-indigo-400",
-          },
-        ]
-      : [];
-
-  const partyCount = parties?.length ?? 0;
-  const filledSeats =
-    parliament?.partySummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const politicsHealth = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        50 +
-          Math.min(partyCount * 10, 30) +
-          (totalSeats > 0 ? Math.min((filledSeats / totalSeats) * 30, 30) : 0) -
-          (pendingElections > 0 ? 10 : 0)
-      )
-    )
-  );
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const heroStats = [
-    { label: "Parties", value: partyCount, accentText: true },
-    { label: "Seats", value: totalSeats, accentText: true },
-    { label: "Elections", value: elections?.length ?? 0, accentText: true },
-  ];
 
   return (
     <SectionShell

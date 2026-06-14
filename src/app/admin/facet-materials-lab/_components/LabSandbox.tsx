@@ -216,7 +216,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
     const poll = () => {
       const style = getComputedStyle(el);
       setComputed({
-        "backdrop-filter": style.backdropFilter || style.webkitBackdropFilter || "none",
+        "backdrop-filter": style.backdropFilter || (style as any).webkitBackdropFilter || "none",
         "box-shadow": style.boxShadow,
         background: style.background,
         "z-index": style.zIndex,

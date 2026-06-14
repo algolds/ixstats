@@ -14,6 +14,7 @@
 
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } from "react";
 import type { FeatureCollection } from "geojson";
+import type { MapLayerType } from "~/lib/map-config";
 import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
 
 import { Suspense } from "react";
@@ -87,6 +88,12 @@ export interface MapOverlayFeatures {
   subdivisions: FeatureCollection;
   storyPins?: FeatureCollection;
   mapLabels?: FeatureCollection;
+}
+
+export interface MapLayerData {
+  type: MapLayerType;
+  data: FeatureCollection;
+  visible: boolean;
 }
 
 export type OverlayVisibility = Record<string, boolean>;

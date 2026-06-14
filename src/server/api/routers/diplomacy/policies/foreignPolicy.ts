@@ -6,54 +6,6 @@ import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
-  // Get diplomatic relationships for a country
-
-  // Get recent diplomatic changes
-
-  // Update diplomatic relationship
-
-  // Create a new diplomatic relationship
-
-  // Delete/terminate a diplomatic relationship
-
-  // Embassy Network Operations
-
-  // Diplomatic messaging has been unified into ThinkShare (/messages).
-  // Use api.messages.getConversationsByFolder with folder="diplomatic" instead.
-  // Use api.messages.sendMessage with conversationType="diplomatic" instead.
-
-  // Cultural Exchanges
-
-  // Link existing cultural exchange to an embassy mission
-
-  // Embassy Game System Endpoints
-
-  // Embassy Management
-
-  // Embassy Upgrades
-
-  // Embassy Missions
-
-  // Embassy Economics
-
-  // Influence and Relationship Management Procedures
-
-  // Follow/Unfollow system for countries
-
-  // Embassy Shared Data System
-
-  // Embassy Profile Management
-
-  // Get cultural compatibility scores for a country with all other countries
-
-  // Get recommended diplomatic partners based on cultural compatibility
-
-  // Update cultural exchange (only title and description)
-
-  // Cancel cultural exchange (with diplomatic penalties)
-
-  // Get NPC responses for cultural exchange using diplomatic AI
-
   // ============================================================
   // Foreign Policy Actions (Phase 2)
   // ============================================================
@@ -448,96 +400,99 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
           break;
       }
 
-      // Create the foreign policy action
-      const action = await ctx.db.foreignPolicyAction.create({
-        data: {
-          initiatorId,
-          targetId: input.targetId,
-          actionType: input.actionType,
-          category,
-          severity: input.severity,
-          status: "active",
-          initiatorGdpImpact,
-          targetGdpImpact,
-          relationshipDelta,
-          reason: input.reason,
-          description: input.description,
-        },
-        include: {
-          initiator: { select: { id: true, name: true } },
-          target: { select: { id: true, name: true } },
-        },
-      });
-
-      // Create storyteller effects for BOTH countries — economic engine auto-processes
+      // Compute trade multiplier and relation changes before transaction
+      const tradeMultiplier =
+        input.actionType === "embargo"
+          ? 0.2
+          : input.actionType === "blockade"
+            ? 0.05
+            : input.actionType === "sanction"
+              ? 0.7
+              : input.actionType === "free_trade"
+                ? 1.25
+                : 1.0;
+      const newStrength = relation
+        ? Math.max(0, Math.min(100, strength + relationshipDelta))
+        : null;
       const actionDescription = `Foreign policy: ${input.actionType} (${input.severity}) ${input.actionType === "free_trade" || input.actionType === "military_alliance" ? "with" : "against"} ${target.name}`;
 
-      await ctx.db.storytellerEffect.createMany({
-        data: [
-          {
-            countryId: initiatorId,
-            ixTimeTimestamp: new Date(),
-            inputType: initiatorInputType,
-            value: initiatorGdpImpact,
-            description: actionDescription,
-            duration: 4, // 4 IxTime years
-            isActive: true,
-            createdBy: ctx.user.id,
+      // Transaction: atomically create FP action + effects + update relations + trade
+      const action = await ctx.db.$transaction(async (tx) => {
+        const created = await tx.foreignPolicyAction.create({
+          data: {
+            initiatorId,
+            targetId: input.targetId,
+            actionType: input.actionType,
+            category,
+            severity: input.severity,
+            status: "active",
+            initiatorGdpImpact,
+            targetGdpImpact,
+            relationshipDelta,
+            reason: input.reason,
+            description: input.description,
           },
-          {
-            countryId: input.targetId,
-            ixTimeTimestamp: new Date(),
-            inputType: targetInputType,
-            value: targetGdpImpact,
-            description: `Affected by ${initiator.name}: ${input.actionType} (${input.severity})`,
-            duration: 4,
-            isActive: true,
-            createdBy: ctx.user.id,
+          include: {
+            initiator: { select: { id: true, name: true } },
+            target: { select: { id: true, name: true } },
           },
-        ],
+        });
+
+        await tx.storytellerEffect.createMany({
+          data: [
+            {
+              countryId: initiatorId,
+              ixTimeTimestamp: new Date(),
+              inputType: initiatorInputType,
+              value: initiatorGdpImpact,
+              description: actionDescription,
+              duration: 4,
+              isActive: true,
+              createdBy: ctx.user.id,
+            },
+            {
+              countryId: input.targetId,
+              ixTimeTimestamp: new Date(),
+              inputType: targetInputType,
+              value: targetGdpImpact,
+              description: `Affected by ${initiator.name}: ${input.actionType} (${input.severity})`,
+              duration: 4,
+              isActive: true,
+              createdBy: ctx.user.id,
+            },
+          ],
+        });
+
+        if (relation && newStrength !== null) {
+          await tx.diplomaticRelation.update({
+            where: { id: relation.id },
+            data: {
+              strength: newStrength,
+              lastContact: new Date(),
+              tradeVolume:
+                input.actionType === "embargo" || input.actionType === "blockade"
+                  ? (relation.tradeVolume ?? 0) * 0.3
+                  : input.actionType === "free_trade"
+                    ? (relation.tradeVolume ?? 0) * 1.2
+                    : relation.tradeVolume,
+            },
+          });
+        }
+
+        if (trade) {
+          await tx.bilateralTrade.update({
+            where: { id: trade.id },
+            data: {
+              tradeVolume: trade.tradeVolume * tradeMultiplier,
+              exportsFrom1: trade.exportsFrom1 * tradeMultiplier,
+              exportsFrom2: trade.exportsFrom2 * tradeMultiplier,
+              tradeBalance1: (trade.exportsFrom1 - trade.exportsFrom2) * tradeMultiplier,
+            },
+          });
+        }
+
+        return created;
       });
-
-      // Update DiplomaticRelation strength
-      if (relation) {
-        const newStrength = Math.max(0, Math.min(100, strength + relationshipDelta));
-        await ctx.db.diplomaticRelation.update({
-          where: { id: relation.id },
-          data: {
-            strength: newStrength,
-            lastContact: new Date(),
-            tradeVolume:
-              input.actionType === "embargo" || input.actionType === "blockade"
-                ? (relation.tradeVolume ?? 0) * 0.3 // Trade drops 70%
-                : input.actionType === "free_trade"
-                  ? (relation.tradeVolume ?? 0) * 1.2 // Trade grows 20%
-                  : relation.tradeVolume,
-          },
-        });
-      }
-
-      // Update BilateralTrade volume
-      if (trade) {
-        const tradeMultiplier =
-          input.actionType === "embargo"
-            ? 0.2
-            : input.actionType === "blockade"
-              ? 0.05
-              : input.actionType === "sanction"
-                ? 0.7
-                : input.actionType === "free_trade"
-                  ? 1.25
-                  : 1.0;
-
-        await ctx.db.bilateralTrade.update({
-          where: { id: trade.id },
-          data: {
-            tradeVolume: trade.tradeVolume * tradeMultiplier,
-            exportsFrom1: trade.exportsFrom1 * tradeMultiplier,
-            exportsFrom2: trade.exportsFrom2 * tradeMultiplier,
-            tradeBalance1: (trade.exportsFrom1 - trade.exportsFrom2) * tradeMultiplier,
-          },
-        });
-      }
 
       // Auto-news: post to ThinkPages
       const newsType =
@@ -607,76 +562,52 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
         });
       }
 
-      // Lift the action
-      const updated = await ctx.db.foreignPolicyAction.update({
-        where: { id: input.actionId },
-        data: { status: "lifted" },
-        include: {
-          initiator: { select: { id: true, name: true } },
-          target: { select: { id: true, name: true } },
-        },
-      });
-
-      // Partial relationship recovery (30% of damage)
-      if (action.relationshipDelta < 0) {
-        const recovery = Math.round(Math.abs(action.relationshipDelta) * 0.3);
-        const relation = await ctx.db.diplomaticRelation.findFirst({
-          where: {
-            OR: [
-              { country1: action.initiatorId, country2: action.targetId },
-              { country1: action.targetId, country2: action.initiatorId },
-            ],
+      // Transaction: atomically lift action + recover relations + deactivate effects
+      const updated = await ctx.db.$transaction(async (tx) => {
+        const updatedAction = await tx.foreignPolicyAction.update({
+          where: { id: input.actionId },
+          data: { status: "lifted" },
+          include: {
+            initiator: { select: { id: true, name: true } },
+            target: { select: { id: true, name: true } },
           },
         });
-        if (relation) {
-          await ctx.db.diplomaticRelation.update({
-            where: { id: relation.id },
-            data: {
-              strength: Math.min(100, relation.strength + recovery),
-              lastContact: new Date(),
+
+        // Partial relationship recovery (30% of damage)
+        if (action.relationshipDelta < 0) {
+          const recovery = Math.round(Math.abs(action.relationshipDelta) * 0.3);
+          const rel = await tx.diplomaticRelation.findFirst({
+            where: {
+              OR: [
+                { country1: action.initiatorId, country2: action.targetId },
+                { country1: action.targetId, country2: action.initiatorId },
+              ],
             },
           });
+          if (rel) {
+            await tx.diplomaticRelation.update({
+              where: { id: rel.id },
+              data: {
+                strength: Math.min(100, rel.strength + recovery),
+                lastContact: new Date(),
+              },
+            });
+          }
         }
-      }
 
-      // Deactivate associated storyteller effects to stop economic drain
-      await ctx.db.storytellerEffect.updateMany({
-        where: {
-          description: { contains: action.actionType },
-          countryId: { in: [action.initiatorId, action.targetId] },
-          isActive: true,
-        },
-        data: { isActive: false },
+        // Deactivate associated storyteller effects to stop economic drain
+        await tx.storytellerEffect.updateMany({
+          where: {
+            description: { contains: action.actionType },
+            countryId: { in: [action.initiatorId, action.targetId] },
+            isActive: true,
+          },
+          data: { isActive: false },
+        });
+
+        return updatedAction;
       });
 
       return updated;
     }),
-
-  // ============================================================
-  // Alliance / Bloc System (Phase 3)
-  // ============================================================
-
-  // Get alliances a country belongs to
-
-  // Get a single alliance dashboard
-
-  // Create a new alliance
-
-  // Invite a country to join an alliance
-
-  // Leave an alliance
-
-  // Propose an alliance action (collective sanction, shared defense, etc.)
-
-  // Vote on an alliance action
-
-  // Create an alliance document
-
-  // Get documents for an alliance
-
-  // Get active embassy missions for a country
 });
-
-// Helper function to determine category from option value
-// Helper functions for embassy game mechanics
-// Influence and Relationship Mechanics

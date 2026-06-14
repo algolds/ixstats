@@ -410,13 +410,12 @@ export const intelCoreDashboardRouter = createTRPCRouter({
 
   /**
    * Get cabinet meetings for a country
-   * Migrated from ECI router
+   * Uses the cabinetMeeting table (same schema as meetings router).
    */
   getCabinetMeetings: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        // Verify user owns the country
         if (ctx.user.countryId !== input.countryId) {
           throw new TRPCError({
             code: "FORBIDDEN",
@@ -424,17 +423,19 @@ export const intelCoreDashboardRouter = createTRPCRouter({
           });
         }
 
-        const meetings = await ctx.db.systemConfig.findMany({
-          where: {
-            key: { contains: `eci_cabinet_meeting_${input.countryId}` },
+        const meetings = await ctx.db.cabinetMeeting.findMany({
+          where: { countryId: input.countryId },
+          orderBy: { scheduledDate: "desc" },
+          include: {
+            decisions: {
+              where: { implementationStatus: { in: ["pending", "in_progress"] } },
+            },
+            actionItems: true,
+            attendances: true,
           },
-          orderBy: { updatedAt: "desc" },
         });
 
-        return meetings.map((meeting) => ({
-          id: meeting.id,
-          ...JSON.parse(meeting.value),
-        }));
+        return meetings;
       } catch (error) {
         console.error("[Unified Intelligence] Error fetching cabinet meetings:", error);
         throw error instanceof TRPCError
@@ -448,13 +449,12 @@ export const intelCoreDashboardRouter = createTRPCRouter({
 
   /**
    * Create a new cabinet meeting
-   * Migrated from ECI router
+   * Uses the cabinetMeeting table (same schema as meetings router).
    */
   createCabinetMeeting: premiumProcedure
     .input(cabinetMeetingSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        // Verify user owns the country
         if (ctx.user.countryId !== input.countryId) {
           throw new TRPCError({
             code: "FORBIDDEN",
@@ -462,10 +462,9 @@ export const intelCoreDashboardRouter = createTRPCRouter({
           });
         }
 
-        // Get the user's full record for backward compatibility
         const user = await ctx.db.user.findUnique({
           where: { clerkUserId: ctx.user.id },
-          include: { country: true },
+          select: { id: true, country: true },
         });
 
         if (!user?.country) {
@@ -475,21 +474,16 @@ export const intelCoreDashboardRouter = createTRPCRouter({
           });
         }
 
-        // Store in SystemConfig with a descriptive key
-        const result = await ctx.db.systemConfig.create({
+        const result = await ctx.db.cabinetMeeting.create({
           data: {
-            key: `eci_cabinet_meeting_${input.countryId}_${Date.now()}`,
-            value: JSON.stringify({
-              ...input,
-              countryId: input.countryId,
-              createdBy: user.id,
-              createdAt: new Date(),
-            }),
-            description: `Cabinet meeting: ${input.title}`,
+            countryId: input.countryId,
+            userId: user.id,
+            title: input.title,
+            scheduledDate: input.scheduledDate,
+            description: input.description ?? null,
           },
         });
 
-        // Trigger notification for the country
         await notificationAPI.create({
           title: "📅 Cabinet Meeting Scheduled",
           message: `A new cabinet meeting titled '${input.title}' has been scheduled.`,

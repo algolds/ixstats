@@ -66,7 +66,7 @@ export function SectionShell({
       {country?.id && onNavigate && (
         <AgendaBar
           countryId={country.id}
-          onNavigate={onNavigate}
+          onNavigateAction={onNavigate}
           activeSection={activeSection ?? section}
         />
       )}

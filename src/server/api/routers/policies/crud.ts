@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationAPI } from "~/lib/notification-api";
+import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 
 export const policiesCrudRouter = createTRPCRouter({
   // ==================== POLICY CRUD ====================
@@ -187,6 +188,20 @@ export const policiesCrudRouter = createTRPCRouter({
         console.error("[Policies] Failed to send policy activation notification:", error);
       }
 
+      // Narrative output: post policy enactment to ThinkPages (fire-and-forget)
+      const country = await ctx.db.country.findUnique({
+        where: { id: policy.countryId },
+        select: { name: true },
+      });
+      void generateDiplomaticNews(ctx.db, policy.countryId, "free_trade_signed", {
+        countryName: country?.name ?? "Government",
+        targetName: policy.name,
+        severity: "light",
+        reason: `New policy enacted: ${policy.description || policy.name}`,
+      }).catch((err) =>
+        console.error("[Policies] Failed to generate policy news:", err)
+      );
+
       return policy;
     }),
 
@@ -222,6 +237,19 @@ export const policiesCrudRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Policies] Failed to send policy suspension notification:", error);
       }
+
+      const country = await ctx.db.country.findUnique({
+        where: { id: policy.countryId },
+        select: { name: true },
+      });
+      void generateDiplomaticNews(ctx.db, policy.countryId, "sanction_imposed", {
+        countryName: country?.name ?? "Government",
+        targetName: policy.name,
+        severity: "light",
+        reason: input.reason ?? "Policy suspended",
+      }).catch((err) =>
+        console.error("[Policies] Failed to generate suspension news:", err)
+      );
 
       return policy;
     }),
@@ -259,6 +287,19 @@ export const policiesCrudRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Policies] Failed to send policy repeal notification:", error);
       }
+
+      const country = await ctx.db.country.findUnique({
+        where: { id: policy.countryId },
+        select: { name: true },
+      });
+      void generateDiplomaticNews(ctx.db, policy.countryId, "policy_lifted", {
+        countryName: country?.name ?? "Government",
+        targetName: policy.name,
+        severity: "moderate",
+        reason: input.reason ?? "Policy repealed",
+      }).catch((err) =>
+        console.error("[Policies] Failed to generate repeal news:", err)
+      );
 
       return policy;
     }),

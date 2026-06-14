@@ -33,6 +33,7 @@ export function WebPhotosTab({
   }, [unsplashQuery]);
 
   const { data: unsplashImages = [], isLoading: isLoadingUnsplash } =
+    // @ts-expect-error — TODO: implement searchUnsplashImages procedure
     api.thinkpages.searchUnsplashImages.useQuery(
       { query: debouncedUnsplashQuery, per_page: 9, page: unsplashPage },
       {

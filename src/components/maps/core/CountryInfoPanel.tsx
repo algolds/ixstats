@@ -150,8 +150,8 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
         {state.activeTab === "info" ? (
           <CountryInfoTab
             wikiRichIntro={state.wikiRichIntro}
-            wikiSections={state.wikiSections}
-            wikiImages={state.wikiImages}
+            wikiSections={state.wikiSections ?? []}
+            wikiImages={state.wikiImages ?? []}
             displayName={state.displayName}
             introExpanded={state.introExpanded}
             setIntroExpanded={state.setIntroExpanded}

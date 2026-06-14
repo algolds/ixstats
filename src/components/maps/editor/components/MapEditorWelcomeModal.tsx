@@ -120,6 +120,7 @@ export function MapEditorWelcomeModal({
         return () => clearTimeout(timer);
       }
     } catch (_) {}
+    return;
   }, [forceShow]);
 
   const handleClose = useCallback(() => {

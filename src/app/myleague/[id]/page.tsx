@@ -27,7 +27,7 @@ import {
   QuickSimWidget,
   type LeagueSection,
 } from "~/components/myleague/LeagueSidebarNav";
-import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
+import { getSportColors, getPreset, type SportPresetKey } from "~/lib/sports/presets";
 import {
   ArrowLeft,
   Play,
@@ -400,7 +400,7 @@ export default function LeagueDetailPage() {
               </Badge>
             </div>
             <p className="text-muted-foreground mt-1 text-xs font-semibold tracking-wider uppercase">
-              {archetypeLabel} • {league.federationName || "Sanctioned League"}
+              {archetypeLabel} • {getPreset(league.sportPreset as SportPresetKey).federationName}
             </p>
           </div>
         </div>

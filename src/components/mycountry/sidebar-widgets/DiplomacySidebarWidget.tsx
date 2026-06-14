@@ -19,14 +19,18 @@ interface DiplomacySidebarWidgetProps {
  * and a recent-activity log (embassies, relations, foreign policies).
  */
 export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProps) {
-  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
+  const { data: embassiesRaw } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
-  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
+  const { data: relationsRaw } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
+
+  const embassies = embassiesRaw ?? [];
+  const relations = relationsRaw ?? [];
+
   const { data: foreignPolicies } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }

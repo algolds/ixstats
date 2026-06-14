@@ -342,7 +342,7 @@ const createPrismaClient = () => {
 };
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: ReturnType<typeof createPrismaClient> | undefined;
+  prisma: PrismaClient | undefined;
 };
 
 export const db = (globalForPrisma.prisma ??
@@ -386,7 +386,7 @@ export { db as prisma };
 // Export read-only mode flag for use in other parts of the application
 export const isDatabaseReadOnly = isReadOnlyMode;
 
-if (typeof window === "undefined" && !isReadOnlyMode) {
+if (typeof (globalThis as any).window === "undefined" && !isReadOnlyMode) {
   // Asynchronously synchronize baseline achievements in background on server start
   import("~/lib/achievement-sync")
     .then(({ syncAchievements }) => {

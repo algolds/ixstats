@@ -7,56 +7,6 @@ import { notificationAPI } from "~/lib/notification-api";
 // Election System Router - Extension of Government Sub-System
 // ============================================================
 
-// D'Hondt method for proportional seat allocation
-// eslint-disable-next-line unused-imports/no-unused-vars
-function dHondtAllocation(
-  partyVotes: { partyId: string; votes: number }[],
-  totalSeats: number
-): Map<string, number> {
-  const seats = new Map<string, number>();
-  partyVotes.forEach((p) => seats.set(p.partyId, 0));
-
-  for (let i = 0; i < totalSeats; i++) {
-    let maxQuotient = -1;
-    let maxParty = "";
-
-    for (const { partyId, votes } of partyVotes) {
-      const currentSeats = seats.get(partyId) ?? 0;
-      const quotient = votes / (currentSeats + 1);
-      if (quotient > maxQuotient) {
-        maxQuotient = quotient;
-        maxParty = partyId;
-      }
-    }
-
-    if (maxParty) {
-      seats.set(maxParty, (seats.get(maxParty) ?? 0) + 1);
-    }
-  }
-
-  return seats;
-}
-
-// FPTP allocation: winner takes all per region, or if no regions, proportional top-party
-// eslint-disable-next-line unused-imports/no-unused-vars
-function fptpAllocation(
-  partyVotes: { partyId: string; votes: number }[],
-  totalSeats: number
-): Map<string, number> {
-  const seats = new Map<string, number>();
-  if (partyVotes.length === 0) return seats;
-
-  // Simple: party with most votes gets all seats (single-district FPTP)
-  // In a real multi-district system this would be per-region
-  const sorted = [...partyVotes].sort((a, b) => b.votes - a.votes);
-  const winner = sorted[0]!;
-  seats.set(winner.partyId, totalSeats);
-  for (const p of partyVotes) {
-    if (p.partyId !== winner.partyId) seats.set(p.partyId, 0);
-  }
-  return seats;
-}
-
 export interface ChamberConfig {
   name: string;
   seats: number;

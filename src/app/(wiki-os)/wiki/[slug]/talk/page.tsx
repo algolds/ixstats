@@ -310,7 +310,7 @@ export default function TalkPage() {
   const tocEntries = useMemo(() => {
     return parsedData.sections.map((sec) => ({
       id: sec.id,
-      name: sec.title,
+      text: sec.title,
       level: 2,
     }));
   }, [parsedData.sections]);

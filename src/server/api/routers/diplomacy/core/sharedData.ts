@@ -4,40 +4,6 @@ import { TRPCError } from "@trpc/server";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreSharedDataRouter = createTRPCRouter({
-  // Get diplomatic relationships for a country
-
-  // Get recent diplomatic changes
-
-  // Update diplomatic relationship
-
-  // Create a new diplomatic relationship
-
-  // Delete/terminate a diplomatic relationship
-
-  // Embassy Network Operations
-
-  // Diplomatic messaging has been unified into ThinkShare (/messages).
-  // Use api.messages.getConversationsByFolder with folder="diplomatic" instead.
-  // Use api.messages.sendMessage with conversationType="diplomatic" instead.
-
-  // Cultural Exchanges
-
-  // Link existing cultural exchange to an embassy mission
-
-  // Embassy Game System Endpoints
-
-  // Embassy Management
-
-  // Embassy Upgrades
-
-  // Embassy Missions
-
-  // Embassy Economics
-
-  // Influence and Relationship Management Procedures
-
-  // Follow/Unfollow system for countries
-
   // Embassy Shared Data System
   getSharedData: publicProcedure
     .input(
@@ -602,58 +568,4 @@ export const diplomaticCoreSharedDataRouter = createTRPCRouter({
         message: "Data sharing has been revoked",
       };
     }),
-
-  // Embassy Profile Management
-
-  // Get cultural compatibility scores for a country with all other countries
-
-  // Get recommended diplomatic partners based on cultural compatibility
-
-  // Update cultural exchange (only title and description)
-
-  // Cancel cultural exchange (with diplomatic penalties)
-
-  // Get NPC responses for cultural exchange using diplomatic AI
-
-  // ============================================================
-  // Foreign Policy Actions (Phase 2)
-  // ============================================================
-
-  // Get active foreign policies for a country (as initiator or target)
-
-  // Get bilateral trade data between two countries
-
-  // Preview the economic impact of a foreign policy action before confirming
-
-  // Propose / enact a foreign policy action
-
-  // Lift / end an active foreign policy action
-
-  // ============================================================
-  // Alliance / Bloc System (Phase 3)
-  // ============================================================
-
-  // Get alliances a country belongs to
-
-  // Get a single alliance dashboard
-
-  // Create a new alliance
-
-  // Invite a country to join an alliance
-
-  // Leave an alliance
-
-  // Propose an alliance action (collective sanction, shared defense, etc.)
-
-  // Vote on an alliance action
-
-  // Create an alliance document
-
-  // Get documents for an alliance
-
-  // Get active embassy missions for a country
 });
-
-// Helper function to determine category from option value
-// Helper functions for embassy game mechanics
-// Influence and Relationship Mechanics

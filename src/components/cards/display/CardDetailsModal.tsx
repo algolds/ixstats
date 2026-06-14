@@ -146,7 +146,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
         }
       }
       if (!url) {
-        url = card.wikiUrl ?? null;
+        url = card.wikiUrl ?? undefined;
       }
 
       // Post-process: convert legacy external ixwiki links to internal WikiOS /wiki/ routes
@@ -932,7 +932,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     </div>
 
                     {/* Wiki article excerpt (full paragraphs) */}
-                    <LoreWikiExcerpt card={card} wikiUrl={wikiUrl} />
+                    <LoreWikiExcerpt card={card} wikiUrl={wikiUrl ?? null} />
 
                     {/* Lore-specific historical metrics */}
                     {(() => {

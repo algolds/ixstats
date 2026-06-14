@@ -9,7 +9,19 @@ function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+function PopoverTrigger({
+  render,
+  children,
+  ...props
+}: React.ComponentProps<typeof PopoverPrimitive.Trigger> & { render?: React.ReactNode }) {
+  const content = render ?? children;
+  if (content) {
+    return (
+      <PopoverPrimitive.Trigger data-slot="popover-trigger" asChild {...props}>
+        {content}
+      </PopoverPrimitive.Trigger>
+    );
+  }
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 

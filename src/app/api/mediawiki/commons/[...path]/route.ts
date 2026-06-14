@@ -102,10 +102,37 @@ export async function GET(
               },
             });
           }
+
+          // Fallback: fetch directly from Commons if wsrv.nl fails
+          console.warn(
+            `[Commons Proxy] wsrv.nl fetch failed, falling back to direct fetch: ${directUrl}`
+          );
+          const directResp = await fetch(directUrl, {
+            headers: { "User-Agent": "IxStats-Builder" },
+            signal: AbortSignal.timeout(15000),
+          });
+          if (directResp.ok) {
+            const contentType = directResp.headers.get("Content-Type") || "image/png";
+            const arrayBuffer = await directResp.arrayBuffer();
+            return new NextResponse(arrayBuffer, {
+              status: 200,
+              headers: {
+                "Content-Type": contentType,
+                "Cache-Control": "public, max-age=86400",
+                ...corsHeaders,
+              },
+            });
+          }
+          console.warn(
+            `[Commons Proxy] Direct fetch also failed with status ${directResp.status}`
+          );
         } catch (imgErr) {
           console.error("[Commons Proxy] Error fetching resolved image path:", imgErr);
         }
       }
+
+      // File matched Special:Filepath but was not found on Commons — return 404
+      return new NextResponse(null, { status: 404, headers: corsHeaders });
     }
 
     const targetUrl = `https://commons.wikimedia.org/${subpath}${queryString}`;

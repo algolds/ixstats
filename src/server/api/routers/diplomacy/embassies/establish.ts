@@ -88,16 +88,6 @@ function _getCulturalExchangeBoostValues(culturalImpact = 15, diplomaticValue = 
 }
 
 export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
-  // Get diplomatic relationships for a country
-
-  // Get recent diplomatic changes
-
-  // Update diplomatic relationship
-
-  // Create a new diplomatic relationship
-
-  // Delete/terminate a diplomatic relationship
-
   // Embassy Network Operations
 
   establishEmbassy: protectedProcedure
@@ -219,16 +209,6 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
         creditsEarned,
       };
     }),
-
-  // Diplomatic messaging has been unified into ThinkShare (/messages).
-  // Use api.messages.getConversationsByFolder with folder="diplomatic" instead.
-  // Use api.messages.sendMessage with conversationType="diplomatic" instead.
-
-  // Cultural Exchanges
-
-  // Link existing cultural exchange to an embassy mission
-
-  // Embassy Game System Endpoints
 
   // Embassy Management
 

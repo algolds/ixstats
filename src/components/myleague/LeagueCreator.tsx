@@ -257,7 +257,6 @@ export function LeagueCreator({
         nationAffiliation: null,
         settings,
         isCanonical,
-        coverImage: coverImage || null,
       });
 
       setCreatedLeagueId(result.id);

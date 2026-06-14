@@ -327,7 +327,7 @@ export default function MyLeaguePage() {
             <AnimatePresence mode="popLayout">
               {filteredLeagues.map((league) => {
                 const sportColor =
-                  getSportColors(league.sportPreset as SportPresetKey)?.primary || "#3b82f6";
+                  getSportColors(league.sportPreset as SportPresetKey).accentColor || "#3b82f6";
                 const isUserOwned = !league.isCanonical; // True if created by user
 
                 return (

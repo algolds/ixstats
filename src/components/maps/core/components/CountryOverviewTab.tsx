@@ -224,7 +224,7 @@ export function CountryOverviewTab({
             Domains ({sovereignty.subjects.length})
           </div>
           <div className="mt-1 flex flex-wrap gap-1">
-            {sovereignty.subjects.map((s) => (
+            {sovereignty.subjects.map((s: { countryId: string; name: string; flag?: string | null; relationshipType?: string }) => (
               <button
                 key={s.countryId}
                 onClick={() =>
