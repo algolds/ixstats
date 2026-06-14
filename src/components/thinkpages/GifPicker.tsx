@@ -2,8 +2,7 @@
 
 // eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Search, Loader2 } from "lucide-react";
-import { IconGif } from "@tabler/icons-react";
+import { Search, Loader2, Film as IconGif } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 // eslint-disable-next-line unused-imports/no-unused-imports
