@@ -224,28 +224,37 @@ export function CountryOverviewTab({
             Domains ({sovereignty.subjects.length})
           </div>
           <div className="mt-1 flex flex-wrap gap-1">
-            {sovereignty.subjects.map((s: { countryId: string; name: string; flag?: string | null; relationshipType?: string }) => (
-              <button
-                key={s.countryId}
-                onClick={() =>
-                  onNeighborClick?.({
-                    featureId: "",
-                    countryId: s.countryId,
-                    displayName: s.name,
-                  })
-                }
-                className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
-              >
-                {s.flag && <img src={s.flag} alt="" className="h-3 w-4 rounded-sm object-cover" />}
-                {s.name}
-                <span className="text-[9px] text-indigo-400">
-                  (
-                  {SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]
-                    ?.short ?? s.relationshipType}
-                  )
-                </span>
-              </button>
-            ))}
+            {sovereignty.subjects.map(
+              (s: {
+                countryId: string;
+                name: string;
+                flag?: string | null;
+                relationshipType?: string;
+              }) => (
+                <button
+                  key={s.countryId}
+                  onClick={() =>
+                    onNeighborClick?.({
+                      featureId: "",
+                      countryId: s.countryId,
+                      displayName: s.name,
+                    })
+                  }
+                  className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+                >
+                  {s.flag && (
+                    <img src={s.flag} alt="" className="h-3 w-4 rounded-sm object-cover" />
+                  )}
+                  {s.name}
+                  <span className="text-[9px] text-indigo-400">
+                    (
+                    {SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]
+                      ?.short ?? s.relationshipType}
+                    )
+                  </span>
+                </button>
+              )
+            )}
           </div>
         </div>
       )}

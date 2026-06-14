@@ -40,7 +40,7 @@ import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/fa
 import { motion } from "motion/react";
 
 const TYPE_OPTIONS = [
-  { value: "", label: "All Types" },
+  { value: "all", label: "All Types" },
   { value: "info", label: "Info" },
   { value: "warning", label: "Warning" },
   { value: "success", label: "Success" },
@@ -54,7 +54,7 @@ const TYPE_OPTIONS = [
 ];
 
 const PRIORITY_OPTIONS = [
-  { value: "", label: "All Priorities" },
+  { value: "all", label: "All Priorities" },
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
@@ -300,9 +300,9 @@ export function NotificationBrowser() {
   const notify = useNotify();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("");
-  const [readFilter, setReadFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [readFilter, setReadFilter] = useState<string>("all");
   const limit = 50;
 
   const [locallyDeletedIds, setLocallyDeletedIds] = useState<Set<string>>(new Set());
@@ -310,8 +310,8 @@ export function NotificationBrowser() {
   const { data, isLoading, refetch } = api.notifications.getAllAdminNotifications.useQuery({
     limit,
     offset: page * limit,
-    type: typeFilter || undefined,
-    priority: priorityFilter || undefined,
+    type: typeFilter === "all" ? undefined : typeFilter,
+    priority: priorityFilter === "all" ? undefined : priorityFilter,
     search: search || undefined,
     read: readFilter === "read" ? true : readFilter === "unread" ? false : undefined,
   });
@@ -410,7 +410,7 @@ export function NotificationBrowser() {
             <SelectValue placeholder="Read status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="read">Read</SelectItem>
             <SelectItem value="unread">Unread</SelectItem>
           </SelectContent>

@@ -50,8 +50,7 @@ export default function GameplayOverviewArticle() {
               >
                 national issues
               </Link>
-              , crisis events, and diplomatic scenarios as they arise, or take proactive
-              action with{" "}
+              , crisis events, and diplomatic scenarios as they arise, or take proactive action with{" "}
               <Link
                 href="/help/mycountry/executive"
                 className="text-blue-600 hover:underline dark:text-blue-400"
@@ -135,8 +134,8 @@ export default function GameplayOverviewArticle() {
                 </Link>
               </li>
               <li>
-                <strong>Government:</strong> 56 components across 10 categories with synergy and conflict
-                mechanics that determine how effective your governance is, plus real-time
+                <strong>Government:</strong> 56 components across 10 categories with synergy and
+                conflict mechanics that determine how effective your governance is, plus real-time
                 StorytellerEffect computation that impacts your nation's stats.{" "}
                 <Link
                   href="/help/government/atomic"

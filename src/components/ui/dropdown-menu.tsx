@@ -123,8 +123,9 @@ function DropdownMenuGroup({ ...props }: React.ComponentProps<typeof DropdownMen
   return <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
-interface DropdownMenuGroupLabelProps
-  extends React.ComponentProps<typeof DropdownMenuPrimitive.Label> {
+interface DropdownMenuGroupLabelProps extends React.ComponentProps<
+  typeof DropdownMenuPrimitive.Label
+> {
   inset?: boolean;
 }
 

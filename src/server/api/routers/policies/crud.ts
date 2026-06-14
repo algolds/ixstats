@@ -198,9 +198,7 @@ export const policiesCrudRouter = createTRPCRouter({
         targetName: policy.name,
         severity: "light",
         reason: `New policy enacted: ${policy.description || policy.name}`,
-      }).catch((err) =>
-        console.error("[Policies] Failed to generate policy news:", err)
-      );
+      }).catch((err) => console.error("[Policies] Failed to generate policy news:", err));
 
       return policy;
     }),
@@ -247,9 +245,7 @@ export const policiesCrudRouter = createTRPCRouter({
         targetName: policy.name,
         severity: "light",
         reason: input.reason ?? "Policy suspended",
-      }).catch((err) =>
-        console.error("[Policies] Failed to generate suspension news:", err)
-      );
+      }).catch((err) => console.error("[Policies] Failed to generate suspension news:", err));
 
       return policy;
     }),
@@ -297,9 +293,7 @@ export const policiesCrudRouter = createTRPCRouter({
         targetName: policy.name,
         severity: "moderate",
         reason: input.reason ?? "Policy repealed",
-      }).catch((err) =>
-        console.error("[Policies] Failed to generate repeal news:", err)
-      );
+      }).catch((err) => console.error("[Policies] Failed to generate repeal news:", err));
 
       return policy;
     }),

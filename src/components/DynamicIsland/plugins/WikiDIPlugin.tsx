@@ -77,10 +77,7 @@ function WikiBreadcrumb() {
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
               >
-                <PreText
-                  className="text-foreground/50 text-[10px] font-medium"
-                  whiteSpace="nowrap"
-                >
+                <PreText className="text-foreground/50 text-[10px] font-medium" whiteSpace="nowrap">
                   {activeSectionName}
                 </PreText>
               </span>

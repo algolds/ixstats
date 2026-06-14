@@ -12,17 +12,21 @@ function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root
 function PopoverTrigger({
   render,
   children,
+  asChild,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Trigger> & { render?: React.ReactNode }) {
-  const content = render ?? children;
-  if (content) {
+  if (render) {
     return (
       <PopoverPrimitive.Trigger data-slot="popover-trigger" asChild {...props}>
-        {content}
+        {render}
       </PopoverPrimitive.Trigger>
     );
   }
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+  return (
+    <PopoverPrimitive.Trigger data-slot="popover-trigger" asChild={asChild} {...props}>
+      {children}
+    </PopoverPrimitive.Trigger>
+  );
 }
 
 function PopoverPortal({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Portal>) {
@@ -48,7 +52,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "pointer-events-auto z-[100050] max-h-[var(--radix-popover-content-available-height)] w-72 max-w-[var(--radix-popover-content-available-width)] origin-[var(--radix-popover-content-transform-origin)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 outline-none transition-[transform,scale,opacity] duration-150 ease-out data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
+          "pointer-events-auto z-[100050] max-h-[var(--radix-popover-content-available-height)] w-72 max-w-[var(--radix-popover-content-available-width)] origin-[var(--radix-popover-content-transform-origin)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 transition-[transform,scale,opacity] duration-150 ease-out outline-none data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
           // Default glass styling with contextual depth detection
           !(typeof className === "string" && className.includes("glass-")) &&
             "glass-contextual-popover glass-refraction",

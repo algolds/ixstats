@@ -206,21 +206,21 @@ export const myCountryActionsRouter = createTRPCRouter({
       for (const [id, def] of Object.entries(ACTION_DEFINITIONS)) {
         const lastExecuted = cooldownMap.get(id);
         const onCooldown =
-          lastExecuted &&
-          now - lastExecuted.getTime() < def.cooldownHours * 60 * 60 * 1000;
+          lastExecuted && now - lastExecuted.getTime() < def.cooldownHours * 60 * 60 * 1000;
 
-        const cooldownRemaining = onCooldown && lastExecuted
-          ? Math.ceil(
-              (def.cooldownHours * 60 * 60 * 1000 - (now - lastExecuted.getTime())) /
-                (60 * 60 * 1000)
-            )
-          : 0;
+        const cooldownRemaining =
+          onCooldown && lastExecuted
+            ? Math.ceil(
+                (def.cooldownHours * 60 * 60 * 1000 - (now - lastExecuted.getTime())) /
+                  (60 * 60 * 1000)
+              )
+            : 0;
 
         // Contextual enablement based on country state
         const contextuallyRelevant =
           (id === "stimulus_package" && country.adjustedGdpGrowth < 0.02) ||
           (id === "population_incentives" && country.populationGrowthRate < 0.01) ||
-          (id === "emergency_response"); // Always available
+          id === "emergency_response"; // Always available
 
         actions.push({
           id,

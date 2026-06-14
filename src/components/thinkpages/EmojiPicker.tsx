@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -523,18 +522,25 @@ export function EmojiPicker({
         onOpenChange?.(open);
       }}
     >
-      <PopoverTrigger
-        disabled={disabled}
-        className={cn(
-          "inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
-          isOpen
-            ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/25 hover:text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 dark:hover:bg-yellow-500/30 dark:hover:text-yellow-300"
-            : "text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-600 dark:text-yellow-400 dark:hover:bg-yellow-500/10 dark:hover:text-yellow-300",
-          disabled && "cursor-not-allowed opacity-50",
-          className
+      <PopoverTrigger asChild disabled={disabled}>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            className={cn(
+              "h-7 w-7 rounded-full p-0 transition-all duration-200",
+              isOpen
+                ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/25 hover:text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 dark:hover:bg-yellow-500/30 dark:hover:text-yellow-300"
+                : "text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-600 dark:text-yellow-400 dark:hover:bg-yellow-500/10 dark:hover:text-yellow-300",
+              className
+            )}
+          >
+            <Smile className="h-3.5 w-3.5" />
+          </Button>
         )}
-      >
-        {trigger ? trigger : <Smile className="h-3.5 w-3.5" />}
       </PopoverTrigger>
       <PopoverContent
         side={side}

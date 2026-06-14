@@ -12,7 +12,12 @@ interface NavigationMenuProps extends React.ComponentProps<typeof NavigationMenu
   contentProps?: Record<string, unknown>;
 }
 
-function NavigationMenu({ className, children, contentProps: _contentProps, ...props }: NavigationMenuProps) {
+function NavigationMenu({
+  className,
+  children,
+  contentProps: _contentProps,
+  ...props
+}: NavigationMenuProps) {
   return (
     <NavigationMenuPrimitive.Root
       data-slot="navigation-menu"

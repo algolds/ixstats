@@ -60,11 +60,13 @@ import {
   Settings,
   Sparkles,
   Map,
+  Calculator,
 } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
 import { useAbility, Can } from "~/components/providers/AbilityProvider";
 import { CountryAdminPanel } from "./CountryAdminPanel";
+import { CountryInspector } from "./CountryInspector";
 
 interface UserManagementProps {
   className?: string;
@@ -318,7 +320,7 @@ export function UserManagement({ className, mode }: UserManagementProps) {
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {mode === "users" ? (
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Users Directory
@@ -326,6 +328,10 @@ export function UserManagement({ className, mode }: UserManagementProps) {
               <TabsTrigger value="countries-editor" className="flex items-center gap-2">
                 <Map className="h-4 w-4" />
                 Country Metrics Editor
+              </TabsTrigger>
+              <TabsTrigger value="country-inspector" className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                Country Inspector
               </TabsTrigger>
             </TabsList>
           ) : mode === "roles" ? (
@@ -961,6 +967,9 @@ export function UserManagement({ className, mode }: UserManagementProps) {
           </TabsContent>
           <TabsContent value="countries-editor" className="mt-6 space-y-6">
             <CountryAdminPanel />
+          </TabsContent>
+          <TabsContent value="country-inspector" className="mt-6">
+            <CountryInspector />
           </TabsContent>
         </Tabs>
       </CardContent>

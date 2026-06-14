@@ -16,16 +16,56 @@ import { IxTime } from "~/lib/ixtime";
 
 // Category → StorytellerEffect inputType + base effect value per component
 const CATEGORY_EFFECTS: Record<string, { inputType: string; base: number; desc: string }> = {
-  "Power Distribution": { inputType: "ECONOMIC_POLICY", base: 0.002, desc: "Governance efficiency and economic coordination" },
-  "Decision Process": { inputType: "ECONOMIC_POLICY", base: 0.002, desc: "Policy effectiveness and institutional predictability" },
-  "Legitimacy Sources": { inputType: "ECONOMIC_POLICY", base: 0.002, desc: "Investor confidence and social cohesion" },
-  Institutions: { inputType: "ECONOMIC_POLICY", base: 0.003, desc: "Administrative efficiency and economic throughput" },
-  "Control Mechanisms": { inputType: "ECONOMIC_POLICY", base: 0.0015, desc: "Regulatory predictability and enforcement" },
-  "Administrative Efficiency": { inputType: "GROWTH_RATE_MODIFIER", base: 0.003, desc: "Reduced friction boosts economic growth" },
-  "Social Policy": { inputType: "POPULATION_ADJUSTMENT", base: 0.004, desc: "Population wellbeing and demographic stability" },
-  "International Relations": { inputType: "GROWTH_RATE_MODIFIER", base: 0.003, desc: "Trade and investment channel expansion" },
-  "Innovation & Development": { inputType: "GROWTH_RATE_MODIFIER", base: 0.004, desc: "R&D investment drives long-term growth" },
-  "Crisis Management": { inputType: "ECONOMIC_POLICY", base: 0.002, desc: "Shock protection and economic resilience" },
+  "Power Distribution": {
+    inputType: "ECONOMIC_POLICY",
+    base: 0.002,
+    desc: "Governance efficiency and economic coordination",
+  },
+  "Decision Process": {
+    inputType: "ECONOMIC_POLICY",
+    base: 0.002,
+    desc: "Policy effectiveness and institutional predictability",
+  },
+  "Legitimacy Sources": {
+    inputType: "ECONOMIC_POLICY",
+    base: 0.002,
+    desc: "Investor confidence and social cohesion",
+  },
+  Institutions: {
+    inputType: "ECONOMIC_POLICY",
+    base: 0.003,
+    desc: "Administrative efficiency and economic throughput",
+  },
+  "Control Mechanisms": {
+    inputType: "ECONOMIC_POLICY",
+    base: 0.0015,
+    desc: "Regulatory predictability and enforcement",
+  },
+  "Administrative Efficiency": {
+    inputType: "GROWTH_RATE_MODIFIER",
+    base: 0.003,
+    desc: "Reduced friction boosts economic growth",
+  },
+  "Social Policy": {
+    inputType: "POPULATION_ADJUSTMENT",
+    base: 0.004,
+    desc: "Population wellbeing and demographic stability",
+  },
+  "International Relations": {
+    inputType: "GROWTH_RATE_MODIFIER",
+    base: 0.003,
+    desc: "Trade and investment channel expansion",
+  },
+  "Innovation & Development": {
+    inputType: "GROWTH_RATE_MODIFIER",
+    base: 0.004,
+    desc: "R&D investment drives long-term growth",
+  },
+  "Crisis Management": {
+    inputType: "ECONOMIC_POLICY",
+    base: 0.002,
+    desc: "Shock protection and economic resilience",
+  },
 };
 
 interface PoliticalDelta {
@@ -61,13 +101,19 @@ function computePoliticalDeltas(
     d.politicalStability = (d.politicalStability ?? 0) + legitimacy.length * 0.025;
 
   // Institutions + Administrative Efficiency → governmentEffectiveness
-  const admin = [...COMPONENT_CATEGORIES["Institutions"], ...COMPONENT_CATEGORIES["Administrative Efficiency"]].filter((ct) => set.has(ct));
+  const admin = [
+    ...COMPONENT_CATEGORIES["Institutions"],
+    ...COMPONENT_CATEGORIES["Administrative Efficiency"],
+  ].filter((ct) => set.has(ct));
   if (admin.length > 0) d.governmentEffectiveness = Math.min(0.3, admin.length * 0.025);
 
   // Control Mechanisms → ruleOfLaw
-  const controlBonus = COMPONENT_CATEGORIES["Control Mechanisms"]
-    .filter((ct) => set.has(ct) && (ct === ComponentType.RULE_OF_LAW || ct === ComponentType.MILITARY_ENFORCEMENT))
-    .length * 0.03;
+  const controlBonus =
+    COMPONENT_CATEGORIES["Control Mechanisms"].filter(
+      (ct) =>
+        set.has(ct) &&
+        (ct === ComponentType.RULE_OF_LAW || ct === ComponentType.MILITARY_ENFORCEMENT)
+    ).length * 0.03;
   if (controlBonus > 0) d.ruleOfLaw = controlBonus;
 
   return d;
@@ -174,21 +220,50 @@ export async function applyGovernmentComponentEffects(
   if (Object.keys(deltas).length > 0) {
     const struct = await db.governmentStructure.findUnique({
       where: { countryId },
-      select: { politicalStability: true, democracyIndex: true, governmentEffectiveness: true, ruleOfLaw: true },
+      select: {
+        politicalStability: true,
+        democracyIndex: true,
+        governmentEffectiveness: true,
+        ruleOfLaw: true,
+      },
     });
 
     if (struct) {
       const update: Record<string, number> = {};
-      const applyDelta = (key: string, current: number, delta: number, min: number, max: number) => {
+      const applyDelta = (
+        key: string,
+        current: number,
+        delta: number,
+        min: number,
+        max: number
+      ) => {
         update[key] = Math.max(min, Math.min(max, current + delta));
       };
 
       if (deltas.politicalStability !== undefined)
-        applyDelta("politicalStability", struct.politicalStability ?? 0.5, deltas.politicalStability, 0, 1);
+        applyDelta(
+          "politicalStability",
+          struct.politicalStability ?? 0.5,
+          deltas.politicalStability,
+          0,
+          1
+        );
       if (deltas.democracyIndex !== undefined)
-        applyDelta("democracyIndex", struct.democracyIndex ?? 50, deltas.democracyIndex * 100, 0, 100);
+        applyDelta(
+          "democracyIndex",
+          struct.democracyIndex ?? 50,
+          deltas.democracyIndex * 100,
+          0,
+          100
+        );
       if (deltas.governmentEffectiveness !== undefined)
-        applyDelta("governmentEffectiveness", struct.governmentEffectiveness ?? 50, deltas.governmentEffectiveness * 100, 0, 100);
+        applyDelta(
+          "governmentEffectiveness",
+          struct.governmentEffectiveness ?? 50,
+          deltas.governmentEffectiveness * 100,
+          0,
+          100
+        );
       if (deltas.ruleOfLaw !== undefined)
         applyDelta("ruleOfLaw", struct.ruleOfLaw ?? 50, deltas.ruleOfLaw * 100, 0, 100);
 

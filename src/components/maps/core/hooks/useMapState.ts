@@ -137,9 +137,14 @@ export function useMapState({
           wikiOpts
         );
         const opts = { staleTime: 10 * 60_000 };
-        void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
-        void utils.geo.getNeighbors.prefetch({ countryId: country.countryId }, opts);
-        void utils.geo.getCountrySovereignty.prefetch({ countryId: country.countryId }, opts);
+        if (country.countryId) {
+          void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
+          void utils.geoCore.getNeighbors.prefetch({ countryId: country.countryId }, opts);
+          void utils.geoSovereignty.getCountrySovereignty.prefetch(
+            { countryId: country.countryId },
+            opts
+          );
+        }
       }
     },
     [utils]

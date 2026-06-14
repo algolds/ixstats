@@ -43,8 +43,7 @@ function resolveCategory(inputType: string, description: string | null): string 
     return "economic";
   if (t.includes("militar") || t.includes("war") || t.includes("defense") || d.includes("militar"))
     return "military";
-  if (t.includes("social") || d.includes("social") || d.includes("population"))
-    return "social";
+  if (t.includes("social") || d.includes("social") || d.includes("population")) return "social";
   if (
     t.includes("emergenc") ||
     t.includes("crisis") ||
@@ -92,13 +91,13 @@ export function NewsFeedWidget({ countryId }: NewsFeedWidgetProps) {
 
   return (
     <CutoutPanel className="mt-3" contentClassName="p-3">
-      <div className="flex items-center justify-between mb-2.5">
+      <div className="mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Newspaper className={amber.text + " h-3.5 w-3.5"} />
           <span className="text-xs font-semibold">News Feed</span>
         </div>
         {activity.length > 0 && (
-          <span className="text-[10px] text-muted-foreground">{activity.length} items</span>
+          <span className="text-muted-foreground text-[10px]">{activity.length} items</span>
         )}
       </div>
 

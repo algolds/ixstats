@@ -31,9 +31,22 @@ const SRC = path.join(ROOT, "src");
 const EXTS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"];
 
 const ENTRY_BASENAMES = new Set([
-  "page", "layout", "template", "loading", "error", "global-error", "not-found",
-  "default", "route", "sitemap", "robots", "manifest", "opengraph-image",
-  "twitter-image", "icon", "apple-icon",
+  "page",
+  "layout",
+  "template",
+  "loading",
+  "error",
+  "global-error",
+  "not-found",
+  "default",
+  "route",
+  "sitemap",
+  "robots",
+  "manifest",
+  "opengraph-image",
+  "twitter-image",
+  "icon",
+  "apple-icon",
 ]);
 
 const isTestFile = (p: string) =>
@@ -145,7 +158,10 @@ function reach(seeds: string[]): Set<string> {
   while (q.length) {
     const cur = q.pop()!;
     for (const next of graph.get(cur) ?? []) {
-      if (!seen.has(next)) { seen.add(next); q.push(next); }
+      if (!seen.has(next)) {
+        seen.add(next);
+        q.push(next);
+      }
     }
   }
   return seen;
@@ -165,11 +181,7 @@ const testReachable = reach(testSeeds);
 if (process.argv.includes("--dead-all") || process.argv.includes("--dead-all-list")) {
   const entrySet = new Set(entries);
   const deadAll = allFiles.filter(
-    (f) =>
-      !prodReachable.has(f) &&
-      !entrySet.has(f) &&
-      !isTestFile(f) &&
-      !f.endsWith(".d.ts")
+    (f) => !prodReachable.has(f) && !entrySet.has(f) && !isTestFile(f) && !f.endsWith(".d.ts")
   );
   if (process.argv.includes("--dead-all-list")) {
     for (const f of deadAll) console.log(path.relative(ROOT, f));
@@ -180,7 +192,8 @@ if (process.argv.includes("--dead-all") || process.argv.includes("--dead-all-lis
     const rel = path.relative(ROOT, f);
     const seg = rel.split("/").slice(0, 2).join("/"); // src/<top>
     const g = byTop.get(seg) ?? { n: 0, lines: 0 };
-    g.n++; g.lines += lc(f);
+    g.n++;
+    g.lines += lc(f);
     byTop.set(seg, g);
   }
   const totalLines = deadAll.reduce((s, f) => s + lc(f), 0);
@@ -213,22 +226,31 @@ if (process.argv.includes("--json")) {
 if (process.argv.includes("--triage")) {
   const deadSet = new Set(componentFiles.filter((f) => !prodReachable.has(f)));
   const inbound = new Map<string, string[]>();
-  for (const [from, tos] of graph) for (const to of tos) {
-    if (!inbound.has(to)) inbound.set(to, []);
-    inbound.get(to)!.push(from);
-  }
+  for (const [from, tos] of graph)
+    for (const to of tos) {
+      if (!inbound.has(to)) inbound.set(to, []);
+      inbound.get(to)!.push(from);
+    }
   const orphans: string[] = [];
   const cluster: string[] = [];
   const leaks: { file: string; liveImporters: string[] }[] = [];
   for (const f of deadSet) {
     const importers = (inbound.get(f) ?? []).filter((i) => i !== f);
-    if (importers.length === 0) { orphans.push(f); continue; }
+    if (importers.length === 0) {
+      orphans.push(f);
+      continue;
+    }
     const live = importers.filter((i) => prodReachable.has(i));
-    if (live.length) leaks.push({ file: path.relative(ROOT, f), liveImporters: live.map((p) => path.relative(ROOT, p)) });
+    if (live.length)
+      leaks.push({
+        file: path.relative(ROOT, f),
+        liveImporters: live.map((p) => path.relative(ROOT, p)),
+      });
     else cluster.push(f);
   }
   const relSort = (a: string, b: string) => lc(b) - lc(a);
-  orphans.sort(relSort); cluster.sort(relSort);
+  orphans.sort(relSort);
+  cluster.sort(relSort);
   const sum = (arr: string[]) => arr.reduce((s, f) => s + lc(f), 0);
 
   if (process.argv.includes("--orphans-list")) {
@@ -236,12 +258,18 @@ if (process.argv.includes("--triage")) {
     process.exit(0);
   }
   console.log(`\n=== TRIAGE ===`);
-  console.log(`orphans (0 importers, safest):  ${orphans.length}  (${sum(orphans).toLocaleString()} lines)`);
-  console.log(`dead-cluster (dead→dead only):  ${cluster.length}  (${sum(cluster).toLocaleString()} lines)`);
+  console.log(
+    `orphans (0 importers, safest):  ${orphans.length}  (${sum(orphans).toLocaleString()} lines)`
+  );
+  console.log(
+    `dead-cluster (dead→dead only):  ${cluster.length}  (${sum(cluster).toLocaleString()} lines)`
+  );
   console.log(`LEAKS (live importer — investigate): ${leaks.length}`);
-  for (const l of leaks.slice(0, 20)) console.log(`  ⚠️ ${l.file}  ← ${l.liveImporters.join(", ")}`);
+  for (const l of leaks.slice(0, 20))
+    console.log(`  ⚠️ ${l.file}  ← ${l.liveImporters.join(", ")}`);
   console.log(`\n--- top 30 orphans by size ---`);
-  for (const f of orphans.slice(0, 30)) console.log(`  ${String(lc(f)).padStart(5)}  ${path.relative(ROOT, f)}`);
+  for (const f of orphans.slice(0, 30))
+    console.log(`  ${String(lc(f)).padStart(5)}  ${path.relative(ROOT, f)}`);
   process.exit(0);
 }
 
@@ -256,14 +284,17 @@ for (const u of unused) {
   const parts = u.file.split("/"); // src/components/<seg>/...
   const seg = parts.length > 3 ? parts[2]! : "(root)"; // index 2 = top-level component dir
   const g = byDir.get(seg) ?? { n: 0, lines: 0 };
-  g.n++; g.lines += u.lines;
+  g.n++;
+  g.lines += u.lines;
   byDir.set(seg, g);
 }
 
 console.log(`\n=== COMPONENT USAGE AUDIT (import-graph reachability) ===\n`);
 console.log(`Component files (excl. tests): ${totalComp}`);
 console.log(`  reachable from app entry pts: ${usedComp}`);
-console.log(`  UNUSED (dead candidates):     ${unused.length}  (${deadLines.toLocaleString()} lines)`);
+console.log(
+  `  UNUSED (dead candidates):     ${unused.length}  (${deadLines.toLocaleString()} lines)`
+);
 console.log(`  └─ of which test-only:        ${testOnly.length}`);
 console.log(`Entry points scanned: ${entries.length}\n`);
 

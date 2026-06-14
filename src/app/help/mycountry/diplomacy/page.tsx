@@ -95,10 +95,10 @@ export default function MyCountryDiplomacyArticle() {
             </li>
           </ul>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
-            All foreign policy actions now execute <strong>atomically in database
-            transactions</strong>, ensuring that policy enactment and its side effects &mdash;
-            including relationship changes, economic impacts, and narrative generation &mdash; either
-            succeed together or roll back entirely.
+            All foreign policy actions now execute{" "}
+            <strong>atomically in database transactions</strong>, ensuring that policy enactment and
+            its side effects &mdash; including relationship changes, economic impacts, and narrative
+            generation &mdash; either succeed together or roll back entirely.
           </p>
         </Section>
 
@@ -123,8 +123,8 @@ export default function MyCountryDiplomacyArticle() {
               their tolerance, willingness to negotiate, and likelihood of escalation.
             </li>
             <li>
-              <strong>Narrative Feed:</strong> Diplomatic events are surfaced in your narrative
-              feed alongside executive actions and issues, giving you a cohesive timeline of your
+              <strong>Narrative Feed:</strong> Diplomatic events are surfaced in your narrative feed
+              alongside executive actions and issues, giving you a cohesive timeline of your
               nation&apos;s international story.
             </li>
           </ul>

@@ -67,10 +67,12 @@ export interface WikiRecentChange {
 // ──────────────────────────────────────────────
 
 let ixwikiPool: Pool | null = null;
+let isWikiDbOffline = false;
+let lastDbCheckTime = 0;
 
 export function getIxWikiPool(): Pool {
   if (!ixwikiPool) {
-    ixwikiPool = mysql.createPool({
+    const rawPool = mysql.createPool({
       host: process.env.IXWIKI_DB_HOST || "localhost",
       port: Number(process.env.IXWIKI_DB_PORT) || 3306,
       user: process.env.IXWIKI_DB_USER || "ixwiki",
@@ -81,6 +83,37 @@ export function getIxWikiPool(): Pool {
       maxIdle: 2,
       idleTimeout: 60000,
       enableKeepAlive: true,
+    });
+
+    ixwikiPool = new Proxy(rawPool, {
+      get(target, prop, receiver) {
+        if (prop === "execute" || prop === "query") {
+          return async (...args: any[]) => {
+            if (isWikiDbOffline) {
+              if (Date.now() - lastDbCheckTime > 5 * 60 * 1000) {
+                isWikiDbOffline = false;
+              } else {
+                return [[], []];
+              }
+            }
+            try {
+              return await (target as any)[prop](...args);
+            } catch (err: any) {
+              if (err?.code === "ECONNREFUSED" || err?.syscall === "connect") {
+                isWikiDbOffline = true;
+                lastDbCheckTime = Date.now();
+                console.warn(
+                  `[WikiBridge] MediaWiki MySQL database offline (ECONNREFUSED on port ${err.port || "13306"}). ` +
+                    `Direct MySQL queries will be disabled. (Establish SSH tunnel on port ${err.port || "13306"} to connect)`
+                );
+                return [[], []];
+              }
+              throw err;
+            }
+          };
+        }
+        return Reflect.get(target, prop, receiver);
+      },
     });
   }
   return ixwikiPool;
@@ -1243,11 +1276,40 @@ function formatMWTimestamp(ts: string): string {
 
 const USER_AGENT = "IxStats-Builder";
 
+const offlineExternalHosts = new Map<string, number>();
+
+function isExternalHostOffline(hostname: string): boolean {
+  const offlineTime = offlineExternalHosts.get(hostname);
+  if (offlineTime) {
+    if (Date.now() - offlineTime > 5 * 60 * 1000) {
+      offlineExternalHosts.delete(hostname);
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+function markExternalHostOffline(hostname: string) {
+  if (!offlineExternalHosts.has(hostname)) {
+    offlineExternalHosts.set(hostname, Date.now());
+    console.warn(
+      `[WikiBridge] External host ${hostname} is returning 403 (Forbidden). ` +
+        `Requests to this host are suspended for 5 minutes in development to prevent server stalling.`
+    );
+  }
+}
+
 /**
  * Fetch from an external wiki API with retry logic for transient 403 errors.
  * Returns null on persistent failures instead of throwing.
  */
 async function fetchExternalWiki(url: string, retries = 2): Promise<Response | null> {
+  const hostname = new URL(url).hostname;
+  if (isExternalHostOffline(hostname)) {
+    return null;
+  }
+
   const result = await withRetrySafe(
     async (signal) => {
       const response = await fetch(url, {
@@ -1272,15 +1334,17 @@ async function fetchExternalWiki(url: string, retries = 2): Promise<Response | n
       retryIf: (err) => err.message.includes("HTTP 403"),
       // eslint-disable-next-line unused-imports/no-unused-vars
       onRetry: (attempt, err) => {
-        console.warn(
-          `[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt}/${retries + 1}`
-        );
+        console.warn(`[WikiBridge] ${hostname} returned 403, retry ${attempt}/${retries + 1}`);
       },
     }
   );
 
   if (!result.success) {
-    console.warn(`[WikiBridge] ${new URL(url).hostname} fetch failed:`, result.error?.message);
+    if (result.error?.message.includes("HTTP 403")) {
+      markExternalHostOffline(hostname);
+    } else {
+      console.warn(`[WikiBridge] ${hostname} fetch failed:`, result.error?.message);
+    }
     return null;
   }
   return result.value ?? null;

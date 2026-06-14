@@ -10,8 +10,20 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Added
+
+- **Storyteller™ Country Calculation Inspector**: Added a new visual tab to select any country and inspect the step-by-step math of its population and economic progression calculations using React Flow nodes.
+  - Implemented the `CountryInspector` component modeling the data pipeline (baseline, config/multipliers, active storyteller events, effective growth rates, max growth caps, compounding, and final outputs).
+  - Added sandbox override controls to dynamically drag target year offset (0-20 years), adjust local growth factor multipliers (0.5x to 2.0x), and inject mock storyteller events to simulate hypothetical impacts.
+  - Expanded the pipeline into granular calculation nodes: Raw GDPPC Growth rate, Diminishing Returns logarithmic decay, Tier Cap clamp, Compound progression, and Direct Modifiers.
+  - Added dedicated connected downstream nodes for secondary indices: Economic Vitality, Population Wellbeing, Governmental Efficiency, and Diplomatic Standing.
+  - Fixed the global growth rate display to format as a factor of `1.0321` or a growth rate of `3.21%` instead of `103.21%`.
+  - Built a comprehensive inspector panel displaying exact mathematical formulas, clamps, and decay functions for all calculation nodes.
+
 ### Changed
 
+- **Map editor default layer visibilities**: Changed the default map editor overlay visibility settings to initialize `pois`, `stories`, and `routes` to `false` (toggled off by default) on editor entry to keep the default editor canvas clean.
+- **Storyteller Panel Tab integration**: Registered the `"inspector"` tab with a `Calculator` icon and rendered the `<CountryInspector />` component in the main control panel.
 - **tRPC router modularization** (continued from prior session): 44 additional routers split into domain sub-directories via `mergeRouters`, preserving every `api.*` path byte-identically (zero call-site changes). Splits were applied to:
 
   **Oversized sub-routers (Phase 4, 9 targets)**
@@ -83,6 +95,11 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Fixed
 
+- **PopoverTrigger Slot runtime crash**: Fixed a runtime error where `Primitive.button failed to slot onto its children` by making the `asChild` prop conditional on the trigger. When no React element is present or when multiple children are rendered, it gracefully defaults to rendering the trigger container.
+- **tRPC namespace and validation errors in map state hooks**: Fixed outdated procedure namespaces in `useMapState.ts`, updating legacy `geo` queries to `geoCore.getNeighbors` and `geoSovereignty.getCountrySovereignty`. Guarded the prefetches with a null-check on `countryId` to prevent Zod validation crashes when no country is loaded.
+- **WikiBridge MySQL connection spam**: Suppressed MySQL `ECONNREFUSED` connection dumps on port 13306 in local development environments by wrapping the DB pool in a Proxy. This logs a single friendly warning to open an SSH tunnel and caches connection failures, silencing further error traces for 5 minutes.
+- **WikiBridge HTTP 403 (Cloudflare) retry hangs**: Implemented an `offlineExternalHosts` cache in the wiki bridge. If an external host (e.g. `iiwiki.com`) returns a 403 Forbidden status, it suspends request attempts to that host for 5 minutes, resolving 6+ second delays and dev server stalls during map interactions.
+- **External wiki request user agents**: Verified that all outgoing `iiwiki.com` requests across the workspace consistently specify the correct `IxStats-Builder` User-Agent header to comply with the wiki's access requirements.
 - **10 pre-existing React Hooks rules-of-hooks errors** in 5 files (`pretext.tsx`, `TransportPropertyForm.tsx`, `AtomicBuilderPage.tsx`, `SwipeableRow.tsx`, `CardBackgroundImage.tsx`): moved early-returns AFTER hook calls (or added safe-default fallback motion values for `useTransform`) so every hook is now called unconditionally across renders. The `// eslint-disable-next-line @next/next/no-img-element` comment in `CardBackgroundImage.tsx` (which referenced a rule that doesn't exist in the project's flat config) was removed. These were pre-existing in `b35f9d4e` but blocking `bun run lint:strict`.
 - **2,687 pre-existing ESLint warnings** suppressed via `// eslint-disable-next-line <rule>` comments. Most are `unused-imports/no-unused-vars` for variables the code is in the middle of refactoring, and `react-hooks/exhaustive-deps` for effects that intentionally read outer-scope values. None introduced by the router refactor.
 - **`@ts-nocheck` / `@ts-ignore` directives** (143): added `// eslint-disable-next-line @typescript-eslint/ban-ts-comment` comments so `lint:strict` no longer fails on them. The directives themselves remain in place — they are intentional, file-level type-skip markers for now.

@@ -1,7 +1,11 @@
 "use client";
 import React, { useEffect, useRef, useState, createContext, useContext } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft as IconArrowNarrowLeft, ArrowRight as IconArrowNarrowRight, X as IconX } from "lucide-react";
+import {
+  ArrowLeft as IconArrowNarrowLeft,
+  ArrowRight as IconArrowNarrowRight,
+  X as IconX,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import Image, { type ImageProps } from "next/image";

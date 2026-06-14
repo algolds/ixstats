@@ -9,12 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
 import { OperationsPanel } from "~/components/defense/OperationsPanel";
 import { DefenseCommandPanel } from "~/components/defense/DefenseCommandPanel";
-import {
-  useCountryData,
-  SectionShell,
-  InlineWiki,
-  TabHeroBanner,
-} from "./primitives";
+import { useCountryData, SectionShell, InlineWiki, TabHeroBanner } from "./primitives";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { DefenseSidebarWidget } from "./sidebar-widgets/DefenseSidebarWidget";
 

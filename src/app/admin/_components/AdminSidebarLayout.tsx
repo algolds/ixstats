@@ -36,10 +36,7 @@ export function AdminSidebarLayout({
   const sidebarContent = (
     <div className="flex min-h-full flex-col space-y-4 p-4">
       <SystemStatusWidget />
-      <AdminSidebarNavWidget
-        onNavigate={handleNavigate}
-        activeSection={activeSection}
-      />
+      <AdminSidebarNavWidget onNavigate={handleNavigate} activeSection={activeSection} />
     </div>
   );
 

@@ -1120,12 +1120,10 @@ export function GlassCanvasComposer({
 
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div>
-                        <GifPicker
-                          onSelectGif={handleInsertGif}
-                          disabled={selectedImages.length >= 4}
-                        />
-                      </div>
+                      <GifPicker
+                        onSelectGif={handleInsertGif}
+                        disabled={selectedImages.length >= 4}
+                      />
                     </TooltipTrigger>
                     <TooltipContent side="top">Insert GIF</TooltipContent>
                   </Tooltip>

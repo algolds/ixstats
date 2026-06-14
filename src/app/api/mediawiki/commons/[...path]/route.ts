@@ -123,9 +123,7 @@ export async function GET(
               },
             });
           }
-          console.warn(
-            `[Commons Proxy] Direct fetch also failed with status ${directResp.status}`
-          );
+          console.warn(`[Commons Proxy] Direct fetch also failed with status ${directResp.status}`);
         } catch (imgErr) {
           console.error("[Commons Proxy] Error fetching resolved image path:", imgErr);
         }

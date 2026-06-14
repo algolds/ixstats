@@ -572,14 +572,14 @@ export default function DiplomaticOptionsPage() {
               <div>
                 <label className="text-foreground mb-2 block text-sm font-medium">Category</label>
                 <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  value={formData.category || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, category: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {CATEGORIES.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {cat}
