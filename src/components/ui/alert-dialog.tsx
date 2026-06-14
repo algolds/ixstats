@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertDialog as AlertDialogPrimitive } from "@base-ui-components/react/alert-dialog";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "~/lib/utils";
 import { buttonVariants } from "~/components/ui/button";
@@ -23,12 +23,12 @@ function AlertDialogPortal({ ...props }: React.ComponentProps<typeof AlertDialog
 function AlertDialogBackdrop({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Backdrop>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
   return (
-    <AlertDialogPrimitive.Backdrop
+    <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-backdrop"
       className={cn(
-        "fixed inset-0 z-[100010] bg-black/50 backdrop-blur-xl transition-colors duration-150 ease-out data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+        "fixed inset-0 z-[100010] bg-black/50 backdrop-blur-xl transition-opacity duration-150 ease-out data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
         className
       )}
       {...props}
@@ -40,22 +40,21 @@ function AlertDialogContent({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Popup>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
   return (
     <AlertDialogPortal>
       <AlertDialogBackdrop />
-      <AlertDialogPrimitive.Popup
+      <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
           "bg-background fixed top-[50%] left-[50%] z-[100011] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg transition-all duration-150 ease-out outline-none sm:max-w-lg",
-          "top-[calc(50%+1rem*var(--nested-dialogs))] scale-[calc(1-0.05*var(--nested-dialogs))] data-[ending-style]:top-[50.25%] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:top-[50.25%] data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
-          "data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/5 data-[nested-dialog-open]:after:backdrop-blur-xl",
+          "data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
           className
         )}
         {...props}
       >
         {children}
-      </AlertDialogPrimitive.Popup>
+      </AlertDialogPrimitive.Content>
     </AlertDialogPortal>
   );
 }
@@ -106,12 +105,27 @@ function AlertDialogDescription({
   );
 }
 
+function AlertDialogAction({
+  className,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+  return (
+    <AlertDialogPrimitive.Action
+      data-slot="alert-dialog-action"
+      className={cn(buttonVariants(), className)}
+      {...props}
+    />
+  );
+}
+
+// Preserves the legacy `AlertDialogClose` export. Radix's Cancel closes the
+// dialog, matching the original Base UI Close behaviour.
 function AlertDialogClose({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Close>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
-    <AlertDialogPrimitive.Close
+    <AlertDialogPrimitive.Cancel
       data-slot="alert-dialog-close"
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
@@ -129,5 +143,6 @@ export {
   AlertDialogFooter,
   AlertDialogTitle,
   AlertDialogDescription,
+  AlertDialogAction,
   AlertDialogClose,
 };
