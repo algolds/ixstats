@@ -32,6 +32,9 @@ const mockDb = {
     findMany: jest.fn() as MockFn,
     create: jest.fn() as MockFn,
   },
+  country: {
+    findUnique: jest.fn() as MockFn,
+  },
 };
 
 const baseContext = {
@@ -124,6 +127,7 @@ describe("policiesRouter scheduling and notifications", () => {
 
     mockDb.policy.update.mockResolvedValue({ ...policyRecord, status: "active" });
     mockDb.user.findFirst.mockResolvedValue({ clerkUserId: "user_1" });
+    mockDb.country.findUnique.mockResolvedValue({ name: "Testland" });
 
     const caller = createCallerFactory(policiesRouter)(baseContext);
 
