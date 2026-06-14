@@ -38,6 +38,7 @@ import {
 import { cn } from "~/lib/utils";
 import "~/styles/wiki-os.css";
 import { StashWelcomeModal } from "~/components/wiki-os/shared/StashWelcomeModal";
+import { sanitizeUserContent } from "~/lib/sanitize-html";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -742,7 +743,7 @@ export default function StashesPage() {
                               {item.note && (
                                 <div
                                   className="wikios-stash-item-note"
-                                  dangerouslySetInnerHTML={{ __html: item.note }}
+                                  dangerouslySetInnerHTML={{ __html: sanitizeUserContent(item.note) }}
                                 />
                               )}
                               <button

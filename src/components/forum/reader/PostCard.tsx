@@ -12,6 +12,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import * as LucideIcons from "lucide-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { sanitizeHtml } from "~/lib/sanitize-html";
 
 interface PostCardProps {
   postId: number;
@@ -248,7 +249,7 @@ export function PostCard({
             )}
           </div>
         ) : (
-          <div className="forum-post-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+          <div className="forum-post-content" dangerouslySetInnerHTML={{ __html: sanitizeHtml(contentHtml) }} />
         )}
 
         {/* Delete confirmation */}
