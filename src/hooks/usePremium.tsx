@@ -5,8 +5,6 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
 export interface PremiumFeatures {
-  sdi: boolean;
-  eci: boolean;
   intelligence: boolean;
   defense: boolean;
   advancedAnalytics: boolean;
@@ -59,8 +57,6 @@ export function usePremium(): PremiumStatus {
       isPremium: false,
       tier: "basic",
       features: {
-        sdi: false,
-        eci: false,
         intelligence: false,
         defense: false,
         advancedAnalytics: false,

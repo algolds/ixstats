@@ -498,8 +498,6 @@ export const usersCountryLinkingRouter = createTRPCRouter({
           tier: "basic" as const,
           isPremium: false,
           features: {
-            sdi: false,
-            eci: false,
             intelligence: false,
             defense: false,
             advancedAnalytics: false,
@@ -519,8 +517,6 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         tier,
         isPremium,
         features: {
-          sdi: isPremium,
-          eci: isPremium,
           intelligence: isPremium,
           defense: isPremium,
           advancedAnalytics: isPremium,
@@ -532,8 +528,6 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         tier: "basic" as const,
         isPremium: false,
         features: {
-          sdi: false,
-          eci: false,
           intelligence: false,
           defense: false,
           advancedAnalytics: false,
@@ -570,7 +564,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
 
           const isUpgrade = input.tier === "mycountry_premium";
           const message = isUpgrade
-            ? "You now have access to SDI, ECI, Intelligence, and advanced analytics features."
+            ? "You now have access to Intelligence and advanced analytics features."
             : "Your membership has been changed to Basic tier.";
 
           await notificationHooks.onUserAccountChange({
