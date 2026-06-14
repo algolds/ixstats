@@ -103,6 +103,7 @@ export function CoreEconomicIndicatorsComponent({
       ]
     : [];
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const healthIndicator = computeHealth(indicators.realGDPGrowthRate, indicators.inflationRate);
 
   return (

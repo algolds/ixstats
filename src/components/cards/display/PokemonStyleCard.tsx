@@ -131,6 +131,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
       ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"].includes(card.rarity);
 
     // Size-dependent classes
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const widthClass = getCardWidth(size);
 
     // Explicit dimensions (maintaining 2.5:3.5 aspect ratio)

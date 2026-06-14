@@ -957,6 +957,7 @@ export class DiplomaticResponseAI {
    */
   static prioritizeEvents(
     events: DiplomaticEvent[],
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: EventGenerationContext
   ): DiplomaticEvent[] {
     return events.sort((a, b) => {

@@ -60,6 +60,7 @@ const PRIORITY_COLORS = {
 
 const LiveDiplomaticFeedComponent: React.FC<LiveDiplomaticFeedProps> = ({
   countryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryName,
   clearanceLevel = "PUBLIC",
   maxEvents = 50,

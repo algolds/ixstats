@@ -69,6 +69,7 @@ export function LiveFeedback({
         Math.max(0, 100 - Math.abs(inputs.fiscalSystem.totalDebtGDPRatio) / 2), // Debt impact
         Math.min(100, inputs.coreIndicators.realGDPGrowthRate * 20), // Growth boost
       ];
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const economicStability =
         stabilityFactors.reduce((a, b) => a + b, 0) / stabilityFactors.length;
 
@@ -78,6 +79,7 @@ export function LiveFeedback({
           inputs.governmentSpending.healthcare +
           inputs.governmentSpending.socialSafety) /
         3;
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const socialWellbeing = Math.min(
         100,
         socialSpending +

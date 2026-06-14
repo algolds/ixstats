@@ -138,6 +138,7 @@ export function useBulkFlags(
   // Memoize the country names array to prevent unnecessary re-renders
   const memoizedCountryNames = useMemo(() => {
     return countryNames.sort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryNamesKey]);
 
   // Main fetch function - uses server cache only, no browser-side Commons API calls
@@ -184,6 +185,7 @@ export function useBulkFlags(
         setIsLoading(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [memoizedCountryNames, serverFlags, source]
   );
 

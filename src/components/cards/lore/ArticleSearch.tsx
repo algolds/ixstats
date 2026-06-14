@@ -30,6 +30,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
   const utils = api.useUtils();
 
   // Debounced search — uses WikiBridge via tRPC (direct MySQL for ixwiki)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const searchArticles = useCallback(
     debounce(async (query: string) => {
       if (!query || query.length < 3) {

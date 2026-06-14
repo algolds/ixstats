@@ -187,6 +187,7 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
 
   private enhanceNotificationForIsland(
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): UnifiedNotification {
     // Add dynamic island specific enhancements
@@ -272,6 +273,7 @@ export class ToastDeliveryHandler implements DeliveryHandler {
 
   private enhanceNotificationForToast(
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): UnifiedNotification {
     const enhanced = { ...notification };
@@ -354,6 +356,7 @@ export class ModalDeliveryHandler implements DeliveryHandler {
 
   private enhanceNotificationForModal(
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): UnifiedNotification {
     const enhanced = { ...notification };
@@ -443,6 +446,7 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
 
   private enhanceNotificationForPalette(
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): UnifiedNotification {
     const enhanced = { ...notification };
@@ -526,6 +530,7 @@ export class SilentDeliveryHandler implements DeliveryHandler {
     return method === "silent";
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
     try {
       // Just store the notification without UI feedback
@@ -593,6 +598,7 @@ export class BadgeDeliveryHandler implements DeliveryHandler {
     return method === "badge";
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
     try {
       // Increment badge count for category

@@ -71,6 +71,7 @@ export function LineupBuilder({
     },
   });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const startingSlots = preset?.startingSlots ?? {};
 
   const maxStarters = useMemo(() => {
@@ -141,7 +142,7 @@ export function LineupBuilder({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2 max-h-[460px] overflow-y-auto pr-1">
+          <div className="grid max-h-[460px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {[...players]
               .sort((a, b) => {
                 const ovrA = (a.ratings as any)?.overall ?? 50;

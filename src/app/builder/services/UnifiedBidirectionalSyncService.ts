@@ -19,11 +19,14 @@ import {
   type BidirectionalSyncState,
   type SyncRecommendation,
   type SyncImpact,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type SyncEvent,
 } from "./base";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 import {
   ComponentType,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ATOMIC_COMPONENTS,
 } from "~/components/government/atoms/AtomicGovernmentComponents";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -408,6 +411,7 @@ export class UnifiedBidirectionalSyncService extends BidirectionalSyncService<
     const recommendations: BuilderSyncRecommendation[] = [];
 
     // Analyze economic structure and recommend tax adjustments
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const { structure, sectors } = economyBuilder;
 
     // GDP-based recommendations

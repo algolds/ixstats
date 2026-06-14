@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/app/admin/storyteller/_components/StorytellerHistory.tsx
 // Audit log of admin storyteller actions

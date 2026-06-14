@@ -46,6 +46,7 @@ export function parseEconomicDataForTaxSystem(
     useAggressiveParsing = true,
     includeGovernmentPolicies = true,
     autoGenerateBrackets = true,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     targetRevenueMatch = true,
   } = options;
 
@@ -159,6 +160,7 @@ export function parseEconomicDataForTaxSystem(
  */
 function parseTaxSystemFromCoreIndicators(coreIndicators: CoreEconomicIndicators): TaxSystemInput {
   const gdpPerCapita = coreIndicators.gdpPerCapita;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const economicTier = getEconomicTier(gdpPerCapita);
 
   // Estimate tax system parameters based on economic development

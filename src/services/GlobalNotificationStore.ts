@@ -539,6 +539,7 @@ export class GlobalNotificationStore {
         version: 1,
         lastUpdate: Date.now(),
         notifications: allNotifications.map((n) => {
+          // eslint-disable-next-line unused-imports/no-unused-vars
           const { persisted, syncVersion, ...notification } = n;
           return notification;
         }),

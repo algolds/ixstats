@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/editor/WikiSourceEditor.tsx
 // Wikitext source editor — VS Code + Google Docs hybrid.
@@ -82,6 +83,7 @@ import {
   Type,
   ChevronDown,
   Sparkles,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   MapPin,
   Map as MapIcon,
   Globe,
@@ -414,6 +416,7 @@ export function WikiSourceEditor({
     { stashId: activeStashId, limit: 50 },
     { enabled: !!activeStashId, staleTime: 10_000 }
   );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const stashItems = stashItemsQuery.data?.items || [];
 
   const imageItems = useMemo(() => {
@@ -591,6 +594,7 @@ export function WikiSourceEditor({
       view.destroy();
       viewRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialWikitext]);
 
   // Warn on unload with unsaved changes

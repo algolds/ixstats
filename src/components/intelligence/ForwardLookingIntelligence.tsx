@@ -65,6 +65,7 @@ const ForwardLookingIntelligence: FC<ForwardLookingIntelligenceProps> = memo(
     const [error, setError] = useState<string | null>(null);
 
     // Get optimized intelligence data
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const { country, intelligence, vitality, isLoading } = useOptimizedIntelligenceData({
       countryId,
       enableIntelligence: true,
@@ -77,6 +78,7 @@ const ForwardLookingIntelligence: FC<ForwardLookingIntelligenceProps> = memo(
       if (country && intelligence && !isGenerating && !forwardIntelligence) {
         generateForwardIntelligence();
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [country, intelligence, isGenerating, forwardIntelligence]);
 
     const generateForwardIntelligence = async () => {

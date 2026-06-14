@@ -4,7 +4,9 @@ import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "~/lib/utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { BUILDER_SECTION_THEMES, type BuilderSection } from "../lib/builder-theme";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { CutoutCard } from "~/components/ui/cutout-card";
 
 export interface TabDefinition {

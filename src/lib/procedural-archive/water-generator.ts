@@ -93,6 +93,7 @@ function seededRandom(seed: number): () => number {
  */
 function generateRivers(heightmap: HeightmapResult, seed: number): LineString[] {
   const { width, height, data, seaLevel } = heightmap;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const rng = seededRandom(seed + 400);
   const rivers: LineString[] = [];
 
@@ -390,6 +391,7 @@ function generateLakes(heightmap: HeightmapResult, seed: number): Polygon[] {
   return lakes;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function simplifyPath(points: Position[], tolerance: number): Position[] {
   if (points.length <= 2) return points;
 

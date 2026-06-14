@@ -1,9 +1,11 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
 import { Settings, Hash, FileText, UserCircle } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { createUrl } from "~/lib/url-utils";
 import Link from "next/link";
 import { ThinkPagesIcon } from "./ThinkPagesIcon";

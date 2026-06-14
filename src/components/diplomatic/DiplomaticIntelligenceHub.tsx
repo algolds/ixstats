@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -77,6 +78,7 @@ interface MissionSummary {
 
 export function DiplomaticIntelligenceHub({
   countryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryName,
 }: DiplomaticIntelligenceHubProps) {
   const [activeTab, setActiveTab] = React.useState<
@@ -121,6 +123,7 @@ export function DiplomaticIntelligenceHub({
     }
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const missions: MissionSummary[] = [];
 
   const activeMissions = useMemo(

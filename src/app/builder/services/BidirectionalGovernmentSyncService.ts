@@ -545,6 +545,7 @@ export class BidirectionalGovernmentSyncService {
    */
   private calculateGovernmentComponentEconomicImpact(
     component: ComponentType,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     governmentBuilder: GovernmentBuilderState
   ) {
     const govComponent = ATOMIC_COMPONENTS[component];
@@ -763,6 +764,7 @@ export class BidirectionalGovernmentSyncService {
    * Get government impact analysis of economy builder state
    * Stub implementation - returns impact data
    */
+  // eslint-disable-next-line unused-imports/no-unused-vars
   getGovernmentImpactOfEconomy(economyBuilder: EconomyBuilderState): any {
     const recommendations =
       this.state.governmentRecommendations.length > 0 ? this.state.governmentRecommendations : [];

@@ -14,6 +14,7 @@ export const HoverEffect = ({
   }[];
   className?: string;
 }) => {
+  // eslint-disable-next-line prefer-const
   let [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (

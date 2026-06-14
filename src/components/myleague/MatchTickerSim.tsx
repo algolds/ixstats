@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Play, Pause, RotateCcw, Flame, Shield, Users, Activity, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -21,7 +22,9 @@ export function MatchTickerSim({
   homeTeam,
   awayTeam,
   trace,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   homeScoreFinal,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   awayScoreFinal,
   onFinished,
 }: MatchTickerSimProps) {

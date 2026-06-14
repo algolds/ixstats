@@ -120,6 +120,7 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
         editorRef.current.focus();
         handleContentChange();
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleContentChange = useCallback(() => {
@@ -144,6 +145,7 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
         e.preventDefault();
         handleSubmit();
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSubmit = useCallback(() => {

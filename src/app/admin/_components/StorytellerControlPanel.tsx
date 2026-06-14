@@ -98,6 +98,7 @@ type InterventionCategory =
   | "environmental"
   | "technological";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface CountrySnapshot {
   id: string;
   name: string;
@@ -139,6 +140,7 @@ interface ScenarioTemplate {
   estimatedImpact: string;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface AdminAction {
   id: string;
   action: string;
@@ -399,9 +401,11 @@ export function StorytellerControlPanel() {
   const [mode, setMode] = useState<ControlMode>("interventions");
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedScale, setSelectedScale] = useState<InterventionScale>("macro");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [searchTerm, setSearchTerm] = useState("");
   const [showInterventionDialog, setShowInterventionDialog] = useState(false);
   const [showGodModeDialog, setShowGodModeDialog] = useState(false);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [showScenarioDialog, setShowScenarioDialog] = useState(false);
   const [editingCountry, setEditingCountry] = useState<any>(null);
   const [simulationRunning, setSimulationRunning] = useState(false);
@@ -422,9 +426,11 @@ export function StorytellerControlPanel() {
   });
 
   // ========== QUERIES ==========
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const {
     data: interventionsData,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isLoading: interventionsLoading,
     refetch: refetchInterventions,
   } = api.countries.getStorytellerEffects.useQuery({
@@ -456,10 +462,12 @@ export function StorytellerControlPanel() {
   });
 
   // ========== COMPUTED ==========
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const countries = countriesData?.countries || [];
   const interventions = interventionsData || [];
   const activeInterventions = interventions.filter((i: any) => i.isActive);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const selectedCountryData = useMemo(() => {
     return countries.find((c) => c.id === selectedCountry);
   }, [countries, selectedCountry]);
@@ -1308,6 +1316,7 @@ interface GodModePanelProps {
   onEdit: (country: any) => void;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function GodModePanel({ countries, selectedCountry, onCountryChange, onEdit }: GodModePanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -1475,6 +1484,7 @@ interface AnalyticsPanelProps {
   countries: any[];
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function AnalyticsPanel({ interventions, countries }: AnalyticsPanelProps) {
   const totalInterventions = interventions.length;
   const activeInterventions = interventions.filter((i: any) => i.isActive).length;

@@ -64,13 +64,15 @@ bun run ts:build          # build with project references (lib + server)
 | Layer | Location | Notes |
 |-------|----------|-------|
 | Pages | `src/app/` | Next.js 16.2 App Router, 187 routes |
-| Components | `src/components/` | 893+ UI components, glass physics design system |
-| API (tRPC) | `src/server/api/routers/` | 83 routers, 1,329 endpoints. Register new routers in `src/server/api/root.ts` |
+| Components | `src/components/` | 893+ UI components, Facet design system (was "Glass Physics") |
+| API (tRPC) | `src/server/api/routers/` | **87 routers** (52 split into subdirs via `mergeRouters`, 24 flat), **1,376 procedures**. Register new routers in `src/server/api/root.ts` |
 | Database | `prisma/schema/` | 237 models split across 12 `.prisma` files |
 | Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers (NOT `middleware.ts`) |
 | Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
 | Hooks | `src/hooks/` | 107+ custom React hooks |
 | Lib | `src/lib/` | Utilities, rate limiter, WebSocket server, memory config |
+| Shared server primitives | `src/server/shared/` | Cross-router shared utilities (e.g. `layer-cache.ts`) — keeps routers decoupled |
+| Architecture guard | `scripts/audit/audit-arch.ts` | Enforces ≤700-line file ceiling, ratchet baseline, blocks cross-router imports |
 
 ### Key pages
 - `/mycountry` — Executive command suite (single-page router pattern)
@@ -149,7 +151,7 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 
 Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference/revision.md)** (canonical "Versioning & Release Architecture"). OS-inspired model — single source of truth is the **Version Registry** `VERSIONS` in [src/lib/buildVersion.ts](file:///ixwiki/public/projects/ixstats/src/lib/buildVersion.ts). **Never hardcode version strings** elsewhere; read derived exports (`APP_VERSION`, `WIKIOS_VERSION`, `CHANNEL`, …) from the registry, and reference the registry from docs rather than quoting numbers.
 
-- **Platform**: `Major.Minor.Patch` + permanent epoch **release name** + **channel** → **IxStates 1.0 "Ogma"** (channel: Alpha). Legacy `1.42`/`2.1` retired; `package.json` version is `1.0.0` (build-tooling only).
+- **Platform**: `Major.Minor.Patch` + permanent epoch **release name** + **channel** → **IxStates 1.0.6 "Ogma"** (channel: Alpha). Legacy `1.42`/`2.1` retired; `package.json` version is `1.0.0` (build-tooling only).
 - **Apps / Engines / Systems / Design** each carry a **single capability integer** (not SemVer), all defined in the registry:
   - **Apps**: `IXWORLD_VERSION`, `WIKIOS_VERSION` (Canvas sub-version: `CANVAS_VERSION`), `IXVAULT_VERSION`
   - **Engines** (internal, Dev-panel only): `MYCOUNTRY_ENGINE_VERSION`, `CONCORD_ENGINE_VERSION`, `ATLAS_ENGINE_VERSION`
@@ -159,6 +161,8 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **Renames**: Glass Physics → **Facet**, Dynamic Island → **Halo**, LoreStash → **Stash** (Prisma model names unchanged).
 - **Build id**: `BUILD_VERSION` (git short SHA) generated into `buildVersion.generated.ts` by `scripts/write-build-version.js` (`prebuild` hook).
 
+> **Patch 1.0.5 → 1.0.6 (June 2026):** 47 god-file routers eliminated via `mergeRouters` domain splitting (now 52/87 routers are subdir-organized), 1 dead type file removed (`unified-intelligence.ts`, 1,552 lines), arch guard tool added to prevent regressions. See CHANGELOG.md.
+
 > **Standing instruction:** after any major session/change, reference **revision.md** and **ask the user whether any version should bump** (platform `Major.Minor.Patch`, a component's capability integer, the channel, or release name) and whether the registry / `CHANGELOG.md` / docs need updating.
 
 
@@ -167,6 +171,7 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **Turbopack**: Next.js 16 defaults to Turbopack. Dev script uses `bun run next dev` (no `--webpack` flag).
 - **ignoreBuildErrors: true**: `next.config.js` ignores TypeScript errors during build.
 - **WebSocket disabled in dev**: Intelligence WebSocket is production-only. Market WS always enabled.
+- **Router god files**: enforce ≤700 lines per `src/server/api/routers/**` file (relaxed to 900 for core type/data tables). Run `bun run audit:arch` to check; to split a router use `bun run scripts/split-router-template.ts --routerFile=... --groups='{...}' --pattern=mergeRouters`. See header comment in the template for full recipe.
 - **Cron jobs disabled in dev**: Auction, passive income, card value, and lore card crons run in production only.
 - **Lint has pre-existing issues**: `bun run lint` prints a note about this — it's expected.
 - **`.next` cleanup**: Dev script cleans stale build artifacts but preserves `.next/cache` for incremental compilation.
@@ -199,7 +204,7 @@ Process: scout that the router is live + a single flat `createTRPCRouter` (dead/
 
 - `CLAUDE.md` — Detailed architecture, design system, MyCountry routing, maps system
 - `docs/README.md` — Documentation hub
-- `docs/reference/api-complete.md` — Full tRPC API catalog (1,329 endpoints)
+- `docs/reference/api-complete.md` — Full tRPC API catalog (1,376 procedures across 87 routers)
 - `docs/systems/` — System-specific guides
 - `IMPLEMENTATION_STATUS.md` — Feature maturity matrix (archived, gitignored)
 -  `/ixwiki/.cursor/rules/design.mdc` — for design token mappings and usage guidelines

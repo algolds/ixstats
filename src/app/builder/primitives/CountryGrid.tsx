@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import { motion } from "motion/react";
 import { Globe } from "lucide-react";
@@ -7,6 +8,7 @@ import { CountriesFocusGridModularBuilder } from "../components/CountriesFocusGr
 import type { RealCountryData } from "../lib/economy-data-service";
 import type { CountryCardData } from "../components/CountryFocusCardBuilder";
 import { useBuilderFilter } from "../components/builder-filter-context";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { DYNAMIC_ISLAND_STYLE, RefractiveGridBezel } from "../components/glass";
 
 interface CountryGridProps {
@@ -43,6 +45,7 @@ export function CountryGrid({
   onCountryClick,
   onClearFilters,
   softSelectedCountryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   scrollPosition,
   onScroll,
   flagUrls = {},
@@ -162,6 +165,7 @@ export function CountryGrid({
     }
   }, [isAutoScrolling, onScroll, checkAndAppendCountries]);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const toggleAutoScroll = useCallback(() => {
     setIsAutoScrolling((prev) => !prev);
   }, []);

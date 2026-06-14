@@ -22,6 +22,7 @@ export function EmploymentMetrics({
   className = "",
 }: EmploymentMetricsProps) {
   // Calculate derived metrics
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const workingAgePopulation = Math.round(totalPopulation * 0.65);
   const totalEmployed = Math.round(data.totalWorkforce * (data.employmentRate / 100));
   const totalUnemployed = Math.round(data.totalWorkforce * (data.unemploymentRate / 100));

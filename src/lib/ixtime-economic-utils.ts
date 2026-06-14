@@ -80,6 +80,7 @@ export function projectEconomicIndicators(
   const newGDPPerCapita = newNominalGDP / newPopulation;
 
   // Inflation compounds over time
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const cumulativeInflation = Math.pow(1 + baseIndicators.inflationRate, yearsToProject);
 
   // Exchange rate may drift based on economic performance
@@ -185,6 +186,7 @@ export function getCurrentEconomicState(
   populationGrowthRate = 0.01, // Default 1% annual growth
   economicEvents: EconomicEvent[] = []
 ): CoreEconomicIndicatorsData {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const rosterTime = IxTime.getInGameEpoch(); // January 1, 2028
   const currentTime = IxTime.getCurrentIxTime();
 

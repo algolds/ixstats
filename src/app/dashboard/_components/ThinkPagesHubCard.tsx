@@ -34,6 +34,7 @@ interface ThinkPagesHubCardProps {
 }
 
 export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isHovered, setIsHovered] = useState(false);
 
   // Fetch ThinkPages data

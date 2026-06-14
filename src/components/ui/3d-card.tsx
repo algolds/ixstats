@@ -28,11 +28,13 @@ export const CardContainer = ({
     containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsMouseEntered(true);
     if (!containerRef.current) return;
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     setIsMouseEntered(false);
@@ -115,6 +117,7 @@ export const CardItem = ({
 
   useEffect(() => {
     handleAnimations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMouseEntered]);
 
   const handleAnimations = () => {

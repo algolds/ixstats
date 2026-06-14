@@ -292,6 +292,7 @@ export function useMeetingScheduler(
     },
   });
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const updateMeeting = api.meetings.updateMeeting.useMutation({
     onSuccess: () => {
       notify.success("Meeting updated successfully");
@@ -324,6 +325,7 @@ export function useMeetingScheduler(
     },
   });
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const recordAttendance = api.meetings.recordAttendance.useMutation({
     onSuccess: () => {
       notify.success("Attendance recorded");
@@ -445,6 +447,7 @@ export function useMeetingScheduler(
       duration: meetingForm.duration,
       scheduledIxTime: ixTime,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meetingForm, countryId, userId, createMeeting]);
 
   const handleAddAgendaItem = useCallback(() => {
@@ -468,6 +471,7 @@ export function useMeetingScheduler(
       estimatedDuration: agendaForm.estimatedDuration,
       priority: agendaForm.priority,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMeetingId, agendaForm, addAgendaItem]);
 
   const handleRecordDecision = useCallback(() => {
@@ -493,6 +497,7 @@ export function useMeetingScheduler(
       votesAgainst: decisionForm.votesAgainst,
       votesAbstain: decisionForm.votesAbstain,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMeetingId, decisionForm, recordDecision]);
 
   const handleCreateActionItem = useCallback(() => {
@@ -520,6 +525,7 @@ export function useMeetingScheduler(
       dueDate: actionForm.dueDate,
       priority: actionForm.priority,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMeetingId, actionForm, createActionItem]);
 
   const handleDeleteMeeting = useCallback(

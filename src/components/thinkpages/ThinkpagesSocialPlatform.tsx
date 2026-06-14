@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion } from "motion/react";
 import { Users, RefreshCw, Loader2, Rss } from "lucide-react";
@@ -69,6 +70,7 @@ export function ThinkpagesSocialPlatform({
   const hasNextPage = profileMode ? userFeedQuery.hasNextPage : feedQuery.hasNextPage;
   const fetchNextPage = profileMode ? userFeedQuery.fetchNextPage : feedQuery.fetchNextPage;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const utils = api.useUtils();
 
   const refetchDisplayFeed = useCallback(() => {
@@ -102,6 +104,7 @@ export function ThinkpagesSocialPlatform({
         notify.error("Please select an account first");
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedAccount, filteredPosts]
   );
 
@@ -111,6 +114,7 @@ export function ThinkpagesSocialPlatform({
         notify.error("Please select an account first");
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedAccount]
   );
 
@@ -125,6 +129,7 @@ export function ThinkpagesSocialPlatform({
       navigator.clipboard.writeText(window.location.href);
       notify.success("Link copied to clipboard!");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReaction = useCallback((_postId: string, _reactionType: string) => {
@@ -159,6 +164,7 @@ export function ThinkpagesSocialPlatform({
         />
       </motion.div>
     ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       selectedAccount?.id,
       accounts,

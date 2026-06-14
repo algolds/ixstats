@@ -425,6 +425,7 @@ export function calculateTransitionCost(
     high: 0.3,
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const baseMultiplier = complexityMultipliers[targetArchetype.implementationComplexity];
 
   // Calculate component costs
@@ -503,6 +504,7 @@ export function calculateTransitionComplexity(
  */
 export function identifyKeySuccessFactors(
   targetArchetype: EconomicArchetype,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   currentState: CountryCharacteristics
 ): KeySuccessFactors {
   const criticalFactors: string[] = [
@@ -809,6 +811,7 @@ function generateReasons(
 
 function identifyBenefits(
   archetype: EconomicArchetype,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   characteristics: CountryCharacteristics
 ): string[] {
   return archetype.strengths.slice(0, 5);
@@ -816,6 +819,7 @@ function identifyBenefits(
 
 function identifyChallenges(
   archetype: EconomicArchetype,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   characteristics: CountryCharacteristics
 ): string[] {
   return archetype.challenges.slice(0, 5);
@@ -835,6 +839,7 @@ function estimateTimeHorizon(
 
 function determineRecommendationLevel(
   matchScore: number,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   compatibility: any
 ): "highly-recommended" | "recommended" | "consider" | "not-recommended" {
   if (matchScore >= 80) return "highly-recommended";
@@ -947,6 +952,7 @@ function calculateSocialCost(
   return gdp * 0.05; // Fixed 5% for social transition support
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function generateFinancingOptions(totalCost: number, gdp: number): string[] {
   return [
     "Phased domestic budget allocation over 5-10 years",

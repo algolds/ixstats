@@ -7,6 +7,7 @@ import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { getNationUrl } from "~/lib/slug-utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { isStandaloneClient } from "~/lib/standalone-detection";
 
 interface UserProfileMenuProps {
@@ -22,6 +23,7 @@ export function UserProfileMenu({
   userProfile,
   setupStatus,
   userCountryFlag,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   flagsLoading,
 }: UserProfileMenuProps) {
   const [showUserPopover, setShowUserPopover] = useState(false);

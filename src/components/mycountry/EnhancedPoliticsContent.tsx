@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Landmark, Users, BarChart3 } from "lucide-react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { VoteIcon } from "~/components/ui/icons";
 import {
   useCountryData,
@@ -50,6 +51,7 @@ export function EnhancedPoliticsContent({
   );
 
   const totalSeats = legislature?.totalSeats ?? 0;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { flagUrl } = useFlag(country?.name ?? "");
 
   const { isGuided } = useSectionDensity({
@@ -119,6 +121,7 @@ export function EnhancedPoliticsContent({
         e.status === "in_progress"
     ).length ?? 0;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const statusBadges: StatusBadgeConfig[] =
     pendingElections > 0
       ? [
@@ -133,6 +136,7 @@ export function EnhancedPoliticsContent({
   const partyCount = parties?.length ?? 0;
   const filledSeats =
     parliament?.partySummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const politicsHealth = Math.max(
     0,
     Math.min(
@@ -146,6 +150,7 @@ export function EnhancedPoliticsContent({
     )
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const heroStats = [
     { label: "Parties", value: partyCount, accentText: true },
     { label: "Seats", value: totalSeats, accentText: true },

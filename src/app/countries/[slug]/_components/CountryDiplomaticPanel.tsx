@@ -34,6 +34,7 @@ interface CountryDiplomaticPanelProps {
 
 export function CountryDiplomaticPanel({
   country,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   flagUrl,
   isOwnCountry,
   viewerCountryId,

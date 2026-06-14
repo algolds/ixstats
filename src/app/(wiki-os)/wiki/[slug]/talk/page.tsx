@@ -2,7 +2,9 @@
 // WikiOS Talk Page — discussion/collaboration page for an article
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useParams, useRouter } from "next/navigation";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
@@ -32,6 +34,7 @@ interface Section {
 // ---------------------------------------------------------------------------
 function CommentCard({
   comment,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   sectionTitle,
   onQuote,
   onReply,
@@ -269,6 +272,7 @@ export default function TalkPage() {
     { staleTime: 30_000 }
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: sectionsData } = api.wikios.getTalkSections.useQuery(
     { title },
     { staleTime: 30_000 }

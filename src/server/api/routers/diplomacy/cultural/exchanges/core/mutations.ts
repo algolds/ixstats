@@ -1,13 +1,8 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomatic-choice-tracker";
-
-
 
 import { vaultService } from "~/lib/vault-service";
 

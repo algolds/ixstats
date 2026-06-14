@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { GlassCard, GlassCardContent } from "../glass/GlassCard";
 
 // Dynamic import for heavy media search modal
@@ -86,6 +87,7 @@ export function NationalSymbolsSection({
           } else if (refCoa) {
             setFoundationCoatOfArmsUrl(refCoa);
           }
+          // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (error) {
           if (refFlag) setFoundationFlagUrl(refFlag);
           if (refCoa) setFoundationCoatOfArmsUrl(refCoa);
@@ -108,6 +110,7 @@ export function NationalSymbolsSection({
     if (activeCoa && (!inputs.coatOfArmsUrl || inputs.coatOfArmsUrl === "")) {
       handleCoatOfArmsUrlChange(activeCoa);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     foundationFlagUrl,
     foundationCoatOfArmsUrl,

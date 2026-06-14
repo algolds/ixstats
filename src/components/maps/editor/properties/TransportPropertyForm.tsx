@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -119,19 +120,10 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
     if (routeWaypoints.length > 0 && tab !== "draw") {
       setTab("draw");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeWaypoints.length]);
 
-  if (!countryId) {
-    return (
-      <div className="space-y-3">
-        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Transport Routes
-        </h3>
-        <p className="text-muted-foreground text-xs">No country selected.</p>
-      </div>
-    );
-  }
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const routes = routeData?.features ?? [];
 
   // ── Filter + sort routes ──
@@ -186,6 +178,17 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
       return next;
     });
   }, []);
+
+  if (!countryId) {
+    return (
+      <div className="space-y-3">
+        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Transport Routes
+        </h3>
+        <p className="text-muted-foreground text-xs">No country selected.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

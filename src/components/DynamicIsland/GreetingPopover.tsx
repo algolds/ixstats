@@ -5,7 +5,9 @@ import { HealthRing } from "../ui/health-ring";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { getNationUrl } from "~/lib/slug-utils";
 import {
+  // eslint-disable-next-line unused-imports/no-unused-imports
   formatCompactNumber as _formatCompactNumber,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   formatCompactCurrency as _formatCompactCurrency,
 } from "~/lib/format-utils";
 import { useUser, SignOutButton } from "~/context/auth-context";
@@ -41,6 +43,7 @@ const getMetricLabelClass = (val: number) => {
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const getPremiumDaysRemaining = (createdAt: string | Date | undefined): number => {
   if (!createdAt) return 30;
   const createdDate = new Date(createdAt);
@@ -62,6 +65,7 @@ interface GreetingPopoverProps {
   onSwitchMode: (mode: ViewMode) => void;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps) {
   const { user, isLoaded } = useUser();
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -89,6 +93,7 @@ export function GreetingPopover({ greeting, onSwitchMode }: GreetingPopoverProps
   })();
 
   // Compute composite vitality
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const vitalityScore = activityRingsData
     ? Math.round(
         ((activityRingsData.economicVitality || 0) +

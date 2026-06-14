@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { TextAnimate } from "~/components/magicui/text-animate";
 import { RiCommandLine } from "react-icons/ri";
 

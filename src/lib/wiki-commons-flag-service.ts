@@ -110,6 +110,7 @@ class WikiCommonsFlagService {
 
       // Try comprehensive coat of arms filename patterns
       const normalizedName = countryName.replace(/\s+/g, "_");
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const lowercaseName = countryName.toLowerCase();
       const titleCaseName = countryName.replace(/\b\w/g, (l) => l.toUpperCase());
 

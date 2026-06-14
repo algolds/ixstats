@@ -60,6 +60,7 @@ export const CardBack = React.memo<CardBackProps>(
     showRarityVariation = true,
   }) => {
     const pattern = getHolographicPattern(rarity);
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const intensity = getHolographicIntensity(rarity);
     const borderConfig = getPremiumBorderConfig(rarity);
     const lightRays = generateLightRays(12);

@@ -126,6 +126,7 @@ export function AtomicExecutiveSummary({
     }
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: synergies, isLoading: synergiesLoading } =
     api.unifiedAtomic.detectSynergies.useQuery(
       { countryId },
@@ -135,6 +136,7 @@ export function AtomicExecutiveSummary({
       }
     );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: effectiveness, isLoading: effectivenessLoading } =
     api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
       { countryId },

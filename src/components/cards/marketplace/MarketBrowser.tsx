@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/cards/marketplace/MarketBrowser.tsx
 // Main marketplace browsing page with auction grid
@@ -73,6 +74,7 @@ export const MarketBrowser = memo<MarketBrowserProps>(
     });
 
     // Bid hook
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const { placeBid, isPlacing } = useAuctionBid();
 
     // UI state

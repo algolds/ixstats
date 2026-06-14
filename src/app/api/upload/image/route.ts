@@ -18,6 +18,7 @@ import crypto from "crypto";
 import { rateLimiter } from "~/lib/rate-limiter";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+// eslint-disable-next-line unused-imports/no-unused-vars
 const UPLOAD_RATE_LIMIT = 10; // Max uploads per minute per user
 
 // SECURITY: Only allow specific image types
@@ -70,6 +71,7 @@ function generateSafeFileName(originalName: string, userId: string, fileType: st
     .createHash("md5")
     .update(`${userId}-${Date.now()}-${originalName}`)
     .digest("hex");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const extension = fileType.split("/")[1] || "png";
   const timestamp = Date.now();
   // Sanitize original name
@@ -214,6 +216,7 @@ export async function GET() {
       maxFileSize: MAX_FILE_SIZE,
       allowedTypes: ALLOWED_TYPES,
     });
+    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (error) {
     return NextResponse.json(
       {

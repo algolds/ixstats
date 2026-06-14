@@ -184,6 +184,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
       window.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("click", handleClickAway);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, showDynamicIsland, processedCountries]);
 
   // Infinite scroll

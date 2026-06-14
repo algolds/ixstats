@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useEffect } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
@@ -195,6 +196,7 @@ export function useWorldMapDataOverlays({
         console.warn("[useWorldMapDataOverlays] story pins error:", err);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, isLoaded, overlayFeatures?.storyPins]);
 
   // 1b. Render custom map labels with dynamic client-side zoom filtering

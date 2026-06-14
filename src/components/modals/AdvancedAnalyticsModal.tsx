@@ -53,6 +53,7 @@ interface AdvancedAnalyticsModalProps {
   countryName: string;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const CHART_COLORS = [
   "#8b5cf6",
   "#06b6d4",
@@ -66,6 +67,7 @@ const CHART_COLORS = [
   "#06b6d4",
 ];
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const VOLATILITY_COLORS = {
   stable: "#10b981",
   moderate: "#f59e0b",
@@ -80,10 +82,14 @@ export function AdvancedAnalyticsModal({
   countryName,
 }: AdvancedAnalyticsModalProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [timeRange, setTimeRange] = useState("1y");
   const [chartType, setChartType] = useState("line");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["gdp", "population"]);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [showProjections, setShowProjections] = useState(true);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [volatilityThreshold, setVolatilityThreshold] = useState(0.15);
 
   // Get country data
@@ -95,6 +101,7 @@ export function AdvancedAnalyticsModal({
     api.historical.getCountryHistory.useQuery({ countryId }, { enabled: isOpen });
 
   // Get advanced analytics
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: advancedAnalytics, isLoading: analyticsLoading } =
     api.intelAnalytics.getAdvancedAnalytics.useQuery(
       { countryId: countryId || "disabled" },
@@ -102,6 +109,7 @@ export function AdvancedAnalyticsModal({
     );
 
   // Get global comparison data
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
     undefined,
     { enabled: isOpen }

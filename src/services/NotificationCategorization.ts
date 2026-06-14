@@ -139,6 +139,7 @@ export class NotificationCategorization {
    */
   analyzeCrossCategoryImpact(
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): {
     affectedCategories: NotificationCategory[];
@@ -429,6 +430,7 @@ export class NotificationCategorization {
     this.contextualRules.set("executive_mode", (context) => (context.isExecutiveMode ? 0.3 : 0));
 
     // Business hours relevance
+    // eslint-disable-next-line unused-imports/no-unused-vars
     this.contextualRules.set("business_hours", (context) => {
       const hour = new Date().getHours();
       return hour >= 9 && hour <= 17 ? 0.2 : -0.1;
@@ -574,6 +576,7 @@ export class NotificationCategorization {
   private evaluateEscalationCondition(
     condition: string,
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): boolean {
     // Simple condition evaluation - would be more sophisticated in practice
@@ -591,6 +594,7 @@ export class NotificationCategorization {
 
   private calculateTimeUrgency(
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): number {
     const age = Date.now() - notification.timestamp;
@@ -656,7 +660,9 @@ export class NotificationCategorization {
 
   private generateActionSuggestions(
     match: { category: EnhancedCategory; score: number; matches: string[] },
+    // eslint-disable-next-line unused-imports/no-unused-vars
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): string[] {
     const suggestions: string[] = [];

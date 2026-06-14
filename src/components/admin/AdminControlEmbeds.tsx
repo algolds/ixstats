@@ -42,6 +42,7 @@ import {
   Zap,
 } from "lucide-react";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { createUrl } from "~/lib/url-utils";
 
 interface AdminControlEmbedProps {

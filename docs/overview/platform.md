@@ -20,16 +20,16 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 | New Player | Guided onboarding, documentation, tutorials | `/help`, `/getting-started`, docs in `docs/overview` |
 
 ## Release Cadence & Versioning
-- Platform: **IxStates 1.0 "Ogma"** (channel: Alpha) — OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at `src/lib/buildVersion.ts`.
+- Platform: **IxStates 1.0.6 "Ogma"** (channel: Alpha) — OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at `src/lib/buildVersion.ts`.
 - Next.js 16.2.9, React 19.2.7, Prisma 6.19.3, tRPC 11.17, Tailwind CSS 4.3
-- 83 tRPC routers, 1,329 API endpoints, 237 Prisma models, 893+ components
+- 87 tRPC routers, 1,376 API endpoints, 237 Prisma models, 893+ components
 - Documentation updates must accompany feature work; use this overview and `docs/DOCUMENTATION_INDEX.md` as canonical entry points
 - **After a major change, reference [`revision.md`](../reference/revision.md) and confirm with the team whether any version should bump.**
 
 ## Platform Hierarchy
 
 ```
-IxStates (platform — versioned: 1.0 "Ogma", channel Alpha)
+IxStates (platform — versioned: 1.0.6 "Ogma", channel Alpha)
 ├── Apps (independent version): IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software powering the IxWiki content; incl Canvas editor sub-system + Image Repository), IxVault (incl IxCards, IxCredits, Card Crafting/Trading/Marketplace/Packs/Lore Cards/NS Import)
 ├── Engines (internal sim cores, independent version): MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld)
 ├── Core Systems (independent version): MyCountry ★ (flagship, with grouped subsystems: Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (standalone core system, not under MyCountry), ThinkPages (incl ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS
@@ -92,13 +92,15 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-83 routers / 1,329 procedures. Key groups:
+**87 routers / 1,376 procedures** (52 of 87 are now split into subdirectories via `mergeRouters`; 24 remain flat; the rest are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling and blocks new cross-router imports — see `docs/prevent_ts_graph_explosion.md` for the rationale.
 
-**IxVault:** `vault.ts`, `cards.ts`, `card-packs.ts`, `card-market.ts`, `card-analytics.ts`, `cardImages.ts`, `crafting.ts`, `trading.ts`, `lore-cards.ts`, `ns-import.ts`
+Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
-**MyCountry & Subsystems:** `mycountry.ts`, `intelligence.ts`, `unified-intelligence.ts`, `diplomatic-intelligence.ts`, `diplomatic.ts`, `security.ts`, `sdi.ts`, `government.ts`, `elections.ts`, `economics.ts`, `enhanced-economics.ts`, `eci.ts`, `atomicEconomic.ts`, `atomicGovernment.ts`, `atomicTax.ts`, `unifiedAtomic.ts`, `taxSystem.ts`, `resources.ts`, `transport.ts`, `meetings.ts`, `nationalIssues.ts`, `crisis-events.ts`, `policies.ts`, `scheduledChanges.ts`, `quickactions.ts`, `historical.ts`
+**IxVault:** `vault/`, `cards/`, `card-packs/`, `card-market/`, `card-analytics/`, `cardImages.ts`, `crafting/`, `trading/`, `lore-cards/`, `ns-import/`
 
-**Other:** `achievements.ts`, `activities.ts`, `admin.ts`, `archetypes.ts`, `countries.ts`, `optimized-countries.ts`, `customTypes.ts`, `formulas.ts`, `thinkpages.ts`, `notifications.ts`, `roles.ts`, `users.ts`, `user-logging.ts`, `wikiCache.ts`, `wikiImporter.ts`, `forum.ts`, `geo.ts`, `demoMode.ts`, `autosaveHistory.ts`, `autosaveMonitoring.ts`
+**MyCountry & Subsystems:** `mycountry/`, `intelligence/` (core, alerts, analytics, core/cache), `diplomatic-intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `security/` (operations, military, assessment, stability), `sdi/`, `government/`, `elections/`, `economics/`, `enhanced-economics/`, `eci/`, `atomicEconomic.ts`, `atomicGovernment.ts`, `atomicTax.ts`, `unifiedAtomic.ts`, `taxSystem/`, `resources/`, `transport/`, `meetings/`, `national-issues/`, `crisis-events/`, `policies/`, `scheduledChanges/`, `quickactions/`, `historical/`
+
+**Other:** `achievements/`, `activities/` (feed, follows, trending, activities), `admin/` (28 interfaces across countries, wiki, worldEvents, system, etc.), `archetypes/`, `countries/` (list, economy, identity, management, diplomacy, wiki, atomic, geography, flags), `blurbs/`, `commons.ts`, `formulas.ts`, `thinkpages/` (posts, accounts, feed, messaging, thinktanks), `notifications/`, `roles/`, `users/`, `user-logging.ts`, `wikiCache.ts`, `wikiImporter/`, `wiki/`, `forum/`, `geo/` (core, features, editor, admin, sovereignty, wiki), `demoMode.ts`, `autosaveHistory.ts`, `autosaveMonitoring.ts`
 
 ### Database & Data Flow
 

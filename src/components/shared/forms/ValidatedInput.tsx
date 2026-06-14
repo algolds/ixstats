@@ -103,6 +103,7 @@ export function ValidatedInput({
 
   const hasErrors = validationMessages.some((m) => m.severity === "error");
   const hasWarnings = validationMessages.some((m) => m.severity === "warning");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const hasInfo = validationMessages.some((m) => m.severity === "info");
   const showSuccess =
     touched && isValid && validationMessages.length === 0 && value.trim() && successMessage;

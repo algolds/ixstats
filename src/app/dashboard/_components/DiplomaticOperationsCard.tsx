@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -42,6 +43,7 @@ export function DiplomaticOperationsCard({
   const [focusedSection, setFocusedSection] = useState<string | null>(null);
 
   // Fetch diplomatic data
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: diplomaticRelations } = api.countries.getDiplomaticRelations?.useQuery(
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId }
@@ -49,6 +51,7 @@ export function DiplomaticOperationsCard({
 
   const { data: activeCrises } = api.intelAlerts.getActiveCrises.useQuery();
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: diplomaticIntelligence } =
     api.intelCore.getEnhancedDiplomaticIntelligence?.useQuery(
       { countryId: userProfile?.countryId || "" },

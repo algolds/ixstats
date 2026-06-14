@@ -25,6 +25,7 @@ interface LiveDataIntegrationProps {
 
 export function LiveDataIntegration({
   countryId = "",
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isExecutiveMode = false,
   enableIntelligenceStream = true,
   enableEconomicStream = true,
@@ -33,6 +34,7 @@ export function LiveDataIntegration({
   const { user } = useUser();
 
   // Get notification bridge
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { bridge, wireIntelligence, wireEconomic, wireDiplomatic } = useGlobalNotificationBridge();
 
   // Track previous data to detect changes
@@ -69,6 +71,7 @@ export function LiveDataIntegration({
   );
 
   // Transform country data into economic metrics
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const economicData = countryData
     ? {
         gdp: (countryData as any).currentTotalGdp || 0,
@@ -100,6 +103,7 @@ export function LiveDataIntegration({
   );
 
   // Transform diplomatic data into events format
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const diplomaticEvents = [
     // Current relationships (for status monitoring)
     ...(diplomaticRelations

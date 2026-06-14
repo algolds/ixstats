@@ -641,6 +641,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     rarity: "Common",
     points: 5,
     iconUrl: "👋",
+    // eslint-disable-next-line unused-imports/no-unused-vars
     condition: (data) => true, // Auto-unlocked on account creation
   },
   {

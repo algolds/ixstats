@@ -251,6 +251,7 @@ export function useIntelligenceWebSocket(
 
     const interval = setInterval(checkConnectionState, 1000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientRef.current]);
 
   return {

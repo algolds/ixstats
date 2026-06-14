@@ -182,6 +182,7 @@ interface CardRevealItemProps {
 }
 
 const CardRevealItem = React.memo<CardRevealItemProps>(
+  // eslint-disable-next-line unused-imports/no-unused-vars
   ({ card, index, isRevealed, service, isMobile }) => {
     const [isFlipped, setIsFlipped] = useState(false);
     const [showSplash, setShowSplash] = useState(false);

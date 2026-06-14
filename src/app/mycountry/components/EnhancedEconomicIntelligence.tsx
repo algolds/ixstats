@@ -115,6 +115,7 @@ export function EnhancedEconomicIntelligence({
     );
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { comprehensive, healthSummary, groupedAnalysis } = analysis;
 
   // Type guards

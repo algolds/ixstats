@@ -91,9 +91,12 @@ export function PredictiveModelsModal({
 }: PredictiveModelsModalProps) {
   const [activeTab, setActiveTab] = useState("forecasts");
   const [selectedTimeframe, setSelectedTimeframe] = useState("5y");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedMetric, setSelectedMetric] = useState("gdp");
   const [showConfidenceIntervals, setShowConfidenceIntervals] = useState(true);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedScenario, setSelectedScenario] = useState<string>("realistic");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [forecastHorizon, setForecastHorizon] = useState(10);
 
   // Get country data
@@ -101,6 +104,7 @@ export function PredictiveModelsModal({
     api.countries.getByIdWithEconomicData.useQuery({ id: countryId }, { enabled: isOpen });
 
   // Get predictive models
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: predictiveModels, isLoading: modelsLoading } =
     api.intelAnalytics.getPredictiveModels.useQuery(
       {
@@ -130,11 +134,14 @@ export function PredictiveModelsModal({
 
       // Base values
       const currentGdp = countryData.currentTotalGdp || 0;
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const currentPopulation = countryData.currentPopulation || 0;
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const currentGdpPerCapita = countryData.currentGdpPerCapita || 0;
 
       // Growth rates with scenario modifiers
       const baseGdpGrowth = countryData.adjustedGdpGrowth || 0;
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const basePopGrowth = countryData.populationGrowthRate || 0;
 
       // Scenario multipliers

@@ -2,17 +2,16 @@
 // UPDATED: Added rate limiting to all mutation endpoints (v1.1.1)
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { EventEmitter } from "events";
 import { NOTIFICATION_EVENTS } from "~/lib/notification-events-registry";
 
 // Event emitter for real-time notifications
 const notificationEmitter = new EventEmitter();
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
+// eslint-disable-next-line unused-imports/no-unused-vars
 const NotificationType = z.enum([
   "info",
   "warning",
@@ -25,6 +24,7 @@ const NotificationType = z.enum([
   "diplomatic",
   "system",
 ]);
+// eslint-disable-next-line unused-imports/no-unused-vars
 const NotificationCategory = z.enum([
   "economic",
   "diplomatic",

@@ -32,6 +32,7 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
   const utils = api.useUtils();
 
   // Debounced search function — uses WikiBridge via tRPC (direct MySQL, ~30ms)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const searchWikiPages = useCallback(
     debounce(async (query: string) => {
       if (!query.trim() || query.length < 3) {

@@ -41,7 +41,9 @@ export function BuilderSidebarLayout({
   alerts,
   activeSection,
   onNavigate,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   completedSteps,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   accessibleSteps,
   mode = "create",
   heroCollapsed,

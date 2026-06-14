@@ -24,6 +24,7 @@
  */
 export type SecurityState = "crisis" | "unstable" | "moderate" | "secure" | "fortified";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const STATE_RANK: Record<SecurityState, number> = {
   crisis: 0,
   unstable: 1,
@@ -32,6 +33,7 @@ const STATE_RANK: Record<SecurityState, number> = {
   fortified: 4,
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const RANK_TO_STATE: Record<number, SecurityState> = {
   0: "crisis",
   1: "unstable",

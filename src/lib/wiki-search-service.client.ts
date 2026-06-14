@@ -1,6 +1,7 @@
 // Wiki search service supporting both ixwiki.com and iiwiki.com
 // Client-side version: uses direct browser fetch (bypasses Cloudflare for iiwiki)
 import type { CountryInfoboxWithDynamicProps } from "./mediawiki-service";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { unifiedFlagService } from "./unified-flag-service";
 import { BASE_PATH } from "./base-path";
 
@@ -18,6 +19,7 @@ function getApiBaseUrl(): string {
       : `/${BASE_PATH}`
     : "";
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const ensureBasePath = (origin: string): string => {
     const trimmedOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
     if (!normalizedBasePath) {
@@ -62,6 +64,7 @@ export interface SearchResult {
   namespace?: number;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface ParsedCountryData {
   name: string;
   population?: number;

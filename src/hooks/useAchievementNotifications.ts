@@ -40,6 +40,7 @@ export interface AchievementNotification {
 export function useAchievementNotifications(config: AchievementNotificationConfig) {
   const {
     countryId,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     countryName,
     enableRealTime = false,
     enableToast = true,
@@ -185,6 +186,7 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
         actions.markEventsAsRead();
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     recentEvents,
     enableNotificationCenter,
@@ -237,6 +239,7 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
 
       playAchievementSound(fullAchievement.tier);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [enableNotificationCenter, enableDynamicIsland, enableToast, playAchievementSound]
   );
 

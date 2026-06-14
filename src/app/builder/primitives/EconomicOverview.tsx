@@ -23,6 +23,7 @@ interface EconomicOverviewProps {
 
 export function EconomicOverview({
   metrics,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   inputs,
   countryStats,
   economyData,
@@ -64,6 +65,7 @@ export function EconomicOverview({
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getHealthIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case "excellent":

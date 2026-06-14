@@ -109,6 +109,7 @@ export const atomicProcedures = {
   // Get atomic intelligence recommendations
   getAtomicIntelligenceRecommendations: publicProcedure
     .input(z.object({ countryId: z.string() }))
+    // eslint-disable-next-line unused-imports/no-unused-vars
     .query(async ({ ctx, input }) => {
       return getAtomicIntelligenceRecommendations(input.countryId);
     }),

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -6,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import Link from "next/link";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { createUrl } from "~/lib/url-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -85,6 +87,7 @@ interface Notification {
 }
 
 // Import the correct Alert type from the FocusCards component
+// eslint-disable-next-line unused-imports/no-unused-vars
 type FocusCardAlert = {
   id: string;
   type: "info" | "warning" | "error" | "success";
@@ -280,6 +283,7 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
       })
     : [];
   // Create activity data matching the countries/[id] page format
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const activityData = activityRingsData
     ? [
         {

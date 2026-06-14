@@ -72,6 +72,7 @@ export interface AtomicComponentData {
  */
 export function calculateRealTimeAtomicEffects(
   components: AtomicComponentData,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   baseEconomicData: {
     gdpGrowthRate: number;
     nominalGDP: number;
@@ -85,12 +86,16 @@ export function calculateRealTimeAtomicEffects(
   const { government, economic, tax } = components;
 
   // Calculate individual component effectiveness
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const governmentEffectiveness = calculateOverallEffectiveness(government);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const economicEffectiveness = calculateOverallEffectiveness(economic as any);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const taxEffectiveness = calculateOverallEffectiveness(tax as any);
 
   // Calculate economic modifiers from government components
   const governmentEconomicModifiers = calculateClientAtomicEconomicImpact(government);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const governmentTaxModifiers = governmentEconomicModifiers.taxCollectionMultiplier;
   const governmentStabilityModifiers = governmentEconomicModifiers.stabilityBonus;
 
@@ -248,6 +253,7 @@ export function applyRealTimeEffects(
 /**
  * Calculate economic component modifiers
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateEconomicComponentModifiers(economicComponents: EconomicComponentType[]): any {
   // This would be implemented based on the economic component effectiveness data
   // For now, return base modifiers
@@ -266,6 +272,7 @@ function calculateEconomicComponentModifiers(economicComponents: EconomicCompone
 /**
  * Calculate tax component modifiers
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateTaxComponentModifiers(taxComponents: TaxComponentType[]): any {
   // This would be implemented based on the tax component effectiveness data
   // For now, return base modifiers

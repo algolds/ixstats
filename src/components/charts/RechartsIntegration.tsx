@@ -116,6 +116,7 @@ export function GlassBarChart({
   hideXAxis = false,
   hideYAxis = false,
 }: BarChartProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const chartColors = useMemo(() => {
     if (colors) return colors;
     const keys = Array.isArray(yKey) ? yKey : [yKey];
@@ -255,6 +256,7 @@ export function GlassLineChart({
   hideXAxis = false,
   hideYAxis = false,
 }: LineChartProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const chartColors = useMemo(() => {
     if (colors) return colors;
     const keys = Array.isArray(yKey) ? yKey : [yKey];

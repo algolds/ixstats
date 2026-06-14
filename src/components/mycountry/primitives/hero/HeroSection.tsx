@@ -9,6 +9,7 @@ import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { HealthRing } from "~/components/ui/health-ring";
 import { LoreScoreBadge } from "../LoreScoreBadge";
 import type { RingConfig } from "../VitalityRings";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { createUrl } from "~/lib/url-utils";
 

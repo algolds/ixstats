@@ -63,7 +63,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`processes/refactoring.md`](processes/refactoring.md) – modular architecture patterns and refactoring guidelines
 - [`processes/schema-validation.md`](processes/schema-validation.md) – schema validation and alignment procedures
 
-- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (1,329 endpoints across 83 routers)
+- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (1,376 procedures across 87 routers)
 - [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
 - [`reference/api-examples.md`](reference/api-examples.md) – tRPC API usage examples
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
@@ -122,4 +122,4 @@ Completed implementation docs, audit reports, and historical documentation are p
 4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
 5. Keep root directory clean—only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS).
 
-The documentation was last refreshed June 2026 (**IxStates 1.0 "Ogma"**). Treat the structure as the source of truth going forward. Version info comes from the [Version Registry](../src/lib/buildVersion.ts); see the [Versioning & Release Architecture](./reference/revision.md).
+The documentation was last refreshed June 2026 (**IxStates 1.0.6 "Ogma"**). Treat the structure as the source of truth going forward. Version info comes from the [Version Registry](../src/lib/buildVersion.ts); see the [Versioning & Release Architecture](./reference/revision.md).

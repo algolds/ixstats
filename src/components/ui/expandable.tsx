@@ -190,6 +190,7 @@ const ANIMATION_PRESETS: Record<string, AnimationPreset> = {
 };
 
 // Update type definitions
+// eslint-disable-next-line unused-imports/no-unused-vars
 type AnimationConfig = {
   initial: { [key: string]: number | string };
   animate: { [key: string]: number | string };

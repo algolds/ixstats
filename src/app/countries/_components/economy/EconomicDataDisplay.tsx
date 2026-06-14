@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/app/countries/_components/economy/EconomicDataDisplay.tsx
 "use client";
@@ -56,19 +57,23 @@ interface DemographicData {
 }
 
 // Add type guards
+// eslint-disable-next-line unused-imports/no-unused-vars
 function isFiscalData(obj: unknown): obj is FiscalData {
   return (
     typeof obj === "object" && obj !== null && ("taxRates" in obj || "spendingCategories" in obj)
   );
 }
+// eslint-disable-next-line unused-imports/no-unused-vars
 function isSocialData(obj: unknown): obj is SocialData {
   return typeof obj === "object" && obj !== null && "economicClasses" in obj;
 }
+// eslint-disable-next-line unused-imports/no-unused-vars
 function isDemographicData(obj: unknown): obj is DemographicData {
   return typeof obj === "object" && obj !== null && "ageDistribution" in obj;
 }
 
 // Helper function to convert DemographicsData to the format expected by Demographics component
+// eslint-disable-next-line unused-imports/no-unused-vars
 const convertDemographicsData = (data: DemographicsData) => {
   return {
     ...data,
@@ -114,10 +119,12 @@ export function EconomicDataDisplay({
   const [selectedTab, setSelectedTab] = useState(defaultTab);
   const [economicData, setEconomicData] = useState<EconomyData | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [compactView, setCompactView] = useState(mode === "compact");
   // Add validation state for fiscal/government
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [milestones, setMilestones] = useState<any[]>([]); // For improved milestone logic
 
   // Fetch country economic data

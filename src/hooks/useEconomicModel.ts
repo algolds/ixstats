@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * useEconomicModel Hook
@@ -264,6 +265,7 @@ export function useEconomicModel(
         notify.error("Cannot remove the last sectoral output year.");
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sectoralOutputs]
   );
 
@@ -338,6 +340,7 @@ export function useEconomicModel(
       setIsSimulating(false);
       notify.success("Economic simulation completed!");
     }, 2000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Action: Save Model

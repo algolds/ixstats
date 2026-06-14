@@ -49,6 +49,7 @@ const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
 
 export function CollectiveActionsPanel({
   allianceId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
   myRole,
 }: CollectiveActionsPanelProps) {

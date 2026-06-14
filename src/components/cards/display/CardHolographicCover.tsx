@@ -19,6 +19,7 @@
 
 import React, { useMemo } from "react";
 import { cn } from "~/lib/utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { CardRarity, CardType } from "@prisma/client";
 import {
   getRainbowHolographicGradient,

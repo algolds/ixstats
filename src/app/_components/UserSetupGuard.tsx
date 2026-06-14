@@ -94,6 +94,7 @@ export function UserSetupGuard() {
 
       console.log("[UserSetupGuard] User has country linked, no redirect needed");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isLoaded,
     user,

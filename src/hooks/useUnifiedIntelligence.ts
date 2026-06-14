@@ -141,6 +141,7 @@ export function useUnifiedIntelligence({
   const [pagination, setPaginationState] = useState<PaginationState>(DEFAULT_PAGINATION);
 
   // WebSocket state
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [wsClient, setWsClient] = useState<IntelligenceWebSocketClient | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
 
@@ -375,6 +376,7 @@ export function useUnifiedIntelligence({
       refetchChannels(),
     ]);
     notify.success("Intelligence Updated", "All data has been refreshed");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetchOverview, refetchActions, refetchFeed, refetchAnalytics, refetchChannels]);
 
   const setFilters = useCallback((newFilters: Partial<FilterState>) => {
@@ -473,6 +475,7 @@ export function useUnifiedIntelligence({
       console.log("[useUnifiedIntelligence] Cleaning up WebSocket connection");
       client.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryId, userId, stableRefetchOverview, stableRefetchFeed]);
 
   return {

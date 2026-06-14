@@ -97,6 +97,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
     const particleIdRef = useRef(0);
 
     const pattern = getHolographicPattern(rarity);
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const intensity = getHolographicIntensity(rarity);
     const lightRays = generateLightRays(8);
     const foilStamp = getFoilStampConfig(rarity);

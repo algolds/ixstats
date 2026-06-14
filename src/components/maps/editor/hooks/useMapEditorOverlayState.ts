@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -965,6 +966,7 @@ export function useMapEditorOverlayState({
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [editor, mapRef]
   );
 
@@ -973,6 +975,7 @@ export function useMapEditorOverlayState({
       editor.startEditing(feature);
       expandPropertiesPanel();
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [editor]
   );
 

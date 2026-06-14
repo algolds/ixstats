@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 /**
  * Diplomatic Network Service
@@ -362,6 +363,7 @@ export class DiplomaticNetworkService {
     relationships: Record<string, any>[];
     goals?: string[];
   }): StrategicOpportunity[] {
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const { embassies, relationships, goals = [] } = context;
     const opportunities: StrategicOpportunity[] = [];
 

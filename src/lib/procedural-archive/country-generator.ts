@@ -153,6 +153,7 @@ export function generateCountries(params: CountryGenParams): CountryResult {
 
   // Final Voronoi
   const delaunay = new Delaunay(points);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const voronoi = delaunay.voronoi(bounds);
   const cellCount = points.length / 2;
 

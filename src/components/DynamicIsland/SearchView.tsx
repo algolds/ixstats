@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Search, X, ChevronRight } from "lucide-react";
 import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import type { SearchViewProps, SearchFilter } from "./types";
 import { PreText } from "~/components/ui/pretext";
@@ -27,6 +28,7 @@ export function SearchView({
   setSearchFilter,
   debouncedSearchQuery,
   searchResults,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countriesData,
   closeDropdown,
 }: SearchViewProps) {

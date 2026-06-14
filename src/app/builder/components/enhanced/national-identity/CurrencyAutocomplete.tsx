@@ -43,14 +43,17 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
   showValidation = true,
   allowCustom = true,
 }: CurrencyAutocompleteProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isOpen, setIsOpen] = useState(false);
   const [inputMode, setInputMode] = useState<"selector" | "input">("selector");
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data, isLoading } = api.customTypes.getFieldSuggestions.useQuery(
     { fieldName, limit: 20 },
     { enabled: isOpen }
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleBlur = useCallback(() => {
     if (value.trim() && onSave) {
       onSave(fieldName, value.trim());
@@ -68,8 +71,10 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
     [onChange, onSave, fieldName]
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const availableCurrencies = getAvailableCurrencies();
   const currencyInfo = getCurrencyInfo(value);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const isValid = !value || isValidCurrency(value);
 
   return (

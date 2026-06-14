@@ -36,6 +36,7 @@ interface QueryConfig {
 export function useOptimizedIntelligenceData({
   countryId,
   enableIntelligence = true,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   enableVitality = true,
   staleTime = 30000, // 30 seconds default stale time
   cacheTime = 300000, // 5 minutes cache time
@@ -83,6 +84,7 @@ export function useOptimizedIntelligenceData({
 
   // Memoize the result to prevent unnecessary re-renders
   // Get notification system for live wire integration
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { createNotification } = useUnifiedNotifications();
   const addNotification = useNotificationStore((state) => state.addNotification);
 
@@ -179,6 +181,7 @@ export function useOptimizedIntelligenceData({
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queries[1].data, addNotification]);
 
   const result = useMemo((): OptimizedIntelligenceData => {

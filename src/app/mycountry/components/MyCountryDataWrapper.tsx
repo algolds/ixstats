@@ -278,6 +278,7 @@ export function MyCountryDataWrapper({
       setNotifications([]);
       prevFeedLengthRef.current = 0;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, intelligenceFeed]);
 
   // Real-time data sync integration - simplified to prevent infinite loops

@@ -71,6 +71,7 @@ class GlobalNotificationBridge extends EventEmitter {
           this.getDataProperty(data, "content") ||
           this.getDataProperty(data, "description") ||
           "Critical intelligence update available",
+        // eslint-disable-next-line unused-imports/no-unused-vars
         actionGenerator: (data: Record<string, unknown>) => [
           {
             id: "view-intelligence",
@@ -92,6 +93,7 @@ class GlobalNotificationBridge extends EventEmitter {
           `⚠️ Crisis Alert: ${this.getDataProperty(data, "title") || "Crisis"}`,
         messageGenerator: (data: Record<string, unknown>) =>
           `Crisis detected: ${this.getDataProperty(data, "content") || this.getDataProperty(data, "description") || "Crisis situation"}`,
+        // eslint-disable-next-line unused-imports/no-unused-vars
         actionGenerator: (data: Record<string, unknown>) => [
           {
             id: "crisis-response",
@@ -119,6 +121,7 @@ class GlobalNotificationBridge extends EventEmitter {
           const value = this.getNumberProperty(data, "value") || 0;
           return `${metric} changed by ${changePercent > 0 ? "+" : ""}${changePercent.toFixed(2)}% to ${value.toLocaleString()}`;
         },
+        // eslint-disable-next-line unused-imports/no-unused-vars
         actionGenerator: (data: Record<string, unknown>) => [
           {
             id: "view-economics",
@@ -166,6 +169,7 @@ class GlobalNotificationBridge extends EventEmitter {
           const eventType = this.getDataProperty(data, "eventType");
           return description || `New diplomatic ${eventType || "event"} recorded`;
         },
+        // eslint-disable-next-line unused-imports/no-unused-vars
         actionGenerator: (data: Record<string, unknown>) => [
           {
             id: "view-diplomatic",
@@ -193,6 +197,7 @@ class GlobalNotificationBridge extends EventEmitter {
           const description = this.getDataProperty(data, "description");
           return description || "New achievement earned!";
         },
+        // eslint-disable-next-line unused-imports/no-unused-vars
         actionGenerator: (data: Record<string, unknown>) => [
           {
             id: "view-achievements",

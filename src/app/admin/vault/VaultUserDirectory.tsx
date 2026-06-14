@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Wallet,
   Search,
   ChevronLeft,

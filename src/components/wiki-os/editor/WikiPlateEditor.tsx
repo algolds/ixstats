@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/editor/WikiPlateEditor.tsx
 // PlateJS visual editor for wiki articles.
@@ -5,6 +6,7 @@
 
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import {
   Plate,

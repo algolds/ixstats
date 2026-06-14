@@ -174,6 +174,7 @@ export const MobileNavHeader = ({ children, className }: MobileNavHeaderProps) =
   );
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 export const MobileNavMenu = ({ children, className, isOpen, onClose }: MobileNavMenuProps) => {
   return (
     <AnimatePresence>

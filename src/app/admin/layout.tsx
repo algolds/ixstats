@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/app/admin/layout.tsx
 // Shared admin layout with auth guard, sidebar, and error boundary

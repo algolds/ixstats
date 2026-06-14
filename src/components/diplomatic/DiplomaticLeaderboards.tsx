@@ -152,6 +152,7 @@ const TIER_CONFIG = {
 
 const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = ({
   viewerCountryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   viewerClearanceLevel = "PUBLIC",
   compact = false,
   className,
@@ -163,6 +164,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
   const [filterTier, setFilterTier] = useState<string>("");
 
   // Fetch country rankings from API
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: countriesData, isLoading } = api.countries.getAll.useQuery(undefined, {
     refetchInterval: 60000, // Refresh every minute
   });
@@ -249,6 +251,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
     }
 
     return filtered;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, filterTier, currentCategory, sortOrder]);
 
   // Get rank change indicator

@@ -4,7 +4,9 @@ import React, { useState, useMemo } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Badge } from "~/components/ui/badge";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Users, TrendingUp, TrendingDown, DollarSign, Shield, Briefcase, Zap } from "lucide-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, LaborConfiguration } from "~/types/economy-builder";
@@ -154,6 +156,7 @@ export function LaborEmploymentTab({
 
   const laborBounds = useMemo(() => getLaborBounds(selectedComponents), [selectedComponents]);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const hasComponentImpact =
     employmentImpacts.unemployment !== 0 ||
     employmentImpacts.participation !== 1 ||

@@ -31,12 +31,9 @@ import { BRANCH_CONFIGS } from "~/lib/military-config";
 interface BranchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   branch: any | null;
   countryId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onCreate: (data: any) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onUpdate: (id: string, data: any) => void;
 }
 
@@ -45,6 +42,7 @@ export function BranchDialog({
   open,
   onOpenChange,
   branch,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
   onCreate,
   onUpdate,
@@ -94,6 +92,7 @@ export function BranchDialog({
       const config = BRANCH_CONFIGS[formData.branchType as keyof typeof BRANCH_CONFIGS];
       setFormData((prev) => ({ ...prev, name: config?.defaultName ?? "" }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branch, open]);
 
   const handleSubmit = () => {

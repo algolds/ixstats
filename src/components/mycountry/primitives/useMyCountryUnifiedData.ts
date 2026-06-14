@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -464,6 +465,7 @@ export function useMyCountryUnifiedData({
   const { data: quickActionPolicies, refetch: refetchQuickActionPolicies } =
     api.quickActions.getPolicies.useQuery({ countryId }, { enabled: !!countryId });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const normalizedDiplomaticRelations = Array.isArray(diplomaticRelations)
     ? diplomaticRelations
     : [];

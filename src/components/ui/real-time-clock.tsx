@@ -15,6 +15,7 @@ export function RealTimeClock({
   className = "",
   showMultiplier = true,
   showGameYear = true,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   updateInterval = 1000,
 }: RealTimeClockProps) {
   // Use centralized time context

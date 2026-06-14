@@ -160,6 +160,7 @@ export async function scoreDailyWikiOS(
   }
 
   // Filter trivial entries
+  // eslint-disable-next-line prefer-const
   let candidates = Array.from(aggMap.values()).filter((e) => e.bytesAdded >= 100);
   candidates.sort((a, b) => b.bytesAdded - a.bytesAdded);
 
@@ -293,6 +294,7 @@ export async function scoreDailyWikiOS(
 async function analyzeProseRatio(
   db: mysql.Pool,
   revIds: number[],
+  // eslint-disable-next-line unused-imports/no-unused-vars
   pageId: number
 ): Promise<number> {
   if (revIds.length === 0) return 0;

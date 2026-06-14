@@ -117,6 +117,7 @@ async function calculateCountryIntelligence(countryId: string) {
     return;
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const now = Date.now();
   const currentIxTime = IxTime.getCurrentIxTime();
 
@@ -142,7 +143,8 @@ async function calculateCountryIntelligence(countryId: string) {
 
     const unemploymentHistory =
       historicalRecords.length > 0
-        ? historicalRecords.map((h) => country.unemploymentRate || 5.0).reverse()
+        ? // eslint-disable-next-line unused-imports/no-unused-vars
+          historicalRecords.map((h) => country.unemploymentRate || 5.0).reverse()
         : [country.unemploymentRate || 5.0];
 
     // Calculate REAL peer averages from database
@@ -537,6 +539,7 @@ async function calculateCountryIntelligence(countryId: string) {
  * Calculate intelligence for all countries or a specific country
  */
 export async function calculateIntelligence(options: CalculateIntelligenceOptions = {}) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { countryId, forceRecalculate = false } = options;
 
   try {

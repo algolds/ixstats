@@ -31,8 +31,10 @@ import { Label } from "~/components/ui/label";
 import {
   Sheet,
   SheetContent,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   SheetHeader,
   SheetTitle,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   SheetDescription,
 } from "~/components/ui/sheet";
 import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
@@ -58,6 +60,7 @@ interface PlayerAttributes {
 
 // ─── Attribute badge styling ────────────────────────────────────────────────
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function attributeBadgeClass(value: number): string {
   if (value >= 90) return "bg-amber-400/20 text-amber-600 dark:text-amber-400 border-amber-400/40";
   if (value >= 80)
@@ -66,6 +69,7 @@ function attributeBadgeClass(value: number): string {
   return "bg-muted/60 text-muted-foreground border-border";
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function attributeProgressColor(value: number): string {
   if (value >= 90) return "bg-amber-400";
   if (value >= 80) return "bg-emerald-400";
@@ -75,6 +79,7 @@ function attributeProgressColor(value: number): string {
 
 // ─── Career stage styling ───────────────────────────────────────────────────
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
   rookie: { label: "Rookie", className: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
   developing: {
@@ -300,7 +305,7 @@ export function TeamRosterModal({
             }
           }}
           className={cn(
-            "hover:bg-muted/40 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition cursor-pointer select-none outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            "hover:bg-muted/40 focus-visible:ring-ring flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition outline-none select-none focus-visible:ring-1",
             isExpanded && "bg-muted/50"
           )}
         >
@@ -614,7 +619,7 @@ export function TeamRosterModal({
                 <Button
                   onClick={handleClaim}
                   disabled={isClaiming || claimTeam.isPending || !user}
-                  className="w-full gap-2 transition-all hover:opacity-95 font-semibold"
+                  className="w-full gap-2 font-semibold transition-all hover:opacity-95"
                   style={{
                     backgroundColor: team.color ? `${team.color}15` : undefined,
                     color: team.color ?? undefined,
@@ -635,7 +640,7 @@ export function TeamRosterModal({
                     onClose();
                     router.push(withBasePath(`/myclub/${team.id}`));
                   }}
-                  className="w-full gap-2 font-semibold transition-all hover:opacity-95 shadow-sm"
+                  className="w-full gap-2 font-semibold shadow-sm transition-all hover:opacity-95"
                   style={{
                     backgroundColor: team.color ? `${team.color}15` : undefined,
                     color: team.color ?? undefined,

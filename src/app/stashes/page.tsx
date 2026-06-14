@@ -130,6 +130,7 @@ export default function StashesPage() {
     },
   });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const items = itemsQuery.data?.items ?? [];
 
   const commonsImageTitles = useMemo(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { memo, useState } from "react";
 import {
   Crosshair,

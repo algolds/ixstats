@@ -259,6 +259,7 @@ export function checkDuplicateDepartmentNames(
     nameCount.get(normalizedName)!.push(index);
   });
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   nameCount.forEach((indices, name) => {
     if (indices.length > 1) {
       indices.forEach((index) => {

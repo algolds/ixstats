@@ -2,7 +2,7 @@
 
 **Last updated:** June 2026
 
-IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **83 routers** and **1,432 endpoints**. Routers live in `src/server/api/routers`, while shared infrastructure is defined in `src/server/api/trpc.ts` and supporting libraries under `src/lib`.
+IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **87 routers** and **1,376 procedures**. Routers live in `src/server/api/routers`, while shared infrastructure is defined in `src/server/api/trpc.ts` and supporting libraries under `src/lib`. **52 of the 87 routers are split into subdirectories** (`mergeRouters` recombination) — see "Router Composition" below.
 
 ## Context & Middleware
 - **Auth Context** – `createTRPCContext` loads Clerk sessions (via `@clerk/nextjs/server`) and auto-provisions users into the database when needed.
@@ -15,6 +15,8 @@ IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **83 r
 - Routers are grouped by domain (economics, intelligence, diplomacy, social, notifications, etc.).
 - Shared procedures follow consistent naming: `get*` for queries, imperative verbs for mutations.
 - Role-aware or protected endpoints leverage `protectedProcedure`/`adminProcedure` wrappers defined alongside context.
+- **Domain splitting pattern** (since 1.0.6): large flat routers are split into same-named subdirectories (e.g. `wikios.ts` → `wikios/{articles,media,search-categories,editing,stash,watchlist-annotations,user-talk,index}.ts`). The sub-router variables are recombined via `mergeRouters` from `~/server/api/trpc` in the new `index.ts`, so every `api.<router>.<key>` path is byte-identical to the original — zero call-site changes. The single canonical splitter is `scripts/split-router-template.ts` (pre-flight, copy-whole-file, AST parity, see header for full recipe).
+- **Cross-router sharing**: a few helpers (e.g. `evaluateThresholds` from `intelligence/alerts/`, `syncResourcePoolModifiers` from `geo/features/`, `resolveWikiPlaceholdersInternal` from `wiki/`) are re-exported from the helper-owner's `index.ts` so external consumers don't have to know the internal group structure. This is the one allowed exception to the "no cross-router imports" rule; shared primitives that are used across router boundaries belong in `src/server/shared/` (e.g. `layer-cache.ts`).
 
 ## Notable Routers
 - `countries.ts` – Central country data access, historical metrics, forecasts.
@@ -46,5 +48,6 @@ IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **83 r
 - Jest-based router tests live under `src/server/api/routers/__tests__` (e.g., `diplomaticIntelligence.test.ts`).
 - Automation scripts in `scripts/audit` validate CRUD coverage, endpoint wiring, and economic formula correctness.
 - Use `bun run audit:wiring` and `bun run test:critical` before deployments.
+- **Architecture guard** (`scripts/audit/audit-arch.ts`, invoked via `bun run audit:arch`) enforces a ≤700-line per-file ceiling on every `src/server/api/routers/**` file (relaxed to 900 for designated core type/data tables in `RELAXED_FILES`) and blocks new cross-router imports. A ratcheted baseline (`arch-baseline.json`) records current offenders so the guard is green today but blocks any growth. New routers above the ceiling must be split using `scripts/split-router-template.ts` before they pass the guard. See `docs/prevent_ts_graph_explosion.md` for the full rationale.
 
 Maintain this guide when introducing new middleware, authentication layers, or API consumption patterns.

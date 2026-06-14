@@ -23,9 +23,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   BookOpen,
   ExternalLink,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Code,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Copy,
   Check,
   Medal,
@@ -36,6 +39,7 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const INFOBOX_TEMPLATE = `{{Infobox nation
 | name         = {{PAGENAME}}
 | image_flag   = Flag-{{PAGENAME}}.svg
@@ -45,6 +49,7 @@ const INFOBOX_TEMPLATE = `{{Infobox nation
 | gdp          = 4.2 Trillion
 }}`;
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const MEDAL_TEMPLATE = `{{Lore medal|type=silver|user=YourUsername|date=2026-06-08}}`;
 
 const formatSlashRate = (rate: number | null | undefined) => {
@@ -179,6 +184,7 @@ export function WikiLoreTab({
   // Awards tab states
   const [awardsSearch, setAwardsSearch] = useState("");
   const [awardsCategory, setAwardsCategory] = useState("ALL");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { data: allAwards, isLoading: isAwardsLoading } =
@@ -187,6 +193,7 @@ export function WikiLoreTab({
       category: awardsCategory === "ALL" ? undefined : awardsCategory,
     });
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleCopyText = (text: string, id: string, label: string) => {
     navigator.clipboard
       .writeText(text)
@@ -883,6 +890,7 @@ export function WikiLoreTab({
                                 customStyle = { color: colorVal };
                               }
                             }
+                            // eslint-disable-next-line unused-imports/no-unused-vars
                           } catch (e) {
                             // ignore
                           }

@@ -16,6 +16,7 @@ interface IntelligenceOverviewProps {
 
 export function IntelligenceOverview({
   countryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryName,
   onTabChange,
 }: IntelligenceOverviewProps) {

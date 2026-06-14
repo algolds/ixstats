@@ -633,6 +633,7 @@ export class BuilderPolicyIntegrationService {
     governmentBuilder: GovernmentBuilderState | null
   ) {
     const categories = taxSystem.taxCategories || [];
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const components = economyBuilder.selectedAtomicComponents;
 
     // Calculate tax effectiveness using atomic integration
@@ -666,6 +667,7 @@ export class BuilderPolicyIntegrationService {
       collectionEfficiency: atomicTaxEffectiveness.collectionEfficiency,
       complianceRate: atomicTaxEffectiveness.complianceRate,
       effectiveness: atomicTaxEffectiveness.effectivenessScore,
+      // eslint-disable-next-line unused-imports/no-unused-vars
       recommendations: atomicRecommendations.recommendedPolicies.map((policy, index) => ({
         category: "General",
         currentRate: 0,
@@ -863,6 +865,7 @@ export class BuilderPolicyIntegrationService {
 
   private calculateGovernmentImpact(
     policyData: any,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: BuilderPolicyContext
   ): GovernmentImpact {
     const baseImpact = policyData.implementationCost || 100000;
@@ -876,6 +879,7 @@ export class BuilderPolicyIntegrationService {
     };
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateTaxImpact(policyData: any, context: BuilderPolicyContext): TaxImpact {
     const revenueImpact = (policyData.implementationCost || 0) * -0.1;
 
@@ -888,6 +892,7 @@ export class BuilderPolicyIntegrationService {
     };
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateSocialImpact(policyData: any, context: BuilderPolicyContext): SocialImpact {
     return {
       inequalityChange: -0.5,

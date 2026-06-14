@@ -27,6 +27,7 @@ interface ChartTooltipProps {
   colors: string[];
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function ChartTooltip({ active, payload, formatValue, colors }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
 
@@ -120,6 +121,7 @@ export function EnhancedPieChart({
       }
       return color;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colors, sectionId, resolvedTheme, data.length, themeColors]);
 
   // Process data to add percentages and handle small slices

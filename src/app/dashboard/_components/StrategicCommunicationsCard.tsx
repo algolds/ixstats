@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -48,11 +49,13 @@ export function StrategicCommunicationsCard({
     { enabled: !!userProfile?.countryId }
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: accountsData } = api.thinkpages.getAccountsByCountry.useQuery(
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId }
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: recentPosts } = api.thinkpages.getFeed.useQuery({ filter: "recent" });
 
   // Mock data for strategic communications (replace with real API calls)

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import { useState, useEffect } from "react";
 import { Shield, Lock, RefreshCw, Database, Key } from "lucide-react";

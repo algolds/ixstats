@@ -291,6 +291,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
       console.log("Sending to mutation:", mutationData);
       createExchangeMutation.mutate(mutationData);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [primaryCountry, createExchangeMutation]
   );
 
@@ -324,6 +325,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
 
       setVotedExchanges((prev) => new Set(prev).add(exchangeId));
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [votedExchanges, voteExchangeMutation]
   );
 
@@ -503,6 +505,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     console.log("Selected scenario response:", option);
     notify.success(`Selected: ${option.label}`);
     setShowScenarioModal(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

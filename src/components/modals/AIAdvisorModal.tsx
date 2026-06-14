@@ -69,6 +69,7 @@ const RECOMMENDATION_COLORS = {
   strategic: "#ec4899",
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const IMPACT_COLORS = {
   low: "#10b981",
   medium: "#f59e0b",
@@ -102,6 +103,7 @@ export function AIAdvisorModal({ isOpen, onClose, countryId, countryName }: AIAd
     api.countries.getByIdWithEconomicData.useQuery({ id: countryId }, { enabled: isOpen });
 
   // Get AI recommendations
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: aiRecommendations, isLoading: recommendationsLoading } =
     api.intelAnalytics.getAIRecommendations.useQuery(
       { countryId: countryId },
@@ -129,6 +131,7 @@ export function AIAdvisorModal({ isOpen, onClose, countryId, countryName }: AIAd
       };
       setMessages([welcomeMessage]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, countryName, messages.length]);
 
   // Auto-scroll to bottom

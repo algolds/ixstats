@@ -72,9 +72,11 @@ export function useEconomyBuilderAutoSync(
   const {
     enabled = true,
     debounceMs = 15000, // 15 seconds
+    // eslint-disable-next-line unused-imports/no-unused-vars
     showConflictWarnings = true,
     onSyncSuccess,
     onSyncError,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onConflictDetected,
   } = options;
 
@@ -93,6 +95,7 @@ export function useEconomyBuilderAutoSync(
   // API mutations
   const autosaveMutation = api.economics.autoSaveEconomyBuilder.useMutation({
     // Optimistic update - show "Saved" immediately before server confirmation
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onMutate: async (newData) => {
       setSyncState((prev) => ({
         ...prev,
@@ -163,6 +166,7 @@ export function useEconomyBuilderAutoSync(
         clearTimeout(debounceTimerRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [economyData, enabled, countryId, debounceMs]);
 
   // Auto-sync handler (avoiding mutation in dependencies)
@@ -190,6 +194,7 @@ export function useEconomyBuilderAutoSync(
       // Error handling is done in the mutation's onError callback
       console.warn("Economy builder autosave failed:", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryId, enabled, economyData]);
 
   // Manual sync function

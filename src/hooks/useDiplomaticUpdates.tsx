@@ -228,6 +228,7 @@ export const useDiplomaticUpdates = (
     return () => {
       disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount/unmount
 
   // Actions object

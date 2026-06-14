@@ -70,11 +70,17 @@ export const Button = ({ className, children, ...props }: ButtonProps) => {
   };
 
   const {
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onClick,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onDrag,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onDragStart,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onDragEnd,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onAnimationStart,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onAnimationEnd,
     ...buttonProps
   } = props;

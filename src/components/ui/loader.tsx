@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "~/lib/utils";
 
 export const LoaderOne = () => {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const transition = (x: number) => {
     return {
       duration: 1,
@@ -242,6 +243,7 @@ export const LoaderFive = ({ text }: { text: string }) => {
 };
 
 // Inline SVG for ix-logo (from public/ix-logo.svg)
+// eslint-disable-next-line unused-imports/no-unused-vars
 const IxLogoSVG = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

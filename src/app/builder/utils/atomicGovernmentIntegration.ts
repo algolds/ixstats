@@ -2575,6 +2575,7 @@ export function generateGovernmentBuilderFromAtomicComponents(
     rationale: string;
     budgetYear: number;
   }> = [];
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const revenueSources: Array<{
     name: string;
     category: string;
@@ -2702,6 +2703,7 @@ export function generateAtomicIntegrationFeedback(
       conflictGroups.get(key)!.penalties.push(conflict.penalty);
     });
 
+    // eslint-disable-next-line unused-imports/no-unused-vars
     conflictGroups.forEach((group, key) => {
       const avgPenalty = Math.round(
         group.penalties.reduce((a, b) => a + b, 0) / group.penalties.length

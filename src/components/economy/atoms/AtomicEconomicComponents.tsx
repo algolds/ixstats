@@ -30,6 +30,7 @@ import {
 // Data imports
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   COMPONENT_CATEGORIES,
   type EconomicComponentType,
 } from "~/lib/atomic-economic-data";
@@ -78,12 +79,15 @@ export function AtomicEconomicComponentSelector({
   selectedComponents,
   onComponentChange,
   maxComponents = 15,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isReadOnly = false,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   governmentComponents = [],
   hideSelectedList = false,
 }: AtomicEconomicComponentSelectorProps) {
   // Use database hook for component data
   const {
+    // eslint-disable-next-line unused-imports/no-unused-vars
     components: dbComponents,
     isLoading,
     isUsingFallback,
@@ -610,6 +614,7 @@ export function AtomicEconomicBuilder({
     builder.handleClear();
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const selectedComponentObjects = useMemo(() => {
     return builder.selectedComponents
       .map((type) => ATOMIC_ECONOMIC_COMPONENTS[type])

@@ -78,13 +78,13 @@ export default function LatestResults1({
       <FacetCard
         depth={2}
         interactive="hover"
-        className="border-border/40 bg-card/90 overflow-hidden rounded-3xl border p-5 shadow-xl relative"
+        className="border-border/40 bg-card/90 relative overflow-hidden rounded-3xl border p-5 shadow-xl"
       >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-foreground text-sm font-extrabold uppercase tracking-wider text-muted-foreground">
+          <h3 className="text-foreground text-muted-foreground text-sm font-extrabold tracking-wider uppercase">
             {title}
           </h3>
-          <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider select-none">
+          <span className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase select-none">
             Swipe Up/Down
           </span>
         </div>
@@ -94,18 +94,18 @@ export default function LatestResults1({
           <div
             ref={containerRef}
             onScroll={handleScroll}
-            className="h-[250px] flex-1 overflow-y-auto snap-y snap-mandatory scroll-smooth hide-scrollbar flex flex-col gap-0"
+            className="hide-scrollbar flex h-[250px] flex-1 snap-y snap-mandatory flex-col gap-0 overflow-y-auto scroll-smooth"
           >
             {visibleMatchDays.map((matchDay) => (
               <div
                 key={matchDay}
-                className="h-[250px] w-full snap-start snap-always shrink-0 flex flex-col bg-muted/20 border border-border/10 dark:bg-slate-950/20 rounded-2xl overflow-hidden"
+                className="bg-muted/20 border-border/10 flex h-[250px] w-full shrink-0 snap-start snap-always flex-col overflow-hidden rounded-2xl border dark:bg-slate-950/20"
               >
-                <h4 className="bg-muted/50 text-muted-foreground px-4 py-2.5 text-center text-xs font-bold tracking-wider uppercase dark:bg-slate-900/40 border-b border-border/10 shrink-0">
+                <h4 className="bg-muted/50 text-muted-foreground border-border/10 shrink-0 border-b px-4 py-2.5 text-center text-xs font-bold tracking-wider uppercase dark:bg-slate-900/40">
                   Matchday {matchDay}
                 </h4>
-                
-                <div className="divide-y divide-border/10 bg-transparent overflow-y-auto thin-scrollbar flex-1">
+
+                <div className="divide-border/10 thin-scrollbar flex-1 divide-y overflow-y-auto bg-transparent">
                   {groupedByMatchDay[matchDay].map((match) => {
                     const hScore = match.homeScore ?? 0;
                     const aScore = match.awayScore ?? 0;
@@ -118,14 +118,14 @@ export default function LatestResults1({
                     return (
                       <div
                         key={match.id}
-                        className="hover:bg-white/5 grid grid-cols-2 gap-x-4 px-4 py-3 transition-colors text-xs"
+                        className="grid grid-cols-2 gap-x-4 px-4 py-3 text-xs transition-colors hover:bg-white/5"
                       >
                         {/* Home Team */}
                         <div className="flex min-w-0 items-center justify-between pr-2">
                           <button
                             type="button"
                             onClick={() => onTeamClick?.(match.homeTeamId)}
-                            className="group flex min-w-0 cursor-pointer items-center gap-2 text-left hover:underline bg-transparent border-none p-0 outline-none"
+                            className="group flex min-w-0 cursor-pointer items-center gap-2 border-none bg-transparent p-0 text-left outline-none hover:underline"
                           >
                             <svg
                               viewBox="0 0 420 420"
@@ -139,18 +139,21 @@ export default function LatestResults1({
                                 fill="currentColor"
                               />
                             </svg>
-                            <div className="text-foreground truncate font-bold text-xs">
+                            <div className="text-foreground truncate text-xs font-bold">
                               <span className="hidden sm:inline">{match.homeTeamName}</span>
                               <span className="inline sm:hidden">
-                                {match.homeShortName ?? match.homeTeamName.slice(0, 3).toUpperCase()}
+                                {match.homeShortName ??
+                                  match.homeTeamName.slice(0, 3).toUpperCase()}
                               </span>
                             </div>
                           </button>
-                          <div className="text-foreground ml-1 flex shrink-0 items-center gap-1.5 font-extrabold text-xs">
+                          <div className="text-foreground ml-1 flex shrink-0 items-center gap-1.5 text-xs font-extrabold">
                             {homeOutcome === "win" && (
-                              <div className="border-purple-500 h-0 w-0 border-[4px] border-e-0 border-y-transparent"></div>
+                              <div className="h-0 w-0 border-[4px] border-e-0 border-purple-500 border-y-transparent"></div>
                             )}
-                            <span className={cn(homeOutcome !== "win" && "font-semibold opacity-70")}>
+                            <span
+                              className={cn(homeOutcome !== "win" && "font-semibold opacity-70")}
+                            >
                               {hScore}
                             </span>
                           </div>
@@ -161,7 +164,7 @@ export default function LatestResults1({
                           <button
                             type="button"
                             onClick={() => onTeamClick?.(match.awayTeamId)}
-                            className="group flex min-w-0 cursor-pointer flex-row-reverse items-center gap-2 text-left hover:underline bg-transparent border-none p-0 outline-none"
+                            className="group flex min-w-0 cursor-pointer flex-row-reverse items-center gap-2 border-none bg-transparent p-0 text-left outline-none hover:underline"
                           >
                             <svg
                               viewBox="0 0 420 420"
@@ -175,18 +178,21 @@ export default function LatestResults1({
                                 fill="currentColor"
                               />
                             </svg>
-                            <div className="text-foreground truncate font-bold text-xs">
+                            <div className="text-foreground truncate text-xs font-bold">
                               <span className="hidden sm:inline">{match.awayTeamName}</span>
                               <span className="inline sm:hidden">
-                                {match.awayShortName ?? match.awayTeamName.slice(0, 3).toUpperCase()}
+                                {match.awayShortName ??
+                                  match.awayTeamName.slice(0, 3).toUpperCase()}
                               </span>
                             </div>
                           </button>
-                          <div className="text-foreground mr-1 flex shrink-0 flex-row-reverse items-center gap-1.5 font-extrabold text-xs">
+                          <div className="text-foreground mr-1 flex shrink-0 flex-row-reverse items-center gap-1.5 text-xs font-extrabold">
                             {awayOutcome === "win" && (
-                              <div className="border-purple-500 h-0 w-0 border-[4px] border-s-0 border-y-transparent"></div>
+                              <div className="h-0 w-0 border-[4px] border-s-0 border-purple-500 border-y-transparent"></div>
                             )}
-                            <span className={cn(awayOutcome !== "win" && "font-semibold opacity-70")}>
+                            <span
+                              className={cn(awayOutcome !== "win" && "font-semibold opacity-70")}
+                            >
                               {aScore}
                             </span>
                           </div>
@@ -201,7 +207,7 @@ export default function LatestResults1({
 
           {/* Vertical Dots Navigation Indicators */}
           {visibleMatchDays.length > 1 && (
-            <div className="flex flex-col justify-center items-center gap-1.5 shrink-0 select-none">
+            <div className="flex shrink-0 flex-col items-center justify-center gap-1.5 select-none">
               {visibleMatchDays.map((_, idx) => {
                 const isActive = idx === activeIndex;
                 return (
@@ -214,10 +220,10 @@ export default function LatestResults1({
                       });
                     }}
                     className={cn(
-                      "w-1.5 rounded-full transition-all duration-300 cursor-pointer outline-none border-none",
+                      "w-1.5 cursor-pointer rounded-full border-none transition-all duration-300 outline-none",
                       isActive
                         ? "h-4 bg-purple-500 shadow-lg shadow-purple-500/30"
-                        : "h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                        : "bg-muted-foreground/30 hover:bg-muted-foreground/50 h-1.5"
                     )}
                     aria-label={`Go to Matchday ${visibleMatchDays[idx]}`}
                   />

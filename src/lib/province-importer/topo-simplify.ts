@@ -12,15 +12,12 @@
 import type { Feature, FeatureCollection, Polygon, MultiPolygon, Position } from "geojson";
 
 // TopoJSON packages are CommonJS — use require for compatibility
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const topoServer = require("topojson-server") as {
   topology: (objects: Record<string, FeatureCollection>, quantization?: number) => any;
 };
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const topoClient = require("topojson-client") as {
   feature: (topology: any, object: any) => FeatureCollection;
 };
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const topoSimplify = require("topojson-simplify") as {
   presimplify: (topology: any, weight?: (triangle: any) => number) => any;
   simplify: (topology: any, minWeight?: number) => any;
@@ -239,6 +236,7 @@ export function simplifyProvinceBatch(
         if (verts <= 500) return f;
         // Iteratively simplify until under 500
         let tolerance = 0.001;
+        // eslint-disable-next-line prefer-const
         let geo = f.geometry;
         for (let attempt = 0; attempt < 8; attempt++) {
           const s = turf.simplify(turf.feature(geo), { tolerance, highQuality: true });

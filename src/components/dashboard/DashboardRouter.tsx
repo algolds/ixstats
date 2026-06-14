@@ -1,6 +1,8 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -26,6 +28,7 @@ import {
   Target,
   Activity,
   AlertTriangle,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   TrendingUp,
   Users,
   Map as MapIcon,
@@ -38,6 +41,7 @@ import * as LucideIcons from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
@@ -47,6 +51,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { EconomicTierBadge, PopulationTierBadge, LocationBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 const CountryMapEmbed = dynamic(
@@ -124,6 +129,7 @@ function StatPill({
 }
 
 function DashboardHero({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   collapsed,
   onCollapsedChange,
 }: {

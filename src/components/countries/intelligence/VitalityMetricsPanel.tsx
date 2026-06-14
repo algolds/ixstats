@@ -29,6 +29,7 @@ export const VitalityMetricsPanel: React.FC<VitalityMetricsPanelProps> = ({
   metrics,
   viewerClearanceLevel,
   showClassified = false,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   flagColors = { primary: "#3b82f6", secondary: "#6366f1", accent: "#8b5cf6" },
   className,
 }) => {

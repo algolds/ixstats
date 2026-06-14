@@ -96,6 +96,7 @@ export function ActionDialog({
     });
 
     return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actionItem, recommendation.title, onOpenChange]);
 
   const handleConfirm = () => {

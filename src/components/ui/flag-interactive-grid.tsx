@@ -36,6 +36,7 @@ export function FlagInteractiveGrid({
   countries,
   maxOpacity = 0.6,
   strokeDasharray = 0,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   duration = 4,
   blurIntensity = 4,
   flagCoverage = 0.25,
@@ -129,12 +130,11 @@ export function FlagInteractiveGrid({
             );
           })}
         </defs>
-
         {/* Base grid */}
         <rect width="100%" height="100%" fill="url(#flagGrid)" />
-
         {/* Static Flag squares with reverse refraction */}
-        {Object.entries(flagMapping).map(([index, country]) => {
+        // eslint-disable-next-line unused-imports/no-unused-vars
+        {Object.entries(flagMapping).map(([index, _country]) => {
           const squareIndex = parseInt(index);
           const row = Math.floor(squareIndex / horizontal);
           const col = squareIndex % horizontal;

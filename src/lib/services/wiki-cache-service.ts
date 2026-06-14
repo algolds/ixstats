@@ -652,6 +652,7 @@ export class WikiCacheService {
         .catch(() => {
           // Ignore errors (entry might not exist)
         });
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Silent fail - hit count is not critical
     }

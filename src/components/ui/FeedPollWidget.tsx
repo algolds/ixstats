@@ -5,8 +5,10 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { PollWidget } from "~/components/ui/poll-widget";
 import { FeatureVoting } from "~/components/ui/feature-voting";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { ArrowUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,6 +38,7 @@ interface FeedPollWidgetProps {
 }
 
 export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { isSignedIn, user } = useUser();
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
     poll.userVotedOptionIds || []
@@ -52,6 +55,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   // tRPC mutation to cast a vote
   const voteMutation = api.polls.vote.useMutation({
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onSuccess: (data) => {
       // Sync state with server response (which triggered db update)
       // Refetch details to get precise real-time synchronization
@@ -162,6 +166,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     });
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const showResults = pollState.hasVoted || isExpired;
 
   // 1. Choice Poll or Feature Poll Render

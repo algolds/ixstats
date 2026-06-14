@@ -48,9 +48,11 @@ export function useGovernmentAutoSync(
   const {
     enabled = true,
     debounceMs = 15000, // 15 seconds
+    // eslint-disable-next-line unused-imports/no-unused-vars
     showConflictWarnings = true,
     onSyncSuccess,
     onSyncError,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onConflictDetected,
   } = options;
 
@@ -69,6 +71,7 @@ export function useGovernmentAutoSync(
   // API mutations
   const autosaveMutation = api.government.autosave.useMutation({
     // Optimistic update - show "Saved" immediately before server confirmation
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onMutate: async (newData) => {
       setSyncState((prev) => ({
         ...prev,
@@ -139,6 +142,7 @@ export function useGovernmentAutoSync(
         clearTimeout(debounceTimerRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [governmentData, enabled, countryId, debounceMs]);
 
   // Auto-sync handler (avoiding mutation in dependencies)
@@ -156,6 +160,7 @@ export function useGovernmentAutoSync(
       // Error handling is done in the mutation's onError callback
       console.warn("Government autosave failed:", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryId, enabled, governmentData]);
 
   // Manual sync function

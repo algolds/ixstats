@@ -75,6 +75,7 @@ export function EnhancedTooltip({
       const spaceTop = triggerRect.top;
       const spaceBottom = viewport.height - triggerRect.bottom;
       const spaceLeft = triggerRect.left;
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const spaceRight = viewport.width - triggerRect.right;
 
       if (spaceTop > tooltipRect.height + 10) {

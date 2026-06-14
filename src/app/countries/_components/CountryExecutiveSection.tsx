@@ -53,6 +53,7 @@ export function CountryExecutiveSection({
     api.intelCore.getStrategicPlans.useQuery({ countryId: countryId }, { enabled: !!countryId });
   const { data: securityThreats, isLoading: threatsLoading } =
     api.intelAlerts.getSecurityThreats.useQuery({ countryId: countryId }, { enabled: !!countryId });
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: realTimeMetrics, isLoading: metricsLoading } =
     api.intelAnalytics.getRealTimeMetrics.useQuery(
       { countryId: countryId },

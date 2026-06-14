@@ -373,5 +373,5 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
           message: "Failed to fetch ending soon auctions",
         });
       }
-    })
+    }),
 });

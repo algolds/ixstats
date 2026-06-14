@@ -268,6 +268,7 @@ function getFallbackScenarios(filters?: ScenarioFilters): ParsedDiplomaticScenar
 
   // Transform to database schema format
   const transformedScenarios: ParsedDiplomaticScenario[] = generatedScenarios.map(
+    // eslint-disable-next-line unused-imports/no-unused-vars
     (scenario, index) => {
       // Map difficulty from metadata
       const difficulty = scenario.difficulty;

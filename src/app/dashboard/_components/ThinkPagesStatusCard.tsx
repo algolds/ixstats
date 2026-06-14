@@ -14,6 +14,7 @@ interface ThinkPagesStatusCardProps {
 }
 
 export function ThinkPagesStatusCard({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   userProfile,
   className = "",
   onCollapse,
@@ -22,6 +23,7 @@ export function ThinkPagesStatusCard({
   // Show "Coming Soon" state instead of mock data
   const isComingSoon = true;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   function getRelativeTime(date: Date | string): string {
     const now = new Date();
     const then = new Date(date);

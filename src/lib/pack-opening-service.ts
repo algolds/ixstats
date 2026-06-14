@@ -19,6 +19,7 @@ const RARITY_COLORS: Record<CardRarity, string> = {
 /**
  * Sound file paths for different rarities
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 const RARITY_SOUNDS: Record<CardRarity, string> = {
   COMMON: "/sounds/common-reveal.mp3",
   UNCOMMON: "/sounds/common-reveal.mp3",
@@ -54,6 +55,7 @@ export class PackOpeningService {
   /**
    * Play rarity-specific sound effect (silenced)
    */
+  // eslint-disable-next-line unused-imports/no-unused-vars
   playRaritySound(rarity: CardRarity): void {
     // Silenced for compliance with no-audio constraints
   }
@@ -75,6 +77,7 @@ export class PackOpeningService {
 
       const vibrationPattern = HAPTIC_PATTERNS[pattern];
       navigator.vibrate(vibrationPattern);
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Silently fail - haptic is optional
     }

@@ -6,6 +6,7 @@ import { IxTime } from "~/lib/ixtime";
 import { useGlobalNotifications, DataNotificationGenerators } from "./GlobalNotificationSystem";
 
 // Real-time data service configuration
+// eslint-disable-next-line unused-imports/no-unused-vars
 const UPDATE_INTERVALS = {
   FAST: 30000, // 30 seconds - critical data
   NORMAL: 60000, // 1 minute - standard data
@@ -35,6 +36,7 @@ interface DataSnapshot {
 export function RealTimeDataService({
   countryId,
   isActive,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   updateInterval = "NORMAL",
   onDataUpdate,
 }: RealTimeDataServiceProps) {
@@ -49,6 +51,7 @@ export function RealTimeDataService({
   // TRPC query for getting real-time country data
   const {
     data: countryData,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     refetch: refetchCountry,
     isLoading,
   } = api.countries.getByIdAtTime.useQuery(

@@ -1,23 +1,29 @@
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { memo, useCallback, Suspense } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { motion, AnimatePresence } from "motion/react";
 import {
   Globe,
   Flag,
   BarChart3,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Info,
   Building2,
   Settings,
   Crown,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Coins,
   Eye,
   HelpCircle,
   CheckCircle,
 } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import {
   Dialog,
@@ -30,6 +36,7 @@ import { useBuilderContext } from "../context/BuilderStateContext";
 import { useBuilderActions } from "../../../hooks/useBuilderActions";
 
 // Help modal component
+// eslint-disable-next-line unused-imports/no-unused-vars
 function HelpModal({ text, title }: { text: string; title: string }) {
   // Core Foundation specific help content
   if (title === "Core Foundation Help") {
@@ -340,12 +347,18 @@ function HelpModal({ text, title }: { text: string; title: string }) {
 import { FoundationStep } from "../steps/FoundationStep";
 import { GovernmentStep } from "../steps/GovernmentStep";
 import { NationalIdentitySection } from "../NationalIdentitySection";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { CoreIndicatorsSection } from "../../../sections/CoreIndicatorsSection";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { AtomicComponentSelector } from "~/components/government/atoms/AtomicGovernmentComponents";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingSection";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
 import { EconomyBuilderPage } from "../index"; // Eagerly loaded from index
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { BuilderLoadingFallback } from "../../LoadingFallback";
 import { BuilderPreviewStep } from "./BuilderPreviewStep";
 import type { RealCountryData, EconomicInputs } from "../../../lib/economy-data-service";

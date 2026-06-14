@@ -23,7 +23,9 @@ export const LinkPreview = ({
   className,
   width = 200,
   height = 125,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   quality = 50,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   layout = "fixed",
   isStatic = false,
   imageSrc = "",

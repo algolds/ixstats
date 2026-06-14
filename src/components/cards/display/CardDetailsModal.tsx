@@ -46,6 +46,7 @@ import { CardHolographicCover } from "./CardHolographicCover";
 import { LoreForumSection } from "./LoreForumSection";
 import { LoreWikiExcerpt } from "./LoreWikiExcerpt";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { GlassLineChart } from "~/components/charts/RechartsIntegration";
 import { api } from "~/trpc/react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -114,6 +115,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
     const [activeTab, setActiveTab] = useState("overview");
 
     // Memoized hooks — must be called before any conditional returns
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const valueHistoryQuery = api.cardMarket.getCardValueHistory.useQuery(
       { cardId: card?.id ?? "" },
       { enabled: !!card && activeTab === "market" }

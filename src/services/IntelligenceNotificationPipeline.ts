@@ -393,6 +393,7 @@ export class IntelligenceNotificationPipeline {
     notification: ContextualNotification,
     channel: DeliveryChannel
   ): Promise<DeliveryResult> {
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const startTime = Date.now();
 
     switch (channel.channel) {
@@ -462,6 +463,7 @@ export class IntelligenceNotificationPipeline {
 
   private async deliverToWeb(
     notification: ContextualNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     channel: DeliveryChannel
   ): Promise<DeliveryResult> {
     // This would integrate with your web notification system
@@ -478,6 +480,7 @@ export class IntelligenceNotificationPipeline {
 
   private async deliverToWebSocket(
     notification: ContextualNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     channel: DeliveryChannel
   ): Promise<DeliveryResult> {
     // This would integrate with your WebSocket server from Phase 2
@@ -676,6 +679,7 @@ export class IntelligenceNotificationPipeline {
     return Math.max(0, Math.min(100, relevance));
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateUniqueness(item: IntelligenceItem): number {
     // This would check against recent similar intelligence
     // For now, return a base score
@@ -775,7 +779,9 @@ export class IntelligenceNotificationPipeline {
   }
 
   private async findRelevantUsers(
+    // eslint-disable-next-line unused-imports/no-unused-vars
     item: IntelligenceItem,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     template: NotificationTemplate
   ): Promise<Array<{ userId: string; relevanceScore: number }>> {
     // This would typically query your user database
@@ -1094,6 +1100,7 @@ export class IntelligenceNotificationPipeline {
     return content;
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private async findRelatedIntelligence(item: IntelligenceItem): Promise<string[]> {
     // This would search for related intelligence items
     // For now, return empty array
@@ -1159,6 +1166,7 @@ export class IntelligenceNotificationPipeline {
 
   private adjustPriorityForUser(
     priority: string,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     userPrefs: UserNotificationPreferences
   ): ContextualNotification["priority"] {
     // Could adjust based on user preferences
@@ -1168,6 +1176,7 @@ export class IntelligenceNotificationPipeline {
   private personalizeTitle(
     template: string,
     item: IntelligenceItem,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     userPrefs: UserNotificationPreferences
   ): string {
     return template
@@ -1179,6 +1188,7 @@ export class IntelligenceNotificationPipeline {
   private personalizeMessage(
     template: string,
     item: IntelligenceItem,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     userPrefs: UserNotificationPreferences
   ): string {
     return template

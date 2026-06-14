@@ -83,6 +83,7 @@ export function CrossBuilderSynergyDisplay({
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getImpactIcon = (impact: number) => {
     if (impact > 0) return TrendingUp;
     if (impact < 0) return TrendingDown;

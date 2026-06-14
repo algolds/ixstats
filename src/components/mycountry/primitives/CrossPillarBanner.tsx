@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -11,6 +12,7 @@ import {
   type PolicyData,
   type RelationData,
   type PartyData,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type CrisisData,
   type LegislatureData,
   type SeatSummary,

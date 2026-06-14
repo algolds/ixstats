@@ -20,6 +20,7 @@ interface FocusedCardLayoutProps {
 
 export const FocusedCardLayout: React.FC<FocusedCardLayoutProps> = ({
   isExpanded,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   cardId,
   title,
   children,
@@ -104,6 +105,7 @@ interface ExpandableCardProps {
 export const ExpandableCard: React.FC<ExpandableCardProps> = ({
   cardId,
   title,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   subtitle,
   expandedTitle,
   isExpanded,

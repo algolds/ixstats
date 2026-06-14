@@ -77,6 +77,7 @@ export const cardMarketWatchlistRouter = createTRPCRouter({
             },
           },
         });
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (e) {
         // Ignore if doesn't exist
       }
@@ -103,5 +104,5 @@ export const cardMarketWatchlistRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
     return watchlist;
-  })
+  }),
 });

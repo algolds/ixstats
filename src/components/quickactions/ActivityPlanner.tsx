@@ -119,6 +119,7 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
   });
 
   // Fetch meetings separately for more detail
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: meetings } = api.quickActions.getMeetings.useQuery({
     countryId,
     userId,
@@ -412,7 +413,8 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
                 </div>
               ) : (
                 <div className="grid grid-cols-7 gap-2">
-                  {weekDays.map((day, index) => {
+                  // eslint-disable-next-line unused-imports/no-unused-vars
+                  {weekDays.map((day, _index) => {
                     const dayKey = format(day, "yyyy-MM-dd");
                     const dayActivities = activitiesByDay.get(dayKey) ?? [];
                     const isToday = isSameDay(day, new Date());

@@ -251,6 +251,7 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
 function MapLinkageSection({
   countryId,
   landArea,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   areaSqMi,
 }: {
   countryId: string;

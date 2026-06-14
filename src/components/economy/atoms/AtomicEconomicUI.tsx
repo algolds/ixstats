@@ -294,6 +294,7 @@ export const EconomicEffectiveness: React.FC<EconomicEffectivenessProps> = ({
     return "text-red-600 dark:text-red-400";
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getEffectivenessBg = (value: number) => {
     if (value >= 85) return "from-green-500 to-green-600";
     if (value >= 70) return "from-blue-500 to-blue-600";

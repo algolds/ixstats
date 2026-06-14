@@ -38,6 +38,7 @@ import {
   Outdent,
   Bookmark,
   ChevronDown,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ChevronRight,
   Copy,
   Check,
@@ -147,6 +148,7 @@ export function WikiVisualEditor({
     { stashId: activeStashId, limit: 50 },
     { enabled: !!activeStashId, staleTime: 10_000 }
   );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const stashItems = stashItemsQuery.data?.items || [];
 
   const imageItems = useMemo(() => {
@@ -193,6 +195,7 @@ export function WikiVisualEditor({
           htmlEl.innerHTML = getChipInnerHTML(wtName);
           return;
         }
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (err) {
         // ignore
       }

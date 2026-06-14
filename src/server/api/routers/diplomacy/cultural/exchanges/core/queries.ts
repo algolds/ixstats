@@ -1,12 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-} from "~/server/api/trpc";
-
-
-
-
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

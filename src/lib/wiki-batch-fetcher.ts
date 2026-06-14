@@ -439,6 +439,7 @@ export class WikiBatchFetcher {
 
       const data = await response.json();
       return data.query?.backlinks?.length || 0;
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       return 0;
     }
@@ -490,6 +491,7 @@ export class WikiBatchFetcher {
   /**
    * Generate preview text from article content
    */
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private async generatePreview(content: string, wikiSource: WikiSource): Promise<string> {
     try {
       // Extract intro section (first paragraph)
@@ -500,6 +502,7 @@ export class WikiBatchFetcher {
       }
 
       return preview;
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       return "Preview generation failed.";
     }
@@ -532,6 +535,7 @@ export class WikiBatchFetcher {
 
       const page = Object.values(pages)[0] as any;
       return page.original?.source;
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       return undefined;
     }

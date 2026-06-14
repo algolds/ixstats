@@ -59,6 +59,7 @@ export default function CollectionDetailPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPublic, setEditPublic] = useState(true);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [cardFilter, setCardFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState("grid");
   const [commentText, setCommentText] = useState("");

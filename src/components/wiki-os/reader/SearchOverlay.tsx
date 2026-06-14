@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 
 interface SearchOverlayProps {

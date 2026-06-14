@@ -42,6 +42,7 @@ export const hasAccess = (
 };
 
 // Wiki content parsing utilities
+// eslint-disable-next-line unused-imports/no-unused-vars
 export const parseWikiContent = (content: string, linkHandler: (link: string) => void): string => {
   if (!content) return "";
 

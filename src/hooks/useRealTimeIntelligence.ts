@@ -146,6 +146,7 @@ export function useRealTimeIntelligence(
       console.log("❌ WebSocket connection closed:", reason);
       setConnectionState((prev) => ({ ...prev, status: "disconnected" }));
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     countryId,
     user?.id,
@@ -209,6 +210,7 @@ export function useRealTimeIntelligence(
     return () => {
       disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

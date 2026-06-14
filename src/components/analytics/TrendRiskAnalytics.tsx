@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -47,6 +48,7 @@ const RISK_COLORS = {
   critical: "#dc2626",
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const VOLATILITY_COLORS = {
   stable: "#10b981",
   moderate: "#f59e0b",

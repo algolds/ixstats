@@ -34,7 +34,9 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   handleSelectResult,
   categoryFilter,
   formatNumber,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isFocused,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onFocus,
 }) => {
   return (

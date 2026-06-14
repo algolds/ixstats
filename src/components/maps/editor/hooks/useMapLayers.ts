@@ -1,9 +1,11 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useEffect } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS, MAP_LAYER_TYPES } from "~/lib/map-config";
 import { getGeoJSONSource, EMPTY_FC, haversineDistance } from "../utils/map-helpers";
 

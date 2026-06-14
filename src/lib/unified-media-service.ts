@@ -232,6 +232,7 @@ export class UnifiedMediaService {
                   source: "direct-pattern",
                 } as FlagData;
               }
+              // eslint-disable-next-line unused-imports/no-unused-vars
             } catch (error) {
               // Continue to next pattern
             }
@@ -379,6 +380,7 @@ export class UnifiedMediaService {
       if (response.ok) {
         return `/api/public/flags/${encodeURIComponent(countryName)}.webp`;
       }
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Server cache not available, continue to MediaWiki
     }

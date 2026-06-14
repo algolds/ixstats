@@ -16,42 +16,52 @@ export const GeographyForm = React.memo(
     // Memoize all change handlers with empty deps since parent callback is stable
     const handleCallingCodeChange = useCallback((value: any) => {
       onIdentityChange("callingCode", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleInternetTLDChange = useCallback((value: any) => {
       onIdentityChange("internetTLD", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleIsoCodeChange = useCallback((value: any) => {
       onIdentityChange("isoCode", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleTimeZoneChange = useCallback((value: any) => {
       onIdentityChange("timeZone", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleEmergencyNumberChange = useCallback((value: any) => {
       onIdentityChange("emergencyNumber", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handlePostalCodeFormatChange = useCallback((value: any) => {
       onIdentityChange("postalCodeFormat", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleDrivingSideChange = useCallback((checked: boolean) => {
       onIdentityChange("drivingSide", checked ? "right" : "left");
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleWeekStartDayChange = useCallback((value: string) => {
       onIdentityChange("weekStartDay", value);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleCoordinatesLatitudeChange = useCallback((value: any) => {
       onIdentityChange("coordinatesLatitude", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleCoordinatesLongitudeChange = useCallback((value: any) => {
       onIdentityChange("coordinatesLongitude", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

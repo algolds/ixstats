@@ -19,6 +19,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 
 interface PollManagerProps {

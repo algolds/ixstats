@@ -17,6 +17,7 @@ interface TaxGovernmentSyncProps {
   className?: string;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface DepartmentFunding {
   department: GovernmentDepartment;
   allocation: BudgetAllocation;
@@ -31,6 +32,7 @@ interface DepartmentFunding {
 
 export function TaxGovernmentSyncDisplay({
   taxSystem,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   departments = [],
   budgetAllocations = [],
   onSync = () => {},

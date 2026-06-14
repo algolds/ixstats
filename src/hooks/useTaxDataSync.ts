@@ -87,6 +87,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
     } catch (error) {
       console.error("Failed to parse economic data:", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     economicData,
     governmentData,
@@ -174,6 +175,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
         error instanceof Error ? error.message : "Unknown error occurred"
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     governmentData,
     revenueAutoPopulated,
@@ -231,6 +233,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
     });
 
     return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderState.categories, setBuilderState, revenueAutoPopulated, onSuggestionsUpdate]);
 
   /**

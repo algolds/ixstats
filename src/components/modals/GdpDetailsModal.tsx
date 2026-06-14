@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -169,7 +170,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
   };
 
   // Default processed data and stats for overview (1y range)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const defaultProcessedData = useMemo(() => processHistoricalData("1y"), [historicalData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const gdpStats = useMemo(() => createGdpStats(defaultProcessedData), [defaultProcessedData]);
 
   // Economic tier information

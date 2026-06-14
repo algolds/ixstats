@@ -94,6 +94,7 @@ export function AtomicAnalyticsDashboard({
   countryName,
   className,
 }: AtomicAnalyticsDashboardProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [activeView, setActiveView] = useState<
     "overview" | "components" | "effectiveness" | "trends"
   >("overview");
@@ -122,6 +123,7 @@ export function AtomicAnalyticsDashboard({
     return components.map((component) => {
       const taxMod =
         TAX_EFFECTIVENESS_MODIFIERS[component as keyof typeof TAX_EFFECTIVENESS_MODIFIERS];
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const economicMod = null; // ECONOMIC_EFFECTIVENESS_MODIFIERS not available
 
       return {
@@ -450,7 +452,8 @@ export function AtomicAnalyticsDashboard({
           </Card>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {componentEffectiveness.map((component, index) => (
+            // eslint-disable-next-line unused-imports/no-unused-vars
+            {componentEffectiveness.map((component, _index) => (
               <Card key={component.componentKey}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">

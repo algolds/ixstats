@@ -50,6 +50,7 @@ export function BidirectionalTaxSyncDisplay({
   const { taxRecommendations, economicImpacts, isSyncing, lastSync, syncHistory, errors } =
     syncState || DEFAULT_SYNC_STATE;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getPriorityColor = (priority: "high" | "medium" | "low") => {
     switch (priority) {
       case "high":
@@ -72,6 +73,7 @@ export function BidirectionalTaxSyncDisplay({
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getImpactIcon = (impact: number) => {
     if (impact > 0) return TrendingUp;
     if (impact < 0) return TrendingDown;

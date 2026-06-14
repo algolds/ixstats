@@ -25,6 +25,7 @@ interface TierVisualizationCountry {
 }
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface GlobalStatsSectionProps {
   globalStats: GlobalEconomicSnapshot;
   isLoading?: boolean;
@@ -50,6 +51,7 @@ interface ExecutiveSummaryProps {
 }
 
 // Helper function to safely format numbers - same approach as countries page
+// eslint-disable-next-line unused-imports/no-unused-vars
 const safeFormatPopulation = (num: number | null | undefined): string => {
   if (num == null || !isFinite(num) || isNaN(num)) {
     return "N/A";
@@ -64,6 +66,7 @@ const safeFormatCurrency = (num: number | null | undefined): string => {
   return formatCurrency(num);
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const safeFormatDensity = (num: number | null | undefined, unit: string): string => {
   if (num == null || !isFinite(num) || isNaN(num)) {
     return "N/A";
@@ -230,6 +233,7 @@ function TrendItem({
   label,
   value,
   suffix = "",
+  // eslint-disable-next-line unused-imports/no-unused-vars
   trend,
   description,
 }: {

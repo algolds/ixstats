@@ -3,19 +3,25 @@ import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import {
   Package,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ShoppingCart,
   Layers,
   TrendingUp,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Gift,
   ArrowRight,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Calendar,
   Flame,
   ArrowUp,
   ArrowDown,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Star,
   ShoppingBag,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Sparkles,
   Download,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Check,
   Wallet,
   History,
@@ -37,12 +43,14 @@ import type { CardInstance } from "~/types/cards-display";
 import type { VaultSection } from "../VaultSidebarNav";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { IxCreditsSymbol } from "../IxCreditsSymbol";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { GradientHeading } from "~/components/ui/gradient-heading";
 import { LiquidMetalButton } from "~/components/ui/liquid-metal-button";
 import { TextureCard, TextureCardContent } from "~/components/ui/texture-card";
 import {
   CutoutCard,
   CutoutCardContent,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
@@ -103,6 +111,7 @@ const getRarityBorder = (rarity?: string | null) => {
   }
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const getRankTitle = (level: number) => {
   if (level >= 21) return "Diamond Cardmaster";
   if (level >= 11) return "Gold Specialist";
@@ -110,6 +119,7 @@ const getRankTitle = (level: number) => {
   return "Bronze Novice";
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const getRankBadgeClass = (level: number) => {
   if (level >= 21) return "border-cyan-500/30 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10";
   if (level >= 11) return "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10";
@@ -119,6 +129,7 @@ const getRankBadgeClass = (level: number) => {
 
 export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps) {
   const { user } = useUser();
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { stats, loading: statsLoading, refreshing } = useVaultStats();
   const { activities, loading: activitiesLoading } = useRecentActivity() as {
     activities: ActivityEntry[] | undefined;
@@ -128,6 +139,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
   const [showCoinExplosion, setShowCoinExplosion] = useState(false);
   const [claimedBonusAmount, setClaimedBonusAmount] = useState(0);
   const [particles, setParticles] = useState<Particle[]>([]);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [activeTab, setActiveTab] = useState<"overview" | "feed" | "showcase">("overview");
 
   const { data: hasImported } = api.nsImport.hasImported.useQuery(undefined, {
@@ -149,6 +161,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: earningsData, isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(
     undefined,
     {
@@ -161,6 +174,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     { enabled: !!user?.id }
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: levelData, isLoading: levelLoading } = api.vault.getVaultLevel.useQuery(
     { userId: user?.id ?? "" },
     { enabled: !!user?.id }

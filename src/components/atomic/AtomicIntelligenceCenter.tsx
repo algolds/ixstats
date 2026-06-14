@@ -147,6 +147,7 @@ export function AtomicIntelligenceCenter({
   variant = "detailed",
   className,
 }: AtomicIntelligenceCenterProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { intelligenceFeeds, realTimeMetrics } = useAtomicIntelligence();
   const { state, getSystemHealth } = useAtomicState();
   const [activeFilter, setActiveFilter] = useState<string>("all");

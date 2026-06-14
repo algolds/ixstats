@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // Enhanced Country Card - Uses the new unified flag system
 // This demonstrates the migration from the old CountryCard.tsx

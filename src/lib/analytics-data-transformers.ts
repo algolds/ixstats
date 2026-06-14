@@ -188,6 +188,7 @@ export function generateSectorPerformanceData(
     const baseGrowth = (recentGrowth + previousGrowth) / 2;
 
     // Distribute growth across sectors with some variation
+    // eslint-disable-next-line unused-imports/no-unused-vars
     Object.keys(sectorData).forEach((sector, index) => {
       const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
       growthRates[sector] = Math.max(0, baseGrowth + variation);
@@ -256,6 +257,7 @@ export function calculateEconomicHealthIndicators(
     exportsGDPPercent?: number;
   } | null,
   laborMarket?: { youthUnemploymentRate?: number; femaleParticipationRate?: number } | null,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   country?: { currentGdpPerCapita?: number; populationGrowthRate?: number } | null
 ): EconomicHealthIndicator[] {
   if (!historicalData || historicalData.length < 2) {

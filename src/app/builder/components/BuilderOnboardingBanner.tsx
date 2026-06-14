@@ -6,7 +6,9 @@ import { X, Lightbulb, Upload, ChevronDown, ChevronUp, Sparkles } from "lucide-r
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { safeSetItemSync, safeGetItemSync } from "~/lib/localStorageMutex";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { BUILDER_ACCENT } from "../lib/builder-theme";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { splashGold } from "~/lib/splash/mycountry-gold";
 import type { BuilderSection } from "../lib/builder-theme";
 

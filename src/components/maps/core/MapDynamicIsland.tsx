@@ -17,6 +17,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { Search, X, Globe, Loader2, MessageCircle, Bell } from "lucide-react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "~/lib/base-path";
 import type { ProjectionMode } from "~/lib/map-config";
 import { cn } from "~/lib/utils";

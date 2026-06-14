@@ -36,6 +36,7 @@ interface EnhancedSocialCountryProfileProps {
 
 const EnhancedSocialCountryProfileComponent: React.FC<EnhancedSocialCountryProfileProps> = ({
   country,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   viewerCountryId,
   onSocialAction,
 }) => {

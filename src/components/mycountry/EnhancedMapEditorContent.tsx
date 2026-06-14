@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -8,6 +9,7 @@
  * Glassmorphic styling.
  */
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { ArrowLeft, AlertCircle, Map, ChevronRight, Loader2, Globe } from "lucide-react";

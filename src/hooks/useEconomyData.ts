@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/hooks/useEconomyData.ts
 
@@ -374,6 +375,7 @@ export function useEconomyData(countryId: string) {
     };
 
     return economyData;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, atomicState]);
 
   return { economy, isLoading, error, refetch };

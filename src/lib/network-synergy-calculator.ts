@@ -465,6 +465,7 @@ export class NetworkSynergyCalculator {
    */
   static identifyEconomicBloc(
     relationships: RelationshipData[],
+    // eslint-disable-next-line unused-imports/no-unused-vars
     treaties: TreatyData[]
   ): NetworkSynergyData["economicBloc"] {
     const members: string[] = [];
@@ -505,10 +506,12 @@ export class NetworkSynergyCalculator {
     const opportunities: Opportunity[] = [];
 
     // Triangulation opportunities (partners' partners)
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const partnerIds = new Set(data.relationships.map((r) => r.targetCountryId));
     // In real implementation, would query for partners' relationships
 
     // Economic complementarity (missing trade relationships)
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const hasTradeWith = new Set(
       data.relationships
         .filter((r) => r.relationship === "trade" || r.relationship === "alliance")
@@ -516,6 +519,7 @@ export class NetworkSynergyCalculator {
     );
 
     // Cultural affinity (shared cultural exchanges)
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const culturalPartners = new Set(
       data.culturalExchanges.flatMap((e) => e.participatingCountries.map((p) => p.countryId))
     );

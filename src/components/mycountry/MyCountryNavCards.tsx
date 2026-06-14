@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Brain, Shield, Crown, Users, Map, Vote } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";

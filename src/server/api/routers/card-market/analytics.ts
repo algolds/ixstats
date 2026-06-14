@@ -263,5 +263,5 @@ export const cardMarketAnalyticsRouter = createTRPCRouter({
         fromUserName: event.fromUserId ? userMap.get(event.fromUserId) || "Unknown" : null,
         toUserName: userMap.get(event.toUserId) || "Unknown",
       }));
-    })
+    }),
 });

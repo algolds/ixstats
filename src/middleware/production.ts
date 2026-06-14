@@ -64,6 +64,7 @@ export function rateLimitMiddleware(
  * Performance monitoring middleware
  */
 export function performanceMiddleware(request: NextRequest) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { startTime, path } = ProductionMiddleware.monitorRequest(request);
 
   return NextResponse.next();
@@ -83,6 +84,7 @@ export function securityMiddleware(request: NextRequest) {
 /**
  * Memory monitoring middleware
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function memoryMiddleware(request: NextRequest) {
   // Monitor memory usage on every request
   MemoryOptimizer.monitorMemoryUsage();
@@ -148,6 +150,7 @@ export function productionMiddleware(request: NextRequest) {
  */
 export function apiMiddleware(request: NextRequest) {
   const startTime = performance.now();
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const path = request.nextUrl.pathname;
 
   // Rate limiting for API endpoints
@@ -170,6 +173,7 @@ export function apiMiddleware(request: NextRequest) {
 /**
  * Static asset middleware
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function staticAssetMiddleware(request: NextRequest) {
   const response = NextResponse.next();
 

@@ -119,6 +119,7 @@ export function AgendaItemSelector({ open, onOpenChange, onSelect }: AgendaItemS
     );
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getCategoryIcon = (category: string) => {
     // You can add specific icons per category if desired
     return <FileText className="h-4 w-4" />;

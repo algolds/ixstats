@@ -14,6 +14,7 @@ interface CountrySelectorHeaderProps {
 
 export function CountrySelectorHeader({
   softSelectedCountry,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onBackToIntro,
 }: CountrySelectorHeaderProps) {
   const { flag } = useCountryFlagRouteAware(

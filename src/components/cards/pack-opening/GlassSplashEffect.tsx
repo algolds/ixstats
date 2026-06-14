@@ -95,6 +95,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
       }
 
       return generated;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [trigger, rarity, isMobile, particleConfig]);
 
     // Cleanup callback

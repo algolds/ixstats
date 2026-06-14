@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { CrownIcon } from "~/components/ui/icons";
 import { useCountryData, SectionShell, InlineWiki, type StatusBadgeConfig } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
@@ -36,6 +37,7 @@ export function EnhancedExecutiveContent({
   );
 
   const activePolicies = policies?.filter((p: any) => p.status === "active").length ?? 0;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { flagUrl } = useFlag(country?.name ?? "");
 
   const { isGuided } = useSectionDensity({
@@ -46,6 +48,7 @@ export function EnhancedExecutiveContent({
     return null;
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const statusBadges: StatusBadgeConfig[] =
     urgentIssueCount > 0
       ? [
@@ -64,6 +67,7 @@ export function EnhancedExecutiveContent({
     meetings
       ?.flatMap((m: any) => m.actionItems ?? [])
       .filter((a: any) => a.status === "pending" || a.status === "PENDING").length ?? 0;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const executiveHealth = Math.max(
     0,
     Math.min(
@@ -79,6 +83,7 @@ export function EnhancedExecutiveContent({
     )
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const heroStats = [
     { label: "Issues", value: issueCount, accentText: true },
     { label: "Policies", value: activePolicies, accentText: true },

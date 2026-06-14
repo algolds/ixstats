@@ -48,6 +48,7 @@ export function GovernmentStructureDisplay({
   const {
     data: governmentData,
     isLoading,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     refetch,
   } = api.government.getByCountryId.useQuery(
     { countryId: countryId || "" },

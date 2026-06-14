@@ -13,6 +13,7 @@ import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
 import { BuilderDIView } from "~/components/DynamicIsland/BuilderDIView";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { MyCountryDIPlugin } from "./MyCountryDIPlugin";
 import { PreText } from "~/components/ui/pretext";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
@@ -66,6 +67,7 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
         filter.setSelectedTemplate(null);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     context.builderState.selectedCountry,
     context.builderState.economicInputs?.countryName,

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -465,6 +466,7 @@ export function EmojiPicker({
       }
     );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const discordEmojis = discordEmojisData?.emojis || [];
 
   // Filter Unicode Emojis based on search query

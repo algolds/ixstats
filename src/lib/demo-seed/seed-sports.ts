@@ -29,12 +29,14 @@ async function downloadImageForSeed(imageUrl: string): Promise<string> {
   if (imageUrl.includes("wikimedia.org") || imageUrl.includes("wikipedia.org")) {
     try {
       const decodedUrl = decodeURIComponent(imageUrl);
-      const commonsMatch = decodedUrl.match(/\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^\/]+)/i);
+      const commonsMatch = decodedUrl.match(
+        /\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^\/]+)/i
+      );
       if (commonsMatch && commonsMatch[1]) {
         const filename = commonsMatch[1];
         return `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`;
       }
-      
+
       const urlObj = new URL(imageUrl);
       const pathname = urlObj.pathname;
       const lastSegment = pathname.split("/").pop();
@@ -51,18 +53,18 @@ async function downloadImageForSeed(imageUrl: string): Promise<string> {
     const ext = imageUrl.split(".").pop()?.split(/[?#]/)[0] || "jpg";
     const fileName = `seeded_${hash}.${ext}`;
     const imagesDir = path.join(process.cwd(), "public", "images", "downloaded");
-    
+
     if (!fs.existsSync(imagesDir)) {
       fs.mkdirSync(imagesDir, { recursive: true });
     }
-    
+
     const filePath = path.join(imagesDir, fileName);
     const publicUrl = `/images/downloaded/${fileName}`;
-    
+
     if (fs.existsSync(filePath)) {
       return publicUrl;
     }
-    
+
     console.log(`[SeedImageDownload] Downloading: ${imageUrl}`);
     const res = await fetch(imageUrl, {
       headers: {
@@ -70,17 +72,20 @@ async function downloadImageForSeed(imageUrl: string): Promise<string> {
       },
       signal: AbortSignal.timeout(15000),
     });
-    
+
     if (!res.ok) {
       throw new Error(`Failed to fetch image: HTTP ${res.status}`);
     }
-    
+
     const buffer = Buffer.from(await res.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
     console.log(`[SeedImageDownload] Saved image to ${publicUrl}`);
     return publicUrl;
   } catch (err) {
-    console.error(`[SeedImageDownload] Failed to download ${imageUrl}, using original URL. Error:`, err);
+    console.error(
+      `[SeedImageDownload] Failed to download ${imageUrl}, using original URL. Error:`,
+      err
+    );
     return imageUrl;
   }
 }
@@ -94,6 +99,7 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const CITY_NAMES = [
   "Olympus City",
   "Nova Albion",
@@ -1621,6 +1627,7 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
 
 async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Promise<number> {
   let count = 0;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const preset = getPreset("f1");
   const leagueSeed = hashString("IRF World Championship");
   const raceCount = 20;
@@ -1753,6 +1760,7 @@ async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Prom
       technicalFeedback: Math.round(50 + rng() * 40),
       starts: Math.round(rng() * 30),
     };
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const tp = await prisma.sportPlayer.create({
       data: {
         teamId: team.id,

@@ -60,6 +60,7 @@ export function DataMonitoringCenter({
   const dbService = getDatabaseIntegrationService();
 
   // Real-time intelligence integration
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { connectionState, latestUpdate, updates, isConnected } = useRealTimeIntelligence({
     countryId,
   });
@@ -75,6 +76,7 @@ export function DataMonitoringCenter({
   });
 
   const [metricTrends, setMetricTrends] = useState<MetricTrend[]>([]);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isMonitoring, setIsMonitoring] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -83,6 +85,7 @@ export function DataMonitoringCenter({
   // Use the data sync hook for real-time updates
   const {
     syncState,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isConnected: isSyncConnected,
     forceRefresh,
     data: countryData,

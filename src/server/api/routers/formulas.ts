@@ -164,6 +164,7 @@ export const formulasRouter = createTRPCRouter({
         expectedOutput: z.number().optional(),
       })
     )
+    // eslint-disable-next-line unused-imports/no-unused-vars
     .mutation(async ({ ctx, input }) => {
       const startTime = Date.now();
 

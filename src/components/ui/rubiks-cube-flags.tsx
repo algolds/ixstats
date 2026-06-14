@@ -159,6 +159,7 @@ export const RubiksCubeFlags: React.FC<RubiksCubeFlagsProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animationSpeed, isAnimating, hoverOnly, isHovered, externalHover]);
 
   // Cleanup on unmount

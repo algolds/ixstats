@@ -74,6 +74,7 @@ import {
 type ClassificationLevel = "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" | "SECRET" | "TOP_SECRET";
 type PriorityLevel = "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface DiplomaticChannel {
   id: string;
   name: string;
@@ -90,6 +91,7 @@ interface DiplomaticChannel {
   }>;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface DiplomaticMessage {
   id: string;
   from: {
@@ -378,6 +380,7 @@ export function SecureCommunications({
       encryptedContent: encryptMessage ? messageContent : undefined, // TODO: Implement actual encryption
       status: "SENT",
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeChannelId,
     messageContent,
@@ -399,6 +402,7 @@ export function SecureCommunications({
     // TODO: Implement channel creation mutation
     notify.info("Channel creation coming soon");
     setShowNewChannel(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newChannelName, newChannelType, newChannelClassification, newChannelEncrypted]);
 
   // Auto-select first channel

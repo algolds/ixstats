@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -30,6 +31,7 @@ interface IntelligenceDashboardProps {
 
 export function IntelligenceDashboard({
   countryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryName,
   onTabChange,
   onNavigate,

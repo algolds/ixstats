@@ -5,6 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { api } from "~/trpc/react";
 import { X, Loader2, Layers } from "lucide-react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Polygon, MultiPolygon } from "geojson";
 
 interface TemplatePreviewDialogProps {

@@ -67,10 +67,13 @@ interface Document {
 
 export function CollaborativeDocument({
   groupId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   groupName,
   currentUserAccount,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   userAccounts = [],
   isOwner = false,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   members = [],
   className = "",
 }: CollaborativeDocumentProps) {
@@ -80,6 +83,7 @@ export function CollaborativeDocument({
   const [isEditing, setIsEditing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -167,6 +171,7 @@ export function CollaborativeDocument({
   });
 
   // Real-time WebSocket for collaborative editing
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { clientState } = useThinkPagesWebSocket({
     accountId: currentUserId,
     autoReconnect: true,
@@ -179,6 +184,7 @@ export function CollaborativeDocument({
 
   // Auto-save functionality
   const handleContentChange = useCallback(
+    // eslint-disable-next-line unused-imports/no-unused-vars
     (content: string, plainText: string) => {
       if (!selectedDocument || !currentUserId) return;
 
@@ -218,6 +224,7 @@ export function CollaborativeDocument({
 
   // Handle wiki-text import
   const handleWikiImport = useCallback(
+    // eslint-disable-next-line unused-imports/no-unused-vars
     (html: string, wikitext: string) => {
       if (richTextEditorRef.current) {
         // Get current content
@@ -353,6 +360,7 @@ export function CollaborativeDocument({
       setShowExportModal(false);
       notify.success(`Exported as ${format.toUpperCase()}`);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentDocument]
   );
 

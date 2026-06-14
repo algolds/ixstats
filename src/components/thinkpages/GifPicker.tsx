@@ -1,10 +1,12 @@
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { IconGif } from "@tabler/icons-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
@@ -31,6 +33,7 @@ interface GifPickerProps {
 
 const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY || "1FCCq4KmjQjC6FdopmB3tr6UUqLepZ0F";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function GifPicker({ onSelectGif, trigger, disabled = false }: GifPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

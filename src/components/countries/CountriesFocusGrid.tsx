@@ -106,6 +106,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
       window.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("click", handleClickAway);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded]);
 
   // Filter and sort countries
@@ -211,6 +212,7 @@ export const CountriesFocusGrid: React.FC<CountriesFocusGridProps> = ({
 
   const onCountryClick = handleCountryClick;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getSortIcon = (option: SortOption) => {
     switch (option) {
       case "random":

@@ -290,6 +290,7 @@ class DatabaseIntegrationService {
     console.log("[DatabaseIntegration] Falling back to polling mode");
 
     setInterval(() => {
+      // eslint-disable-next-line unused-imports/no-unused-vars
       this.streams.forEach(async (stream, streamId) => {
         if (stream.status === "active") {
           try {
@@ -343,6 +344,7 @@ class DatabaseIntegrationService {
   /**
    * Detect changes in country data
    */
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private detectChanges(newData: any, stream: DataStream): string[] {
     // This would implement change detection logic
     // For now, return empty array - will be implemented based on specific needs

@@ -19,6 +19,7 @@ export const adminBotRouter = createTRPCRouter({
   // Get system status
 
   // Get bot status with health check
+  // eslint-disable-next-line unused-imports/no-unused-vars
   getBotStatus: adminProcedure.query(async ({ ctx }) => {
     try {
       const [botHealth, ixTimeStatus] = await Promise.all([
@@ -68,6 +69,7 @@ export const adminBotRouter = createTRPCRouter({
   // Set custom time via bot or local override
 
   // Bot control operations
+  // eslint-disable-next-line unused-imports/no-unused-vars
   syncBot: adminProcedure.mutation(async ({ ctx }) => {
     try {
       const result = await IxTime.syncWithBot();
@@ -78,6 +80,7 @@ export const adminBotRouter = createTRPCRouter({
     }
   }),
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   pauseBot: adminProcedure.mutation(async ({ ctx }) => {
     try {
       const result = await IxTime.pauseBotTime();
@@ -88,6 +91,7 @@ export const adminBotRouter = createTRPCRouter({
     }
   }),
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   resumeBot: adminProcedure.mutation(async ({ ctx }) => {
     try {
       const result = await IxTime.resumeBotTime();
@@ -98,6 +102,7 @@ export const adminBotRouter = createTRPCRouter({
     }
   }),
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   clearBotOverrides: adminProcedure.mutation(async ({ ctx }) => {
     try {
       const result = await IxTime.clearBotOverrides();

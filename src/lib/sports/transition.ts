@@ -1,5 +1,6 @@
 import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { TRPCError } from "@trpc/server";
 import { getPreset, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";
@@ -227,6 +228,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         }
 
         try {
+          // eslint-disable-next-line prefer-const
           let sportsAccount = await tx.thinkpagesAccount.findUnique({
             where: { username: "SportsNews" },
           });
@@ -428,6 +430,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
       draftOrder = updatedTeams.map((t: any) => t.id);
     }
 
+    // eslint-disable-next-line prefer-const
     let rookiePool = rookies.map((r, index) => ({
       ...r,
       id: `rookie_${index}`,
@@ -698,6 +701,7 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
     const allPlayers = allPlayersList[nationId] || [];
 
     // Sort and select top 11
+    // eslint-disable-next-line prefer-const
     let squad = [...draftPlayers]
       .sort((a: any, b: any) => {
         const ratingA = (a.ratings as any)?.overall ?? 50;

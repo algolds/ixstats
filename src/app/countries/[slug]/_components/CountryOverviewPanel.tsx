@@ -11,6 +11,7 @@ import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetail
 import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
 import {
   BookOpen,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ExternalLink,
   Building,
   Crown,

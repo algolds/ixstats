@@ -10,6 +10,7 @@ import type {
   TierFilter,
   PopulationRange,
 } from "../countries/_components/CountriesSearch";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { api } from "~/trpc/react";
 import CountriesFilterSidebar from "../countries/_components/CountriesFilterSidebar";
 import CountriesSortBar from "../countries/_components/CountriesSortBar";
@@ -37,11 +38,16 @@ export default function ExplorePage() {
   // Comparison functionality
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const {
+    // eslint-disable-next-line unused-imports/no-unused-vars
     comparisonCountries,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     addCountryToComparison,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     removeCountryFromComparison,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     clearComparison,
     getAvailableCountries,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isLoading: isLoadingComparison,
   } = useCountryComparison();
 

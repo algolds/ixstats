@@ -57,6 +57,7 @@ export function BidirectionalGovernmentSyncDisplay({
   const { governmentRecommendations, economicImpacts, isSyncing, lastSync, syncHistory, errors } =
     syncState || DEFAULT_SYNC_STATE;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getPriorityColor = (priority: "critical" | "high" | "medium" | "low") => {
     switch (priority) {
       case "critical":
@@ -83,6 +84,7 @@ export function BidirectionalGovernmentSyncDisplay({
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getImpactIcon = (impact: number) => {
     if (impact > 0) return TrendingUp;
     if (impact < 0) return TrendingDown;

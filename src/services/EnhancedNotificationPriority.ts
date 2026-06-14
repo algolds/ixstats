@@ -440,6 +440,7 @@ export class EnhancedNotificationPriority {
 
   private generateClusterKey(
     notification: UnifiedNotification,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): string {
     // Group by category, priority, and time window
@@ -467,6 +468,7 @@ export class EnhancedNotificationPriority {
 
   private determineBatchingStrategy(
     cluster: NotificationCluster,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): "immediate" | "delayed" | "scheduled" {
     if (cluster.priority === "critical") return "immediate";
@@ -477,6 +479,7 @@ export class EnhancedNotificationPriority {
 
   private calculateDeliveryWindow(
     cluster: NotificationCluster,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: NotificationContext
   ): { start: number; end: number } {
     const now = Date.now();
@@ -524,6 +527,7 @@ export class EnhancedNotificationPriority {
     return "focused";
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private getRecentNotificationLoad(userId: string): number {
     // Would query recent notification count from store
     return 0; // Placeholder
@@ -563,7 +567,9 @@ export class EnhancedNotificationPriority {
 
   private recommendDeliveryMethod(
     score: number,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     factors: ContextualFactors,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     preferences: UserNotificationPreferences
   ): string {
     if (score > 80) return "dynamic-island";

@@ -648,6 +648,7 @@ const POLICY_TEMPLATES: Record<
 export function getPolicyRecommendations(context: CountryContext): PolicyRecommendation[] {
   const recommendations: PolicyRecommendation[] = [];
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   for (const [key, template] of Object.entries(POLICY_TEMPLATES)) {
     const evaluation = template.conditions(context);
 

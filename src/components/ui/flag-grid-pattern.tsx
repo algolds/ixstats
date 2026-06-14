@@ -91,6 +91,7 @@ export function FlagGridPattern({
     return () => clearInterval(interval);
   }, [countries]);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const totalSquares = horizontal * vertical;
 
   return (

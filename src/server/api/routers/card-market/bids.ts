@@ -290,5 +290,5 @@ export const cardMarketBidsRouter = createTRPCRouter({
           message: "Failed to fetch auction history",
         });
       }
-    })
+    }),
 });

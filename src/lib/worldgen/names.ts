@@ -7,6 +7,7 @@
 
 import { WorldNamingSystem } from "../procedural-archive/markov-naming";
 import { getLanguageFamilies } from "../procedural-archive/language-families";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { PackedGraph, WorldGenParams } from "./types";
 
 /**

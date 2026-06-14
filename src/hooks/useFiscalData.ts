@@ -93,24 +93,28 @@ export function useFiscalData({
   // Memoized revenue chart data
   const revenueChartData = useMemo(
     () => generateRevenueChartData(fiscalData),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fiscalData.taxRevenueGDPPercent]
   );
 
   // Memoized spending chart data
   const spendingChartData = useMemo(
     () => generateSpendingChartData(fiscalData, nominalGDP, governmentStructure),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fiscalData.governmentSpendingByCategory, nominalGDP, governmentStructure]
   );
 
   // Memoized debt composition data
   const debtChartData = useMemo(
     () => generateDebtCompositionData(fiscalData),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fiscalData.internalDebtGDPPercent, fiscalData.externalDebtGDPPercent]
   );
 
   // Memoized fiscal metrics
   const fiscalMetrics = useMemo(
     () => calculateFiscalMetrics(fiscalData, nominalGDP),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       fiscalData.taxRevenueGDPPercent,
       fiscalData.governmentBudgetGDPPercent,

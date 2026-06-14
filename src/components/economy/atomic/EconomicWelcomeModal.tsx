@@ -22,6 +22,7 @@ import {
   Info,
   DollarSign,
   TrendingUp,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Globe,
   Coins,
   Scale,

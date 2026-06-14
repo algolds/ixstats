@@ -15,6 +15,7 @@
  */
 
 import { useRef, useCallback, useState } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Settings2, List, BookOpen } from "lucide-react";
 
 type MobileTab = "properties" | "features";
@@ -46,6 +47,7 @@ export function MobileEditorSheet({
   title,
   maxHeight = "70vh",
   featureListContent,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   wikiContent,
   isEditMode = true,
 }: MobileEditorSheetProps) {

@@ -4,6 +4,7 @@
  */
 
 import { notificationAPI } from "./notification-api";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { isNotificationEventEnabled, guardNotificationEvent } from "./notification-event-guard";
 
 /**
@@ -356,6 +357,7 @@ export async function onTradeEvent(params: {
 }) {
   if (!(await guardNotificationEvent("onTradeEvent"))) return;
   const priority = params.eventType === "embargo" ? "high" : "medium";
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const type =
     params.impact === "positive" ? "success" : params.impact === "negative" ? "warning" : "info";
 

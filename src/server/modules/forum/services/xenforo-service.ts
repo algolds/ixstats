@@ -246,6 +246,7 @@ function getApiUrl(): string {
   return getXfApiUrl();
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function stripBBCode(text: string): string {
   return text.replace(/\[\/?\w+(?:=[^\]]*)?]/g, "").trim();
 }

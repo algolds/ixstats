@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Badge } from "~/components/ui/badge";
 import type { ToastType, ToastPriority } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
@@ -64,6 +65,7 @@ const PRIORITIES: { label: string; value: ToastPriority }[] = [
 export function TestSuitePanel() {
   const notify = useNotify();
   const addNotification = useNotificationStore((state) => state.addNotification);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { bridge } = useGlobalNotificationBridge();
 
   const [testResults, setTestResults] = useState<string[]>([]);

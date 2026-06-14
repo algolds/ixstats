@@ -56,6 +56,7 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
   activityRingsData,
   className,
 }) => {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [showAllMetrics, setShowAllMetrics] = useState(false);
   const flagColors = getFlagColors(country.name);
 
@@ -88,6 +89,7 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
   const infrastructureIndex = developmentIndex; // Using development as proxy for infrastructure
   const globalRelevance = Math.min(100, Math.log10(country.currentTotalGdp / 1000000000 + 1) * 25);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const vitalityMetrics = [
     {
       id: "economic-power",
@@ -158,6 +160,7 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
   ];
 
   // Performance indicators
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getPerformanceIcon = (value: number) => {
     if (value > 80) return <Crown className="h-4 w-4 text-yellow-400" />;
     if (value > 60) return <Target className="h-4 w-4 text-green-400" />;
@@ -166,6 +169,7 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
     return <TrendingUp className="h-4 w-4 text-red-400" />;
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getPerformanceLevel = (value: number): { label: string; color: string } => {
     if (value > 80) return { label: "Excellent", color: "text-green-500" };
     if (value > 60) return { label: "Strong", color: "text-blue-500" };

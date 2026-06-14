@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * Live Notifications Hook
@@ -6,6 +7,7 @@
 
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";

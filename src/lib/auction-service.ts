@@ -1167,6 +1167,7 @@ export class AuctionService {
     }
 
     // Sorting
+    // eslint-disable-next-line prefer-const
     let orderBy: any[] = [{ isFeatured: "desc" }];
     if (params.sortBy === "newest") {
       orderBy.push({ createdAt: "desc" });

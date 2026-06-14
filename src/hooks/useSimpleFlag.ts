@@ -107,6 +107,7 @@ export function useSimpleFlags(countryNames: string[]) {
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryNames.join(",")]);
 
   const refetch = async () => {
@@ -117,6 +118,7 @@ export function useSimpleFlags(countryNames: string[]) {
       try {
         const url = await unifiedFlagService.getFlagUrl(countryName);
         urls[countryName] = url;
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         urls[countryName] = null;
       }

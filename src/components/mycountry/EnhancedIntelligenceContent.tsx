@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { AlertTriangle } from "lucide-react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { BrainIcon } from "~/components/ui/icons";
 import { useCountryData, SectionShell, InlineWiki, type StatusBadgeConfig } from "./primitives";
 import { api } from "~/trpc/react";
@@ -46,6 +47,7 @@ export function EnhancedIntelligenceContent({
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { flagUrl } = useFlag(country?.name ?? "");
 
   const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
@@ -65,6 +67,7 @@ export function EnhancedIntelligenceContent({
   const otherAlerts = Math.max(totalAlerts - criticalAlerts, 0);
   const defOverviewScore = defenseOverview?.overallScore ?? 50;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const intelligenceHealth = Math.max(
     0,
     Math.min(
@@ -75,6 +78,7 @@ export function EnhancedIntelligenceContent({
     )
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const statusBadges: StatusBadgeConfig[] =
     criticalAlerts > 0
       ? [
@@ -86,6 +90,7 @@ export function EnhancedIntelligenceContent({
         ]
       : [];
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const heroStats = [
     { label: "Security", value: `${defOverviewScore}/100`, accentText: true },
     { label: "Alerts", value: criticalAlerts, accentText: true },

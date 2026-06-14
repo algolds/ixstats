@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import type { BuilderStep } from "../components/enhanced/builderConfig";
 import type { BuilderState } from "./useBuilderState";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { stepOrder } from "../components/enhanced/builderConfig";
 import { TAX_SYSTEM_TEMP_DISABLED } from "../constants";
 
@@ -224,6 +225,7 @@ export function useBuilderActions({
         break;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderState, setBuilderState, handleTabChange, mode]);
 
   // Handle previous step - moves to previous tab or previous step

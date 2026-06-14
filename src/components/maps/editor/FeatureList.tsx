@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -7,6 +8,7 @@
  * auto-expands its group and scrolls it into view.
  */
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   MapPin,

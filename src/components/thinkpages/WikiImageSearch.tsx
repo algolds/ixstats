@@ -23,6 +23,7 @@ interface WikiImageSearchProps {
 }
 
 export function WikiImageSearch({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onImageSelect,
   selectedImage,
   setSelectedImage,

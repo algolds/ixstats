@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -574,6 +575,7 @@ export function LaborEmployment({
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-4">
                       {sectorData.length > 0 &&
+                        // eslint-disable-next-line unused-imports/no-unused-vars
                         sectorData.map((sector, idx) => (
                           <div key={sector.name} className="space-y-2">
                             <div className="flex items-center justify-between">

@@ -71,6 +71,7 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
   const economyData = mapCountryToEconomyData(country);
 
   // Construct system status from available data
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const systemStatus = {
     ixTime: currentIxTime,
     serverStatus: "operational",

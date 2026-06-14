@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useMemo, type ElementType } from "react";
 import {
   TrendingUp,
@@ -12,9 +13,11 @@ import {
   CheckCircle,
   TrendingDown,
   Settings,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Play,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { api } from "~/trpc/react";
@@ -50,6 +53,7 @@ import {
 } from "../lib/economy-calculations";
 
 // Economy Builder Integration
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
@@ -82,6 +86,7 @@ export function EconomySection({
   fieldLocks,
 }: EconomySectionComponentProps) {
   const isEditMode = mode === "edit";
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // Get builder context to update global state
@@ -145,6 +150,7 @@ export function EconomySection({
   );
 
   // Get atomic components if country ID is provided
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: atomicComponents } = api.government.getComponents.useQuery(
     { countryId: countryId || "" },
     {
@@ -157,6 +163,7 @@ export function EconomySection({
   const metrics: Metric[] = useMemo(() => {
     const workingAgePopulation = Math.round(totalPopulation * 0.65);
     const laborForce = Math.round(workingAgePopulation * 0.65); // 65% participation rate
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const employed = Math.round(laborForce * ((100 - unemploymentRate) / 100));
 
     return [
@@ -575,6 +582,7 @@ export function EconomySection({
   // Calculate derived metrics
   const workingAgePopulation = Math.round(totalPopulation * 0.65);
   const laborForce = Math.round(workingAgePopulation * 0.65);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const employed = Math.round(laborForce * ((100 - unemploymentRate) / 100));
 
   return (

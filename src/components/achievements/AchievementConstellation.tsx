@@ -123,6 +123,7 @@ const AchievementConstellationComponent: React.FC<AchievementConstellationProps>
   }, []);
 
   // Handle pan
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handlePan = useCallback((deltaX: number, deltaY: number) => {
     setControls((prev) => ({
       ...prev,

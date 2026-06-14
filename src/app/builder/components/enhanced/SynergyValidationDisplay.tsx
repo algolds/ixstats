@@ -38,6 +38,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
     null
   );
   const [isRunning, setIsRunning] = useState(false);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -98,6 +99,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
 
   const renderTestResult = (
     result: SynergyValidationResult | ConflictValidationResult,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     index: number
   ) => {
     const isSynergyResult = "expectedSynergy" in result;

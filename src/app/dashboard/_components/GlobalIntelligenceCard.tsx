@@ -7,6 +7,7 @@ import { ExecutiveActivityRings } from "~/components/ui/executive-activity-rings
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface ProcessedCountryData {
   id: string;
   name: string;

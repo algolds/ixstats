@@ -236,7 +236,8 @@ export const MiniExecutiveDashboard: React.FC<MiniExecutiveDashboardProps> = ({
         </h4>
 
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-          {statusIndicators.map((indicator, index) => (
+          // eslint-disable-next-line unused-imports/no-unused-vars
+          {statusIndicators.map((indicator, _index) => (
             <div
               key={indicator.label}
               className="bg-background/50 flex items-center justify-between rounded-lg p-3"

@@ -4,6 +4,7 @@ import React, { memo } from "react";
 import { useAllCountriesData } from "~/hooks/useAllCountriesData";
 import { ActivityMarquee } from "./ActivityMarquee";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface Country {
   id: string;
   name: string;

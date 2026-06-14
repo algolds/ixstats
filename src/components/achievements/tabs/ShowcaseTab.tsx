@@ -35,6 +35,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     ? JSON.parse(achievement.metadata)
                     : achievement.metadata;
                 count = parsed.count || 0;
+                // eslint-disable-next-line unused-imports/no-unused-vars
               } catch (e) {
                 // ignore
               }

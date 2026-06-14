@@ -70,6 +70,7 @@ export function DatabaseExplorer() {
   const [isExecuting, setIsExecuting] = useState(false);
 
   // Mock database tables
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [tables, setTables] = useState<DatabaseTable[]>([
     {
       name: "Country",
@@ -278,6 +279,7 @@ export function DatabaseExplorer() {
   ]);
 
   // Fetch real data from API for query execution
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: countriesData } = api.countries.getAll.useQuery(undefined, {
     enabled: false, // Only fetch when needed
   });

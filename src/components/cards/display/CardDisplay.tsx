@@ -108,6 +108,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
     // Size-dependent classes
     const widthClass = getCardWidth(size);
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const aspectRatioClass = getCardAspectRatio(size);
 
     // Font sizes based on card size

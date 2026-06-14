@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -16,6 +17,7 @@ import {
 import { CommandPanel } from "~/components/executive/CommandPanel";
 import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const DiplomacyOverview = dynamic(
   () => import("./DiplomacyOverview").then((m) => ({ default: m.DiplomacyOverview })),
   { ssr: false }

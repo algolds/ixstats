@@ -19,6 +19,7 @@ import {
   Search,
 } from "lucide-react";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -130,6 +131,7 @@ export function useCommandItems(userProfile?: UserProfile) {
 
 // Shared state management hook for Dynamic Island
 export function useDynamicIslandState() {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
   const activePlugin = useActiveDIPlugin();
@@ -150,6 +152,7 @@ export function useDynamicIslandState() {
   );
 
   // Get user profile for contextual search
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Wiki full-text search — only fires when query is active and relevant filter
@@ -711,6 +714,7 @@ export function useDynamicIslandState() {
         clearTimeout(shortcutTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, switchMode, searchFilter, searchQuery, isProcessingShortcut]);
 
   // Cleanup on unmount

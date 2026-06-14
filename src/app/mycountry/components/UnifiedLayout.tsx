@@ -118,6 +118,7 @@ function MobileSectionNavigator({
   sections,
   onSectionSelect,
   expandedSections,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onToggleSection,
 }: MobileSectionNavigatorProps) {
   return (
@@ -129,6 +130,7 @@ function MobileSectionNavigator({
           (SectionIcons[section.id as keyof typeof SectionIcons] as
             | React.ComponentType<any>
             | undefined) || Activity;
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const isExpanded = expandedSections.has(section.id);
 
         return (
@@ -321,15 +323,22 @@ export function UnifiedLayout({
   onModeToggle,
   currentIxTime,
   timeAcceleration,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   achievements,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   milestones,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   rankings,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   intelligenceFeed,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   flagUrl,
   children,
   className = "",
   syncState,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onForceRefresh,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onForceUpdateStats,
 }: UnifiedLayoutProps) {
   const isExecutiveMode = viewMode === "executive";

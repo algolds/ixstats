@@ -3,6 +3,7 @@
 
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
@@ -14,8 +15,11 @@ import {
   MessageSquare,
   Clock,
   Link2,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ChevronRight,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ChevronDown,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ChevronUp,
   Home,
   Shuffle,

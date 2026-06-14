@@ -171,6 +171,7 @@ export function GovernmentBuilderWithPreview({
     };
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const overview = getGovernmentOverview();
   const trendData = getBudgetTrendData();
 
@@ -219,6 +220,7 @@ export function GovernmentBuilderWithPreview({
             <GovernmentBuilder
               initialData={currentGovernmentData || undefined}
               onChange={handleGovernmentChange}
+              // eslint-disable-next-line unused-imports/no-unused-vars
               onSave={async (structure) => {
                 // This will be handled by the parent component
               }}

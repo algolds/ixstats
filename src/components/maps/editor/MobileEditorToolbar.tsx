@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Plus, X, MapPin, Hexagon, Landmark, FileUp, List } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 

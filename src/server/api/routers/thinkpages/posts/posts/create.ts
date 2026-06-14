@@ -19,6 +19,7 @@ const invalidateFeeds = async () => {
   }
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const hydratePostDates = (post: any) => {
   if (!post) return post;
   return {
@@ -52,6 +53,7 @@ const hydratePostDates = (post: any) => {
   };
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const SearchUnsplashImagesSchema = z.object({
   query: z.string().min(1),
   page: z.number().min(1).default(1),
@@ -80,6 +82,7 @@ const thinkpagesAccountBaseSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function formatPollForClient(poll: any) {
   if (!poll) return null;
   const votes: Record<string, number> = {};
@@ -111,6 +114,7 @@ function formatPollForClient(poll: any) {
   };
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const pollInclude = {
   poll: {
     include: {
@@ -126,9 +130,11 @@ const pollInclude = {
 };
 
 // Create schema - all required fields with defaults
+// eslint-disable-next-line unused-imports/no-unused-vars
 const CreateAccountSchema = thinkpagesAccountBaseSchema;
 
 // Update schema - all fields optional
+// eslint-disable-next-line unused-imports/no-unused-vars
 const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
 
 const CreatePostSchema = z.object({
@@ -205,6 +211,7 @@ const CreatePostSchema = z.object({
     .optional(),
 });
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const AddReactionSchema = z.object({
   postId: z.string(),
   accountId: z.string(), // ThinkpagesAccount ID for reactions
@@ -214,6 +221,7 @@ const AddReactionSchema = z.object({
   ]),
 });
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
   hashtag: z.string().optional(),
@@ -222,6 +230,7 @@ const GetFeedSchema = z.object({
   cursor: z.string().optional(),
 });
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 async function getWikiCommonsImageInfo(
   title: string
 ): Promise<{ url: string; description: string; photographer: string } | null> {

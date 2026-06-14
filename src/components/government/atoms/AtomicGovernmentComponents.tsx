@@ -15,6 +15,7 @@
 
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Save,
@@ -86,6 +87,7 @@ export function AtomicGovernmentComponents({
 }: AtomicGovernmentComponentsProps) {
   // Fetch component data from database (with fallback)
   const {
+    // eslint-disable-next-line unused-imports/no-unused-vars
     components: componentData,
     isLoading: componentsLoading,
     isUsingFallback,

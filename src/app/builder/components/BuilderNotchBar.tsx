@@ -255,6 +255,7 @@ export function BuilderNotchBar({
       ];
     }
     return [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, mode]);
 
   const steps = useMemo(() => {

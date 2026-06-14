@@ -55,11 +55,13 @@ interface NetworkVisualizationProps {
 export default function NetworkVisualization({
   countryId,
   countryName,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   embassies,
   relationships,
   width = 800,
   height = 600,
   showDataFlows = true,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   filterType = "all",
 }: NetworkVisualizationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -210,6 +212,7 @@ export default function NetworkVisualization({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, width, height]);
 
   // Draw network on canvas

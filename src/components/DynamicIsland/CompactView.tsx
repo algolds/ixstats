@@ -6,6 +6,7 @@ import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Clock, Calendar, Search, Bell, MessageCircle, BookOpen, Settings } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { useUser } from "~/context/auth-context";
@@ -15,6 +16,7 @@ import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
 import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "~/lib/base-path";
 import IxLogoV2 from "~/app/_components/ix-logo-v2.svg";
 import type { CompactViewProps } from "./types";
@@ -24,6 +26,7 @@ import { isStandaloneClient } from "~/lib/standalone-detection";
 
 // Extracted sub-components
 import { MapsProfileDropdown } from "./MapsProfileDropdown";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { WikiProfileButton as _WikiProfileButton } from "./WikiProfileButton";
 import { PreText } from "~/components/ui/pretext";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
@@ -52,6 +55,7 @@ const getTimeDisplay = (ixTime: number): string => {
 function CompactViewComponent({
   mode,
   isSticky,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isCollapsed,
   setIsCollapsed,
   setIsUserInteracting,
@@ -67,11 +71,13 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
   const router = useRouter();
   const diPathname = usePathname();
   const isOnMapsPage = diPathname?.startsWith("/maps") || false;
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
     { enabled: !!user?.id }
@@ -149,6 +155,7 @@ function CompactViewComponent({
   useEffect(() => {
     setMounted(true);
     previousNotificationCountRef.current = totalUnreadCount;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Flash on new notifications

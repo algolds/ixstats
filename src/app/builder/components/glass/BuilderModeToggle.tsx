@@ -12,6 +12,7 @@ interface BuilderModeToggleProps {
 }
 
 export function BuilderModeToggle({ mode, onModeChange, className }: BuilderModeToggleProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const toggleMode = () => {
     onModeChange(mode === "basic" ? "advanced" : "basic");
   };

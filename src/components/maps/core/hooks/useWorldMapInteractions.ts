@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useEffect, useCallback, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
@@ -29,7 +30,9 @@ export function useWorldMapInteractions({
   map,
   isLoaded,
   layers,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   overlayVisibility,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   labelsVisible,
   geographyFilter,
   topCountryNames,

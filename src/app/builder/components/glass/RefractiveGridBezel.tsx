@@ -16,6 +16,7 @@ export function RefractiveGridBezel({ countryCount, children }: RefractiveGridBe
   useEffect(() => {
     if (!containerRef.current) return;
     const resizeObserver = new ResizeObserver((entries) => {
+      // eslint-disable-next-line prefer-const
       for (let entry of entries) {
         const { inlineSize, blockSize } = entry.borderBoxSize?.[0] || {
           inlineSize: entry.contentRect.width,

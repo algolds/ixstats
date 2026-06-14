@@ -77,6 +77,7 @@ export function GlobalNotificationProvider({ children }: { children: React.React
 
       return id;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 

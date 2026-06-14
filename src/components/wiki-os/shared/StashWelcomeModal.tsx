@@ -13,6 +13,7 @@ import {
   Sparkles,
   Info,
   Clock,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   HelpCircle,
   Eye,
   FolderOpen,
@@ -20,6 +21,7 @@ import {
   StickyNote,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { WIKIOS_VERSION, STASHES_WELCOME_VERSION } from "~/lib/buildVersion";
 
 const STORAGE_KEY = "wikios-stashes-welcome-seen";

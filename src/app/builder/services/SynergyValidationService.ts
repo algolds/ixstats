@@ -746,11 +746,13 @@ export class SynergyValidationService {
     ];
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private findSlowestTest(testSuites: ValidationTestSuite[]): string {
     // Mock implementation - in real scenario would track actual timing
     return "economy-economy-synergies";
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private findFastestTest(testSuites: ValidationTestSuite[]): string {
     // Mock implementation - in real scenario would track actual timing
     return "edge-cases-boundaries";

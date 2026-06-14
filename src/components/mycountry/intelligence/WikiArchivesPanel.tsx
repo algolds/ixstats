@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -178,6 +179,7 @@ function SectionCard({
 // ─── Main Panel ──────────────────────────────────────────────────────────────
 
 export const WikiArchivesPanel = memo(function WikiArchivesPanel({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
   countryName,
 }: WikiArchivesPanelProps) {

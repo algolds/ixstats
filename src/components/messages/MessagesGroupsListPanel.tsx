@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Search, Users, Plus, Loader2, Compass } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";

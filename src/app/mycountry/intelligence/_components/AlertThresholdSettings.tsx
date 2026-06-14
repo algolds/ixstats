@@ -184,6 +184,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
   };
 
   const availableMetrics = METRIC_NAMES[formData.alertType] || [];
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const selectedMetric = availableMetrics.find((m) => m.value === formData.metricName);
 
   return (

@@ -14,12 +14,14 @@ import { IxTime } from "~/lib/ixtime";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function simpleHash(seasonId: string, matchDay: number, matchIndex: number): number {
   return (
     seasonId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + matchDay * 7 + matchIndex
   );
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number): number {
   return (
     leagueId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 17 +
@@ -28,6 +30,7 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
   );
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
   if (!team.nationId) return undefined;
 
@@ -69,6 +72,7 @@ const careerStageMultiplier: Record<string, number> = {
   retired: 0,
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function computeTeamRatingVector(
   players: Array<{
     isActive: boolean;

@@ -61,18 +61,9 @@ export function PreText({
   // Check if children is a plain string
   const isStringChild = typeof children === "string";
 
-  // Short-circuit for nowrap to avoid layout loop on flex containers
-  if (whiteSpace === "nowrap") {
-    return (
-      <span className={cn("inline-block max-w-full truncate text-inherit", className)}>
-        {children}
-      </span>
-    );
-  }
-
   // Prepare the text segments (client-only precomputation)
   const prepared: PreparedTextWithSegments | null = useMemo(() => {
-    if (!isMounted || !isStringChild) return null;
+    if (!isMounted || !isStringChild || whiteSpace === "nowrap") return null;
     try {
       return prepareWithSegments(children as string, font, {
         whiteSpace,
@@ -95,6 +86,15 @@ export function PreText({
       return null;
     }
   }, [prepared, width, lineHeight]);
+
+  // Short-circuit for nowrap to avoid layout loop on flex containers
+  if (whiteSpace === "nowrap") {
+    return (
+      <span className={cn("inline-block max-w-full truncate text-inherit", className)}>
+        {children}
+      </span>
+    );
+  }
 
   if (!isStringChild) {
     // Fallback: render children normally if they are React Elements

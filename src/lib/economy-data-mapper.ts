@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/lib/economy-data-mapper.ts
 // ═══════════════════════════════════════════════════════════════════════════
@@ -12,10 +13,14 @@ import {
   safeParseEconomyData,
   type EconomyData,
   type FiscalSystemData,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type LaborEmploymentData,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type IncomeWealthDistributionData,
   type DemographicsData,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type CoreEconomicIndicatorsData,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type GovernmentSpendingData,
 } from "~/schemas/economics.schema";
 

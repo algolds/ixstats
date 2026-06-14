@@ -97,6 +97,7 @@ export function MapSearchOverlay({
     return Object.entries(groups);
   }, [results]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const flatResults = results ?? [];
 
   // Close on outside click

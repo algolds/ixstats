@@ -85,6 +85,7 @@ export function AtomicDashboard({
   allowEdit = true,
   className,
 }: AtomicDashboardProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { state, getSystemHealth } = useAtomicState();
   const { selectedComponents, effectivenessScore, setSelectedComponents } = useAtomicComponents();
   const { systemHealth, realTimeMetrics } = useAtomicAnalytics();

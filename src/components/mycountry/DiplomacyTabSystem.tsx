@@ -19,6 +19,7 @@ interface DiplomacyTabSystemProps {
 }
 
 export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { user } = useUser();
   const { country } = useMyCountryUnifiedData();
   const [activeTab, setActiveTab] = useState("network");

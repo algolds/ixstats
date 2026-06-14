@@ -78,6 +78,7 @@ export function useCountryImage({
   // Stable key from country data
   const cacheKey = useMemo(
     () => (countryData ? getCacheKey(context, countryData) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       context,
       countryData?.continent,

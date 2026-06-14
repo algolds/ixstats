@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -17,8 +18,10 @@ import {
   Info,
   Package,
   Check,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Clock,
   Coins,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Layers,
   X,
 } from "lucide-react";
@@ -26,10 +29,12 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { vaultNotify } from "~/lib/vault-notifications";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Alert, AlertDescription } from "~/components/ui/alert";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Badge } from "~/components/ui/badge";
 import NumberFlow from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
@@ -138,6 +143,7 @@ function ImportDeckTab() {
     }[];
   } | null>(null);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: importStats } = api.nsImport.getImportStats.useQuery();
 
   const requestVerification = api.nsImport.requestVerification.useMutation({

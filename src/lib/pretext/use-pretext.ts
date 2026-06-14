@@ -33,7 +33,6 @@ export type {
 const isBrowser = typeof window !== "undefined";
 
 function getPretext() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require("@chenglou/pretext") as typeof import("@chenglou/pretext");
 }
 

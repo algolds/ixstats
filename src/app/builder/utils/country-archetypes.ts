@@ -1,4 +1,5 @@
 import {
+  // eslint-disable-next-line unused-imports/no-unused-imports
   DollarSign,
   TrendingUp,
   BarChart3,
@@ -7,7 +8,9 @@ import {
   Globe, // For continents
   Users, // For population tiers
   Banknote, // For region
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Scale, // For legal systems
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Shield, // For military/security
   Vote, // For democratic systems
   Gavel, // For judicial systems

@@ -3,12 +3,14 @@
 
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bold, Italic, Link2, ImageIcon, Quote, Code, Send, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 
 interface ThreadComposerProps {

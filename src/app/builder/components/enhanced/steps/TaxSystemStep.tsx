@@ -25,6 +25,7 @@ export function TaxSystemStep({
   activeTaxSystemData,
   economicInputs,
   economyBuilder,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   selectedComponents,
   governmentBuilderData,
   onUpdate,

@@ -14,6 +14,7 @@ import {
 import { Building2, Crown, Scale, Users, Briefcase, Link2, Link2Off } from "lucide-react";
 import type { GovernmentStructureInput, GovernmentType } from "~/types/government";
 import { safeFormatCurrency } from "~/lib/format-utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { CurrencySelector } from "~/components/ui/currency-selector";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
@@ -202,6 +203,7 @@ export function GovernmentStructureForm({
     [onChange]
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const formatCurrency = (amount: number) => {
     return safeFormatCurrency(amount, data.budgetCurrency || "USD", false, "USD");
   };

@@ -55,6 +55,7 @@ export const economyProcedures = {
           },
           include: includeObject,
         });
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (dbError) {
         const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({

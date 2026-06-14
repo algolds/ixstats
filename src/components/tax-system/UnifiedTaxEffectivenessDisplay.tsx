@@ -107,6 +107,7 @@ export function UnifiedTaxEffectivenessDisplay({
     // Get atomic tax effectiveness from government components
     const componentTypes = governmentComponents.map((c) => c.type);
     const atomicEffectiveness = calculateAtomicTaxEffectiveness(componentTypes, baseTaxSystem);
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const recommendations = getAtomicTaxRecommendations(componentTypes);
 
     // Calculate tax component contribution
@@ -116,6 +117,7 @@ export function UnifiedTaxEffectivenessDisplay({
         : 0;
 
     // Calculate economic impact
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const baseGDP = economicData?.nominalGDP || 1000000000;
     const baseGrowth = economicData?.realGDPGrowthRate || 0.03;
     const baseInequality = economicData?.giniCoefficient || 40;

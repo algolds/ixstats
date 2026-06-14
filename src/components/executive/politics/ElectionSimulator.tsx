@@ -75,6 +75,7 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
   );
 
   // Multi-chamber tabs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const chambers = parliament?.legislature?.chambers ?? [];
   const [activeChamberTab, setActiveChamberTab] = useState<string>("");
 
@@ -86,6 +87,7 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
     } else {
       setActiveChamberTab("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chambers]);
 
   // Dynamically filter seats and aggregate summary for the active chamber tab

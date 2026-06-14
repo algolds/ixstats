@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Badge } from "~/components/ui/badge";
 import {
+  // eslint-disable-next-line unused-imports/no-unused-imports
   CheckCircle,
   AlertCircle,
   ArrowUpRight,
@@ -44,6 +45,7 @@ interface SectorCardProps {
 }
 
 export function SectorCard({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   sectorId,
   template,
   isActive,

@@ -49,6 +49,7 @@ interface ChartLabelEntry {
 }
 
 // Custom label renderer for bar values
+// eslint-disable-next-line unused-imports/no-unused-vars
 function renderCustomLabel(entry: ChartLabelEntry, formatValue?: (value: number) => string) {
   if (!entry || entry.value === undefined || entry.value === null) return null;
 
@@ -142,6 +143,7 @@ export function EnhancedBarChart({
   formatLabel,
   maxBars = 20,
 }: EnhancedBarChartProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { theme: resolvedTheme, colors: themeColors, cssVars } = useSectionTheme(sectionId, theme);
 
   // Generate section-appropriate colors
@@ -189,6 +191,7 @@ export function EnhancedBarChart({
       }
       return color;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colors, yKey, sectionId, resolvedTheme, data.length]);
 
   // Process and limit data if needed
@@ -229,6 +232,7 @@ export function EnhancedBarChart({
     });
 
     // Filter out any items that might still have invalid data
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const validData = sanitizedData.filter((item, index) => {
       if (Array.isArray(yKey)) {
         const isValid = yKey.every((key) => {
@@ -259,6 +263,7 @@ export function EnhancedBarChart({
     });
 
     return sorted.slice(0, maxBars);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, maxBars, yKey, xKey, title]);
 
   // Check if we have valid data to render

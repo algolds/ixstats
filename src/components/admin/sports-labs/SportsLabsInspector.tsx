@@ -49,6 +49,7 @@ import {
   Briefcase,
   TrendingUp,
 } from "lucide-react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface SportsLabsInspectorProps {
@@ -488,9 +489,9 @@ export function SportsLabsInspector({
                       <p className="font-semibold">
                         {p.firstName} {p.lastName}
                       </p>
-                      <p className="text-muted-foreground text-[10px] flex items-center gap-1">
+                      <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
                         <PositionTooltip position={p.position}>
-                          <span className="cursor-help hover:text-foreground transition-colors font-medium">
+                          <span className="hover:text-foreground cursor-help font-medium transition-colors">
                             {p.position}
                           </span>
                         </PositionTooltip>{" "}
@@ -632,9 +633,9 @@ export function SportsLabsInspector({
                       <p className="font-semibold">
                         {p.firstName} {p.lastName}
                       </p>
-                      <p className="text-muted-foreground text-[10px] flex items-center gap-1">
+                      <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
                         <PositionTooltip position={p.position}>
-                          <span className="cursor-help hover:text-foreground transition-colors font-medium">
+                          <span className="hover:text-foreground cursor-help font-medium transition-colors">
                             {p.position}
                           </span>
                         </PositionTooltip>{" "}
@@ -1437,18 +1438,17 @@ export function SportsLabsInspector({
                   <span className="text-foreground font-semibold">
                     {p.player?.firstName} {p.player?.lastName}
                   </span>
-                  <p className="text-muted-foreground text-[9px] flex items-center gap-1">
+                  <p className="text-muted-foreground flex items-center gap-1 text-[9px]">
                     {p.player?.position ? (
                       <PositionTooltip position={p.player.position}>
-                        <span className="cursor-help hover:text-foreground transition-colors font-medium">
+                        <span className="hover:text-foreground cursor-help font-medium transition-colors">
                           {p.player.position}
                         </span>
                       </PositionTooltip>
                     ) : (
                       "-"
                     )}{" "}
-                    &middot; Rating:{" "}
-                    {p.player ? getPlayerOverall(p.player.ratings) : "-"}
+                    &middot; Rating: {p.player ? getPlayerOverall(p.player.ratings) : "-"}
                   </p>
                 </div>
                 <Badge variant="outline">{p.team.name}</Badge>

@@ -524,6 +524,7 @@ const IMAGE_FIELDS = new Set<string>([
 function extractFilename(value: string): string {
   if (!value) return "";
   // Trim comments first
+  // eslint-disable-next-line prefer-const
   let clean = value.replace(/<!--[\s\S]*?-->/g, "").trim();
 
   // If it's an external URL, return as is

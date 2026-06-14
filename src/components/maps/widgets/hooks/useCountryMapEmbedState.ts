@@ -24,12 +24,14 @@ export function useCountryMapEmbedState({
   const highlightCountryIdsStr = JSON.stringify(highlightCountryIds);
   const highlightIdsMemo = useMemo(
     () => new Set(highlightCountryIds || []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [highlightCountryIdsStr]
   );
 
   const highlightCountryNamesStr = JSON.stringify(highlightCountryNames);
   const highlightNamesMemo = useMemo(
     () => new Set(highlightCountryNames || []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [highlightCountryNamesStr]
   );
 

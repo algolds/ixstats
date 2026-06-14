@@ -5,6 +5,7 @@
  */
 
 import { CardRarity } from "~/lib/card-enums";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { CardType } from "~/lib/card-enums";
 import type {
   CardInstance,
@@ -16,6 +17,7 @@ import type {
 } from "~/types/cards-display";
 import {
   getBaseStatDefs,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   getBaseStatDef,
   getSpecialStatsForType,
   STAT_PROGRESSION,
@@ -342,6 +344,7 @@ export function formatCardStats(card: CardInstance): FormattedStats {
  * @param size - Card display size
  * @returns Tailwind aspect ratio class
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function getCardAspectRatio(size: CardDisplaySize): string {
   // All sizes maintain the standard trading card aspect ratio
   return "aspect-[2.5/3.5]";

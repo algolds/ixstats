@@ -13,6 +13,7 @@
 import { type PrismaClient } from "@prisma/client";
 import { getAchievementById, type ExtendedAchievementData } from "./achievement-definitions";
 import { vaultService } from "./vault-service";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { getCardRewardForAchievement, hasCardReward } from "./achievement-card-rewards";
 import { awardAchievementCard } from "./card-service";
 import { eventBus } from "./event-bus";

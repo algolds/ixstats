@@ -11,6 +11,7 @@ import {
   Globe,
   TrendingUp,
   Building2,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Users,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -27,6 +28,7 @@ import { safeGetItemSync, safeSetItemSync } from "~/lib/localStorageMutex";
 import {
   archetypes,
   consolidatedCategories,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type ConsolidatedCategory,
 } from "../utils/country-archetypes";
 

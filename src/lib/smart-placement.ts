@@ -46,6 +46,7 @@ function polygonCentroid(coords: number[][]): [number, number] {
 export function getSuggestedPlacements(
   mode: string,
   features: FeatureInput[],
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryBbox?: [number, number, number, number]
 ): PlacementSuggestion[] {
   const suggestions: PlacementSuggestion[] = [];

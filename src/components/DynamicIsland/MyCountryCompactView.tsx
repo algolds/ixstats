@@ -47,10 +47,13 @@ interface VitalMetric {
 function MyCountryCompactViewComponent({
   section,
   isSticky,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isCollapsed,
   setIsCollapsed,
   setIsUserInteracting,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   timeDisplayMode,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   setTimeDisplayMode,
   onSwitchMode,
   onToggleDIMode,
@@ -81,6 +84,7 @@ function MyCountryCompactViewComponent({
   const notifications = useNotificationStore((state) => state.notifications);
   const { getStats } = useGlobalNotificationBridge();
   const { unreadCount: executiveUnreadCount, isExecutiveMode } = useExecutiveNotifications();
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const bridgeStats = getStats();
 
   const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(

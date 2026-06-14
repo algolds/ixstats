@@ -22,6 +22,7 @@ import {
   Guitar,
   Star,
   Image,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   X,
 } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
@@ -48,34 +49,42 @@ export const CultureForm = React.memo(
     // Memoize all change handlers with empty deps since parent callback is stable
     const handleMottoChange = useCallback((value: any) => {
       onIdentityChange("motto", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleMottoNativeChange = useCallback((value: any) => {
       onIdentityChange("mottoNative", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleOfficialLanguagesChange = useCallback((value: string) => {
       onIdentityChange("officialLanguages", value);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleNationalLanguageChange = useCallback((value: string) => {
       onIdentityChange("nationalLanguage", value);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleNationalAnthemChange = useCallback((value: any) => {
       onIdentityChange("nationalAnthem", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleNationalReligionChange = useCallback((value: any) => {
       onIdentityChange("nationalReligion", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleNationalDayChange = useCallback((value: any) => {
       onIdentityChange("nationalDay", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleNationalSportChange = useCallback((value: any) => {
       onIdentityChange("nationalSport", String(value));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleCurrencyChange = useCallback(

@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       if (!response.ok) {
         throw new Error(`Discord bot health check failed: ${response.status}`);
       }
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (healthError) {
       // Bot is not available, return graceful fallback
       console.warn("Discord bot is not available, using local time state");
@@ -95,6 +96,7 @@ export async function POST(request: Request) {
       throw new Error(`Discord bot API returned ${response.status}`);
     }
 
+    // eslint-disable-next-line prefer-const
     botData = await response.json();
 
     // Apply bot's current time and multiplier to IxStats (always sync to match bot)

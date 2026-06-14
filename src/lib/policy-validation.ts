@@ -137,6 +137,7 @@ export function validatePolicyStep1(
  * @param department - Selected department (optional)
  * @returns Validation result (always valid)
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function validatePolicyStep2(department: string | null | undefined): ValidationResult {
   return {
     valid: true,

@@ -41,10 +41,9 @@ interface DraftPicksViewProps {
   className?: string;
 }
 
-
-
 export function DraftPicksView({
   picks,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isSoccer = false,
   onTeamClick,
   className,

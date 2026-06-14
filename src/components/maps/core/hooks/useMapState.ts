@@ -1,7 +1,9 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { ProjectionMode, MapLayerType } from "~/lib/map-config";
 import type { OverlayVisibility } from "../IxWorldMap";
 import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/overlay-registry";
@@ -22,9 +24,11 @@ interface UseMapStateProps {
 
 export function useMapState({
   userCountryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isAdmin,
   onCountrySelect,
   mapRef,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   measureToolRef,
   mapLayers,
   layerDataMap,

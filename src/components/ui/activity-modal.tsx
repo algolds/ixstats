@@ -48,6 +48,7 @@ interface ActivityPopoverProps {
 
 export function ActivityPopover({
   open,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   anchorEl,
   onClose,
   countryData,

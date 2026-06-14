@@ -58,7 +58,7 @@ bun run db:sync:prod-to-dev    # pull production snapshot into local
 |-------|----------|-------|
 | Pages | `src/app/` | Next.js 16.2 App Router, 187 routes |
 | Components | `src/components/` | 893+ UI components (Facet glass design system) |
-| API (tRPC) | `src/server/api/routers/` | 83 routers, 1,329 endpoints; register new ones in `root.ts` |
+| API (tRPC) | `src/server/api/routers/` | **87 routers** (52 split into subdirs via `mergeRouters`, 24 flat), **1,376 procedures**; register new ones in `root.ts` |
 | Database | `prisma/schema/` | 237 models across 12 `.prisma` files |
 | Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers |
 | Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
@@ -99,7 +99,7 @@ Routers must only: define endpoints, validate input, call service layer, return 
 - `src/lib/production-optimizations.ts` — production optimization config
 
 **API Layer:**
-- `src/server/api/root.ts` — tRPC root router (registers all 83 routers with `safeRouter()` wrapper)
+- `src/server/api/root.ts` — tRPC root router (registers all 87 routers with `safeRouter()` wrapper)
 - `src/server/api/routers/` — flat `.ts` files + `geo/`, `diplomacy/`, `intelligence/`, `countries/`, `admin/`, `activities/`, `sports/`, `thinkpages/`, `security/` subdirectories
 - `src/server/api/trpc.ts` — exports `createTRPCRouter`, `mergeRouters`, `publicProcedure`, `protectedProcedure`
 
@@ -165,7 +165,7 @@ Large flat routers are split into a domain subdirectory and recombined with `mer
 
 ## Platform & Versioning
 
-Current release: **IxStates 1.0 "Ogma"** (channel: Alpha). Version source of truth: `src/lib/buildVersion.ts`. After any major change, check `docs/reference/revision.md` and ask whether the platform version, component capability integer, channel, or changelog need updating.
+Current release: **IxStates 1.0.6 "Ogma"** (channel: Alpha). Version source of truth: `src/lib/buildVersion.ts`. After any major change, check `docs/reference/revision.md` and ask whether the platform version, component capability integer, channel, or changelog need updating.
 
 **Apps** (independent capability integer): IxWorld, WikiOS (with Canvas), IxVault  
 **Engines** (sim cores): MyCountry, Concord (time/diplomacy/crises/NPCs), Atlas (geo/worldgen)  

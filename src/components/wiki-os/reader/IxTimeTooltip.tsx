@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/reader/IxTimeTooltip.tsx
 // IxTime date display with tooltip showing IxTime equivalent.

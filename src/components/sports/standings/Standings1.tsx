@@ -167,18 +167,31 @@ export default function Standings1({
                   </td>
                   <td className="px-4 py-3 text-end whitespace-nowrap">
                     <div className="flex flex-col items-end gap-1.5">
-                      <span className={cn("text-xs font-bold", diff > 0 ? "text-emerald-500" : diff < 0 ? "text-rose-500" : "text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          "text-xs font-bold",
+                          diff > 0
+                            ? "text-emerald-500"
+                            : diff < 0
+                              ? "text-rose-500"
+                              : "text-muted-foreground"
+                        )}
+                      >
                         {diffStr}
                       </span>
                       <div className="flex h-1.5 w-12 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                         <div
-                          className="bg-emerald-500 h-full transition-all"
-                          style={{ width: `${Math.min(100, Math.max(0, (team.pointsFor / (team.pointsFor + team.pointsAgainst || 1)) * 100))}%` }}
+                          className="h-full bg-emerald-500 transition-all"
+                          style={{
+                            width: `${Math.min(100, Math.max(0, (team.pointsFor / (team.pointsFor + team.pointsAgainst || 1)) * 100))}%`,
+                          }}
                           title={`${team.pointsFor} Points For`}
                         />
                         <div
-                          className="bg-rose-500 h-full transition-all"
-                          style={{ width: `${Math.min(100, Math.max(0, (team.pointsAgainst / (team.pointsFor + team.pointsAgainst || 1)) * 100))}%` }}
+                          className="h-full bg-rose-500 transition-all"
+                          style={{
+                            width: `${Math.min(100, Math.max(0, (team.pointsAgainst / (team.pointsFor + team.pointsAgainst || 1)) * 100))}%`,
+                          }}
                           title={`${team.pointsAgainst} Points Against`}
                         />
                       </div>

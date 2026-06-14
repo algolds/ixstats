@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -39,27 +40,47 @@ import {
   ChevronDown,
   Plus,
   Edit2,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Trash2,
   History,
   Sparkles,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Cpu,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Crown,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   BookOpen,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Database,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   TrendingUp,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Award,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Flame,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Shield,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Star,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Zap,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Gift,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Coins,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Heart,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Palette,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Wrench,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Gauge,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Lock,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Compass,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Trophy,
   Loader2,
   ToggleLeft,
@@ -72,6 +93,7 @@ export function VaultStoreControl() {
   const utils = api.useUtils();
 
   // Queries
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: items, isLoading, refetch } = api.vault.adminListStoreItemsAll.useQuery();
 
   // Dialog States

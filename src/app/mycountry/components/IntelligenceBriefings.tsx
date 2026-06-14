@@ -490,9 +490,11 @@ export function IntelligenceBriefings({
   const [activeTab, setActiveTab] = useState<
     "all" | "hot_issue" | "opportunity" | "risk_mitigation" | "strategic_initiative"
   >("all");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [priorityFilter, setPriorityFilter] = useState<DataPriority[]>(filterPriority);
 
   // Fetch atomic intelligence recommendations
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: atomicRecommendations, isLoading: atomicLoading } =
     api.countries.getAtomicIntelligenceRecommendations.useQuery(
       { countryId: countryId! },

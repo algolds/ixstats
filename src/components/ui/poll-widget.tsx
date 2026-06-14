@@ -284,6 +284,7 @@ export function PollWidgetRoot({
   // Animation state
   const [animationPhase, setAnimationPhase] = useState<PollWidgetAnimationPhase>("idle");
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const selected = selectedArray ?? [];
 
   const totalVotes = useMemo(

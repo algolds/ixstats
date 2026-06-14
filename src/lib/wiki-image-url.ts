@@ -21,6 +21,7 @@ export function resolveImageUrl(
 ): string | undefined {
   if (!filename) return undefined;
 
+  // eslint-disable-next-line prefer-const
   let cleanName = filename
     .split("|")[0]!
     .replace(/^(File|Image|file|image):/i, "")

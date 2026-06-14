@@ -116,7 +116,9 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   const issueCount = pendingIssues?.total ?? 0;
   const urgentCount = pendingIssues?.urgent ?? 0;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const activePolicies = policies?.filter((p) => p.status === "active").length ?? 0;
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const totalPolicies = policies?.length ?? 0;
   const pendingActions =
     meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;

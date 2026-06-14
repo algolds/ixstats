@@ -99,6 +99,7 @@ export function extractDefenseBudget(
 export function syncDefenseBudgetToGovernment(
   defenseBudget: DefenseBudgetData,
   governmentStructure: GovernmentStructure,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   militaryBranches: MilitaryBranch[]
 ): Partial<GovernmentStructure> {
   const defenseDepts = findDefenseDepartments(governmentStructure);

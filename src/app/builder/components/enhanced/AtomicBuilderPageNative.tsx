@@ -95,6 +95,7 @@ export function AtomicBuilderPageNative({
       return unsubscribe;
     }
     return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - subscribe once only
 
   // Generate country profile from inputs and reference country

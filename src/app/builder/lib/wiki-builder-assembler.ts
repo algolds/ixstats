@@ -4,6 +4,7 @@
  */
 
 import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { ComponentType } from "~/lib/enums";
 import type {
   EconomicInputs,
@@ -13,6 +14,7 @@ import type {
   FiscalSystemData,
   IncomeWealthData,
   DemographicData,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   GeographyData,
 } from "../lib/economy-data-service";
 import type {
@@ -24,6 +26,7 @@ import type {
 } from "~/types/government";
 import type { GovernmentSpendingData } from "~/types/economics";
 import type { EconomyBuilderState } from "~/types/economy-builder";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { ExtractedBuilderData } from "./wiki-data-extractor";
 import type { WikiGovernmentAttributes } from "./wiki-government-parser";
 import type { WikiEconomyAttributes } from "./wiki-economy-parser";
@@ -451,6 +454,7 @@ function createRevenueSourcesFromParsed(
 function calculateCompleteness(
   infobox: UnifiedInfoboxData,
   matchResult: MatchResult,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   departments: ParsedDepartment[]
 ): Record<string, number> {
   const identityFields = [

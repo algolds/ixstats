@@ -11,6 +11,7 @@ export async function syncAchievements(db: PrismaClient): Promise<void> {
     const credits = getCreditsForRarity(def.rarity);
 
     // Rewards JSON structure
+    // eslint-disable-next-line prefer-const
     let rewards: any = {
       credits,
       cardIds: cardId ? [cardId] : [],

@@ -64,12 +64,14 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
     notificationsEnabled = true,
     onDataChange,
     onError,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onStatusChange,
   } = options;
 
   const { addNotification } = useGlobalNotifications();
 
   // Data notification helpers for creating standardized notifications
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const useDataNotifications = () => ({
     createEconomicAlert: async (data: {
       metric: string;
@@ -109,6 +111,7 @@ export function useDataSync(countryId: string, options: DataSyncOptions = {}) {
   const processDataUpdateRef = useRef<(data: CountryDashboardData) => void>(() => {});
 
   // Stable timestamp to prevent infinite re-renders
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [stableTimestamp] = useState(() => IxTime.getCurrentIxTime());
 
   // TRPC queries and mutations - using MyCountry API for enhanced data

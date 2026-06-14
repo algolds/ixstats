@@ -211,5 +211,5 @@ export const lorewardsCalendarsRouter = createTRPCRouter({
       }
 
       return calendar;
-    })
+    }),
 });

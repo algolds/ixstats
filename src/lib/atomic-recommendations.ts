@@ -618,6 +618,7 @@ export class AtomicRecommendationEngine {
     };
 
     // Find which group the component belongs to
+    // eslint-disable-next-line unused-imports/no-unused-vars
     for (const [groupName, components] of Object.entries(alternativeGroups)) {
       if (components.includes(component)) {
         // Return other components in the same group that aren't already selected

@@ -13,6 +13,7 @@ type Color = {
 };
 
 // Mock parseColor function - replace with actual implementation
+// eslint-disable-next-line unused-imports/no-unused-vars
 const parseColor = (value: string): Color => {
   throw new Error(
     "parseColor not implemented - install react-aria-components or use alternative color library"

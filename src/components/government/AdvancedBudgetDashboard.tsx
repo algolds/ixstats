@@ -199,6 +199,7 @@ export function AdvancedBudgetDashboard({
   isReadOnly = false,
 }: AdvancedBudgetDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedScenario, setSelectedScenario] = useState<string>("");
   const [budgetOptimization, setBudgetOptimization] = useState<
     "EFFICIENCY" | "GROWTH" | "STABILITY"
@@ -280,6 +281,7 @@ export function AdvancedBudgetDashboard({
     return formatCompactCurrency(amount, "N/A", currency);
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleCategoryUpdate = (categoryId: string, updates: Partial<BudgetCategory>) => {
     if (isReadOnly || !onBudgetChange) return;
 

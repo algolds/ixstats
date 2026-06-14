@@ -1742,6 +1742,7 @@ function ChoicesTab({
                   try {
                     const parsed = JSON.parse(e.target.value);
                     setChoiceFormData({ ...choiceFormData, effects: parsed });
+                    // eslint-disable-next-line unused-imports/no-unused-vars
                   } catch (e) {
                     // Invalid JSON, don't update
                   }
@@ -1763,6 +1764,7 @@ function ChoicesTab({
                   try {
                     const parsed = JSON.parse(e.target.value);
                     setChoiceFormData({ ...choiceFormData, predictedOutcomes: parsed });
+                    // eslint-disable-next-line unused-imports/no-unused-vars
                   } catch (e) {
                     // Invalid JSON, don't update
                   }

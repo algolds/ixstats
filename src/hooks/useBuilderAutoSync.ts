@@ -171,6 +171,7 @@ export function useGovernmentBuilderAutoSync(
         onSyncError(err);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     countryId,
     builderState,
@@ -272,6 +273,7 @@ export function useTaxBuilderAutoSync(
   const createMutation = api.taxSystem.create.useMutation();
   const updateMutation = api.taxSystem.update.useMutation();
   const checkConflictsMutation = api.taxSystem.checkConflicts.useMutation();
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const existingTaxQuery = api.taxSystem.getByCountryId.useQuery(
     { countryId: countryId || "" },
     { enabled: !!countryId, staleTime: 30000 }

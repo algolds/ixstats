@@ -482,6 +482,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         console.warn("Could not extract structured data from template:", extractError);
         // Continue with just the HTML content
       }
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (err) {
       // Silent fallback - no error logging for missing templates
       const fallbackData: FeaturedArticleData = {
@@ -658,6 +659,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
 
   useEffect(() => {
     fetchFeaturedArticle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRefresh = () => {

@@ -70,6 +70,7 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
       };
     }, [isClient, children]);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const getSpeed = (): string => {
       if (typeof speed === "number") {
         return `${speed}s`;
@@ -83,6 +84,7 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
       return speeds[speed];
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const getAnimationName = (): string => {
       if (vertical || direction === "up" || direction === "down") {
         return "marqueeY";
@@ -90,6 +92,7 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
       return "marquee";
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const getAnimationDirection = (): string => {
       if (direction === "right" || direction === "down") {
         return "reverse";

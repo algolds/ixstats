@@ -49,9 +49,11 @@ export function useTaxSystemAutoSync(
   const {
     enabled = true,
     debounceMs = 15000, // 15 seconds
+    // eslint-disable-next-line unused-imports/no-unused-vars
     showConflictWarnings = true,
     onSyncSuccess,
     onSyncError,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onConflictDetected,
   } = options;
 
@@ -70,6 +72,7 @@ export function useTaxSystemAutoSync(
   // API mutations
   const autosaveMutation = api.taxSystem.autosave.useMutation({
     // Optimistic update - show "Saved" immediately before server confirmation
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onMutate: async (newData) => {
       setSyncState((prev) => ({
         ...prev,
@@ -140,6 +143,7 @@ export function useTaxSystemAutoSync(
         clearTimeout(debounceTimerRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taxSystemData, enabled, countryId, debounceMs]);
 
   // Auto-sync handler (avoiding mutation in dependencies)
@@ -157,6 +161,7 @@ export function useTaxSystemAutoSync(
       // Error handling is done in the mutation's onError callback
       console.warn("Tax system autosave failed:", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryId, enabled, taxSystemData]);
 
   // Manual sync function

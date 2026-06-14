@@ -32,7 +32,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { motion, AnimatePresence, useTransform } from "motion/react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
 import useMeasure from "react-use-measure";
 import { cn } from "~/lib/utils";
 import { useSwipePhysics } from "./useSwipePhysics";
@@ -196,6 +196,7 @@ function SwipeableRowRoot({
 
   // Watch for commit state from physics
   const prevState = useRef<SwipeState>("closed");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const current = physics.swipeState.current;
     if (current !== prevState.current) {
@@ -563,6 +564,7 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
     wasDrag,
     toggleExpand,
     isCommitting,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isExpanded,
     springPreset,
     containerWidth,
@@ -750,9 +752,73 @@ export function SwipeActionButton({
   const inlineStyle = isCssColor ? ({ "--btn-color": color } as React.CSSProperties) : undefined;
 
   const context = useContext(RowInternalContext);
+  const _hasContext = !!(context && _index !== undefined && _total !== undefined && _side);
+
+  // Fallback motion value (used when no context — keeps useTransform hooks unconditional)
+  const fallbackSpringX = useMotionValue(0);
+
+  // Safe defaults for hook calls
+  const safeIndex = _index ?? 0;
+  const safeTotal = _total ?? 1;
+  const safeSide: "leading" | "trailing" = _side ?? "leading";
+  const springX = context?.springX ?? fallbackSpringX;
+  const revealPx = context?.thresholdsPx.reveal ?? 0;
+  const emphasizePx = context?.thresholdsPx.emphasize ?? 0;
+  const commitPx = context?.thresholdsPx.commit ?? 0;
+
+  // Let's compute primary button status
+  const isPrimary = safeSide === "leading" ? safeIndex === 0 : safeIndex === safeTotal - 1;
+
+  // Accordion translation
+  const shiftAmount = safeSide === "trailing" ? (safeTotal - 1 - safeIndex) * 68 : -safeIndex * 68;
+
+  // Create springX mappings
+  const x = useTransform(
+    springX,
+    safeSide === "trailing" ? [0, -revealPx, -commitPx] : [0, revealPx, commitPx],
+    [shiftAmount, 0, 0]
+  );
+
+  // Scale and opacity mappings
+  const scale = useTransform(
+    springX,
+    safeSide === "trailing"
+      ? isPrimary
+        ? [0, -revealPx, -emphasizePx, -commitPx]
+        : [0, -revealPx, -emphasizePx, -emphasizePx - 20]
+      : isPrimary
+        ? [0, revealPx, emphasizePx, commitPx]
+        : [0, revealPx, emphasizePx, emphasizePx + 20],
+    isPrimary ? [0.5, 1.0, 1.0, 1.15] : [0.5, 1.0, 1.0, 0.0]
+  );
+
+  const opacity = useTransform(
+    springX,
+    safeSide === "trailing"
+      ? isPrimary
+        ? [0, -revealPx * 0.5, -revealPx]
+        : [0, -revealPx * 0.5, -revealPx, -emphasizePx, -emphasizePx - 20]
+      : isPrimary
+        ? [0, revealPx * 0.5, revealPx]
+        : [0, revealPx, emphasizePx, emphasizePx + 20],
+    isPrimary ? [0, 0.5, 1.0] : [0, 0.5, 1.0, 1.0, 0.0]
+  );
+
+  // Width and MinWidth mappings (only shrink non-primary buttons to 0, primary expands via flex-grow)
+  const widthTransform = useTransform(
+    springX,
+    safeSide === "trailing"
+      ? [0, -emphasizePx, -emphasizePx - 20]
+      : [0, emphasizePx, emphasizePx + 20],
+    [68, 68, 0]
+  );
+
+  const width = isPrimary ? "68px" : widthTransform;
+  const minWidth = isPrimary ? "68px" : widthTransform;
+  const flexGrow = isPrimary ? 1 : 0;
 
   // Fallback if not inside SwipeableRow
-  if (!context || _index === undefined || _total === undefined || !_side) {
+  if (!_hasContext) {
     return (
       <button
         data-swipe-action={id}
@@ -781,62 +847,6 @@ export function SwipeActionButton({
       </button>
     );
   }
-
-  const { springX, thresholdsPx } = context;
-  const revealPx = thresholdsPx.reveal;
-  const emphasizePx = thresholdsPx.emphasize;
-  const commitPx = thresholdsPx.commit;
-
-  // Let's compute primary button status
-  const isPrimary = _side === "leading" ? _index === 0 : _index === _total - 1;
-
-  // Accordion translation
-  const shiftAmount = _side === "trailing" ? (_total - 1 - _index) * 68 : -_index * 68;
-
-  // Create springX mappings
-  const x = useTransform(
-    springX,
-    _side === "trailing" ? [0, -revealPx, -commitPx] : [0, revealPx, commitPx],
-    [shiftAmount, 0, 0]
-  );
-
-  // Scale and opacity mappings
-  const scale = useTransform(
-    springX,
-    _side === "trailing"
-      ? isPrimary
-        ? [0, -revealPx, -emphasizePx, -commitPx]
-        : [0, -revealPx, -emphasizePx, -emphasizePx - 20]
-      : isPrimary
-        ? [0, revealPx, emphasizePx, commitPx]
-        : [0, revealPx, emphasizePx, emphasizePx + 20],
-    isPrimary ? [0.5, 1.0, 1.0, 1.15] : [0.5, 1.0, 1.0, 0.0]
-  );
-
-  const opacity = useTransform(
-    springX,
-    _side === "trailing"
-      ? isPrimary
-        ? [0, -revealPx * 0.5, -revealPx]
-        : [0, -revealPx * 0.5, -revealPx, -emphasizePx, -emphasizePx - 20]
-      : isPrimary
-        ? [0, revealPx * 0.5, revealPx]
-        : [0, revealPx * 0.5, revealPx, emphasizePx, emphasizePx + 20],
-    isPrimary ? [0, 0.5, 1.0] : [0, 0.5, 1.0, 1.0, 0.0]
-  );
-
-  // Width and MinWidth mappings (only shrink non-primary buttons to 0, primary expands via flex-grow)
-  const widthTransform = useTransform(
-    springX,
-    _side === "trailing"
-      ? [0, -emphasizePx, -emphasizePx - 20]
-      : [0, emphasizePx, emphasizePx + 20],
-    [68, 68, 0]
-  );
-
-  const width = isPrimary ? "68px" : widthTransform;
-  const minWidth = isPrimary ? "68px" : widthTransform;
-  const flexGrow = isPrimary ? 1 : 0;
 
   return (
     <motion.button

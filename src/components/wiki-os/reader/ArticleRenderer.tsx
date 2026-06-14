@@ -98,7 +98,9 @@ function WikiOSHeader({
   featuredImageUrl,
   themeColors,
   awardsData,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   tocLength,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onTocClick,
 }: {
   title: string;
@@ -856,9 +858,9 @@ export function ArticleRenderer({
               <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />
             )}
             <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
-
             {/* Render portals into injected placeholder nodes */}
-            {portalTargets.map((target, idx) => {
+            // eslint-disable-next-line unused-imports/no-unused-vars
+            {portalTargets.map((target, _idx) => {
               if (target.type === "coords") {
                 return createPortal(
                   <CoordsPill
@@ -1131,6 +1133,7 @@ function injectPlaceholderElements(html: string): string {
   // 5. Process Template stats anchors e.g. <a href="...Template:MyCountry:field...">
   processed = processed.replace(
     /<a[^>]*href="[^"]*Template(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     (match, templateName, label) => {
       const decoded = safeDecodeURI(templateName);
       if (
@@ -1272,6 +1275,7 @@ function CoordsPill({
 // DynamicStatSpan Component
 // ---------------------------------------------------------------------------
 function DynamicStatSpan({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   placeholderKey,
   data,
 }: {

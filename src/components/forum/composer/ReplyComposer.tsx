@@ -5,6 +5,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Bold, Italic, Link2, ImageIcon, Quote, Code, Send, X } from "lucide-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";

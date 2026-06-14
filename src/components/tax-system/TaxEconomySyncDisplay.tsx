@@ -499,6 +499,7 @@ export function TaxEconomySyncDisplay({
                 value={economicImpact.overallScore}
                 className="h-3"
                 style={{
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                   // @ts-ignore - Custom CSS variable
                   "--progress-background": tierRecommendation.color,
                 }}

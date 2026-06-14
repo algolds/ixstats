@@ -515,6 +515,7 @@ export function monitorThresholds(
 export function detectOpportunities(
   country: Country,
   trends: TrendAnalysis[],
+  // eslint-disable-next-line unused-imports/no-unused-vars
   peerAverages: Record<string, number>
 ): IntelligenceAlert[] {
   const opportunities: IntelligenceAlert[] = [];

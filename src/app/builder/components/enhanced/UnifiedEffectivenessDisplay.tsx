@@ -89,6 +89,7 @@ export function UnifiedEffectivenessDisplay({
     return "text-red-600 dark:text-red-400";
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getScoreBadgeVariant = (score: number) => {
     if (score >= 80) return "default" as const;
     if (score >= 60) return "secondary" as const;
@@ -96,6 +97,7 @@ export function UnifiedEffectivenessDisplay({
     return "destructive" as const;
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getPriorityColor = (priority: "critical" | "high" | "medium" | "low") => {
     switch (priority) {
       case "critical":
@@ -122,6 +124,7 @@ export function UnifiedEffectivenessDisplay({
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getTimeToImplementColor = (timeToImplement: string) => {
     switch (timeToImplement) {
       case "immediate":

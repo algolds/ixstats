@@ -16,10 +16,13 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { stripBasePath } from "~/lib/base-path";
 import {
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Home,
   Grid3x3,
   Wallet,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Package,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ArrowRightLeft,
   Download,
   Trophy,

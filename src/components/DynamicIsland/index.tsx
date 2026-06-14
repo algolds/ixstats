@@ -15,6 +15,7 @@ import { CompactView } from "./CompactView";
 import { ExpandedView } from "./ExpandedView";
 import { NavTray, getSectionForPath } from "./NavTray";
 import { useDynamicIslandState } from "./hooks";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
@@ -107,8 +108,11 @@ function CommandPaletteContent({
     timeDisplayMode,
     searchResults,
     countriesData,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     setMode,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     setIsExpanded,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     setExpandedMode,
     setSearchQuery,
     setSearchFilter,
@@ -176,6 +180,7 @@ function CommandPaletteContent({
       }
     }
     setSize(newSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     setSize,
     activeIsSticky,

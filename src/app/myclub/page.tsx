@@ -3,10 +3,12 @@
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { Trophy, Users, ArrowRight } from "lucide-react";
@@ -59,6 +61,7 @@ export default function MyClubPage() {
 
   const clubCards =
     clubs?.map((team, idx) => {
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const emoji = SPORT_EMOJIS[team.league?.sportPreset ?? ""] ?? "\uD83C\uDFC6";
       const hasActiveSeason = !!team.activeSeason;
 
@@ -69,9 +72,9 @@ export default function MyClubPage() {
           card={{
             src: withBasePath(
               team.coverImage ||
-              team.logo ||
-              SPORT_FALLBACK_IMAGES[team.league?.sportPreset ?? ""] ||
-              "/api/mediawiki/commons/Special:Filepath/Stadion_Luzhniki_Moskva_July_2018.jpg"
+                team.logo ||
+                SPORT_FALLBACK_IMAGES[team.league?.sportPreset ?? ""] ||
+                "/api/mediawiki/commons/Special:Filepath/Stadion_Luzhniki_Moskva_July_2018.jpg"
             ),
             title: team.name,
             category: team.league?.name ?? "Custom Team",

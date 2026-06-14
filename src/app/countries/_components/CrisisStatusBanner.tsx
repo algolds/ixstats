@@ -106,7 +106,8 @@ export function CrisisStatusBanner({ countryId }: CrisisStatusBannerProps) {
             )}
             {/* Show crisis titles */}
             <div className="mt-2 text-sm">
-              {activeCrises.slice(0, 2).map((crisis, index) => (
+              // eslint-disable-next-line unused-imports/no-unused-vars
+              {activeCrises.slice(0, 2).map((crisis, _index) => (
                 <div key={crisis.id} className="mb-1">
                   • {crisis.title} ({crisis.severity})
                 </div>

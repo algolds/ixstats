@@ -790,7 +790,6 @@ function FlightRoute({
         "line-join": "round",
         "line-cap": resolvedDash ? "butt" : "round",
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       paint: paint as any,
     });
 

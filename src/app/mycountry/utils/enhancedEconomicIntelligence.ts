@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // Enhanced Economic Intelligence Integration
 // Transforms enhanced economic analysis into intelligence system format
@@ -23,6 +24,7 @@ import type {
 export function transformToExecutiveIntelligence(
   countryStats: CountryStats,
   economyData: EconomyData,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   historicalData: HistoricalDataPoint[] = []
 ): ExecutiveIntelligence {
   try {

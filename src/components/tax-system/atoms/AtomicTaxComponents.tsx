@@ -1143,6 +1143,7 @@ export const TAX_COMPONENT_CATEGORIES: Record<TaxComponentCategory, string[]> = 
 
 // ==================== ICON MAPPING ====================
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const CATEGORY_ICONS: Record<TaxComponentCategory, React.ReactNode> = {
   "Collection Methods": <Smartphone className="h-5 w-5" />,
   "Revenue Strategies": <DollarSign className="h-5 w-5" />,
@@ -1151,6 +1152,7 @@ const CATEGORY_ICONS: Record<TaxComponentCategory, React.ReactNode> = {
   Administration: <Building2 className="h-5 w-5" />,
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   digital_filing: <FileText className="h-4 w-4" />,
   withholding_system: <Receipt className="h-4 w-4" />,

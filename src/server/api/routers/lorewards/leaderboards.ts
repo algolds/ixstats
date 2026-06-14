@@ -548,5 +548,5 @@ export const lorewardsLeaderboardsRouter = createTRPCRouter({
       console.error("UFC leaderboard db error:", err);
       return [];
     }
-  })
+  }),
 });

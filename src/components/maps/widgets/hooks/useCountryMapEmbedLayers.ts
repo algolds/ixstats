@@ -505,6 +505,7 @@ export function useCountryMapEmbedLayers({
 
       state.setMapReady(true);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.geometry,
     state.centroid,
@@ -548,5 +549,6 @@ export function useCountryMapEmbedLayers({
         state.setMapReady(false);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initMap, state.geometry]);
 }

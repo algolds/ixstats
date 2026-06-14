@@ -1,7 +1,9 @@
 import React, { useCallback, useState, useEffect } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { usePathname } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";

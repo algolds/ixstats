@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/format-utils";
 import { motion, AnimatePresence } from "motion/react";
 import { TrendingUp, Briefcase, Users, DollarSign } from "lucide-react";

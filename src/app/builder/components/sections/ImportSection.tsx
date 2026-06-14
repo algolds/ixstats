@@ -157,6 +157,7 @@ export const ImportSection = React.memo(function ImportSection({
       try {
         let results: SearchResult[];
 
+        // eslint-disable-next-line prefer-const
         results = await searchWikiMutation.mutateAsync({
           query: currentSearchTerm,
           site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
@@ -236,6 +237,7 @@ export const ImportSection = React.memo(function ImportSection({
     }, 500);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedSite.name, categoryFilter]);
 
   const handleSelectResult = async (result: SearchResult) => {
@@ -250,6 +252,7 @@ export const ImportSection = React.memo(function ImportSection({
       let data: any;
 
       // All wikis use tRPC (server-side proxy)
+      // eslint-disable-next-line prefer-const
       data = await parseInfoboxMutation.mutateAsync({
         pageName: result.title,
         site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",

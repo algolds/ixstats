@@ -34,6 +34,7 @@ export const RandomFlagGrid: React.FC<RandomFlagGridProps> = ({
   countries,
   className,
   gridSize = 4,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   animationSpeed = 1000,
 }) => {
   const [flagGrid, setFlagGrid] = useState<FlagGridItem[]>([]);

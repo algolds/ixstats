@@ -66,10 +66,12 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
     if (countryNames.length === 0) return;
 
     setIsPreloading(true);
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const startTime = Date.now();
 
     try {
       // Check which countries already have cached flags
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const cacheStats = ixnayWiki.getCacheStats();
 
       // The service will handle filtering out already cached items
@@ -78,6 +80,7 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
       const endTime = Date.now();
 
       // Update cache stats
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const newCacheStats = ixnayWiki.getCacheStats();
 
       setLastPreloadTime(endTime);

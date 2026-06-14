@@ -144,17 +144,20 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
           (ownership: any) => ownership.lastSalePrice !== null && ownership.lastSalePrice > 0
         );
 
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const avgSalePrice =
           recentSales.length > 0
             ? recentSales.reduce((sum: number, o: any) => sum + (o.lastSalePrice || 0), 0) /
               recentSales.length
             : null;
 
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const highestSale =
           recentSales.length > 0
             ? Math.max(...recentSales.map((o: any) => o.lastSalePrice || 0))
             : null;
 
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const lowestSale =
           recentSales.length > 0
             ? Math.min(
@@ -162,6 +165,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
               )
             : null;
 
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const ownedBy = card.CardOwnership.length;
 
         // Save value history entry
@@ -180,6 +184,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
           // Get corresponding GDP values for the same time periods
           // For simplicity, use current GDP as approximation (in production, would query GDP history)
+          // eslint-disable-next-line unused-imports/no-unused-vars
           const gdpValues = cardValues.map(() => country.currentTotalGdp);
 
           // In a real implementation, we'd query GDP history at matching timestamps

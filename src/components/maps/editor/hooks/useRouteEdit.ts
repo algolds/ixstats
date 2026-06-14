@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
@@ -5,6 +6,7 @@ import type { EditorMode } from "~/hooks/useMapEditor";
 import {
   getGeoJSONSource,
   updateSnapGuide,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   haversineDistance,
   getFeatureCoords,
   EMPTY_FC,
@@ -27,10 +29,13 @@ export function useRouteEdit({
   isLoaded,
   mode,
   routeWaypoints,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   editingRouteId,
   editingRouteVertices,
   onRouteVerticesUpdate,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onRouteEditCommit,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onRouteEditCancel,
 }: UseRouteEditProps) {
   const routeDraggingRef = useRef<number | null>(null);

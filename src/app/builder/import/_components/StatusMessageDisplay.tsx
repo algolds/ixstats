@@ -18,6 +18,7 @@ export const StatusMessageDisplay: React.FC<StatusMessageDisplayProps> = ({
   searchTerm,
   categoryFilter,
   selectedSiteDisplayName,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   isIiwiki,
   error,
 }) => {

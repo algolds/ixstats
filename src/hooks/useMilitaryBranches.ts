@@ -18,7 +18,6 @@ export function useMilitaryBranches({ countryId }: UseMilitaryBranchesOptions) {
   // --- State ---
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [showBranchDialog, setShowBranchDialog] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingBranch, setEditingBranch] = useState<any>(null);
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
 
@@ -81,7 +80,6 @@ export function useMilitaryBranches({ countryId }: UseMilitaryBranchesOptions) {
     setShowBranchDialog(true);
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEditBranch = useCallback((branch: any) => {
     setEditingBranch(branch);
     setShowBranchDialog(true);

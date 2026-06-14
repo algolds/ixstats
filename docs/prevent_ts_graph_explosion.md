@@ -1,120 +1,94 @@
 # Prevent TypeScript Graph Explosion + Stabilize Dev Performance
 
+**Status: ✅ Resolved (June 2026 — patch 1.0.6).** This document originally described a proposal; it has been fully implemented. See the **Current State** section below for the live status and the **Architecture guard** section for the ongoing enforcement mechanism.
+
+---
+
+## Problem (recap)
+
 Establish proper TypeScript compilation boundaries, isolate backend modules from the client-side UI, and resolve circular import paths that lead to tsserver memory bloat (>7GB RAM) and WSL/dev server instability.
 
-## User Review Required
+## Original proposal — APPROVED & IMPLEMENTED
 
-> [!IMPORTANT]
-> - **Modular TS Configs**: We will recreate `tsconfig.base.json`, `tsconfig.ui.json`, `tsconfig.server.json`, `tsconfig.trpc.json`, and `tsconfig.db.json` to enable split typechecking.
-> - **Forum Module Location**: As approved during the grill-me session, `src/modules/forum` will be relocated to `src/server/modules/forum`.
-> - **Client-Server Separation**: Pure UI formatting utilities (like `RARITY_INLINE_COLORS`, `rarityRank`, etc.) currently in `src/modules/forum/lib/forum-widget-utils` will be moved to `src/shared/forum-utils.ts` to sever the dependency chain between client UI components and server-side XenForo API integration.
+> [!IMPORTANT] **Original user-review items — all completed:**
+> - ✅ **Modular TS Configs**: `tsconfig.base.json`, `tsconfig.ui.json`, `tsconfig.server.json`, `tsconfig.trpc.json`, and `tsconfig.db.json` were created to enable split typechecking. `tsconfig.json` was updated with `"incremental": true` and `"tsBuildInfoFile": ".next/cache/tsbuildinfo"`.
+> - ✅ **Forum Module Location**: `src/modules/forum` was relocated to `src/server/modules/forum`.
+> - ✅ **Client-Server Separation**: Pure UI formatting utilities (`RARITY_INLINE_COLORS`, `rarityRank`, etc.) were moved to `src/shared/forum-utils.ts` to sever the dependency chain between client UI components and server-side XenForo API integration.
 
-## Proposed Changes
+### Original implementation steps
 
-### TypeScript Configuration & Dev Performance
-Recreate modular compiler configurations and update the root compiler options for incremental caching.
+#### TypeScript Configuration & Dev Performance
+All five modular tsconfigs were created. The root `tsconfig.json` was updated with incremental caching.
 
-#### [MODIFY] [tsconfig.json](file:///home/jxsig/projects/ixstats/tsconfig.json)
-- Set `"incremental": true`.
-- Set `"tsBuildInfoFile": ".next/cache/tsbuildinfo"`.
-- Ensure standard performance flags are maintained.
+#### Shared UI Layer Utilities
+- ✅ `src/shared/forum-utils.ts` created with the 6 pure client formatting utilities
+- ✅ All 6 client files updated to import from `~/shared/forum-utils` (route.ts, 4 page.tsx, ForumRarityBar.tsx, ForumMiniCard.tsx)
 
-#### [NEW] [tsconfig.base.json](file:///home/jxsig/projects/ixstats/tsconfig.base.json)
-- Define base TypeScript compiler options shared by all sub-projects.
+#### Backend Forum Module Relocation
+- ✅ `src/modules/forum` deleted; all files relocated to `src/server/modules/forum`
+- ✅ `src/server/modules/forum/index.ts` re-exports only the server-side procedure-bag (the `forum-widget-utils` re-exports were removed)
+- ✅ 11 server-side files updated to import from `~/server/modules/forum` (cards, wiki, ixnayid, trading, forum, trending, feed, card-packs, forum-bridge, vault-service)
 
-#### [NEW] [tsconfig.ui.json](file:///home/jxsig/projects/ixstats/tsconfig.ui.json)
-- Scope type checking specifically to frontend files (`src/app`, `src/components`, `src/hooks`, `src/types`).
-- Exclude `src/server`.
+## Current State (post 1.0.6)
 
-#### [NEW] [tsconfig.server.json](file:///home/jxsig/projects/ixstats/tsconfig.server.json)
-- Scope type checking specifically to backend files (`src/server`, `src/lib`).
-- Exclude Next.js frontend pages and components to avoid loading heavy React DOM types into server checks.
+The original 3-pronged work (modular TS configs, client/server separation of forum-utils, backend forum module relocation) was the *first wave*. The **second wave** (June 2026 — patch 1.0.6) extended the architecture guard much further to prevent the same class of problem at the **router file level**:
 
-#### [NEW] [tsconfig.trpc.json](file:///home/jxsig/projects/ixstats/tsconfig.trpc.json)
-- Scope to tRPC endpoints (`src/trpc`).
+| Metric | Before 1.0.6 | After 1.0.6 |
+|---|---|---|
+| tRPC routers | 83 | 87 |
+| Procedures | 1,329 | 1,376 |
+| Router files in `src/server/api/routers/` | 135 | 364 |
+| Files over 700 lines ("god files") | ~50 | **17 (all ratcheted in baseline)** |
+| Cross-router imports | 1 (`countries/*` → `geo/core`) | **0** |
+| Dead type files | 1 (`unified-intelligence.ts`, 1,552 lines) | **0** |
+| Subdir-organized routers | ~30 (pre-existing) | **52 (all via `mergeRouters`)** |
 
-#### [NEW] [tsconfig.db.json](file:///home/jxsig/projects/ixstats/tsconfig.db.json)
-- Scope to Prisma client and server-side db connections (`src/db`, `src/server/db.ts`).
+### Architecture guard (enforcement)
 
----
+`scripts/audit/audit-arch.ts` (run via `bun run audit:arch`) enforces the following rules on every commit, with no exceptions other than the ratchet baseline:
 
-### Shared UI Layer Utilities
-Separate client formatting utilities from server-side modules to eliminate barrel export dependency webs.
+1. **File-size ceiling.** Every file in `src/server/api/routers/**` and `src/types/**` must be ≤ **700 lines** (default) or ≤ **900 lines** (relaxed for files in `RELAXED_FILES`, currently `src/types/ixstats.ts` and `src/types/economy-builder.ts`).
+2. **Ratchet baseline.** `scripts/audit/arch-baseline.json` records every current offender at its exact current line count. They may not grow — they may only shrink as splits land. New files must be under the ceiling.
+3. **No cross-router imports.** No router in `routers/<A>/` may import from `routers/<B>/`. The one historical exception (`countries/*` → `geo/core`) was eliminated in 1.0.6 by extracting `clearLayerCache` / `layerCache` to the shared primitive `src/server/shared/layer-cache.ts`.
 
-#### [NEW] [forum-utils.ts](file:///home/jxsig/projects/ixstats/src/shared/forum-utils.ts)
-- Relocate pure client UI formatting utilities from `src/modules/forum/lib/forum-widget-utils.ts`.
+### How to split a new oversized router
 
-#### [MODIFY] [route.ts](file:///home/jxsig/projects/ixstats/src/app/api/forum/user-cards/route.ts)
-- Update import path from `~/modules/forum` to `~/shared/forum-utils`.
+Use the canonical splitter:
 
-#### [MODIFY] [page.tsx](file:///home/jxsig/projects/ixstats/src/app/(widget)/forum/cards/[username]/page.tsx)
-- Update import path to `~/shared/forum-utils`.
+```bash
+bun run scripts/split-router-template.ts \
+  --routerFile="src/server/api/routers/foo.ts" \
+  --outDir="src/server/api/routers/foo" \
+  --varName="fooRouter" \
+  --groups='{read:["getX","getY"],mutate:["createZ","updateW"]}' \
+  --pattern="mergeRouters"
+```
 
-#### [MODIFY] [page.tsx](file:///home/jxsig/projects/ixstats/src/app/(widget)/forum/cards/[username]/profile/page.tsx)
-- Update import path to `~/shared/forum-utils`.
+The template (see its 100+ line header comment) handles all the proven recipe steps:
+- Static + dynamic relative-import pre-flight (the bug pattern that broke wikios, intel/core, intel/alerts, intel/analytics, geo/admin, geo/features, transport — all now fixed in the template)
+- Copy-whole-file strategy (retains module-level helpers per group, `eslint --fix` trims unused)
+- `mergeRouters` recombination in the new `index.ts` so every `api.<router>.<key>` path is byte-identical to the original — zero call-site changes
+- Built-in AST parity verification (mandatory, no separate verifier script needed)
+- Optional `--pattern=spread` mode for procedure-bag (object) routers like `countries/management/`
 
-#### [MODIFY] [ForumRarityBar.tsx](file:///home/jxsig/projects/ixstats/src/app/(widget)/forum/cards/[username]/ForumRarityBar.tsx)
-- Update import path to `~/shared/forum-utils`.
+### How to run the guard
 
-#### [MODIFY] [page.tsx](file:///home/jxsig/projects/ixstats/src/app/(widget)/forum/cards/[username]/embed/page.tsx)
-- Update import path to `~/shared/forum-utils`.
+```bash
+bun run audit:arch              # check (exit 1 on violation)
+bun run audit:arch:update       # rewrite the size baseline (only after a split)
+```
 
-#### [MODIFY] [ForumMiniCard.tsx](file:///home/jxsig/projects/ixstats/src/app/(widget)/forum/cards/[username]/ForumMiniCard.tsx)
-- Update import path to `~/shared/forum-utils`.
-
----
-
-### Backend Forum Module Relocation
-Relocate backend logic under `src/server/modules/forum` and remove the client formatting utilities from the server module's barrel export.
-
-#### [DELETE] [forum](file:///home/jxsig/projects/ixstats/src/modules/forum)
-- Relocate all files within `src/modules/forum` to the new directory.
-
-#### [NEW] [forum](file:///home/jxsig/projects/ixstats/src/server/modules/forum)
-- Relocate and adapt `index.ts`, `services/`, and `lib/` files.
-- Remove `forum-widget-utils.ts` and its barrel exports from the main barrel file.
-
-#### [MODIFY] [cards.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/cards.ts)
-- Update import path from `~/modules/forum` to `~/server/modules/forum`.
-
-#### [MODIFY] [wiki.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/wiki.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [ixnayid.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/ixnayid.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [trading.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/trading.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [forum.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/forum.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [feed.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/feed.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [card-packs.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/card-packs.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [forum-bridge.ts](file:///home/jxsig/projects/ixstats/src/server/bridges/forum-bridge.ts)
-- Update import path to `~/server/modules/forum`.
-
-#### [MODIFY] [vault-service.ts](file:///home/jxsig/projects/ixstats/src/lib/vault-service.ts)
-- Update import path to `~/server/modules/forum`.
+`bun run typecheck:trpc` is also part of the CI gate — it catches broken relative imports (the most common split bug) before they reach production.
 
 ## Verification Plan
 
 ### Automated Tests
-- Validate incremental compiler compilation by running Next.js build:
-  ```bash
-  bun run build
-  ```
-- Run ESLint to verify that imports are resolved correctly and there are no broken modules:
-  ```bash
-  bun run lint
-  ```
+- `bun run typecheck` validates the full typecheck graph (ui, server, trpc, db) — passes for all 4 sub-projects with `--max-old-space-size=6144`/`4096` heap bounds to avoid OOM on 8GB servers
+- `bun run lint` runs ESLint
+- `bun run audit:arch` enforces the architecture guard
+- `bun run scripts/verify-router-splits.ts` AST-parity verifies the 4 pre-existing split routers (admin, sports, activities, security)
 
 ### Manual Verification
-- Confirm that typecheck scripts in `package.json` (such as `bun run typecheck:ui` and `bun run typecheck:server`) pass successfully once the split config files are recreated.
+- All `bun run typecheck:*` sub-project scripts pass
+- `bun run audit:arch` is green (17 ratcheted files, 0 new offenders, 0 cross-router imports)
+- Per-router procedure counts match the canonical baseline (1376 total)

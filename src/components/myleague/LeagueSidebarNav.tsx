@@ -487,19 +487,21 @@ export function QuickSimWidget({
 
   return (
     <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
-      <h4 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase flex items-center gap-1.5">
+      <h4 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase">
         <PlayCircle className="h-3.5 w-3.5 text-purple-400" /> QuickSim
       </h4>
-      <p className="text-muted-foreground text-[10px] mb-3 leading-relaxed">
+      <p className="text-muted-foreground mb-3 text-[10px] leading-relaxed">
         Advance the league schedule by simulating the next match day/round instantly from any page.
       </p>
       <Button
-        onClick={() => simulateMatchDay.mutate({
-          seasonId,
-          matchDay: 0
-        })}
+        onClick={() =>
+          simulateMatchDay.mutate({
+            seasonId,
+            matchDay: 0,
+          })
+        }
         disabled={simulateMatchDay.isPending}
-        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 h-8 text-xs rounded-lg shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
+        className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-purple-600 py-1.5 text-xs font-bold text-white shadow transition hover:bg-purple-500"
       >
         {simulateMatchDay.isPending ? (
           <>

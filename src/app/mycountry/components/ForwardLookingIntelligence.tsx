@@ -48,6 +48,7 @@ interface PredictiveInsight {
   relevanceScore: number; // 0-100, how relevant to current situation
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface CompetitiveIntel {
   id: string;
   title: string;
@@ -380,6 +381,7 @@ function PredictiveInsightCard({
 
 function MilestoneCard({
   milestone,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onUpdate,
 }: {
   milestone: MilestoneTracking;
@@ -438,6 +440,7 @@ function MilestoneCard({
 
 export function ForwardLookingIntelligence({
   vitalityData,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   forwardIntelligence,
   timeHorizon = "6_months",
   onInsightAction,

@@ -237,6 +237,7 @@ class RealTimeIntelligenceServer {
         // Send ping to check connection health
         try {
           client.ws.ping();
+          // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (error) {
           console.log(`🧹 Connection failed ping: ${clientId}`);
           this.clients.delete(clientId);

@@ -48,6 +48,7 @@ export function ActivityFeedCard({
   countries,
   userCountry,
   isLoading = false,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   className,
 }: ActivityFeedCardProps) {
   return (

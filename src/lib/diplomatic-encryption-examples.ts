@@ -412,6 +412,7 @@ export async function manuallyRotateKeys(countryId: string, userId: string): Pro
  * Get encryption statistics for a country
  */
 export async function getCountryEncryptionStats(countryId: string) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [encryptionLogs, decryptionLogs, signLogs, verifyLogs, keys] = await Promise.all([
     db.encryptionAuditLog.count({
       where: { countryId, operation: "ENCRYPT", success: true },

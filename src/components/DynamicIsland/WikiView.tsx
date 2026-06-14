@@ -5,6 +5,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import dynamic from "next/dynamic";
 import {
   Search,
@@ -25,6 +26,7 @@ import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
 import { PreText } from "~/components/ui/pretext";
@@ -51,6 +53,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const { articleTitle, tocEntries, themeColors, activeSectionId, navigateToSection } =
     useWikiContext();
   const [searchQuery, setSearchQuery] = useState("");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
   const [draftsOpen, setDraftsOpen] = useState(true);
@@ -129,6 +132,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     [router, onClose]
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleSectionClick = useCallback(
     (id: string) => {
       navigateToSection(id);

@@ -65,6 +65,7 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
   const [showClassified, setShowClassified] = useState(false);
 
   // Custom hooks
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { vitalityMetrics, countryMetrics } = useIntelligenceMetrics({
     country,
     flagColors,
@@ -76,6 +77,7 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
     countryName: country.name,
   });
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { wikiData: fetchedWikiData, isLoading: isLoadingWiki } = useWikiIntelligence({
     countryName: country.name,
     countryData: {
@@ -92,6 +94,7 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
     },
   });
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { hasAccess } = useClearanceAccess({ viewerClearanceLevel });
 
   // Use provided wikiData or fetched data

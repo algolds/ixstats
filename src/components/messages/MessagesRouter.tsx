@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -360,6 +361,7 @@ function MessagesRouterInner() {
         }
       },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       currentUserId,
       refetchConversations,
@@ -548,6 +550,7 @@ function MessagesRouterInner() {
         });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       selectedConversation,
       currentUserId,

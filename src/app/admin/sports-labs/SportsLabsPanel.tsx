@@ -14,9 +14,11 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { AdminHeader } from "../_components/AdminHeader";
 import { SportsLabsInspector } from "~/components/admin/sports-labs/SportsLabsInspector";
 import { cn } from "~/lib/utils";
@@ -272,6 +274,7 @@ export default function SportsLabsPanel() {
         },
       },
     ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSport]);
 
   const dynamicEdges = React.useMemo(() => {
@@ -332,6 +335,7 @@ export default function SportsLabsPanel() {
         style: { stroke: "#a855f7", strokeWidth: 1.5 },
       },
     ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSport]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(dynamicNodes);

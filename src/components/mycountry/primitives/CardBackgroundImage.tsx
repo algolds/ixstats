@@ -92,7 +92,6 @@ export function CardBackgroundImage({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={preset.label}

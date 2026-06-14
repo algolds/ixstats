@@ -10,6 +10,7 @@ interface SearchingStatusProps {
 
 export const SearchingStatus: React.FC<SearchingStatusProps> = ({
   searchTerm,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   categoryFilter,
   selectedSiteDisplayName,
 }) => {

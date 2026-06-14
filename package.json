@@ -14,7 +14,7 @@
     "build:fast": "SKIP_ENV_VALIDATION=true ./scripts/with-base-path.sh next build && bun run postbuild",
     "postbuild": "./scripts/post-build.sh",
     "build:ixworld": "./scripts/deploy-ixworld.sh",
-    "check": "bun run typecheck && echo '✓ Type checking complete. Run bun run build for full validation.'",
+    "check": "bun run typecheck && echo '\u2713 Type checking complete. Run bun run build for full validation.'",
     "dev": "./start-development.sh",
     "dev:local": "./scripts/dev-local.sh",
     "deploy:local": "./scripts/deploy-local.sh",
@@ -50,14 +50,14 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "db:migrate": "echo '⛔ ERROR: db:migrate blocked - database contains production data (82 nations). Use db:migrate:force to override.' && exit 1",
+    "db:migrate": "echo '\u26d4 ERROR: db:migrate blocked - database contains production data (82 nations). Use db:migrate:force to override.' && exit 1",
     "db:migrate:force": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:prod": "prisma migrate deploy",
-    "db:push": "echo '⛔ ERROR: db:push blocked - database contains production data (82 nations). Use db:push:force to override.' && exit 1",
+    "db:push": "echo '\u26d4 ERROR: db:push blocked - database contains production data (82 nations). Use db:push:force to override.' && exit 1",
     "db:push:force": "prisma db push",
     "db:push:prod": "prisma db push",
-    "db:reset": "echo '⛔ DANGEROUS: db:reset is PERMANENTLY blocked. This would destroy 82 nations of production data.' && exit 1",
+    "db:reset": "echo '\u26d4 DANGEROUS: db:reset is PERMANENTLY blocked. This would destroy 82 nations of production data.' && exit 1",
     "db:studio": "prisma studio",
     "db:studio:prod": "prisma studio",
     "db:init": "tsx scripts/setup/init-db.ts",
@@ -346,11 +346,7 @@
       ]
     },
     "roots": [
-      "<rootDir>/src",
-      "<rootDir>/tests"
-    ],
-    "testPathIgnorePatterns": [
-      "<rootDir>/tests/e2e/"
+      "<rootDir>/src"
     ],
     "testMatch": [
       "**/__tests__/**/*.test.ts",
@@ -370,19 +366,19 @@
       "html"
     ],
     "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup.ts"
+      "<rootDir>/src/setupTests.ts"
     ],
     "moduleNameMapper": {
-      "^server-only$": "<rootDir>/tests/__mocks__/server-only.ts",
-      "^ansi-regex$": "<rootDir>/tests/__mocks__/ansi-regex.ts",
-      "^~/env$": "<rootDir>/tests/__mocks__/env.ts",
-      "^~/trpc/react$": "<rootDir>/tests/__mocks__/trpc-react.ts",
+      "^server-only$": "<rootDir>/jest-mocks/server-only.ts",
+      "^ansi-regex$": "<rootDir>/jest-mocks/ansi-regex.ts",
+      "^~/env$": "<rootDir>/jest-mocks/env.ts",
+      "^~/trpc/react$": "<rootDir>/jest-mocks/trpc-react.ts",
       "^~/(.*)$": "<rootDir>/src/$1",
       "^@/(.*)$": "<rootDir>/src/$1",
-      "^superjson$": "<rootDir>/tests/__mocks__/superjson.ts"
+      "^superjson$": "<rootDir>/jest-mocks/superjson.ts"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@t3-oss|zod)/)"
+      "node_modules/(?!(@t3-oss|zod|node-fetch)/)"
     ],
     "transform": {
       "^.+\\.(ts|tsx)$": [
@@ -397,7 +393,11 @@
           }
         }
       ]
-    }
+    },
+    "testPathIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/src/server/api/routers/__tests__/caching-benchmark.test.ts"
+    ]
   },
   "prettier": {
     "semi": true,

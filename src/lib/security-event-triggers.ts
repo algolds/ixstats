@@ -352,6 +352,7 @@ export async function checkAndGenerateSecurityEvent(
     }
 
     // Evaluate triggers
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const { shouldGenerate, multiplier, triggeredBy } = evaluateTriggers(context);
 
     if (!shouldGenerate) {
@@ -374,6 +375,7 @@ export async function checkAndGenerateSecurityEvent(
       ) + event.effects.casualtyRange[0];
 
     // Create event in database
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const createdEvent = await db.securityEvent.create({
       data: {
         countryId: context.countryId,

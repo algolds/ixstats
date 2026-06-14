@@ -2,10 +2,7 @@
 
 import type { ReactNode } from "react";
 import { cn } from "~/lib/utils";
-import {
-  LeagueSidebarNav,
-  type LeagueSection,
-} from "./LeagueSidebarNav";
+import { LeagueSidebarNav, type LeagueSection } from "./LeagueSidebarNav";
 
 interface LeagueSidebarLayoutProps {
   children: ReactNode;
@@ -65,6 +62,7 @@ const SECTION_THEMES: Record<
   },
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function sportAccentShadow(accent: string | undefined): string {
   if (!accent) return "";
   return `0_-8px_25px_-8px_hsl(var(--myleague-accent)/0.2)`;

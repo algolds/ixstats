@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { PreText } from "~/components/ui/pretext";
 import {
   Globe,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Sparkles,
   Database,
   Users,
@@ -10,6 +11,7 @@ import {
   MapPin,
   Building,
   Crown,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   CheckCircle2,
   Loader2,
   ArrowRight,
@@ -47,6 +49,7 @@ const wikiSuggestions: Record<string, string[]> = {
   althistory: ["United States", "Russian Empire", "German Reich", "British Empire", "Japan"],
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function extractCount(parsed: ParsedCountryData): number {
   let count = 0;
   if (parsed.population || parsed.population_estimate || parsed.population_total) count++;

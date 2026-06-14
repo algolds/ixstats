@@ -1,13 +1,16 @@
 // src/components/media-search/WikiRepositoryTab.tsx
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "~/lib/utils";
 import {
   Search,
   Loader2,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Check,
   X,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   FolderOpen,
   Globe,
   Database,

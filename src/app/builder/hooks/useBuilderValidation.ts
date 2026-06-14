@@ -194,6 +194,7 @@ export function useBuilderValidation({
             return { isValid: true, errors: [], warnings: [] };
         }
       },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [validateFoundation, validateCore, validateGovernment, validateEconomics, mode]
   );
 

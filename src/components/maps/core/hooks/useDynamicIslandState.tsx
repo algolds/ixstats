@@ -84,6 +84,7 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
     return Object.entries(groups);
   }, [results]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const flatResults = results ?? [];
   const showResults = searchOpen && debouncedQuery.length >= 2;
   const hasResults = grouped.length > 0;

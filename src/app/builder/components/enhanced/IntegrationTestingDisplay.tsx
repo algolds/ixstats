@@ -59,6 +59,7 @@ export function IntegrationTestingDisplay({
     null
   );
   const [isRunning, setIsRunning] = useState(false);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
@@ -93,6 +94,7 @@ export function IntegrationTestingDisplay({
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getSeverityColor = (severity: "low" | "medium" | "high" | "critical") => {
     switch (severity) {
       case "low":
@@ -108,6 +110,7 @@ export function IntegrationTestingDisplay({
     }
   };
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const getSeverityIcon = (severity: "low" | "medium" | "high" | "critical") => {
     switch (severity) {
       case "low":

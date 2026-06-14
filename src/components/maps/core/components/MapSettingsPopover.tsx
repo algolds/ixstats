@@ -19,6 +19,7 @@ export function MapSettingsPopover({
   projectionMode,
   onProjectionChange,
   theme,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   effectiveTheme,
   setTheme,
   router,

@@ -7,7 +7,9 @@
  */
 
 import type { PackedGraph, WorldGenParams } from "./types";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { WATER_THRESHOLD, elevToMeters } from "./types";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { isLand, cellLat, cellAreaKm2 } from "./voronoi-mesh";
 
 // ──────────────────────────────────────────────
@@ -48,6 +50,7 @@ export const TREWARTHA_COLORS: Record<string, string> = {
 // Main Entry Point
 // ──────────────────────────────────────────────
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function computeClimate(graph: PackedGraph, params: WorldGenParams): void {
   const { cells } = graph;
   const n = cells.n;

@@ -241,6 +241,7 @@ function ImpactPreview({
   );
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEventsHubProps) {
   const [activeTab, setActiveTab] = useState("active");
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -268,6 +269,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
 
   // Extract scenarios from API response
   const activeScenarios = activeData?.scenarios || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const scenarioHistory = historyData?.scenarios || [];
 
   // Response mutation

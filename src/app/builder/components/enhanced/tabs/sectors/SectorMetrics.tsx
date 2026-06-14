@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Factory, PieChart, Users, TrendingUp, Target } from "lucide-react";
 import { MetricCard } from "../../../../primitives/enhanced";
 import type { SectorConfiguration } from "~/types/economy-builder";
@@ -16,6 +18,7 @@ interface SectorMetricsProps {
 
 export function SectorMetrics({
   sectors,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onNormalize,
   hasZeroContribution = [],
 }: SectorMetricsProps) {

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -5,7 +6,9 @@ import React, { useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Position, Polygon, MultiPolygon, Feature, FeatureCollection } from "geojson";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { VertexRef, EdgeRef } from "~/lib/border-editor";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { getVertices, findNearestVertex, findNearestEdge, getAllRings } from "~/lib/border-editor";
 
 interface BorderEditorMapProps {

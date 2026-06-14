@@ -36,6 +36,7 @@ import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
 import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
 import { registerCustomCurrency } from "~/lib/format-utils";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const CURRENT_SCHEMA_VERSION = 1;
 
 /** Parse numeric values like "$1.2 trillion", "€45,000", "10 million", "1234567" */
@@ -485,6 +486,7 @@ export function useBuilderState(
                       : typeof dept.functions === "string"
                         ? JSON.parse(dept.functions)
                         : [];
+                    // eslint-disable-next-line unused-imports/no-unused-vars
                   } catch (e) {
                     return [];
                   }
@@ -496,6 +498,7 @@ export function useBuilderState(
                       : typeof dept.kpis === "string"
                         ? JSON.parse(dept.kpis)
                         : [];
+                    // eslint-disable-next-line unused-imports/no-unused-vars
                   } catch (e) {
                     return [];
                   }
@@ -1069,10 +1072,12 @@ export function useBuilderState(
             setLastSaved(new Date(savedLastSaved));
           }
         }
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to load saved state, continue with default
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, countryId, isLoadingCountry]);
 
   // Autosave state to localStorage with ref to prevent infinite loops
@@ -1139,6 +1144,7 @@ export function useBuilderState(
 
         safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
         safeSetItemSync(savedKey, new Date().toISOString());
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to save state on unload
       }
@@ -1274,6 +1280,7 @@ export function useBuilderState(
       try {
         lastSyncedStateRef.current = currentSyncPayload;
         await updateMutation.mutateAsync(currentSyncPayload);
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (err) {
         // Handled by mutation onError
       }
@@ -1281,6 +1288,7 @@ export function useBuilderState(
 
     const timer = setTimeout(triggerDbSync, 1500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     builderState.economicInputs,
     builderState.governmentComponents,
@@ -1327,6 +1335,7 @@ export function useBuilderState(
     } catch (error) {
       console.error("Manual save failed:", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, countryId, isLoadingCountry]);
 
   // Update handlers
@@ -1619,6 +1628,7 @@ export function useBuilderState(
       }
       setLastSaved(null);
       setBuilderState(getInitialState(mode));
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Failed to clear draft
     }

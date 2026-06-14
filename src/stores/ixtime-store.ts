@@ -97,6 +97,7 @@ const calculateProgressingTime = (state: IxTimeState): IxTimeState => {
   };
 };
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 export const useIxTimeStore = create<IxTimeStore>()((set, get) => ({
   ...initialState,
 

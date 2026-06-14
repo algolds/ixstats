@@ -418,7 +418,8 @@ export function SimplifiedTrendRiskAnalytics({ countryId }: SimplifiedTrendRiskA
           initial="hidden"
           animate="show"
         >
-          {riskFactors.map((factor, idx) => (
+          // eslint-disable-next-line unused-imports/no-unused-vars
+          {riskFactors.map((factor, _idx) => (
             <motion.div key={factor.name} variants={itemVariants} whileHover={cardHover}>
               <Card
                 className={`${

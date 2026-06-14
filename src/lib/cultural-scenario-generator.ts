@@ -472,6 +472,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
       CulturalScenarioType,
       (ctx: ScenarioContext) => ResponseOption[]
     > = {
+      // eslint-disable-next-line unused-imports/no-unused-vars
       festival_collaboration: (ctx) => [
         {
           id: "mediation",
@@ -600,6 +601,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
         },
       ],
 
+      // eslint-disable-next-line unused-imports/no-unused-vars
       artifact_repatriation: (ctx) => [
         {
           id: "full_repatriation",
@@ -732,6 +734,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
         },
       ],
 
+      // eslint-disable-next-line unused-imports/no-unused-vars
       cultural_appropriation: (ctx) => [
         {
           id: "withdraw_collection",
@@ -874,6 +877,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
    */
   private static generateGenericResponseOptions(
     scenarioSubtype: string,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     context: ScenarioContext
   ): ResponseOption[] {
     // Generate 3-4 balanced response options with varying approaches

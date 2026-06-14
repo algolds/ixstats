@@ -314,7 +314,6 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         </button>
       </div>
 
-      {/* eslint-disable-next-line react/no-unknown-property */}
       <style jsx>{`
         @keyframes featureSavedFadeIn {
           from {

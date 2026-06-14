@@ -1,20 +1,12 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-
 
 import {
   NPCCulturalParticipation,
   type NPCParticipationContext,
 } from "~/lib/npc-cultural-participation";
 import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomatic-npc-personality";
-
-
-
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({

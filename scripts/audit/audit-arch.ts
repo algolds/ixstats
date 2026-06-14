@@ -35,10 +35,7 @@ const DEFAULT_MAX = 700;
 const RELAXED_MAX = 900;
 
 /** Files that legitimately stay as a single large file (data tables / core type defs). */
-const RELAXED_FILES = new Set<string>([
-  "src/types/ixstats.ts",
-  "src/types/economy-builder.ts",
-]);
+const RELAXED_FILES = new Set<string>(["src/types/ixstats.ts", "src/types/economy-builder.ts"]);
 
 /**
  * Known cross-router imports that are not yet fixed. Each entry is the importing
@@ -115,7 +112,9 @@ function updateBaseline(): void {
   }
   const sorted = Object.fromEntries(Object.entries(merged).sort((a, b) => b[1] - a[1]));
   fs.writeFileSync(path.join(ROOT, BASELINE_PATH), JSON.stringify(sorted, null, 2) + "\n");
-  console.log(`✓ Baseline updated: ${Object.keys(merged).length} ratcheted files → ${BASELINE_PATH}`);
+  console.log(
+    `✓ Baseline updated: ${Object.keys(merged).length} ratcheted files → ${BASELINE_PATH}`
+  );
 }
 
 function checkSizes(): string[] {
@@ -127,9 +126,13 @@ function checkSizes(): string[] {
     if (lines <= ceiling) continue;
     const allowed = baseline[f];
     if (allowed === undefined) {
-      errors.push(`NEW god file: ${f} = ${lines} lines (ceiling ${ceiling}). Split it or add to RELAXED_FILES.`);
+      errors.push(
+        `NEW god file: ${f} = ${lines} lines (ceiling ${ceiling}). Split it or add to RELAXED_FILES.`
+      );
     } else if (lines > allowed) {
-      errors.push(`GROWN past baseline: ${f} = ${lines} lines (baseline ${allowed}, ceiling ${ceiling}). Do not grow ratcheted files.`);
+      errors.push(
+        `GROWN past baseline: ${f} = ${lines} lines (baseline ${allowed}, ceiling ${ceiling}). Do not grow ratcheted files.`
+      );
     }
   }
   return errors;
@@ -152,7 +155,9 @@ function checkCrossRouter(): string[] {
       const importsOtherGroup = targetGroup !== null && targetGroup !== group;
       const importsFlatSibling = targetGroup === null;
       if (importsOtherGroup || importsFlatSibling) {
-        errors.push(`Cross-router import in ${f}: ${m[1]} (move shared code to src/server/shared/).`);
+        errors.push(
+          `Cross-router import in ${f}: ${m[1]} (move shared code to src/server/shared/).`
+        );
       }
     }
   }
@@ -171,12 +176,18 @@ const crossErrors = checkCrossRouter();
 const all = [...sizeErrors, ...crossErrors];
 
 if (all.length === 0) {
-  console.log("✓ arch guard passed (no new god files, no growth past baseline, no new cross-router imports).");
+  console.log(
+    "✓ arch guard passed (no new god files, no growth past baseline, no new cross-router imports)."
+  );
   process.exit(0);
 }
 
 console.error(`✗ arch guard found ${all.length} violation(s):\n`);
 for (const e of all) console.error(`  • ${e}`);
-console.error(`\nTip: if a file legitimately must stay flat, add it to RELAXED_FILES (ceiling ${RELAXED_MAX}).`);
-console.error(`After an approved split that shrinks files, run: bun run scripts/audit/audit-arch.ts --update`);
+console.error(
+  `\nTip: if a file legitimately must stay flat, add it to RELAXED_FILES (ceiling ${RELAXED_MAX}).`
+);
+console.error(
+  `After an approved split that shrinks files, run: bun run scripts/audit/audit-arch.ts --update`
+);
 process.exit(1);

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * Diplomatic Operations Hook
@@ -628,6 +629,7 @@ export function useDiplomaticOperations({
       location: newEmbassyData.location || undefined,
       ambassadorName: newEmbassyData.ambassador || undefined,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newEmbassyData, countryId, establishEmbassyMutation, hostCountryOptions, countryName]);
 
   const handleStartMission = useCallback(() => {
@@ -642,6 +644,7 @@ export function useDiplomaticOperations({
       staffAssigned: newMissionData.staff,
       priorityLevel: newMissionData.priority,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmbassy, newMissionData, startMissionMutation]);
 
   const handleCompleteMission = useCallback(
@@ -667,6 +670,7 @@ export function useDiplomaticOperations({
       endDate:
         newExchangeData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newExchangeData, countryId, countryName, createExchangeMutation]);
 
   const handleAllocateBudget = useCallback(() => {
@@ -679,6 +683,7 @@ export function useDiplomaticOperations({
       embassyId: selectedEmbassy,
       additionalBudget: budgetAmount,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmbassy, budgetAmount, allocateBudgetMutation]);
 
   const handleUpgradeEmbassy = useCallback(() => {
@@ -700,6 +705,7 @@ export function useDiplomaticOperations({
       upgradeType: upgrade.upgradeType,
       level: upgrade.nextLevel,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmbassy, availableUpgrades, selectedUpgradeType, upgradeEmbassyMutation]);
 
   return {

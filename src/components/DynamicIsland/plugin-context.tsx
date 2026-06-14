@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { createContext, useContext, useCallback, useRef, useSyncExternalStore } from "react";
 import type { DIPlugin, DIViewProps } from "./types";
 
@@ -95,7 +96,6 @@ export function useDIPlugin(plugin: DIPlugin) {
       registry.unregister(pluginRef.current.id);
     };
     // Only re-run if the plugin ID changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registry, plugin.id]);
 
   // Re-register when plugin content changes (center, actions, etc.)

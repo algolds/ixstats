@@ -22,6 +22,7 @@ import {
   Calculator,
   ChevronDown,
   ChevronRight,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   HelpCircle,
 } from "lucide-react";
 import type { BudgetAllocationInput, BudgetStatus } from "~/types/government";

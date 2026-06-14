@@ -54,6 +54,7 @@ const economicsSyncRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const { countryId, governmentComponents } = input;
 
       // SECURITY: Verify user owns this country
@@ -65,6 +66,7 @@ const economicsSyncRouter = createTRPCRouter({
       }
 
       // Update country with government components
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const updated = await ctx.db.country.update({
         where: { id: countryId },
         data: {

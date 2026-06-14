@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -264,6 +265,7 @@ interface CommonsCategoryBrowserProps {
 }
 
 // Flatten all categories for the batch info query (max 20 per call)
+// eslint-disable-next-line unused-imports/no-unused-vars
 const ALL_CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.categories);
 
 export function CommonsCategoryBrowser({

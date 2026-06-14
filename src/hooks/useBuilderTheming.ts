@@ -107,6 +107,7 @@ export function useBuilderTheming(foundationCountryName?: string) {
         removeTheme();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

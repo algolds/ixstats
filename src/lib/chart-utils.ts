@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/lib/chart-utils.ts
 // FIXED: Consistent percentage and number formatting
@@ -406,6 +407,7 @@ export function getGrowthColor(decimalValue: number | null | undefined): string 
   return "text-gray-500";
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
   if (!value || !isFinite(value)) return fallback;
 

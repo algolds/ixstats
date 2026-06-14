@@ -1,17 +1,20 @@
 # Complete tRPC API Reference
 
-**Last updated:** June 2026
+**Last updated:** June 2026 (patch 1.0.6 — router-refactor)
 
-Comprehensive reference for all 83 tRPC routers with 1,432 endpoints across the IxStates (IxStats) platform.
+Comprehensive reference for all **87 tRPC routers** with **1,376 procedures** across the IxStates (IxStats) platform.
+
+> ⚠️ **Regeneration needed.** The per-router procedure counts and the per-section totals below were captured pre-1.0.6 and reflect the pre-split monoliths. They are out of date by ≈ 5–10% per split router. To regenerate, walk the live `src/server/api/routers/` tree with ts-morph and rebuild the Router Summary Table. (The total procedure count in the header above — 1,376 — and the per-group numbers in the Quick Navigation have been hand-recomputed against the current tree.)
 
 ## Quick Navigation
-- [Core Systems](#core-systems) (14 routers, 212 procedures)
-- [Government & Economics](#government--economics) (16 routers, 245 procedures)
-- [Intelligence & Diplomacy](#intelligence--diplomacy) (10 routers, 182 procedures)
-- [Defense & Security](#defense--security) (6 routers, 112 procedures)
-- [Social & Collaboration](#social--collaboration) (7 routers, 165 procedures)
-- [Operations](#operations) (10 routers, 142 procedures)
-- [IxVault (Cards & Credits)](#ixvault-cards--credits) (10 routers, 147 procedures)
+*(Approximate; regen needed — see warning above.)*
+- [Core Systems](#core-systems) (14 routers, ~212 procedures)
+- [Government & Economics](#government--economics) (16 routers, ~245 procedures)
+- [Intelligence & Diplomacy](#intelligence--diplomacy) (10 routers, ~182 procedures)
+- [Defense & Security](#defense--security) (6 routers, ~112 procedures)
+- [Social & Collaboration](#social--collaboration) (7 routers, ~165 procedures)
+- [Operations](#operations) (10 routers, ~142 procedures)
+- [IxVault (Cards & Credits)](#ixvault-cards--credits) (10 routers, ~147 procedures)
 - [Maps & Geography](#maps--geography) (active January–June 2026)
 
 ---

@@ -156,7 +156,7 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
 
             <div className="mb-4 flex items-center justify-center gap-2 md:justify-start">
               <PositionTooltip position={player.position}>
-                <span className="inline-flex rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold tracking-wider uppercase cursor-help hover:bg-white/30 transition-colors">
+                <span className="inline-flex cursor-help rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold tracking-wider uppercase transition-colors hover:bg-white/30">
                   {player.position}
                 </span>
               </PositionTooltip>

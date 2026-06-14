@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Loader2 } from "lucide-react";
 import { IOSActivityIndicator } from "~/components/ui/loader";
 

@@ -80,6 +80,7 @@ async function saveCache(flags: Record<string, FlagCacheEntry>): Promise<void> {
 
 const COMMONS_PATTERNS = (name: string): string[] => {
   const u = name.replace(/\s+/g, "_");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const l = name.toLowerCase().replace(/\s+/g, "_");
   return [
     `Flag of ${name}.svg`,

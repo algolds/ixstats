@@ -369,8 +369,10 @@ interface EconomicImpactPreview {
 export function DMControlPanel() {
   const [selectedScope, setSelectedScope] = useState<string>("global");
   const [selectedScale, setSelectedScale] = useState<InputScale>("macro");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedCategory, setSelectedCategory] = useState<InputCategory | "all">("all");
   const [showForm, setShowForm] = useState(false);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [showFlowChart, setShowFlowChart] = useState(false);
   const [editingInput, setEditingInput] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<"controls" | "preview" | "flowchart" | "timeline">(
@@ -388,10 +390,12 @@ export function DMControlPanel() {
   });
   const [impactPreview, setImpactPreview] = useState<EconomicImpactPreview | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [simulationRunning, setSimulationRunning] = useState(false);
 
   // Queries
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const {
     data: effects,

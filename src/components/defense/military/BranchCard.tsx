@@ -25,7 +25,6 @@ import { AssetManager } from "~/components/defense/AssetManager";
 import type { BRANCH_CONFIGS } from "~/lib/military-config";
 
 interface BranchCardProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   branch: any;
   config: (typeof BRANCH_CONFIGS)[keyof typeof BRANCH_CONFIGS] | undefined;
   isExpanded: boolean;

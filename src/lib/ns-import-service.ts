@@ -425,6 +425,7 @@ export class NSImportService {
         });
       }
 
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const totalCards = deckData.cards.length;
 
       // Deduplicate cards and track quantities
@@ -445,6 +446,7 @@ export class NSImportService {
 
       // Process each unique card
       for (let i = 0; i < uniqueCards.length; i++) {
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const { card: nsCard, quantity } = uniqueCards[i]!;
 
         if (options.progressCallback) {

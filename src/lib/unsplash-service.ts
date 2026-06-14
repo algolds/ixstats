@@ -72,6 +72,7 @@ class UnsplashService {
       "city",
       "development",
     ];
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const populationTerms = populationKeywords[
       populationTier as keyof typeof populationKeywords
     ] || ["urban"];

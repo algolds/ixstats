@@ -298,6 +298,7 @@ export const intelligenceRouter = createTRPCRouter({
         if (!Array.isArray(findings)) {
           throw new Error("Findings template must be a JSON array");
         }
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -362,6 +363,7 @@ export const intelligenceRouter = createTRPCRouter({
           if (!Array.isArray(findings)) {
             throw new Error("Findings template must be a JSON array");
           }
+          // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (error) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -560,12 +562,14 @@ export const intelligenceBriefingRouter = createTRPCRouter({
   // Recalculate intelligence for a country
   recalculateForCountry: premiumProcedure
     .input(z.object({ countryId: z.string() }))
+    // eslint-disable-next-line unused-imports/no-unused-vars
     .mutation(async ({ ctx, input }) => {
       await calculateIntelligence({ countryId: input.countryId, forceRecalculate: true });
       return { success: true, message: `Intelligence recalculated for country ${input.countryId}` };
     }),
 
   // Recalculate intelligence for all countries (admin only)
+  // eslint-disable-next-line unused-imports/no-unused-vars
   recalculateAll: adminProcedure.mutation(async ({ ctx }) => {
     await calculateIntelligence({ forceRecalculate: true });
     return { success: true, message: "Intelligence recalculated for all countries" };

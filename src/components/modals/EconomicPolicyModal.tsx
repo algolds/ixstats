@@ -108,6 +108,7 @@ const POLICY_STATUS_CONFIG = {
 export function EconomicPolicyModal({
   children,
   mode = "create",
+  // eslint-disable-next-line unused-imports/no-unused-vars
   policyId,
 }: EconomicPolicyModalProps) {
   const { user } = useUser();

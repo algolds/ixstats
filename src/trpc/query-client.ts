@@ -2,6 +2,7 @@ import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query"
 import SuperJSON from "superjson";
 
 // Selective logger - suppress verbose logs but keep errors
+// eslint-disable-next-line unused-imports/no-unused-vars
 const selectiveLogger = {
   log: () => {}, // Suppress info logs
   warn: () => {}, // Suppress warnings

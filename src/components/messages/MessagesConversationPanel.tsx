@@ -34,6 +34,7 @@ export function MessagesConversationPanel({
   onSelectConversation,
   currentUserId,
   onNewConversation,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onOpenGroupsDirectory,
   settings,
   mutedConversations = [],

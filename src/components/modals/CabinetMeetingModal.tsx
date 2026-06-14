@@ -51,6 +51,7 @@ interface CabinetMeetingModalProps {
 export function CabinetMeetingModal({
   children,
   mode = "create",
+  // eslint-disable-next-line unused-imports/no-unused-vars
   meetingId,
 }: CabinetMeetingModalProps) {
   const { user } = useUser();
@@ -95,6 +96,7 @@ export function CabinetMeetingModal({
   });
 
   // Meeting statistics
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const meetingStats = {
     totalMeetings: meetings?.length || 0,
     upcomingMeetings:

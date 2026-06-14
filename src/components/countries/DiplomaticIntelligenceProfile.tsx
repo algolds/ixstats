@@ -129,10 +129,12 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   });
 
   // ThinkShare integration
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: viewerAccounts } = api.thinkpages.getAccountsByCountry.useQuery(
     { countryId: viewerCountryId || "" },
     { enabled: !!viewerCountryId }
   );
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: targetCountryAccounts } = api.thinkpages.getAccountsByCountry.useQuery(
     { countryId: country.id },
     { enabled: !!country.id }
@@ -153,6 +155,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   });
 
   // Calculate intelligence metrics with clearance-based access
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const intelligenceMetrics = useMemo(() => {
     const baseMetrics = {
       economicStrength: Math.min(100, (country.currentGdpPerCapita / 65000) * 100),
@@ -206,6 +209,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
 
     // TODO: Refactor this to work with new User-based ThinkPages system
     // The old character account system has been deprecated
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [country.name, createConversationMutation]);
 
   // Toggle card expansion
@@ -1184,6 +1188,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                       <div className="space-y-3">
                         {country.achievementConstellation?.recentMilestones
                           ?.slice(0, 3)
+                          // eslint-disable-next-line unused-imports/no-unused-vars
                           .map((achievement, index) => (
                             <div
                               key={achievement.id}

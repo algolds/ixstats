@@ -9,6 +9,7 @@ import {
   consolidatedCategories,
   getArchetypesByConsolidatedCategory,
   type CategorizedCountryArchetype,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type ConsolidatedCategory,
 } from "../utils/country-archetypes";
 import type { RealCountryData } from "../lib/economy-data-service";

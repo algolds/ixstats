@@ -1,4 +1,4 @@
-# IxStates (IxStats) Documentation Index (June 2026)
+# IxStates (IxStats) Documentation Index (June 2026 — patch 1.0.6)
 
 This index mirrors the new documentation structure. Use it as the canonical map when authoring, reviewing, or discovering guidance.
 
@@ -30,6 +30,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`architecture/frontend.md`](architecture/frontend.md) | App Router layout, design system, and UI composition guidelines |
 | [`architecture/backend.md`](architecture/backend.md) | tRPC composition patterns, middleware, rate limits, and auth context |
 | [`architecture/data.md`](architecture/data.md) | Prisma schema domains, migrations, seed/backup routines |
+| [`prevent_ts_graph_explosion.md`](prevent_ts_graph_explosion.md) | TypeScript graph isolation: modular tsconfigs, client/server separation, cross-router import ban. **Status: ✅ Resolved in 1.0.6.** Architecture guard (`scripts/audit/audit-arch.ts`) enforces the ≤700-line ceiling and ratchet baseline going forward. |
 
 ### Systems
 | Document | Summary |
@@ -69,11 +70,13 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md) | Rate limiting configuration, Redis setup, endpoint protection, and troubleshooting |
 | [`processes/testing.md`](processes/testing.md) | Test strategy, coverage goals, fixtures, and nightly automation |
 | [`processes/contributing.md`](processes/contributing.md) | Contribution workflow, review protocol, release cadence |
+| [`processes/refactoring.md`](processes/refactoring.md) | Refactoring patterns, including the router-split recipe (uses `scripts/split-router-template.ts`) |
 
 ### Reference
 | Document | Summary |
 | --- | --- |
 | [`reference/api.md`](reference/api.md) | Generated table of routers, procedures, input/output, and auth requirements |
+| [`reference/api-complete.md`](reference/api-complete.md) | **Complete tRPC API catalog** — 87 routers, 1,376 procedures. *(Header notes regeneration needed: per-router counts are pre-1.0.6; regenerate from live tree via ts-morph.)* |
 | [`reference/database.md`](reference/database.md) | Prisma models, relations, derived views, and data ownership |
 | [`reference/branding.md`](reference/branding.md) | Complete brand catalog: Apps, Engines, UI/Feature Systems, Facet design system, utilities, icons, colors, symbols, and visual identity tokens |
 | [`reference/facet-design-system.md`](reference/facet-design-system.md) | Facet Design System Reference & Style Guide: tokens, volumetric depth, compound hierarchy blurs, physical materials, adaptive textures, and edge glare refraction |
@@ -98,6 +101,13 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | Document | Summary |
 | --- | --- |
 | [`systems/maps.md`](systems/maps.md) | IxWorld map system: MapLibre GL JS, 7 layers, geo router (102 endpoints), border editor |
+
+### Audits
+| Document | Summary |
+| --- | --- |
+| [`audits/AUDIT_2026-06.md`](audits/AUDIT_2026-06.md) | V1 compliance audit (June 2026) — comprehensive production-readiness review |
+| [`audits/REFACTOR_PLAN_2026-06.md`](audits/REFACTOR_PLAN_2026-06.md) | The plan that produced the V1 compliance work |
+| [`audits/AUDIT_2026-06-13.md`](audits/AUDIT_2026-06-13.md) | **Router refactor audit (patch 1.0.6)** — 44+ router splits, 1 dead type removed, 1 cross-router import eliminated, architecture guard added, 95+ one-off scripts consolidated to 1 canonical template |
 | [`IXWORLD_OCEANOGRAPHY_REPORT.md`](IXWORLD_OCEANOGRAPHY_REPORT.md) | Ocean basins, seas, currents, shipping routes, and marine ecology |
 
 

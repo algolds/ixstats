@@ -34,6 +34,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { ActivityRings, createDefaultActivityRings } from "./ActivityRings";
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface ActivityRing {
   id: string;
   title: string;

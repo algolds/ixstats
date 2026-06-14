@@ -229,7 +229,7 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 
 ---
 
-**Architecture Version:** Current (IxStates 1.0 "Ogma" platform — legacy v2/v2.1 retired)
+**Architecture Version:** Current (IxStates 1.0.6 "Ogma" platform — legacy v2/v2.1 retired)
 **Last Major Update:** June 2026
 **Status:** Production-ready with single-page router and clear separation of concerns
 

@@ -98,6 +98,7 @@ export interface UseAtomicEconomicBuilderReturn {
  * @returns Builder state and actions
  */
 export function useAtomicEconomicBuilder({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
   initialSelection = [],
   maxComponents = 15,
@@ -110,7 +111,9 @@ export function useAtomicEconomicBuilder({
   // Use database hook for component data
   const {
     components: dbComponents,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isLoading: dbLoading,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isUsingFallback,
   } = useEconomicComponentsData();
 

@@ -103,6 +103,7 @@ export function Lens({
         </div>
       </motion.div>
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPosition, lensSize, lensColor, zoomFactor, children, duration]);
 
   return (

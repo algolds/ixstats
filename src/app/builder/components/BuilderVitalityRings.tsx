@@ -107,6 +107,7 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
       social: socialHealth,
       government: governmentHealth,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [economicHealth, socialHealth, governmentHealth, showMomentum]);
 
   // Use extracted colors or fallback to defaults

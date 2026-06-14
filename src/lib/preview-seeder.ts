@@ -110,6 +110,7 @@ export class PreviewSeeder {
       await this.db.incomeDistribution.deleteMany();
       await this.db.governmentBudget.deleteMany();
       await this.db.demographics.deleteMany();
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       console.log("Note: Some advanced tables don't exist yet, skipping...");
     }
@@ -260,6 +261,7 @@ export class PreviewSeeder {
       const populationGrowthRate = template.populationGrowthRate ?? 0.012;
       const baselinePopulation = Math.round(template.baselinePopulation * populationScale);
       const baselineGdpPerCapita = template.baselineGdpPerCapita * (1 + replicationIndex * 0.02);
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const nominalGDP = baselinePopulation * baselineGdpPerCapita;
       const currentPopulation = Math.round(baselinePopulation * (1 + populationGrowthRate));
       const currentGdpPerCapita = baselineGdpPerCapita * (1 + growthRate);
@@ -581,6 +583,7 @@ export class PreviewSeeder {
     return users;
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private async seedUserActivities(users: any[]): Promise<void> {
     // TODO: Re-enable when MockDataGenerator is available
     // const userCountryPairs = users

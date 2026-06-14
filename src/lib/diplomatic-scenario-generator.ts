@@ -432,6 +432,7 @@ export class DiplomaticScenarioGenerator {
         return context.relationships.some((r) => r.relationship === "trade" && r.strength > 40);
       },
       generate: (context, target) => {
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const relationship = context.relationships.find(
           (r) =>
             (r.country1 === target.id || r.country2 === target.id) && r.relationship === "trade"
@@ -1616,6 +1617,7 @@ export class DiplomaticScenarioGenerator {
         return context.embassies.length > 0;
       },
       generate: (context, target) => {
+        // eslint-disable-next-line unused-imports/no-unused-vars
         const embassy =
           context.embassies.find(
             (e) => e.hostCountryId === target.id || e.guestCountryId === target.id

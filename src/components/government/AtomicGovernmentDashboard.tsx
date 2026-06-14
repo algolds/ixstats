@@ -65,11 +65,13 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
   const [showComponentSelector, setShowComponentSelector] = useState(false);
 
   // atomicGovernment router is registered and available (uses getComponents, not getGovernmentStructure)
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: governmentData, isLoading } = api.atomicGovernment.getComponents.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: countryData } = api.countries.getByIdWithEconomicData.useQuery(
     { id: countryId },
     { enabled: !!countryId }

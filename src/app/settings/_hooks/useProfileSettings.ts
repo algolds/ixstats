@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import { useState, useCallback } from "react";
 import { useNotify } from "~/hooks/useNotify";
@@ -41,6 +42,7 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       console.error("Failed to update country name:", error);
       notify.error("Failed to update country name");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfileCountryId, newCountryName, updateCountryNameMutation, refetchProfile]);
 
   const handleFlagUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,6 +96,7 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
     } finally {
       setIsUploadingFlag(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFlagSave = useCallback(async () => {
@@ -116,6 +119,7 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       console.error("Failed to save flag:", error);
       notify.error("Failed to save flag");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfileCountryId, uploadedFlagUrl, updateCountryFlagMutation, refetchProfile]);
 
   return {

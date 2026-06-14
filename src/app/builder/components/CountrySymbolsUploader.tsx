@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { motion, AnimatePresence } from "motion/react";
 import {
   Flag,
   Shield,
   Image as ImageIcon,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ChevronDown,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Sparkles,
   Upload,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Loader2,
 } from "lucide-react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import { extractColorsFromImage, type ExtractedColors } from "~/lib/image-color-extractor";
 import { getFlagColors } from "~/lib/flag-color-extractor";
@@ -87,6 +92,7 @@ export function CountrySymbolsUploader({
       setIsExtracting(false);
       lastProcessedRef.current = imageKey;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flagUrl, coatOfArmsUrl, foundationCountry?.name]);
 
   useEffect(() => {
@@ -115,6 +121,7 @@ export function CountrySymbolsUploader({
         onCoatOfArmsUrlChange(foundationCountry.coatOfArmsUrl);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     foundationCountry?.flagUrl,
     foundationCountry?.coatOfArmsUrl,

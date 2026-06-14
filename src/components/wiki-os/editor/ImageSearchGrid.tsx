@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/editor/ImageSearchGrid.tsx
 // Visual image search with glass-physics cards — IxWiki + Wikimedia Commons.

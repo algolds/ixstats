@@ -109,6 +109,7 @@ export function PostComposer({
     } catch (error: any) {
       notify.error(error.message || "Failed to create post");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content, visibility, canPost, onPost, replyTo, account.id, createPostMutation]);
 
   const handleKeyDown = useCallback(

@@ -1270,6 +1270,7 @@ async function fetchExternalWiki(url: string, retries = 2): Promise<Response | n
       baseDelayMs: 2000,
       timeoutMs: 20000,
       retryIf: (err) => err.message.includes("HTTP 403"),
+      // eslint-disable-next-line unused-imports/no-unused-vars
       onRetry: (attempt, err) => {
         console.warn(
           `[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt}/${retries + 1}`

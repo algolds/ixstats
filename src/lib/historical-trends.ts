@@ -187,6 +187,7 @@ export function calculateDiplomaticTrend(
 export function calculateGovernmentTrend(
   currentApproval: number,
   economicPerformance: number,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   diplomaticStanding: number
 ): TrendAnalysis {
   // Government approval tends to correlate with economic performance

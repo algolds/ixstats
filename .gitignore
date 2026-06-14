@@ -128,7 +128,6 @@ prisma/backups/
 # Archive & Generated Docs
 # --------------------------------------------------------------------------------
 docs/archive/
-CHANGELOG.md
 IMPLEMENTATION_STATUS.md
 data/
 

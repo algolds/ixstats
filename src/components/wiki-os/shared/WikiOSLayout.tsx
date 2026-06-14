@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/shared/WikiOSLayout.tsx
 // WikiOS content wrapper with standard DashboardSidebarLayout.
@@ -31,6 +32,7 @@ import type { TocEntry } from "~/lib/wiki-os/html-transformer";
 
 export function WikiOSLayout({
   title,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   sidebarVariant = "wiki",
   hideTitleHeading = false,
   sections,

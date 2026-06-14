@@ -8,6 +8,7 @@
 
 import type { PackedGraph, WorldGenParams, Culture } from "./types";
 import { makeRng } from "./rng";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { isLand, cellLat } from "./voronoi-mesh";
 import { getLanguageFamilies } from "../procedural-archive/language-families";
 

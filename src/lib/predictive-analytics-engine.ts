@@ -366,6 +366,7 @@ export class PredictiveAnalyticsEngine {
       historical,
       countryData
     );
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const gdpPerCapita = currentGdp / currentPopulation;
 
     // Regional ranking based on GDP per capita and growth rate
@@ -603,6 +604,7 @@ export class PredictiveAnalyticsEngine {
   private generateScenarios(
     baseProjection: any,
     historical: HistoricalDataPoint[],
+    // eslint-disable-next-line unused-imports/no-unused-vars
     daysAhead: number
   ): EconomicProjection["scenarios"] {
     const volatility = this.calculateVolatility(historical, "totalGdp");
@@ -764,6 +766,7 @@ export class PredictiveAnalyticsEngine {
     return "low";
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private identifySystemicRiskFactors(historical: HistoricalDataPoint[]): string[] {
     return ["Systemic risk factors require broader economic context"];
   }
@@ -925,6 +928,7 @@ export class PredictiveAnalyticsEngine {
 
     if (targetGdpPerCapita && currentGdpPerCapita < targetGdpPerCapita) {
       const projectedGdpGrowth = gdpTrend.slope * 365; // Annual growth
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const projectedPopGrowth = popTrend.slope * 365;
 
       const yearsToTarget = Math.max(
@@ -1010,6 +1014,7 @@ export class PredictiveAnalyticsEngine {
    */
   private calculateEconomicPerformanceScore(
     historical: HistoricalDataPoint[],
+    // eslint-disable-next-line unused-imports/no-unused-vars
     countryData: any
   ): number {
     if (historical.length === 0) return 50;
@@ -1065,6 +1070,7 @@ export class PredictiveAnalyticsEngine {
   private calculateInnovationScore(
     historical: HistoricalDataPoint[],
     gdpGrowthRate: number,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     countryData: any
   ): number {
     if (historical.length < 2) return 3.0;

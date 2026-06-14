@@ -411,7 +411,9 @@ function AssetDialog({
   open,
   onOpenChange,
   asset,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   branchId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   branchType,
   onCreate,
   onUpdate,

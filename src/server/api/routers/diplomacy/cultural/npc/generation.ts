@@ -1,18 +1,8 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomatic-choice-tracker";
-
-
-
-
-
-
-
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({

@@ -40,14 +40,14 @@ export function PlayerTrainingButton({
       <PopoverTrigger
         className={cn(
           buttonVariants({ variant: "ghost", size: "sm" }),
-          "text-muted-foreground hover:text-foreground h-7 text-[10px] px-2"
+          "text-muted-foreground hover:text-foreground h-7 px-2 text-[10px]"
         )}
       >
         <Dumbbell className="mr-1 h-3 w-3" />
         Train
       </PopoverTrigger>
 
-      <PopoverContent className="border-border bg-card w-52 rounded-xl border p-3 shadow-xl backdrop-blur-xl pointer-events-auto">
+      <PopoverContent className="border-border bg-card pointer-events-auto w-52 rounded-xl border p-3 shadow-xl backdrop-blur-xl">
         <p className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-wider uppercase">
           Focus Attribute
         </p>

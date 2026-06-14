@@ -58,6 +58,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
   showAtomicIntegration = false,
   mode = "create",
 }: FiscalSystemSectionProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const isEditMode = mode === "edit";
 
   const [selectedView, setSelectedView] = useState<
@@ -122,6 +123,7 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
     atomicComponents?.filter((c) => c.isActive).map((c) => c.componentType as ComponentType) || [];
 
   // Use fiscalSystem from inputs with safe fallback for hooks
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fiscalSystem = inputs.fiscalSystem ?? {
     taxRevenueGDPPercent: 20,
     governmentBudgetGDPPercent: 25,

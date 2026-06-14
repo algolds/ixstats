@@ -19,6 +19,7 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
 
   // Determine which account type should post based on crisis type or severity
   // For simplicity, let's say media accounts post about all crises for now.
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const accountTypeToPost = "media";
 
   const activeUsers = await prisma.user.findMany({

@@ -181,6 +181,7 @@ export function IxStatsCharts({
   }, [theme]);
 
   // Custom tooltip component
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
 

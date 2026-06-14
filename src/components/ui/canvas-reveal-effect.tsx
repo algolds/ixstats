@@ -36,6 +36,7 @@ export const CanvasRevealEffect = ({
 }) => {
   const [webglSupported, setWebglSupported] = useState(true);
   const [contextAvailable, setContextAvailable] = useState(true);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [contextId, setContextId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -314,6 +315,7 @@ const ShaderMaterial = ({
       setMaterialError(true);
       return null;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size.width, size.height, source]);
 
   if (materialError || !material) {

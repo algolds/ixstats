@@ -137,6 +137,7 @@ function ComparisonRow({
   value,
   rawValue,
   compareValue,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   unit,
   higherIsBetter = true,
 }: {

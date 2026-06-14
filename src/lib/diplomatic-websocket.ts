@@ -127,6 +127,7 @@ export class DiplomaticWebSocket {
 
         this.ws.onclose = (event) => {
           clearTimeout(connectionTimeout);
+          // eslint-disable-next-line unused-imports/no-unused-vars
           const reason = this.getCloseReason(event.code);
           this.isConnected = false;
           this.onStatusChange("disconnected");
@@ -590,6 +591,7 @@ export const useDiplomaticWebSocket = (
         manager.removeStatusListener(onStatusChange);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, onEvent, onStatusChange]);
 
   return {

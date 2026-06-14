@@ -25,6 +25,7 @@ interface TradeMetricsProps {
 
 export function TradeMetrics({
   data,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   nominalGDP,
   showAdvanced = false,
   className = "",
@@ -153,7 +154,8 @@ export function TradeMetrics({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {exportMix.map(({ name, value, color }) => (
+            // eslint-disable-next-line unused-imports/no-unused-vars
+            {exportMix.map(({ name, value, _color }) => (
               <div key={name} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{name}</span>

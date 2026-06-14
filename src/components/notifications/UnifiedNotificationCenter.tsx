@@ -256,8 +256,10 @@ function NotificationDisplay({
 
 export function UnifiedNotificationCenter({
   config: userConfig = {},
+  // eslint-disable-next-line unused-imports/no-unused-vars
   userPreferences,
   onNotificationAction,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onPreferencesChange,
   className = "",
 }: UnifiedNotificationCenterProps) {
@@ -265,6 +267,7 @@ export function UnifiedNotificationCenter({
 
   // State management
   const [activeTab, setActiveTab] = useState<"all" | "unread" | "priority">("all");
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [filters, setFilters] = useState<NotificationFilters>({
     categories: [],
     priorities: [],
@@ -275,7 +278,9 @@ export function UnifiedNotificationCenter({
   // Import live notifications hook
   const {
     notifications: liveNotifications,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     unreadCount: liveUnreadCount,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isLoading,
     markAsRead: liveMarkAsRead,
     markAllAsRead: liveMarkAllAsRead,

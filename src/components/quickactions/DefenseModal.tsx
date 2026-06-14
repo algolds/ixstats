@@ -44,14 +44,17 @@ export function DefenseModal({ countryId, open, onOpenChange }: DefenseModalProp
   const router = useRouter();
 
   // Get security assessment
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: securityData, isLoading: securityLoading } =
     api.security.getSecurityAssessment.useQuery({ countryId }, { enabled: !!countryId && open });
 
   // Get military branches
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: militaryBranches, isLoading: branchesLoading } =
     api.security.getMilitaryBranches.useQuery({ countryId }, { enabled: !!countryId && open });
 
   // Get active threats
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: threats, isLoading: threatsLoading } = api.security.getSecurityThreats.useQuery(
     { countryId, activeOnly: true },
     { enabled: !!countryId && open }

@@ -1,8 +1,8 @@
 # Refactoring Best Practices
 
-**Last updated:** May 2026
+**Last updated:** June 2026 (patch 1.0.6)
 
-This guide documents the established patterns and best practices for refactoring large components in the IxStats codebase, based on successful refactoring work completed in October 2025.
+This guide documents the established patterns and best practices for refactoring large components and tRPC routers in the IxStats codebase. The component-level patterns (modular architecture, business-logic extraction, hooks, presentation components) are based on the October 2025 work. The **tRPC router-splitting recipe** was added in June 2026 (patch 1.0.6) and is documented at the bottom of this file.
 
 ## Overview
 
@@ -946,3 +946,81 @@ Remember: **Refactoring is an investment in long-term code health**. Take the ti
 - [React Performance Optimization](https://react.dev/learn/render-and-commit)
 - [TypeScript Best Practices](https://www.typescriptlang.org/docs/handbook/declaration-files/do-s-and-don-ts.html)
 - [Testing Library Documentation](https://testing-library.com/docs/react-testing-library/intro/)
+
+---
+
+## tRPC Router Splitting Recipe (added patch 1.0.6)
+
+When a tRPC router in `src/server/api/routers/` grows over **700 lines** (or 900 for files in `RELAXED_FILES`), split it into a same-named subdirectory. This pattern was proven across 44+ splits in 1.0.6 — all preserved byte-identical `api.<router>.<key>` paths with zero call-site changes.
+
+### When to split
+
+- File is over 700 lines (the arch guard will fail otherwise; see `bun run audit:arch`)
+- The router has a natural **domain partition** (e.g. CRUD vs queries vs admin; or by sub-feature)
+- Each partition can produce a self-contained file under 700 lines
+
+### The canonical splitter
+
+**`scripts/split-router-template.ts`** (~250 lines, with a 100-line header comment documenting all 6 lessons learned). It handles:
+- Static + dynamic relative-import pre-flight (the bug pattern that broke wikios, intel/core, intel/alerts, geo/admin, geo/features, transport — all now fixed in the template)
+- Copy-whole-file strategy (retains module-level helpers per group, `eslint --fix` trims unused)
+- `mergeRouters` recombination in the new `index.ts` (or `--pattern=spread` for procedure-bag routers)
+- AST parity verification (mandatory, no separate verifier needed)
+
+### Usage
+
+```bash
+bun run scripts/split-router-template.ts \
+  --routerFile="src/server/api/routers/foo.ts" \
+  --outDir="src/server/api/routers/foo" \
+  --varName="fooRouter" \
+  --groups='{read:["getX","getY"],mutate:["createZ","updateW"]}' \
+  --pattern="mergeRouters"
+```
+
+For procedure-bag routers (e.g. `countries/management` which exports `managementProcedures = {...}` and gets spread into the parent):
+```bash
+--pattern="spread" --varName="managementProcedures"
+```
+
+### What the splitter does
+
+1. **Pre-flight scans** the source for:
+   - Static relative imports: `grep -nE "from ['\"]\.\.?/[^'\"]+['\"]"`
+   - Dynamic relative imports: `grep -nE "await import\(['\"]\.\.?/[^'\"]+['\"]\)"`
+   - External importers of any module-level helper exports (so we know if we need to re-export)
+2. **Partitions** the procedures into 2–4 logical groups per the `--groups` JSON
+3. **Copies** the whole source per group, **renames** the exported router var, **removes** out-of-group procedures, **rewrites** all relative imports to add one more `../` per directory level the file moved down
+4. **Writes** the new `index.ts` with `mergeRouters(...)` (or object spread) recombining the sub-routers under the original export name
+5. **Deletes** the monolith
+6. **AST-parity verifies** that the union of procedure keys across new sub-files equals the original (mandatory step, fails with non-zero exit if mismatch)
+
+### After the split
+
+1. **Update the arch guard baseline** to drop the now-split file: `bun run audit:arch:update`
+2. **Run a consolidated typecheck** (do NOT let the agent that ran the splitter also run typecheck — agents split + verify; the orchestrator typechecks): `bun run typecheck:trpc`
+3. **If you discover the splitter missed a relative import** (it happens occasionally when the import is conditional or in a comment), fix it with `sed`/`perl` manually — the template can't anticipate every case
+
+### The arch guard (enforcement)
+
+After 1.0.6, the architecture guard `bun run audit:arch` runs in CI and fails if:
+- Any file in `src/server/api/routers/**` is over 700 lines (or 900 for `RELAXED_FILES`)
+- A ratcheted file in `arch-baseline.json` has grown
+- A new cross-router import appears (no router may import from another router)
+
+The guard is wired to `bun run audit:arch` and has a partner `bun run audit:arch:update` to re-ratchet the baseline after a successful split.
+
+### Common gotchas
+
+- **Dynamic imports**: `await import("./foo")` doesn't match static-import regexes. The template checks BOTH, but if you find a missed one, use `perl -i -pe` rather than `sed` (parens confuse sed's replacement).
+- **Helper re-exports**: when a router exports a helper used by another router (e.g. `evaluateThresholds` from `intelligence/alerts` is imported by `intelligence/core/dashboard`), the new `<router>/index.ts` MUST re-export the helper. Otherwise external importers break. The template's pre-flight external-importer scan flags this.
+- **Procedure-bag pattern**: routers that export a plain object (e.g. `managementProcedures = {...}`) and get spread into a parent (rather than `createTRPCRouter({})` + `mergeRouters`) need `--pattern=spread` mode. Only `countries/management` uses this pattern in the current tree.
+- **Single-procedure monsters**: a procedure that is intrinsically 500+ lines (e.g. a complex simulation or import routine) cannot be fragmented by domain — it just goes into its own group file. Ratchet that file in the baseline.
+
+### References
+
+- **`arch.md`** — the architecture rules (≤700 lines, no cross-router imports, no shared mega-types)
+- **`scripts/audit/audit-arch.ts`** — the architecture guard
+- **`scripts/split-router-template.ts`** — the canonical splitter (read its 100-line header comment)
+- **`docs/prevent_ts_graph_explosion.md`** — the broader TypeScript graph isolation context
+- **`docs/audits/AUDIT_2026-06-13.md`** — the audit that produced this work

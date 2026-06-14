@@ -62,7 +62,9 @@ export function GovernmentSpending({
   totalPopulation,
   onSpendingDataChangeAction, // Use renamed prop
   isReadOnly = false,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   indicators, // Accept indicators
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onIndicatorsChangeAction, // Accept onIndicatorsChangeAction
 }: GovernmentSpendingProps) {
   const [selectedView, setSelectedView] = useState<"overview" | "detailed" | "comparison">(

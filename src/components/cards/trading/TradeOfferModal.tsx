@@ -2,8 +2,10 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { motion } from "motion/react";
 import Image from "next/image";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { X, ArrowRightLeft, Coins, Send, AlertCircle, Search, User } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
@@ -207,6 +209,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
         prev.includes(cardId) ? prev.filter((id) => id !== cardId) : [...prev, cardId]
       );
     };
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const resetForm = () => {
       setStep(recipientId ? "cards" : "partner");
       setSelectedYourCards([]);

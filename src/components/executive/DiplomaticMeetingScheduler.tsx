@@ -87,6 +87,7 @@ export function DiplomaticMeetingScheduler({
   onOpenChange,
   defaultMeeting,
 }: DiplomaticMeetingSchedulerProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { user } = useUser();
   const notify = useNotify();
 

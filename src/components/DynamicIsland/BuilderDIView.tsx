@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { cn } from "~/lib/utils";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { PreText } from "~/components/ui/pretext";
 import {
   archetypes,
@@ -86,6 +87,7 @@ function BuilderProgressView({ filter, context, onClose }: BuilderProgressViewPr
 
   const countryName =
     builderState.economicInputs?.countryName || activeTemplate?.name || "New Nation";
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const baseTemplateName = activeTemplate?.name || "Not selected";
 
   // Steps map
@@ -400,6 +402,7 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
     }
   }, [filter.softSelectedCountry]);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const showContinueButton = !!activeTemplate;
 
   const { handleContinue: actionsContinue } = useBuilderActions({
@@ -408,6 +411,7 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
     mode: context.mode,
   });
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleContinue = () => {
     const currentStep = context.builderState.step;
     if (currentStep === "foundation") {

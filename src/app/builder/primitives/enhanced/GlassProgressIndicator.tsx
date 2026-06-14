@@ -47,6 +47,7 @@ export function GlassProgressIndicator({
   const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 
   // Animated percentage for smooth transitions
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const animatedValue = useAnimatedValue(percentage, {
     ...DEFAULT_ANIMATIONS.spring,
     duration: animationDuration,

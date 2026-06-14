@@ -52,6 +52,7 @@ export function computeApproxAreaForFeature(geometry: Geometry): number {
         sumLng += lng;
         sumLat += lat;
       }
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const cLng = sumLng / closed.length;
       const cLat = sumLat / closed.length;
       const latRad = (cLat * Math.PI) / 180;

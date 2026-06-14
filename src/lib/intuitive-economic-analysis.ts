@@ -386,7 +386,9 @@ export class IntuitiveEconomicAnalysis {
   private generateHealthSummary(
     countryStats: CountryStats,
     economyData: EconomyData,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     detailedAnalysis: ComprehensiveEconomicAnalysis,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     groupedAnalysis: GroupedAnalysisResult
   ): EconomicHealthSummary {
     return this.quickHealthCheck(countryStats, economyData);
@@ -395,7 +397,9 @@ export class IntuitiveEconomicAnalysis {
   private generateActionableInsights(
     countryStats: CountryStats,
     economyData: EconomyData,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     detailedAnalysis: ComprehensiveEconomicAnalysis,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     groupedAnalysis: GroupedAnalysisResult
   ): ActionableInsights {
     const immediateActions = [];
@@ -654,6 +658,7 @@ export class IntuitiveEconomicAnalysis {
   private generateSimulation(
     countryStats: CountryStats,
     economyData: EconomyData,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     historicalData: HistoricalDataPoint[]
   ): EconomicSimulation {
     const currentGrowth = countryStats.adjustedGdpGrowth;
@@ -787,6 +792,7 @@ export class IntuitiveEconomicAnalysis {
 
   private determineTrend(
     countryStats: CountryStats,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     economyData: EconomyData
   ): EconomicHealthSummary["trend"] {
     // Simplified trend analysis
@@ -962,6 +968,7 @@ export class IntuitiveEconomicAnalysis {
   }
 
   // Story generation helpers
+  // eslint-disable-next-line unused-imports/no-unused-vars
   private characterizePast(tier: string, historicalData: HistoricalDataPoint[]): string {
     if (tier === "Impoverished" || tier === "Developing") {
       return "Agricultural foundation with gradual modernization";

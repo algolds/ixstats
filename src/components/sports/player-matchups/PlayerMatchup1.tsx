@@ -88,7 +88,7 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
             {playerA.firstName} {playerA.lastName}
           </h4>
           <PositionTooltip position={playerA.position}>
-            <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase cursor-help hover:underline decoration-dotted">
+            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-bold uppercase decoration-dotted hover:underline">
               {playerA.position}
             </span>
           </PositionTooltip>
@@ -130,7 +130,7 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
             {playerB.firstName} {playerB.lastName}
           </h4>
           <PositionTooltip position={playerB.position}>
-            <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase cursor-help hover:underline decoration-dotted">
+            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-bold uppercase decoration-dotted hover:underline">
               {playerB.position}
             </span>
           </PositionTooltip>

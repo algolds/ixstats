@@ -4,7 +4,7 @@
 
 IxStates is a nation simulation and worldbuilding platform — a persistent world where every country's economy, military, diplomacy, and borders are live and interconnected.
 
-[IxStates 1.0 "Ogma" · 83 routers · 1,329 endpoints · 237 data models · 893 components]
+[IxStates 1.0.6 "Ogma" · 87 routers · 1,376 procedures · 237 data models · 893+ components]
 
 ---
 
@@ -40,9 +40,10 @@ Next.js 16 · React 19 · TypeScript 5.9 · Prisma 6.19 · tRPC 11.17 Tailwind C
 
 - Next.js 16.2.6 App Router — 187 routes across `src/app`
 - React 19.2.6 + TypeScript 5.9.3 — 893+ components in `src/components`
-- tRPC 11.17 API layer — **83 routers**, **1,329 typed procedures**
+- tRPC 11.17 API layer — **87 routers** (52 split into subdirs, 24 flat), **1,376 typed procedures**
 - Prisma 6.19.3 ORM — **237 models** on PostgreSQL
 - Custom server (`server.mjs`) with layered env loading and Socket.IO realtime feeds
+- **Architecture guard** (`scripts/audit/audit-arch.ts`) enforces ≤700-line file ceiling and zero cross-router imports
 - In-app help center at `/help` and documentation hub in `docs/`
 
 ## Feature Pillars
@@ -54,6 +55,7 @@ Each tier carries an independent version where noted — see the **[Versioning &
 | **Apps** *(independent version)* | IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software — powers the IxWiki content; Canvas editor sub-system), IxVault (wallet + trading cards + IxCredits + crafting/trading/marketplace/packs/lore cards/NS import) |
 | **Engines** *(internal sim cores, independent version)* | MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld) |
 | **Core Systems** *(independent version)* | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS (28 interfaces) |
+> **Patch 1.0.6:** 47 god-file routers eliminated via `mergeRouters`-based domain splitting; arch guard tool added. See CHANGELOG.md. |
 | **Design System** *(independent version)* | Facet (glass / refraction / depth) |
 | **Platform Utilities** | IxTime (game clock), IxnayID (cross-platform identity) |
 | **Inherits platform version** | IxForum (community), Experimental Labs |
@@ -159,6 +161,8 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 | `bun run lint` | ESLint with cache |
 | `bun run dev` | Development server with incremental type checking |
 | `bun run typecheck` | Full typecheck across all sub-projects (ui, server, trpc, db) |
+| `bun run audit:arch` | Architecture guard — enforces file-size ceiling, ratchets baseline, blocks cross-router imports |
+| `bun run scripts/split-router-template.ts --help` | Split a router into a subdir (see header comment for usage) |
 
 ## Project Structure
 
@@ -181,10 +185,12 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 ├── Infrastructure
 │   ├── src/components/             # UI components (893+ across 44 directories)
 │   ├── src/hooks/                  # Custom React hooks (107)
-│   ├── src/server/api/routers/     # tRPC routers (83, including subdirectories)
+│   ├── src/server/api/routers/     # tRPC routers (87 — 52 split into subdirs via mergeRouters, 24 flat)
 │   ├── src/lib/                    # Utilities, rate limiter, game clock, cron, WebSocket
+│   ├── src/server/shared/          # Cross-router shared primitives (e.g. `layer-cache.ts`)
 │   ├── src/styles/                 # Facet design system (glass/refraction/depth), themes, forum CSS
 │   ├── prisma/                     # Schema (237 models across 12 files) + migrations
+│   ├── scripts/audit/              # Architecture guard (ratchet baseline; fails on new god files / growth)
 │   └── server.mjs                  # Custom Node server (Socket.IO + cron)
 │
 └── Navigation Hubs
@@ -207,7 +213,7 @@ Early-stage prototype systems under the Labs dropdown.
 
 ## Design System
 
-The platform is built on **Facet** *(formerly "Glass Physics")* — a custom glass / refraction / depth design system with hierarchy, dynamic refraction, and light/dark theme support. See `src/styles/glass-refraction.css` and `src/styles/themes.css`. *(CSS classes/tokens remain `glass-*` / `--glass-*` pending a separate mechanical rename.)*
+The platform is built on **Facet**  — a custom design system built around depth with hierarchy, dynamic refraction, and native light/dark theme intergration. See `src/styles/glass-refraction.css` and `src/styles/themes.css`. *(CSS classes/tokens remain `glass-*` / `--glass-*` pending a separate mechanical rename.)*
 
 - **Icons**: Lucide React (primary), React Icons (Font Awesome, Game Icons, Remix), 36 custom animated icons (`src/components/ui/icons/`)
 - **Brand colors**: Indigo primary (`#6366f1`), with per-system accent colors mapped in `docs/reference/branding.md`
@@ -216,9 +222,10 @@ The platform is built on **Facet** *(formerly "Glass Physics")* — a custom gla
 ## API & Data Access
 
 - tRPC context: `src/server/api/trpc.ts` (Clerk auth, rate limiting, user provisioning)
-- Router index: `src/server/api/root.ts` (83 domain routers)
+- Router index: `src/server/api/root.ts` (87 domain routers)
 - Database: Prisma client helpers in `src/server/db`
 - Realtime: Socket.IO events from `src/lib/websocket-server.ts`
+- **Architecture guard:** `bun run audit:arch` — fails on new god files, file growth past ratcheted baseline, or new cross-router imports. Single canonical splitter: `scripts/split-router-template.ts`
 
 ## Observability
 

@@ -11,6 +11,7 @@ import { cn } from "~/lib/utils";
 import { BuilderWelcomeModal } from "./BuilderWelcomeModal";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { useBuilderFilter } from "./builder-filter-context";
 import { DynamicIslandEffects, DYNAMIC_ISLAND_STYLE } from "./glass";
@@ -58,6 +59,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   section,
   mode = "create",
   countryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onNavigate,
 }: BuilderSectionHeroProps) {
   const isEditMode = mode === "edit";
@@ -69,7 +71,9 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   const {
     builderState,
     setBuilderState,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     submitFn,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     isSubmittingGlobal,
     foundationPreviewCountry,
     setFoundationPreviewCountry,
@@ -87,6 +91,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
     if (!el) return;
 
     const observer = new ResizeObserver((entries) => {
+      // eslint-disable-next-line unused-imports/no-unused-vars
       for (const entry of entries) {
         const rectHeight = el.getBoundingClientRect().height;
         if (rectHeight > 0) {
@@ -134,6 +139,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchExpanded, foundationFilter.searchTerm, foundationFilter.selectedArchetypes]);
 
   // Focus input when expanded
@@ -166,6 +172,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   }, [foundationFilter.softSelectedCountry]);
 
   // Get stable foundation country name
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const foundationCountryName = (() => {
     if (builderState.selectedCountry) {
       const c = builderState.selectedCountry;
@@ -192,6 +199,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
   // Upgrade flag to high-res / SVG
   const countryFlagUrl = getHighResFlagUrl(rawFlagUrl);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const steps = isEditMode
     ? ["identity", "government", "economics", "preview"]
     : ["foundation", "identity", "government", "economics", "preview"];

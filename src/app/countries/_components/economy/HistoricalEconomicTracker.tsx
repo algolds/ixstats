@@ -78,11 +78,13 @@ export function HistoricalEconomicTracker({
     setIsAddingEvent,
 
     // Computed data
+    // eslint-disable-next-line unused-imports/no-unused-vars
     filteredData,
     allEvents,
     chartData,
     eventMarkers,
     economicHealthTrend,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     volatilityMetrics,
 
     // Utility functions

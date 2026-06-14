@@ -67,6 +67,7 @@ interface ParsedEconomicComponent {
 
 const economicComponentTypeSchema = z.nativeEnum(EconomicComponentType);
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const getAllComponentsSchema = z
   .object({
     category: z.string().optional(),
@@ -74,10 +75,12 @@ const getAllComponentsSchema = z
   })
   .optional();
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const getComponentByTypeSchema = z.object({
   componentType: economicComponentTypeSchema,
 });
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const incrementUsageSchema = z.object({
   componentType: economicComponentTypeSchema,
 });
@@ -183,6 +186,7 @@ function getFallbackComponents(): ParsedEconomicComponent[] {
 /**
  * Get fallback component by type
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 function getFallbackComponentByType(
   componentType: EconomicComponentType
 ): ParsedEconomicComponent | null {
@@ -216,6 +220,7 @@ function getFallbackComponentByType(
 /**
  * Ensure database is seeded with economic component reference data
  */
+// eslint-disable-next-line unused-imports/no-unused-vars
 async function ensureSeeded(db: any) {
   try {
     const count = await db.economicComponentData.count();
@@ -566,5 +571,5 @@ export const economicComponentsComponentsRouter = createTRPCRouter({
           message: `Failed to delete component ${input.componentType}. Please try again or contact support if the issue persists.`,
         });
       }
-    })
+    }),
 });

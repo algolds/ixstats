@@ -244,6 +244,7 @@ export function generateChartColors(
  */
 export function convertThemeColorForChart(
   colorVar: string,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   opacity: number = 1
 ): {
   hsl: string;

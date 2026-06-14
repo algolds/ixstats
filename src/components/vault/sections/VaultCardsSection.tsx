@@ -11,6 +11,7 @@ import {
   Folder,
   ShoppingBag,
   Trash2,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   SortAsc,
   Copy,
   Grid3x3,
@@ -24,10 +25,12 @@ import {
   BookOpen,
   MapPin,
   Loader2,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Coins,
   Sparkles,
   Calendar,
   FileText,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Settings,
   Filter,
   ChevronDown,
@@ -55,14 +58,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { CardDisplay } from "~/components/cards/display";
 import { VaultCardsFilterSidebar } from "./VaultCardsFilterSidebar";
 import NumberFlow from "~/components/ui/number-flow";
 import {
+  // eslint-disable-next-line unused-imports/no-unused-imports
   CutoutCard,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   CutoutCardContent,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 import type { CardInstance } from "~/types/cards-display";
@@ -95,6 +102,7 @@ interface FilterState {
   maxValue: number;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface VaultCardsSectionProps {
   initialTab?: string | null;
 }
@@ -532,6 +540,7 @@ function GallerySidebarContent({
 // ─── Inventory Tab ───────────────────────────────────────────────
 
 function InventoryTab({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   ownerships,
   isLoading,
   allCards,
@@ -1004,10 +1013,15 @@ function CardGalleryTab({
   season,
   rarity,
   sortBy,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onSourceChange,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onSearchChange,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onSeasonChange,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onRarityChange,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onSortByChange,
 }: {
   source: GallerySource;

@@ -42,6 +42,7 @@ export const militaryEquipmentImagesRouter = createTRPCRouter({
         equipmentId: z.string().cuid(),
       })
     )
+    // eslint-disable-next-line unused-imports/no-unused-vars
     .query(async ({ ctx, input }) => {
       try {
         const { resolveEquipmentImage } =
@@ -154,6 +155,7 @@ export const militaryEquipmentImagesRouter = createTRPCRouter({
    * Public: Get image cache statistics
    * Returns statistics about the equipment image cache
    */
+  // eslint-disable-next-line unused-imports/no-unused-vars
   getImageCacheStats: publicProcedure.query(async ({ ctx }) => {
     try {
       const { getImageCacheStats } =

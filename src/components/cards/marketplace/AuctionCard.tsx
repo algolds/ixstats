@@ -44,6 +44,7 @@ function formatCredits(amount: number): string {
  * />
  */
 export const AuctionCard = memo<AuctionCardProps>(
+  // eslint-disable-next-line unused-imports/no-unused-vars
   ({ auction, onBid, onBuyout, currentUserId, className }) => {
     const isCurrentBidder = false; // TODO: Track current bidder
     const hasEnded = auction.isExpired;

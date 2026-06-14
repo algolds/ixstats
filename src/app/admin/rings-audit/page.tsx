@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -119,6 +120,7 @@ function CountryRingsCard({
                   <div className="grid grid-cols-4 gap-2">
                     {RING_META.map((ring) => {
                       const valA = activityData?.[ring.key as keyof typeof activityData] ?? 0;
+                      // eslint-disable-next-line unused-imports/no-unused-vars
                       const valD =
                         (dashboardData as any)?.[ring.key as keyof typeof dashboardData] ?? 0;
                       const currentVal = data?.[ring.key as keyof typeof data] ?? 0;

@@ -6,23 +6,29 @@ import { createPortal } from "react-dom";
 import {
   X,
   Search,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   MapPin,
   Building,
   BarChart2,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Globe,
   Flag,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Plus,
   Loader2,
   CheckCircle,
   AlertTriangle,
   Compass,
   Map as MapIcon,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   HelpCircle,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   ArrowRight,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/map-config";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { booleanPointInPolygon, point } from "@turf/turf";
 
 // Helper Portal component to render modals under document.body
@@ -937,6 +943,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [mapLoaded, setMapLoaded] = useState(false);
   const labelInputRef = useRef<HTMLInputElement>(null);
 
@@ -1136,6 +1143,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
       setMapLoaded(true);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     centroid,
     geometry,

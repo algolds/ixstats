@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useEffect } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
@@ -9,6 +10,7 @@ import {
   WATER_BODY_LABELS,
   MAP_SYMBOL_FONTS,
   getProjectionSpec,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   DEMOTED_COUNTRY_NAMES,
   MAP_LAYER_TYPES,
 } from "~/lib/map-config";

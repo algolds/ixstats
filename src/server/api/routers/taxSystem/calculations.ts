@@ -2,9 +2,6 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 
-
-
-
 import {
   getUnifiedTaxEffectiveness,
   getTaxEconomyImpact,
@@ -13,6 +10,7 @@ import { ComponentType } from "@prisma/client";
 import { notificationHooks } from "~/lib/notification-hooks";
 
 // Validation helpers for brackets
+// eslint-disable-next-line unused-imports/no-unused-vars
 function validateBracketsState(
   state: TaxBuilderState
 ): { ok: true } | { ok: false; errors: Array<{ categoryIndex: number; message: string }> } {

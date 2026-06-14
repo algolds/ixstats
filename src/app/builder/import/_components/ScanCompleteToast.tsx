@@ -77,6 +77,7 @@ export function ScanCompleteToast({
     revenueSources,
     conflicts,
     warnings,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     overallCompleteness,
   } = result;
 
@@ -173,6 +174,7 @@ export function ScanCompleteToast({
                           const label = key
                             .replace(/([A-Z])/g, " $1")
                             .replace(/^./, (s) => s.toUpperCase());
+                          // eslint-disable-next-line unused-imports/no-unused-vars
                           const isDerived = ["laborMarket", "fiscalSystem"].includes(key);
                           return (
                             <div key={key} className="flex items-center gap-2">

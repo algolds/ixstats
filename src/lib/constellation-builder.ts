@@ -50,6 +50,7 @@ export class ConstellationBuilder {
 
     // Position achievements within their categories
     Object.entries(groupedAchievements).forEach(
+      // eslint-disable-next-line unused-imports/no-unused-vars
       ([category, categoryAchievements], categoryIndex) => {
         const categoryCenter = categoryPositions[category as AchievementCategory];
         const positions = this.positionAchievementsInCategory(

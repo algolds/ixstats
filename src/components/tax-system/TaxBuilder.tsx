@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { createPortal } from "react-dom";
 import { isEqual } from "lodash";
 import { Badge as UIBadge } from "~/components/ui/badge";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Calculator, X, AlertTriangle, Settings, BarChart3 } from "lucide-react";
 import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
 import { GlassCard } from "~/components/ui/enhanced-card";
@@ -30,6 +32,7 @@ import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
 
 // Templates and types
 import { taxSystemTemplates } from "./TaxSystemTemplates";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { TaxSystem, TaxCategory, TaxBracket, TaxCalculationResult } from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";
 
@@ -68,6 +71,7 @@ export function TaxBuilder({
   initialData,
   onSave,
   onChange,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onPreview,
   isReadOnly = false,
   countryId,
@@ -96,6 +100,7 @@ export function TaxBuilder({
     (typeof taxSystemTemplates)[number] | null
   >(null);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);

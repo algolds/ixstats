@@ -129,6 +129,7 @@ export class CrossBuilderSynergyService {
   private detectSynergies(
     economicComponents: EconomicComponentType[],
     governmentComponents: ComponentType[],
+    // eslint-disable-next-line unused-imports/no-unused-vars
     taxComponents: string[]
   ): CrossBuilderSynergy[] {
     const synergies: CrossBuilderSynergy[] = [];
@@ -215,6 +216,7 @@ export class CrossBuilderSynergyService {
   private detectConflicts(
     economicComponents: EconomicComponentType[],
     governmentComponents: ComponentType[],
+    // eslint-disable-next-line unused-imports/no-unused-vars
     taxComponents: string[]
   ): CrossBuilderSynergy[] {
     const conflicts: CrossBuilderSynergy[] = [];
@@ -484,7 +486,9 @@ export class CrossBuilderSynergyService {
     govComp: ComponentType,
     type: "synergy" | "conflict"
   ) {
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const economicComponent = ATOMIC_ECONOMIC_COMPONENTS[economicComp];
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const govComponent = ATOMIC_COMPONENTS[govComp];
 
     const multiplier = type === "synergy" ? 1 : -1;

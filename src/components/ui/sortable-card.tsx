@@ -30,6 +30,7 @@ export function SortableCard({
   variant = "glass",
   actions,
   order,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onReorder,
 }: SortableCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);

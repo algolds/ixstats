@@ -27,7 +27,8 @@ export const AnimatedTooltip = ({
 
   return (
     <>
-      {items.map((item, idx) => (
+      // eslint-disable-next-line unused-imports/no-unused-vars
+      {items.map((item, _idx) => (
         <div
           className="group relative -mr-4"
           key={item.name}

@@ -405,6 +405,7 @@ export interface FormState {
 }
 
 // UI State types
+// eslint-disable-next-line unused-imports/no-unused-vars
 type LoadingState<T = unknown> = {
   isLoading: boolean;
   error?: string | null;

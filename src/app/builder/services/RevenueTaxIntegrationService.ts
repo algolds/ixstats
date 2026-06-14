@@ -265,6 +265,7 @@ export class RevenueTaxIntegrationService {
   ): RevenueSourceInput[] {
     const revenueSources: RevenueSourceInput[] = [];
 
+    // eslint-disable-next-line unused-imports/no-unused-vars
     taxCategories.forEach((taxCategory, index) => {
       const revenueCategory = this.getRevenueCategoryForTaxType(taxCategory.categoryType);
       const collectionMethod = this.getDefaultCollectionMethod(taxCategory.categoryType);

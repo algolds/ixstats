@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -96,6 +97,7 @@ export function GovernmentSpendingModal({
     api.historical.getCountryHistory.useQuery({ countryId }, { enabled: !!countryId && isOpen });
 
   // Fetch global stats for comparison
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
     undefined,
     { enabled: isOpen }

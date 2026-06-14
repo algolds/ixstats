@@ -84,6 +84,7 @@ export default function NetworkDashboard({ countryId, countryName }: NetworkDash
       treaties,
       sharedData,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryId, embassies, relationships, culturalExchanges]);
 
   // Auto-refresh every 10 seconds

@@ -48,6 +48,7 @@ const CountryCard: React.FC<{
   flagUrl,
 }) => {
   const controls = useAnimation();
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = useCallback(() => {
@@ -119,12 +120,16 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
   onCountryClick,
   isLoading = false,
   hasMore = false,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   onLoadMore,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   searchInput,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   filterBy,
   onClearFilters,
   cardSize,
   onCardHoverChange,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   scrollPosition,
   softSelectedCountryId,
   parallaxOffsets = [],

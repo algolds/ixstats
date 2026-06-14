@@ -18,6 +18,7 @@ import * as path from "path";
 import { getArticleWikitext, type WikiSource } from "./wiki-bridge";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-wiki-parser";
 import { withRetrySafe } from "./with-retry";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "./base-path";
 
 // ──────────────────────────────────────────────

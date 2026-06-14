@@ -4,6 +4,7 @@
 
 "use client";
 
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { type ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -14,6 +15,7 @@ import {
   Search,
   Bookmark,
   MessageCircle,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   Bell,
   Reply,
   Share2,
@@ -24,6 +26,7 @@ import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { api } from "~/trpc/react";
 import { IXFORUM_VERSION } from "~/lib/buildVersion";
 
@@ -50,6 +53,7 @@ const NAV_GROUP_2: ForumNavItem[] = [
   { id: "conversations", href: "/messages", icon: MessageCircle, title: "Messages" },
 ];
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const NAV_GROUP_3: ForumNavItem[] = [
   { id: "search", href: "/forum/search", icon: Search, title: "Search" },
 ];

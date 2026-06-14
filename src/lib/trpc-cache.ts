@@ -17,6 +17,7 @@
  */
 
 import { Redis } from "ioredis";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { initTRPC } from "@trpc/server";
 import { createHash } from "crypto";
 import type { createTRPCContext } from "~/server/api/trpc";
@@ -51,6 +52,7 @@ function getRedisClient(): Redis | null {
       });
 
       return redis;
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (err) {
       console.warn("[TRPC_CACHE] Failed to connect to Redis, using memory cache fallback");
       return null;

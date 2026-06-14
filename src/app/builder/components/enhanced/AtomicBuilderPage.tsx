@@ -35,6 +35,7 @@ import { StepContent } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import type { BuilderStep } from "./builderConfig";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { BuilderStepNav } from "../BuilderStepNav";
 import type { BuilderSection } from "../../lib/builder-theme";
 
@@ -102,10 +103,13 @@ function AtomicBuilderPageInner({
   // Tutorial state
   const [showTutorial, setShowTutorial] = useState(false);
   const [showQuickStart, setShowQuickStart] = useState(false);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [tutorialMode, setTutorialMode] = useState<string | null>(null);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const quickStartProcessed = useRef(false);
 
   // Error state
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [error, setError] = useState<string | null>(null);
 
   // Submission lock to prevent double-submits
@@ -218,6 +222,7 @@ function AtomicBuilderPageInner({
         setBuilderState((prev) => ({ ...prev, economicInputs: updatedInputs }));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderState.governmentComponents, setBuilderState]);
 
   // Track last processed government structure to prevent loops
@@ -266,6 +271,7 @@ function AtomicBuilderPageInner({
         setBuilderState((prev) => ({ ...prev, economicInputs: updatedInputs }));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderState.governmentStructure, setBuilderState]);
 
   // Note: Unified Builder Integration is handled by useBuilderState hook
@@ -288,6 +294,7 @@ function AtomicBuilderPageInner({
   }, []);
 
   // Create country mutation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const createCountryMutation = (api.countries as any).createCountry?.useMutation({
     onSuccess: (country: any) => {
       try {
@@ -295,6 +302,7 @@ function AtomicBuilderPageInner({
           localStorage.removeItem("builder_state");
           localStorage.removeItem("builder_last_saved");
         }
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to clear saved state
       }
@@ -344,6 +352,7 @@ function AtomicBuilderPageInner({
   };
 
   // Update country mutation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateCountryMutation = (api.countries as any).updateCountry?.useMutation({
     onSuccess: (country: any) => {
       try {
@@ -351,6 +360,7 @@ function AtomicBuilderPageInner({
           localStorage.removeItem(`builder_state_${countryId}`);
           localStorage.removeItem(`builder_last_saved_${countryId}`);
         }
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to clear saved state
       }
@@ -447,6 +457,7 @@ function AtomicBuilderPageInner({
         });
       }
       setIsConfirmModalOpen(false);
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Error handled by mutation's onError callback
       // Release lock on error
@@ -494,6 +505,7 @@ function AtomicBuilderPageInner({
 
     setIsVerified(false);
     setIsConfirmModalOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderState, user, isSubmitting, isEditMode]);
   // Register the submit function and loading state with context
   useEffect(() => {
@@ -531,6 +543,7 @@ function AtomicBuilderPageInner({
         localStorage.removeItem("builder_state");
         localStorage.removeItem("builder_last_saved");
       }
+      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Failed to clear saved state
     }
@@ -580,6 +593,43 @@ function AtomicBuilderPageInner({
     [handleQuickStartNavigation]
   );
 
+  // Map BuilderStep to BuilderSection for step nav
+  const stepToSection: Record<BuilderStep, BuilderSection> = {
+    foundation: "foundation",
+    core: "identity",
+    government: "government",
+    economics: "economics",
+    preview: "preview",
+  };
+
+  const _currentSection = stepToSection[builderState.step];
+
+  const _handleNavigateSection = useCallback(
+    (section: BuilderSection) => {
+      const sectionToStep: Record<BuilderSection, BuilderStep | undefined> = {
+        foundation: "foundation",
+        identity: "core",
+        government: "government",
+        economics: "economics",
+        preview: "preview",
+        import: undefined,
+      };
+      const targetStep = sectionToStep[section];
+      if (targetStep) {
+        setBuilderState((prev) => ({ ...prev, step: targetStep }));
+      }
+    },
+    [setBuilderState]
+  );
+
+  const _allSections = new Set<BuilderSection>([
+    "foundation",
+    "identity",
+    "government",
+    "economics",
+    "preview",
+  ]);
+
   // Authentication guard
   if (!user) {
     return (
@@ -616,43 +666,6 @@ function AtomicBuilderPageInner({
       </div>
     );
   }
-
-  // Map BuilderStep to BuilderSection for step nav
-  const stepToSection: Record<BuilderStep, BuilderSection> = {
-    foundation: "foundation",
-    core: "identity",
-    government: "government",
-    economics: "economics",
-    preview: "preview",
-  };
-
-  const currentSection = stepToSection[builderState.step];
-
-  const handleNavigateSection = useCallback(
-    (section: BuilderSection) => {
-      const sectionToStep: Record<BuilderSection, BuilderStep | undefined> = {
-        foundation: "foundation",
-        identity: "core",
-        government: "government",
-        economics: "economics",
-        preview: "preview",
-        import: undefined,
-      };
-      const targetStep = sectionToStep[section];
-      if (targetStep) {
-        setBuilderState((prev) => ({ ...prev, step: targetStep }));
-      }
-    },
-    [setBuilderState]
-  );
-
-  const allSections = new Set<BuilderSection>([
-    "foundation",
-    "identity",
-    "government",
-    "economics",
-    "preview",
-  ]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col space-y-6">

@@ -177,7 +177,8 @@ export default function TeamLineup1({
                       {player.firstName} {player.lastName}
                     </div>
                     <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wide uppercase">
-                      {SPORTS_ABBREVIATIONS[player.position] || player.position} #{player.number ?? "--"}
+                      {SPORTS_ABBREVIATIONS[player.position] || player.position} #
+                      {player.number ?? "--"}
                     </div>
                     <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-1.5 text-[10px]">
                       <span className="text-muted-foreground font-bold">RATING:</span>

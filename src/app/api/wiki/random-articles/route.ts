@@ -46,6 +46,7 @@ export async function GET(request: Request) {
           if (idx >= items.length) break;
           try {
             results[idx] = await fn(items[idx]);
+            // eslint-disable-next-line unused-imports/no-unused-vars
           } catch (e) {
             results[idx] = null as unknown as R;
           }

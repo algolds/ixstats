@@ -467,6 +467,7 @@ export class OptimizedIntelligenceQueries {
   static async getIntelligenceFeed(
     countryId?: string,
     limit = 50,
+    // eslint-disable-next-line unused-imports/no-unused-vars
     options: OptimizedQueryOptions = {}
   ): Promise<any[]> {
     const startTime = performance.now();

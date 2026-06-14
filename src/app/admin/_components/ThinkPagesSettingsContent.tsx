@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Globe, Save, Check, MessageSquare, Flame, TrendingUp } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";

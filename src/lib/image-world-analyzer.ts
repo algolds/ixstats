@@ -280,6 +280,7 @@ export function generateOverlaysForPoliticalMap(
       cx += x!;
       cy += y!;
     }
+    // eslint-disable-next-line unused-imports/no-unused-vars
     cx /= coords.length;
     cy /= coords.length;
 

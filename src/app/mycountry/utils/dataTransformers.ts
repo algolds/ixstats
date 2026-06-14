@@ -46,6 +46,7 @@ export function transformToVitalityIntelligence(
   peerData?: ExistingCountryData[],
   diplomaticData?: DiplomaticDataInput
 ): VitalityIntelligence[] {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const now = Date.now();
   const peerAverages = calculatePeerAverages(peerData || []);
 
@@ -455,6 +456,7 @@ export function transformToVitalityIntelligence(
         totalCountries: peerData?.length || 1,
       },
     },
+    // eslint-disable-next-line unused-imports/no-unused-vars
   ].map((vitality, vitalityIndex) => {
     const recommendations = generateRecommendations(vitality);
     const criticalAlerts = vitality.score < 40 ? generateCriticalAlerts([vitality]) : [];
@@ -550,6 +552,7 @@ function calculatePeerAverages(peerData: ExistingCountryData[]): {
 
 // Create mock historical data for trends (in real implementation, this would come from database)
 export function createMockHistoricalData(country: ExistingCountryData): ExistingCountryData {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const variance = 0.1; // 10% variance for mock previous data
 
   // Use deterministic variations based on country characteristics

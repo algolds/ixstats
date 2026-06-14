@@ -69,6 +69,7 @@ export function LaborEmploymentSection({
       workingAgePopulation * (laborEmployment.laborForceParticipationRate / 100)
     );
     const employed = Math.round(laborForce * ((100 - laborEmployment.unemploymentRate) / 100));
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const unemployed = laborForce - employed;
 
     return [

@@ -533,6 +533,7 @@ export function ExecutiveCommandCenter({
   className = "",
   loading = false,
 }: ExecutiveCommandCenterProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { user } = useUser();
   const notify = useNotify();
   const [viewMode, setViewMode] = useState<"overview" | "detailed">("overview");

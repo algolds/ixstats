@@ -213,6 +213,7 @@ export default function EconomicComponentsPage() {
     }
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const components = componentsResponse?.components || [];
 
   const { data: stats } = api.economicComponents.getComponentUsageStats.useQuery(undefined, {

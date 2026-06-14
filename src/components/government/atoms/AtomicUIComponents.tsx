@@ -195,6 +195,7 @@ export const AtomicGauge: React.FC<AtomicGaugeProps> = ({
   className,
 }) => {
   const percentage = Math.min((value / max) * 100, 100);
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const rotation = (percentage / 100) * 180 - 90;
 
   const getColor = () => {

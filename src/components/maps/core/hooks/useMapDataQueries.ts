@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useEffect, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";

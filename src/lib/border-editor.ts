@@ -1047,6 +1047,7 @@ function getIntermediateVertices(
  */
 export function sanitizeRegionShape(
   geometry: Polygon | MultiPolygon,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryBorder: Polygon | MultiPolygon
 ): { geometry: Polygon | MultiPolygon; issues: string[] } {
   const issues: string[] = [];

@@ -407,6 +407,7 @@ export class IxnayWikiService {
       console.log(`[MediaWiki] Deduplicating request for: ${normKey}`);
       try {
         return (await existingRequest) as T;
+        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         console.log(`[MediaWiki] Deduplicated request failed for: ${normKey}, will retry`);
         this.REQUEST_QUEUE.delete(normKey);

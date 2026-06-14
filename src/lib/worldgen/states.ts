@@ -9,6 +9,7 @@
 
 import type { PackedGraph, WorldGenParams, State, Burg } from "./types";
 import { makeRng } from "./rng";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { isLand, cellLat, cellLng, cellAreaKm2 } from "./voronoi-mesh";
 import { MarkovNameGenerator } from "../procedural-archive/markov-naming";
 import { getLanguageFamilies } from "../procedural-archive/language-families";
@@ -139,6 +140,7 @@ function selectCapitals(
   graph: PackedGraph,
   params: WorldGenParams,
   targetCount: number,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   rng: () => number
 ): Burg[] {
   const { cells } = graph;

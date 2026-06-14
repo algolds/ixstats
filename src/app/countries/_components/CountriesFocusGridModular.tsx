@@ -34,7 +34,9 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
   isLoading = false,
   hasMore = false,
   onLoadMore,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   searchInput,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   filterBy,
   onClearFilters,
   viewerCountryId,

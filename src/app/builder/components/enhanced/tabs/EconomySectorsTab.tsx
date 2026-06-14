@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from "react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Factory, Settings, Search, RefreshCw, AlertCircle, CheckCircle, Info } from "lucide-react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 
 // Sub-components
@@ -15,6 +17,7 @@ import {
   getSectorCategory,
   calculateSectorTotals,
   getSectorConstraints,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   type SectorConstraint,
 } from "./utils/sectorCalculations";
 import { validateEconomy } from "./utils/validation";

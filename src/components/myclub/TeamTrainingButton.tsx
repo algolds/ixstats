@@ -14,6 +14,7 @@ export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrain
   const utils = api.useUtils();
 
   const teamTraining = api.sports.teamTraining.useMutation({
+    // eslint-disable-next-line unused-imports/no-unused-vars
     onSuccess: (data) => {
       utils.sports.getMyClubOverview.invalidate();
       onTrained?.();

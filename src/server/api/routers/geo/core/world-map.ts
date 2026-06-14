@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Geometry } from "geojson";
 import { MAP_LAYER_TYPES } from "~/lib/map-config";
 import { getZoomBucket } from "./cache";

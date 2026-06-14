@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Landmark, ArrowUpRight, Trophy, Sparkles, Check, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -246,7 +247,8 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       </CardHeader>
       <CardContent>
         <div className="relative flex h-[420px] flex-col gap-3 md:h-[450px]">
-          {cards.map((card, idx) => {
+          // eslint-disable-next-line unused-imports/no-unused-vars
+          {cards.map((card, _idx) => {
             const isExpanded = activeCard === card.id;
             const Icon = card.icon;
 

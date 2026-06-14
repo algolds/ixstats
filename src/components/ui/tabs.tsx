@@ -36,6 +36,7 @@ export function Tabs({
 
   React.useEffect(() => {
     if (!value && defaultValue) setUncontrolledValue(defaultValue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValue]);
 
   return (

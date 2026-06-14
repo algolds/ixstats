@@ -2,6 +2,7 @@
 
 import { Loader2, Coins, Ticket, BadgeDollarSign, TrendingUp } from "lucide-react";
 import { api } from "~/trpc/react";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

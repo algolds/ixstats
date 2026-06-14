@@ -138,6 +138,7 @@ function getSessionFlagData(countries: Array<{ id: string; name: string }>): Ses
 }
 
 // Save session flag data
+// eslint-disable-next-line unused-imports/no-unused-vars
 function saveSessionFlagData(data: SessionFlagData): void {
   if (typeof window === "undefined") return;
 
@@ -169,6 +170,7 @@ export function AnimatedFlagsBackground({
   const [sessionData] = useState<SessionFlagData>(() => {
     return getSessionFlagData(countries);
   });
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isPreloaded, setIsPreloaded] = useState(false);
 
   // Preload all flag sets on mount
@@ -199,6 +201,7 @@ export function AnimatedFlagsBackground({
 
     const selectedCountries = currentCountries;
 
+    // eslint-disable-next-line unused-imports/no-unused-vars
     return selectedCountries.map((country, index) => {
       // Create pseudo-random but deterministic positions based on country name and set
       const hash = (country.name + sessionData.currentSetIndex)

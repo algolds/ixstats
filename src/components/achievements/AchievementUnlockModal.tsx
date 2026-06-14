@@ -48,6 +48,7 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
   onViewProgress,
   autoCloseDelay = 8000,
 }) => {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [showDetails, setShowDetails] = useState(false);
   const [particles, setParticles] = useState<ParticleProps[]>([]);
   const [animationStage, setAnimationStage] = useState<"entering" | "celebrating" | "stable">(

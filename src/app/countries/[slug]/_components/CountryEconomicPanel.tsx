@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -6,6 +7,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { Badge } from "~/components/ui/badge";
 import {
   Dialog,
@@ -32,6 +34,7 @@ import {
   Heart,
 } from "lucide-react";
 import { NationalIdentityDisplay } from "~/components/countries/NationalIdentityDisplay";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { createUrl } from "~/lib/url-utils";
 import type {
   CoreEconomicIndicatorsData,
@@ -52,6 +55,7 @@ import {
   type SectorData,
 } from "~/components/mycountry/primitives";
 import {
+  // eslint-disable-next-line unused-imports/no-unused-imports
   formatCompactNumber,
   formatCompactCurrency,
   formatCurrency,
@@ -526,6 +530,7 @@ export function CountryEconomicPanel({
         value: formatPercent((economicsData.labor as any).employmentBySector?.services),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [(economicsData.labor as any).employmentBySector]
   );
 
@@ -548,6 +553,7 @@ export function CountryEconomicPanel({
         value: formatPercent((economicsData.labor as any).employmentByType?.informal),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [(economicsData.labor as any).employmentByType]
   );
 

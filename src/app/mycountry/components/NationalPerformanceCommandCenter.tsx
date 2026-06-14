@@ -127,6 +127,7 @@ function PerformanceTile({
   onActionClick?: (action: ActionableRecommendation) => void;
   onMetricClick?: (metric: IntelligenceMetric, area: string) => void;
 }) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [expanded, setExpanded] = useState(false);
   const config = areaConfig[vitality.area];
   const statusConf = statusConfig[vitality.status];
@@ -319,6 +320,7 @@ export function NationalPerformanceCommandCenter({
   className = "",
   loading = false,
 }: NationalPerformanceCommandCenterProps) {
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const [viewMode, setViewMode] = useState<"overview" | "detailed">("overview");
 
   const overallStats = useMemo(() => {

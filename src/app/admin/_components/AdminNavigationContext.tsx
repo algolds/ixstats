@@ -47,6 +47,7 @@ export function AdminNavigationProvider({ children }: { children: React.ReactNod
     if (routeSection !== activeSection) {
       setActiveSection(routeSection);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const onNavigate = useCallback((section: string) => {

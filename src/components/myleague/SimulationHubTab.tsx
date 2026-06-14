@@ -9,6 +9,7 @@ import { ScheduleView } from "~/components/myleague/ScheduleView";
 import { BracketView } from "~/components/myleague/BracketView";
 import { RaceResults } from "~/components/myleague/RaceResults";
 import { DraftPicksView } from "~/components/myleague/DraftPicksView";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { ArrowLeft, Play, FastForward, Trophy, Calendar, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
@@ -177,22 +178,37 @@ export function SimulationHubTab({
         </motion.div>
       )}
 
-      <div className="border border-purple-500/25 bg-card/60 backdrop-blur-md rounded-2xl p-6 relative overflow-hidden shadow-lg shadow-purple-500/5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+      <div className="bg-card/60 relative overflow-hidden rounded-2xl border border-purple-500/25 p-6 shadow-lg shadow-purple-500/5 backdrop-blur-md">
+        <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
-                <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", isInProgress ? "bg-purple-400" : "bg-slate-400")} />
-                <span className={cn("relative inline-flex rounded-full h-2 w-2", isInProgress ? "bg-purple-500" : "bg-slate-500")} />
+                <span
+                  className={cn(
+                    "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+                    isInProgress ? "bg-purple-400" : "bg-slate-400"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "relative inline-flex h-2 w-2 rounded-full",
+                    isInProgress ? "bg-purple-500" : "bg-slate-500"
+                  )}
+                />
               </span>
-              <h2 className="text-xl font-black text-foreground">Simulation Control Deck</h2>
+              <h2 className="text-foreground text-xl font-black">Simulation Control Deck</h2>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide uppercase">
               <span>Season {season.seasonNumber}</span>
               <span>•</span>
               <Badge
                 variant={isInProgress ? "default" : isCompleted ? "secondary" : "outline"}
-                className={cn("font-bold text-[9px] uppercase px-2 py-0.5 rounded shadow-sm border", isInProgress ? "bg-purple-500/10 border-purple-500/20 text-purple-400 hover:bg-purple-500/15" : "bg-muted text-muted-foreground border-border")}
+                className={cn(
+                  "rounded border px-2 py-0.5 text-[9px] font-bold uppercase shadow-sm",
+                  isInProgress
+                    ? "border-purple-500/20 bg-purple-500/10 text-purple-400 hover:bg-purple-500/15"
+                    : "bg-muted text-muted-foreground border-border"
+                )}
               >
                 {season.status}
               </Badge>
@@ -217,7 +233,7 @@ export function SimulationHubTab({
                       })
                     }
                     disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
-                    className="bg-purple-600 hover:bg-purple-500 text-white font-bold h-9 text-xs rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
+                    className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-purple-600 text-xs font-bold text-white shadow transition hover:bg-purple-500"
                   >
                     {simulateMatchDay.isPending ? (
                       <>
@@ -237,7 +253,7 @@ export function SimulationHubTab({
                   variant="outline"
                   onClick={() => simulateFullSeason.mutate({ seasonId: season.id })}
                   disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
-                  className="border-purple-500/30 hover:bg-purple-500/10 text-purple-400 font-bold h-9 text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border-purple-500/30 text-xs font-bold text-purple-400 shadow-sm transition hover:bg-purple-500/10"
                 >
                   {simulateFullSeason.isPending ? (
                     <>
@@ -258,7 +274,7 @@ export function SimulationHubTab({
               <Button
                 onClick={() => transitionToNextSeason.mutate({ seasonId: season.id })}
                 disabled={transitionToNextSeason.isPending}
-                className="bg-purple-600 hover:bg-purple-500 text-white font-bold h-9 text-xs rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer"
+                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-purple-600 text-xs font-bold text-white shadow transition hover:bg-purple-500"
               >
                 {transitionToNextSeason.isPending ? (
                   <>
@@ -278,27 +294,34 @@ export function SimulationHubTab({
 
         {/* Dynamic Sim Progress Bar */}
         {isInProgress && (
-          <div className="mt-6 border-t border-border/10 pt-4 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="border-border/10 mt-6 space-y-2 border-t pt-4">
+            <div className="text-muted-foreground flex items-center justify-between text-xs font-semibold tracking-wider uppercase">
               <span>Season Simulation Progress</span>
               <span>
                 {(() => {
-                  const completedMatches = season.matches.filter(m => m.status === 'completed').length;
-                  const pct = season.matches.length > 0 ? Math.round((completedMatches / season.matches.length) * 100) : 0;
+                  const completedMatches = season.matches.filter(
+                    (m) => m.status === "completed"
+                  ).length;
+                  const pct =
+                    season.matches.length > 0
+                      ? Math.round((completedMatches / season.matches.length) * 100)
+                      : 0;
                   return `${pct}% (${completedMatches}/${season.matches.length} Matches)`;
                 })()}
               </span>
             </div>
-            <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden relative border border-border/20 shadow-inner">
+            <div className="border-border/20 relative h-2 w-full overflow-hidden rounded-full border bg-slate-200 shadow-inner dark:bg-slate-800">
               <motion.div
-                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500"
                 initial={{ width: 0 }}
                 animate={{
                   width: `${
                     season.matches.length > 0
-                      ? (season.matches.filter(m => m.status === 'completed').length / season.matches.length) * 100
+                      ? (season.matches.filter((m) => m.status === "completed").length /
+                          season.matches.length) *
+                        100
                       : 0
-                  }%`
+                  }%`,
                 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               />

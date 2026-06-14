@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+// eslint-disable-next-line unused-imports/no-unused-imports
 import { RefreshCw, BarChart3, TrendingUp, Globe, Info, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { type TimeRange, type ChartType, TIME_RANGE_OPTIONS, CHART_TYPE_OPTIONS } from "./types";
@@ -105,6 +106,7 @@ const DEFAULT_TABS: MetricModalTab[] = [
 export function BaseMetricDetailsModal({
   isOpen,
   onClose,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
   countryName,
   title,

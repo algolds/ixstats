@@ -69,6 +69,7 @@ export const generateRecommendations = (
   vitality: VitalityIntelligence
 ): ActionableRecommendation[] => {
   const recommendations: ActionableRecommendation[] = [];
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { area, score, trend, keyMetrics } = vitality;
 
   // Economic recommendations

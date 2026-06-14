@@ -90,6 +90,7 @@ const POSITION_CLASSES = {
 
 const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificationProps> = ({
   countryId,
+  // eslint-disable-next-line unused-imports/no-unused-vars
   countryName,
   position = "top-right",
   maxNotifications = 3,
@@ -99,6 +100,7 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
   className,
 }) => {
   const enableRealTime = false; // Disable real-time by default
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { isConnected, recentEvents, actions } = useAchievementUpdates(countryId, enableRealTime);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
   const notify = useNotify();

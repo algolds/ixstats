@@ -144,6 +144,7 @@ export function AtomicImpactPreview({
   const { gdpImpact, taxEfficiency, stabilityIndex, internationalStanding } = economicImpact;
 
   // Calculate net synergy score
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const netSynergyScore = synergyCount - conflictCount;
 
   // Determine overall system health

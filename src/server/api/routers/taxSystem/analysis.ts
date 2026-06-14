@@ -2,18 +2,15 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { GovernmentBuilderState } from "~/types/government";
-import {
-  detectTaxConflicts,
-} from "~/server/services/builderIntegrationService";
+import { detectTaxConflicts } from "~/server/services/builderIntegrationService";
 import { TaxBuilderStateSchema } from "~/types/validation/tax";
 import {
   parseEconomicDataForTaxSystem,
   calculateRecommendedTaxRevenue,
 } from "~/lib/tax-data-parser";
 
-
-
 // Validation helpers for brackets
+// eslint-disable-next-line unused-imports/no-unused-vars
 function validateBracketsState(
   state: TaxBuilderState
 ): { ok: true } | { ok: false; errors: Array<{ categoryIndex: number; message: string }> } {

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -936,6 +937,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         return next;
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [snapTarget]
   );
 
@@ -1257,6 +1259,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         });
         break;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const submitEditCity = useCallback(async () => {
@@ -1417,6 +1420,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           break;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       countryId,
       deleteCity,

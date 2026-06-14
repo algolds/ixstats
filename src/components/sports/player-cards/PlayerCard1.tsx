@@ -121,9 +121,11 @@ export default function PlayerCard1({ player, team, statistics, className }: Pla
           <h2 className="text-foreground mt-0! truncate text-lg font-extrabold tracking-tight">
             {player.firstName} {player.lastName}
           </h2>
-          <div className="text-muted-foreground mt-0.5 text-xs font-semibold capitalize flex items-center justify-center gap-1">
+          <div className="text-muted-foreground mt-0.5 flex items-center justify-center gap-1 text-xs font-semibold capitalize">
             <PositionTooltip position={player.position}>
-              <span className="cursor-help hover:underline decoration-dotted">{player.position}</span>
+              <span className="cursor-help decoration-dotted hover:underline">
+                {player.position}
+              </span>
             </PositionTooltip>
             {player.careerStage && (
               <>

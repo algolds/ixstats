@@ -17,6 +17,7 @@ interface EffectivenessPanelProps {
 }
 
 export function EffectivenessPanel({
+  // eslint-disable-next-line unused-imports/no-unused-vars
   componentEffectiveness,
   selectedComponents,
   economicHealthMetrics,

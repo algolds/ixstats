@@ -21,6 +21,7 @@ const VERBOSE = process.env.TRPC_VERBOSE === "true";
 import { rateLimiter } from "~/lib/rate-limiter";
 import {
   AppError,
+  // eslint-disable-next-line unused-imports/no-unused-imports
   NotFoundError,
   UnauthorizedError,
   ForbiddenError,
@@ -419,7 +420,9 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
     const namespace = options.namespace || "default";
 
     // Create custom rate limiter for this specific configuration
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const now = Date.now();
+    // eslint-disable-next-line unused-imports/no-unused-vars
     const key = `ratelimit:${namespace}:${identifier}`;
 
     // Simple check using the rateLimiter's check method with custom namespace

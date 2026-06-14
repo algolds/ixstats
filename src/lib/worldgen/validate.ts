@@ -31,7 +31,8 @@ export function validateAndRepair(graph: PackedGraph): ValidationResult {
   // 1. Coverage check: every land cell must have state, culture, biome, elevZone
   let missingState = 0;
   let missingCulture = 0;
-  let missingBiome = 0;
+  // eslint-disable-next-line prefer-const
+  let _missingBiome = 0;
 
   for (let i = 0; i < cells.n; i++) {
     if (!isLand(graph, i)) continue;

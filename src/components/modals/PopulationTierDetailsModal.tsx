@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 "use client";
 
@@ -82,6 +83,7 @@ interface ProcessedData {
   populationTierDistribution: Record<string, number>;
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface TierDistributionPayload {
   fullName: string;
 }
@@ -421,6 +423,7 @@ export function PopulationTierDetailsModal({
     };
   }, [economicData, globalStats, tierSystemData]);
 
+  // eslint-disable-next-line unused-imports/no-unused-vars
   const { currentTierInfo, tierDistributionData, currentPopulation } = processedData;
 
   if (!isOpen) return null;
