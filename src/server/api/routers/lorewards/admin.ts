@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import * as fs from "fs";
 import { fullSync } from "~/lib/lorewards-sync";
@@ -22,7 +22,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 
   /** Run WikiOS scoring for a specific date. Returns full candidate breakdowns. */
-  scoreDay: publicProcedure
+  scoreDay: adminProcedure
     .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .query(async ({ input }) => {
       const result = await scoreDailyWikiOS(input.date);
@@ -193,7 +193,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
   }),
 
   /** Update user blacklist status */
-  updateBlacklist: publicProcedure
+  updateBlacklist: adminProcedure
     .input(
       z.object({
         username: z.string().min(1),
@@ -219,7 +219,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
     }),
 
   /** Override past winner or runner-up */
-  overrideWinner: publicProcedure
+  overrideWinner: adminProcedure
     .input(
       z.object({
         date: z.string().min(1),

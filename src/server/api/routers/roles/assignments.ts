@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 // Permission categories enum
@@ -76,7 +76,7 @@ export const rolesAssignmentsRouter = createTRPCRouter({
   // Delete a role
 
   // Assign role to user
-  assignUserRole: publicProcedure
+  assignUserRole: adminProcedure
     .input(
       z.object({
         clerkUserId: z.string(),
@@ -134,7 +134,7 @@ export const rolesAssignmentsRouter = createTRPCRouter({
     }),
 
   // Remove role from user
-  removeUserRole: publicProcedure
+  removeUserRole: adminProcedure
     .input(
       z.object({
         clerkUserId: z.string(),
@@ -185,7 +185,7 @@ export const rolesAssignmentsRouter = createTRPCRouter({
     }),
 
   // Get users with their roles
-  getUsersWithRoles: publicProcedure
+  getUsersWithRoles: adminProcedure
     .input(
       z
         .object({
@@ -247,7 +247,7 @@ export const rolesAssignmentsRouter = createTRPCRouter({
     }),
 
   // Get audit logs
-  getAuditLogs: publicProcedure
+  getAuditLogs: adminProcedure
     .input(
       z
         .object({

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 // Permission categories enum
@@ -158,7 +158,7 @@ export const rolesManagementRouter = createTRPCRouter({
     }),
 
   // Update a role
-  updateRole: publicProcedure
+  updateRole: adminProcedure
     .input(
       z.object({
         roleId: z.string(),
@@ -255,7 +255,7 @@ export const rolesManagementRouter = createTRPCRouter({
     }),
 
   // Delete a role
-  deleteRole: publicProcedure
+  deleteRole: adminProcedure
     .input(
       z.object({
         roleId: z.string(),
@@ -326,7 +326,7 @@ export const rolesManagementRouter = createTRPCRouter({
   // Get audit logs
 
   // Initialize default roles and permissions
-  initializeRoleSystem: publicProcedure.mutation(async ({ ctx }) => {
+  initializeRoleSystem: adminProcedure.mutation(async ({ ctx }) => {
     try {
       // Check if already initialized
       const existingRoles = await ctx.db.role.count();
