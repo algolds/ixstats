@@ -11,6 +11,14 @@ import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 import { calculateIntelligence } from "~/lib/intelligence-calculator";
 import { notificationAPI } from "~/lib/notification-api";
 
+function safeJsonParse<T>(raw: string, fallback: T): T {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export const intelligenceRouter = createTRPCRouter({
   getFeed: publicProcedure.query(async ({ ctx }) => {
     // Get real intelligence items from database
@@ -141,7 +149,7 @@ export const intelligenceRouter = createTRPCRouter({
       });
 
       return messages.map((msg) => {
-        const data = JSON.parse(msg.value);
+        const data = safeJsonParse<Record<string, any>>(msg.value, {});
         return {
           id: msg.id,
           from: data.from || "System",
