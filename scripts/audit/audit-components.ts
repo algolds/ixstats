@@ -102,9 +102,12 @@ function edgesOf(file: string): string[] {
     const v = exp.getModuleSpecifierValue();
     if (v) specs.add(v); // re-export: `export ... from "x"` (barrel edge)
   }
-  // dynamic import("x")
+  // dynamic import("x") and CommonJS require("x")
   for (const call of sf.getDescendantsOfKind(SyntaxKind.CallExpression)) {
-    if (call.getExpression().getKind() === SyntaxKind.ImportKeyword) {
+    const expr = call.getExpression();
+    const isDynamicImport = expr.getKind() === SyntaxKind.ImportKeyword;
+    const isRequire = expr.isKind(SyntaxKind.Identifier) && expr.getText() === "require";
+    if (isDynamicImport || isRequire) {
       const arg = call.getArguments()[0];
       if (arg?.isKind(SyntaxKind.StringLiteral)) specs.add(arg.getLiteralValue());
     }
