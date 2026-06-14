@@ -114,33 +114,69 @@ export const loreCardsUserRouter = createTRPCRouter({
           });
         }
 
-        // Deduct IxCredits if not using token
+        // Deduct IxCredits and log transaction if not using token
         if (!useToken) {
-          await ctx.db.myVault.update({
-            where: { userId },
+          await ctx.db.$transaction(async (tx) => {
+            const freshVault = await tx.myVault.findUnique({
+              where: { userId },
+            });
+
+            if (!freshVault) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Vault not found. Please initialize your vault first.",
+              });
+            }
+
+            if (freshVault.credits < LORE_CARD_REQUEST_COST) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Insufficient IxCredits. You need ${LORE_CARD_REQUEST_COST} IxC to request a lore card (current balance: ${freshVault.credits} IxC)`,
+              });
+            }
+
+            const updated = await tx.myVault.update({
+              where: { userId },
+              data: {
+                credits: {
+                  decrement: LORE_CARD_REQUEST_COST,
+                },
+              },
+            });
+
+            // Log transaction inside transaction callback
+            await tx.vaultTransaction.create({
+              data: {
+                vaultId: freshVault.id,
+                credits: -LORE_CARD_REQUEST_COST,
+                balanceAfter: updated.credits,
+                type: "EXPENSE",
+                source: "LORE_CARD_REQUEST",
+                metadata: {
+                  articleTitle: input.articleTitle,
+                  wikiSource: input.wikiSource,
+                  useToken: false,
+                },
+              },
+            });
+          });
+        } else {
+          // Log transaction for token use
+          await ctx.db.vaultTransaction.create({
             data: {
-              credits: {
-                decrement: LORE_CARD_REQUEST_COST,
+              vaultId: vault.id,
+              credits: 0,
+              balanceAfter: vault.credits,
+              type: "EXPENSE",
+              source: "LORE_CARD_REQUEST",
+              metadata: {
+                articleTitle: input.articleTitle,
+                wikiSource: input.wikiSource,
+                useToken: true,
               },
             },
           });
         }
-
-        // Log transaction
-        await ctx.db.vaultTransaction.create({
-          data: {
-            vaultId: vault.id,
-            credits: useToken ? 0 : -LORE_CARD_REQUEST_COST,
-            balanceAfter: useToken ? vault.credits : vault.credits - LORE_CARD_REQUEST_COST,
-            type: "EXPENSE",
-            source: "LORE_CARD_REQUEST",
-            metadata: {
-              articleTitle: input.articleTitle,
-              wikiSource: input.wikiSource,
-              useToken,
-            },
-          },
-        });
 
         // Create request
         const request = await ctx.db.loreCardRequest.create({
