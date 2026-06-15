@@ -33,9 +33,12 @@ import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   calculateBBox,
   validateGeometry,
+  distanceDeg,
 } from "~/lib/border-editor";
+import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/shared-vertex-builder";
+import type { SharedVertexData } from "~/lib/shared-vertex-builder";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import type { SharedVertexData, FeatureVertexRef } from "~/lib/shared-vertex-builder";
+import type { FeatureVertexRef } from "~/lib/shared-vertex-builder";
 
 // ──────────────────────────────────────────────
 // Types
@@ -54,6 +57,10 @@ export interface BorderEditorState {
   splitLine: Position[];
   mergeTargets: string[];
   neighbors: Array<{ featureId: string; displayName: string | null }>;
+  /** Geometries of neighbor features, indexed by neighbor featureId. */
+  neighborGeometries: Record<string, Polygon | MultiPolygon>;
+  /** Geometries of neighbors changed during this session (sent on submit). */
+  dirtyNeighbors: Record<string, Polygon | MultiPolygon>;
   isDirty: boolean;
   isLoading: boolean;
   error: string | null;
@@ -100,6 +107,8 @@ const INITIAL_STATE: BorderEditorState = {
   splitLine: [],
   mergeTargets: [],
   neighbors: [],
+  neighborGeometries: {},
+  dirtyNeighbors: {},
   isDirty: false,
   isLoading: false,
   error: null,
@@ -167,6 +176,24 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         {
           onSuccess: (data) => {
             const geom = data.feature.geometry as Polygon | MultiPolygon;
+            const neighborGeoms: Record<string, Polygon | MultiPolygon> = {};
+            const rawNeighbors = data.neighbors as Array<{
+              featureId: string;
+              displayName: string | null;
+              geometry?: unknown;
+            }>;
+            for (const n of rawNeighbors) {
+              if (n.geometry) {
+                neighborGeoms[n.featureId] = n.geometry as Polygon | MultiPolygon;
+              }
+            }
+            const sharedVertices = buildSharedVertexIndex([
+              { featureId, geometry: geom },
+              ...Object.entries(neighborGeoms).map(([fid, g]) => ({
+                featureId: fid,
+                geometry: g,
+              })),
+            ]);
             setState((s) => ({
               ...s,
               featureId,
@@ -174,6 +201,8 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
               geometry: geom,
               originalGeometry: geom,
               neighbors: data.neighbors,
+              neighborGeometries: neighborGeoms,
+              dirtyNeighbors: {},
               undoStackState: createUndoStack(),
               selectedVertex: null,
               splitLine: [],
@@ -182,8 +211,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
               isLoading: false,
               error: null,
               areaKm2: calculateArea(geom),
-              sharedVertices:
-                (data as { sharedVertices?: SharedVertexData[] }).sharedVertices ?? [],
+              sharedVertices,
               altitudeSnap: null,
             }));
           },
@@ -280,6 +308,44 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (!dragStartGeom.current) {
         dragStartGeom.current = s.geometry;
       }
+
+      // Is the vertex being dragged a shared one? Match on its CURRENT coord.
+      const here = ref.coord;
+      const shared = s.sharedVertices.find(
+        (sv) => distanceDeg([sv.lng, sv.lat], here) < 0.001
+      );
+
+      if (shared) {
+        const geomMap = new Map<string, Polygon | MultiPolygon>();
+        geomMap.set(s.featureId!, s.geometry);
+        for (const [fid, g] of Object.entries(s.neighborGeometries)) geomMap.set(fid, g);
+        const updated = moveSharedVertex(shared, to, geomMap);
+
+        const newSelf = updated.get(s.featureId!) ?? s.geometry;
+        const newNeighbors: Record<string, Polygon | MultiPolygon> = { ...s.neighborGeometries };
+        const newDirty: Record<string, Polygon | MultiPolygon> = { ...s.dirtyNeighbors };
+        for (const [fid, g] of updated) {
+          if (fid === s.featureId) continue;
+          newNeighbors[fid] = g;
+          newDirty[fid] = g;
+        }
+        // Update the shared-vertex's stored coord so the next drag event still matches.
+        const newShared = s.sharedVertices.map((sv) =>
+          sv === shared ? { ...sv, lng: to[0], lat: to[1] } : sv
+        );
+        return {
+          ...s,
+          geometry: newSelf,
+          neighborGeometries: newNeighbors,
+          dirtyNeighbors: newDirty,
+          sharedVertices: newShared,
+          isDirty: true,
+          areaKm2: calculateArea(newSelf),
+          selectedVertex: { ...ref, coord: to },
+        };
+      }
+
+      // Not shared — original single-feature behavior.
       const newGeom = moveVertex(s.geometry, ref, to);
       return {
         ...s,
@@ -386,10 +452,15 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         throw new Error(`Invalid geometry: ${validation.errors.join(", ")}`);
       }
 
+      const neighborUpdates = Object.entries(state.dirtyNeighbors).map(
+        ([nFeatureId, geometry]) => ({ featureId: nFeatureId, geometry })
+      );
+
       const result = await submitBorderEdit.mutateAsync({
         featureId: state.featureId,
         editSubtype: "vertex_edit",
         proposedGeometry: state.geometry as unknown as Record<string, unknown>,
+        neighborUpdates,
         applyDirectly,
         reason,
       });
@@ -400,13 +471,14 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
           ...s,
           originalGeometry: s.geometry,
           isDirty: false,
+          dirtyNeighbors: {},
           undoStackState: createUndoStack(),
         }));
       }
 
       return result;
     },
-    [state.featureId, state.geometry, submitBorderEdit, utils]
+    [state.featureId, state.geometry, state.dirtyNeighbors, submitBorderEdit, utils]
   );
 
   const executeSplitAction = useCallback(

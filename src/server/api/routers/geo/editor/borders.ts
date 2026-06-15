@@ -73,7 +73,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
 
       // Find neighboring features by bounding box overlap
       const bbox = feature.boundingBox as number[] | null;
-      let neighbors: Array<{ featureId: string; displayName: string | null }> = [];
+      let neighbors: Array<{
+        featureId: string;
+        displayName: string | null;
+        geometry: unknown;
+      }> = [];
       if (bbox && bbox.length === 4) {
         const pad = 1; // 1° padding for neighbor search
         neighbors = await ctx.db.mapLayer
@@ -83,7 +87,12 @@ export const geoEditorBordersRouter = createTRPCRouter({
               featureId: { not: input.featureId },
               isActive: true,
             },
-            select: { featureId: true, displayName: true, boundingBox: true },
+            select: {
+              featureId: true,
+              displayName: true,
+              boundingBox: true,
+              geometry: true,
+            },
           })
           .then((layers) =>
             layers
@@ -97,7 +106,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
                   nb[3]! > bbox[1]! - pad
                 );
               })
-              .map((l) => ({ featureId: l.featureId, displayName: l.displayName }))
+              .map((l) => ({
+                featureId: l.featureId,
+                displayName: l.displayName,
+                geometry: l.geometry,
+              }))
           );
       }
 
@@ -158,6 +171,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
         editSubtype: z.enum(["vertex_edit", "redraw", "split", "merge"]),
         proposedGeometry: z.record(z.string(), z.unknown()), // GeoJSON geometry
         affectedFeatures: z.array(z.string()).optional(),
+        neighborUpdates: z
+          .array(
+            z.object({
+              featureId: z.string(),
+              geometry: z.record(z.string(), z.unknown()),
+            })
+          )
+          .optional(),
         applyDirectly: z.boolean().default(false),
         reason: z.string().optional(),
       })
@@ -185,17 +206,62 @@ export const geoEditorBordersRouter = createTRPCRouter({
         const bbox = calculateBBox(geom);
         const area = calculateArea(geom);
 
-        await ctx.db.mapLayer.update({
-          where: { id: feature.id },
-          data: {
-            geometry: input.proposedGeometry as any,
-            centroid,
-            boundingBox: bbox,
-            areaSqKm: area,
-          },
+        // Look up neighbor features so we can update them and link to their countries.
+        const neighborUpdates = input.neighborUpdates ?? [];
+        const neighborRows =
+          neighborUpdates.length > 0
+            ? await ctx.db.mapLayer.findMany({
+                where: {
+                  layerType: "political",
+                  featureId: { in: neighborUpdates.map((n) => n.featureId) },
+                  isActive: true,
+                },
+                select: { id: true, featureId: true, countryId: true, areaSqKm: true },
+              })
+            : [];
+        const neighborByFeatureId = new Map(neighborRows.map((r) => [r.featureId, r]));
+
+        // Wrap primary + neighbor updates in a single transaction so a partial
+        // failure rolls back everything (no half-moved shared border).
+        await ctx.db.$transaction(async (tx) => {
+          await tx.mapLayer.update({
+            where: { id: feature.id },
+            data: {
+              geometry: input.proposedGeometry as any,
+              centroid,
+              boundingBox: bbox,
+              areaSqKm: area,
+            },
+          });
+
+          for (const nUpdate of neighborUpdates) {
+            const neighborRow = neighborByFeatureId.get(nUpdate.featureId);
+            if (!neighborRow) continue;
+            const nGeom = nUpdate.geometry as unknown as
+              | import("geojson").Polygon
+              | import("geojson").MultiPolygon;
+            const nCentroid = calculateCentroid(nGeom);
+            const nBbox = calculateBBox(nGeom);
+            const nArea = calculateArea(nGeom);
+
+            await tx.mapLayer.update({
+              where: { id: neighborRow.id },
+              data: {
+                geometry: nUpdate.geometry as any,
+                centroid: nCentroid,
+                boundingBox: nBbox,
+                areaSqKm: nArea,
+              },
+            });
+
+            if (neighborRow.countryId) {
+              await syncCountryGeometryFromMapLayer(tx, neighborRow.countryId);
+            }
+          }
         });
 
         if (feature.countryId) {
+          // Sync outside the transaction — it does its own internal commits.
           await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
 
           // Log in BorderHistory
@@ -234,7 +300,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
           proposedData: input.proposedGeometry as any,
           currentData: feature.geometry ?? undefined,
           previousGeometry: feature.geometry ?? undefined,
-          affectedFeatures: input.affectedFeatures ?? [],
+          affectedFeatures:
+            input.neighborUpdates?.map((n) => n.featureId) ?? input.affectedFeatures ?? [],
           status: "pending",
         },
       });
