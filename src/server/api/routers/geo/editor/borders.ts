@@ -475,6 +475,41 @@ export const geoEditorBordersRouter = createTRPCRouter({
       return { geometry, issues };
     }),
 
+  /** Rebuild the province adjacency graph for all active political features.
+   *  Requires PostGIS. Returns the number of features updated and pairs found.
+   *  Safe to re-run; overwrites existing neighbors values. */
+  rebuildAdjacency: adminProcedure
+    .input(z.object({ worldId: z.string().default("default") }))
+    .mutation(async ({ ctx }) => {
+      const { isPostGISAvailable } = await import("~/lib/geo-validation");
+      if (!(await isPostGISAvailable(ctx.db))) return { features: 0, pairs: 0, skipped: true };
+      const pairs = await ctx.db.$queryRawUnsafe<Array<{ a: string; b: string }>>(
+        `SELECT a."featureId" AS a, b."featureId" AS b
+           FROM map_layers a
+           JOIN map_layers b
+             ON a.id < b.id
+            AND a."layerType" = 'political' AND a."isActive" = true
+            AND b."layerType" = 'political' AND b."isActive" = true
+            AND a.geom_postgis IS NOT NULL AND b.geom_postgis IS NOT NULL
+            AND ST_Intersects(a.geom_postgis, b.geom_postgis)
+            AND NOT ST_Equals(a.geom_postgis, b.geom_postgis)`
+      );
+      const adj = new Map<string, Set<string>>();
+      for (const { a, b } of pairs) {
+        (adj.get(a) ?? adj.set(a, new Set()).get(a)!).add(b);
+        (adj.get(b) ?? adj.set(b, new Set()).get(b)!).add(a);
+      }
+      let updated = 0;
+      for (const [featureId, set] of Array.from(adj.entries())) {
+        await ctx.db.mapLayer.updateMany({
+          where: { layerType: "political", featureId, isActive: true },
+          data: { neighbors: Array.from(set) as any },
+        });
+        updated++;
+      }
+      return { features: updated, pairs: pairs.length };
+    }),
+
   // ──────────────────────────────────────────────
   // User map editor endpoints (country owners)
   // ──────────────────────────────────────────────
