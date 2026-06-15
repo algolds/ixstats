@@ -35,7 +35,7 @@ export const VERSIONS = {
 
   // Apps — own brand, ship/break independently.
   apps: {
-    ixworld: 1,
+    ixworld: 1.1,
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
     ixvault: 1,
   },
