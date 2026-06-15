@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MousePointer2, Pencil, Scissors, Merge, Undo2, Redo2, Save, Check, X, Wrench } from "lucide-react";
+import { MousePointer2, Pencil, Scissors, Merge, Undo2, Redo2, Save, Check, X, Wrench, Spline, Waves, Minimize2 } from "lucide-react";
 import type { BorderEditMode } from "~/hooks/useBorderEditor";
 
 interface BorderEditorToolbarProps {
@@ -15,6 +15,9 @@ interface BorderEditorToolbarProps {
   onSubmit: () => void;
   onCancel: () => void;
   onRepair: () => void;
+  onSmooth: () => void;
+  onNaturalize: () => void;
+  onSimplify: () => void;
   isDirty: boolean;
   isSaving: boolean;
   areaKm2: number | null;
@@ -59,6 +62,9 @@ export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({
   onSubmit,
   onCancel,
   onRepair,
+  onSmooth,
+  onNaturalize,
+  onSimplify,
   isDirty,
   isSaving,
   areaKm2,
@@ -140,6 +146,30 @@ export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({
         >
           <Wrench className="h-3.5 w-3.5" />
           Repair
+        </button>
+        <button
+          onClick={onSmooth}
+          className="bg-muted/50 text-foreground hover:bg-muted/80 flex items-center gap-1 rounded px-2 py-1.5 text-xs"
+          title="Soften corners (Chaikin smoothing)"
+        >
+          <Spline className="h-3.5 w-3.5" />
+          Smooth
+        </button>
+        <button
+          onClick={onNaturalize}
+          className="bg-muted/50 text-foreground hover:bg-muted/80 flex items-center gap-1 rounded px-2 py-1.5 text-xs"
+          title="Subdivide and randomize for an organic coastline"
+        >
+          <Waves className="h-3.5 w-3.5" />
+          Naturalize
+        </button>
+        <button
+          onClick={onSimplify}
+          className="bg-muted/50 text-foreground hover:bg-muted/80 flex items-center gap-1 rounded px-2 py-1.5 text-xs"
+          title="Reduce vertex count (Douglas-Peucker)"
+        >
+          <Minimize2 className="h-3.5 w-3.5" />
+          Simplify
         </button>
         <button
           onClick={onSubmit}

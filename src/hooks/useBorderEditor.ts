@@ -34,6 +34,9 @@ import {
   calculateBBox,
   validateGeometry,
   distanceDeg,
+  smoothGeometry,
+  naturalizeGeometry,
+  simplifyGeometry,
 } from "~/lib/border-editor";
 import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/shared-vertex-builder";
 import type { SharedVertexData } from "~/lib/shared-vertex-builder";
@@ -90,6 +93,9 @@ export interface BorderEditorActions {
   executeSplit: (nameA: string, nameB: string) => Promise<void>;
   executeMerge: (newName: string) => Promise<void>;
   repair: () => Promise<void>;
+  smooth: () => void;
+  naturalize: () => void;
+  simplify: () => void;
   reset: () => void;
 }
 
@@ -547,6 +553,67 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, [state.geometry, repairGeometry]);
 
+  const smoothAction = useCallback(() => {
+    setState((s) => {
+      if (!s.geometry) return s;
+      const newGeom = smoothGeometry(s.geometry, 1);
+      const stack = pushUndo(
+        s.undoStackState,
+        { type: "replace_geometry", geometry: newGeom },
+        s.geometry,
+        newGeom
+      );
+      return {
+        ...s,
+        geometry: newGeom,
+        undoStackState: stack,
+        isDirty: true,
+        areaKm2: calculateArea(newGeom),
+      };
+    });
+  }, []);
+
+  const naturalizeAction = useCallback(() => {
+    setState((s) => {
+      if (!s.geometry) return s;
+      const seed = Date.now() & 0xffff;
+      const newGeom = naturalizeGeometry(s.geometry, 0.01, seed);
+      const stack = pushUndo(
+        s.undoStackState,
+        { type: "replace_geometry", geometry: newGeom },
+        s.geometry,
+        newGeom
+      );
+      return {
+        ...s,
+        geometry: newGeom,
+        undoStackState: stack,
+        isDirty: true,
+        areaKm2: calculateArea(newGeom),
+      };
+    });
+  }, []);
+
+  const simplifyAction = useCallback(() => {
+    setState((s) => {
+      if (!s.geometry) return s;
+      const newGeom = simplifyGeometry(s.geometry, 0.01);
+      const stack = pushUndo(
+        s.undoStackState,
+        { type: "replace_geometry", geometry: newGeom },
+        s.geometry,
+        newGeom
+      );
+      return {
+        ...s,
+        geometry: newGeom,
+        undoStackState: stack,
+        isDirty: true,
+        areaKm2: calculateArea(newGeom),
+      };
+    });
+  }, []);
+
   const actions: BorderEditorActions = {
     loadFeature,
     setMode,
@@ -563,6 +630,9 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     executeSplit: executeSplitAction,
     executeMerge: executeMergeAction,
     repair: repairAction,
+    smooth: smoothAction,
+    naturalize: naturalizeAction,
+    simplify: simplifyAction,
     reset,
   };
 
