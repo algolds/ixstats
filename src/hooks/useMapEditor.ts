@@ -1555,6 +1555,71 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     clearMultiSelect();
   }, [countryId, selectedIds, allFeatures, handleDeleteFeature, clearMultiSelect]);
 
+  /**
+   * Bulk-edit a single attribute on all currently selected subdivisions.
+   *
+   * Strategy: per-row calls to countryGeo.upsertSubdivision (auth-checked,
+   * atomic per feature). Selection is mixed-type so we scope to subdivisions
+   * only — non-subdivision selections are silently skipped (consistent with
+   * how the UI hides the bulk-edit bar when no subdivisions are selected).
+   *
+   * Returns { successCount, failCount } so callers can surface partial failures.
+   */
+  const bulkEditSelected = useCallback(
+    async (
+      field: "color" | "type" | "level" | "governmentType",
+      value: string | number
+    ): Promise<{ successCount: number; failCount: number }> => {
+      if (!countryId || selectedIds.size === 0) return { successCount: 0, failCount: 0 };
+
+      const toEdit = allFeatures.filter(
+        (f) => selectedIds.has(f.id) && f.type === "subdivision"
+      );
+
+      if (toEdit.length === 0) return { successCount: 0, failCount: 0 };
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const feature of toEdit) {
+        try {
+          await updateSubdivision.mutateAsync({
+            countryId,
+            id: feature.id,
+            name: feature.name ?? "",
+            [field]: value,
+          });
+          successCount++;
+        } catch {
+          failCount++;
+        }
+      }
+
+      // Push one consolidated history entry (mirrors the 50-cap in pushAction)
+      if (successCount > 0) {
+        pushAction({
+          type: "update",
+          featureType: "subdivision",
+          featureId: `bulk:${Array.from(selectedIds).join(",")}`,
+          newData: { field, value, count: successCount },
+        });
+        invalidateAllMapData();
+        debouncedRefetch();
+      }
+
+      return { successCount, failCount };
+    },
+    [
+      countryId,
+      selectedIds,
+      allFeatures,
+      updateSubdivision,
+      pushAction,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
+  );
+
   const isMutating =
     createCity.isPending ||
     updateCity.isPending ||
@@ -1681,5 +1746,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     toggleSelectId,
     clearMultiSelect,
     bulkDeleteSelected,
+    bulkEditSelected,
   };
 }
