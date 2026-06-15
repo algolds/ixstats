@@ -1006,11 +1006,25 @@ export default function MapEditorOverlay({
       {editor.selectedIds.size > 1 && (
         <BatchActionsBar
           selectedCount={editor.selectedIds.size}
+          subdivisionCount={
+            editor.allFeatures.filter(
+              (f) => editor.selectedIds.has(f.id) && f.type === "subdivision"
+            ).length
+          }
           onBatchDelete={async () => {
             if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
             await editor.bulkDeleteSelected();
           }}
           onDeselectAll={editor.clearMultiSelect}
+          onBulkEdit={async (field, value) => {
+            const result = await editor.bulkEditSelected(field, value);
+            if (result.failCount > 0) {
+              alert(
+                `Bulk edit: ${result.successCount} updated, ${result.failCount} failed. Check console for details.`
+              );
+            }
+            return result;
+          }}
           isMutating={editor.isMutating}
         />
       )}
