@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
-import { Pencil } from "lucide-react";
+import React, { useState } from "react";
+import { Pencil, Grid3X3 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
+import { ProvinceGeneratorPanel } from "~/components/maps/editor/components/ProvinceGeneratorPanel";
 import { JsonViewer } from "~/components/json-viewer";
 
 interface PropertiesPanelContentProps {
@@ -83,6 +84,7 @@ export function PropertiesPanelContent({
   setBrushTargetId,
 }: PropertiesPanelContentProps) {
   const router = useRouter();
+  const [showGenerator, setShowGenerator] = useState(false);
 
   if (isWorldMode) {
     let mainContent: React.ReactNode = null;
@@ -376,6 +378,15 @@ export function PropertiesPanelContent({
             )}
             {!isUnclaimed && (
               <button
+                onClick={() => setShowGenerator((v) => !v)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-purple-600/20 px-3 py-2 text-xs font-medium text-purple-500 hover:bg-purple-600/30"
+              >
+                <Grid3X3 className="h-3.5 w-3.5" />
+                Generate Subdivisions…
+              </button>
+            )}
+            {!isUnclaimed && (
+              <button
                 onClick={() => {
                   if (mapSelectedCountry?.featureId) {
                     router.push(`/admin/geography?featureId=${mapSelectedCountry.featureId}`);
@@ -387,6 +398,15 @@ export function PropertiesPanelContent({
               </button>
             )}
           </div>
+          {showGenerator && (
+            <div className="border-border/30 rounded-lg border bg-muted/10">
+              <ProvinceGeneratorPanel
+                countryGeometry={editor?.countryGeo?.geometry ?? null}
+                countryId={activeCountryId ?? ""}
+                onClose={() => setShowGenerator(false)}
+              />
+            </div>
+          )}
         </div>
       );
     } else {
