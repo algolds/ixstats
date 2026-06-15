@@ -147,6 +147,9 @@ const VITALITY_LEGEND: OverlayLegend = {
 
 // Health legend: green-toned (distinct from WEALTH_LEGEND's slate→emerald→amber).
 // Green-only gradient so the two wealth-adjacent legends don't collide visually.
+// Note: country.overallNationalHealth defaults to 0 in the schema; if no game
+// loop has populated the column, the choropleth renders all-low and the map
+// won't recolor — the note below tells the user why.
 const HEALTH_LEGEND: OverlayLegend = {
   type: "gradient",
   title: "Health Map — National Health Index",
@@ -157,6 +160,7 @@ const HEALTH_LEGEND: OverlayLegend = {
     { color: "#16a34a", label: "" },
     { color: "#15803d", label: "High" },
   ],
+  note: "Requires country.overallNationalHealth to be populated (defaults to 0). All-zero on a fresh DB.",
 };
 
 // MAINTENANCE: Trade balance is a signed metric (negative = deficit, positive =
@@ -175,6 +179,7 @@ const TRADE_BALANCE_LEGEND: OverlayLegend = {
     { color: "#94a3b8", label: "" },
     { color: "#475569", label: "Deficit" },
   ],
+  note: "Requires country.tradeBalance to be populated (defaults to 0). All-zero on a fresh DB.",
 };
 
 // ── renderProps adapters ────────────────────────────────────────────────────

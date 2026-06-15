@@ -12,6 +12,7 @@
  * `validFrom`/`validTo` is a deferred follow-up.
  */
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { cachedPublicProcedure } from "~/server/api/trpc";
 import { mergeBordersAsOf } from "~/lib/border-history-asof";
 import { loadLayerFromDB, loadGeoJSONFromFile } from "./layer-loader";
@@ -75,4 +76,61 @@ export const borderHistoryProcedures = {
       maxTime: IxTime.getCurrentIxTime(),
     };
   }),
+
+  /**
+   * Dev-only seed: insert a synthetic `BorderHistory` row for a given country
+   * using the country's CURRENT geometry as the snapshot, with a `changedAt`
+   * 24h in the past. The goal is to make the timeline scrubber visible on a
+   * fresh DB without requiring the operator to first perform a real admin
+   * border edit. Refuses to run outside development.
+   *
+   * `countryId` is the `Country.id` (cuid), not the `featureId`. Call once
+   * per country you want to appear in the scrubber domain.
+   */
+  seedBorderHistoryDev: cachedPublicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        daysAgo: z.number().int().min(1).max(365).default(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (process.env.NODE_ENV === "production") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "seedBorderHistoryDev is dev-only; refuses to run in production.",
+        });
+      }
+
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { id: true, geometry: true, name: true },
+      });
+      if (!country) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Country not found: ${input.countryId}`,
+        });
+      }
+      if (!country.geometry) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Country has no geometry yet: ${country.name}`,
+        });
+      }
+
+      const changedAt = new Date(Date.now() - input.daysAgo * 24 * 60 * 60 * 1000);
+      const created = await ctx.db.borderHistory.create({
+        data: {
+          countryId: country.id,
+          geometry: country.geometry as any,
+          changedBy: "dev-seed",
+          changedAt,
+          reason: `Dev seed (${input.daysAgo}d ago) for timeline scrubber`,
+        },
+        select: { id: true, countryId: true, changedAt: true },
+      });
+
+      return { created };
+    }),
 };

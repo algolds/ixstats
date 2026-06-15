@@ -49,6 +49,15 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
                 </span>
               ))}
           </div>
+          {/* Data-status note (e.g. "all-zero on a fresh DB"). Rendered only when
+              the registry entry set one; intent is to explain "I toggled the
+              overlay and nothing recolored" without users having to read the
+              data model. */}
+          {"note" in legend && legend.note && (
+            <p className="text-muted-foreground/70 mt-1 text-[9px] leading-snug italic">
+              {legend.note}
+            </p>
+          )}
         </div>
       )}
 

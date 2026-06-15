@@ -39,6 +39,14 @@ export type OverlayLegend =
       type: "gradient";
       title: string;
       stops: { color: string; label: string }[];
+      /**
+       * Optional data-status note. Set by the registry entry when the metric
+       * has known data-dependency requirements (e.g. needs game state to be
+       * populated). Rendered as a small banner under the gradient by
+       * AnalyticsLegend so users see the "all-zero / no recolor" state
+       * explained rather than assuming the overlay is broken.
+       */
+      note?: string;
     }
   | {
       type: "line-legend";
