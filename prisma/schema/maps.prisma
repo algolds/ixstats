@@ -257,6 +257,7 @@ model MapLayer {
   areaSqKm     Float?                   // Calculated area
   centroid     Json?                    // GeoJSON Point [lng, lat]
   boundingBox  Json?                    // [minLng, minLat, maxLng, maxLat]
+  neighbors    Json?                    // string[] of featureIds whose borders touch this feature
   isActive     Boolean                  @default(true)
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
