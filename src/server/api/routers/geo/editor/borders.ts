@@ -242,6 +242,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
             const nGeom = nUpdate.geometry as unknown as
               | import("geojson").Polygon
               | import("geojson").MultiPolygon;
+            await validateGeometryValid(ctx.db, nUpdate.geometry);
             const nCentroid = calculateCentroid(nGeom);
             const nBbox = calculateBBox(nGeom);
             const nArea = calculateArea(nGeom);
