@@ -119,7 +119,7 @@ export function useNavigationItems({
             name: "MyLeague",
             href: "/myleague",
             icon: Trophy,
-            description: "Sports league simulation",
+            description: "Sports management",
           },
           {
             name: "Vexel",
