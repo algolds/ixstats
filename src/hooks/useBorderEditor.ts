@@ -42,12 +42,14 @@ import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/shared-vertex-bu
 import type { SharedVertexData } from "~/lib/shared-vertex-builder";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureVertexRef } from "~/lib/shared-vertex-builder";
+import { traceAlongLayer } from "~/lib/border-trace";
+import type { TraceFeature } from "~/lib/border-trace";
 
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
 
-export type BorderEditMode = "select" | "vertex_edit" | "freehand" | "split" | "merge";
+export type BorderEditMode = "select" | "vertex_edit" | "freehand" | "split" | "merge" | "trace";
 
 export interface BorderEditorState {
   mode: BorderEditMode;
@@ -97,6 +99,11 @@ export interface BorderEditorActions {
   naturalize: () => void;
   simplify: () => void;
   reset: () => void;
+  /** Provide the river/coast layer data used by "trace" mode. */
+  setTraceLayerSource: (
+    layers: Array<{ type: string; data: { features: TraceFeature[] } }> | undefined,
+    visibleLayers: Set<string>
+  ) => void;
 }
 
 // ──────────────────────────────────────────────
@@ -136,6 +143,15 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const repairGeometry = api.geoEditor.repairBorderGeometry.useMutation();
   const utils = api.useUtils();
   const dragStartGeom = useRef<Polygon | MultiPolygon | null>(null);
+
+  // ── Trace mode state (mutable refs — not React state) ──
+  /** Coordinate of the first click in "trace" mode; null before first click. */
+  const traceStartRef = useRef<[number, number] | null>(null);
+  /** River/coast layer data updated externally via setTraceLayerSource. */
+  const traceLayersRef = useRef<Array<{ type: string; data: { features: TraceFeature[] } }> | undefined>(undefined);
+  /** Currently visible layer IDs (used to filter to "rivers" etc.). */
+  const traceVisibleLayersRef = useRef<Set<string>>(new Set());
+
   // Keep saveDraft in a ref to avoid resetting the auto-save timer on every render
   const saveDraftRef = useRef(saveDraft);
   saveDraftRef.current = saveDraft;
@@ -233,6 +249,10 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   );
 
   const setMode = useCallback((mode: BorderEditMode) => {
+    // Clear trace first-click when leaving trace mode
+    if (mode !== "trace") {
+      traceStartRef.current = null;
+    }
     setState((s) => ({
       ...s,
       mode,
@@ -299,6 +319,66 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
 
       if (s.mode === "split") {
         return { ...s, splitLine: [...s.splitLine, point] };
+      }
+
+      if (s.mode === "trace") {
+        const prev = traceStartRef.current;
+        if (!prev) {
+          // First click — store the trace start; wait for second click
+          traceStartRef.current = [lng, lat];
+          return s;
+        }
+
+        // Second click — run the trace
+        traceStartRef.current = null;
+
+        const layers = traceLayersRef.current;
+        const visibleLayers = traceVisibleLayersRef.current;
+        const traceLayerTypes = ["rivers", "lakes"];
+        const features: TraceFeature[] = [];
+        if (layers) {
+          for (const layerType of traceLayerTypes) {
+            if (!visibleLayers.has(layerType)) continue;
+            const layer = layers.find((l) => l.type === layerType);
+            if (layer?.data?.features) {
+              for (const f of layer.data.features) {
+                if (f.geometry && (f.geometry.type === "LineString" || f.geometry.type === "MultiLineString")) {
+                  features.push(f as TraceFeature);
+                }
+              }
+            }
+          }
+        }
+
+        const traced = traceAlongLayer(prev, [lng, lat], features, 0.05);
+        if (traced.length === 0) return s;
+
+        // Find the edge nearest to the first trace point and splice the run in
+        const nearestEdge = findNearestEdge(s.geometry, prev);
+        if (!nearestEdge) return s;
+
+        // Insert all traced vertices one by one starting after the nearest edge
+        let newGeom = s.geometry;
+        for (let i = 0; i < traced.length; i++) {
+          const currentEdge = findNearestEdge(newGeom, traced[i]!);
+          if (currentEdge) {
+            newGeom = addVertex(newGeom, currentEdge.ref, traced[i]!);
+          }
+        }
+
+        const newStack = pushUndo(
+          s.undoStackState,
+          { type: "replace_geometry", geometry: newGeom },
+          s.geometry,
+          newGeom
+        );
+        return {
+          ...s,
+          geometry: newGeom,
+          undoStackState: newStack,
+          isDirty: true,
+          areaKm2: calculateArea(newGeom),
+        };
       }
 
       // "freehand" mode is declared in BorderEditMode for future use.
@@ -594,6 +674,17 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, []);
 
+  const setTraceLayerSourceAction = useCallback(
+    (
+      layers: Array<{ type: string; data: { features: TraceFeature[] } }> | undefined,
+      visibleLayers: Set<string>
+    ) => {
+      traceLayersRef.current = layers;
+      traceVisibleLayersRef.current = visibleLayers;
+    },
+    []
+  );
+
   const simplifyAction = useCallback(() => {
     setState((s) => {
       if (!s.geometry) return s;
@@ -634,6 +725,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     naturalize: naturalizeAction,
     simplify: simplifyAction,
     reset,
+    setTraceLayerSource: setTraceLayerSourceAction,
   };
 
   return [state, actions];
