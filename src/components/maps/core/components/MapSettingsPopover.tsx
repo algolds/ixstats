@@ -1,10 +1,11 @@
 "use client";
 
-import { Settings, Sun, Moon, Monitor, User } from "lucide-react";
+import { Settings, Sun, Moon, Monitor, User, LayoutDashboard } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import type { ProjectionMode } from "~/lib/map-config";
 import type { Theme } from "~/context/theme-context";
 import { useRouter } from "next/navigation";
+import { useIsAdmin } from "~/hooks/usePermissions";
 
 interface MapSettingsPopoverProps {
   projectionMode: ProjectionMode;
@@ -24,6 +25,7 @@ export function MapSettingsPopover({
   setTheme,
   router,
 }: MapSettingsPopoverProps) {
+  const isAdmin = useIsAdmin();
   return (
     <Popover>
       <PopoverTrigger
@@ -95,6 +97,15 @@ export function MapSettingsPopover({
             <User className="h-3.5 w-3.5" />
             User Settings
           </button>
+          {isAdmin && (
+            <button
+              onClick={() => router.push("/admin")}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-colors"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Admin Dashboard
+            </button>
+          )}
         </div>
       </PopoverContent>
     </Popover>
