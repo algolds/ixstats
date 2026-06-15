@@ -20,6 +20,7 @@ import { invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { getTerrainForArea } from "~/lib/base-layer-query";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/geo-validation";
+import { generateProvinces } from "~/lib/province-generator";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 // eslint-disable-next-line unused-imports/no-unused-vars
@@ -655,6 +656,87 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         where: { countryId: input.countryId },
       });
       return { deleted: result.count };
+    }),
+
+  /**
+   * Commit generated subdivisions: auto-subdivide a country polygon into N
+   * provinces using Voronoi tessellation. Each cell is clipped to the country
+   * border via clipAndValidatePolygon and bulk-created as an approved Subdivision.
+   */
+  commitGeneratedSubdivisions: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        count: z.number().int().min(2).max(200),
+        seed: z.number().optional(),
+        names: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country as any;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+
+      // Load country geometry from the map_layers table (needed for the pure-math generator)
+      const rows = await ctx.db.$queryRawUnsafe<Array<{ geom_geojson: string }>>(
+        `SELECT ST_AsGeoJSON(geom_postgis) as geom_geojson
+         FROM map_layers
+         WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
+         LIMIT 1`,
+        input.countryId
+      );
+      if (rows.length === 0 || !rows[0]?.geom_geojson) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Country geometry not found" });
+      }
+      const countryGeom = JSON.parse(rows[0].geom_geojson) as any;
+
+      // Generate raw Voronoi cells (pure math, no DB yet)
+      const rawCells = generateProvinces(countryGeom, input.count, {
+        seed: input.seed,
+      });
+      if (rawCells.length === 0) {
+        return { created: 0, skipped: 0 };
+      }
+
+      const names = input.names ?? [];
+      let created = 0;
+      let skipped = 0;
+
+      // Clip each cell to the country border and create a Subdivision
+      for (let i = 0; i < rawCells.length; i++) {
+        const cell = rawCells[i]!;
+        const clipped = await clipAndValidatePolygon(
+          ctx.db as any,
+          input.countryId,
+          cell as unknown as Record<string, unknown>,
+          `Generated Province ${i + 1}`
+        );
+        const name = names[i] || `Province ${i + 1}`;
+
+        try {
+          await ctx.db.subdivision.create({
+            data: {
+              name,
+              countryId: input.countryId,
+              type: "province",
+              level: 1,
+              geometry: clipped,
+              status: "approved",
+              submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+            },
+          });
+          created++;
+        } catch {
+          skipped++;
+        }
+      }
+
+      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      broadcastMapUpdate("subdivision", input.countryId);
+      await syncGeographicDemographics(ctx.db, input.countryId);
+
+      return { created, skipped, totalCells: rawCells.length };
     }),
 
   // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
