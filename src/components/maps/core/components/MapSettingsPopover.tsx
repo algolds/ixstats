@@ -1,11 +1,13 @@
 "use client";
 
-import { Settings, Sun, Moon, Monitor, User, LayoutDashboard } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Sun, Moon, Monitor, User, LayoutDashboard, Magnet } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import type { ProjectionMode } from "~/lib/map-config";
 import type { Theme } from "~/context/theme-context";
 import { useRouter } from "next/navigation";
 import { useIsAdmin } from "~/hooks/usePermissions";
+import { getSnapEnabled, setSnapEnabled, getSnapTolerance, setSnapTolerance } from "~/lib/editor-prefs";
 
 interface MapSettingsPopoverProps {
   projectionMode: ProjectionMode;
@@ -26,6 +28,15 @@ export function MapSettingsPopover({
   router,
 }: MapSettingsPopoverProps) {
   const isAdmin = useIsAdmin();
+  const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled);
+  const [snapTol, setSnapTolState] = useState(getSnapTolerance);
+
+  // Keep state in sync across renders (other instances may write prefs)
+  useEffect(() => {
+    setSnapEnabledState(getSnapEnabled());
+    setSnapTolState(getSnapTolerance());
+  }, []);
+
   return (
     <Popover>
       <PopoverTrigger
@@ -86,6 +97,52 @@ export function MapSettingsPopover({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Snap Controls */}
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Magnet className="text-muted-foreground h-3 w-3" />
+              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                Snap
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                const next = !snapEnabled;
+                setSnapEnabled(next);
+                setSnapEnabledState(next);
+              }}
+              className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                snapEnabled
+                  ? "bg-emerald-500/10 text-emerald-500"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {snapEnabled ? "On" : "Off"}
+            </button>
+          </div>
+          {snapEnabled && (
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0.001"
+                max="0.1"
+                step="0.001"
+                value={snapTol}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setSnapTolerance(v);
+                  setSnapTolState(v);
+                }}
+                className="h-1 flex-1 accent-blue-500"
+              />
+              <span className="text-muted-foreground w-10 text-right font-mono text-[10px] tabular-nums">
+                {snapTol.toFixed(3)}°
+              </span>
+            </div>
+          )}
         </div>
 
         {/* User Settings */}

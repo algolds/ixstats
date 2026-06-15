@@ -5,6 +5,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { snapToBorderEdge } from "~/lib/border-editor";
+import { getSnapEnabled, getSnapTolerance } from "~/lib/editor-prefs";
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
 import {
   getGeoJSONSource,
@@ -139,28 +140,32 @@ export function useSubdivisionDraw({
       let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
       // Snap to visible background layers first
-      if (worldMapLayers && editorVisibleLayers) {
-        clickPoint = snapToLayerFeatures(clickPoint, worldMapLayers, editorVisibleLayers, 0.015);
+      const snapOn = getSnapEnabled();
+      const snapTol = getSnapTolerance();
+      if (snapOn && worldMapLayers && editorVisibleLayers) {
+        clickPoint = snapToLayerFeatures(clickPoint, worldMapLayers, editorVisibleLayers, snapTol);
       }
 
       const border = countryGeometry;
-      if (border) {
-        clickPoint = snapToBorderEdge(clickPoint, border, 0.015);
+      if (snapOn && border) {
+        clickPoint = snapToBorderEdge(clickPoint, border, snapTol);
       }
-      for (const feat of features) {
-        if (
-          feat.type === "subdivision" &&
-          feat.geometry &&
-          (feat.geometry as any).coordinates &&
-          (feat.geometry as any).coordinates.length > 0
-        ) {
-          const snapped = snapToBorderEdge(
-            clickPoint,
-            feat.geometry as Polygon | MultiPolygon,
-            0.01
-          );
-          if (snapped !== clickPoint) {
-            clickPoint = snapped;
+      if (snapOn) {
+        for (const feat of features) {
+          if (
+            feat.type === "subdivision" &&
+            feat.geometry &&
+            (feat.geometry as any).coordinates &&
+            (feat.geometry as any).coordinates.length > 0
+          ) {
+            const snapped = snapToBorderEdge(
+              clickPoint,
+              feat.geometry as Polygon | MultiPolygon,
+              snapTol
+            );
+            if (snapped !== clickPoint) {
+              clickPoint = snapped;
+            }
           }
         }
       }

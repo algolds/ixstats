@@ -29,6 +29,7 @@ import {
   snapGeometryToBackgroundLayers,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
+import { getSnapEnabled, getSnapTolerance } from "~/lib/editor-prefs";
 
 interface UseSubdivisionVertexEditProps {
   map: MapLibreMap | null;
@@ -354,28 +355,34 @@ export function useSubdivisionVertexEdit({
       let target: Position = [lngLat.lng, lngLat.lat];
 
       // Snap to visible background layers first
-      if (worldMapLayers && editorVisibleLayers) {
+      const snapOn = getSnapEnabled();
+      const snapTol = getSnapTolerance();
+      if (snapOn && worldMapLayers && editorVisibleLayers) {
         target = snapToLayerFeatures(
           target as [number, number],
           worldMapLayers,
           editorVisibleLayers,
-          0.015
+          snapTol
         );
       }
 
       const border = countryGeometryRef.current;
       if (border) {
         target = clampToGeometry(target, border);
-        target = snapToBorderEdge(target, border, 0.015);
+        if (snapOn) {
+          target = snapToBorderEdge(target, border, snapTol);
+        }
       }
 
-      const editingId = vertexEditRef.current.featureId;
-      for (const feat of featuresRef.current) {
-        if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-        const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, 0.02);
-        if (snapped !== target) {
-          target = snapped;
-          break;
+      if (snapOn) {
+        const editingId = vertexEditRef.current.featureId;
+        for (const feat of featuresRef.current) {
+          if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
+          const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, snapTol);
+          if (snapped !== target) {
+            target = snapped;
+            break;
+          }
         }
       }
 
@@ -529,29 +536,35 @@ export function useSubdivisionVertexEdit({
       let target: Position = [lngLat.lng, lngLat.lat];
 
       // Snap to visible background layers first
-      if (worldMapLayers && editorVisibleLayers) {
+      const snapOn = getSnapEnabled();
+      const snapTol = getSnapTolerance();
+      if (snapOn && worldMapLayers && editorVisibleLayers) {
         target = snapToLayerFeatures(
           target as [number, number],
           worldMapLayers,
           editorVisibleLayers,
-          0.015
+          snapTol
         );
       }
 
       const border = countryGeometryRef.current;
       if (border) {
         target = clampToGeometry(target, border);
-        target = snapToBorderEdge(target, border, 0.015);
+        if (snapOn) {
+          target = snapToBorderEdge(target, border, snapTol);
+        }
       }
 
-      const editingId = vertexEditRef.current.featureId;
-      for (const feat of featuresRef.current) {
-        if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-        const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, 0.01);
+      if (snapOn) {
+        const editingId = vertexEditRef.current.featureId;
+        for (const feat of featuresRef.current) {
+          if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
+          const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, snapTol);
         if (snapped !== target) {
           target = snapped;
           break;
         }
+      }
       }
 
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);

@@ -10,6 +10,7 @@
 
 import { useState, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
+import { clampToGeometry, pointInGeometry } from "~/lib/border-editor";
 
 // ── Undo/Redo Types ──
 
@@ -1065,21 +1066,40 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         mode === "add-story-pin" ||
         mode === "add-label"
       ) {
-        setPendingCoordinates([lng, lat]);
+        let point: [number, number] = [lng, lat];
+        if (countryGeo?.geometry) {
+          point = clampToGeometry(point, countryGeo.geometry) as [number, number];
+        }
+        setPendingCoordinates(point);
       } else if (mode === "add-route") {
         setRouteWaypoints((prev) => [...prev, [lng, lat]]);
       }
     },
-    [mode]
+    [mode, countryGeo]
   );
 
   const handleDrawComplete = useCallback(
     (geometry: object) => {
       if (mode === "add-subdivision") {
+        if (
+          countryGeo?.geometry &&
+          (geometry as any).type === "Polygon"
+        ) {
+          const outerRing = (geometry as any).coordinates?.[0] as [number, number][] | undefined;
+          if (outerRing && outerRing.length > 0) {
+            const anyInside = outerRing.some((pt: [number, number]) =>
+              pointInGeometry(pt, countryGeo.geometry)
+            );
+            if (!anyInside) {
+              alert("Region must be inside the country boundary.");
+              return;
+            }
+          }
+        }
         setPendingGeometry(geometry);
       }
     },
-    [mode]
+    [mode, countryGeo]
   );
 
   // Submit handlers
