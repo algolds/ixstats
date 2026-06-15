@@ -9,7 +9,7 @@ import { JsonViewer } from "~/components/json-viewer";
 
 interface PropertiesPanelContentProps {
   isWorldMode: boolean;
-  activeEditorMode: "view" | "forge" | "border_edit";
+  activeEditorMode: "view" | "border_edit";
   activeCountryId: string | null;
   mapSelectedCountry: any;
   borderState: any;
@@ -33,6 +33,14 @@ interface PropertiesPanelContentProps {
   setSelectedRouteId: (id: string | null) => void;
   handleSubmit: any;
   enterBorderEdit?: () => void;
+  isUnclaimed?: boolean;
+  createCountryFromShapeAction?: (name: string) => void;
+  createCountryFromShapePending?: boolean;
+  assignCountryId?: string;
+  setAssignCountryId?: (id: string) => void;
+  handleAssignLink?: (featureId: string) => void;
+  assignMutation?: any;
+  availableCountries?: any[];
 }
 
 export function PropertiesPanelContent({
@@ -61,6 +69,14 @@ export function PropertiesPanelContent({
   setSelectedRouteId,
   handleSubmit,
   enterBorderEdit,
+  isUnclaimed,
+  createCountryFromShapeAction,
+  createCountryFromShapePending,
+  assignCountryId,
+  setAssignCountryId,
+  handleAssignLink,
+  assignMutation,
+  availableCountries,
 }: PropertiesPanelContentProps) {
   const router = useRouter();
 
@@ -70,6 +86,7 @@ export function PropertiesPanelContent({
       "w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground disabled:opacity-50 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
 
     if (activeEditorMode === "border_edit") {
+      // Border editor panel — unchanged from plan 020
       mainContent = (
         <BorderEditorPanel
           featureId={borderState.featureId}
@@ -83,7 +100,8 @@ export function PropertiesPanelContent({
           isDirty={borderState.isDirty}
         />
       );
-    } else if (activeEditorMode === "forge") {
+    } else if (editor.mode !== "view") {
+      // A feature-placement tool is active — show its form (was forge branch)
       mainContent = (
         <FeaturePropertyPanel
           mode={editor.mode}
@@ -116,27 +134,93 @@ export function PropertiesPanelContent({
           allFeatures={editor.allFeatures}
         />
       );
-    } else {
-      // Active mode === view
-      if (mapSelectedCountry) {
-        mainContent = (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
-                Country Profile
-              </span>
-              <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500">
-                {selectedCountryName}
-              </span>
-            </div>
-            <div className="space-y-3">
-              {featureDetails?.flagUrl && (
-                <img
-                  src={featureDetails.flagUrl}
-                  alt={`${selectedCountryName} flag`}
-                  className="border-border/50 aspect-video w-full rounded-lg border object-cover shadow-sm"
-                />
-              )}
+    } else if (mapSelectedCountry) {
+      // Selection-first: a shape is selected — show its profile + contextual actions
+      mainContent = (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              {isUnclaimed ? "Unclaimed Territory" : "Country Profile"}
+            </span>
+            <span
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                isUnclaimed
+                  ? "bg-amber-500/10 text-amber-500"
+                  : "bg-emerald-500/10 text-emerald-500"
+              }`}
+            >
+              {selectedCountryName || mapSelectedCountry.featureId}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {featureDetails?.flagUrl && (
+              <img
+                src={featureDetails.flagUrl}
+                alt={`${selectedCountryName} flag`}
+                className="border-border/50 aspect-video w-full rounded-lg border object-cover shadow-sm"
+              />
+            )}
+
+            {/* Unclaimed territory actions */}
+            {isUnclaimed && (
+              <div className="border-border/30 space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <p className="text-muted-foreground text-[10px]">
+                  This territory has no linked country record.
+                </p>
+
+                {/* Assign to existing country */}
+                {setAssignCountryId && handleAssignLink && availableCountries && (
+                  <div className="space-y-1.5">
+                    <label className="text-muted-foreground text-[10px] font-medium uppercase">
+                      Assign to country
+                    </label>
+                    <div className="flex gap-1.5">
+                      <select
+                        value={assignCountryId ?? ""}
+                        onChange={(e) => setAssignCountryId(e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:border-blue-500 focus:outline-none"
+                      >
+                        <option value="">— select country —</option>
+                        {availableCountries.map((c: any) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleAssignLink(mapSelectedCountry.featureId)}
+                        disabled={!assignCountryId || assignMutation?.isPending}
+                        className="shrink-0 rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs font-medium text-blue-500 hover:bg-blue-600/30 disabled:opacity-50"
+                      >
+                        Assign
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Create new country from shape */}
+                {createCountryFromShapeAction && (
+                  <button
+                    onClick={() => {
+                      const name = window.prompt(
+                        "Enter name for the new country:",
+                        mapSelectedCountry.displayName || ""
+                      );
+                      if (name && name.trim()) {
+                        createCountryFromShapeAction(name.trim());
+                      }
+                    }}
+                    disabled={createCountryFromShapePending}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600/20 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50"
+                  >
+                    {createCountryFromShapePending ? "Creating…" : "+ Create new country from shape"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Wiki linkage — only for claimed shapes */}
+            {!isUnclaimed && (
               <div>
                 <label className="text-muted-foreground text-[10px] font-medium uppercase">
                   Wiki Linkage
@@ -158,7 +242,10 @@ export function PropertiesPanelContent({
                   </button>
                 </div>
               </div>
+            )}
 
+            {/* Custom Properties JSON */}
+            {!isUnclaimed && (
               <div>
                 <div className="flex items-center justify-between">
                   <label className="text-muted-foreground text-[10px] font-medium uppercase">
@@ -202,17 +289,20 @@ export function PropertiesPanelContent({
                   )}
                 </div>
               </div>
+            )}
 
-              <div className="border-border/30 space-y-2 border-t pt-3">
-                {isWorldMode && mapSelectedCountry && enterBorderEdit && (
-                  <button
-                    onClick={enterBorderEdit}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600/20 px-3 py-2 text-xs font-medium text-blue-500 hover:bg-blue-600/30"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Edit Borders
-                  </button>
-                )}
+            <div className="border-border/30 space-y-2 border-t pt-3">
+              {/* Edit Borders — available for any selected shape */}
+              {enterBorderEdit && (
+                <button
+                  onClick={enterBorderEdit}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600/20 px-3 py-2 text-xs font-medium text-blue-500 hover:bg-blue-600/30"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Borders
+                </button>
+              )}
+              {!isUnclaimed && (
                 <button
                   onClick={() => {
                     if (mapSelectedCountry?.featureId) {
@@ -223,17 +313,17 @@ export function PropertiesPanelContent({
                 >
                   Manage Database Record
                 </button>
-              </div>
+              )}
             </div>
           </div>
-        );
-      } else {
-        mainContent = (
-          <p className="text-muted-foreground py-8 text-center italic">
-            Click a country on the map to manage linkages or properties.
-          </p>
-        );
-      }
+        </div>
+      );
+    } else {
+      mainContent = (
+        <p className="text-muted-foreground py-8 text-center italic">
+          Click any shape on the map to view its properties and actions.
+        </p>
+      );
     }
 
     return <div className="space-y-4">{mainContent}</div>;

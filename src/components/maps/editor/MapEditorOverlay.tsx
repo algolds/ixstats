@@ -191,8 +191,6 @@ export default function MapEditorOverlay({
     handleChangePanelPlacement,
     cursorCoords,
     cursorZoom,
-    forgeMode,
-    setForgeMode,
     showGrid,
     setShowGrid,
     paintMapMode,
@@ -404,9 +402,6 @@ export default function MapEditorOverlay({
         isAdmin={isAdmin}
         editorVisibleLayers={editorVisibleLayers}
         toggleEditorLayer={toggleEditorLayer}
-        forgeMode={forgeMode}
-        setForgeMode={setForgeMode}
-        setActiveEditorMode={setActiveEditorMode}
         generateTransport={generateTransport}
         recalculateGeo={recalculateGeo}
         simplifyAll={simplifyAll}
@@ -414,8 +409,8 @@ export default function MapEditorOverlay({
         onShowHelp={() => setShowWelcomeModal(true)}
       />
 
-      {/* Photoshop-style context bar */}
-      {(!isWorldMode || activeEditorMode === "forge") && (
+      {/* Photoshop-style context bar — shown when a feature tool is active */}
+      {(!isWorldMode || editor.mode !== "view") && (
         <EditorErrorBoundary name="ToolOptions">
           <ToolOptionsBar
             mode={editor.mode}

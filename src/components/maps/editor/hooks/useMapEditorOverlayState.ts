@@ -33,21 +33,21 @@ export function useMapEditorOverlayState({
   useMapLiveSync();
 
   const [activeCountryId, setActiveCountryId] = useState<string | null>(countryId || null);
-  const [activeEditorMode, setActiveEditorMode] = useState<"view" | "forge" | "border_edit">(
-    isWorldMode ? "view" : "forge"
+  const [activeEditorMode, setActiveEditorMode] = useState<"view" | "border_edit">(
+    "view"
   );
   const [mapSelectedCountry, setMapSelectedCountry] = useState<SelectedCountry | null>(null);
 
   // --- Map Editor & Border Editor Hooks ---
   const [borderState, borderActions] = useBorderEditor();
   const editor = useMapEditor(
-    !isWorldMode || (activeEditorMode === "forge" && activeCountryId)
+    !isWorldMode || activeCountryId
       ? activeCountryId || undefined
       : undefined,
     { skipLinkageGate: isWorldMode }
   );
   const importer = useProvinceImporter(
-    !isWorldMode || (activeEditorMode === "forge" && activeCountryId)
+    !isWorldMode || activeCountryId
       ? activeCountryId || undefined
       : "__none__"
   );
@@ -62,6 +62,8 @@ export function useMapEditorOverlayState({
   const linkageLoading = editor.linkageLoading;
   const hasGeometry = !!editor.countryGeo;
   const toolsDisabled = !isLinked || !hasGeometry;
+  // True when a shape is selected but has no linked Country record
+  const isUnclaimed = !!mapSelectedCountry && !mapSelectedCountry.countryId;
 
   const disabledTools = useMemo(() => {
     if (!isWorldMode) return [];
@@ -244,6 +246,28 @@ export function useMapEditorOverlayState({
       alert(`Failed to save feature properties: ${err.message}`);
     },
   });
+
+  const createCountryFromShapeMutation = api.geoEditor.createCountryFromShape.useMutation({
+    onSuccess: () => {
+      utils.geoCore.listCountries.invalidate();
+      utils.geoCore.getWorldMap.invalidate();
+      refetchValidation();
+    },
+    onError: (err) => {
+      alert(`Failed to create country: ${err.message}`);
+    },
+  });
+
+  const createCountryFromShapeAction = useCallback(
+    (name: string) => {
+      if (!mapSelectedCountry?.featureId) return;
+      createCountryFromShapeMutation.mutate({
+        featureId: mapSelectedCountry.featureId,
+        name,
+      });
+    },
+    [mapSelectedCountry, createCountryFromShapeMutation]
+  );
 
   useEffect(() => {
     if (featureDetails) {
@@ -1143,16 +1167,8 @@ export function useMapEditorOverlayState({
     };
   }, [mapInstance, handleMapMouseMove]);
 
-  useEffect(() => {
-    if (!isWorldMode) return;
-    if (activeEditorMode === "border_edit") return;
-
-    if (editor.mode === "view") {
-      setActiveEditorMode("view");
-    } else {
-      setActiveEditorMode("forge");
-    }
-  }, [editor.mode, isWorldMode, activeEditorMode]);
+  // editor.mode transitions are surfaced via the always-available tool rail.
+  // Only border_edit needs explicit mode setting (via enterBorderEdit).
 
   const featureCounts = useMemo(
     () => ({
@@ -1182,6 +1198,9 @@ export function useMapEditorOverlayState({
     hasGeometry,
     toolsDisabled,
     disabledTools,
+    isUnclaimed,
+    createCountryFromShapeAction,
+    createCountryFromShapePending: createCountryFromShapeMutation.isPending,
     activeSidebarTab,
     setActiveSidebarTab,
     featureSearch,
