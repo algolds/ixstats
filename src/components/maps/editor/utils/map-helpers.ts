@@ -2,7 +2,8 @@
 // @ts-nocheck
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { Geometry, Position, Feature, Polygon, MultiPolygon } from "geojson";
-import { intersect, featureCollection } from "@turf/turf";
+import { intersect } from "@turf/intersect";
+import { featureCollection } from "@turf/helpers";
 import {
   getAllRings,
   rebuildGeometry,

@@ -29,7 +29,9 @@ import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/map-config";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { booleanPointInPolygon, point } from "@turf/turf";
+import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
+// eslint-disable-next-line unused-imports/no-unused-imports
+import { point } from "@turf/helpers";
 
 // Helper Portal component to render modals under document.body
 function Portal({ children }: { children: React.ReactNode }) {

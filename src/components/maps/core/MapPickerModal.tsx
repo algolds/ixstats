@@ -7,7 +7,8 @@ import { buildBaseStyle, getCountryColor } from "~/lib/map-config";
 import { Button } from "~/components/ui/button";
 
 // Tree-shakeable Turf imports for containment checks
-import { booleanPointInPolygon, point } from "@turf/turf";
+import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
+import { point } from "@turf/helpers";
 
 export interface MapPickerModalProps {
   isOpen: boolean;

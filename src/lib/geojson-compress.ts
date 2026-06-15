@@ -7,7 +7,7 @@
  * 3. Consecutive duplicate point removal
  */
 
-import { simplify } from "@turf/turf";
+import { simplify } from "@turf/simplify";
 import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 
 // ── Coordinate truncation + pole clamping ──────────

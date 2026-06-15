@@ -7,19 +7,15 @@
  * Client-side compatible (no server dependencies).
  */
 
-import {
-  area,
-  bbox,
-  buffer,
-  centroid,
-  difference,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  feature,
-  featureCollection,
-  intersect,
-  kinks,
-  union,
-} from "@turf/turf";
+import { area } from "@turf/area";
+import { bbox } from "@turf/bbox";
+import { buffer } from "@turf/buffer";
+import { centroid } from "@turf/centroid";
+import { difference } from "@turf/difference";
+import { featureCollection } from "@turf/helpers";
+import { intersect } from "@turf/intersect";
+import { kinks } from "@turf/kinks";
+import { union } from "@turf/union";
 import type { Feature, Polygon, MultiPolygon, Position } from "geojson";
 import type { ProvinceFeature, TopologyReport, GapReport, OverlapReport } from "./types";
 
