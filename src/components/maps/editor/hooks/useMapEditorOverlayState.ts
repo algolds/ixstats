@@ -61,13 +61,16 @@ export function useMapEditorOverlayState({
   const isLinked = !!editor.linkage?.isLinked;
   const linkageLoading = editor.linkageLoading;
   const hasGeometry = !!editor.countryGeo;
-  const toolsDisabled = !isLinked || !hasGeometry;
+  // World editor is selection-first — tools are enabled for ANY selected shape (claimed or unclaimed).
+  const toolsDisabled = isWorldMode ? !mapSelectedCountry : (!isLinked || !hasGeometry);
   // True when a shape is selected but has no linked Country record
   const isUnclaimed = !!mapSelectedCountry && !mapSelectedCountry.countryId;
 
   const disabledTools = useMemo(() => {
     if (!isWorldMode) return [];
-    if (!activeCountryId) {
+    // In world editor, tools are enabled for any selected shape.
+    // Unclaimed territories just don't get country-specific tools (like subdivision import).
+    if (!mapSelectedCountry) {
       return [
         "add-city",
         "add-subdivision",
@@ -83,7 +86,7 @@ export function useMapEditorOverlayState({
       return ["add-city", "add-poi", "add-route", "add-story-pin", "add-label", "paint"];
     }
     return [];
-  }, [isWorldMode, activeCountryId, hasGeometry]);
+  }, [isWorldMode, mapSelectedCountry, hasGeometry]);
 
   // --- Sidebar Tabs State ---
   const [activeSidebarTab, setActiveSidebarTab] = useState<
@@ -1182,6 +1185,7 @@ export function useMapEditorOverlayState({
   );
 
   return {
+    isWorldMode,
     activeCountryId,
     setActiveCountryId,
     activeEditorMode,
