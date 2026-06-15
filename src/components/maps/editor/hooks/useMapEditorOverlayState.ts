@@ -865,7 +865,7 @@ export function useMapEditorOverlayState({
     mapLayers: editorMapLayers,
     toggleLayer: toggleEditorLayer,
     visibleLayers: editorVisibleLayers,
-  } = useMapData(["background", "altitudes", "rivers", "lakes"]);
+  } = useMapData(["background", "altitudes", "rivers", "lakes", "political", "country_labels"]);
   const worldMapLayers = editorMapLayers;
 
   // Keep border editor trace mode in sync with the latest river/coast layer data
