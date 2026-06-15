@@ -28,6 +28,8 @@ import {
   Truck,
   Activity,
   Gauge,
+  Heart,
+  Scale,
 } from "lucide-react";
 import type { FeatureCollection } from "geojson";
 import type {
@@ -140,6 +142,38 @@ const VITALITY_LEGEND: OverlayLegend = {
     { color: "#34d399", label: "Mid" },
     { color: "#fbbf24", label: "" },
     { color: "#f59e0b", label: "High" },
+  ],
+};
+
+// Health legend: green-toned (distinct from WEALTH_LEGEND's slate→emerald→amber).
+// Green-only gradient so the two wealth-adjacent legends don't collide visually.
+const HEALTH_LEGEND: OverlayLegend = {
+  type: "gradient",
+  title: "Health Map — National Health Index",
+  stops: [
+    { color: "#bbf7d0", label: "Low" },
+    { color: "#86efac", label: "" },
+    { color: "#4ade80", label: "Mid" },
+    { color: "#16a34a", label: "" },
+    { color: "#15803d", label: "High" },
+  ],
+};
+
+// MAINTENANCE: Trade balance is a signed metric (negative = deficit, positive =
+// surplus), so the ideal legend is diverging (red→neutral→green). The current
+// `choroplethRenderProps` helper only supports sequential scales
+// ("wealth" | "population" | "neutral"), so this v1 legend is a sequential
+// blue/slate gradient that reads as "balance magnitude". A follow-up plan should
+// extend the helper with a "diverging" scale option and update this legend.
+const TRADE_BALANCE_LEGEND: OverlayLegend = {
+  type: "gradient",
+  title: "Trade Balance (surplus → deficit)",
+  stops: [
+    { color: "#e0f2fe", label: "Surplus" },
+    { color: "#7dd3fc", label: "" },
+    { color: "#64748b", label: "Balanced" },
+    { color: "#94a3b8", label: "" },
+    { color: "#475569", label: "Deficit" },
   ],
 };
 
@@ -339,6 +373,36 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     component: ChoroplethOverlay,
     renderProps: choroplethRenderProps("wealth", "vitality"),
     legend: VITALITY_LEGEND,
+  },
+  health: {
+    id: "health",
+    label: "Health Map",
+    category: "fill",
+    icon: Heart,
+    defaultVisible: false,
+    dataFetcher: (utils: TRPCUtils) =>
+      utils.geoCore.getRegionalChoropleth.fetch({
+        metric: "health",
+        groupBy: "country",
+      }),
+    component: ChoroplethOverlay,
+    renderProps: choroplethRenderProps("neutral", "health"),
+    legend: HEALTH_LEGEND,
+  },
+  tradeBalance: {
+    id: "tradeBalance",
+    label: "Trade Balance",
+    category: "fill",
+    icon: Scale,
+    defaultVisible: false,
+    dataFetcher: (utils: TRPCUtils) =>
+      utils.geoCore.getRegionalChoropleth.fetch({
+        metric: "tradeBalance",
+        groupBy: "country",
+      }),
+    component: ChoroplethOverlay,
+    renderProps: choroplethRenderProps("neutral", "tradeBalance"),
+    legend: TRADE_BALANCE_LEGEND,
   },
 };
 
