@@ -5,6 +5,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { api } from "~/trpc/react";
+import { applyBrushStroke } from "~/lib/territory-brush";
 import {
   type UndoStack,
   type VertexRef,
@@ -104,6 +105,14 @@ export interface BorderEditorActions {
     layers: Array<{ type: string; data: { features: TraceFeature[] } }> | undefined,
     visibleLayers: Set<string>
   ) => void;
+  /** Apply a territory brush stroke: transfers area from the loaded feature (source)
+   *  into the named neighbour (target). Returns true on success, false if stroke
+   *  doesn't overlap / would fully consume source / geometry is invalid. */
+  applyBrushTransfer: (
+    strokePoints: [number, number][],
+    radiusKm: number,
+    targetFeatureId: string
+  ) => boolean;
 }
 
 // ──────────────────────────────────────────────
@@ -705,6 +714,54 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, []);
 
+  const brushResultRef = useRef<boolean>(false);
+
+  const applyBrushTransferAction = useCallback(
+    (strokePoints: [number, number][], radiusKm: number, targetFeatureId: string): boolean => {
+      brushResultRef.current = false;
+      setState((s) => {
+        if (!s.geometry) return s;
+        const targetGeom = s.neighborGeometries[targetFeatureId];
+        if (!targetGeom) return s;
+
+        const result = applyBrushStroke(strokePoints, radiusKm, s.geometry, targetGeom);
+        if (!result) return s;
+
+        const newDirty: Record<string, Polygon | MultiPolygon> = {
+          ...s.neighborGeometries,
+        };
+        newDirty[targetFeatureId] = result.target;
+        for (const [fid] of Object.entries(s.dirtyNeighbors)) {
+          if (fid !== targetFeatureId) newDirty[fid] = s.dirtyNeighbors[fid]!;
+        }
+
+        const newStack = pushUndo(
+          s.undoStackState,
+          {
+            type: "move_vertex",
+            ref: { ringIndex: 0, vertexIndex: 0, coord: [0, 0] },
+            to: [0, 0],
+          },
+          s.geometry,
+          result.source
+        );
+
+        brushResultRef.current = true;
+
+        return {
+          ...s,
+          geometry: result.source,
+          dirtyNeighbors: newDirty,
+          undoStackState: newStack,
+          isDirty: true,
+          areaKm2: calculateArea(result.source),
+        };
+      });
+      return brushResultRef.current;
+    },
+    []
+  );
+
   const actions: BorderEditorActions = {
     loadFeature,
     setMode,
@@ -726,6 +783,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     simplify: simplifyAction,
     reset,
     setTraceLayerSource: setTraceLayerSourceAction,
+    applyBrushTransfer: applyBrushTransferAction,
   };
 
   return [state, actions];

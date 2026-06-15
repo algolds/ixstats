@@ -1,5 +1,5 @@
 /**
- * Territory Brush Math — pure geometry for the brush-transfer spike (plan 012).
+ * Territory Brush Math — pure geometry for territory brush transfers (plan 012).
  *
  * Mechanic: a brush stroke (sequence of [lng,lat] points + a radius) is expanded
  * into a polygon B via turf/buffer. The intersection B∩S is cut from the source
@@ -11,8 +11,6 @@
  *
  * Results are passed through sanitizeRegionShape to remove spikes / degenerate rings.
  * Returns null when the stroke doesn't overlap the source at all.
- *
- * SPIKE / EXPERIMENTAL — not wired to production flows.
  */
 
 import { buffer } from "@turf/buffer";

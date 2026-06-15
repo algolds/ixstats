@@ -1,5 +1,5 @@
 /**
- * Tests for territory-brush-math.ts (plan 012 spike).
+ * Tests for territory-brush.ts (plan 012 production build).
  *
  * Fixture: two adjacent unit squares meeting at x=0.
  *
@@ -13,7 +13,7 @@
  */
 
 import type { Polygon, MultiPolygon } from "geojson";
-import { applyBrushStroke } from "./territory-brush-math";
+import { applyBrushStroke } from "../territory-brush";
 import { calculateArea } from "~/lib/border-editor";
 
 // ─────────────────────────────────────────────────────────────────────────────
