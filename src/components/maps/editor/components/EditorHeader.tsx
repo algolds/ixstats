@@ -12,7 +12,6 @@ import {
   Minimize2,
   Droplets,
   Mountain as MountainIcon,
-  Sparkles,
   Train,
   RefreshCw,
   Settings,
@@ -24,7 +23,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 
 interface EditorHeaderProps {
   countryInfo: { name: string } | null | undefined;
-  activeEditorMode: "view" | "forge" | "border_edit";
+  activeEditorMode: "view" | "border_edit";
   isWorldMode: boolean;
   activeCountryId: string | null;
   editor: any;
@@ -34,9 +33,6 @@ interface EditorHeaderProps {
   isAdmin: boolean;
   editorVisibleLayers: Set<string>;
   toggleEditorLayer: (layer: string) => void;
-  forgeMode: boolean;
-  setForgeMode: React.Dispatch<React.SetStateAction<boolean>>;
-  setActiveEditorMode: React.Dispatch<React.SetStateAction<"view" | "forge" | "border_edit">>;
   generateTransport: any;
   recalculateGeo: any;
   simplifyAll: any;
@@ -56,16 +52,12 @@ export function EditorHeader({
   isAdmin,
   editorVisibleLayers,
   toggleEditorLayer,
-  forgeMode,
-  setForgeMode,
-  setActiveEditorMode,
   generateTransport,
   recalculateGeo,
   simplifyAll,
   handleRequestExit,
   onShowHelp,
 }: EditorHeaderProps) {
-  const isForgeActive = isWorldMode ? activeEditorMode === "forge" : forgeMode;
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   return (
@@ -93,11 +85,7 @@ export function EditorHeader({
             )}
             <ChevronRight className="h-3 w-3" />
             <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-blue-500">
-              {activeEditorMode === "border_edit"
-                ? "BORDER EDIT"
-                : activeEditorMode === "forge"
-                  ? "FORGE"
-                  : "VIEW"}
+              {activeEditorMode === "border_edit" ? "BORDER EDIT" : "VIEW"}
             </span>
           </>
         ) : (
@@ -105,13 +93,13 @@ export function EditorHeader({
             <Map className="h-3.5 w-3.5 text-emerald-500" />
             <span className="text-foreground font-semibold">{countryInfo?.name ?? "…"}</span>
             <ChevronRight className="h-3 w-3" />
-            <span>{forgeMode ? "Forge Mode" : "Map Editor"}</span>
+            <span>Map Editor</span>
           </>
         )}
       </div>
 
       {/* Undo/Redo — left side after breadcrumb */}
-      {(!isWorldMode || activeEditorMode === "forge") && (
+      {(!isWorldMode || editor.mode !== "view") && (
         <div className="ml-2 flex items-center gap-0.5">
           <button
             disabled={!editor.historyCanUndo}
@@ -133,12 +121,12 @@ export function EditorHeader({
       )}
 
       {/* Save indicator */}
-      {(!isWorldMode || activeEditorMode === "forge") && editor.isMutating && (
+      {editor.isMutating && (
         <span className="ml-2 animate-pulse text-[10px] text-amber-500">Saving…</span>
       )}
-      {(!isWorldMode || activeEditorMode === "forge") &&
-        !editor.isMutating &&
-        editor.lastSavedAt && <span className="ml-2 text-[10px] text-emerald-500">Saved</span>}
+      {!editor.isMutating && editor.lastSavedAt && (
+        <span className="ml-2 text-[10px] text-emerald-500">Saved</span>
+      )}
 
       <div className="ml-auto" />
 
@@ -307,75 +295,43 @@ export function EditorHeader({
         </button>
       )}
 
-      {/* Admin: Forge Mode toggle + actions */}
-      {isAdmin && (
+      {/* Admin: transport + recalc actions — available when a country is active */}
+      {isAdmin && activeCountryId && (
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => {
-              if (isWorldMode) {
-                if (activeEditorMode === "forge") {
-                  setActiveEditorMode("view");
-                  editor.setMode("view");
-                } else {
-                  setActiveEditorMode("forge");
-                }
-              } else {
-                setForgeMode((v) => !v);
+            onClick={async () => {
+              try {
+                const result = await generateTransport.mutateAsync({
+                  countryId: activeCountryId,
+                  routeTypes: ["rail", "highway"],
+                  clearExisting: true,
+                });
+                alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`);
+              } catch (e) {
+                alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
               }
             }}
-            className={cn(
-              "flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
-              isForgeActive
-                ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            )}
-            title={
-              isWorldMode
-                ? "Toggle Forge Mode (editing features)"
-                : "Toggle Forge Mode (admin superpowers)"
-            }
+            disabled={generateTransport.isPending}
+            className="flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-1 text-[11px] font-medium text-indigo-600 hover:bg-indigo-500/20 disabled:opacity-50 dark:text-indigo-400"
           >
-            <Sparkles className="h-3 w-3" />
-            Forge
+            <Train className="h-3 w-3" />
+            {generateTransport.isPending ? "..." : "Gen Transport"}
           </button>
-          {isForgeActive && activeCountryId && (
-            <>
-              <button
-                onClick={async () => {
-                  try {
-                    const result = await generateTransport.mutateAsync({
-                      countryId: activeCountryId,
-                      routeTypes: ["rail", "highway"],
-                      clearExisting: true,
-                    });
-                    alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`);
-                  } catch (e) {
-                    alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
-                  }
-                }}
-                disabled={generateTransport.isPending}
-                className="flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-1 text-[11px] font-medium text-indigo-600 hover:bg-indigo-500/20 disabled:opacity-50 dark:text-indigo-400"
-              >
-                <Train className="h-3 w-3" />
-                {generateTransport.isPending ? "..." : "Gen Transport"}
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                    alert("Geographic profile recalculated");
-                  } catch (e) {
-                    alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
-                  }
-                }}
-                disabled={recalculateGeo.isPending}
-                className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-400"
-              >
-                <RefreshCw className={cn("h-3 w-3", recalculateGeo.isPending && "animate-spin")} />
-                Recalc
-              </button>
-            </>
-          )}
+          <button
+            onClick={async () => {
+              try {
+                await recalculateGeo.mutateAsync({ countryId: activeCountryId });
+                alert("Geographic profile recalculated");
+              } catch (e) {
+                alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+              }
+            }}
+            disabled={recalculateGeo.isPending}
+            className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-400"
+          >
+            <RefreshCw className={cn("h-3 w-3", recalculateGeo.isPending && "animate-spin")} />
+            Recalc
+          </button>
         </div>
       )}
     </div>

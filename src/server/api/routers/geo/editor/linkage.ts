@@ -403,6 +403,57 @@ export const geoEditorLinkageRouter = createTRPCRouter({
   // Linkage validation & repair
   // ──────────────────────────────────────────────
 
+  /**
+   * Admin: Create a new Country record from an unclaimed political map feature.
+   */
+  createCountryFromShape: adminProcedure
+    .input(z.object({ featureId: z.string(), name: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const feature = await ctx.db.mapLayer.findFirst({
+        where: { layerType: "political", featureId: input.featureId, isActive: true },
+      });
+      if (!feature) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
+      }
+      if (feature.countryId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Feature already linked to a country",
+        });
+      }
+      const slug = input.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const newCountry = await ctx.db.country.create({
+        data: {
+          name: input.name,
+          slug,
+          geometry: feature.geometry as any,
+          centroid: feature.centroid as any,
+          boundingBox: feature.boundingBox as any,
+          landArea: feature.areaSqKm ?? undefined,
+          areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
+          economicTier: "developing",
+          isDemo: false,
+        } as any,
+      });
+      await ctx.db.mapLayer.update({
+        where: { id: feature.id },
+        data: { countryId: newCountry.id },
+      });
+      await syncCountryGeometryFromMapLayer(ctx.db, newCountry.id);
+      clearLayerCache("political");
+      await invalidateCache([
+        "geoCore.listCountries",
+        "geoCore.getWorldMap",
+        "geoEditor.validateLinkage",
+        "geoCore.getCountryLinkage",
+      ]);
+      broadcastMapUpdate("linkage", newCountry.id);
+      return { countryId: newCountry.id, name: newCountry.name };
+    }),
+
   /** Validate country ↔ map feature linkage. Returns inconsistencies. */
   validateLinkage: adminProcedure.query(async ({ ctx }) => {
     // Get all political map layers with country links
