@@ -37,6 +37,7 @@ import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { featureIdToDisplayName } from "~/lib/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
+import { validateGeometryValid } from "~/lib/geo-validation";
 
 // ──────────────────────────────────────────────
 // Router
@@ -202,6 +203,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
         const geom = input.proposedGeometry as unknown as
           | import("geojson").Polygon
           | import("geojson").MultiPolygon;
+        await validateGeometryValid(ctx.db, input.proposedGeometry);
         const centroid = calculateCentroid(geom);
         const bbox = calculateBBox(geom);
         const area = calculateArea(geom);
@@ -458,6 +460,18 @@ export const geoEditorBordersRouter = createTRPCRouter({
         mergedFeatures: input.featureIds,
         newFeature: { featureId: newFeatureId, name: input.newName },
       };
+    }),
+
+  /** Clean up the current editor geometry (dedupe vertices, remove spikes). */
+  repairBorderGeometry: adminProcedure
+    .input(z.object({ geometry: z.record(z.string(), z.unknown()) }))
+    .mutation(async ({ input }) => {
+      const { sanitizeRegionShape } = await import("~/lib/border-editor");
+      const geom = input.geometry as unknown as
+        | import("geojson").Polygon
+        | import("geojson").MultiPolygon;
+      const { geometry, issues } = sanitizeRegionShape(geom, geom);
+      return { geometry, issues };
     }),
 
   // ──────────────────────────────────────────────

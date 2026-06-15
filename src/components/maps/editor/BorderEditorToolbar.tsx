@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MousePointer2, Pencil, Scissors, Merge, Undo2, Redo2, Save, Check, X } from "lucide-react";
+import { MousePointer2, Pencil, Scissors, Merge, Undo2, Redo2, Save, Check, X, Wrench } from "lucide-react";
 import type { BorderEditMode } from "~/hooks/useBorderEditor";
 
 interface BorderEditorToolbarProps {
@@ -14,6 +14,7 @@ interface BorderEditorToolbarProps {
   onSave: () => void;
   onSubmit: () => void;
   onCancel: () => void;
+  onRepair: () => void;
   isDirty: boolean;
   isSaving: boolean;
   areaKm2: number | null;
@@ -57,6 +58,7 @@ export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({
   onSave,
   onSubmit,
   onCancel,
+  onRepair,
   isDirty,
   isSaving,
   areaKm2,
@@ -130,6 +132,14 @@ export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({
         >
           <Save className="h-3.5 w-3.5" />
           {isSaving ? "Saving..." : "Save"}
+        </button>
+        <button
+          onClick={onRepair}
+          className="bg-muted/50 text-foreground hover:bg-muted/80 flex items-center gap-1 rounded px-2 py-1.5 text-xs"
+          title="Clean duplicate vertices and spikes"
+        >
+          <Wrench className="h-3.5 w-3.5" />
+          Repair
         </button>
         <button
           onClick={onSubmit}
