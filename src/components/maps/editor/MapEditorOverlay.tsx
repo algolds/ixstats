@@ -337,6 +337,13 @@ export default function MapEditorOverlay({
   const renderPanel = (panelId: "panelA" | "panelB") => {
     const config = panelConfigs[panelId];
     const isStacked = panelConfigs.panelA.placement === panelConfigs.panelB.placement;
+    // World editor: panelB must always have the properties tab — it is the primary
+    // interaction surface for the properties panel content. localStorage may have
+    // a stale config from a prior session where all tabs were dragged out.
+    const tabs =
+      panelId === "panelB" && isWorldMode && !config.tabs.includes("properties")
+        ? [...config.tabs, "properties"]
+        : config.tabs;
     return (
       <EditorPanel
         mode={editor.mode}
@@ -347,13 +354,16 @@ export default function MapEditorOverlay({
             [panelId]: { ...prev[panelId], collapsed: !prev[panelId].collapsed },
           }))
         }
-        tabs={config.tabs}
+        tabs={tabs}
         onTabDrop={(tabId) => handleMoveTab(tabId, panelId)}
         placement={config.placement}
         onChangePlacement={(placement) => handleChangePanelPlacement(panelId, placement)}
         isWorldMode={isWorldMode}
-        activeTabOverride={activeSidebarTab}
-        onTabChange={(tab) => setActiveSidebarTab(tab as any)}
+        activeTabOverride={panelId === "panelA" ? activeSidebarTab : undefined}
+        onTabChange={(tab) => {
+          // panelB is independent — only sync the page-level tab when panelA changes
+          if (panelId === "panelA") setActiveSidebarTab(tab as any);
+        }}
         linkagesContent={<LinkageValidationPanel {...state} />}
         sovereigntyContent={<SovereigntyPanel {...state} />}
         featureCount={editor.allFeatures.length}
@@ -518,7 +528,7 @@ export default function MapEditorOverlay({
 
         {/* Left panel slot */}
         {(!toolsDisabled || isWorldMode) && (
-          <div ref={leftSidebarRef} className="hidden h-full shrink-0 sm:flex">
+          <div ref={leftSidebarRef} data-testid="editor-panel-A" className="hidden h-full shrink-0 sm:flex">
             {panelConfigs.panelA.placement === "left" &&
               panelConfigs.panelB.placement !== "left" && (
                 <EditorErrorBoundary name="LeftPanel-A">
@@ -849,7 +859,7 @@ export default function MapEditorOverlay({
 
         {/* Right panel slot */}
         {(!toolsDisabled || isWorldMode) && (
-          <div ref={rightSidebarRef} className="hidden h-full shrink-0 sm:flex">
+          <div ref={rightSidebarRef} data-testid="editor-panel-B" className="hidden h-full shrink-0 sm:flex">
             {panelConfigs.panelA.placement === "right" &&
               panelConfigs.panelB.placement !== "right" && (
                 <EditorErrorBoundary name="LeftPanel-A">
