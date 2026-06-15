@@ -691,6 +691,9 @@ export default function MapEditorOverlay({
                       setActiveEditorMode("view");
                     }}
                     onRepair={() => void borderActions.repair()}
+                    onSmooth={() => void borderActions.smooth()}
+                    onNaturalize={() => void borderActions.naturalize()}
+                    onSimplify={() => void borderActions.simplify()}
                     isDirty={borderState.isDirty}
                     isSaving={isSubmitting}
                     areaKm2={borderState.areaKm2}
