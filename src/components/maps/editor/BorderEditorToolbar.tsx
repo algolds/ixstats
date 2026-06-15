@@ -49,6 +49,12 @@ const MODES: Array<{ id: BorderEditMode; label: string; icon: React.ReactNode; t
     icon: <Merge className="h-4 w-4" />,
     tip: "Select countries to merge together",
   },
+  {
+    id: "trace",
+    label: "Trace",
+    icon: <Waves className="h-4 w-4" />,
+    tip: "Click two points on a river to follow it",
+  },
 ];
 
 export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({

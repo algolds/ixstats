@@ -868,6 +868,12 @@ export function useMapEditorOverlayState({
   } = useMapData(["background", "altitudes", "rivers", "lakes"]);
   const worldMapLayers = editorMapLayers;
 
+  // Keep border editor trace mode in sync with the latest river/coast layer data
+  const setTraceLayerSource = borderActions.setTraceLayerSource;
+  useEffect(() => {
+    setTraceLayerSource(worldMapLayers, editorVisibleLayers);
+  }, [worldMapLayers, editorVisibleLayers, setTraceLayerSource]);
+
   const { data: transportRouteData } = api.transport.getCountryRoutes.useQuery(
     { countryId: activeCountryId ?? "" },
     { enabled: !!activeCountryId, staleTime: 60_000, gcTime: 5 * 60_000 }
