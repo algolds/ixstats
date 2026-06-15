@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapPin, Layers, AlertTriangle, Users } from "lucide-react";
+import { MapPin, Layers, AlertTriangle, Users, Crosshair } from "lucide-react";
 import type { Polygon, MultiPolygon } from "geojson";
 import { getVertices } from "~/lib/border-editor";
 
@@ -15,6 +15,9 @@ interface BorderEditorPanelProps {
   mode: string;
   areaKm2: number | null;
   isDirty: boolean;
+  /** Brush mode: selected target neighbor featureId */
+  brushTargetId: string | null;
+  onBrushTargetChange: (featureId: string | null) => void;
 }
 
 export const BorderEditorPanel = React.memo(function BorderEditorPanel({
@@ -27,6 +30,8 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
   mode,
   areaKm2,
   isDirty,
+  brushTargetId,
+  onBrushTargetChange,
 }: BorderEditorPanelProps) {
   const vertices = geometry ? getVertices(geometry) : [];
   const ringCount = geometry
@@ -105,7 +110,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
       )}
 
       {/* Neighbor list (non-merge mode) */}
-      {mode !== "merge" && neighbors.length > 0 && (
+      {mode !== "merge" && mode !== "brush" && neighbors.length > 0 && (
         <div className="border-border border-t pt-2">
           <div className="text-muted-foreground mb-1 text-xs font-medium">
             Neighbors ({neighbors.length})
@@ -120,6 +125,34 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
               <div className="text-muted-foreground/50 text-xs">+{neighbors.length - 10} more</div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Brush target selector */}
+      {mode === "brush" && neighbors.length > 0 && (
+        <div className="border-border border-t pt-2">
+          <div className="text-foreground mb-1.5 flex items-center gap-1.5 text-xs font-medium">
+            <Crosshair className="h-3.5 w-3.5" />
+            Select target neighbor
+          </div>
+          <div className="space-y-1">
+            {neighbors.map((n) => (
+              <button
+                key={n.featureId}
+                onClick={() => onBrushTargetChange(n.featureId === brushTargetId ? null : n.featureId)}
+                className={`w-full rounded px-2 py-1 text-left text-xs transition-colors ${
+                  brushTargetId === n.featureId
+                    ? "bg-purple-500/30 text-purple-500 ring-1 ring-purple-500/40"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {n.displayName || n.featureId}
+              </button>
+            ))}
+          </div>
+          <p className="text-muted-foreground/50 mt-1 text-[10px]">
+            Click and drag on the map to paint territory into the selected neighbor.
+          </p>
         </div>
       )}
     </div>

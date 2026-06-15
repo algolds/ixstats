@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MousePointer2, Pencil, Scissors, Merge, Undo2, Redo2, Save, Check, X, Wrench, Spline, Waves, Minimize2 } from "lucide-react";
+import { MousePointer2, Pencil, Scissors, Merge, Undo2, Redo2, Save, Check, X, Wrench, Spline, Waves, Minimize2, Paintbrush } from "lucide-react";
 import type { BorderEditMode } from "~/hooks/useBorderEditor";
 
 interface BorderEditorToolbarProps {
@@ -22,6 +22,9 @@ interface BorderEditorToolbarProps {
   isSaving: boolean;
   areaKm2: number | null;
   splitPointCount: number;
+  /** Brush mode props */
+  brushRadius: number;
+  onBrushRadiusChange: (radius: number) => void;
 }
 
 const MODES: Array<{ id: BorderEditMode; label: string; icon: React.ReactNode; tip: string }> = [
@@ -55,6 +58,12 @@ const MODES: Array<{ id: BorderEditMode; label: string; icon: React.ReactNode; t
     icon: <Waves className="h-4 w-4" />,
     tip: "Click two points on a river to follow it",
   },
+  {
+    id: "brush",
+    label: "Brush",
+    icon: <Paintbrush className="h-4 w-4" />,
+    tip: "Paint territory into a neighbor",
+  },
 ];
 
 export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({
@@ -75,6 +84,8 @@ export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({
   isSaving,
   areaKm2,
   splitPointCount,
+  brushRadius,
+  onBrushRadiusChange,
 }: BorderEditorToolbarProps) {
   return (
     <div className="border-border bg-card/90 flex flex-col gap-2 rounded-lg border p-2 backdrop-blur">
@@ -131,6 +142,27 @@ export const BorderEditorToolbar = React.memo(function BorderEditorToolbar({
       {mode === "split" && splitPointCount > 0 && (
         <div className="border-border border-t pt-2 text-xs text-amber-500">
           Split line: {splitPointCount} points
+        </div>
+      )}
+
+      {/* Brush size control */}
+      {mode === "brush" && (
+        <div className="border-border border-t pt-2">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-[10px] uppercase">Radius</span>
+            <input
+              type="range"
+              min="1"
+              max="200"
+              step="1"
+              value={brushRadius}
+              onChange={(e) => onBrushRadiusChange(parseFloat(e.target.value))}
+              className="h-1 flex-1 accent-blue-500"
+            />
+            <span className="text-muted-foreground w-10 text-right font-mono text-[10px] tabular-nums">
+              {brushRadius}km
+            </span>
+          </div>
         </div>
       )}
 

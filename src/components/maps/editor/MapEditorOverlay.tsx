@@ -108,6 +108,8 @@ export default function MapEditorOverlay({
   const [rightSplitRatio, setRightSplitRatio] = useState(0.5);
   const [bottomSplitRatio, setBottomSplitRatio] = useState(0.5);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [brushRadius, setBrushRadius] = useState(20);
+  const [brushTargetId, setBrushTargetId] = useState<string | null>(null);
 
   const leftSidebarRef = useRef<HTMLDivElement>(null);
   const rightSidebarRef = useRef<HTMLDivElement>(null);
@@ -332,7 +334,13 @@ export default function MapEditorOverlay({
     />
   );
 
-  const renderRightPanelContent = () => <PropertiesPanelContent {...state} />;
+  const renderRightPanelContent = () => (
+    <PropertiesPanelContent
+      {...state}
+      brushTargetId={brushTargetId}
+      setBrushTargetId={setBrushTargetId}
+    />
+  );
 
   const renderPanel = (panelId: "panelA" | "panelB") => {
     const config = panelConfigs[panelId];
@@ -703,6 +711,8 @@ export default function MapEditorOverlay({
                     isSaving={isSubmitting}
                     areaKm2={borderState.areaKm2}
                     splitPointCount={borderState.splitLine.length}
+                    brushRadius={brushRadius}
+                    onBrushRadiusChange={setBrushRadius}
                   />
                 </div>
               )}

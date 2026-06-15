@@ -41,6 +41,8 @@ interface PropertiesPanelContentProps {
   handleAssignLink?: (featureId: string) => void;
   assignMutation?: any;
   availableCountries?: any[];
+  brushTargetId?: string | null;
+  setBrushTargetId?: (id: string | null) => void;
 }
 
 export function PropertiesPanelContent({
@@ -77,6 +79,8 @@ export function PropertiesPanelContent({
   handleAssignLink,
   assignMutation,
   availableCountries,
+  brushTargetId,
+  setBrushTargetId,
 }: PropertiesPanelContentProps) {
   const router = useRouter();
 
@@ -98,6 +102,8 @@ export function PropertiesPanelContent({
           mode={borderState.mode}
           areaKm2={borderState.areaKm2}
           isDirty={borderState.isDirty}
+          brushTargetId={brushTargetId ?? null}
+          onBrushTargetChange={setBrushTargetId ?? (() => {})}
         />
       );
     } else if (editor.mode !== "view") {
