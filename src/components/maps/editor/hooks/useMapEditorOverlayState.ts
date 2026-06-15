@@ -726,6 +726,12 @@ export function useMapEditorOverlayState({
     }
   };
 
+  const enterBorderEdit = useCallback(() => {
+    if (!mapSelectedCountry?.featureId) return;
+    borderActions.loadFeature(mapSelectedCountry.featureId);
+    setActiveEditorMode("border_edit");
+  }, [mapSelectedCountry, borderActions]);
+
   const handleSplitConfirm = useCallback(
     async (nameA: string, nameB: string) => {
       try {
@@ -1290,6 +1296,7 @@ export function useMapEditorOverlayState({
     handleEditSovereignty,
     handleSaveFeatureProperties,
     handleConfirmBorderSave,
+    enterBorderEdit,
     handleSplitConfirm,
     handleMergeConfirm,
     handleBorderToolbarSubmit,

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
@@ -31,6 +32,7 @@ interface PropertiesPanelContentProps {
   selectedRouteId: string | null;
   setSelectedRouteId: (id: string | null) => void;
   handleSubmit: any;
+  enterBorderEdit?: () => void;
 }
 
 export function PropertiesPanelContent({
@@ -58,6 +60,7 @@ export function PropertiesPanelContent({
   selectedRouteId,
   setSelectedRouteId,
   handleSubmit,
+  enterBorderEdit,
 }: PropertiesPanelContentProps) {
   const router = useRouter();
 
@@ -200,7 +203,16 @@ export function PropertiesPanelContent({
                 </div>
               </div>
 
-              <div className="border-border/30 border-t pt-3">
+              <div className="border-border/30 space-y-2 border-t pt-3">
+                {isWorldMode && mapSelectedCountry && enterBorderEdit && (
+                  <button
+                    onClick={enterBorderEdit}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600/20 px-3 py-2 text-xs font-medium text-blue-500 hover:bg-blue-600/30"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit Borders
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     if (mapSelectedCountry?.featureId) {
