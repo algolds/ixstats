@@ -82,6 +82,7 @@ export interface BorderEditorActions {
   ) => Promise<{ applied: boolean; editRequestId: string | null }>;
   executeSplit: (nameA: string, nameB: string) => Promise<void>;
   executeMerge: (newName: string) => Promise<void>;
+  repair: () => Promise<void>;
   reset: () => void;
 }
 
@@ -117,6 +118,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const submitBorderEdit = api.geoEditor.submitBorderEdit.useMutation();
   const splitCountry = api.geoEditor.splitCountry.useMutation();
   const mergeCountries = api.geoEditor.mergeCountries.useMutation();
+  const repairGeometry = api.geoEditor.repairBorderGeometry.useMutation();
   const utils = api.useUtils();
   const dragStartGeom = useRef<Polygon | MultiPolygon | null>(null);
   // Keep saveDraft in a ref to avoid resetting the auto-save timer on every render
@@ -449,6 +451,30 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     setState(INITIAL_STATE);
   }, []);
 
+  const repairAction = useCallback(async () => {
+    if (!state.geometry) return;
+    const res = await repairGeometry.mutateAsync({
+      geometry: state.geometry as unknown as Record<string, unknown>,
+    });
+    const repaired = res.geometry as Polygon | MultiPolygon;
+    setState((s) => {
+      if (!s.geometry) return s;
+      const stack = pushUndo(
+        s.undoStackState,
+        { type: "replace_geometry", geometry: repaired },
+        s.geometry,
+        repaired
+      );
+      return {
+        ...s,
+        geometry: repaired,
+        undoStackState: stack,
+        isDirty: true,
+        areaKm2: calculateArea(repaired),
+      };
+    });
+  }, [state.geometry, repairGeometry]);
+
   const actions: BorderEditorActions = {
     loadFeature,
     setMode,
@@ -464,6 +490,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     submitEdit: submitEditAction,
     executeSplit: executeSplitAction,
     executeMerge: executeMergeAction,
+    repair: repairAction,
     reset,
   };
 

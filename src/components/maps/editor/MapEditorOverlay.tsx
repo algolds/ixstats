@@ -690,6 +690,7 @@ export default function MapEditorOverlay({
                       borderActions.reset();
                       setActiveEditorMode("view");
                     }}
+                    onRepair={() => void borderActions.repair()}
                     isDirty={borderState.isDirty}
                     isSaving={isSubmitting}
                     areaKm2={borderState.areaKm2}
