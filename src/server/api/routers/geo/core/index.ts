@@ -20,9 +20,11 @@ import { statsProcedures } from "./stats";
 import { geoProfileProcedures } from "./geo-profile";
 import { overlayProcedures } from "./overlays";
 import { adminOpsProcedures } from "./admin-ops";
+import { borderHistoryProcedures } from "./border-history";
 
 export const geoCoreRouter = createTRPCRouter({
   ...worldMapProcedures,
+  ...borderHistoryProcedures,
   ...countryProcedures,
   ...pointQueryProcedures,
   ...discoveryProcedures,

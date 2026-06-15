@@ -5,7 +5,7 @@
  * for the IxWorldMap component. Fetches GeoJSON data via tRPC.
  */
 
-import { useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import { useIsAdmin } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
@@ -23,6 +23,8 @@ import { MeasureTool } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
+import { TimelineScrubber } from "./TimelineScrubber";
+import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/map-config";
 import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
 
@@ -197,14 +199,41 @@ export function MapContainer({
     return map;
   }, [mapLayers]);
 
+  // Timeline scrubber: when the user scrubs to a past IxTime, fetch the
+  // "as-of" political FeatureCollection and swap it into the political layer.
+  // `null` = at "now", live data flows through.
+  const [historicalIxTime, setHistoricalIxTime] = useState<number | null>(null);
+
+  const { data: historicalPolitical } = api.geoCore.getWorldMapAsOf.useQuery(
+    { ixTime: historicalIxTime as number },
+    {
+      enabled: historicalIxTime !== null,
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+    }
+  );
+
   // Inject computed parameters back into state refs/configs
   const activeMapLayers = useMemo(() => {
-    if (!controlledVisibleLayers) return mapLayers;
-    return mapLayers.map((layer) => ({
-      ...layer,
-      visible: controlledVisibleLayers.has(layer.type),
-    }));
-  }, [mapLayers, controlledVisibleLayers]);
+    const visibilityAdjusted = !controlledVisibleLayers
+      ? mapLayers
+      : mapLayers.map((layer) => ({
+          ...layer,
+          visible: controlledVisibleLayers.has(layer.type),
+        }));
+
+    // When scrubbed to a past date, swap the political layer's data for the
+    // historical FeatureCollection. If the historical query has not returned
+    // yet, keep the live layer so the map doesn't blink.
+    if (historicalIxTime === null || !historicalPolitical) {
+      return visibilityAdjusted;
+    }
+    return visibilityAdjusted.map((layer) =>
+      layer.type === "political"
+        ? { ...layer, data: historicalPolitical as FeatureCollection }
+        : layer
+    );
+  }, [mapLayers, controlledVisibleLayers, historicalIxTime, historicalPolitical]);
 
   // Setup callbacks/variables that link mapLayers / userCountryId
   const handleMapClickWithLayers = useCallback(
@@ -399,6 +428,11 @@ export function MapContainer({
           mapLayers={mapLayers}
           onExit={() => setIsWorldEditing(false)}
         />
+      )}
+
+      {/* Historical timeline scrubber (read-only) */}
+      {showControls && (
+        <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />
       )}
 
       {/* WebGL/Loading Error Fallback Overlay */}
