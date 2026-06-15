@@ -548,7 +548,6 @@ export function useMapEditorOverlayState({
 
   const [cursorCoords, setCursorCoords] = useState<[number, number] | null>(null);
   const [cursorZoom, setCursorZoom] = useState<number | undefined>(undefined);
-  const [forgeMode, setForgeMode] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [paintMapMode, setPaintMapMode] = useState<
     "population" | "development" | "resources" | "wiki"
@@ -1291,8 +1290,6 @@ export function useMapEditorOverlayState({
     setCursorCoords,
     cursorZoom,
     setCursorZoom,
-    forgeMode,
-    setForgeMode,
     showGrid,
     setShowGrid,
     paintMapMode,
