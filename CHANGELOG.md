@@ -26,6 +26,7 @@ capability integer. Each release entry below lists which components advanced and
   - Added dedicated connected downstream nodes for secondary indices: Economic Vitality, Population Wellbeing, Governmental Efficiency, and Diplomatic Standing.
   - Fixed the global growth rate display to format as a factor of `1.0321` or a growth rate of `3.21%` instead of `103.21%`.
   - Built a comprehensive inspector panel displaying exact mathematical formulas, clamps, and decay functions for all calculation nodes.
+- **MyCountry Geography section — owner attribute editing (Plan 031)**: New `GeographyContent` component under `MyCountrySidebarNav` route `/mycountry/geography`. Fetches `countryGeo.getCountryGeoBundle` and renders inline-editable cards for cities (population, GDP contribution, mayor name, specialization) and subdivisions (population, GDP contribution, governor name, government type). Saves via existing `countryGeo.upsertCity` / `upsertSubdivision` mutations (already owner-gated via `standardMutationCountryOwnerProcedure`). Sidebar nav gains a "Geography" entry with emerald gradient. Rollups + reconciliation UI (P-D) still pending. Reuses existing server functions — no new tRPC mutations needed.
 
 ### Changed
 

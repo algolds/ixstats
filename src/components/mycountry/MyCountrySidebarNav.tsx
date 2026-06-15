@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Brain, Shield, Crown, Users, Vote, Lock, Edit2 } from "lucide-react";
+import { Brain, Shield, Crown, Users, Vote, Lock, Edit2, MapPin } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   LayoutDashboardIcon,
@@ -58,7 +58,8 @@ export type MyCountrySection =
   | "intelligence"
   | "defense"
   | "politics"
-  | "map-editor";
+  | "map-editor"
+  | "geography";
 
 export const NAV_ITEMS: {
   id: MyCountrySection;
@@ -108,12 +109,21 @@ export const NAV_ITEMS: {
     gradient: "from-indigo-500 to-indigo-600",
     activeGlow: "shadow-indigo-500/20",
   },
+  {
+    id: "geography",
+    href: "/mycountry/geography",
+    icon: MapPin,
+    title: "Geography",
+    gradient: "from-emerald-500 to-emerald-600",
+    activeGlow: "shadow-emerald-500/20",
+  },
 ];
 
 export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   const pathname = stripBasePath(rawPathname);
   if (pathname === "/mycountry" || pathname === "/mycountry/") return "overview";
   if (pathname.startsWith("/mycountry/map-editor")) return "map-editor";
+  if (pathname.startsWith("/mycountry/geography")) return "geography";
   for (const item of NAV_ITEMS) {
     if (item.id !== "overview" && pathname.startsWith(item.href)) return item.id;
   }
