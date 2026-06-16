@@ -10,7 +10,8 @@
  * - Status-based opacity (planned=40%, construction=70%, operational=100%, abandoned=30%)
  * - Animated dash-offset flow effect (toggleable, performance-capped)
  * - Color-coded by type: rail=gray, highway=orange, road=brown, shipping=blue,
- *   canal=cyan, air_corridor=purple, ferry=teal
+ *   canal=cyan, air_corridor=purple, ferry=teal, pipeline=yellow, power=amber,
+ *   fiber=light-gray, military_supply=red, military_naval=dark-red
  */
 
 import { useEffect, useRef, useCallback } from "react";
@@ -36,6 +37,11 @@ export const ROUTE_COLORS: Record<string, string> = {
   canal: "#06b6d4", // cyan-500
   air_corridor: "#a855f7", // purple-500
   ferry: "#14b8a6", // teal-500
+  pipeline: "#eab308", // yellow-500
+  power_grid: "#f59e0b", // amber-500
+  fiber: "#e5e7eb", // gray-200
+  military_supply: "#dc2626", // red-600
+  military_naval: "#7f1d1d", // red-900
 };
 
 const ROUTE_WIDTHS: Record<string, number> = {
@@ -46,6 +52,11 @@ const ROUTE_WIDTHS: Record<string, number> = {
   canal: 1.5,
   air_corridor: 2,
   ferry: 1.5,
+  pipeline: 2,
+  power_grid: 1.5,
+  fiber: 1,
+  military_supply: 2,
+  military_naval: 2,
 };
 
 // ── Status opacity mapping ──────────────────────────────────────────
@@ -60,52 +71,21 @@ const STATUS_OPACITY: Record<string, number> = {
 // ── MapLibre color expression (match by routeType) ──────────────────
 
 function buildColorExpression(): any[] {
-  return [
-    "match",
-    ["get", "routeType"],
-    "rail",
-    ROUTE_COLORS.rail!,
-    "highway",
-    ROUTE_COLORS.highway!,
-    "road",
-    ROUTE_COLORS.road!,
-    "shipping_lane",
-    ROUTE_COLORS.shipping_lane!,
-    "canal",
-    ROUTE_COLORS.canal!,
-    "air_corridor",
-    ROUTE_COLORS.air_corridor!,
-    "ferry",
-    ROUTE_COLORS.ferry!,
-    "#888888", // fallback
-  ];
+  const arms: any[] = ["match", ["get", "routeType"]];
+  for (const [type, color] of Object.entries(ROUTE_COLORS)) {
+    arms.push(type, color);
+  }
+  arms.push("#888888"); // fallback
+  return arms;
 }
 
 function buildWidthExpression(selectedRouteId: string | null | undefined): any[] {
-  return [
-    "case",
-    ["==", ["get", "id"], selectedRouteId ?? ""],
-    6,
-    [
-      "match",
-      ["get", "routeType"],
-      "rail",
-      ROUTE_WIDTHS.rail!,
-      "highway",
-      ROUTE_WIDTHS.highway!,
-      "road",
-      ROUTE_WIDTHS.road!,
-      "shipping_lane",
-      ROUTE_WIDTHS.shipping_lane!,
-      "canal",
-      ROUTE_WIDTHS.canal!,
-      "air_corridor",
-      ROUTE_WIDTHS.air_corridor!,
-      "ferry",
-      ROUTE_WIDTHS.ferry!,
-      1.5, // fallback
-    ],
-  ];
+  const typeArms: any[] = ["match", ["get", "routeType"]];
+  for (const [type, width] of Object.entries(ROUTE_WIDTHS)) {
+    typeArms.push(type, width);
+  }
+  typeArms.push(1.5); // fallback
+  return ["case", ["==", ["get", "id"], selectedRouteId ?? ""], 6, typeArms];
 }
 
 function buildOpacityExpression(selectedRouteId: string | null | undefined): any[] {

@@ -40,6 +40,21 @@ function calculateRouteCosts(routeType: string, lengthKm: number, terrainDifficu
     case "ferry":
       baseCostPerKm = 0.02;
       break;
+    case "pipeline":
+      baseCostPerKm = 0.03;
+      break;
+    case "power_grid":
+      baseCostPerKm = 0.02;
+      break;
+    case "fiber":
+      baseCostPerKm = 0.005;
+      break;
+    case "military_supply":
+      baseCostPerKm = 0.02;
+      break;
+    case "military_naval":
+      baseCostPerKm = 0.005;
+      break;
   }
   const costBillion = lengthKm * baseCostPerKm * (1 + terrainDifficulty * 1.5);
   const maintenanceCost = costBillion * 0.02; // 2% annual maintenance
