@@ -537,6 +537,20 @@ export const securityOperationsRouter = createTRPCRouter({
         }
       } catch {}
 
+      // Canon news: initiator's feed
+      void generateDiplomaticNews(ctx.db as any, conflict.initiatorId, "pvp_conflict_proposed", {
+        countryName: conflict.initiator.name,
+        targetName: conflict.defender.name,
+        reason: input.reason,
+      });
+
+      // Canon news: defender's feed
+      void generateDiplomaticNews(ctx.db as any, input.defenderId, "pvp_conflict_proposed", {
+        countryName: conflict.initiator.name,
+        targetName: conflict.defender.name,
+        reason: input.reason,
+      });
+
       return conflict;
     }),
 
@@ -633,6 +647,18 @@ export const securityOperationsRouter = createTRPCRouter({
           });
         }
       } catch {}
+
+      // Canon news: defender's feed
+      void generateDiplomaticNews(ctx.db as any, accepted.defenderId, "pvp_conflict_accepted", {
+        countryName: accepted.defender.name,
+        targetName: accepted.initiator.name,
+      });
+
+      // Canon news: initiator's feed
+      void generateDiplomaticNews(ctx.db as any, accepted.initiatorId, "pvp_conflict_accepted", {
+        countryName: accepted.defender.name,
+        targetName: accepted.initiator.name,
+      });
 
       return accepted;
     }),
@@ -797,6 +823,22 @@ export const securityOperationsRouter = createTRPCRouter({
             createdBy: userProfile.id,
           },
         ],
+      });
+
+      const winnerName = initiatorWins ? initiator.name : defender.name;
+
+      // Canon news: initiator's feed
+      void generateDiplomaticNews(ctx.db as any, userProfile.countryId, "pvnpc_conflict_resolved", {
+        countryName: initiator.name,
+        targetName: defender.name,
+        winner: winnerName,
+      });
+
+      // Canon news: defender's feed
+      void generateDiplomaticNews(ctx.db as any, input.targetCountryId, "pvnpc_conflict_resolved", {
+        countryName: initiator.name,
+        targetName: defender.name,
+        winner: winnerName,
       });
 
       return conflict;
