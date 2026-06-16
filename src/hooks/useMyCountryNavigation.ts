@@ -11,10 +11,10 @@ import { useState, useEffect } from "react";
  */
 
 // Tab order for directional animations
-const TAB_ORDER = ["overview", "economy", "labor", "government", "demographics", "analytics"];
+const TAB_ORDER = ["overview", "economy", "labor", "government", "geography", "demographics", "analytics"];
 
 // Valid tabs accepted from the URL hash
-const VALID_TABS = ["overview", "economy", "labor", "government", "demographics", "analytics"];
+const VALID_TABS = ["overview", "economy", "labor", "government", "geography", "demographics", "analytics"];
 
 export interface UseMyCountryNavigationResult {
   activeTab: string;

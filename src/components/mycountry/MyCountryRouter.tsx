@@ -102,14 +102,6 @@ const EnhancedMapEditorContent = dynamic(
     ssr: false,
   }
 );
-const GeographyContent = dynamic(
-  () => import("./GeographyContent").then((m) => ({ default: m.GeographyContent })),
-  {
-    loading: () => <SectionSkeleton />,
-    ssr: false,
-  }
-);
-
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
   executive: "Executive Command",
@@ -118,7 +110,6 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
   defense: "Defense & Security",
   politics: "Political Landscape",
   "map-editor": "Map Editor",
-  geography: "Geography & Settlements",
 };
 
 /**
@@ -350,19 +341,11 @@ function MyCountryRouterInner() {
             notifications={notifications}
           />
         );
-      case "geography":
-        return (
-          <GeographyContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate as any}
-            notifications={notifications}
-          />
-        );
       default:
         return null;
     }
   };
-
+  
   return (
     <DashboardErrorBoundary
       fallback={createSectionFallback(SECTION_TITLES[activeSection])}

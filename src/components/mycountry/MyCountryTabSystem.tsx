@@ -20,7 +20,7 @@ import {
 } from "~/components/modals/metric-details";
 import { useMyCountryNavigation } from "~/hooks/useMyCountryNavigation";
 import { useMyCountryMetrics } from "~/hooks/useMyCountryMetrics";
-import { MyCountryTabsList, OverviewTab, EconomyTab, LaborTab, GovernmentTab } from "./tabs";
+import { MyCountryTabsList, OverviewTab, EconomyTab, LaborTab, GovernmentTab, GeographyTab } from "./tabs";
 import { UpgradeTeaser } from "./premium/UpgradeTeaser";
 
 interface MyCountryTabSystemProps {
@@ -120,6 +120,13 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
             metricView={metricView}
             setMetricViewAction={setMetricView}
           />
+        </TabsContent>
+
+        {/* Geography Tab — moved from sidebar to its own tab after Government.
+            Spatial (geometry/coordinates) lives in the map editor; this tab
+            owns the geographic attribute UI plus the rollup settings modal. */}
+        <TabsContent value="geography" className="space-y-4" id="geography">
+          <GeographyTab />
         </TabsContent>
 
         {/* Demographics and Analytics tabs removed — demographics belongs in Intelligence (premium),

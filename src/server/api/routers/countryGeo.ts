@@ -7,6 +7,9 @@ import {
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { ixnayWiki } from "~/lib/mediawiki-service";
+import { parseEntityAttributesFromWiki, type EntityKind } from "~/lib/wiki-entity-parser";
+import { checkGeoCompliance } from "~/lib/country-geo-compliance";
 import {
   getCountryGeoBundle,
   upsertCity,
@@ -32,6 +35,64 @@ export const countryGeoRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       return getCountryGeoBundle(ctx.db, input.countryId);
+    }),
+
+  /**
+   * Run the geographic compliance validator against the current bundle.
+   * Returns a list of issues (errors, warnings, info) describing
+   * population/GDP rollup inconsistencies, capital integrity, founded-year
+   * sanity, and coordinates that fall outside the country's bounding box.
+   */
+  getGeoCompliance: cachedPublicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const bundle = await getCountryGeoBundle(ctx.db, input.countryId);
+      const bbox = (bundle.boundingBox as [number, number, number, number] | null) ?? null;
+      const issues = checkGeoCompliance({
+        cities: bundle.cities.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type,
+          isNationalCapital: !!c.isNationalCapital,
+          isSubdivisionCapital: !!c.isSubdivisionCapital,
+          population: c.population ?? null,
+          gdpContribution: c.gdpContribution ?? null,
+          coordinates: c.coordinates,
+          foundedYear: c.foundedYear ?? null,
+        })),
+        subdivisions: bundle.subdivisions.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          population: s.population ?? null,
+          gdpContribution: s.gdpContribution ?? null,
+          capital: s.capital ?? null,
+        })),
+        pois: bundle.pois.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          coordinates: p.coordinates,
+        })),
+        country: {
+          id: bundle.country.id,
+          name: bundle.country.name,
+          currentPopulation: bundle.country.currentPopulation ?? null,
+          currentTotalGdp: bundle.country.currentTotalGdp ?? null,
+          geoRollupMode: bundle.country.geoRollupMode ?? null,
+        },
+        rollups: bundle.rollups ?? null,
+        boundingBox: bbox,
+      });
+      const summary = {
+        errors: issues.filter((i) => i.severity === "error").length,
+        warnings: issues.filter((i) => i.severity === "warning").length,
+        info: issues.filter((i) => i.severity === "info").length,
+      };
+      return { issues, summary };
     }),
 
   /**
@@ -293,5 +354,133 @@ export const countryGeoRouter = createTRPCRouter({
       broadcastMapUpdate("national-rebase", input.countryId);
 
       return updated;
+    }),
+
+  /**
+   * Populate a geographic entity (City / Subdivision / POI) by parsing
+   * its linked wiki page infobox. The wiki page title is resolved from
+   * the entity's `wikiPageTitle` field, falling back to the entity's
+   * `name` if not set.
+   *
+   * Fetches the wiki wikitext, runs it through the infobox parser, and
+   * maps parsed fields to the corresponding entity attributes:
+   *   - City:      population, mayorName, gdpContribution, elevation, foundedYear
+   *   - Subdivision: population, governorName, gdpContribution, areaSqKm, capital
+   *   - POI:       description
+   *
+   * Returns a per-field diff (`applied` + `skipped`) so the UI can
+   * surface what was filled in vs. what was missing on the wiki page.
+   */
+  populateFromWiki: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        kind: z.enum(["city", "subdivision", "poi"]),
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country as any;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+
+      const { countryId, kind, id } = input;
+      const kindTyped = kind as EntityKind;
+
+      // 1. Fetch the entity (so we can resolve its wiki title + existing values).
+      let existing: any;
+      let wikiTitle: string | null = null;
+      if (kind === "city") {
+        existing = await ctx.db.city.findFirst({ where: { id, countryId } });
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "City not found" });
+        wikiTitle = existing.wikiPageTitle?.trim() || existing.name;
+      } else if (kind === "subdivision") {
+        existing = await ctx.db.subdivision.findFirst({ where: { id, countryId } });
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Subdivision not found" });
+        wikiTitle = existing.wikiPageTitle?.trim() || existing.name;
+      } else {
+        existing = await ctx.db.pointOfInterest.findFirst({ where: { id, countryId } });
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "POI not found" });
+        wikiTitle = existing.wikiPageTitle?.trim() || existing.name;
+      }
+
+      if (!wikiTitle) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No wiki title to look up." });
+      }
+
+      // 2. Fetch the wiki page wikitext.
+      const wikitext = await ixnayWiki.getPageWikitext(wikiTitle);
+      if (!wikitext || typeof wikitext === "object") {
+        return {
+          wikiTitle,
+          templateName: null,
+          applied: [],
+          skipped: [],
+          hasChanges: false,
+          error: `Wiki page "${wikiTitle}" not found or empty.`,
+        };
+      }
+
+      // 3. Parse the infobox and build the diff.
+      const result = parseEntityAttributesFromWiki(wikitext, kindTyped, wikiTitle, existing);
+
+      if (!result.hasChanges) {
+        return result;
+      }
+
+      // 4. Apply via the existing upsert path (preserves validation + caching).
+      const applied: Record<string, unknown> = {};
+      for (const f of result.applied) {
+        applied[f.field] = f.newValue;
+      }
+
+      if (kind === "city") {
+        await upsertCity(ctx.db, countryId, {
+          id: existing.id,
+          name: existing.name,
+          type: existing.type,
+          coordinates: existing.coordinates,
+          population: (applied.population as number) ?? existing.population,
+          gdpContribution: (applied.gdpContribution as number) ?? existing.gdpContribution,
+          mayorName: (applied.mayorName as string) ?? existing.mayorName,
+          specialization: (applied.specialization as string) ?? existing.specialization,
+          elevation: (applied.elevation as number) ?? existing.elevation,
+          foundedYear: (applied.foundedYear as number) ?? existing.foundedYear,
+          wikiPageTitle: existing.wikiPageTitle,
+          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+        });
+        broadcastMapUpdate("city", countryId);
+      } else if (kind === "subdivision") {
+        await upsertSubdivision(ctx.db, countryId, {
+          id: existing.id,
+          name: existing.name,
+          type: existing.type,
+          level: existing.level,
+          population: (applied.population as number) ?? existing.population,
+          gdpContribution: (applied.gdpContribution as number) ?? existing.gdpContribution,
+          governorName: (applied.governorName as string) ?? existing.governorName,
+          areaSqKm: (applied.areaSqKm as number) ?? existing.areaSqKm,
+          capital: (applied.capital as string) ?? existing.capital,
+          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+        });
+        broadcastMapUpdate("subdivision", countryId);
+      } else {
+        await upsertPoi(ctx.db, countryId, {
+          id: existing.id,
+          name: existing.name,
+          category: existing.category,
+          coordinates: existing.coordinates,
+          description: (applied.description as string) ?? existing.description,
+          icon: existing.icon,
+          wikiPageTitle: existing.wikiPageTitle,
+          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+        });
+        broadcastMapUpdate("poi", countryId);
+      }
+
+      await invalidateCache(["geoCore.getAllMapFeatures"]);
+
+      return result;
     }),
 });

@@ -1,36 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Building2, Pin, Save, Loader2, TrendingUp, RefreshCw, BarChart3, Tag } from "lucide-react";
+import { MapPin, Building2, Pin, Save, Loader2, Tag } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useCountryData } from "./primitives";
-import { SectionShell, SearchableList } from "./primitives";
+import { SearchableList } from "./primitives";
 import { GeographyMap } from "./GeographyMap";
-import { GeographySidebarWidget } from "./sidebar-widgets/GeographySidebarWidget";
-import type { MyCountrySection } from "./MyCountrySidebarNav";
-
-interface GeographyContentProps {
-  activeSection?: MyCountrySection;
-  onNavigate?: (section: MyCountrySection) => void;
-  notifications?: Partial<Record<string, number>>;
-}
+import { RollupSettingsModal } from "./RollupSettingsModal";
+import { PopulateFromWikiButton } from "./PopulateFromWikiButton";
+import { GeoCompliancePanel } from "./GeoCompliancePanel";
 
 /**
  * Geography attribute editor — MyCountry P-C.
  *
- * Per docs/systems/maps.md, the geographic data is split into two editing
- * surfaces: the map editor owns spatial (geometry, coordinates, placement);
- * this widget owns attributes (population, GDP contribution, governor/mayor
- * name, specialization, etc.).
+ * Lives under the Overview page, after the Government tab. Owns the
+ * geographic attribute UI (cities, subdivisions, POIs) + a settings
+ * dialog for the geographic rollup mode and rebase action. Spatial
+ * (geometry, coordinates, placement) is owned by the map editor.
  *
  * Uses the existing countryGeo tRPC router (upsertCity, upsertSubdivision,
  * upsertPoi, setCapital) — owner-gated via standardMutationCountryOwnerProcedure.
  */
-export function GeographyContent({
-  activeSection,
-  onNavigate,
-  notifications,
-}: GeographyContentProps) {
+export function GeographyContent() {
   const { country } = useCountryData();
   const countryId = country?.id;
 
@@ -40,50 +31,47 @@ export function GeographyContent({
   );
 
   if (!countryId) {
-    return (
-      <SectionShell section="geography" activeSection={activeSection} onNavigate={onNavigate}>
-        <p className="text-muted-foreground text-sm">No country context.</p>
-      </SectionShell>
-    );
+    return <p className="text-muted-foreground text-sm">No country context.</p>;
   }
 
   if (isLoading) {
     return (
-      <SectionShell section="geography" activeSection={activeSection} onNavigate={onNavigate}>
-        <div className="space-y-2">
-          <div className="bg-muted h-12 animate-pulse rounded" />
-          <div className="bg-muted h-32 animate-pulse rounded" />
-        </div>
-      </SectionShell>
+      <div className="space-y-2">
+        <div className="bg-muted h-12 animate-pulse rounded" />
+        <div className="bg-muted h-32 animate-pulse rounded" />
+      </div>
     );
   }
 
   if (!bundle) {
-    return (
-      <SectionShell section="geography" activeSection={activeSection} onNavigate={onNavigate}>
-        <p className="text-muted-foreground text-sm">No geographic data found.</p>
-      </SectionShell>
-    );
+    return <p className="text-muted-foreground text-sm">No geographic data found.</p>;
   }
 
   const { cities, subdivisions, pois, rollups, country: countryData, centroid, boundingBox } = bundle;
 
   return (
-    <SectionShell
-      section="geography"
-      activeSection={activeSection}
-      onNavigate={onNavigate}
-      contextWidget={<GeographySidebarWidget countryId={countryId} />}
-      hero={
-        <div className="border-border bg-card/40 relative h-72 overflow-hidden rounded-xl border sm:h-96">
-          <GeographyMap
-            countryId={countryId}
-            centroid={centroid ?? null}
-            boundingBox={(boundingBox as [number, number, number, number] | null) ?? null}
-          />
-        </div>
-      }
-    >
+    <div className="space-y-4">
+      {/* Flat-projection, country-locked preview map */}
+      <div className="border-border bg-card/40 relative h-72 overflow-hidden rounded-xl border sm:h-96">
+        <GeographyMap
+          countryId={countryId}
+          centroid={centroid ?? null}
+          boundingBox={(boundingBox as [number, number, number, number] | null) ?? null}
+        />
+      </div>
+
+      {/* Rollup settings trigger */}
+      {rollups && (
+        <RollupSettingsModal
+          countryId={countryId}
+          geoRollupMode={countryData?.geoRollupMode ?? "hybrid"}
+          rollups={rollups}
+          nationalPopulation={countryData?.currentPopulation ?? 0}
+          nationalGdp={countryData?.currentTotalGdp ?? 0}
+          onUpdated={() => refetch()}
+        />
+      )}
+
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-2">
         <div className="border-border bg-card/40 rounded-lg border p-2">
@@ -109,17 +97,9 @@ export function GeographyContent({
         </div>
       </div>
 
-      {/* Rollup + reconciliation (P-D) */}
-      {rollups && (
-        <RollupSummary
-          countryId={countryId}
-          geoRollupMode={countryData?.geoRollupMode ?? "hybrid"}
-          rollups={rollups}
-          nationalPopulation={countryData?.currentPopulation ?? 0}
-          nationalGdp={countryData?.currentTotalGdp ?? 0}
-          onUpdated={() => refetch()}
-        />
-      )}
+      {/* Compliance guard — surfaces population/GDP rollup inconsistencies,
+          capital integrity, founded-year sanity, and coordinate-bounds issues. */}
+      <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />
 
       {/* Cities editor */}
       <SearchableList
@@ -161,9 +141,11 @@ export function GeographyContent({
         searchPlaceholder="Search POIs, categories…"
         emptyMessage="No points of interest yet."
         noMatchMessage="No POIs match your search."
-        renderItem={(poi) => <PoiCard poi={poi} />}
+        renderItem={(poi) => (
+          <PoiCard poi={poi} countryId={countryId} onApplied={() => refetch()} />
+        )}
       />
-    </SectionShell>
+    </div>
   );
 }
 
@@ -206,6 +188,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
           <div className="text-foreground text-xs font-semibold">{city.name}</div>
           <div className="text-muted-foreground text-[10px]">
             {city.isNationalCapital ? "★ National Capital" : city.type}
+            {city.wikiPageTitle ? ` · wiki: ${city.wikiPageTitle}` : ""}
           </div>
         </div>
         {editing ? (
@@ -225,12 +208,21 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setEditing(true)}
-            className="text-muted-foreground text-[10px] underline"
-          >
-            Edit
-          </button>
+          <div className="flex items-center gap-1">
+            <PopulateFromWikiButton
+              countryId={countryId}
+              kind="city"
+              id={city.id}
+              wikiTitle={city.wikiPageTitle}
+              onApplied={onSaved}
+            />
+            <button
+              onClick={() => setEditing(true)}
+              className="text-muted-foreground text-[10px] underline"
+            >
+              Edit
+            </button>
+          </div>
         )}
       </div>
 
@@ -319,7 +311,10 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
       <div className="mb-2 flex items-center justify-between">
         <div>
           <div className="text-foreground text-xs font-semibold">{subdivision.name}</div>
-          <div className="text-muted-foreground text-[10px]">{subdivision.type}</div>
+          <div className="text-muted-foreground text-[10px]">
+            {subdivision.type}
+            {subdivision.wikiPageTitle ? ` · wiki: ${subdivision.wikiPageTitle}` : ""}
+          </div>
         </div>
         {editing ? (
           <div className="flex gap-1">
@@ -338,12 +333,21 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setEditing(true)}
-            className="text-muted-foreground text-[10px] underline"
-          >
-            Edit
-          </button>
+          <div className="flex items-center gap-1">
+            <PopulateFromWikiButton
+              countryId={countryId}
+              kind="subdivision"
+              id={subdivision.id}
+              wikiTitle={subdivision.wikiPageTitle}
+              onApplied={onSaved}
+            />
+            <button
+              onClick={() => setEditing(true)}
+              className="text-muted-foreground text-[10px] underline"
+            >
+              Edit
+            </button>
+          </div>
         )}
       </div>
 
@@ -400,165 +404,28 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
   );
 }
 
-function RollupSummary({
-  countryId,
-  geoRollupMode,
-  rollups,
-  nationalPopulation,
-  nationalGdp,
-  onUpdated,
-}: {
-  countryId: string;
-  geoRollupMode: string;
-  rollups: {
-    cityPopulationSum: number;
-    subdivisionPopulationSum: number;
-    cityGdpContributionSum: number;
-    subdivisionGdpContributionSum: number;
-    populationCoverage: number;
-    gdpCoverage: number;
-  };
-  nationalPopulation: number;
-  nationalGdp: number;
-  onUpdated: () => void;
-}) {
-  const [mode, setMode] = useState(geoRollupMode);
-  const updateMode = api.countryGeo.updateGeoRollupMode.useMutation({
-    onSuccess: () => {
-      onUpdated();
-    },
-  });
-  const rebase = api.countryGeo.rebaseNationalFromGeography.useMutation({
-    onSuccess: () => {
-      onUpdated();
-    },
-  });
-
-  const popPct = Math.round(rollups.populationCoverage * 100);
-  const gdpPct = Math.round(rollups.gdpCoverage * 100);
-
-  const handleModeChange = (newMode: "hybrid" | "top-down" | "bottom-up") => {
-    setMode(newMode);
-    updateMode.mutate({ countryId, mode: newMode });
-  };
-
-  const handleRebase = () => {
-    if (
-      !window.confirm(
-        "Recompute national totals from geographic sums? This overwrites currentPopulation/currentTotalGdp."
-      )
-    )
-      return;
-    rebase.mutate({ countryId });
-  };
-
-  return (
-    <div className="border-border bg-card/30 space-y-3 rounded-lg border p-3">
-      <div className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-        <BarChart3 className="h-3.5 w-3.5" />
-        Geographic Rollups & Reconciliation
-      </div>
-
-      {/* Coverage meters */}
-      <div className="space-y-2">
-        <CoverageMeter label="Population coverage" percent={popPct} />
-        <CoverageMeter label="GDP coverage" percent={gdpPct} />
-        <div className="text-muted-foreground/70 text-[10px]">
-          City pop: {rollups.cityPopulationSum.toLocaleString()} · Sub pop:{" "}
-          {rollups.subdivisionPopulationSum.toLocaleString()} · National:{" "}
-          {nationalPopulation.toLocaleString()}
-        </div>
-        <div className="text-muted-foreground/70 text-[10px]">
-          City GDP: {Math.round(rollups.cityGdpContributionSum).toLocaleString()} · Sub GDP:{" "}
-          {Math.round(rollups.subdivisionGdpContributionSum).toLocaleString()} · National:{" "}
-          {Math.round(nationalGdp).toLocaleString()}
-        </div>
-      </div>
-
-      {/* Rollup mode selector */}
-      <div className="space-y-1.5">
-        <label className="text-muted-foreground text-[10px] font-medium uppercase">
-          Rollup Mode
-        </label>
-        <div className="bg-accent/50 flex rounded-lg p-0.5">
-          {(["hybrid", "top-down", "bottom-up"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => handleModeChange(m)}
-              disabled={updateMode.isPending}
-              className={`flex-1 rounded-md px-2 py-1.5 text-[10px] font-medium transition-colors ${
-                mode === m
-                  ? "bg-background text-foreground ring-border shadow-sm ring-1"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title={
-                m === "hybrid"
-                  ? "Sim values authoritative; geography shown as-is"
-                  : m === "top-down"
-                    ? "Geography rebalanced to match national (scales up)"
-                    : "National recomputed from sum (only when coverage is complete)"
-              }
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-        <p className="text-muted-foreground/60 text-[10px]">
-          {mode === "hybrid"
-            ? "Sim baseline; geography rolls up as-is."
-            : mode === "top-down"
-              ? "Geography scaled to match national totals."
-              : "National recomputed from geographic sum (requires full coverage)."}
-        </p>
-      </div>
-
-      {/* Rebase action */}
-      <button
-        onClick={handleRebase}
-        disabled={rebase.isPending}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-600/20 px-3 py-2 text-xs font-medium text-amber-500 hover:bg-amber-600/30 disabled:opacity-50"
-      >
-        {rebase.isPending ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <RefreshCw className="h-3.5 w-3.5" />
-        )}
-        {rebase.isPending ? "Rebasing…" : "Rebase National from Geography"}
-      </button>
-    </div>
-  );
-}
-
-function CoverageMeter({ label, percent }: { label: string; percent: number }) {
-  const clamped = Math.max(0, Math.min(100, percent));
-  const color = clamped >= 100 ? "bg-emerald-500" : clamped >= 50 ? "bg-amber-500" : "bg-red-500";
-  return (
-    <div>
-      <div className="text-muted-foreground flex items-center justify-between text-[10px]">
-        <span>{label}</span>
-        <span className="text-foreground/80 font-mono">{clamped}%</span>
-      </div>
-      <div className="bg-muted/30 mt-0.5 h-1.5 overflow-hidden rounded-full">
-        <div
-          className={`${color} h-full transition-all`}
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function PoiCard({ poi }: { poi: any }) {
+function PoiCard({ poi, countryId, onApplied }: { poi: any; countryId: string; onApplied?: () => void }) {
   return (
     <div className="border-border bg-card/30 rounded-lg border p-3">
-      <div className="mb-1 flex items-center gap-1.5">
-        <Tag className="text-muted-foreground h-3 w-3" />
-        <div className="text-foreground text-xs font-semibold">{poi.name}</div>
+      <div className="mb-1 flex items-center justify-between gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <Tag className="text-muted-foreground h-3 w-3" />
+          <div className="text-foreground text-xs font-semibold">{poi.name}</div>
+        </div>
+        <PopulateFromWikiButton
+          countryId={countryId}
+          kind="poi"
+          id={poi.id}
+          wikiTitle={poi.wikiPageTitle}
+          onApplied={onApplied}
+          compact
+        />
       </div>
       <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
         <span className="bg-accent/60 rounded px-1.5 py-0.5 font-mono uppercase">
           {poi.category}
         </span>
+        {poi.wikiPageTitle ? <span>· wiki: {poi.wikiPageTitle}</span> : null}
       </div>
       {poi.description && (
         <p className="text-foreground/80 text-[11px] leading-snug">{poi.description}</p>

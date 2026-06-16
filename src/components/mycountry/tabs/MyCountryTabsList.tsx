@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BarChart3, TrendingUp, Briefcase, Building } from "lucide-react";
+import { BarChart3, TrendingUp, Briefcase, Building, MapPin } from "lucide-react";
 import { FacetTabs } from "~/components/facet-ui";
 
 /**
@@ -94,6 +94,22 @@ export function MyCountryTabsList({
       activeIconClassName:
         "text-[var(--tab-government-icon)] dark:text-[var(--tab-government-accent)]",
       glowClassName: "bg-[var(--tab-government-primary)]/20",
+    },
+    {
+      id: "geography",
+      icon: MapPin,
+      label: (
+        <>
+          <span className="hidden sm:inline">Geography</span>
+          <span className="sm:hidden">Geo</span>
+        </>
+      ),
+      badge: 0,
+      activeIndicatorClassName:
+        "bg-emerald-500/10 border-emerald-500/30 text-emerald-500",
+      activeTextClassName: "text-emerald-600 dark:text-emerald-400",
+      activeIconClassName: "text-emerald-500 dark:text-emerald-400",
+      glowClassName: "bg-emerald-500/20",
     },
   ];
 

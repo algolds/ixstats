@@ -48,7 +48,7 @@ export function EnhancedMyCountryContent({
       {/* New-player onboarding — self-hides once established */}
       {country?.id && <SetupChecklist countryId={country.id} onNavigate={onNavigate} />}
 
-      {/* Economy & Government tabs */}
+      {/* Economy, Labor, Government, Geography tabs */}
       <div id="tabs">
         <MyCountryTabSystem variant={variant} />
       </div>
