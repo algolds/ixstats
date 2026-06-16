@@ -23,8 +23,7 @@ import { useMyCountryMetrics } from "~/hooks/useMyCountryMetrics";
 import {
   MyCountryTabsList,
   OverviewTab,
-  EconomyTab,
-  LaborTab,
+  EconomyLaborTab,
   GovernmentTab,
   GeographyTab,
 } from "./tabs";
@@ -89,22 +88,9 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
           />
         </TabsContent>
 
-        {/* Economy Tab */}
+        {/* Economy Tab (with internal Economy/Labor toggle) */}
         <TabsContent value="economy" className="space-y-4" id="economy">
-          <EconomyTab
-            country={country}
-            economyData={economyData}
-            countryImageData={countryImageData}
-            setImageUploadModalAction={setImageUploadModal}
-            openMetricModalAction={openMetricModal}
-            metricView={metricView}
-            setMetricViewAction={setMetricView}
-          />
-        </TabsContent>
-
-        {/* Labor Tab */}
-        <TabsContent value="labor" id="labor">
-          <LaborTab
+          <EconomyLaborTab
             country={country}
             economyData={economyData}
             countryImageData={countryImageData}
