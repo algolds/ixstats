@@ -122,4 +122,4 @@ Completed implementation docs, audit reports, and historical documentation are p
 4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
 5. Keep root directory clean—only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS).
 
-The documentation was last refreshed June 2026 (**IxStates 1.0.6 "Ogma"**). Treat the structure as the source of truth going forward. Version info comes from the [Version Registry](../src/lib/buildVersion.ts); see the [Versioning & Release Architecture](./reference/revision.md).
+The documentation was last refreshed June 2026 (**IxStates 1.1.0 "Ogma"**). Treat the structure as the source of truth going forward. Version info comes from the [Version Registry](../src/lib/buildVersion.ts); see the [Versioning & Release Architecture](./reference/revision.md).

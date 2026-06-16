@@ -63,7 +63,7 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
             >
               <div className="flex rotate-3 gap-20">
                 <span>Facet UI Engine</span>
-                <span>1.0.2 Ogma</span>
+                <span>1.1.0 Ogma</span>
               </div>
               <div className="flex -rotate-3 gap-12 text-xs font-bold">
                 <span>Tactile Shading Grid</span>

@@ -5,10 +5,12 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.0 "Ogma"**, channel Alpha), while Apps / Engines / Systems each carry a single
+**IxStates 1.1 "Ogma"**, channel Alpha), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
+
+## [1.1.0 Ogma (Alpha)] - 2026-06-16
 
 ### Added
 

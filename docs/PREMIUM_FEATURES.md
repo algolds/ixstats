@@ -1,6 +1,6 @@
 # IxStats Premium Features Matrix
 
-**Last Updated:** November 2025 (platform: IxStates 1.0.6 "Ogma"; legacy v1.42 numbering retired — see [revision.md](./reference/revision.md))
+**Last Updated:** June 2026 (platform: IxStates 1.1.0 "Ogma"; legacy v1.42 numbering retired — see [revision.md](./reference/revision.md))
 
 This document provides a comprehensive breakdown of features available in the Basic (Free) tier versus the MyCountry Premium tier.
 
@@ -451,5 +451,5 @@ IxStats follows a **generous freemium model**:
 - Email: support@ixstats.com
 - Discord: [IxStats Community Server]
 
-**Last Review:** November 8, 2025
-**Platform:** IxStates 1.0.6 "Ogma" (legacy v1.42 retired)
+**Last Review:** June 2026
+**Platform:** IxStates 1.1.0 "Ogma" (legacy v1.42 retired)

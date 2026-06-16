@@ -1,7 +1,7 @@
 # Production Deployment Checklist
 
 **Last Updated:** June 2026
-**Version:** IxStates 1.0.6 "Ogma"
+**Version:** IxStates 1.1.0 "Ogma"
 
 Complete checklist for deploying IxStats to production. Follow these steps to ensure a safe, successful deployment.
 

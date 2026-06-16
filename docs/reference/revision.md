@@ -60,7 +60,7 @@ Platform versions are treated as platform epochs.
 Example:
 
 ```text
-IxStates 1.0 Ogma
+IxStates 1.1 Ogma
 IxStates 2.0 Seshat
 IxStates 3.0 Thoth
 ```
@@ -85,7 +85,7 @@ Expected cadence:
 Release names are not temporary codenames. They are part of the public identity of the platform.
 
 ```text
-IxStates 1.0 Ogma
+IxStates 1.1 Ogma
 IxStates 2.0 Seshat
 IxStates 3.0 Thoth
 ```
@@ -111,10 +111,10 @@ Stable
 Examples:
 
 ```text
-IxStates 1.0 Ogma Alpha
-IxStates 1.0 Ogma Beta
-IxStates 1.0 Ogma RC1
-IxStates 1.0 Ogma Stable
+IxStates 1.1 Ogma Alpha
+IxStates 1.1 Ogma Beta
+IxStates 1.1 Ogma RC1
+IxStates 1.1 Ogma Stable
 ```
 
 ---
@@ -132,7 +132,7 @@ Major.Minor.Patch  +  Release Name  +  Channel
 Example:
 
 ```text
-1.0.0  Ogma  Alpha
+1.1.0  Ogma  Alpha
 ```
 
 > **Legacy note:** Earlier internal numbering (`1.42`, `2.1`) is retired. The platform resets to **`1.0 Ogma`** as the public baseline.
@@ -320,7 +320,7 @@ The build identifier is the authoritative source of truth for "exactly what is d
 ## Footer
 
 ```text
-IxStates 1.0 Ogma
+IxStates 1.1 Ogma
 Alpha
 Build 8f4e3b1
 ```
@@ -328,10 +328,10 @@ Build 8f4e3b1
 ## About Page
 
 ```text
-IxStates 1.0 Ogma
+IxStates 1.1 Ogma
 Channel: Alpha
 
-IxWorld 1
+IxWorld 1.2
 WikiOS 1
 IxVault 1
 
@@ -342,27 +342,27 @@ Build 8f4e3b1
 
 ```text
 Platform
-Version: 1.0.0
+Version: 1.1.0
 Release: Ogma
 Channel: Alpha
 
 Apps
-IxWorld: 1
+IxWorld: 1.2
 WikiOS: 1   (Canvas: 1)
 IxVault: 1
 
 Engines
-MyCountry: 1
-Concord: 1
-Atlas: 1
+MyCountry: 2
+Concord: 2
+Atlas: 2
 
 Systems
-MyCountry: 1
+MyCountry: 2
 Builder: 1
 ThinkPages: 1
 Achievements: 1
 Stash: 1
-Repository: 1
+Repository: 2
 Halo: 1
 
 Design
@@ -390,31 +390,31 @@ The registry is a structured object rather than flat constants:
 export const VERSIONS = {
   platform: {
     major: 1,
-    minor: 0,
+    minor: 1,
     patch: 0,
     release: "Ogma",
     channel: "Alpha",
   },
 
   apps: {
-    ixworld: 1,
+    ixworld: 1.2,
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
     ixvault: 1,
   },
 
   engines: {
-    mycountry: 1, // nation-scoped deterministic sim
-    concord: 1,   // living-world sim (time, diplomacy, crises, NPCs)
-    atlas: 1,     // spatial foundation (worldgen, geo, maps) — powers IxWorld
+    mycountry: 2, // nation-scoped deterministic sim
+    concord: 2,   // living-world sim (time, diplomacy, crises, NPCs)
+    atlas: 2,     // spatial foundation (worldgen, geo, maps) — powers IxWorld
   },
 
   systems: {
-    mycountry: 1, // public-facing executive UI
+    mycountry: 2, // public-facing executive UI
     builder: 1,
     thinkpages: 1,
     achievements: 1, // incl. LoreWards
     stash: 1,
-    repository: 1,
+    repository: 2,
     halo: 1, // global contextual overlay (was "Dynamic Island")
   },
 
@@ -449,7 +449,7 @@ Release names are permanent epochs; future epochs are reserved but unscheduled.
 
 | Epoch | Status | Theme focus |
 |---|---|---|
-| **1.0 Ogma** | Current (Alpha) | Foundation: nation sim, maps, social, vault |
+| **1.1 Ogma** | Current (Alpha) | Executive/diplomacy canon track, map overlays, Defense/Politics panels, adjacency graph |
 | **2.0 Seshat** | Reserved | TBD — likely real-time simulation depth, advanced economies |
 | **3.0 Thoth** | Reserved | TBD — large-scale diplomacy, AI-assisted systems |
 

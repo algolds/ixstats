@@ -4,7 +4,7 @@
 
 IxStates is a nation simulation and worldbuilding platform — a persistent world where every country's economy, military, diplomacy, and borders are live and interconnected.
 
-[IxStates 1.0.6 "Ogma" · 87 routers · 1,376 procedures · 237 data models · 893+ components]
+[IxStates 1.1.0 "Ogma" · 87 routers · 1,376 procedures · 237 data models · 893+ components]
 
 ---
 
@@ -55,7 +55,7 @@ Each tier carries an independent version where noted — see the **[Versioning &
 | **Apps** *(independent version)* | IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software — powers the IxWiki content; Canvas editor sub-system), IxVault (wallet + trading cards + IxCredits + crafting/trading/marketplace/packs/lore cards/NS import) |
 | **Engines** *(internal sim cores, independent version)* | MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld) |
 | **Core Systems** *(independent version)* | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS (28 interfaces) |
-> **Patch 1.0.6:** 47 god-file routers eliminated via `mergeRouters`-based domain splitting; arch guard tool added. See CHANGELOG.md. |
+> **Patch 1.0.6:** 47 god-file routers eliminated via `mergeRouters`-based domain splitting; arch guard tool added. **Minor 1.1.0:** canon track, map overlays, Defense/Politics panels, adjacency rebuild. See CHANGELOG.md. |
 | **Design System** *(independent version)* | Facet (glass / refraction / depth) |
 | **Platform Utilities** | IxTime (game clock), IxnayID (cross-platform identity) |
 | **Inherits platform version** | IxForum (community), Experimental Labs |

@@ -1,4 +1,4 @@
-# IxStates (IxStats) Documentation Index (June 2026 — patch 1.0.6)
+# IxStates (IxStats) Documentation Index (June 2026 — minor 1.1.0)
 
 This index mirrors the new documentation structure. Use it as the canonical map when authoring, reviewing, or discovering guidance.
 

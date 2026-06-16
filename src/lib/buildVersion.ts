@@ -27,29 +27,29 @@ export type ReleaseChannel = "Developer" | "Alpha" | "Beta" | "Release Candidate
 export const VERSIONS = {
   platform: {
     major: 1,
-    minor: 0,
-    patch: 5,
+    minor: 1,
+    patch: 0,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },
 
   // Apps — own brand, ship/break independently.
   apps: {
-    ixworld: 1.1,
+    ixworld: 1.2,
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
     ixvault: 1,
   },
 
   // Engines — internal-only simulation cores (surfaced in the Dev panel).
   engines: {
-    mycountry: 1, // nation-scoped deterministic sim
-    concord: 1, // living-world sim (time, diplomacy, crises, NPCs)
-    atlas: 1, // spatial foundation (worldgen, geo, maps) — powers IxWorld
+    mycountry: 2, // nation-scoped deterministic sim
+    concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
+    atlas: 2, // spatial foundation (worldgen, geo, maps) — powers IxWorld
   },
 
   // UI / feature systems — independent, user-facing.
   systems: {
-    mycountry: 1, // public-facing executive command UI
+    mycountry: 2, // public-facing executive command UI
     builder: 1,
     thinkpages: 1,
     achievements: 1, // incl. LoreWards

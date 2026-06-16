@@ -20,7 +20,7 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 | New Player | Guided onboarding, documentation, tutorials | `/help`, `/getting-started`, docs in `docs/overview` |
 
 ## Release Cadence & Versioning
-- Platform: **IxStates 1.0.6 "Ogma"** (channel: Alpha) — OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at `src/lib/buildVersion.ts`.
+- Platform: **IxStates 1.1.0 "Ogma"** (channel: Alpha) — OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at `src/lib/buildVersion.ts`.
 - Next.js 16.2.9, React 19.2.7, Prisma 6.19.3, tRPC 11.17, Tailwind CSS 4.3
 - 87 tRPC routers, 1,376 API endpoints, 237 Prisma models, 893+ components
 - Documentation updates must accompany feature work; use this overview and `docs/DOCUMENTATION_INDEX.md` as canonical entry points
@@ -29,7 +29,7 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 ## Platform Hierarchy
 
 ```
-IxStates (platform — versioned: 1.0.6 "Ogma", channel Alpha)
+IxStates (platform — versioned: 1.1.0 "Ogma", channel Alpha)
 ├── Apps (independent version): IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software powering the IxWiki content; incl Canvas editor sub-system + Image Repository), IxVault (incl IxCards, IxCredits, Card Crafting/Trading/Marketplace/Packs/Lore Cards/NS Import)
 ├── Engines (internal sim cores, independent version): MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld)
 ├── Core Systems (independent version): MyCountry ★ (flagship, with grouped subsystems: Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (standalone core system, not under MyCountry), ThinkPages (incl ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS
