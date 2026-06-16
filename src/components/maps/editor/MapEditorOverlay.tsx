@@ -32,6 +32,7 @@ import {
   ProvincePreviewLayer,
 } from "~/components/maps/editor/province-importer";
 import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
+import { RouteNetworkButton } from "~/components/maps/RouteNetworkView";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
@@ -739,6 +740,7 @@ export default function MapEditorOverlay({
                   maxBuiltYear={historicalYear}
                 />
               )}
+              {countryId && <RouteNetworkButton countryId={countryId} />}
             </EditorErrorBoundary>
           </div>
 
