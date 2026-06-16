@@ -8,6 +8,7 @@ import { ExecutiveSidebarWidget } from "./sidebar-widgets/ExecutiveSidebarWidget
 import { NewsFeedWidget } from "./NewsFeedWidget";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
 import { ExecutiveWarRoom } from "~/components/executive/ExecutiveWarRoom";
+import { NarrativeFeed } from "./NarrativeFeed";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface EnhancedExecutiveContentProps {
@@ -62,6 +63,8 @@ export function EnhancedExecutiveContent({
 
       {/* War Room — 3-panel command center */}
       <ExecutiveWarRoom countryId={country.id} />
+
+      <NarrativeFeed countryId={country.id} />
 
       {/* Wiki woven inline */}
       <InlineWiki context="executive" accent="amber" maxSections={1} />

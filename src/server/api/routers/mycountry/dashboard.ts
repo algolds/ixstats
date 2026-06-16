@@ -208,4 +208,84 @@ export const myCountryDashboardRouter = createTRPCRouter({
         return [];
       }
     }),
+
+  /**
+   * Get unified canon feed for a country.
+   * Merges storyteller effects, diplomatic events, and resolved national issues into a
+   * single chronological story. Excludes ThinkPages posts to avoid double-counting.
+   */
+  getCanonFeed: publicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().min(1).max(60).default(30),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const [effects, events, decisions] = await Promise.all([
+          db.storytellerEffect.findMany({
+            where: { countryId: input.countryId, ixTimeTimestamp: { gte: since } },
+            orderBy: { ixTimeTimestamp: "desc" },
+            take: input.limit,
+            select: { id: true, description: true, inputType: true, ixTimeTimestamp: true },
+          }),
+          db.diplomaticEvent.findMany({
+            where: {
+              OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+            },
+            orderBy: { createdAt: "desc" },
+            take: input.limit,
+            select: { id: true, title: true, eventType: true, severity: true, createdAt: true },
+          }),
+          db.nationalIssue.findMany({
+            where: {
+              countryId: input.countryId,
+              status: { in: ["responded", "auto_resolved"] },
+            },
+            orderBy: { respondedAt: "desc" },
+            take: input.limit,
+            select: { id: true, title: true, domain: true, respondedAt: true, updatedAt: true },
+          }),
+        ]);
+
+        type CanonFeedItem = {
+          id: string;
+          kind: "effect" | "diplomacy" | "decision";
+          title: string;
+          category: string;
+          timestamp: number;
+        };
+        const items: CanonFeedItem[] = [
+          ...effects.map((e) => ({
+            id: `eff_${e.id}`,
+            kind: "effect" as const,
+            title: e.description ?? e.inputType,
+            category: e.inputType.toLowerCase().includes("popula") ? "social" : "economic",
+            timestamp: e.ixTimeTimestamp.getTime(),
+          })),
+          ...events.map((d) => ({
+            id: `dip_${d.id}`,
+            kind: "diplomacy" as const,
+            title: d.title,
+            category: d.severity && d.severity !== "info" ? "emergency" : "diplomatic",
+            timestamp: d.createdAt.getTime(),
+          })),
+          ...decisions.map((n) => ({
+            id: `dec_${n.id}`,
+            kind: "decision" as const,
+            title: n.title,
+            category: "governance",
+            timestamp: (n.respondedAt ?? n.updatedAt).getTime(),
+          })),
+        ];
+
+        items.sort((a, b) => b.timestamp - a.timestamp);
+        return items.slice(0, input.limit);
+      } catch (error) {
+        console.error("[MyCountry CanonFeed] Error:", error);
+        return [];
+      }
+    }),
 });
