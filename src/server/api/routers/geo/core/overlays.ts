@@ -3,6 +3,11 @@ import { cachedPublicProcedure } from "~/server/api/trpc";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Geometry } from "geojson";
 import { computeCrisisRiskFactors } from "~/lib/geo-analytics";
+import {
+  deriveNationalHealthScore,
+  deriveNetTradeBalance,
+  type HealthInput,
+} from "~/lib/overlay-metrics";
 
 export const overlayProcedures = {
   getRegionalChoropleth: cachedPublicProcedure
@@ -27,11 +32,31 @@ export const overlayProcedures = {
           currentGdpPerCapita: true,
           currentTotalGdp: true,
           economicVitality: true,
-          overallNationalHealth: true,
-          tradeBalance: true,
           landArea: true,
+          lifeExpectancy: true,
+          literacyRate: true,
+          povertyRate: true,
+          urbanPopulationPercent: true,
+          populationWellbeing: true,
         },
       });
+
+      // Derive trade balance from bilateral trade rows when requested.
+      const tradeBalanceMap = new Map<string, number>();
+      if (input.metric === "tradeBalance") {
+        const trades = await ctx.db.bilateralTrade.findMany({
+          select: {
+            country1Id: true,
+            country2Id: true,
+            exportsFrom1: true,
+            exportsFrom2: true,
+            tradeBalance1: true,
+          },
+        });
+        for (const c of countries) {
+          tradeBalanceMap.set(c.id, deriveNetTradeBalance(c.id, trades));
+        }
+      }
 
       const getMetricValue = (c: (typeof countries)[number]): number => {
         switch (input.metric) {
@@ -45,18 +70,36 @@ export const overlayProcedures = {
           case "vitality":
             return c.economicVitality ?? 0;
           case "health":
-            return c.overallNationalHealth ?? 0;
+            return deriveNationalHealthScore({
+              lifeExpectancy: c.lifeExpectancy,
+              literacyRate: c.literacyRate,
+              povertyRate: c.povertyRate,
+              urbanPopulationPercent: c.urbanPopulationPercent,
+              populationWellbeing: c.populationWellbeing,
+              economicVitality: c.economicVitality,
+              currentGdpPerCapita: c.currentGdpPerCapita,
+            } satisfies HealthInput);
           case "tradeBalance":
-            return c.tradeBalance ?? 0;
+            return tradeBalanceMap.get(c.id) ?? 0;
           default:
             return 0;
         }
       };
 
+      // Trade balance is signed: negative = deficit, positive = surplus. The
+      // sequential color scale maps low rank to surplus and high rank to deficit,
+      // so we invert the rank value for that metric.
+      const getRankValue = (c: (typeof countries)[number]): number => {
+        if (input.metric === "tradeBalance") {
+          return -(getMetricValue(c) || 0);
+        }
+        return getMetricValue(c);
+      };
+
       if (input.groupBy === "country") {
         // Compute percentile rank (0–1) for each country so colors distribute evenly.
         // Raw values go in rawValue for tooltips. `value` is the normalized rank.
-        const rawValues = countries.map((c) => ({ c, raw: getMetricValue(c) }));
+        const rawValues = countries.map((c) => ({ c, raw: getRankValue(c) }));
         const sorted = [...rawValues].sort((a, b) => a.raw - b.raw);
         const rankMap = new Map<string, number>();
         for (let i = 0; i < sorted.length; i++) {
@@ -111,8 +154,11 @@ export const overlayProcedures = {
         );
       }
 
-      // Rank groups by percentile (0–1)
-      const sortedGroups = Array.from(groupAgg.entries()).sort((a, b) => a[1] - b[1]);
+      // Rank groups by percentile (0–1). Invert trade balance so deficits rank high.
+      const sortedGroups = Array.from(groupAgg.entries()).sort((a, b) => {
+        const diff = a[1] - b[1];
+        return input.metric === "tradeBalance" ? -diff : diff;
+      });
       const groupRank = new Map<string, number>();
       for (let i = 0; i < sortedGroups.length; i++) {
         groupRank.set(
