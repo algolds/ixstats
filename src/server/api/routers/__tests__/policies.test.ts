@@ -35,6 +35,10 @@ const mockDb = {
   country: {
     findUnique: jest.fn() as MockFn,
   },
+  storytellerEffect: {
+    create: jest.fn() as MockFn,
+    updateMany: jest.fn() as MockFn,
+  },
 };
 
 const baseContext = {
@@ -46,6 +50,8 @@ const baseContext = {
 describe("policiesRouter scheduling and notifications", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockDb.storytellerEffect.create.mockResolvedValue({ id: "effect_1" });
+    mockDb.storytellerEffect.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it("schedules activities tied to policies and stores references in relatedIds", async () => {
