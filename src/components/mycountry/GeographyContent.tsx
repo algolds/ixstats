@@ -5,6 +5,8 @@ import { MapPin, Building2, Pin, Save, Loader2, TrendingUp, RefreshCw, BarChart3
 import { api } from "~/trpc/react";
 import { useCountryData } from "./primitives";
 import { SectionShell } from "./primitives";
+import { GeographyMap } from "./GeographyMap";
+import { GeographySidebarWidget } from "./sidebar-widgets/GeographySidebarWidget";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface GeographyContentProps {
@@ -68,6 +70,9 @@ export function GeographyContent({
 
   return (
     <div className="space-y-4">
+      {/* Sidebar-style context widget (stats + activity) */}
+      <GeographySidebarWidget countryId={countryId} />
+
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-2">
         <div className="border-border bg-card/40 rounded-lg border p-2">
@@ -92,6 +97,9 @@ export function GeographyContent({
           <div className="text-foreground text-lg font-semibold">{pois.length}</div>
         </div>
       </div>
+
+      {/* P-E Tier-0 embed — shared MapContainer focused on the user's country */}
+      <GeographyMap countryId={countryId} />
 
       {/* Rollup + reconciliation (P-D) */}
       {rollups && (
