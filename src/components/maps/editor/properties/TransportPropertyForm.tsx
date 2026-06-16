@@ -27,6 +27,11 @@ const ROUTE_TYPES = [
   { value: "canal", label: "Canal", color: "#06b6d4" },
   { value: "air_corridor", label: "Air", color: "#a855f7" },
   { value: "ferry", label: "Ferry", color: "#14b8a6" },
+  { value: "pipeline", label: "Pipeline", color: "#eab308" },
+  { value: "power_grid", label: "Power", color: "#f59e0b" },
+  { value: "fiber", label: "Fiber", color: "#e5e7eb" },
+  { value: "military_supply", label: "Mil. Supply", color: "#dc2626" },
+  { value: "military_naval", label: "Mil. Naval", color: "#7f1d1d" },
 ] as const;
 
 type SortKey = "name" | "length" | "type" | "status";
