@@ -82,9 +82,7 @@ export function SearchableList<T>({
   const isFilteredEmpty = !isEmpty && filtered.length === 0;
 
   return (
-    <div
-      className={`border-border bg-card/30 overflow-hidden rounded-lg border ${className}`}
-    >
+    <div className={`border-border bg-card/30 overflow-hidden rounded-lg border ${className}`}>
       {/* Header (click to collapse) */}
       <button
         type="button"
@@ -102,7 +100,7 @@ export function SearchableList<T>({
           {title}
         </span>
         <span
-          className={`rounded-full px-1.5 py-0.5 text-[10px] font-mono font-medium ${accent.badge}`}
+          className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium ${accent.badge}`}
         >
           {items.length}
         </span>

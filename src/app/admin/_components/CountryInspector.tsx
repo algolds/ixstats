@@ -22,7 +22,6 @@ import {
   Globe,
   Calculator,
   TrendingUp,
-  TrendingDown,
   Calendar,
   Settings,
   Zap,
@@ -157,10 +156,12 @@ function CalcNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "relative min-w-[210px] rounded-xl border bg-card/90 p-4 shadow-lg backdrop-blur-md transition-all duration-300 text-left",
+        "bg-card/90 relative min-w-[210px] rounded-xl border p-4 text-left shadow-lg backdrop-blur-md transition-all duration-300",
         borderColors[category] || "border-border",
         glowColors[category],
-        selected ? "scale-105 border-primary shadow-xl shadow-primary/10 ring-1 ring-primary/30" : ""
+        selected
+          ? "border-primary shadow-primary/10 ring-primary/30 scale-105 shadow-xl ring-1"
+          : ""
       )}
       style={{
         backgroundColor: bgGlows[category],
@@ -179,28 +180,26 @@ function CalcNode({ data, selected }: NodeProps) {
             type="target"
             id={pos}
             position={position}
-            className="border-background !h-2.5 !w-2.5 border !bg-primary transition-all duration-200"
+            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-all duration-200"
           />
         );
       })}
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[9px] uppercase font-bold tracking-wider">
+          <span className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
             {data.title as string}
           </span>
           {selected && (
-            <Badge className="text-[8px] px-1 h-3.5 bg-primary/20 text-primary border-0 select-none">
+            <Badge className="bg-primary/20 text-primary h-3.5 border-0 px-1 text-[8px] select-none">
               Selected
             </Badge>
           )}
         </div>
-        <div className="text-foreground text-sm font-extrabold truncate">
+        <div className="text-foreground truncate text-sm font-extrabold">
           {data.mainValue as string}
         </div>
-        <div className="text-muted-foreground text-[10px] truncate">
-          {data.subValue as string}
-        </div>
+        <div className="text-muted-foreground truncate text-[10px]">{data.subValue as string}</div>
       </div>
 
       {outputs.map((pos) => {
@@ -215,7 +214,7 @@ function CalcNode({ data, selected }: NodeProps) {
             type="source"
             id={pos}
             position={position}
-            className="border-background !h-2.5 !w-2.5 border !bg-primary transition-all duration-200"
+            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-all duration-200"
           />
         );
       })}
@@ -241,7 +240,7 @@ export function CountryInspector() {
   const [selectedCountryId, setSelectedCountryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  
+
   // Sandbox controls state
   const [yearsElapsed, setYearsElapsed] = useState<number>(0);
   const [localMultiplier, setLocalMultiplier] = useState<number>(1.0);
@@ -252,7 +251,7 @@ export function CountryInspector() {
   const [newEffectType, setNewEffectType] = useState<string>("gdp_adjustment");
   const [newEffectValue, setNewEffectValue] = useState<string>("5"); // in %
   const [newEffectDesc, setNewEffectDesc] = useState<string>("");
-  const [newEffectDuration, setNewEffectDuration] = useState<number>(5);
+  const [newEffectDuration, _setNewEffectDuration] = useState<number>(5);
 
   // Selected node tracking
   const [selectedNodeId, setSelectedNodeId] = useState<string>("baseline");
@@ -478,7 +477,10 @@ export function CountryInspector() {
     const tradeStrength = (countryData as any).tradeRelationshipStrength ?? 25;
     const allianceStrength = (countryData as any).allianceStrength ?? 15;
     const tensions = (countryData as any).diplomaticTensions ?? 5;
-    const diplomaticVal = Math.min(100, Math.max(40, influence + tradeStrength + allianceStrength - tensions));
+    const diplomaticVal = Math.min(
+      100,
+      Math.max(40, influence + tradeStrength + allianceStrength - tensions)
+    );
 
     return {
       baseline: {
@@ -895,7 +897,7 @@ export function CountryInspector() {
 
   useEffect(() => {
     if (flowData.nodes.length > 0) {
-      setNodes(flowData.nodes.map(n => ({ ...n, selected: n.id === selectedNodeId })));
+      setNodes(flowData.nodes.map((n) => ({ ...n, selected: n.id === selectedNodeId })));
       setEdges(flowData.edges);
     }
   }, [flowData.nodes, flowData.edges, selectedNodeId, setNodes, setEdges]);
@@ -939,35 +941,37 @@ export function CountryInspector() {
       case "baseline":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Globe className="h-4 w-4 text-sky-500" />
               Baseline State
             </h4>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              These are the baseline values retrieved from the roster sheet, which represent the country's starting parameters.
+              These are the baseline values retrieved from the roster sheet, which represent the
+              country's starting parameters.
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="border-border/40 bg-muted/20 rounded-lg p-2.5">
                 <span className="text-muted-foreground block text-[10px]">Baseline Population</span>
-                <span className="font-mono font-bold text-foreground">
+                <span className="text-foreground font-mono font-bold">
                   {calculation.baseline.pop.toLocaleString()}
                 </span>
               </div>
               <div className="border-border/40 bg-muted/20 rounded-lg p-2.5">
                 <span className="text-muted-foreground block text-[10px]">Baseline GDP PC</span>
-                <span className="font-mono font-bold text-foreground">
+                <span className="text-foreground font-mono font-bold">
                   ${calculation.baseline.gdppc.toLocaleString()}
                 </span>
               </div>
-              <div className="border-border/40 bg-muted/20 rounded-lg p-2.5 col-span-2">
+              <div className="border-border/40 bg-muted/20 col-span-2 rounded-lg p-2.5">
                 <span className="text-muted-foreground block text-[10px]">Baseline Total GDP</span>
-                <span className="font-mono font-bold text-foreground">
+                <span className="text-foreground font-mono font-bold">
                   ${calculation.baseline.gdp.toLocaleString()}
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded">
-              Formula: <code className="font-mono font-semibold">Total GDP = Population × GDP PC</code>
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+              Formula:{" "}
+              <code className="font-mono font-semibold">Total GDP = Population × GDP PC</code>
             </div>
           </div>
         );
@@ -975,36 +979,40 @@ export function CountryInspector() {
       case "settings":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Settings className="h-4 w-4 text-amber-500" />
               Simulation Modifiers
             </h4>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Global parameters stored in system configuration along with custom sandbox multipliers.
+              Global parameters stored in system configuration along with custom sandbox
+              multipliers.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Global Growth Factor</span>
                 <span className="font-mono font-bold">
                   {calculation.settings.globalGrowthFactor.toFixed(4)} (
                   {((calculation.settings.globalGrowthFactor - 1) * 100).toFixed(2)}%)
                 </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Local Multiplier Slider</span>
                 <span className="font-mono font-bold text-amber-500">
                   {calculation.settings.localGrowthFactor.toFixed(2)}x
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Tier Modifer ({calculation.baseline.tier})</span>
+                <span className="text-muted-foreground">
+                  Tier Modifer ({calculation.baseline.tier})
+                </span>
                 <span className="font-mono font-bold">
                   {calculation.settings.tierModifier.toFixed(2)}x
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded">
-              Formula: <code className="font-mono font-semibold">Base rate × Global × Local × Tier</code>
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+              Formula:{" "}
+              <code className="font-mono font-semibold">Base rate × Global × Local × Tier</code>
             </div>
           </div>
         );
@@ -1012,7 +1020,7 @@ export function CountryInspector() {
       case "storyteller":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Zap className="h-4 w-4 text-indigo-500" />
               Storyteller Effects
             </h4>
@@ -1020,20 +1028,22 @@ export function CountryInspector() {
               Aggregate of active database storyteller effects and sandboxed mock events.
             </p>
             {calculation.effects.active.length === 0 ? (
-              <p className="text-muted-foreground italic text-xs">No active storyteller modifiers.</p>
+              <p className="text-muted-foreground text-xs italic">
+                No active storyteller modifiers.
+              </p>
             ) : (
-              <div className="max-h-[160px] overflow-y-auto space-y-1.5 pr-1 text-xs">
+              <div className="max-h-[160px] space-y-1.5 overflow-y-auto pr-1 text-xs">
                 {calculation.effects.active.map((eff, index) => (
                   <div
                     key={index}
                     className={cn(
-                      "flex items-center justify-between p-2 rounded border border-border/40",
-                      eff.mock ? "bg-indigo-500/5 border-indigo-500/20" : "bg-muted/20"
+                      "border-border/40 flex items-center justify-between rounded border p-2",
+                      eff.mock ? "border-indigo-500/20 bg-indigo-500/5" : "bg-muted/20"
                     )}
                   >
                     <div>
-                      <div className="font-medium truncate max-w-[150px]">{eff.name}</div>
-                      <div className="text-[9px] text-muted-foreground">
+                      <div className="max-w-[150px] truncate font-medium">{eff.name}</div>
+                      <div className="text-muted-foreground text-[9px]">
                         {eff.type.replace("_", " ")} {eff.mock ? "(Sandbox)" : "(DB)"}
                       </div>
                     </div>
@@ -1051,7 +1061,7 @@ export function CountryInspector() {
       case "popGrowth":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Users className="h-4 w-4 text-teal-500" />
               Effective Population Growth
             </h4>
@@ -1059,28 +1069,29 @@ export function CountryInspector() {
               Computes the annual growth rate used to project future populations.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Baseline Pop Growth Rate</span>
                 <span className="font-mono font-bold">
                   {(calculation.popGrowth.baseRate * 100).toFixed(2)}%
                 </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Storyteller Adjustments</span>
                 <span className="font-mono font-bold text-indigo-500">
                   {calculation.popGrowth.storytellerAdjust >= 0 ? "+" : ""}
                   {(calculation.popGrowth.storytellerAdjust * 100).toFixed(2)}%
                 </span>
               </div>
-              <div className="flex justify-between font-bold text-foreground">
+              <div className="text-foreground flex justify-between font-bold">
                 <span>Final Pop Growth Rate</span>
                 <span className="font-mono">
                   {(calculation.popGrowth.finalRate * 100).toFixed(2)}%
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded">
-              Formula: <code className="font-mono font-semibold">Final Rate = Base Rate + Adjustments</code>
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+              Formula:{" "}
+              <code className="font-mono font-semibold">Final Rate = Base Rate + Adjustments</code>
             </div>
           </div>
         );
@@ -1088,45 +1099,71 @@ export function CountryInspector() {
       case "gdpGrowth":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <DollarSign className="h-4 w-4 text-purple-500" />
               Raw GDPPC Growth
             </h4>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Calculates the raw annual GDP per capita growth rate after combining baseline rates, global multipliers, sandbox controls, and storyteller effects (before diminishing returns and caps).
+              Calculates the raw annual GDP per capita growth rate after combining baseline rates,
+              global multipliers, sandbox controls, and storyteller effects (before diminishing
+              returns and caps).
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Baseline Growth Rate</span>
-                <span className="font-mono">{(calculation.gdpGrowth.baseRate * 100).toFixed(2)}%</span>
+                <span className="font-mono">
+                  {(calculation.gdpGrowth.baseRate * 100).toFixed(2)}%
+                </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
-                <span className="text-muted-foreground">× Global Factor ({calculation.settings.globalGrowthFactor.toFixed(4)})</span>
-                <span className="font-mono">{(calculation.gdpGrowth.withGlobalFactor * 100).toFixed(2)}%</span>
+              <div className="border-border/30 flex justify-between border-b pb-1">
+                <span className="text-muted-foreground">
+                  × Global Factor ({calculation.settings.globalGrowthFactor.toFixed(4)})
+                </span>
+                <span className="font-mono">
+                  {(calculation.gdpGrowth.withGlobalFactor * 100).toFixed(2)}%
+                </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
-                <span className="text-muted-foreground">× Local Multiplier ({calculation.settings.localGrowthFactor}x)</span>
-                <span className="font-mono">{(calculation.gdpGrowth.withLocalFactor * 100).toFixed(2)}%</span>
+              <div className="border-border/30 flex justify-between border-b pb-1">
+                <span className="text-muted-foreground">
+                  × Local Multiplier ({calculation.settings.localGrowthFactor}x)
+                </span>
+                <span className="font-mono">
+                  {(calculation.gdpGrowth.withLocalFactor * 100).toFixed(2)}%
+                </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
-                <span className="text-muted-foreground">× Tier Modifier ({calculation.settings.tierModifier}x)</span>
-                <span className="font-mono">{(calculation.gdpGrowth.withTierModifier * 100).toFixed(2)}%</span>
+              <div className="border-border/30 flex justify-between border-b pb-1">
+                <span className="text-muted-foreground">
+                  × Tier Modifier ({calculation.settings.tierModifier}x)
+                </span>
+                <span className="font-mono">
+                  {(calculation.gdpGrowth.withTierModifier * 100).toFixed(2)}%
+                </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">+ Storyteller Adjustments</span>
-                <span className="font-mono text-indigo-500">{(calculation.effects.gdpAdjust * 100).toFixed(2)}%</span>
+                <span className="font-mono text-indigo-500">
+                  {(calculation.effects.gdpAdjust * 100).toFixed(2)}%
+                </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">× Storyteller Multipliers</span>
-                <span className="font-mono text-indigo-500">{(calculation.effects.gdpMultiplier >= 0 ? "+" : "")}{(calculation.effects.gdpMultiplier * 100).toFixed(2)}%</span>
+                <span className="font-mono text-indigo-500">
+                  {calculation.effects.gdpMultiplier >= 0 ? "+" : ""}
+                  {(calculation.effects.gdpMultiplier * 100).toFixed(2)}%
+                </span>
               </div>
-              <div className="flex justify-between font-bold text-foreground">
+              <div className="text-foreground flex justify-between font-bold">
                 <span>Raw Growth Rate</span>
-                <span className="font-mono">{(calculation.gdpGrowth.withStorytellerAdjust * 100).toFixed(2)}%</span>
+                <span className="font-mono">
+                  {(calculation.gdpGrowth.withStorytellerAdjust * 100).toFixed(2)}%
+                </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded">
-              Formula: <code className="font-mono font-semibold">Raw Growth = (Base × Global × Local × Tier + Adjustments) × Multipliers</code>
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+              Formula:{" "}
+              <code className="font-mono font-semibold">
+                Raw Growth = (Base × Global × Local × Tier + Adjustments) × Multipliers
+              </code>
             </div>
           </div>
         );
@@ -1134,46 +1171,69 @@ export function CountryInspector() {
       case "diminishingReturns":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Info className="h-4 w-4 text-yellow-500" />
               Diminishing Returns Calculator
             </h4>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Applies diminishing returns to wealthier economies (exceeding threshold) using logarithmic decay. This slows down growth rates for extravagant nations.
+              Applies diminishing returns to wealthier economies (exceeding threshold) using
+              logarithmic decay. This slows down growth rates for extravagant nations.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Current GDP Per Capita</span>
-                <span className="font-mono font-bold">${Math.round(calculation.baseline.gdppc).toLocaleString()}</span>
+                <span className="font-mono font-bold">
+                  ${Math.round(calculation.baseline.gdppc).toLocaleString()}
+                </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Diminishing Threshold</span>
                 <span className="font-mono font-bold">$60,000</span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Status</span>
                 {calculation.gdpGrowth.diminishingReturns.active ? (
-                  <Badge variant="outline" className="border-yellow-500/30 bg-yellow-500/10 text-yellow-500 text-[10px]">
+                  <Badge
+                    variant="outline"
+                    className="border-yellow-500/30 bg-yellow-500/10 text-[10px] text-yellow-500"
+                  >
                     ACTIVE
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="border-green-500/30 bg-green-500/10 text-green-500 text-[10px]">
+                  <Badge
+                    variant="outline"
+                    className="border-green-500/30 bg-green-500/10 text-[10px] text-green-500"
+                  >
                     INACTIVE
                   </Badge>
                 )}
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Incoming Raw Growth</span>
-                <span className="font-mono">{(calculation.gdpGrowth.diminishingReturns.originalRate * 100).toFixed(2)}%</span>
+                <span className="font-mono">
+                  {(calculation.gdpGrowth.diminishingReturns.originalRate * 100).toFixed(2)}%
+                </span>
               </div>
-              <div className="flex justify-between font-bold text-foreground">
+              <div className="text-foreground flex justify-between font-bold">
                 <span>Reduced Rate</span>
-                <span className="font-mono">{(calculation.gdpGrowth.diminishingReturns.reducedRate * 100).toFixed(2)}%</span>
+                <span className="font-mono">
+                  {(calculation.gdpGrowth.diminishingReturns.reducedRate * 100).toFixed(2)}%
+                </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
-              <div>Formula: <code className="font-mono font-semibold">Reduced = Raw / (1 + DiminishingFactor × 0.5)</code></div>
-              <div>• Factor: <code className="font-mono font-semibold">DiminishingFactor = log2(GDPC / 60,000 + 1)</code></div>
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+              <div>
+                Formula:{" "}
+                <code className="font-mono font-semibold">
+                  Reduced = Raw / (1 + DiminishingFactor × 0.5)
+                </code>
+              </div>
+              <div>
+                • Factor:{" "}
+                <code className="font-mono font-semibold">
+                  DiminishingFactor = log2(GDPC / 60,000 + 1)
+                </code>
+              </div>
             </div>
           </div>
         );
@@ -1181,38 +1241,45 @@ export function CountryInspector() {
       case "tierCap":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <TrendingUp className="h-4 w-4 text-pink-500" />
               Economic Tier Growth Cap
             </h4>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Limits the maximum annual growth rate based on the country's current economic tier to prevent hyper-growth at high wealth.
+              Limits the maximum annual growth rate based on the country's current economic tier to
+              prevent hyper-growth at high wealth.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Current Tier</span>
-                <span className="font-bold text-foreground">{calculation.baseline.tier}</span>
+                <span className="text-foreground font-bold">{calculation.baseline.tier}</span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Max Tier Growth Cap</span>
                 <span className="font-mono font-bold text-pink-500">
                   {(calculation.gdpGrowth.tierMax * 100).toFixed(2)}%
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Cap Status</span>
                 {calculation.gdpGrowth.isCapped ? (
-                  <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-500 text-[10px]">
+                  <Badge
+                    variant="outline"
+                    className="border-red-500/30 bg-red-500/10 text-[10px] text-red-500"
+                  >
                     CAPPED
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="border-green-500/30 bg-green-500/10 text-green-500 text-[10px]">
+                  <Badge
+                    variant="outline"
+                    className="border-green-500/30 bg-green-500/10 text-[10px] text-green-500"
+                  >
                     UNCAPPED
                   </Badge>
                 )}
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded">
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
               {calculation.baseline.tier} limits annual GDPPC growth to{" "}
               {(calculation.gdpGrowth.tierMax * 100).toFixed(2)}%.
             </div>
@@ -1222,35 +1289,37 @@ export function CountryInspector() {
       case "progression":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Calendar className="h-4 w-4 text-orange-500" />
               Time Progression Engine
             </h4>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Compounds growth rates over the target timeline. Also applies one-time special modifiers (like natural disaster reductions).
+              Compounds growth rates over the target timeline. Also applies one-time special
+              modifiers (like natural disaster reductions).
             </p>
             <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Years Projected</span>
                 <span className="font-mono font-bold text-orange-500">
                   {calculation.progression.years.toFixed(1)}
                 </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Compound Pop Growth Factor</span>
                 <span className="font-mono">
                   {calculation.progression.popGrowthCompound.toFixed(4)}x
                 </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Compound GDP Growth Factor</span>
                 <span className="font-mono">
                   {calculation.progression.gdpGrowthCompound.toFixed(4)}x
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded">
-              Formula: <code className="font-mono font-semibold">Value_t = Value_0 × (1 + r)^N</code>
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+              Formula:{" "}
+              <code className="font-mono font-semibold">Value_t = Value_0 × (1 + r)^N</code>
             </div>
           </div>
         );
@@ -1258,22 +1327,23 @@ export function CountryInspector() {
       case "directModifiers":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Zap className="h-4 w-4 text-red-500" />
               Direct Special Modifiers
             </h4>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Applies one-time direct modifiers to outputs at the end of simulation (e.g. natural disasters, trade agreements). These are not compounded annually.
+              Applies one-time direct modifiers to outputs at the end of simulation (e.g. natural
+              disasters, trade agreements). These are not compounded annually.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Direct Population Modifier</span>
                 <span className="font-mono font-bold text-red-500">
                   {calculation.progression.directPopModifier >= 0 ? "+" : ""}
                   {(calculation.progression.directPopModifier * 100).toFixed(1)}%
                 </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Direct GDP Modifier</span>
                 <span className="font-mono font-bold text-red-500">
                   {calculation.progression.directGdpModifier >= 0 ? "+" : ""}
@@ -1281,8 +1351,11 @@ export function CountryInspector() {
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded">
-              Formula: <code className="font-mono font-semibold">Output = CompoundedState × (1 + DirectModifier)</code>
+            <div className="text-muted-foreground bg-muted/30 rounded p-2 text-[10px]">
+              Formula:{" "}
+              <code className="font-mono font-semibold">
+                Output = CompoundedState × (1 + DirectModifier)
+              </code>
             </div>
           </div>
         );
@@ -1290,7 +1363,7 @@ export function CountryInspector() {
       case "output":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <TrendingUp className="h-4 w-4 text-emerald-500" />
               Projected Output
             </h4>
@@ -1300,39 +1373,40 @@ export function CountryInspector() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="border-border/40 bg-muted/20 rounded-lg p-2">
                 <span className="text-muted-foreground block text-[9px]">Projected Population</span>
-                <span className="font-mono font-bold text-foreground">
+                <span className="text-foreground font-mono font-bold">
                   {Math.round(calculation.output.pop).toLocaleString()}
                 </span>
-                <span className="text-[9px] text-muted-foreground block">
+                <span className="text-muted-foreground block text-[9px]">
                   (Tier {calculation.output.popTier})
                 </span>
               </div>
               <div className="border-border/40 bg-muted/20 rounded-lg p-2">
                 <span className="text-muted-foreground block text-[9px]">Projected GDP PC</span>
-                <span className="font-mono font-bold text-foreground">
+                <span className="text-foreground font-mono font-bold">
                   ${Math.round(calculation.output.gdppc).toLocaleString()}
                 </span>
-                <span className="text-[9px] text-muted-foreground block">
+                <span className="text-muted-foreground block text-[9px]">
                   ({calculation.output.tier})
                 </span>
               </div>
-              <div className="border-border/40 bg-muted/20 rounded-lg p-2 col-span-2">
+              <div className="border-border/40 bg-muted/20 col-span-2 rounded-lg p-2">
                 <span className="text-muted-foreground block text-[9px]">Projected Total GDP</span>
                 <span className="font-mono font-bold text-emerald-500">
                   {fmtBig(calculation.output.gdp)}
                 </span>
               </div>
               {calculation.output.popDensity !== undefined && (
-                <div className="border-border/40 bg-muted/20 rounded-lg p-2 col-span-2">
+                <div className="border-border/40 bg-muted/20 col-span-2 rounded-lg p-2">
                   <span className="text-muted-foreground block text-[9px]">Population Density</span>
-                  <span className="font-mono text-foreground font-medium">
+                  <span className="text-foreground font-mono font-medium">
                     {calculation.output.popDensity.toFixed(1)} / km²
                   </span>
                 </div>
               )}
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded mt-2">
-              Formula: <code className="font-mono font-semibold">Total GDP = Population × GDP PC</code>
+            <div className="text-muted-foreground bg-muted/30 mt-2 rounded p-2 text-[10px]">
+              Formula:{" "}
+              <code className="font-mono font-semibold">Total GDP = Population × GDP PC</code>
             </div>
           </div>
         );
@@ -1340,7 +1414,7 @@ export function CountryInspector() {
       case "vitality":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Calculator className="h-4 w-4 text-emerald-500" />
               Economic Vitality Formula
             </h4>
@@ -1348,29 +1422,40 @@ export function CountryInspector() {
               Calculates index reflecting GDP wealth and growth rate.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">GDP Score Component</span>
                 <span className="font-mono font-bold">
                   {calculation.secondary.details.gdpScore.toFixed(1)} / 100
                 </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Growth Bonus</span>
                 <span className="font-mono font-bold">
                   {calculation.secondary.details.growthBonus.toFixed(1)}
                 </span>
               </div>
-              <div className="flex justify-between font-bold text-foreground">
+              <div className="text-foreground flex justify-between font-bold">
                 <span>Final Economic Vitality</span>
                 <span className="font-mono">
                   {Math.round(calculation.secondary.vitality)} / 100
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
-              <div>Formula: <code className="font-mono font-semibold">Vitality = (GDP Score × 0.7) + Growth Bonus + 30</code></div>
-              <div>• GDP Score: <code className="font-mono font-semibold">Min(100, (GDPPC / 50,000) × 100)</code></div>
-              <div>• Growth Bonus: <code className="font-mono font-semibold">Clamp(Growth Rate × 400, -20, 20)</code></div>
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+              <div>
+                Formula:{" "}
+                <code className="font-mono font-semibold">
+                  Vitality = (GDP Score × 0.7) + Growth Bonus + 30
+                </code>
+              </div>
+              <div>
+                • GDP Score:{" "}
+                <code className="font-mono font-semibold">Min(100, (GDPPC / 50,000) × 100)</code>
+              </div>
+              <div>
+                • Growth Bonus:{" "}
+                <code className="font-mono font-semibold">Clamp(Growth Rate × 400, -20, 20)</code>
+              </div>
             </div>
           </div>
         );
@@ -1378,7 +1463,7 @@ export function CountryInspector() {
       case "wellbeing":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Users className="h-4 w-4 text-teal-500" />
               Population Wellbeing Formula
             </h4>
@@ -1386,29 +1471,40 @@ export function CountryInspector() {
               Combines growth health status and population density factors.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Growth Health</span>
                 <span className="font-mono font-bold">
                   {calculation.secondary.details.growthHealth}
                 </span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Density Factor</span>
                 <span className="font-mono font-bold">
                   {calculation.secondary.details.densityFactor.toFixed(1)}
                 </span>
               </div>
-              <div className="flex justify-between font-bold text-foreground">
+              <div className="text-foreground flex justify-between font-bold">
                 <span>Final Wellbeing</span>
                 <span className="font-mono">
                   {Math.round(calculation.secondary.wellbeing)} / 100
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
-              <div>Formula: <code className="font-mono font-semibold">Wellbeing = (Growth Health + Density Factor) / 2</code></div>
-              <div>• Growth Health: <code className="font-mono font-semibold">Pop Growth &gt; 0 ? 70 : 40</code></div>
-              <div>• Density Factor: <code className="font-mono font-semibold">Max(50, 100 - Density / 500)</code></div>
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+              <div>
+                Formula:{" "}
+                <code className="font-mono font-semibold">
+                  Wellbeing = (Growth Health + Density Factor) / 2
+                </code>
+              </div>
+              <div>
+                • Growth Health:{" "}
+                <code className="font-mono font-semibold">Pop Growth &gt; 0 ? 70 : 40</code>
+              </div>
+              <div>
+                • Density Factor:{" "}
+                <code className="font-mono font-semibold">Max(50, 100 - Density / 500)</code>
+              </div>
             </div>
           </div>
         );
@@ -1416,7 +1512,7 @@ export function CountryInspector() {
       case "efficiency":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Settings className="h-4 w-4 text-pink-500" />
               Governmental Efficiency Formula
             </h4>
@@ -1424,26 +1520,35 @@ export function CountryInspector() {
               Computed based on the economic tier category score multiplier.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Economic Tier</span>
                 <span className="font-bold">{calculation.output.tier}</span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1.5">
+              <div className="border-border/30 flex justify-between border-b pb-1.5">
                 <span className="text-muted-foreground">Tier Base Score</span>
                 <span className="font-mono font-bold">
                   {Math.round(calculation.secondary.efficiency / 0.8)}
                 </span>
               </div>
-              <div className="flex justify-between font-bold text-foreground">
+              <div className="text-foreground flex justify-between font-bold">
                 <span>Final Efficiency</span>
                 <span className="font-mono">
                   {Math.round(calculation.secondary.efficiency)} / 100
                 </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
-              <div>Formula: <code className="font-mono font-semibold">Efficiency = Tier Score × 0.8</code></div>
-              <div>• Tier Scores: <code className="font-mono text-[9px]">Extravagant=95, VeryStrong=85, Strong=75, Healthy=65, Developed=50, Developing=35, Impoverished=25</code></div>
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+              <div>
+                Formula:{" "}
+                <code className="font-mono font-semibold">Efficiency = Tier Score × 0.8</code>
+              </div>
+              <div>
+                • Tier Scores:{" "}
+                <code className="font-mono text-[9px]">
+                  Extravagant=95, VeryStrong=85, Strong=75, Healthy=65, Developed=50, Developing=35,
+                  Impoverished=25
+                </code>
+              </div>
             </div>
           </div>
         );
@@ -1451,7 +1556,7 @@ export function CountryInspector() {
       case "diplomatic":
         return (
           <div className="space-y-4">
-            <h4 className="text-foreground text-sm font-bold flex items-center gap-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Globe className="h-4 w-4 text-indigo-500" />
               Diplomatic Standing Formula
             </h4>
@@ -1459,29 +1564,38 @@ export function CountryInspector() {
               Derived from influence, alliances, and trade strength offsets against tensions.
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Global Influence</span>
                 <span className="font-mono">{calculation.secondary.details.influence}</span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Trade Relationship Strength</span>
                 <span className="font-mono">+{calculation.secondary.details.tradeStrength}</span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Alliance Strength</span>
                 <span className="font-mono">+{calculation.secondary.details.allianceStrength}</span>
               </div>
-              <div className="flex justify-between border-b border-border/30 pb-1">
+              <div className="border-border/30 flex justify-between border-b pb-1">
                 <span className="text-muted-foreground">Diplomatic Tensions</span>
-                <span className="font-mono text-red-500">-{calculation.secondary.details.tensions}</span>
+                <span className="font-mono text-red-500">
+                  -{calculation.secondary.details.tensions}
+                </span>
               </div>
-              <div className="flex justify-between font-bold text-foreground">
+              <div className="text-foreground flex justify-between font-bold">
                 <span>Final Diplomatic Standing</span>
-                <span className="font-mono">{Math.round(calculation.secondary.diplomatic)} / 100</span>
+                <span className="font-mono">
+                  {Math.round(calculation.secondary.diplomatic)} / 100
+                </span>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground bg-muted/30 p-2 rounded space-y-1">
-              <div>Formula: <code className="font-mono font-semibold">Standing = Clamp(Influence + Trade + Alliance - Tensions, 40, 100)</code></div>
+            <div className="text-muted-foreground bg-muted/30 space-y-1 rounded p-2 text-[10px]">
+              <div>
+                Formula:{" "}
+                <code className="font-mono font-semibold">
+                  Standing = Clamp(Influence + Trade + Alliance - Tensions, 40, 100)
+                </code>
+              </div>
             </div>
           </div>
         );
@@ -1498,18 +1612,19 @@ export function CountryInspector() {
   return (
     <div className="space-y-6">
       {/* Search Header Selector */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between border-b border-border/30 pb-5">
+      <div className="border-border/30 flex flex-col justify-between gap-4 border-b pb-5 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h3 className="text-foreground text-lg font-semibold flex items-center gap-2">
+          <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
             <Calculator className="h-5 w-5 text-indigo-500" />
             Country Calculation Pipeline Inspector
           </h3>
           <p className="text-muted-foreground text-xs">
-            Select a nation to analyze base metrics, growth configurations, caps, and storyteller adjustments.
+            Select a nation to analyze base metrics, growth configurations, caps, and storyteller
+            adjustments.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {/* Search Input Searchable Single-select */}
           <div className="relative w-full sm:w-[240px]">
             <div className="relative">
@@ -1522,14 +1637,14 @@ export function CountryInspector() {
                   setSearchQuery(e.target.value);
                   setShowDropdown(true);
                 }}
-                className="pl-9 h-9"
+                className="h-9 pl-9"
               />
             </div>
 
             {showDropdown && (
-              <div className="absolute z-50 left-0 right-0 mt-1.5 rounded-lg border border-border/40 bg-popover text-popover-foreground shadow-lg backdrop-blur-md">
+              <div className="border-border/40 bg-popover text-popover-foreground absolute right-0 left-0 z-50 mt-1.5 rounded-lg border shadow-lg backdrop-blur-md">
                 <ScrollArea className="h-[220px]">
-                  <div className="p-1 space-y-0.5">
+                  <div className="space-y-0.5 p-1">
                     {filteredCountries.map((c) => (
                       <button
                         key={c.id}
@@ -1539,13 +1654,13 @@ export function CountryInspector() {
                           setShowDropdown(false);
                         }}
                         className={cn(
-                          "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground",
+                          "hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors",
                           selectedCountryId === c.id ? "bg-accent text-accent-foreground" : ""
                         )}
                       >
                         <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />
-                        <span className="font-semibold text-foreground">{c.name}</span>
-                        <span className="text-muted-foreground text-[10px] ml-auto">
+                        <span className="text-foreground font-semibold">{c.name}</span>
+                        <span className="text-muted-foreground ml-auto text-[10px]">
                           {c.economicTier}
                         </span>
                       </button>
@@ -1567,7 +1682,7 @@ export function CountryInspector() {
               setIsFullscreen(!isFullscreen);
               setSidebarHidden(!sidebarHidden);
             }}
-            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all h-9 shrink-0"
+            className="bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all"
             title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
             {isFullscreen ? (
@@ -1592,11 +1707,15 @@ export function CountryInspector() {
           {/* Left Controls Column */}
           <div className="space-y-6 lg:col-span-4">
             {/* Country info header */}
-            <div className="border border-border/40 rounded-xl p-4 bg-muted/15 flex items-center gap-3">
-              <UnifiedCountryFlag countryName={countryData.name} flagUrl={countryData.flag} size="lg" />
+            <div className="border-border/40 bg-muted/15 flex items-center gap-3 rounded-xl border p-4">
+              <UnifiedCountryFlag
+                countryName={countryData.name}
+                flagUrl={countryData.flag}
+                size="lg"
+              />
               <div>
                 <h4 className="text-foreground text-sm font-extrabold">{countryData.name}</h4>
-                <div className="text-muted-foreground text-[10px] space-y-0.5">
+                <div className="text-muted-foreground space-y-0.5 text-[10px]">
                   <div>Region: {countryData.region || "Global"}</div>
                   <div>Baseline: {calculation.baseline.date.toLocaleDateString()}</div>
                 </div>
@@ -1604,11 +1723,11 @@ export function CountryInspector() {
             </div>
 
             {/* Slider controls */}
-            <div className="border border-border/40 rounded-xl p-4 bg-muted/5 space-y-5">
+            <div className="border-border/40 bg-muted/5 space-y-5 rounded-xl border p-4">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <Label className="text-foreground">Target Projection Timeline</Label>
-                  <span className="text-orange-500 font-mono">+{yearsElapsed.toFixed(1)} yrs</span>
+                  <span className="font-mono text-orange-500">+{yearsElapsed.toFixed(1)} yrs</span>
                 </div>
                 <Slider
                   value={[yearsElapsed]}
@@ -1617,16 +1736,19 @@ export function CountryInspector() {
                   max={20}
                   step={0.5}
                 />
-                <div className="flex justify-between text-[9px] text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-[9px]">
                   <span>Baseline ({calculation.baseline.date.getFullYear()})</span>
-                  <span>+{yearsElapsed.toFixed(1)} yrs ({calculation.baseline.date.getFullYear() + Math.floor(yearsElapsed)})</span>
+                  <span>
+                    +{yearsElapsed.toFixed(1)} yrs (
+                    {calculation.baseline.date.getFullYear() + Math.floor(yearsElapsed)})
+                  </span>
                 </div>
               </div>
 
-              <div className="space-y-1.5 border-t border-border/30 pt-4">
+              <div className="border-border/30 space-y-1.5 border-t pt-4">
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <Label className="text-foreground">Local Growth Multiplier</Label>
-                  <span className="text-amber-500 font-mono">{localMultiplier.toFixed(2)}x</span>
+                  <span className="font-mono text-amber-500">{localMultiplier.toFixed(2)}x</span>
                 </div>
                 <Slider
                   value={[localMultiplier]}
@@ -1635,7 +1757,7 @@ export function CountryInspector() {
                   max={2.0}
                   step={0.05}
                 />
-                <div className="flex justify-between text-[9px] text-muted-foreground">
+                <div className="text-muted-foreground flex justify-between text-[9px]">
                   <span>0.50x Penalty</span>
                   <span>1.0x Normal</span>
                   <span>2.00x Boost</span>
@@ -1644,25 +1766,29 @@ export function CountryInspector() {
             </div>
 
             {/* Active database storyteller effects */}
-            <div className="border border-border/40 rounded-xl p-4 bg-muted/5 space-y-3">
-              <Label className="text-foreground text-xs font-bold block">Active Database Effects</Label>
+            <div className="border-border/40 bg-muted/5 space-y-3 rounded-xl border p-4">
+              <Label className="text-foreground block text-xs font-bold">
+                Active Database Effects
+              </Label>
               {countryData.storytellerEffects && countryData.storytellerEffects.length > 0 ? (
-                <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                <div className="max-h-[140px] space-y-2 overflow-y-auto pr-1">
                   {countryData.storytellerEffects.map((eff: any) => {
                     const isDisabled = !!disabledEffects[eff.id];
                     return (
                       <div
                         key={eff.id}
                         className={cn(
-                          "flex items-center justify-between p-2 rounded border transition-colors",
+                          "flex items-center justify-between rounded border p-2 transition-colors",
                           isDisabled
                             ? "bg-muted/10 border-border/20 opacity-50"
                             : "bg-muted/30 border-border/50"
                         )}
                       >
-                        <div className="text-xs truncate max-w-[170px]">
-                          <div className="font-semibold truncate">{eff.description || `${eff.inputType} effect`}</div>
-                          <div className="text-[9px] text-muted-foreground">
+                        <div className="max-w-[170px] truncate text-xs">
+                          <div className="truncate font-semibold">
+                            {eff.description || `${eff.inputType} effect`}
+                          </div>
+                          <div className="text-muted-foreground text-[9px]">
                             {eff.inputType.replace("_", " ")}
                           </div>
                         </div>
@@ -1674,7 +1800,7 @@ export function CountryInspector() {
                           <button
                             onClick={() => handleToggleDbEffect(eff.id)}
                             className={cn(
-                              "text-[9px] px-1.5 py-0.5 rounded font-bold border transition-all",
+                              "rounded border px-1.5 py-0.5 text-[9px] font-bold transition-all",
                               isDisabled
                                 ? "bg-primary/10 text-primary border-primary/20"
                                 : "bg-destructive/10 text-destructive border-destructive/20"
@@ -1695,40 +1821,52 @@ export function CountryInspector() {
             </div>
 
             {/* Mock Sandbox effects form */}
-            <div className="border border-border/40 rounded-xl p-4 bg-muted/5 space-y-4">
-              <Label className="text-foreground text-xs font-bold block">Mock Sandbox Event</Label>
+            <div className="border-border/40 bg-muted/5 space-y-4 rounded-xl border p-4">
+              <Label className="text-foreground block text-xs font-bold">Mock Sandbox Event</Label>
               <form onSubmit={handleAddMockEffect} className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Effect Type</Label>
+                    <Label className="text-muted-foreground text-[10px]">Effect Type</Label>
                     <Select value={newEffectType} onValueChange={setNewEffectType}>
                       <SelectTrigger className="h-8 text-[11px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="gdp_adjustment" className="text-xs">GDP Adjustment</SelectItem>
-                        <SelectItem value="population_adjustment" className="text-xs">Pop Adjustment</SelectItem>
-                        <SelectItem value="growth_rate_modifier" className="text-xs">Growth Rate Mult</SelectItem>
-                        <SelectItem value="natural_disaster" className="text-xs">Natural Disaster (Direct)</SelectItem>
-                        <SelectItem value="trade_agreement" className="text-xs">Trade Agreement (Direct)</SelectItem>
-                        <SelectItem value="special_event" className="text-xs">Special Event (Direct)</SelectItem>
+                        <SelectItem value="gdp_adjustment" className="text-xs">
+                          GDP Adjustment
+                        </SelectItem>
+                        <SelectItem value="population_adjustment" className="text-xs">
+                          Pop Adjustment
+                        </SelectItem>
+                        <SelectItem value="growth_rate_modifier" className="text-xs">
+                          Growth Rate Mult
+                        </SelectItem>
+                        <SelectItem value="natural_disaster" className="text-xs">
+                          Natural Disaster (Direct)
+                        </SelectItem>
+                        <SelectItem value="trade_agreement" className="text-xs">
+                          Trade Agreement (Direct)
+                        </SelectItem>
+                        <SelectItem value="special_event" className="text-xs">
+                          Special Event (Direct)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Value (%)</Label>
+                    <Label className="text-muted-foreground text-[10px]">Value (%)</Label>
                     <Input
                       type="number"
                       value={newEffectValue}
                       onChange={(e) => setNewEffectValue(e.target.value)}
-                      className="h-8 text-xs font-mono"
+                      className="h-8 font-mono text-xs"
                       step="0.5"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Description / Label</Label>
+                  <Label className="text-muted-foreground text-[10px]">Description / Label</Label>
                   <Input
                     placeholder="e.g. Technology Boom"
                     value={newEffectDesc}
@@ -1737,23 +1875,23 @@ export function CountryInspector() {
                   />
                 </div>
 
-                <Button type="submit" size="sm" className="w-full h-8 text-xs font-semibold">
+                <Button type="submit" size="sm" className="h-8 w-full text-xs font-semibold">
                   <Plus className="mr-1 h-3.5 w-3.5" /> Add Sandbox Event
                 </Button>
               </form>
 
               {mockEffects.length > 0 && (
-                <div className="border-t border-border/30 pt-3 space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                  <div className="text-[10px] uppercase font-bold text-indigo-500 tracking-wider">
+                <div className="border-border/30 max-h-[140px] space-y-2 overflow-y-auto border-t pt-3 pr-1">
+                  <div className="text-[10px] font-bold tracking-wider text-indigo-500 uppercase">
                     Added Mock Effects
                   </div>
                   {mockEffects.map((eff) => (
                     <div
                       key={eff.id}
-                      className="flex items-center justify-between p-2 rounded border border-indigo-500/20 bg-indigo-500/5 text-xs"
+                      className="flex items-center justify-between rounded border border-indigo-500/20 bg-indigo-500/5 p-2 text-xs"
                     >
-                      <div className="truncate max-w-[160px]">
-                        <div className="font-semibold truncate">{eff.description}</div>
+                      <div className="max-w-[160px] truncate">
+                        <div className="truncate font-semibold">{eff.description}</div>
                         <div className="text-[9px] text-indigo-400">
                           {eff.type.replace("_", " ")}
                         </div>
@@ -1765,7 +1903,7 @@ export function CountryInspector() {
                         </span>
                         <button
                           onClick={() => handleRemoveMockEffect(eff.id)}
-                          className="text-red-400 hover:text-red-300 transition-colors p-0.5"
+                          className="p-0.5 text-red-400 transition-colors hover:text-red-300"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1780,7 +1918,7 @@ export function CountryInspector() {
           {/* Right React Flow + Details Inspector Column */}
           <div className="flex flex-col gap-6 lg:col-span-8">
             {/* React Flow Board */}
-            <div className="relative h-[480px] w-full rounded-xl border border-border/40 bg-card/30 overflow-hidden shadow-inner">
+            <div className="border-border/40 bg-card/30 relative h-[480px] w-full overflow-hidden rounded-xl border shadow-inner">
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -1813,16 +1951,16 @@ export function CountryInspector() {
             </div>
 
             {/* Selected Node Details Card */}
-            <div className="border border-border/40 bg-card/40 rounded-xl p-5 shadow-sm backdrop-blur-sm">
+            <div className="border-border/40 bg-card/40 rounded-xl border p-5 shadow-sm backdrop-blur-sm">
               {renderNodeDetails()}
             </div>
           </div>
         </div>
       ) : (
-        <div className="border border-border/40 rounded-xl border-dashed py-24 text-center">
-          <Calculator className="text-muted-foreground mx-auto mb-3 h-10 w-10 opacity-60 animate-pulse" />
+        <div className="border-border/40 rounded-xl border border-dashed py-24 text-center">
+          <Calculator className="text-muted-foreground mx-auto mb-3 h-10 w-10 animate-pulse opacity-60" />
           <h4 className="text-foreground text-sm font-bold">No Country Loaded</h4>
-          <p className="text-muted-foreground text-xs mt-1">
+          <p className="text-muted-foreground mt-1 text-xs">
             Search and select a country from the dropdown to start inspecting calculations.
           </p>
         </div>

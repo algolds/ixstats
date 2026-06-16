@@ -50,7 +50,14 @@ import type { TraceFeature } from "~/lib/border-trace";
 // Types
 // ──────────────────────────────────────────────
 
-export type BorderEditMode = "select" | "vertex_edit" | "freehand" | "split" | "merge" | "trace" | "brush";
+export type BorderEditMode =
+  | "select"
+  | "vertex_edit"
+  | "freehand"
+  | "split"
+  | "merge"
+  | "trace"
+  | "brush";
 
 export interface BorderEditorState {
   mode: BorderEditMode;
@@ -157,7 +164,9 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   /** Coordinate of the first click in "trace" mode; null before first click. */
   const traceStartRef = useRef<[number, number] | null>(null);
   /** River/coast layer data updated externally via setTraceLayerSource. */
-  const traceLayersRef = useRef<Array<{ type: string; data: { features: TraceFeature[] } }> | undefined>(undefined);
+  const traceLayersRef = useRef<
+    Array<{ type: string; data: { features: TraceFeature[] } }> | undefined
+  >(undefined);
   /** Currently visible layer IDs (used to filter to "rivers" etc.). */
   const traceVisibleLayersRef = useRef<Set<string>>(new Set());
 
@@ -351,7 +360,10 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
             const layer = layers.find((l) => l.type === layerType);
             if (layer?.data?.features) {
               for (const f of layer.data.features) {
-                if (f.geometry && (f.geometry.type === "LineString" || f.geometry.type === "MultiLineString")) {
+                if (
+                  f.geometry &&
+                  (f.geometry.type === "LineString" || f.geometry.type === "MultiLineString")
+                ) {
                   features.push(f as TraceFeature);
                 }
               }
@@ -408,9 +420,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
 
       // Is the vertex being dragged a shared one? Match on its CURRENT coord.
       const here = ref.coord;
-      const shared = s.sharedVertices.find(
-        (sv) => distanceDeg([sv.lng, sv.lat], here) < 0.001
-      );
+      const shared = s.sharedVertices.find((sv) => distanceDeg([sv.lng, sv.lat], here) < 0.001);
 
       if (shared) {
         const geomMap = new Map<string, Polygon | MultiPolygon>();

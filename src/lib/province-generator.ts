@@ -25,14 +25,7 @@ import {
   polygon as turfPolygon,
   multiPolygon as turfMultiPolygon,
 } from "@turf/helpers";
-import type {
-  Feature,
-  FeatureCollection,
-  Point,
-  Polygon,
-  MultiPolygon,
-  BBox,
-} from "geojson";
+import type { Feature, FeatureCollection, Point, Polygon, MultiPolygon, BBox } from "geojson";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -68,11 +61,7 @@ function mulberry32(seed: number): () => number {
 /**
  * Scatter `count` points inside `bounds` using the given PRNG.
  */
-function scatterPoints(
-  count: number,
-  bounds: BBox,
-  rand: () => number
-): FeatureCollection<Point> {
+function scatterPoints(count: number, bounds: BBox, rand: () => number): FeatureCollection<Point> {
   const [minX, minY, maxX, maxY] = bounds;
   const features = Array.from({ length: count }, () =>
     point([minX + rand() * (maxX - minX), minY + rand() * (maxY - minY)])
@@ -84,9 +73,7 @@ function scatterPoints(
  * Lift a raw GeoJSON Polygon/MultiPolygon to a turf Feature so turf
  * `intersect` can accept it (it needs `Feature<Polygon|MultiPolygon>`).
  */
-function toFeature(
-  geom: Polygon | MultiPolygon
-): Feature<Polygon> | Feature<MultiPolygon> {
+function toFeature(geom: Polygon | MultiPolygon): Feature<Polygon> | Feature<MultiPolygon> {
   if (geom.type === "Polygon") {
     return turfPolygon(geom.coordinates) as Feature<Polygon>;
   }
@@ -166,10 +153,7 @@ export function generateProvinces(
 export function totalProvinceArea(provinces: (Polygon | MultiPolygon)[]): number {
   return provinces.reduce((sum, g) => {
     try {
-      const f =
-        g.type === "Polygon"
-          ? turfPolygon(g.coordinates)
-          : turfMultiPolygon(g.coordinates);
+      const f = g.type === "Polygon" ? turfPolygon(g.coordinates) : turfMultiPolygon(g.coordinates);
       return sum + area(f);
     } catch {
       return sum;

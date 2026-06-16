@@ -139,7 +139,9 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
             {neighbors.map((n) => (
               <button
                 key={n.featureId}
-                onClick={() => onBrushTargetChange(n.featureId === brushTargetId ? null : n.featureId)}
+                onClick={() =>
+                  onBrushTargetChange(n.featureId === brushTargetId ? null : n.featureId)
+                }
                 className={`w-full rounded px-2 py-1 text-left text-xs transition-colors ${
                   brushTargetId === n.featureId
                     ? "bg-purple-500/30 text-purple-500 ring-1 ring-purple-500/40"

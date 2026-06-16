@@ -89,7 +89,9 @@ describe("mergeBordersAsOf", () => {
     const snapshotGeom = history[0]?.geometry;
     const result = mergeBordersAsOf([original], history, new Date("2026-06-01"));
     expect(result[0]).not.toBe(original);
-    expect(original.geometry).toBe(square(0, 0, 1, 1).geometry !== undefined ? original.geometry : original.geometry);
+    expect(original.geometry).toBe(
+      square(0, 0, 1, 1).geometry !== undefined ? original.geometry : original.geometry
+    );
     expect(history[0]?.geometry).toBe(snapshotGeom);
   });
 });

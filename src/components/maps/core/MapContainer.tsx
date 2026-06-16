@@ -431,9 +431,7 @@ export function MapContainer({
       )}
 
       {/* Historical timeline scrubber (read-only) */}
-      {showControls && (
-        <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />
-      )}
+      {showControls && <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />}
 
       {/* WebGL/Loading Error Fallback Overlay */}
       {(webglError || mapLoadTimeout) && (

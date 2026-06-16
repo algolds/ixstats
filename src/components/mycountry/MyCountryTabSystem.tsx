@@ -20,7 +20,14 @@ import {
 } from "~/components/modals/metric-details";
 import { useMyCountryNavigation } from "~/hooks/useMyCountryNavigation";
 import { useMyCountryMetrics } from "~/hooks/useMyCountryMetrics";
-import { MyCountryTabsList, OverviewTab, EconomyTab, LaborTab, GovernmentTab, GeographyTab } from "./tabs";
+import {
+  MyCountryTabsList,
+  OverviewTab,
+  EconomyTab,
+  LaborTab,
+  GovernmentTab,
+  GeographyTab,
+} from "./tabs";
 import { UpgradeTeaser } from "./premium/UpgradeTeaser";
 
 interface MyCountryTabSystemProps {

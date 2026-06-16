@@ -345,7 +345,7 @@ function MyCountryRouterInner() {
         return null;
     }
   };
-  
+
   return (
     <DashboardErrorBoundary
       fallback={createSectionFallback(SECTION_TITLES[activeSection])}

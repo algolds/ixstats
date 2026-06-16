@@ -54,8 +54,8 @@ export function NarrativeFeed({ countryId }: { countryId: string }) {
       </div>
       {items.length === 0 ? (
         <p className="text-muted-foreground py-6 text-center text-xs">
-          Nothing has happened yet. Enact a policy, conclude a meeting, or shape your diplomacy —
-          it will be recorded here.
+          Nothing has happened yet. Enact a policy, conclude a meeting, or shape your diplomacy — it
+          will be recorded here.
         </p>
       ) : (
         <div className="space-y-2">

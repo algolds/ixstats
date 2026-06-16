@@ -249,7 +249,10 @@ export function PostCard({
             )}
           </div>
         ) : (
-          <div className="forum-post-content" dangerouslySetInnerHTML={{ __html: sanitizeHtml(contentHtml) }} />
+          <div
+            className="forum-post-content"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(contentHtml) }}
+          />
         )}
 
         {/* Delete confirmation */}

@@ -13,12 +13,7 @@ import { generateProvinces, totalProvinceArea } from "../province-generator";
 // ──────────────────────────────────────────────────────────────
 
 /** Simple axis-aligned square: [0,0] → [10,10] in GeoJSON lon/lat space */
-function squarePolygon(
-  minLng: number,
-  minLat: number,
-  maxLng: number,
-  maxLat: number
-): Polygon {
+function squarePolygon(minLng: number, minLat: number, maxLng: number, maxLat: number): Polygon {
   const ring: Position[] = [
     [minLng, minLat],
     [maxLng, minLat],

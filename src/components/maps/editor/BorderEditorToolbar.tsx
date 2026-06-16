@@ -1,7 +1,22 @@
 "use client";
 
 import React from "react";
-import { MousePointer2, Pencil, Scissors, Merge, Undo2, Redo2, Save, Check, X, Wrench, Spline, Waves, Minimize2, Paintbrush } from "lucide-react";
+import {
+  MousePointer2,
+  Pencil,
+  Scissors,
+  Merge,
+  Undo2,
+  Redo2,
+  Save,
+  Check,
+  X,
+  Wrench,
+  Spline,
+  Waves,
+  Minimize2,
+  Paintbrush,
+} from "lucide-react";
 import type { BorderEditMode } from "~/hooks/useBorderEditor";
 
 interface BorderEditorToolbarProps {

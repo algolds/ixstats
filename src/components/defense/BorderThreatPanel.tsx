@@ -1,6 +1,14 @@
 "use client";
 
-import { Shield, Globe, AlertTriangle, Users, Anchor, Crosshair, ArrowRightLeft } from "lucide-react";
+import {
+  Shield,
+  Globe,
+  AlertTriangle,
+  Users,
+  Anchor,
+  Crosshair,
+  ArrowRightLeft,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -39,8 +47,8 @@ function StatItem({
   icon: React.ElementType;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border bg-card/50 px-3 py-2">
-      <div className="flex items-center gap-2 text-muted-foreground">
+    <div className="bg-card/50 flex items-center justify-between rounded-lg border px-3 py-2">
+      <div className="text-muted-foreground flex items-center gap-2">
         <Icon className="h-4 w-4 text-red-600" />
         <span className="text-sm">{label}</span>
       </div>
@@ -69,13 +77,14 @@ function ThreatRow({
   };
 }) {
   const level =
-    threatLevelConfig[threat.threatLevel as keyof typeof threatLevelConfig] ?? threatLevelConfig.low;
+    threatLevelConfig[threat.threatLevel as keyof typeof threatLevelConfig] ??
+    threatLevelConfig.low;
   const diplomatic =
     diplomaticConfig[threat.diplomaticRelations as keyof typeof diplomaticConfig] ??
     diplomaticConfig.neutral;
 
   return (
-    <div className="space-y-3 rounded-xl border bg-card/50 p-4 transition-colors hover:bg-card">
+    <div className="bg-card/50 hover:bg-card space-y-3 rounded-xl border p-4 transition-colors">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -128,7 +137,9 @@ function ThreatRow({
       )}
 
       {threat.notes && (
-        <p className="text-muted-foreground border-t pt-3 text-xs leading-relaxed">{threat.notes}</p>
+        <p className="text-muted-foreground border-t pt-3 text-xs leading-relaxed">
+          {threat.notes}
+        </p>
       )}
     </div>
   );
@@ -144,10 +155,10 @@ function MetricItem({
   icon: React.ElementType;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-md bg-background/50 px-2 py-1.5">
+    <div className="bg-background/50 flex items-center gap-2 rounded-md px-2 py-1.5">
       <Icon className="text-muted-foreground h-3.5 w-3.5" />
       <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+        <div className="text-muted-foreground text-[10px] tracking-wider uppercase">{label}</div>
         <div className="text-sm font-semibold">{value ?? 0}</div>
       </div>
     </div>
@@ -184,7 +195,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Border Security Overview */}
-        <Card className="border-red-500/10 bg-gradient-to-br from-card to-card/95 backdrop-blur">
+        <Card className="from-card to-card/95 border-red-500/10 bg-gradient-to-br backdrop-blur">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Shield className="h-4 w-4 text-red-600" />
@@ -194,11 +205,11 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between rounded-lg bg-red-500/5 p-3">
-              <span className="text-sm text-muted-foreground">Security level</span>
+              <span className="text-muted-foreground text-sm">Security level</span>
               <div className="text-right">
                 <div className="text-2xl font-bold tabular-nums">
                   {border?.overallSecurityLevel ?? 0}
-                  <span className="text-sm font-normal text-muted-foreground">/100</span>
+                  <span className="text-muted-foreground text-sm font-normal">/100</span>
                 </div>
                 <Badge variant="outline" className="mt-1 text-xs capitalize">
                   {border?.securityStatus ?? "unknown"}
@@ -231,7 +242,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
         </Card>
 
         {/* Neighbor Threats */}
-        <Card className="border-red-500/10 bg-gradient-to-br from-card to-card/95 backdrop-blur">
+        <Card className="from-card to-card/95 border-red-500/10 bg-gradient-to-br backdrop-blur">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-red-600" />

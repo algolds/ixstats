@@ -743,7 +743,9 @@ export default function StashesPage() {
                               {item.note && (
                                 <div
                                   className="wikios-stash-item-note"
-                                  dangerouslySetInnerHTML={{ __html: sanitizeUserContent(item.note) }}
+                                  dangerouslySetInnerHTML={{
+                                    __html: sanitizeUserContent(item.note),
+                                  }}
                                 />
                               )}
                               <button

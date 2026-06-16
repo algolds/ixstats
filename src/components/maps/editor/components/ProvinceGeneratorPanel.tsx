@@ -40,10 +40,6 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
     if (!countryGeometry) return;
     setError(null);
     try {
-      const namesList = names
-        .split("\n")
-        .map((n) => n.trim())
-        .filter(Boolean);
       const result = generateProvinces(countryGeometry, count, { seed });
       if (result.length === 0) {
         setError("Generation produced no cells — try a different seed or count.");
@@ -54,7 +50,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
     } catch (e: any) {
       setError(e?.message || "Generation failed");
     }
-  }, [countryGeometry, count, seed, names]);
+  }, [countryGeometry, count, seed]);
 
   const handleCommit = useCallback(() => {
     if (!cells || cells.length === 0) return;
@@ -68,7 +64,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       seed,
       names: namesList.length > 0 ? namesList : undefined,
     });
-  }, [cells, countryId, count, seed, names, commitMutation]);
+  }, [cells, countryId, seed, names, commitMutation]);
 
   const handleDiscard = useCallback(() => {
     setCells(null);
@@ -92,9 +88,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
   return (
     <div className="space-y-3 p-3">
       <div className="flex items-center justify-between">
-        <span className="text-foreground text-xs font-semibold">
-          Generate Subdivisions
-        </span>
+        <span className="text-foreground text-xs font-semibold">Generate Subdivisions</span>
         <button
           onClick={onClose}
           className="text-muted-foreground hover:text-foreground rounded p-0.5"
@@ -120,7 +114,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-muted-foreground text-[10px] font-medium uppercase shrink-0">
+          <label className="text-muted-foreground shrink-0 text-[10px] font-medium uppercase">
             Seed
           </label>
           <input
@@ -159,18 +153,21 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       {/* Generated cells preview */}
       {cells && (
         <>
-          <div className="border-border/30 space-y-1 rounded-lg border bg-muted/10 p-2">
+          <div className="border-border/30 bg-muted/10 space-y-1 rounded-lg border p-2">
             <div className="text-muted-foreground flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
               <span className="flex items-center gap-1">
                 <Grid3X3 className="h-3 w-3" />
                 Preview ({cells.length} cells)
               </span>
             </div>
-            <div className="max-h-40 overflow-y-auto space-y-0.5">
+            <div className="max-h-40 space-y-0.5 overflow-y-auto">
               {cells.map((cell, i) => (
                 <div key={i} className="text-muted-foreground flex justify-between text-[10px]">
                   <span>
-                    {names.split("\n").map((n) => n.trim()).filter(Boolean)[i] || `Province ${i + 1}`}
+                    {names
+                      .split("\n")
+                      .map((n) => n.trim())
+                      .filter(Boolean)[i] || `Province ${i + 1}`}
                   </span>
                   <span className="font-mono text-[9px]">
                     {cell.type === "Polygon"
@@ -207,7 +204,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </>
       )}
 
-      {error && <p className="text-red-500 text-[10px]">{error}</p>}
+      {error && <p className="text-[10px] text-red-500">{error}</p>}
     </div>
   );
 });

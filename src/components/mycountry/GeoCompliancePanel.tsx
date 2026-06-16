@@ -10,7 +10,6 @@ import {
   Loader2,
   RefreshCw,
   Shield,
-  X,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import type { ComplianceIssue, ComplianceSeverity } from "~/lib/country-geo-compliance";
@@ -37,12 +36,9 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
 
   const issues = query.data?.issues ?? [];
   const summary = query.data?.summary ?? { errors: 0, warnings: 0, info: 0 };
-  const tone = summary.errors > 0 ? "red" : summary.warnings > 0 ? "amber" : "emerald";
 
   return (
-    <div
-      className={`border-border bg-card/30 overflow-hidden rounded-lg border`}
-    >
+    <div className={`border-border bg-card/30 overflow-hidden rounded-lg border`}>
       <button
         type="button"
         onClick={() => {
@@ -147,7 +143,7 @@ function ComplianceBadge({
   }[tone];
   return (
     <span
-      className={`rounded-full px-1.5 py-0.5 text-[10px] font-mono font-medium ${cls}`}
+      className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium ${cls}`}
       title={`${count} ${label}`}
     >
       {count}
@@ -159,9 +155,7 @@ function ComplianceIssueRow({ issue }: { issue: ComplianceIssue }) {
   const Icon = iconFor(issue.severity);
   const color = colorFor(issue.severity);
   return (
-    <div
-      className={`flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] ${color}`}
-    >
+    <div className={`flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] ${color}`}>
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <div className="flex-1">
         <div className="leading-snug">{issue.message}</div>

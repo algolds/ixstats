@@ -146,9 +146,7 @@ describe("BorderThreatPanel", () => {
 
     renderPanel();
 
-    expect(
-      screen.getByText("No neighbor threat assessments recorded yet.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("No neighbor threat assessments recorded yet.")).toBeInTheDocument();
     expect(screen.queryByText("Eastland")).not.toBeInTheDocument();
   });
 });

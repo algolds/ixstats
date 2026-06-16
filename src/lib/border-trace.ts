@@ -81,11 +81,7 @@ function findNearestSegment(
  * two segment positions — the direct interior route. Returns vertices ordered
  * from the start side to the end side.
  */
-function walkPolyline(
-  line: number[][],
-  startSeg: number,
-  endSeg: number
-): [number, number][] {
+function walkPolyline(line: number[][], startSeg: number, endSeg: number): [number, number][] {
   if (line.length < 2 || startSeg === endSeg) return [];
 
   const lo = Math.min(startSeg, endSeg);

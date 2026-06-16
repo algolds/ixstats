@@ -38,7 +38,13 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
           where: { OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }] },
           orderBy: { createdAt: "desc" },
           take: 200,
-          select: { country1Id: true, country2Id: true, eventType: true, title: true, severity: true },
+          select: {
+            country1Id: true,
+            country2Id: true,
+            eventType: true,
+            title: true,
+            severity: true,
+          },
         });
         const incidentsByCountry = groupIncidentsByCountry(events, input.countryId);
 

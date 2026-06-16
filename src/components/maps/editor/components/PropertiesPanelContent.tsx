@@ -33,7 +33,9 @@ interface PropertiesPanelContentProps {
   selectedRouteId: string | null;
   setSelectedRouteId: (id: string | null) => void;
   handleSubmit: any;
-  enterBorderEdit?: (initialMode?: "select" | "vertex_edit" | "split" | "merge" | "trace" | "brush") => void;
+  enterBorderEdit?: (
+    initialMode?: "select" | "vertex_edit" | "split" | "merge" | "trace" | "brush"
+  ) => void;
   isUnclaimed?: boolean;
   createCountryFromShapeAction?: (name: string) => void;
   createCountryFromShapePending?: boolean;
@@ -158,48 +160,51 @@ export function PropertiesPanelContent({
                   : "bg-emerald-500/10 text-emerald-500"
               }`}
             >
-              {selectedCountryName || mapSelectedCountry.displayName || mapSelectedCountry.featureId}
+              {selectedCountryName ||
+                mapSelectedCountry.displayName ||
+                mapSelectedCountry.featureId}
             </span>
           </div>
 
           {/* Feature data card (always visible) */}
-          <div className="border-border/30 space-y-2 rounded-lg border bg-muted/10 p-3">
+          <div className="border-border/30 bg-muted/10 space-y-2 rounded-lg border p-3">
             <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
               Feature Data
             </label>
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Feature ID</span>
-                <span className="font-mono text-foreground/80 text-[10px] max-w-[180px] truncate">
+                <span className="text-foreground/80 max-w-[180px] truncate font-mono text-[10px]">
                   {mapSelectedCountry.featureId || "—"}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Display Name</span>
-                <span className="text-foreground/80">
-                  {mapSelectedCountry.displayName || "—"}
-                </span>
+                <span className="text-foreground/80">{mapSelectedCountry.displayName || "—"}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Country ID</span>
-                <span className="font-mono text-foreground/80 text-[10px]">
-                  {mapSelectedCountry.countryId || (<span className="text-amber-500 italic">unlinked</span>)}
+                <span className="text-foreground/80 font-mono text-[10px]">
+                  {mapSelectedCountry.countryId || (
+                    <span className="text-amber-500 italic">unlinked</span>
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Centroid</span>
-                <span className="font-mono text-foreground/80 text-[10px]">
-                  {mapSelectedCountry.centroidLng?.toFixed(4)},{mapSelectedCountry.centroidLat?.toFixed(4)}
+                <span className="text-foreground/80 font-mono text-[10px]">
+                  {mapSelectedCountry.centroidLng?.toFixed(4)},
+                  {mapSelectedCountry.centroidLat?.toFixed(4)}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Fill Color</span>
                 <span className="flex items-center gap-1">
                   <span
-                    className="inline-block h-3 w-3 rounded border border-border"
+                    className="border-border inline-block h-3 w-3 rounded border"
                     style={{ backgroundColor: mapSelectedCountry.fillColor || "#e8e5da" }}
                   />
-                  <span className="font-mono text-foreground/80 text-[10px]">
+                  <span className="text-foreground/80 font-mono text-[10px]">
                     {mapSelectedCountry.fillColor || "—"}
                   </span>
                 </span>
@@ -209,7 +214,7 @@ export function PropertiesPanelContent({
 
           {/* DB feature details card (when available) */}
           {featureDetails && (
-            <div className="border-border/30 space-y-2 rounded-lg border bg-muted/10 p-3">
+            <div className="border-border/30 bg-muted/10 space-y-2 rounded-lg border p-3">
               <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 Database Record
               </label>
@@ -218,7 +223,7 @@ export function PropertiesPanelContent({
                   <img
                     src={featureDetails.flagUrl}
                     alt={`${selectedCountryName} flag`}
-                    className="border-border/50 aspect-video w-full rounded-lg border object-cover shadow-sm mb-2"
+                    className="border-border/50 mb-2 aspect-video w-full rounded-lg border object-cover shadow-sm"
                   />
                 )}
                 {featureDetails.featureType && (
@@ -240,8 +245,8 @@ export function PropertiesPanelContent({
           )}
 
           {/* Full feature properties JSON viewer */}
-          <div className="border-border/30 rounded-lg border bg-muted/10 p-3">
-            <div className="flex items-center justify-between mb-2">
+          <div className="border-border/30 bg-muted/10 rounded-lg border p-3">
+            <div className="mb-2 flex items-center justify-between">
               <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 Properties JSON
               </label>
@@ -249,9 +254,7 @@ export function PropertiesPanelContent({
                 onClick={() => {
                   if (isEditingJson) {
                     try {
-                      const parsed = propertiesJsonString
-                        ? JSON.parse(propertiesJsonString)
-                        : {};
+                      const parsed = propertiesJsonString ? JSON.parse(propertiesJsonString) : {};
                       setJsonError(null);
                       handleSaveFeatureProperties(parsed);
                       setIsEditingJson(false);
@@ -299,7 +302,7 @@ export function PropertiesPanelContent({
                     <select
                       value={assignCountryId ?? ""}
                       onChange={(e) => setAssignCountryId(e.target.value)}
-                      className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground focus:border-blue-500 focus:outline-none"
+                      className="border-border bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
                     >
                       <option value="">— select country —</option>
                       {availableCountries.map((c: any) => (
@@ -408,7 +411,7 @@ export function PropertiesPanelContent({
             )}
           </div>
           {showGenerator && (
-            <div className="border-border/30 rounded-lg border bg-muted/10">
+            <div className="border-border/30 bg-muted/10 rounded-lg border">
               <ProvinceGeneratorPanel
                 countryGeometry={editor?.countryGeo?.geometry ?? null}
                 countryId={activeCountryId ?? ""}
@@ -420,7 +423,7 @@ export function PropertiesPanelContent({
       );
     } else {
       mainContent = (
-        <div className="py-8 text-center space-y-2">
+        <div className="space-y-2 py-8 text-center">
           <p className="text-muted-foreground text-xs italic">
             Click any shape on the map to view its properties and actions.
           </p>

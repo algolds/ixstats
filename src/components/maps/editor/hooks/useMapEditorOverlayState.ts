@@ -33,23 +33,17 @@ export function useMapEditorOverlayState({
   useMapLiveSync();
 
   const [activeCountryId, setActiveCountryId] = useState<string | null>(countryId || null);
-  const [activeEditorMode, setActiveEditorMode] = useState<"view" | "border_edit">(
-    "view"
-  );
+  const [activeEditorMode, setActiveEditorMode] = useState<"view" | "border_edit">("view");
   const [mapSelectedCountry, setMapSelectedCountry] = useState<SelectedCountry | null>(null);
 
   // --- Map Editor & Border Editor Hooks ---
   const [borderState, borderActions] = useBorderEditor();
   const editor = useMapEditor(
-    !isWorldMode || activeCountryId
-      ? activeCountryId || undefined
-      : undefined,
+    !isWorldMode || activeCountryId ? activeCountryId || undefined : undefined,
     { skipLinkageGate: isWorldMode }
   );
   const importer = useProvinceImporter(
-    !isWorldMode || activeCountryId
-      ? activeCountryId || undefined
-      : "__none__"
+    !isWorldMode || activeCountryId ? activeCountryId || undefined : "__none__"
   );
 
   const { data: neighborGeoms } = api.geoCore.getNeighborGeometries.useQuery(
@@ -62,7 +56,7 @@ export function useMapEditorOverlayState({
   const linkageLoading = editor.linkageLoading;
   const hasGeometry = !!editor.countryGeo;
   // World editor is selection-first — tools are enabled for ANY selected shape (claimed or unclaimed).
-  const toolsDisabled = isWorldMode ? !mapSelectedCountry : (!isLinked || !hasGeometry);
+  const toolsDisabled = isWorldMode ? !mapSelectedCountry : !isLinked || !hasGeometry;
   // True when a shape is selected but has no linked Country record
   const isUnclaimed = !!mapSelectedCountry && !mapSelectedCountry.countryId;
 
@@ -76,14 +70,14 @@ export function useMapEditorOverlayState({
         "add-subdivision",
         "add-poi",
         "add-route",
-         "add-story-pin",
-         "add-label",
-         "import-provinces",
-       ];
-     }
-     if (!hasGeometry) {
-       return ["add-city", "add-poi", "add-route", "add-story-pin", "add-label"];
-     }
+        "add-story-pin",
+        "add-label",
+        "import-provinces",
+      ];
+    }
+    if (!hasGeometry) {
+      return ["add-city", "add-poi", "add-route", "add-story-pin", "add-label"];
+    }
     return [];
   }, [isWorldMode, mapSelectedCountry, hasGeometry]);
 

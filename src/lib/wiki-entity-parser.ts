@@ -13,7 +13,7 @@
  * skipped.
  */
 
-import { parseInfobox, parsePopulation, type InfoboxField, type ParsedInfobox } from "./wiki-infobox-parser";
+import { parseInfobox, parsePopulation, type InfoboxField } from "./wiki-infobox-parser";
 import { compareValues, type ContradictionVerdict } from "./country-geo-compliance";
 
 export type EntityKind = "city" | "subdivision" | "poi";
@@ -136,7 +136,13 @@ export function parseEntityAttributesFromWiki(
     const gdp = pickNumber("gdp_nominal", "gdp", "gdp_total");
     if (gdp) {
       applied.push(
-        mkApplied("gdpContribution", "GDP Contribution", gdp.value, gdp.source, existing.gdpContribution)
+        mkApplied(
+          "gdpContribution",
+          "GDP Contribution",
+          gdp.value,
+          gdp.source,
+          existing.gdpContribution
+        )
       );
     } else {
       skipped.push({ field: "gdpContribution", reason: "no GDP field on infobox" });
@@ -144,14 +150,18 @@ export function parseEntityAttributesFromWiki(
 
     const elev = pickNumber("elevation_m", "elevation");
     if (elev) {
-      applied.push(mkApplied("elevation", "Elevation (m)", elev.value, elev.source, existing.elevation));
+      applied.push(
+        mkApplied("elevation", "Elevation (m)", elev.value, elev.source, existing.elevation)
+      );
     }
 
     const founded = pickText("founded_date", "founded", "established", "established_date");
     if (founded) {
       const year = extractYear(founded.value);
       if (year !== null) {
-        applied.push(mkApplied("foundedYear", "Founded year", year, founded.source, existing.foundedYear));
+        applied.push(
+          mkApplied("foundedYear", "Founded year", year, founded.source, existing.foundedYear)
+        );
       }
     }
 
@@ -159,7 +169,13 @@ export function parseEntityAttributesFromWiki(
     const specialization = pickText("settlement_type", "city_type", "type");
     if (specialization && !existing.specialization) {
       applied.push(
-        mkApplied("specialization", "Specialization", specialization.value, specialization.source, existing.specialization)
+        mkApplied(
+          "specialization",
+          "Specialization",
+          specialization.value,
+          specialization.source,
+          existing.specialization
+        )
       );
     }
   } else if (kind === "subdivision") {
@@ -203,16 +219,16 @@ export function parseEntityAttributesFromWiki(
 
     const area = pickNumber("area_total_km2", "area_km2", "area");
     if (area) {
-      applied.push(
-        mkApplied("areaSqKm", "Area (km²)", area.value, area.source, existing.areaSqKm)
-      );
+      applied.push(mkApplied("areaSqKm", "Area (km²)", area.value, area.source, existing.areaSqKm));
     } else {
       skipped.push({ field: "areaSqKm", reason: "no area field on infobox" });
     }
 
     const seat = pickText("seat", "capital", "administrative_center", "headquarters");
     if (seat) {
-      applied.push(mkApplied("capital", "Capital / Seat", seat.value, seat.source, existing.capital));
+      applied.push(
+        mkApplied("capital", "Capital / Seat", seat.value, seat.source, existing.capital)
+      );
     }
   } else if (kind === "poi") {
     const description = pickText("description", "summary", "abstract");
@@ -221,7 +237,13 @@ export function parseEntityAttributesFromWiki(
       // everything else is too entity-specific. Apply it even if existing
       // is set, since wiki summaries are usually more authoritative.
       applied.push(
-        mkApplied("description", "Description", description.value, description.source, existing.description)
+        mkApplied(
+          "description",
+          "Description",
+          description.value,
+          description.source,
+          existing.description
+        )
       );
     } else {
       skipped.push({ field: "description", reason: "no description field on infobox" });
@@ -244,7 +266,14 @@ function mkApplied(
   source: string,
   oldValue: number | string | null | undefined
 ): AppliedField {
-  return { field, label, source, newValue, oldValue, verdict: compareValues(field, oldValue, newValue) };
+  return {
+    field,
+    label,
+    source,
+    newValue,
+    oldValue,
+    verdict: compareValues(field, oldValue, newValue),
+  };
 }
 
 /** Extract a 4-digit year from strings like "1857", "12 May 1857", "{{start date|1857|5|12}}". */

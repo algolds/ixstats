@@ -7,7 +7,12 @@ import type { ProjectionMode } from "~/lib/map-config";
 import type { Theme } from "~/context/theme-context";
 import { useRouter } from "next/navigation";
 import { useIsAdmin } from "~/hooks/usePermissions";
-import { getSnapEnabled, setSnapEnabled, getSnapTolerance, setSnapTolerance } from "~/lib/editor-prefs";
+import {
+  getSnapEnabled,
+  setSnapEnabled,
+  getSnapTolerance,
+  setSnapTolerance,
+} from "~/lib/editor-prefs";
 
 interface MapSettingsPopoverProps {
   projectionMode: ProjectionMode;

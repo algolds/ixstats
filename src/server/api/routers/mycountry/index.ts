@@ -14,7 +14,4 @@ import { mergeRouters } from "~/server/api/trpc";
 import { myCountryDashboardRouter } from "./dashboard";
 import { myCountryIntelligenceRouter } from "./intelligence";
 
-export const myCountryRouter = mergeRouters(
-  myCountryDashboardRouter,
-  myCountryIntelligenceRouter
-);
+export const myCountryRouter = mergeRouters(myCountryDashboardRouter, myCountryIntelligenceRouter);

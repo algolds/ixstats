@@ -108,5 +108,4 @@ describe("moveSharedVertex", () => {
       expect(ring[ref.vertexIndex]).toEqual(to);
     }
   });
-
 });

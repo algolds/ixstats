@@ -25,7 +25,11 @@ export function GeographyContent() {
   const { country } = useCountryData();
   const countryId = country?.id;
 
-  const { data: bundle, isLoading, refetch } = api.countryGeo.getCountryGeoBundle.useQuery(
+  const {
+    data: bundle,
+    isLoading,
+    refetch,
+  } = api.countryGeo.getCountryGeoBundle.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId, staleTime: 30_000 }
   );
@@ -47,7 +51,15 @@ export function GeographyContent() {
     return <p className="text-muted-foreground text-sm">No geographic data found.</p>;
   }
 
-  const { cities, subdivisions, pois, rollups, country: countryData, centroid, boundingBox } = bundle;
+  const {
+    cities,
+    subdivisions,
+    pois,
+    rollups,
+    country: countryData,
+    centroid,
+    boundingBox,
+  } = bundle;
 
   return (
     <div className="space-y-4">
@@ -198,7 +210,11 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
               disabled={upsert.isPending}
               className="rounded bg-emerald-600/20 px-2 py-0.5 text-[10px] font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50"
             >
-              {upsert.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              {upsert.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Save className="h-3 w-3" />
+              )}
             </button>
             <button
               onClick={() => setEditing(false)}
@@ -323,7 +339,11 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
               disabled={upsert.isPending}
               className="rounded bg-emerald-600/20 px-2 py-0.5 text-[10px] font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50"
             >
-              {upsert.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              {upsert.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Save className="h-3 w-3" />
+              )}
             </button>
             <button
               onClick={() => setEditing(false)}
@@ -404,7 +424,15 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
   );
 }
 
-function PoiCard({ poi, countryId, onApplied }: { poi: any; countryId: string; onApplied?: () => void }) {
+function PoiCard({
+  poi,
+  countryId,
+  onApplied,
+}: {
+  poi: any;
+  countryId: string;
+  onApplied?: () => void;
+}) {
   return (
     <div className="border-border bg-card/30 rounded-lg border p-3">
       <div className="mb-1 flex items-center justify-between gap-1.5">
@@ -447,9 +475,7 @@ function FieldInput({
 }) {
   return (
     <div>
-      <label className="text-muted-foreground text-[10px] font-medium uppercase">
-        {label}
-      </label>
+      <label className="text-muted-foreground text-[10px] font-medium uppercase">{label}</label>
       <input
         type={type}
         value={value}

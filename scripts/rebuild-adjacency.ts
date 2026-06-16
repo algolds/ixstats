@@ -34,9 +34,7 @@ async function main() {
   });
 
   if (!adminUser) {
-    throw new Error(
-      "No admin user found in the database. Assign an owner/admin/staff role first."
-    );
+    throw new Error("No admin user found in the database. Assign an owner/admin/staff role first.");
   }
 
   console.log(
@@ -52,7 +50,9 @@ async function main() {
     rateLimitIdentifier: "script-rebuild-adjacency",
   } as any);
 
-  console.log(`[rebuild-adjacency] Calling geoEditor.rebuildAdjacency({ worldId: "${worldId}" })...`);
+  console.log(
+    `[rebuild-adjacency] Calling geoEditor.rebuildAdjacency({ worldId: "${worldId}" })...`
+  );
   const result = await caller.rebuildAdjacency({ worldId });
   console.log("[rebuild-adjacency] Done:", result);
 }

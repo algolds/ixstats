@@ -35,7 +35,7 @@ describe("traceAlongLayer", () => {
       // Intermediate vertices on the forward path are (2,0) and (3,0)
       const river = makeRiver();
       const start: [number, number] = [1.1, 0.01]; // near vertex 1, on seg 1
-      const end: [number, number] = [3.1, 0.01];   // near vertex 3, on seg 3
+      const end: [number, number] = [3.1, 0.01]; // near vertex 3, on seg 3
 
       const result = traceAlongLayer(start, end, [river], 0.1);
 
@@ -52,7 +52,7 @@ describe("traceAlongLayer", () => {
     test("vertices are in ascending order along the river", () => {
       const river = makeRiver();
       const start: [number, number] = [0.5, 0.0]; // segment 0
-      const end: [number, number] = [3.5, 0.0];   // segment 3
+      const end: [number, number] = [3.5, 0.0]; // segment 3
 
       const result = traceAlongLayer(start, end, [river], 0.1);
 
@@ -106,10 +106,24 @@ describe("traceAlongLayer", () => {
 
     test("returns [] when points snap to different features", () => {
       const river1: TraceFeature = {
-        geometry: { type: "LineString", coordinates: [[0, 0], [1, 0], [2, 0]] },
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [0, 0],
+            [1, 0],
+            [2, 0],
+          ],
+        },
       };
       const river2: TraceFeature = {
-        geometry: { type: "LineString", coordinates: [[10, 0], [11, 0], [12, 0]] },
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [10, 0],
+            [11, 0],
+            [12, 0],
+          ],
+        },
       };
       // start near river1, end near river2
       const result = traceAlongLayer([0.5, 0.01], [10.5, 0.01], [river1, river2], 0.1);
@@ -123,8 +137,17 @@ describe("traceAlongLayer", () => {
         geometry: {
           type: "MultiLineString",
           coordinates: [
-            [[0, 0], [1, 0], [2, 0], [3, 0]],  // line 0
-            [[0, 5], [1, 5], [2, 5]],            // line 1
+            [
+              [0, 0],
+              [1, 0],
+              [2, 0],
+              [3, 0],
+            ], // line 0
+            [
+              [0, 5],
+              [1, 5],
+              [2, 5],
+            ], // line 1
           ],
         },
       };
@@ -139,8 +162,16 @@ describe("traceAlongLayer", () => {
         geometry: {
           type: "MultiLineString",
           coordinates: [
-            [[0, 0], [1, 0], [2, 0]],
-            [[0, 5], [1, 5], [2, 5]],
+            [
+              [0, 0],
+              [1, 0],
+              [2, 0],
+            ],
+            [
+              [0, 5],
+              [1, 5],
+              [2, 5],
+            ],
           ],
         },
       };

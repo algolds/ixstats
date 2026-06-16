@@ -378,7 +378,11 @@ export function useSubdivisionVertexEdit({
         const editingId = vertexEditRef.current.featureId;
         for (const feat of featuresRef.current) {
           if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-          const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, snapTol);
+          const snapped = snapToBorderEdge(
+            target,
+            feat.geometry as Polygon | MultiPolygon,
+            snapTol
+          );
           if (snapped !== target) {
             target = snapped;
             break;
@@ -559,12 +563,16 @@ export function useSubdivisionVertexEdit({
         const editingId = vertexEditRef.current.featureId;
         for (const feat of featuresRef.current) {
           if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-          const snapped = snapToBorderEdge(target, feat.geometry as Polygon | MultiPolygon, snapTol);
-        if (snapped !== target) {
-          target = snapped;
-          break;
+          const snapped = snapToBorderEdge(
+            target,
+            feat.geometry as Polygon | MultiPolygon,
+            snapTol
+          );
+          if (snapped !== target) {
+            target = snapped;
+            break;
+          }
         }
-      }
       }
 
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);

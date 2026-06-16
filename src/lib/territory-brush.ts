@@ -18,12 +18,7 @@ import { difference } from "@turf/difference";
 import { featureCollection } from "@turf/helpers";
 import { intersect } from "@turf/intersect";
 import { union } from "@turf/union";
-import type {
-  Feature,
-  FeatureCollection,
-  Polygon,
-  MultiPolygon,
-} from "geojson";
+import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
 import { sanitizeRegionShape } from "~/lib/border-editor";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,9 +26,7 @@ import { sanitizeRegionShape } from "~/lib/border-editor";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Wrap a raw geometry as a GeoJSON Feature for turf. */
-function toFeature(
-  geometry: Polygon | MultiPolygon
-): Feature<Polygon | MultiPolygon> {
+function toFeature(geometry: Polygon | MultiPolygon): Feature<Polygon | MultiPolygon> {
   return { type: "Feature", geometry, properties: {} };
 }
 
@@ -41,9 +34,7 @@ function toFeature(
  * Extract a Polygon | MultiPolygon from a turf result feature, or return null
  * if the result is empty / a non-area geometry type.
  */
-function extractPolygonGeom(
-  feat: Feature | null | undefined
-): Polygon | MultiPolygon | null {
+function extractPolygonGeom(feat: Feature | null | undefined): Polygon | MultiPolygon | null {
   if (!feat?.geometry) return null;
   const t = feat.geometry.type;
   if (t === "Polygon" || t === "MultiPolygon") {

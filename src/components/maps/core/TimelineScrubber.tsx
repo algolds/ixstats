@@ -26,10 +26,10 @@ export interface TimelineScrubberProps {
 const SCRUB_DEBOUNCE_MS = 200;
 
 export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberProps) {
-  const { data: range, isLoading: rangeLoading } = api.geoCore.getHistoryRange.useQuery(
-    undefined,
-    { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
-  );
+  const { data: range, isLoading: rangeLoading } = api.geoCore.getHistoryRange.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
 
   // No history rows → don't render anything.
   const hasHistory = !!range && range.minTime !== null;
@@ -109,8 +109,8 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
       </div>
 
       <p className="mt-2 text-[10px] leading-snug text-white/40">
-        Shows the political layer as of the selected date. Snapshots reflect editor
-        history; countries without edits show their current border at every date.
+        Shows the political layer as of the selected date. Snapshots reflect editor history;
+        countries without edits show their current border at every date.
       </p>
     </div>
   );

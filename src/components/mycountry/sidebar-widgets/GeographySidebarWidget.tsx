@@ -1,14 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { MapPin, Building2, Layers, GitFork, RefreshCw } from "lucide-react";
+import { MapPin, Building2, Layers } from "lucide-react";
 import { api } from "~/trpc/react";
-import {
-  SectionContextWidget,
-  useCountryData,
-  type ContextStat,
-  type ContextActivityEntry,
-} from "../primitives";
+import { SectionContextWidget, type ContextStat, type ContextActivityEntry } from "../primitives";
 
 interface GeographySidebarWidgetProps {
   countryId: string;

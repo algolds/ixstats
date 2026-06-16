@@ -105,8 +105,7 @@ export function MyCountryTabsList({
         </>
       ),
       badge: 0,
-      activeIndicatorClassName:
-        "bg-emerald-500/10 border-emerald-500/30 text-emerald-500",
+      activeIndicatorClassName: "bg-emerald-500/10 border-emerald-500/30 text-emerald-500",
       activeTextClassName: "text-emerald-600 dark:text-emerald-400",
       activeIconClassName: "text-emerald-500 dark:text-emerald-400",
       glowClassName: "bg-emerald-500/20",

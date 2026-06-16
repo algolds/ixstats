@@ -28,8 +28,8 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const embassies = embassiesRaw ?? [];
-  const relations = relationsRaw ?? [];
+  const embassies = useMemo(() => embassiesRaw ?? [], [embassiesRaw]);
+  const relations = useMemo(() => relationsRaw ?? [], [relationsRaw]);
 
   const { data: foreignPolicies } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
     { countryId },

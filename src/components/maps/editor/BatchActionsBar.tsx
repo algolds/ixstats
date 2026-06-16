@@ -64,8 +64,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
 
   const handleApply = useCallback(async () => {
     if (!value.trim()) return;
-    const coerced: string | number =
-      field === "level" ? parseInt(value, 10) : value;
+    const coerced: string | number = field === "level" ? parseInt(value, 10) : value;
     if (field === "level" && isNaN(coerced as number)) return;
 
     setPending(true);
@@ -209,9 +208,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
         </div>
       )}
 
-      {resultMsg && (
-        <span className="text-muted-foreground italic">{resultMsg}</span>
-      )}
+      {resultMsg && <span className="text-muted-foreground italic">{resultMsg}</span>}
 
       <button
         onClick={onBatchDelete}

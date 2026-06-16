@@ -50,12 +50,7 @@ export function PopulateFromWikiButton({
   };
 
   if (result) {
-    return (
-      <WikiParseResult
-        result={result}
-        onDismiss={() => setResult(null)}
-      />
-    );
+    return <WikiParseResult result={result} onDismiss={() => setResult(null)} />;
   }
 
   return (
@@ -114,18 +109,14 @@ function WikiParseResult({
           <div className="flex-1 space-y-0.5">
             {isError && <div className="font-medium">{result.error}</div>}
             {isEmpty && (
-              <div className="font-medium">
-                No mappable fields found on the wiki infobox.
-              </div>
+              <div className="font-medium">No mappable fields found on the wiki infobox.</div>
             )}
             {matches.length > 0 && (
               <div>
                 <span className="font-medium">
                   {matches.length} field{matches.length === 1 ? "" : "s"} in sync:
                 </span>{" "}
-                <span className="text-foreground/80">
-                  {matches.map((a) => a.label).join(", ")}
-                </span>
+                <span className="text-foreground/80">{matches.map((a) => a.label).join(", ")}</span>
               </div>
             )}
             {softMismatches.length > 0 && (
@@ -147,14 +138,10 @@ function WikiParseResult({
                   {hardMismatches.map((a) => (
                     <li key={a.field} className="flex flex-wrap items-baseline gap-1.5">
                       <span className="text-foreground/80 font-medium">{a.label}:</span>
-                      <span className="line-through opacity-70">
-                        {formatVal(a.oldValue)}
-                      </span>
+                      <span className="line-through opacity-70">{formatVal(a.oldValue)}</span>
                       <span>→</span>
                       <span className="font-semibold">{formatVal(a.newValue)}</span>
-                      <span className="text-muted-foreground/70 text-[9px]">
-                        (from {a.source})
-                      </span>
+                      <span className="text-muted-foreground/70 text-[9px]">(from {a.source})</span>
                     </li>
                   ))}
                 </ul>

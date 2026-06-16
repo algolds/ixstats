@@ -159,7 +159,10 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       // Auto-generation is opt-in (narrative mode is the default). When off, issues
       // only appear via DM injection (plan 034) or prior generation.
       if (GAMEPLAY_FLAGS.issuesAutoGenerate) {
-        const shouldEval = await NationalIssuesEngine.shouldEvaluate(input.countryId, ctx.db as any);
+        const shouldEval = await NationalIssuesEngine.shouldEvaluate(
+          input.countryId,
+          ctx.db as any
+        );
         if (shouldEval) {
           // Run evaluation in background - don't block the query
           NationalIssuesEngine.evaluateCountry(

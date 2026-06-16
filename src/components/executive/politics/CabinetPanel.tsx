@@ -5,13 +5,7 @@ import { Briefcase, Loader2, Plus, Users, X } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -92,10 +86,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
   const officialsByDepartment = useMemo(() => {
     const map = new Map<string, typeof officials>();
     for (const dept of departments) {
-      map.set(
-        dept.id,
-        officials?.filter((o) => o.departmentId === dept.id) ?? []
-      );
+      map.set(dept.id, officials?.filter((o) => o.departmentId === dept.id) ?? []);
     }
     return map;
   }, [departments, officials]);
@@ -167,7 +158,9 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
             <div className="text-muted-foreground flex flex-col items-center justify-center py-8 text-center text-sm">
               <Users className="mb-2 h-8 w-8 opacity-40" />
               <p>No government departments configured yet.</p>
-              <p className="mt-1 text-xs">Create a government structure to start staffing your cabinet.</p>
+              <p className="mt-1 text-xs">
+                Create a government structure to start staffing your cabinet.
+              </p>
             </div>
           ) : (
             <ScrollArea className="max-h-[440px] pr-2">
@@ -267,7 +260,10 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={!!dialogDepartmentId} onOpenChange={(open) => !open && setDialogDepartmentId(null)}>
+      <Dialog
+        open={!!dialogDepartmentId}
+        onOpenChange={(open) => !open && setDialogDepartmentId(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Appoint official</DialogTitle>

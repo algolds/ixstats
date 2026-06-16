@@ -2,7 +2,12 @@
  * Tests for editor-prefs.ts — localStorage-backed editor preferences.
  */
 
-import { getSnapEnabled, setSnapEnabled, getSnapTolerance, setSnapTolerance } from "../editor-prefs";
+import {
+  getSnapEnabled,
+  setSnapEnabled,
+  getSnapTolerance,
+  setSnapTolerance,
+} from "../editor-prefs";
 
 describe("editor-prefs — snap enabled", () => {
   test("default is true", () => {

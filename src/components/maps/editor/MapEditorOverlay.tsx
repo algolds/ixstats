@@ -383,10 +383,7 @@ export default function MapEditorOverlay({
             isLoading={editor.featuresLoading}
             selectedIds={editor.selectedIds}
             onToggleSelect={editor.toggleSelectId}
-            collapseAll={
-              editor.mode.startsWith("add-") ||
-              editor.mode.startsWith("edit-")
-            }
+            collapseAll={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")}
           />
         }
         layersContent={renderLayersElement()}
@@ -530,7 +527,11 @@ export default function MapEditorOverlay({
 
         {/* Left panel slot */}
         {(!toolsDisabled || isWorldMode) && (
-          <div ref={leftSidebarRef} data-testid="editor-panel-A" className="hidden h-full shrink-0 sm:flex">
+          <div
+            ref={leftSidebarRef}
+            data-testid="editor-panel-A"
+            className="hidden h-full shrink-0 sm:flex"
+          >
             {panelConfigs.panelA.placement === "left" &&
               panelConfigs.panelB.placement !== "left" && (
                 <EditorErrorBoundary name="LeftPanel-A">
@@ -838,7 +839,11 @@ export default function MapEditorOverlay({
 
         {/* Right panel slot */}
         {(!toolsDisabled || isWorldMode) && (
-          <div ref={rightSidebarRef} data-testid="editor-panel-B" className="hidden h-full shrink-0 sm:flex">
+          <div
+            ref={rightSidebarRef}
+            data-testid="editor-panel-B"
+            className="hidden h-full shrink-0 sm:flex"
+          >
             {panelConfigs.panelA.placement === "right" &&
               panelConfigs.panelB.placement !== "right" && (
                 <EditorErrorBoundary name="LeftPanel-A">
@@ -965,10 +970,7 @@ export default function MapEditorOverlay({
           <MobileEditorSheet
             onClose={() => editor.resetForm()}
             title="Properties"
-            isEditMode={
-              editor.mode.startsWith("add-") ||
-              editor.mode.startsWith("edit-")
-            }
+            isEditMode={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")}
             featureListContent={
               <FeatureList
                 features={editor.allFeatures}

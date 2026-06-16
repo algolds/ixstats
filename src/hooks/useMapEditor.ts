@@ -1081,10 +1081,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const handleDrawComplete = useCallback(
     (geometry: object) => {
       if (mode === "add-subdivision") {
-        if (
-          countryGeo?.geometry &&
-          (geometry as any).type === "Polygon"
-        ) {
+        if (countryGeo?.geometry && (geometry as any).type === "Polygon") {
           const outerRing = (geometry as any).coordinates?.[0] as [number, number][] | undefined;
           if (outerRing && outerRing.length > 0) {
             const anyInside = outerRing.some((pt: [number, number]) =>
@@ -1592,9 +1589,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     ): Promise<{ successCount: number; failCount: number }> => {
       if (!countryId || selectedIds.size === 0) return { successCount: 0, failCount: 0 };
 
-      const toEdit = allFeatures.filter(
-        (f) => selectedIds.has(f.id) && f.type === "subdivision"
-      );
+      const toEdit = allFeatures.filter((f) => selectedIds.has(f.id) && f.type === "subdivision");
 
       if (toEdit.length === 0) return { successCount: 0, failCount: 0 };
 

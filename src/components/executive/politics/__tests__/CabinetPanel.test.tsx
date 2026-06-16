@@ -75,7 +75,12 @@ describe("CabinetPanel", () => {
       { id: "d-2", name: "Defense", ministerTitle: "Secretary" },
     ]);
     mockOfficialsData = [
-      createOfficial({ id: "1", departmentId: "d-1", name: "Elena Vance", title: "Minister of Foreign Affairs" }),
+      createOfficial({
+        id: "1",
+        departmentId: "d-1",
+        name: "Elena Vance",
+        title: "Minister of Foreign Affairs",
+      }),
     ];
 
     render(<CabinetPanel countryId="c-1" />);
@@ -93,7 +98,12 @@ describe("CabinetPanel", () => {
       { id: "d-2", name: "Defense", ministerTitle: "Secretary" },
     ]);
     mockOfficialsData = [
-      createOfficial({ id: "1", departmentId: "d-1", name: "Elena Vance", title: "Minister of Foreign Affairs" }),
+      createOfficial({
+        id: "1",
+        departmentId: "d-1",
+        name: "Elena Vance",
+        title: "Minister of Foreign Affairs",
+      }),
     ];
 
     render(<CabinetPanel countryId="c-1" />);

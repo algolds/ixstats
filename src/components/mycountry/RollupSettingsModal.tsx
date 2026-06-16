@@ -53,7 +53,11 @@ export function RollupSettingsModal({
   const gdpPct = Math.round(rollups.gdpCoverage * 100);
   const worst = Math.min(popPct, gdpPct);
   const coverageTone =
-    worst >= 100 ? "bg-emerald-600/20 text-emerald-500" : worst >= 50 ? "bg-amber-600/20 text-amber-500" : "bg-red-600/20 text-red-500";
+    worst >= 100
+      ? "bg-emerald-600/20 text-emerald-500"
+      : worst >= 50
+        ? "bg-amber-600/20 text-amber-500"
+        : "bg-red-600/20 text-red-500";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -69,16 +73,16 @@ export function RollupSettingsModal({
                 <BarChart3 className="h-3.5 w-3.5" />
               </div>
               <div>
-                <div className="text-foreground text-xs font-semibold">
-                  Geographic Rollups
-                </div>
+                <div className="text-foreground text-xs font-semibold">Geographic Rollups</div>
                 <div className="text-muted-foreground text-[10px]">
                   Mode: {geoRollupMode} · Pop {popPct}% · GDP {gdpPct}%
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-mono font-medium ${coverageTone}`}>
+              <span
+                className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] font-medium ${coverageTone}`}
+              >
                 {worst}%
               </span>
               <Settings className="text-muted-foreground h-3.5 w-3.5" />
@@ -231,10 +235,7 @@ function CoverageMeter({ label, percent }: { label: string; percent: number }) {
         <span className="text-foreground/80 font-mono">{clamped}%</span>
       </div>
       <div className="bg-muted/30 mt-0.5 h-1.5 overflow-hidden rounded-full">
-        <div
-          className={`${color} h-full transition-all`}
-          style={{ width: `${clamped}%` }}
-        />
+        <div className={`${color} h-full transition-all`} style={{ width: `${clamped}%` }} />
       </div>
     </div>
   );

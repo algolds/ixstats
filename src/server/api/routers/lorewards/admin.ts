@@ -4,7 +4,12 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 import { db } from "~/server/db";
 import * as fs from "fs";
 import { fullSync } from "~/lib/lorewards-sync";

@@ -33,8 +33,8 @@ function bboxToZoom(bbox: BoundingBox | null | undefined, viewportSize = 600): n
   // Mercator: world width in pixels = 256 * 2^zoom.
   // 1 deg lng ≈ 1 at equator (cos compensation for typical country latitudes
   // is small enough to ignore for the initial-view heuristic).
-  const zoomLng = Math.log2((viewportSize * 0.7) / (256 * lngSpan / 360));
-  const zoomLat = Math.log2((viewportSize * 0.7) / (256 * latSpan / 180));
+  const zoomLng = Math.log2((viewportSize * 0.7) / ((256 * lngSpan) / 360));
+  const zoomLat = Math.log2((viewportSize * 0.7) / ((256 * latSpan) / 180));
   const z = Math.min(zoomLng, zoomLat);
   return Math.max(1.5, Math.min(8, Math.round(z * 10) / 10));
 }
@@ -75,7 +75,9 @@ export const GeographyMap = React.memo(function GeographyMap({
   const initialZoom = useMemo(() => bboxToZoom(boundingBox), [boundingBox]);
 
   return (
-    <div className={`border-border bg-card/40 relative overflow-hidden rounded-lg border ${height} ${className}`}>
+    <div
+      className={`border-border bg-card/40 relative overflow-hidden rounded-lg border ${height} ${className}`}
+    >
       <Suspense
         fallback={
           <div className="flex h-full w-full items-center justify-center">
@@ -84,7 +86,14 @@ export const GeographyMap = React.memo(function GeographyMap({
         }
       >
         <MapContainer
-          initialLayers={["background", "altitudes", "rivers", "lakes", "political", "country_labels"]}
+          initialLayers={[
+            "background",
+            "altitudes",
+            "rivers",
+            "lakes",
+            "political",
+            "country_labels",
+          ]}
           selectedCountryId={countryId}
           initialCountryId={countryId}
           onCountrySelect={(c: SelectedCountry | null) => {

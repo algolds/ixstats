@@ -118,13 +118,6 @@ const STORY_CATEGORIES = [
   { value: "disaster", label: "Disaster" },
 ];
 
-const PAINT_MODES = [
-  { value: "population", label: "Population" },
-  { value: "development", label: "Development" },
-  { value: "resources", label: "Resources" },
-  { value: "wiki", label: "Wiki Coverage" },
-];
-
 const SUGGESTED_LABEL_COLORS = [
   { name: "Dark Slate", hex: "#0f172a" },
   { name: "Ocean Blue", hex: "#1a5276" },
