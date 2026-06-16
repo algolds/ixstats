@@ -30,6 +30,7 @@ import {
   Gauge,
   Heart,
   Scale,
+  Flame,
 } from "lucide-react";
 import type { FeatureCollection } from "geojson";
 import type {
@@ -177,12 +178,27 @@ const TRADE_BALANCE_LEGEND: OverlayLegend = {
   ],
 };
 
+const CANON_DENSITY_LEGEND: OverlayLegend = {
+  type: "gradient",
+  title: "Canon Density — Story Heat",
+  stops: [
+    { color: "#fef9c3", label: "Quiet" },
+    { color: "#fde047", label: "" },
+    { color: "#f97316", label: "Active" },
+    { color: "#dc2626", label: "" },
+    { color: "#7f1d1d", label: "Story-Dense" },
+  ],
+};
+
 // ── renderProps adapters ────────────────────────────────────────────────────
 // Bridge the unified render context to each component's concrete prop shape so
 // IxWorldMap can render every overlay from one loop without rewriting components.
 
 /** ChoroplethOverlay-style fill: data is a FeatureCollection (+ optional metadata). */
-function choroplethRenderProps(colorScale: "wealth" | "population" | "neutral", layerId: string) {
+function choroplethRenderProps(
+  colorScale: "wealth" | "population" | "neutral" | "canon",
+  layerId: string
+) {
   return ({ map, data, visible }: OverlayRenderCtx) => {
     if (!data) return null;
     const fc = data as FeatureCollection & {
@@ -403,6 +419,17 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     component: ChoroplethOverlay,
     renderProps: choroplethRenderProps("neutral", "tradeBalance"),
     legend: TRADE_BALANCE_LEGEND,
+  },
+  canonDensity: {
+    id: "canonDensity",
+    label: "Canon Density",
+    category: "fill",
+    icon: Flame,
+    defaultVisible: false,
+    dataFetcher: (utils: TRPCUtils) => utils.geoCore.getCanonDensity.fetch(),
+    component: ChoroplethOverlay,
+    renderProps: choroplethRenderProps("canon", "canonDensity"),
+    legend: CANON_DENSITY_LEGEND,
   },
 };
 

@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 
-type ColorScale = "wealth" | "population" | "neutral";
+type ColorScale = "wealth" | "population" | "neutral" | "canon";
 
 interface ChoroplethOverlayProps {
   map: MapLibreMap | null;
@@ -80,6 +80,13 @@ const COLOR_SCALES: Record<ColorScale, [number, string][]> = {
     [0, "#dbeafe"],
     [0.5, "#3b82f6"],
     [1, "#1e3a8a"],
+  ],
+  canon: [
+    [0, "#fef9c3"], // yellow-100 (quiet)
+    [0.25, "#fde047"], // yellow-300
+    [0.5, "#f97316"], // orange-500
+    [0.75, "#dc2626"], // red-600
+    [1, "#7f1d1d"], // red-900 (story-dense)
   ],
 };
 
