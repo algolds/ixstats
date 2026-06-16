@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Building2, Pin, Save, Loader2, TrendingUp, RefreshCw, BarChart3 } from "lucide-react";
+import { MapPin, Building2, Pin, Save, Loader2, TrendingUp, RefreshCw, BarChart3, Tag } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useCountryData } from "./primitives";
-import { SectionShell } from "./primitives";
+import { SectionShell, SearchableList } from "./primitives";
 import { GeographyMap } from "./GeographyMap";
 import { GeographySidebarWidget } from "./sidebar-widgets/GeographySidebarWidget";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
@@ -66,13 +66,24 @@ export function GeographyContent({
     );
   }
 
-  const { cities, subdivisions, pois, rollups, country: countryData } = bundle;
+  const { cities, subdivisions, pois, rollups, country: countryData, centroid, boundingBox } = bundle;
 
   return (
-    <div className="space-y-4">
-      {/* Sidebar-style context widget (stats + activity) */}
-      <GeographySidebarWidget countryId={countryId} />
-
+    <SectionShell
+      section="geography"
+      activeSection={activeSection}
+      onNavigate={onNavigate}
+      contextWidget={<GeographySidebarWidget countryId={countryId} />}
+      hero={
+        <div className="border-border bg-card/40 relative h-72 overflow-hidden rounded-xl border sm:h-96">
+          <GeographyMap
+            countryId={countryId}
+            centroid={centroid ?? null}
+            boundingBox={(boundingBox as [number, number, number, number] | null) ?? null}
+          />
+        </div>
+      }
+    >
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-2">
         <div className="border-border bg-card/40 rounded-lg border p-2">
@@ -98,9 +109,6 @@ export function GeographyContent({
         </div>
       </div>
 
-      {/* P-E Tier-0 embed — shared MapContainer focused on the user's country */}
-      <GeographyMap countryId={countryId} />
-
       {/* Rollup + reconciliation (P-D) */}
       {rollups && (
         <RollupSummary
@@ -114,45 +122,48 @@ export function GeographyContent({
       )}
 
       {/* Cities editor */}
-      {cities.length > 0 && (
-        <div>
-          <h3 className="text-foreground mb-2 text-sm font-semibold">Cities</h3>
-          <div className="space-y-2">
-            {cities.map((city: any) => (
-              <CityEditor
-                key={city.id}
-                city={city}
-                countryId={countryId}
-                onSaved={() => refetch()}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <SearchableList
+        title="Cities"
+        icon={<Building2 className="text-muted-foreground h-3.5 w-3.5" />}
+        accent={{ badge: "bg-blue-600/20 text-blue-500", ring: "ring-blue-500/30" }}
+        items={cities}
+        searchKeys={["name", "type", "mayorName", "specialization"]}
+        searchPlaceholder="Search cities, mayors, specializations…"
+        emptyMessage="No cities yet. Use the map editor to place some."
+        noMatchMessage="No cities match your search."
+        renderItem={(city) => (
+          <CityEditor city={city} countryId={countryId} onSaved={() => refetch()} />
+        )}
+      />
 
       {/* Subdivisions editor */}
-      {subdivisions.length > 0 && (
-        <div>
-          <h3 className="text-foreground mb-2 text-sm font-semibold">Subdivisions</h3>
-          <div className="space-y-2">
-            {subdivisions.map((sub: any) => (
-              <SubdivisionEditor
-                key={sub.id}
-                subdivision={sub}
-                countryId={countryId}
-                onSaved={() => refetch()}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <SearchableList
+        title="Subdivisions"
+        icon={<MapPin className="text-muted-foreground h-3.5 w-3.5" />}
+        accent={{ badge: "bg-emerald-600/20 text-emerald-500", ring: "ring-emerald-500/30" }}
+        items={subdivisions}
+        searchKeys={["name", "type", "governorName", "governmentType"]}
+        searchPlaceholder="Search subdivisions, governors, government…"
+        emptyMessage="No subdivisions yet. Generate some from the action buttons above."
+        noMatchMessage="No subdivisions match your search."
+        renderItem={(sub) => (
+          <SubdivisionEditor subdivision={sub} countryId={countryId} onSaved={() => refetch()} />
+        )}
+      />
 
-      {cities.length === 0 && subdivisions.length === 0 && (
-        <div className="text-muted-foreground py-6 text-center text-sm">
-          No cities or subdivisions yet. Use the map editor to place some.
-        </div>
-      )}
-    </div>
+      {/* Points of Interest (read-only) */}
+      <SearchableList
+        title="Points of Interest"
+        icon={<Pin className="text-muted-foreground h-3.5 w-3.5" />}
+        accent={{ badge: "bg-amber-600/20 text-amber-500", ring: "ring-amber-500/30" }}
+        items={pois}
+        searchKeys={["name", "category", "description"]}
+        searchPlaceholder="Search POIs, categories…"
+        emptyMessage="No points of interest yet."
+        noMatchMessage="No POIs match your search."
+        renderItem={(poi) => <PoiCard poi={poi} />}
+      />
+    </SectionShell>
   );
 }
 
@@ -533,6 +544,25 @@ function CoverageMeter({ label, percent }: { label: string; percent: number }) {
           style={{ width: `${clamped}%` }}
         />
       </div>
+    </div>
+  );
+}
+
+function PoiCard({ poi }: { poi: any }) {
+  return (
+    <div className="border-border bg-card/30 rounded-lg border p-3">
+      <div className="mb-1 flex items-center gap-1.5">
+        <Tag className="text-muted-foreground h-3 w-3" />
+        <div className="text-foreground text-xs font-semibold">{poi.name}</div>
+      </div>
+      <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
+        <span className="bg-accent/60 rounded px-1.5 py-0.5 font-mono uppercase">
+          {poi.category}
+        </span>
+      </div>
+      {poi.description && (
+        <p className="text-foreground/80 text-[11px] leading-snug">{poi.description}</p>
+      )}
     </div>
   );
 }

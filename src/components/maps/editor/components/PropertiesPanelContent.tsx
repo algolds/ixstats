@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Pencil, Grid3X3 } from "lucide-react";
+import { Pencil, Grid3X3, Paintbrush } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
@@ -33,7 +33,7 @@ interface PropertiesPanelContentProps {
   selectedRouteId: string | null;
   setSelectedRouteId: (id: string | null) => void;
   handleSubmit: any;
-  enterBorderEdit?: () => void;
+  enterBorderEdit?: (initialMode?: "select" | "vertex_edit" | "split" | "merge" | "trace" | "brush") => void;
   isUnclaimed?: boolean;
   createCountryFromShapeAction?: (name: string) => void;
   createCountryFromShapePending?: boolean;
@@ -369,11 +369,20 @@ export function PropertiesPanelContent({
           <div className="border-border/30 space-y-2 border-t pt-3">
             {enterBorderEdit && (
               <button
-                onClick={enterBorderEdit}
+                onClick={() => enterBorderEdit()}
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600/20 px-3 py-2 text-xs font-medium text-blue-500 hover:bg-blue-600/30"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Edit Borders
+              </button>
+            )}
+            {enterBorderEdit && (
+              <button
+                onClick={() => enterBorderEdit("brush")}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600/20 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-600/30"
+              >
+                <Paintbrush className="h-3.5 w-3.5" />
+                Brush Territory…
               </button>
             )}
             {!isUnclaimed && (

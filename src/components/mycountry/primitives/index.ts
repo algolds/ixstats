@@ -82,6 +82,7 @@ export {
 } from "./SectionContextWidget";
 export { InlineWiki } from "./InlineWiki";
 export { PremiumPreviewFrame } from "./PremiumPreviewFrame";
+export { SearchableList, type SearchableListProps } from "./SearchableList";
 
 // Card background image components
 export { CardBackgroundImage, useCardImage, useAllCardImages } from "./CardBackgroundImage";

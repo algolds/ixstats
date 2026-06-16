@@ -746,11 +746,17 @@ export function useMapEditorOverlayState({
     }
   };
 
-  const enterBorderEdit = useCallback(() => {
-    if (!mapSelectedCountry?.featureId) return;
-    borderActions.loadFeature(mapSelectedCountry.featureId);
-    setActiveEditorMode("border_edit");
-  }, [mapSelectedCountry, borderActions]);
+  const enterBorderEdit = useCallback(
+    (initialMode?: "select" | "vertex_edit" | "split" | "merge" | "trace" | "brush") => {
+      if (!mapSelectedCountry?.featureId) return;
+      borderActions.loadFeature(mapSelectedCountry.featureId);
+      setActiveEditorMode("border_edit");
+      if (initialMode) {
+        borderActions.setMode(initialMode);
+      }
+    },
+    [mapSelectedCountry, borderActions]
+  );
 
   const handleSplitConfirm = useCallback(
     async (nameA: string, nameB: string) => {
