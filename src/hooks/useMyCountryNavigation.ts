@@ -55,7 +55,8 @@ export function useMyCountryNavigation(): UseMyCountryNavigationResult {
   // Handle URL hash navigation
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace("#", "");
+      let hash = window.location.hash.replace("#", "");
+      if (hash === "labor") hash = "economy"; // Labor is now a sub-view of Economy
       if (hash && VALID_TABS.includes(hash)) {
         setActiveTab(hash);
       }

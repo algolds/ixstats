@@ -2,6 +2,7 @@ export { MyCountryTabsList } from "./MyCountryTabsList";
 export { OverviewTab } from "./OverviewTab";
 export { EconomyTab } from "./EconomyTab";
 export { LaborTab } from "./LaborTab";
+export { EconomyLaborTab } from "./EconomyLaborTab";
 export { GovernmentTab } from "./GovernmentTab";
 export { GeographyTab } from "./GeographyTab";
 export { WikiSectionRow } from "./WikiSectionRow";
