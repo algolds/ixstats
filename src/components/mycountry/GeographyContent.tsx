@@ -5,7 +5,7 @@ import { MapPin, Building2, Pin, Save, Loader2, Tag } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useCountryData } from "./primitives";
 import { SearchableList } from "./primitives";
-import { GeographyMap } from "./GeographyMap";
+import { CountryWireframe } from "./CountryWireframe";
 import { RollupSettingsModal } from "./RollupSettingsModal";
 import { PopulateFromWikiButton } from "./PopulateFromWikiButton";
 import { GeoCompliancePanel } from "./GeoCompliancePanel";
@@ -57,18 +57,16 @@ export function GeographyContent() {
     pois,
     rollups,
     country: countryData,
-    centroid,
-    boundingBox,
+    geometry,
   } = bundle;
 
   return (
     <div className="space-y-4">
-      {/* Flat-projection, country-locked preview map */}
+      {/* Wireframe outline preview */}
       <div className="border-border bg-card/40 relative h-72 overflow-hidden rounded-xl border sm:h-96">
-        <GeographyMap
-          countryId={countryId}
-          centroid={centroid ?? null}
-          boundingBox={(boundingBox as [number, number, number, number] | null) ?? null}
+        <CountryWireframe
+          geometry={(geometry as import("geojson").Geometry | null) ?? null}
+          cities={cities}
         />
       </div>
 
