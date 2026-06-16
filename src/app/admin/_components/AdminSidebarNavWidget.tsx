@@ -27,6 +27,7 @@ import {
   Terminal,
   Trophy,
   Search,
+  Newspaper,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
@@ -118,6 +119,14 @@ const NAV_GROUPS: NavGroup[] = [
         description: "Events & live interventions",
         activeColor: "text-purple-500 dark:text-purple-400 border-l-purple-500",
         section: "storyteller",
+      },
+      {
+        label: "National Issues",
+        href: "/admin/national-issues",
+        icon: Newspaper,
+        description: "Issue templates & DM injection",
+        activeColor: "text-rose-500 dark:text-rose-400 border-l-rose-500",
+        section: "national-issues",
       },
       {
         label: "Realms™",

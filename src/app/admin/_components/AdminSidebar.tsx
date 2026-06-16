@@ -25,6 +25,7 @@ import {
   Vote,
   Coins,
   Terminal,
+  Newspaper,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -56,6 +57,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/storyteller",
     icon: Gamepad2,
     description: "World Events & Simulation",
+  },
+  {
+    label: "National Issues",
+    href: "/admin/national-issues",
+    icon: Newspaper,
+    description: "Issue Templates & DM Injection",
   },
   {
     label: "Countries",

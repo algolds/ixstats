@@ -12,6 +12,8 @@ import {
   Handle,
   Position,
   type NodeProps,
+  type Node,
+  type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -888,8 +890,8 @@ export function CountryInspector() {
     return { nodes, edges };
   }, [calculation, countryData, yearsElapsed]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   useEffect(() => {
     if (flowData.nodes.length > 0) {

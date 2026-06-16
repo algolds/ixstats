@@ -74,6 +74,11 @@ const PollsPanel = dynamic(() => import("../polls/PollsPanel").then((m) => m.def
   ssr: false,
 });
 
+const NationalIssuesPanel = dynamic(
+  () => import("../national-issues/page").then((m) => m.default),
+  { loading: Loader, ssr: false }
+);
+
 const WorldStudioPanel = dynamic(() => import("../maps/WorldStudioPanel").then((m) => m.default), {
   loading: Loader,
   ssr: false,
@@ -196,6 +201,8 @@ export function AdminRouter() {
         );
       case "reference-data":
         return <ReferenceDataPanel />;
+      case "national-issues":
+        return <NationalIssuesPanel />;
 
       // Users
       case "user-management":
