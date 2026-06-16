@@ -13,6 +13,7 @@ import {
   ToggleRight,
   BarChart3,
   RefreshCw,
+  Send,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -63,6 +64,12 @@ export default function NationalIssuesAdminPage() {
   } | null>(null);
   const [forceGenCountryId, setForceGenCountryId] = useState("");
   const [forceGenTemplateId, setForceGenTemplateId] = useState("");
+  const [injectScope, setInjectScope] = useState<"country" | "region" | "continent" | "all">(
+    "country"
+  );
+  const [injectTarget, setInjectTarget] = useState("");
+  const [injectTemplateId, setInjectTemplateId] = useState("");
+  const [injectLabel, setInjectLabel] = useState("");
   const [showStats, setShowStats] = useState(false);
 
   // Fetch templates
@@ -106,6 +113,7 @@ export default function NationalIssuesAdminPage() {
   });
 
   const forceGenerate = api.nationalIssues.forceGenerate.useMutation();
+  const injectEvent = api.nationalIssues.injectEvent.useMutation();
 
   const templates = templatesData?.templates ?? [];
 
@@ -225,6 +233,123 @@ export default function NationalIssuesAdminPage() {
             <p className="mt-2 text-xs text-green-400">
               Issue created: {forceGenerate.data.issueId}
             </p>
+          )}
+        </div>
+
+        {/* Inject Event Panel */}
+        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+          <h3 className="mb-2 text-sm font-semibold">Inject DM Event</h3>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="text-muted-foreground text-xs">Template</label>
+              <Select value={injectTemplateId} onValueChange={setInjectTemplateId}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.slug}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-32">
+              <label className="text-muted-foreground text-xs">Scope</label>
+              <Select
+                value={injectScope}
+                onValueChange={(v) => {
+                  setInjectScope(v as typeof injectScope);
+                  setInjectTarget("");
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="country">Country</SelectItem>
+                  <SelectItem value="region">Region</SelectItem>
+                  <SelectItem value="continent">Continent</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {injectScope === "country" && (
+              <div className="flex-1">
+                <label className="text-muted-foreground text-xs">Country</label>
+                <Select value={injectTarget} onValueChange={setInjectTarget}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select country..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries?.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {(injectScope === "region" || injectScope === "continent") && (
+              <div className="flex-1">
+                <label className="text-muted-foreground text-xs">
+                  {injectScope === "region" ? "Region" : "Continent"}
+                </label>
+                <Input
+                  value={injectTarget}
+                  onChange={(e) => setInjectTarget(e.target.value)}
+                  placeholder={injectScope === "region" ? "e.g. Europe" : "e.g. Asia"}
+                  className="h-8 text-xs"
+                />
+              </div>
+            )}
+            <div className="flex-1">
+              <label className="text-muted-foreground text-xs">Label (optional)</label>
+              <Input
+                value={injectLabel}
+                onChange={(e) => setInjectLabel(e.target.value)}
+                placeholder="e.g. Spring Festival arc"
+                className="h-8 text-xs"
+                maxLength={100}
+              />
+            </div>
+            <Button
+              size="sm"
+              className="h-8"
+              disabled={
+                !injectTemplateId ||
+                (injectScope !== "all" && !injectTarget) ||
+                injectEvent.isPending
+              }
+              onClick={() => {
+                const target =
+                  injectScope === "country"
+                    ? { scope: "country" as const, countryId: injectTarget }
+                    : injectScope === "region"
+                      ? { scope: "region" as const, region: injectTarget }
+                      : injectScope === "continent"
+                        ? { scope: "continent" as const, continent: injectTarget }
+                        : { scope: "all" as const };
+                injectEvent.mutate({
+                  templateId: injectTemplateId,
+                  target,
+                  label: injectLabel || undefined,
+                });
+              }}
+            >
+              <Send className="mr-1 h-3 w-3" />
+              {injectEvent.isPending ? "..." : "Inject"}
+            </Button>
+          </div>
+          {injectEvent.data && (
+            <p className="mt-2 text-xs text-green-400">
+              Injected {injectEvent.data.created}/{injectEvent.data.requested} issues
+            </p>
+          )}
+          {injectEvent.error && (
+            <p className="mt-2 text-xs text-red-400">{injectEvent.error.message}</p>
           )}
         </div>
 

@@ -14,6 +14,8 @@ import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues-engine";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
+const DM_EVENT_TAG = "DM event";
+const MAX_BROADCAST = 100; // safety cap on a single injection
 
 /** Ensures ~18 nations each have one force-generated showcase issue for the guest splash (idempotent per country). */
 // eslint-disable-next-line unused-imports/no-unused-vars
@@ -280,6 +282,76 @@ export const nationalIssuesTemplatesRouter = createTRPCRouter({
         where: { id: input.id },
         data: { isActive: input.isActive },
       });
+    }),
+
+  /**
+   * Inject a narrative event onto a country, region, continent, or all countries.
+   * Bypasses trigger conditions; tags created issues for auditability.
+   */
+  injectEvent: adminProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        target: z.discriminatedUnion("scope", [
+          z.object({ scope: z.literal("country"), countryId: z.string() }),
+          z.object({ scope: z.literal("region"), region: z.string() }),
+          z.object({ scope: z.literal("continent"), continent: z.string() }),
+          z.object({ scope: z.literal("all") }),
+        ]),
+        label: z.string().max(100).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const template = await ctx.db.nationalIssueTemplate.findUnique({
+        where: { id: input.templateId },
+        select: { id: true, slug: true },
+      });
+      if (!template) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
+      }
+
+      let countryIds: string[];
+      if (input.target.scope === "country") {
+        countryIds = [input.target.countryId];
+      } else {
+        const where =
+          input.target.scope === "region"
+            ? { region: input.target.region }
+            : input.target.scope === "continent"
+              ? { continent: input.target.continent }
+              : {};
+        const countries = await ctx.db.country.findMany({ where, select: { id: true } });
+        countryIds = countries.map((c) => c.id);
+      }
+
+      if (countryIds.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No countries match the target" });
+      }
+      if (countryIds.length > MAX_BROADCAST) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Target matches ${countryIds.length} countries (max ${MAX_BROADCAST} per injection)`,
+        });
+      }
+
+      const tag = `${DM_EVENT_TAG}: ${input.label ?? template.slug} [by ${ctx.auth!.userId}]`;
+      const issueIds: string[] = [];
+      for (const countryId of countryIds) {
+        const issueId = await NationalIssuesEngine.forceGenerate(
+          input.templateId,
+          countryId,
+          ctx.db as any
+        );
+        if (issueId) {
+          await ctx.db.nationalIssue.update({
+            where: { id: issueId },
+            data: { triggerReason: tag },
+          });
+          issueIds.push(issueId);
+        }
+      }
+
+      return { created: issueIds.length, requested: countryIds.length, issueIds };
     }),
 
   /**
