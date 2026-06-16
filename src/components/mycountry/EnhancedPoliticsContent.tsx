@@ -14,6 +14,7 @@ import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { PoliticsSidebarWidget } from "./sidebar-widgets/PoliticsSidebarWidget";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
 import { PoliticsWarRoom } from "~/components/executive/politics/PoliticsWarRoom";
+import { CabinetPanel } from "~/components/executive/politics/CabinetPanel";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface EnhancedPoliticsContentProps {
@@ -123,6 +124,9 @@ export function EnhancedPoliticsContent({
 
       {/* War Room — 3-panel command center */}
       <PoliticsWarRoom countryId={country.id} />
+
+      {/* Cabinet staffing panel */}
+      <CabinetPanel countryId={country.id} />
 
       {/* Wiki woven inline */}
       <InlineWiki context="politics" accent="indigo" maxSections={1} />
