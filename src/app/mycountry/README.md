@@ -42,7 +42,6 @@ MyCountry uses the single-page router pattern found across the application:
 - Defense: `api.unifiedIntelligence.getModules`, `api.security.getThreatStatus`
 - Elections: `api.elections.getElections`, `api.elections.simulateElection`
 - National Issues: `api.nationalIssues.getMyIssues`, `api.nationalIssues.respond`
-- Executive Actions: `api.mycountry.getExecutiveActions` (lists 9 available actions with cooldown status), `api.mycountry.executeAction` (applies real StorytellerEffect and generates narrative output)
 - News Feed: `api.mycountry.getNewsFeed` (surfaces narrative output from executive actions, government effects, and diplomatic events)
 - Government Components: `api.government.getComponents` (56 atomic components now affect game state via `src/lib/government-component-effects.ts` — political metrics and economic StorytellerEffects)
 

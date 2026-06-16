@@ -9,16 +9,12 @@
  *                 (country data, national summary, achievements, rankings, milestones)
  *  - intelligence: ongoing monitoring and vitality tracking (intelligence feed + vitality
  *                  snapshot updates with notification hooks)
- *  - actions:     executive action lifecycle (listing available actions + executing them
- *                 with audit logging and cache invalidation)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { myCountryDashboardRouter } from "./dashboard";
 import { myCountryIntelligenceRouter } from "./intelligence";
-import { myCountryActionsRouter } from "./actions";
 
 export const myCountryRouter = mergeRouters(
   myCountryDashboardRouter,
-  myCountryIntelligenceRouter,
-  myCountryActionsRouter
+  myCountryIntelligenceRouter
 );
