@@ -9,6 +9,52 @@ import {
   type HealthInput,
 } from "~/lib/overlay-metrics";
 
+/**
+ * Weighted canon sources used by the Canon Density overlay. Each source is
+ * counted once per country (via Prisma `groupBy`) and multiplied by its weight.
+ */
+const CANON_SOURCE_WEIGHTS = {
+  storytellerEffect: 1,
+  diplomaticEvent: 1,
+  resolvedNationalIssue: 1,
+  militaryConflict: 2,
+  storyPin: 0.5,
+} as const;
+
+type CanonSourceName = keyof typeof CANON_SOURCE_WEIGHTS;
+
+/**
+ * Merge per-source per-country counts into a single weighted score map.
+ * Countries with no canon activity get a score of 0.
+ */
+export function computeCanonDensityScores(
+  countryIds: string[],
+  sourceCounts: Record<CanonSourceName, Record<string, number>>
+): Map<string, number> {
+  const scores = new Map<string, number>();
+  for (const id of countryIds) {
+    scores.set(id, 0);
+  }
+
+  for (const [source, counts] of Object.entries(sourceCounts)) {
+    const weight = CANON_SOURCE_WEIGHTS[source as CanonSourceName];
+    for (const [countryId, count] of Object.entries(counts)) {
+      const current = scores.get(countryId) ?? 0;
+      scores.set(countryId, current + count * weight);
+    }
+  }
+
+  return scores;
+}
+
+function normalizeCountMap(records: { id: string; _count: number }[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const r of records) {
+    map[r.id] = r._count;
+  }
+  return map;
+}
+
 export const overlayProcedures = {
   getRegionalChoropleth: cachedPublicProcedure
     .input(
@@ -196,6 +242,131 @@ export const overlayProcedures = {
         },
       };
     }),
+
+  /**
+   * Canon Density — weighted, deterministic story-activity heatmap.
+   *
+   * Counts canon events per country using Prisma `groupBy`, then combines them
+   * with source-specific weights. The returned `value` is a percentile rank
+   * (0–1) so colors distribute evenly across the active range.
+   */
+  getCanonDensity: cachedPublicProcedure.query(async ({ ctx }) => {
+    const countries = await ctx.db.country.findMany({
+      where: { geometry: { not: null } as any },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        geometry: true,
+        centroid: true,
+        continent: true,
+        region: true,
+      },
+    });
+
+    const countryIds = countries.map((c) => c.id);
+
+    // Per-source groupBy counts (single round-trip per source, no N+1).
+    const [
+      storytellerEffects,
+      diplomaticEvents,
+      resolvedIssues,
+      conflictsAsInitiator,
+      conflictsAsDefender,
+      storyPins,
+    ] = await Promise.all([
+      ctx.db.storytellerEffect.groupBy({
+        by: ["countryId"],
+        where: { countryId: { not: null } },
+        _count: { _all: true },
+      }),
+      ctx.db.diplomaticEvent.groupBy({
+        by: ["country1Id"],
+        _count: { _all: true },
+      }),
+      ctx.db.nationalIssue.groupBy({
+        by: ["countryId"],
+        where: { status: { in: ["responded", "auto_resolved"] } },
+        _count: { _all: true },
+      }),
+      ctx.db.militaryConflict.groupBy({
+        by: ["initiatorId"],
+        _count: { _all: true },
+      }),
+      ctx.db.militaryConflict.groupBy({
+        by: ["defenderId"],
+        _count: { _all: true },
+      }),
+      ctx.db.storyPin.groupBy({
+        by: ["countryId"],
+        where: { status: { not: "rejected" } },
+        _count: { _all: true },
+      }),
+    ]);
+
+    // Aggregate military conflict counts from both sides.
+    const conflictCounts: Record<string, number> = {};
+    for (const side of [conflictsAsInitiator, conflictsAsDefender]) {
+      for (const row of side) {
+        const id = "initiatorId" in row ? row.initiatorId : row.defenderId;
+        conflictCounts[id] = (conflictCounts[id] ?? 0) + row._count._all;
+      }
+    }
+
+    const sourceCounts = {
+      storytellerEffect: normalizeCountMap(
+        // Prisma groupBy by a nullable field still includes the null bucket; filter it out.
+        storytellerEffects
+          .filter((r): r is typeof r & { countryId: string } => r.countryId !== null)
+          .map((r) => ({ id: r.countryId, _count: r._count._all }))
+      ),
+      diplomaticEvent: normalizeCountMap(
+        diplomaticEvents.map((r) => ({ id: r.country1Id, _count: r._count._all }))
+      ),
+      resolvedNationalIssue: normalizeCountMap(
+        resolvedIssues.map((r) => ({ id: r.countryId, _count: r._count._all }))
+      ),
+      militaryConflict: conflictCounts,
+      storyPin: normalizeCountMap(
+        storyPins.map((r) => ({ id: r.countryId, _count: r._count._all }))
+      ),
+    };
+
+    const scores = computeCanonDensityScores(countryIds, sourceCounts);
+
+    // Percentile rank across all countries with geometry.
+    const sorted = [...countries].sort((a, b) => (scores.get(a.id) ?? 0) - (scores.get(b.id) ?? 0));
+    const rankMap = new Map<string, number>();
+    for (let i = 0; i < sorted.length; i++) {
+      rankMap.set(sorted[i]!.id, sorted.length > 1 ? i / (sorted.length - 1) : 0.5);
+    }
+
+    const maxScore = Math.max(1, ...Array.from(scores.values()));
+
+    return {
+      type: "FeatureCollection" as const,
+      features: countries.map((c) => ({
+        type: "Feature" as const,
+        geometry: c.geometry as unknown as import("geojson").Geometry,
+        properties: {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          value: rankMap.get(c.id) ?? 0,
+          rawValue: scores.get(c.id) ?? 0,
+          metric: "canonDensity",
+          continent: c.continent,
+          region: c.region,
+        },
+      })),
+      metadata: {
+        metric: "canonDensity",
+        minVal: 0,
+        maxVal: maxScore,
+        count: countries.length,
+      },
+    };
+  }),
 
   /**
    * 4.3 — Crisis Risk Map: Return per-country risk scores as a GeoJSON

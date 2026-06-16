@@ -4,9 +4,17 @@ jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "te
 jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
-import { overlayProcedures } from "../overlays";
+import { overlayProcedures, computeCanonDensityScores } from "../overlays";
 
 type MockFn = jest.Mock<any, any>;
+
+function makeGroupByResult(field: string, id: string, count: number) {
+  return { [field]: id, _count: { _all: count } };
+}
+
+function makeConflictRow(role: "initiatorId" | "defenderId", id: string, count: number) {
+  return { [role]: id, _count: { _all: count } };
+}
 
 function makeCountry(id: string, overrides: Record<string, unknown> = {}) {
   return {
@@ -39,6 +47,21 @@ const mockDb = {
   },
   bilateralTrade: {
     findMany: jest.fn() as MockFn,
+  },
+  storytellerEffect: {
+    groupBy: jest.fn() as MockFn,
+  },
+  diplomaticEvent: {
+    groupBy: jest.fn() as MockFn,
+  },
+  nationalIssue: {
+    groupBy: jest.fn() as MockFn,
+  },
+  militaryConflict: {
+    groupBy: jest.fn() as MockFn,
+  },
+  storyPin: {
+    groupBy: jest.fn() as MockFn,
   },
 };
 
@@ -154,5 +177,78 @@ describe("getRegionalChoropleth", () => {
     expect(result.features[0]?.properties.value).toBeGreaterThan(
       result.features[1]?.properties.value ?? 0
     );
+  });
+});
+
+describe("computeCanonDensityScores", () => {
+  it("applies source weights and defaults missing countries to 0", () => {
+    const scores = computeCanonDensityScores(["A", "B", "C"], {
+      storytellerEffect: { A: 2, B: 1 },
+      diplomaticEvent: { B: 3 },
+      resolvedNationalIssue: {},
+      militaryConflict: { A: 1, C: 2 },
+      storyPin: { C: 4 },
+    });
+
+    expect(scores.get("A")).toBe(2 * 1 + 1 * 2); // 4
+    expect(scores.get("B")).toBe(1 * 1 + 3 * 1); // 4
+    expect(scores.get("C")).toBe(2 * 2 + 4 * 0.5); // 6
+  });
+
+  it("returns zero for all countries when no sources have counts", () => {
+    const scores = computeCanonDensityScores(["A", "B"], {
+      storytellerEffect: {},
+      diplomaticEvent: {},
+      resolvedNationalIssue: {},
+      militaryConflict: {},
+      storyPin: {},
+    });
+
+    expect(scores.get("A")).toBe(0);
+    expect(scores.get("B")).toBe(0);
+  });
+});
+
+describe("getCanonDensity", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns weighted scores and percentile ranks per country", async () => {
+    mockDb.country.findMany.mockResolvedValue([
+      makeCountry("A"),
+      makeCountry("B"),
+      makeCountry("C"),
+    ]);
+
+    mockDb.storytellerEffect.groupBy.mockResolvedValue([
+      makeGroupByResult("countryId", "A", 2),
+      makeGroupByResult("countryId", "B", 1),
+    ]);
+    mockDb.diplomaticEvent.groupBy.mockResolvedValue([makeGroupByResult("country1Id", "B", 3)]);
+    mockDb.nationalIssue.groupBy.mockResolvedValue([]);
+    mockDb.militaryConflict.groupBy
+      .mockResolvedValueOnce([makeConflictRow("initiatorId", "A", 1)])
+      .mockResolvedValueOnce([makeConflictRow("defenderId", "C", 2)]);
+    mockDb.storyPin.groupBy.mockResolvedValue([makeGroupByResult("countryId", "C", 4)]);
+
+    const caller = createCallerFactory(testRouter)(baseContext);
+    const result = (await caller.getCanonDensity()) as {
+      features: { properties: { id: string; rawValue: number; value: number } }[];
+      metadata: { maxVal: number };
+    };
+
+    const byId = new Map(result.features.map((f) => [f.properties.id, f.properties]));
+
+    expect(result.features).toHaveLength(3);
+    expect(byId.get("A")?.rawValue).toBe(4);
+    expect(byId.get("B")?.rawValue).toBe(4);
+    expect(byId.get("C")?.rawValue).toBe(6);
+
+    // C is the highest scorer and should outrank A and B.
+    expect(byId.get("C")?.value).toBeGreaterThan(byId.get("A")?.value ?? 1);
+    expect(byId.get("C")?.value).toBeGreaterThan(byId.get("B")?.value ?? 1);
+
+    expect(result.metadata.maxVal).toBe(6);
   });
 });
