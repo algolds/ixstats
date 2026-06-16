@@ -95,12 +95,14 @@ interface MapEditorOverlayProps {
   mapLayers?: MapLayerData[];
   onExit: () => void;
   isWorldMode?: boolean;
+  historicalYear?: number | null;
 }
 
 export default function MapEditorOverlay({
   countryId,
   onExit,
   isWorldMode = false,
+  historicalYear,
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
 
@@ -734,6 +736,7 @@ export default function MapEditorOverlay({
                   visible={layerStates.routes?.visible ?? true}
                   selectedRouteId={selectedRouteId}
                   onRouteClick={handleRouteClick}
+                  maxBuiltYear={historicalYear}
                 />
               )}
             </EditorErrorBoundary>
