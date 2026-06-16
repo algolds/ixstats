@@ -14,55 +14,8 @@ import {
   type CityNode,
   type RouteType,
 } from "~/lib/transport-generator";
+import { calculateRouteCosts } from "~/lib/transport-costs";
 import { syncResourcePoolModifiers } from "../geo/features";
-
-function calculateRouteCosts(routeType: string, lengthKm: number, terrainDifficulty: number) {
-  let baseCostPerKm = 0.01; // default road
-  switch (routeType) {
-    case "rail":
-      baseCostPerKm = 0.04;
-      break;
-    case "highway":
-      baseCostPerKm = 0.05;
-      break;
-    case "shipping_lane":
-      baseCostPerKm = 0.001;
-      break;
-    case "canal":
-      baseCostPerKm = 0.1;
-      break;
-    case "road":
-      baseCostPerKm = 0.01;
-      break;
-    case "air_corridor":
-      baseCostPerKm = 0.08;
-      break;
-    case "ferry":
-      baseCostPerKm = 0.02;
-      break;
-    case "pipeline":
-      baseCostPerKm = 0.03;
-      break;
-    case "power_grid":
-      baseCostPerKm = 0.02;
-      break;
-    case "fiber":
-      baseCostPerKm = 0.005;
-      break;
-    case "military_supply":
-      baseCostPerKm = 0.02;
-      break;
-    case "military_naval":
-      baseCostPerKm = 0.005;
-      break;
-  }
-  const costBillion = lengthKm * baseCostPerKm * (1 + terrainDifficulty * 1.5);
-  const maintenanceCost = costBillion * 0.02; // 2% annual maintenance
-  return {
-    costBillion: Math.round(costBillion * 1000) / 1000,
-    maintenanceCost: Math.round(maintenanceCost * 1000) / 1000,
-  };
-}
 
 export async function syncTransportEconomicModifiers(db: any, countryId: string) {
   const routes = await db.transportRoute.findMany({
@@ -284,11 +237,11 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       const hubCityIds = new Set<string>();
 
       for (const route of generated) {
-        const { costBillion, maintenanceCost } = calculateRouteCosts(
-          route.routeType,
-          route.lengthKm,
-          route.terrainDifficulty
-        );
+        const { costBillion, maintenanceCost } = calculateRouteCosts({
+          routeType: route.routeType,
+          lengthKm: route.lengthKm,
+          terrainDifficulty: route.terrainDifficulty,
+        });
         await ctx.db.transportRoute.create({
           data: {
             countryId: input.countryId,
@@ -381,11 +334,11 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       });
       const terrainDifficulty = geoProfile?.terrainRoughness ?? 0.2;
 
-      const { costBillion, maintenanceCost } = calculateRouteCosts(
-        input.routeType,
-        roundedLength,
-        terrainDifficulty
-      );
+      const { costBillion, maintenanceCost } = calculateRouteCosts({
+        routeType: input.routeType,
+        lengthKm: roundedLength,
+        terrainDifficulty,
+      });
 
       const route = await ctx.db.transportRoute.create({
         data: {
@@ -454,7 +407,11 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         const type = (updates.routeType as string) || route.routeType;
         const length = route.lengthKm ?? 0;
         const diff = route.terrainDifficulty ?? 0.2;
-        const { costBillion, maintenanceCost } = calculateRouteCosts(type, length, diff);
+        const { costBillion, maintenanceCost } = calculateRouteCosts({
+          routeType: type,
+          lengthKm: length,
+          terrainDifficulty: diff,
+        });
         updates.properties = {
           ...((route.properties as Record<string, any>) || {}),
           ...((updates.properties as Record<string, any>) || {}),
@@ -511,11 +468,11 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       });
       const routeType = route?.routeType ?? "road";
       const existingProps = (route?.properties as Record<string, any>) || {};
-      const { costBillion, maintenanceCost } = calculateRouteCosts(
+      const { costBillion, maintenanceCost } = calculateRouteCosts({
         routeType,
-        roundedLength,
-        terrainDifficulty
-      );
+        lengthKm: roundedLength,
+        terrainDifficulty,
+      });
 
       const updated = await ctx.db.transportRoute.update({
         where: { id: input.id },
