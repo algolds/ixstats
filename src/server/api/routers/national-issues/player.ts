@@ -14,6 +14,7 @@ import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues-engine";
 import { NationalIssuesConsequences } from "~/lib/national-issues-consequences";
 import { notificationAPI } from "~/lib/notification-api";
+import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 
@@ -155,17 +156,20 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      // Trigger evaluation if stale
-      const shouldEval = await NationalIssuesEngine.shouldEvaluate(input.countryId, ctx.db as any);
-      if (shouldEval) {
-        // Run evaluation in background - don't block the query
-        NationalIssuesEngine.evaluateCountry(
-          input.countryId,
-          ctx.db as any,
-          input.domain ? { forceDomain: input.domain } : undefined
-        ).catch((err) => {
-          console.error("[NationalIssues] Background evaluation failed:", err);
-        });
+      // Auto-generation is opt-in (narrative mode is the default). When off, issues
+      // only appear via DM injection (plan 034) or prior generation.
+      if (GAMEPLAY_FLAGS.issuesAutoGenerate) {
+        const shouldEval = await NationalIssuesEngine.shouldEvaluate(input.countryId, ctx.db as any);
+        if (shouldEval) {
+          // Run evaluation in background - don't block the query
+          NationalIssuesEngine.evaluateCountry(
+            input.countryId,
+            ctx.db as any,
+            input.domain ? { forceDomain: input.domain } : undefined
+          ).catch((err) => {
+            console.error("[NationalIssues] Background evaluation failed:", err);
+          });
+        }
       }
 
       // Build where clause
@@ -330,7 +334,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         });
       }
 
-      if (issue.deadlineIxTime) {
+      if (GAMEPLAY_FLAGS.issuesEnforceDeadlines && issue.deadlineIxTime) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Cannot dismiss issues with deadlines",

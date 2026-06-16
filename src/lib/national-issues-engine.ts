@@ -23,6 +23,7 @@
 
 import { IxTime } from "./ixtime";
 import { formatCurrency, formatPopulation } from "./chart-utils";
+import { GAMEPLAY_FLAGS } from "./gameplay-flags";
 import type { PrismaClient } from "@prisma/client";
 
 // ==================== TYPES ====================
@@ -762,6 +763,11 @@ export class NationalIssuesEngine {
   static async autoResolveExpired(
     db: PrismaClient
   ): Promise<{ resolved: number; errors: string[] }> {
+    // In narrative mode deadlines are not enforced; auto-resolution does nothing.
+    if (!GAMEPLAY_FLAGS.issuesEnforceDeadlines) {
+      return { resolved: 0, errors: [] };
+    }
+
     const currentIxTime = IxTime.getCurrentIxTime();
     const errors: string[] = [];
     let resolved = 0;

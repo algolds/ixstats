@@ -12,6 +12,7 @@
  */
 
 import { IxTime } from "./ixtime";
+import { GAMEPLAY_FLAGS } from "./gameplay-flags";
 import {
   NationalIssuesEngine,
   type ResponseOptionTemplate,
@@ -385,6 +386,7 @@ export class NationalIssuesConsequences {
    * Calculate IxCredits reward based on issue severity and resolution type.
    */
   private static calculateIxCredits(issue: any, isAutoResolve: boolean): number {
+    if (!GAMEPLAY_FLAGS.issuesAwardCredits) return 0; // narrative mode: no reward farming
     if (isAutoResolve) return 0; // No reward for inaction
 
     const severityRewards: Record<string, number> = {
