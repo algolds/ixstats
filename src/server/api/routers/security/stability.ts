@@ -14,6 +14,7 @@ import {
 } from "~/lib/stability-formulas";
 
 import { notificationAPI } from "~/lib/notification-api";
+import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 
 // ===========================
 // Input Validation Schemas
@@ -448,7 +449,7 @@ export const securityStabilityRouter = createTRPCRouter({
       // Verify ownership
       const event = await ctx.db.securityEvent.findUnique({
         where: { id: input.id },
-        select: { countryId: true },
+        include: { country: { select: { name: true } } },
       });
 
       if (!event) {
@@ -494,6 +495,14 @@ export const securityStabilityRouter = createTRPCRouter({
           });
         }
       } catch {}
+
+      // Canon news: security/stability event resolved
+      void generateDiplomaticNews(ctx.db as any, event.countryId, "security_event_resolved", {
+        countryName: event.country?.name ?? "A nation",
+        eventType: resolved.eventType,
+        severity: resolved.severity,
+        notes: input.resolutionNotes,
+      });
 
       return resolved;
     }),
