@@ -178,7 +178,7 @@ export function EditorPanel({
   // Auto-switch tabs based on mode (for properties tab)
   useEffect(() => {
     if (userOverrideRef.current) return;
-    if (mode.startsWith("add-") || mode.startsWith("edit-") || mode === "paint") {
+    if (mode.startsWith("add-") || mode.startsWith("edit-")) {
       if (tabs.includes("properties")) {
         setActiveTab("properties");
       }

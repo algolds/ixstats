@@ -23,7 +23,6 @@ import {
   Type,
   Route,
   BookMarked,
-  Paintbrush,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -65,9 +64,6 @@ interface ToolOptionsBarProps {
   // Route
   routeTypes?: string[];
   onRouteTypesChange?: (types: string[]) => void;
-  // Paint
-  paintMode?: string;
-  onPaintModeChange?: (mode: string) => void;
   // Selection
   selectedCount?: number;
   onDuplicate?: () => void;
@@ -389,22 +385,6 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               </button>
             );
           })}
-        </>
-      )}
-
-      {/* ── Paint mode ── */}
-      {mode === "paint" && (
-        <>
-          <ToolLabel icon={Paintbrush} label="Paint" />
-          {PAINT_MODES.map((m) => (
-            <button
-              key={m.value}
-              onClick={() => props.onPaintModeChange?.(m.value)}
-              className={props.paintMode === m.value ? activeBtnClass : btnClass}
-            >
-              {m.label}
-            </button>
-          ))}
         </>
       )}
     </div>

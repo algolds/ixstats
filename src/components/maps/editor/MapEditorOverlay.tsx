@@ -195,8 +195,6 @@ export default function MapEditorOverlay({
     cursorZoom,
     showGrid,
     setShowGrid,
-    paintMapMode,
-    setPaintMapMode,
     hoveredFeature,
     showShortcuts,
     setShowShortcuts,
@@ -215,7 +213,6 @@ export default function MapEditorOverlay({
     transportRouteData,
     selectedRouteId,
     handleRouteClick,
-    paintColors,
     handleSelectFeature,
     handleEditFeature,
     handleDeleteFeature,
@@ -388,8 +385,7 @@ export default function MapEditorOverlay({
             onToggleSelect={editor.toggleSelectId}
             collapseAll={
               editor.mode.startsWith("add-") ||
-              editor.mode.startsWith("edit-") ||
-              editor.mode === "paint"
+              editor.mode.startsWith("edit-")
             }
           />
         }
@@ -458,8 +454,6 @@ export default function MapEditorOverlay({
             onLabelBoldChange={(bold) =>
               editor.setMapLabelForm((f) => ({ ...f, fontWeight: bold ? "bold" : "normal" }))
             }
-            paintMode={paintMapMode}
-            onPaintModeChange={(m) => setPaintMapMode(m as any)}
             selectedCount={editor.selectedIds.size}
             onDelete={
               editor.selectedIds.size > 0
@@ -670,7 +664,6 @@ export default function MapEditorOverlay({
                   worldMapLayers={worldMapLayers}
                   editorVisibleLayers={editorVisibleLayers}
                   showGrid={showGrid}
-                  paintColors={paintColors}
                   routeWaypoints={editor.routeWaypoints}
                   layerVisibility={{
                     regions: layerStates.regions?.visible ?? true,
@@ -714,30 +707,6 @@ export default function MapEditorOverlay({
                     brushRadius={brushRadius}
                     onBrushRadiusChange={setBrushRadius}
                   />
-                </div>
-              )}
-
-              {/* Paint mode legend */}
-              {editor.mode === "paint" && (
-                <div className="border-border bg-card/90 absolute bottom-8 left-3 z-20 rounded-lg border px-3 py-2 shadow-md backdrop-blur-sm">
-                  <div className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wider uppercase">
-                    {paintMapMode === "wiki"
-                      ? "Wiki Coverage"
-                      : paintMapMode.charAt(0).toUpperCase() + paintMapMode.slice(1)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground text-[9px]">Low</span>
-                    <div
-                      className="h-2.5 w-24 rounded-sm"
-                      style={{
-                        background:
-                          paintMapMode === "wiki"
-                            ? "linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%))"
-                            : "linear-gradient(to right, hsl(60,80%,50%), hsl(30,80%,45%), hsl(0,80%,40%))",
-                      }}
-                    />
-                    <span className="text-muted-foreground text-[9px]">High</span>
-                  </div>
                 </div>
               )}
 
@@ -998,8 +967,7 @@ export default function MapEditorOverlay({
             title="Properties"
             isEditMode={
               editor.mode.startsWith("add-") ||
-              editor.mode.startsWith("edit-") ||
-              editor.mode === "paint"
+              editor.mode.startsWith("edit-")
             }
             featureListContent={
               <FeatureList

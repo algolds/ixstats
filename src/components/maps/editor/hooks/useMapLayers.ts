@@ -21,7 +21,6 @@ interface UseMapLayersProps {
   worldMapLayers?: MapLayerData[];
   showGrid?: boolean;
   gridZoomBucket: number;
-  paintColors?: Record<string, string>;
   routeWaypoints?: [number, number][];
 }
 
@@ -37,7 +36,6 @@ export function useMapLayers({
   worldMapLayers,
   showGrid,
   gridZoomBucket,
-  paintColors,
   routeWaypoints,
 }: UseMapLayersProps) {
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
@@ -835,21 +833,10 @@ export function useMapLayers({
     }
   }, [map, isLoaded]);
 
-  // 8. Paint colors matching
+  // 8. Subdivisions fill — kept transparent (paint mode was removed in Plan 024).
   useEffect(() => {
     if (!map || !isLoaded || !map.getLayer("editor-subdivisions-fill")) return;
-
-    if (paintColors && Object.keys(paintColors).length > 0) {
-      const matchExpr: any[] = ["match", ["get", "id"]];
-      for (const [id, color] of Object.entries(paintColors)) {
-        matchExpr.push(id, color);
-      }
-      matchExpr.push("transparent");
-      map.setPaintProperty("editor-subdivisions-fill", "fill-color", matchExpr);
-      map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0.5);
-    } else {
-      map.setPaintProperty("editor-subdivisions-fill", "fill-color", "transparent");
-      map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0);
-    }
-  }, [map, isLoaded, paintColors]);
+    map.setPaintProperty("editor-subdivisions-fill", "fill-color", "transparent");
+    map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0);
+  }, [map, isLoaded]);
 }

@@ -23,7 +23,6 @@ import {
   StoryPinPropertyForm,
   MapLabelPropertyForm,
   TransportPropertyForm,
-  PaintPropertyForm,
 } from "./properties";
 import { SmartPlacement } from "./SmartPlacement";
 
@@ -88,10 +87,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
   if (mode === "view") return null;
 
-  // Self-contained panels for paint and transport modes
-  if (mode === "paint") {
-    return <PaintPropertyForm countryId={countryId} onCancel={onCancel} />;
-  }
+  // Self-contained panels for transport modes
   if (mode === "add-route" || mode === "edit-route") {
     return (
       <TransportPropertyForm

@@ -76,15 +76,14 @@ export function useMapEditorOverlayState({
         "add-subdivision",
         "add-poi",
         "add-route",
-        "add-story-pin",
-        "add-label",
-        "import-provinces",
-        "paint",
-      ];
-    }
-    if (!hasGeometry) {
-      return ["add-city", "add-poi", "add-route", "add-story-pin", "add-label", "paint"];
-    }
+         "add-story-pin",
+         "add-label",
+         "import-provinces",
+       ];
+     }
+     if (!hasGeometry) {
+       return ["add-city", "add-poi", "add-route", "add-story-pin", "add-label"];
+     }
     return [];
   }, [isWorldMode, mapSelectedCountry, hasGeometry]);
 
@@ -549,11 +548,6 @@ export function useMapEditorOverlayState({
   const [cursorCoords, setCursorCoords] = useState<[number, number] | null>(null);
   const [cursorZoom, setCursorZoom] = useState<number | undefined>(undefined);
   const [showGrid, setShowGrid] = useState(false);
-  const [paintMapMode, setPaintMapMode] = useState<
-    "population" | "development" | "resources" | "wiki"
-  >("population");
-  const [paintSelectedRegion, setPaintSelectedRegion] = useState<string | null>(null);
-  const [paintCompareRegion, setPaintCompareRegion] = useState<string | null>(null);
   const [hoveredFeature, setHoveredFeature] = useState<{
     feature: (typeof editor.allFeatures)[number];
     screenPos: { x: number; y: number };
@@ -920,47 +914,6 @@ export function useMapEditorOverlayState({
     [editor]
   );
 
-  const { data: subdivisionStats } = api.geoFeatures.getSubdivisionStats.useQuery(
-    { countryId: activeCountryId ?? "" },
-    { enabled: editor.mode === "paint" && !!activeCountryId, staleTime: 60_000 }
-  );
-
-  const paintColors = useMemo(() => {
-    if (editor.mode !== "paint" || !subdivisionStats || subdivisionStats.length === 0)
-      return undefined;
-
-    const colors: Record<string, string> = {};
-    const stats = subdivisionStats;
-
-    const maxPop = Math.max(1, ...stats.map((s) => s.population ?? 0));
-    const maxDev = Math.max(1, ...stats.map((s) => s.developmentScore));
-    const maxRes = Math.max(1, ...stats.map((s) => s.resourceCount));
-
-    for (const s of stats) {
-      let t = 0;
-      switch (paintMapMode) {
-        case "population":
-          t = (s.population ?? 0) / maxPop;
-          break;
-        case "development":
-          t = s.developmentScore / maxDev;
-          break;
-        case "resources":
-          t = s.resourceCount / maxRes;
-          break;
-        case "wiki":
-          t = s.totalFeatures > 0 ? s.wikiLinked / s.totalFeatures : 0;
-          break;
-      }
-      colors[s.id] =
-        paintMapMode === "wiki"
-          ? `hsl(${Math.round(t * 120)}, 70%, 50%)`
-          : `hsl(${Math.round((1 - t) * 60)}, 80%, ${55 - t * 15}%)`;
-    }
-
-    return colors;
-  }, [editor.mode, subdivisionStats, paintMapMode]);
-
   const [debouncedCoords, setDebouncedCoords] = useState<[number, number] | null>(null);
   useEffect(() => {
     if (!cursorCoords) {
@@ -980,9 +933,7 @@ export function useMapEditorOverlayState({
     (feature: any) => {
       setSelectedRouteId(null);
       editor.setSelectedFeature(feature);
-      if (editor.mode !== "paint") {
-        editor.startEditing(feature);
-      }
+      editor.startEditing(feature);
       expandPropertiesPanel();
       if (mapRef.current) {
         if (feature.coordinates) {
@@ -1135,7 +1086,7 @@ export function useMapEditorOverlayState({
         setCursorCoords([latlng.lng, latlng.lat]);
       }
 
-      if (activeEditorMode !== "view" || (editor.mode !== "view" && editor.mode !== "paint")) {
+      if (activeEditorMode !== "view" || editor.mode !== "view") {
         return;
       }
 
@@ -1292,12 +1243,6 @@ export function useMapEditorOverlayState({
     setCursorZoom,
     showGrid,
     setShowGrid,
-    paintMapMode,
-    setPaintMapMode,
-    paintSelectedRegion,
-    setPaintSelectedRegion,
-    paintCompareRegion,
-    setPaintCompareRegion,
     hoveredFeature,
     setHoveredFeature,
     showShortcuts,
@@ -1338,8 +1283,6 @@ export function useMapEditorOverlayState({
     selectedRouteId,
     setSelectedRouteId,
     handleRouteClick,
-    subdivisionStats,
-    paintColors,
     handleSelectFeature,
     handleEditFeature,
     handleDeleteFeature,

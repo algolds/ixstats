@@ -23,11 +23,10 @@ import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   FileUp,
   Route,
-  Paintbrush,
   BookMarked,
   Type,
 } from "lucide-react";
-import { MousePointerIcon, MapPinIcon, LandmarkIcon, PaintBrushIcon } from "~/components/ui/icons";
+import { MousePointerIcon, MapPinIcon, LandmarkIcon } from "~/components/ui/icons";
 import type { EditorMode } from "~/hooks/useMapEditor";
 
 interface MapEditorToolbarProps {
@@ -55,7 +54,6 @@ const TOOLS: ToolDef[] = [
   { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
   { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 1 },
   { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 1 },
-  { mode: "paint", icon: Paintbrush, label: "Paint", shortcut: "B", group: 3 },
 ];
 
 /** Animated icon overrides for toolbar tools (only where a good visual match exists) */
@@ -65,7 +63,6 @@ const ANIMATED_TOOL_ICONS: Partial<
   view: MousePointerIcon,
   "add-city": MapPinIcon,
   "add-poi": LandmarkIcon,
-  paint: PaintBrushIcon,
 };
 
 export function MapEditorToolbar({

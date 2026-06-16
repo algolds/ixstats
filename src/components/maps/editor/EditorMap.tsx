@@ -82,8 +82,6 @@ interface EditorMapProps {
   showGrid?: boolean;
   /** Called when map zoom changes */
   onZoomChange?: (zoom: number) => void;
-  /** Paint mode: per-subdivision color map (id → hex color) */
-  paintColors?: Record<string, string>;
   /** In-progress route waypoints for visual rendering */
   routeWaypoints?: [number, number][];
   /** Layer visibility state — controls which feature types are rendered */
@@ -116,7 +114,6 @@ const EditorMap = memo(
       editorVisibleLayers,
       showGrid,
       onZoomChange,
-      paintColors,
       routeWaypoints,
       layerVisibility,
       editingRouteId,
@@ -163,7 +160,6 @@ const EditorMap = memo(
       worldMapLayers,
       showGrid,
       gridZoomBucket,
-      paintColors,
       routeWaypoints,
     });
 

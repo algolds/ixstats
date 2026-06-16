@@ -4,4 +4,3 @@ export { POIPropertyForm } from "./POIPropertyForm";
 export { StoryPinPropertyForm } from "./StoryPinPropertyForm";
 export { MapLabelPropertyForm } from "./MapLabelPropertyForm";
 export { TransportPropertyForm } from "./TransportPropertyForm";
-export { PaintPropertyForm } from "./PaintPropertyForm";
