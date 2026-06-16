@@ -149,6 +149,8 @@ interface TransportOverlayProps {
   animateFlows?: boolean;
   /** Route type filter — only show these types (show all if empty/undefined) */
   visibleRouteTypes?: string[];
+  /** Hide routes built after this game year; null/undefined = show all */
+  maxBuiltYear?: number | null;
 }
 
 export function TransportOverlay({
@@ -161,12 +163,13 @@ export function TransportOverlay({
   selectedRouteId,
   animateFlows = false,
   visibleRouteTypes,
+  maxBuiltYear,
 }: TransportOverlayProps) {
   const animFrameRef = useRef<number>(0);
   const dashOffsetRef = useRef(0);
 
   // ── Filtered data based on route type visibility ──
-  const filteredData = useFilteredRouteData(routeData, visibleRouteTypes);
+  const filteredData = useFilteredRouteData(routeData, visibleRouteTypes, maxBuiltYear);
 
   // ── Animate dash offset for flow effect ──
   const animateRef = useRef(animateFlows);
@@ -497,15 +500,22 @@ export function TransportOverlay({
 
 function useFilteredRouteData(
   data: FeatureCollection,
-  visibleTypes: string[] | undefined
+  visibleTypes: string[] | undefined,
+  maxBuiltYear?: number | null
 ): FeatureCollection {
-  if (!visibleTypes || visibleTypes.length === 0) return data;
-
-  const typeSet = new Set(visibleTypes);
+  const typeSet =
+    visibleTypes && visibleTypes.length > 0 ? new Set(visibleTypes) : null;
+  if (!typeSet && (maxBuiltYear === undefined || maxBuiltYear === null)) return data;
   return {
     type: "FeatureCollection",
-    features: data.features.filter(
-      (f) => f.properties && typeSet.has(f.properties.routeType as string)
-    ),
+    features: data.features.filter((f) => {
+      if (!f.properties) return false;
+      if (typeSet && !typeSet.has(f.properties.routeType as string)) return false;
+      if (maxBuiltYear !== undefined && maxBuiltYear !== null) {
+        const by = f.properties.builtYear;
+        if (typeof by === "number" && by > maxBuiltYear) return false;
+      }
+      return true;
+    }),
   };
 }
