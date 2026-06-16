@@ -275,6 +275,63 @@ export function EditorHeader({
                       </span>
                     </button>
                   )}
+
+                  {/* Admin: transport + recalc — gated, separated visually from the always-on items above */}
+                  {isAdmin && activeCountryId && (
+                    <>
+                      <div className="border-border/60 my-1 border-t" aria-hidden />
+                      <div className="text-muted-foreground/80 px-2 text-[9px] font-semibold tracking-wider uppercase select-none">
+                        Admin
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setIsSettingsOpen(false);
+                          try {
+                            const result = await generateTransport.mutateAsync({
+                              countryId: activeCountryId,
+                              routeTypes: ["rail", "highway"],
+                              clearExisting: true,
+                            });
+                            alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`);
+                          } catch (e) {
+                            alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                          }
+                        }}
+                        disabled={generateTransport.isPending}
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
+                        title="Generate rail + highway routes procedurally (clears existing transport routes)"
+                      >
+                        <Train className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                        <span className="font-medium">
+                          {generateTransport.isPending ? "Generating..." : "Gen Transport"}
+                        </span>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setIsSettingsOpen(false);
+                          try {
+                            await recalculateGeo.mutateAsync({ countryId: activeCountryId });
+                            alert("Geographic profile recalculated");
+                          } catch (e) {
+                            alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                          }
+                        }}
+                        disabled={recalculateGeo.isPending}
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
+                        title="Recalculate the geographic profile for the active country"
+                      >
+                        <RefreshCw
+                          className={cn(
+                            "h-3.5 w-3.5 shrink-0 text-emerald-500",
+                            recalculateGeo.isPending && "animate-spin"
+                          )}
+                        />
+                        <span className="font-medium">
+                          {recalculateGeo.isPending ? "Recalculating..." : "Recalc"}
+                        </span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </PopoverContent>
@@ -293,46 +350,6 @@ export function EditorHeader({
         >
           Delete {editor.selectedIds.size} Selected
         </button>
-      )}
-
-      {/* Admin: transport + recalc actions — available when a country is active */}
-      {isAdmin && activeCountryId && (
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={async () => {
-              try {
-                const result = await generateTransport.mutateAsync({
-                  countryId: activeCountryId,
-                  routeTypes: ["rail", "highway"],
-                  clearExisting: true,
-                });
-                alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`);
-              } catch (e) {
-                alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
-              }
-            }}
-            disabled={generateTransport.isPending}
-            className="flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-1 text-[11px] font-medium text-indigo-600 hover:bg-indigo-500/20 disabled:opacity-50 dark:text-indigo-400"
-          >
-            <Train className="h-3 w-3" />
-            {generateTransport.isPending ? "..." : "Gen Transport"}
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                alert("Geographic profile recalculated");
-              } catch (e) {
-                alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
-              }
-            }}
-            disabled={recalculateGeo.isPending}
-            className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-400"
-          >
-            <RefreshCw className={cn("h-3 w-3", recalculateGeo.isPending && "animate-spin")} />
-            Recalc
-          </button>
-        </div>
       )}
     </div>
   );
