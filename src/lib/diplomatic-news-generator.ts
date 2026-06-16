@@ -30,7 +30,8 @@ type NewsEventType =
   | "election_result"
   | "pvp_conflict_proposed"
   | "pvp_conflict_accepted"
-  | "pvnpc_conflict_resolved";
+  | "pvnpc_conflict_resolved"
+  | "security_event_resolved";
 
 interface NewsContext {
   countryName?: string;
@@ -39,7 +40,9 @@ interface NewsContext {
   operationName?: string;
   partyName?: string;
   actionType?: string;
+  eventType?: string;
   severity?: string;
+  notes?: string;
   seats?: number;
   percentage?: string;
   personnel?: number;
@@ -110,6 +113,10 @@ const NEWS_TEMPLATES: Record<
   pvnpc_conflict_resolved: (ctx) => ({
     content: `Military engagement between ${ctx.countryName} and ${ctx.targetName} concluded. ${ctx.winner ? `${ctx.winner} claims victory.` : "Outcome disputed."}`,
     hashtags: ["Military", "Conflict", "Resolution"],
+  }),
+  security_event_resolved: (ctx) => ({
+    content: `${ctx.countryName} has resolved a ${ctx.severity ?? "security"} incident: ${ctx.eventType ?? "security event"}. ${ctx.notes ? `Official statement: "${ctx.notes}"` : "Stability operations concluded successfully."}`,
+    hashtags: ["Security", "Stability", "DomesticAffairs"],
   }),
 };
 
