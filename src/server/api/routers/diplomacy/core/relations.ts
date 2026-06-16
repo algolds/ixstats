@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { groupIncidentsByCountry } from "~/lib/diplomatic-incidents";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreRelationsRouter = createTRPCRouter({
@@ -32,6 +33,15 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
         });
         const countryMap = new Map(countries.map((c) => [c.id, c]));
 
+        // Batch-fetch recent diplomatic events for the viewer (one query, not per relation)
+        const events = await ctx.db.diplomaticEvent.findMany({
+          where: { OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }] },
+          orderBy: { createdAt: "desc" },
+          take: 200,
+          select: { country1Id: true, country2Id: true, eventType: true, title: true, severity: true },
+        });
+        const incidentsByCountry = groupIncidentsByCountry(events, input.countryId);
+
         // Transform relations to match expected format
         const transformedRelations = relations.map((relation) => {
           const targetId =
@@ -58,7 +68,7 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
             economicTier: relation.economicTier,
             flagUrl: relation.flagUrl,
             activePolicies: [],
-            recentIncidents: [],
+            recentIncidents: incidentsByCountry.get(targetId) ?? [],
             establishedAt: relation.establishedAt.toISOString(),
           };
         });
