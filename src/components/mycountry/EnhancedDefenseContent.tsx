@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { Sword, Target, Activity } from "lucide-react";
+import { Sword, Target, Activity, Shield } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
 import { OperationsPanel } from "~/components/defense/OperationsPanel";
@@ -21,6 +21,17 @@ const DashboardMapWidget = dynamic(
   { ssr: false, loading: () => <div className="bg-muted h-64 animate-pulse rounded-xl" /> }
 );
 
+const BorderThreatPanel = dynamic(
+  () =>
+    import("~/components/defense/BorderThreatPanel").then((m) => ({
+      default: m.BorderThreatPanel,
+    })),
+  {
+    ssr: false,
+    loading: () => <div className="bg-muted h-64 animate-pulse rounded-xl" />,
+  }
+);
+
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface EnhancedDefenseContentProps {
@@ -29,7 +40,7 @@ interface EnhancedDefenseContentProps {
   notifications?: Partial<Record<string, number>>;
 }
 
-type DefenseTab = "command" | "forces" | "operations";
+type DefenseTab = "command" | "forces" | "operations" | "borders";
 
 export function EnhancedDefenseContent({
   activeSection,
@@ -67,6 +78,7 @@ export function EnhancedDefenseContent({
       shortLabel: "Ops",
       badge: 0,
     },
+    { value: "borders" as const, icon: Shield, label: "Borders", shortLabel: "Borders", badge: 0 },
   ];
 
   return (
@@ -89,7 +101,7 @@ export function EnhancedDefenseContent({
           onValueChange={(v) => setActiveTab(v as DefenseTab)}
           className="space-y-3"
         >
-          <TabsList className="grid w-full grid-cols-3 gap-0.5">
+          <TabsList className="grid w-full grid-cols-4 gap-0.5">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -146,6 +158,13 @@ export function EnhancedDefenseContent({
                 accentColor="red"
               />
               <OperationsPanel countryId={country.id} />
+            </ThemedTabContent>
+          </TabsContent>
+
+          {/* Borders Tab — Border security and neighbor threat assessments */}
+          <TabsContent value="borders">
+            <ThemedTabContent theme="defense" className="tab-content-enter">
+              <BorderThreatPanel countryId={country.id} />
             </ThemedTabContent>
           </TabsContent>
         </Tabs>
