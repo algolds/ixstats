@@ -959,7 +959,6 @@ export function TaxCalculator({
                   </h4>
 
                   <div className="space-y-3">
-                    // eslint-disable-next-line unused-imports/no-unused-vars
                     {calculationResult.breakdown.map((category, _index) => (
                       <Card key={category.categoryId} className="p-4">
                         <div className="flex items-center justify-between">
