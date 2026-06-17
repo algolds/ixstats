@@ -194,10 +194,8 @@ export function useWorldMapOverlayFeatures({
             "text-padding": 8 as unknown as number,
             "text-font": [...MAP_SYMBOL_FONTS.regular],
             "symbol-sort-key": [
-              "case",
-              ["has", "areaSqKm"],
-              ["-", ["get", "areaSqKm"]],
-              0,
+              "-",
+              ["coalesce", ["get", "areaSqKm"], 0]
             ] as unknown as number,
           },
           paint: {
@@ -332,10 +330,8 @@ export function useWorldMapOverlayFeatures({
             "text-optional": true,
             "text-font": [...MAP_SYMBOL_FONTS.regular],
             "symbol-sort-key": [
-              "case",
-              ["has", "population"],
-              ["-", ["get", "population"]],
-              0,
+              "-",
+              ["coalesce", ["get", "population"], 0]
             ] as unknown as number,
           },
           paint: { "text-color": "#1e40af", "text-halo-color": "#fff", "text-halo-width": 1.5 },

@@ -659,6 +659,7 @@ export function clipGeometryToBorder(
 
 /** Ray-casting point-in-polygon algorithm. Handles Polygons, MultiPolygons, and holes. */
 export function isPointInPolygon(point: [number, number], polygon: Polygon | MultiPolygon): boolean {
+  if (!point || isNaN(point[0]) || isNaN(point[1])) return false;
   const [lng, lat] = point;
   const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
 
@@ -669,8 +670,12 @@ export function isPointInPolygon(point: [number, number], polygon: Polygon | Mul
 
     let ringInside = false;
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const xi = ring[i][0]!, yi = ring[i][1]!;
-      const xj = ring[j][0]!, yj = ring[j][1]!;
+      const pi = ring[i];
+      const pj = ring[j];
+      if (!pi || !pj || isNaN(pi[0]) || isNaN(pi[1]) || isNaN(pj[0]) || isNaN(pj[1])) continue;
+
+      const xi = pi[0], yi = pi[1];
+      const xj = pj[0], yj = pj[1];
 
       const intersect = ((yi > lat) !== (yj > lat))
         && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
@@ -680,11 +685,16 @@ export function isPointInPolygon(point: [number, number], polygon: Polygon | Mul
     if (ringInside) {
       let insideHole = false;
       for (let h = 1; h < poly.length; h++) {
-        const hole = poly[h]!;
+        const hole = poly[h];
+        if (!hole) continue;
         let holeInside = false;
         for (let i = 0, j = hole.length - 1; i < hole.length; j = i++) {
-          const xi = hole[i][0]!, yi = hole[i][1]!;
-          const xj = hole[j][0]!, yj = hole[j][1]!;
+          const pi = hole[i];
+          const pj = hole[j];
+          if (!pi || !pj || isNaN(pi[0]) || isNaN(pi[1]) || isNaN(pj[0]) || isNaN(pj[1])) continue;
+
+          const xi = pi[0], yi = pi[1];
+          const xj = pj[0], yj = pj[1];
 
           const intersect = ((yi > lat) !== (yj > lat))
             && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
@@ -714,9 +724,10 @@ function closestPointOnSegment(p: [number, number], a: [number, number], b: [num
   const apy = py - ay;
 
   const abLen2 = abx * abx + aby * aby;
-  if (abLen2 === 0) return a;
+  if (abLen2 === 0 || isNaN(abLen2)) return a;
 
   let t = (apx * abx + apy * aby) / abLen2;
+  if (isNaN(t)) return a;
   t = Math.max(0, Math.min(1, t));
 
   return [ax + t * abx, ay + t * aby];
@@ -730,18 +741,21 @@ export function findClosestPointOnBoundary(point: [number, number], polygon: Pol
 
   for (const poly of polys) {
     const ring = poly[0];
-    if (!ring) continue;
+    if (!ring || ring.length < 2) continue;
 
     for (let i = 0; i < ring.length - 1; i++) {
-      const a = ring[i]!;
-      const b = ring[i+1]!;
+      const a = ring[i];
+      const b = ring[i+1];
+      if (!a || !b || isNaN(a[0]) || isNaN(a[1]) || isNaN(b[0]) || isNaN(b[1])) continue;
+
       const cp = closestPointOnSegment(point, a as [number, number], b as [number, number]);
+      if (!cp || isNaN(cp[0]) || isNaN(cp[1])) continue;
 
       const dx = point[0] - cp[0];
       const dy = point[1] - cp[1];
       const d2 = dx * dx + dy * dy;
 
-      if (d2 < minDistance2) {
+      if (!isNaN(d2) && d2 < minDistance2) {
         minDistance2 = d2;
         closestPoint = cp;
       }
@@ -758,6 +772,7 @@ function getCentroid(polygon: Polygon | MultiPolygon): [number, number] {
     const ring = poly[0];
     if (!ring) continue;
     for (const pt of ring) {
+      if (!pt || isNaN(pt[0]) || isNaN(pt[1])) continue;
       sumX += pt[0]!;
       sumY += pt[1]!;
       count++;
@@ -772,11 +787,18 @@ export function snapPointToCountryBorderJS(
   provinces: ProvinceFeature[],
   maxDistanceMeters = 10000
 ): [number, number] {
+  if (!point || isNaN(point[0]) || isNaN(point[1])) {
+    return point;
+  }
+
   if (isPointInPolygon(point, polygon)) {
     return point;
   }
 
   const closestPoint = findClosestPointOnBoundary(point, polygon);
+  if (!closestPoint || isNaN(closestPoint[0]) || isNaN(closestPoint[1])) {
+    return point;
+  }
 
   const dx = point[0] - closestPoint[0];
   const dy = point[1] - closestPoint[1];
@@ -790,7 +812,7 @@ export function snapPointToCountryBorderJS(
   let targetCentroid: [number, number] = closestPoint;
   let minCentroidDist = Infinity;
   for (const p of provinces) {
-    if (!p.included) continue;
+    if (!p.included || !p.centroid || isNaN(p.centroid[0]) || isNaN(p.centroid[1])) continue;
     const dist = Math.hypot(closestPoint[0] - p.centroid[0], closestPoint[1] - p.centroid[1]);
     if (dist < minCentroidDist) {
       minCentroidDist = dist;
@@ -802,11 +824,15 @@ export function snapPointToCountryBorderJS(
     targetCentroid = getCentroid(polygon);
   }
 
+  if (!targetCentroid || isNaN(targetCentroid[0]) || isNaN(targetCentroid[1])) {
+    return closestPoint;
+  }
+
   const vx = targetCentroid[0] - closestPoint[0];
   const vy = targetCentroid[1] - closestPoint[1];
   const len = Math.hypot(vx, vy);
 
-  if (len > 0) {
+  if (len > 0 && !isNaN(len)) {
     for (const nudgeAmount of [0.0001, 0.0002, 0.0005, 0.001]) {
       const nx = closestPoint[0] + (vx / len) * nudgeAmount;
       const ny = closestPoint[1] + (vy / len) * nudgeAmount;
