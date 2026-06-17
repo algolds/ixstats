@@ -124,4 +124,4 @@ export const CANVAS_VERSION = String(VERSIONS.subSystems.canvas);
 export const STASHES_WELCOME_VERSION = "1.0";
 export const ATOMIC_WELCOME_VERSION = "1.0";
 export const ATOMIC_ECONOMY_WELCOME_VERSION = "1.0";
-export const MAP_EDITOR_WELCOME_VERSION = "1.0";
+export const MAP_EDITOR_WELCOME_VERSION = "1.1";

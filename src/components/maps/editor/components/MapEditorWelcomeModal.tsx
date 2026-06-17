@@ -77,6 +77,21 @@ const SHORTCUTS = [
 
 const CHANGELOG = [
   {
+    version: "v2.4",
+    title: "Bulk City Importer",
+    desc: "Upload a CSV, TSV, or JSON file to create many cities at once. Coordinates are validated inside your borders and any rows that need fixing are flagged before you commit.",
+  },
+  {
+    version: "v2.3",
+    title: "Auto-Derived City Elevation & Region Area",
+    desc: "City elevation now fills in from the terrain zone and region area from the drawn geometry. Click the Auto button to derive a value — manual overrides are still accepted.",
+  },
+  {
+    version: "v2.2",
+    title: "Toolbar Consolidation",
+    desc: "Moved the Network view, Snap toggle, Grid, and Center controls into the editor toolbar for a cleaner canvas, with Gen Transport and Recalc tucked into Settings.",
+  },
+  {
     version: "v2.1",
     title: "Hierarchical Layers Tree",
     desc: "Merged the old Layers and Features tabs into a single unified tree view. Click to expand layer groups and select child features directly.",
