@@ -279,6 +279,8 @@ export default function LeagueDetailPage() {
 
   const archetypeLabel = ARCHETYPE_LABELS[league.archetype] ?? league.archetype;
 
+  const nextMatchDay = activeSeason ? findNextScheduledMatchDayFromSchedule(schedule) : null;
+
   const sidebarExtra = (
     <div className="space-y-3">
       <LeagueBrandCard
@@ -299,6 +301,7 @@ export default function LeagueDetailPage() {
       {activeSeason && activeSeason.id && (
         <QuickSimWidget
           seasonId={activeSeason.id}
+          nextMatchDay={nextMatchDay}
           onSimulated={() => {
             utils.sports.getLeague.invalidate({ id });
           }}
@@ -313,7 +316,6 @@ export default function LeagueDetailPage() {
     </div>
   );
 
-  const nextMatchDay = activeSeason ? findNextScheduledMatchDayFromSchedule(schedule) : null;
   const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   const heroSection = (

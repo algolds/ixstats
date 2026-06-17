@@ -17,6 +17,7 @@ import {
   type TeamRatingVector,
 } from "~/lib/sports";
 import { exchangeService } from "~/lib/exchange-service";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -347,6 +348,10 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
         const archetype = preset.archetype;
 
+        // Only system owners may mint a canonical (official/canon) league.
+        // Non-owners requesting isCanonical:true silently get a non-canonical league.
+        const canonical = input.isCanonical === true && isSystemOwner(ctx.auth.userId);
+
         const league = await ctx.db.sportLeague.create({
           data: {
             name: input.name,
@@ -354,7 +359,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             archetype,
             teamCount: input.teamCount,
             nationAffiliation: input.nationAffiliation,
-            isCanonical: input.isCanonical,
+            isCanonical: canonical,
             settings: input.settings as any,
             createdByUserId: ctx.user.id,
             status: "active",

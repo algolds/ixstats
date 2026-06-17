@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { LeagueCreator } from "~/components/myleague/LeagueCreator";
+import { LeagueCover } from "~/components/sports/LeagueCover";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -48,16 +49,6 @@ const SPORT_EMOJIS: Record<string, string> = {
   baseball: "⚾",
   f1: "🏎️",
   boxing: "🥊",
-};
-
-const SPORT_FALLBACK_IMAGES: Record<string, string> = {
-  soccer: "/api/mediawiki/commons/Special:Filepath/Stade_V%C3%A9lodrome_interior_2018.jpg",
-  football: "/api/mediawiki/commons/Special:Filepath/Maracana_Stadium.jpg",
-  hockey: "/api/mediawiki/commons/Special:Filepath/Bell_Centre_interior_view.jpg",
-  basketball: "/api/mediawiki/commons/Special:Filepath/Madison_Square_Garden_interior.jpg",
-  baseball: "/api/mediawiki/commons/Special:Filepath/Scotiabank_Saddledome.jpg",
-  f1: "/api/mediawiki/commons/Special:Filepath/Monaco_Grand_Prix_stretching_past_the_harbour_in_Monte_Carlo%2C_Monaco.jpg",
-  boxing: "/api/mediawiki/commons/Special:Filepath/2021_CISM_Military_World_Games_Boxing.jpg",
 };
 
 const ARCHETYPE_LABELS: Record<string, string> = {
@@ -168,12 +159,10 @@ export default function MyLeaguePage() {
           >
             {/* Background Cover Image */}
             <div className="absolute inset-0 z-0">
-              <img
-                src={withBasePath(
-                  (featuredLeague as any).coverImage ||
-                    SPORT_FALLBACK_IMAGES[featuredLeague.sportPreset] ||
-                    "/api/mediawiki/commons/Special:Filepath/Stade_V%C3%A9lodrome_interior_2018.jpg"
-                )}
+              <LeagueCover
+                sportPreset={featuredLeague.sportPreset}
+                coverImage={(featuredLeague as any).coverImage}
+                seed={featuredLeague.id}
                 alt=""
                 className="h-full w-full object-cover opacity-25 blur-[1px] transition-transform duration-700 group-hover:scale-105"
               />
@@ -349,13 +338,10 @@ export default function MyLeaguePage() {
                     >
                       {/* Image header */}
                       <div className="bg-muted relative h-36 overflow-hidden">
-                        <img
-                          src={withBasePath(
-                            (league as any).coverImage ||
-                              (league as any).logo ||
-                              SPORT_FALLBACK_IMAGES[league.sportPreset] ||
-                              "/api/mediawiki/commons/Special:Filepath/Stadion_Luzhniki_Moskva_July_2018.jpg"
-                          )}
+                        <LeagueCover
+                          sportPreset={league.sportPreset}
+                          coverImage={(league as any).coverImage || (league as any).logo}
+                          seed={league.id}
                           alt={league.name}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />

@@ -66,7 +66,7 @@ export function LineupBuilder({
 
   const setLineup = api.sports.setLineup.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate();
+      utils.sports.getMyClubOverview.invalidate({ teamId });
       onSaved?.();
     },
   });

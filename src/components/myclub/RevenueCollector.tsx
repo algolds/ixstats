@@ -32,7 +32,7 @@ export function RevenueCollector({
 
   const collect = api.sports.collectMatchRevenue.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate();
+      utils.sports.getMyClubOverview.invalidate({ teamId });
       onCollected?.();
     },
   });
