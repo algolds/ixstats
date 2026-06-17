@@ -144,9 +144,9 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
             <>
               {seatSummary.slice(0, 4).map((seat: any) => (
                 <CommandPanelItem
-                  key={seat.partyId ?? seat.partyName}
+                  key={seat.party?.id ?? seat.party?.name}
                   accentColor="indigo"
-                  title={seat.partyName ?? "Unknown Party"}
+                  title={seat.party?.name ?? "Unknown Party"}
                   subtitle={`${seat.seats} seat${seat.seats !== 1 ? "s" : ""}`}
                   trailingText={
                     totalSeats > 0 ? `${Math.round((seat.seats / totalSeats) * 100)}%` : undefined
