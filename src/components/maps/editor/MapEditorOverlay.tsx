@@ -36,7 +36,7 @@ import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
 import { BorderEditorToolbar } from "~/components/maps/editor/BorderEditorToolbar";
-import { Dialog, DialogContent } from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 
 import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapEditorOverlayState";
 import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
@@ -1048,6 +1048,7 @@ export default function MapEditorOverlay({
           }}
         >
           <DialogContent className="bg-card border-border flex h-[580px] max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-xl border p-0 shadow-2xl">
+            <DialogTitle className="sr-only">Import Provinces</DialogTitle>
             <ProvinceImportWizard
               importer={importer}
               onComplete={() => {

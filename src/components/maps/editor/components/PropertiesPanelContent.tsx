@@ -446,6 +446,17 @@ export function PropertiesPanelContent({
     return <div className="space-y-4">{mainContent}</div>;
   }
 
+  // City import wizard — also available in the regular (non-world) country editor.
+  if (editor.mode === "import-cities") {
+    return (
+      <CityImportWizard
+        countryId={activeCountryId ?? ""}
+        onComplete={() => editor.setMode("view")}
+        onCancel={() => editor.setMode("view")}
+      />
+    );
+  }
+
   return (
     <FeaturePropertyPanel
       mode={editor.mode}
