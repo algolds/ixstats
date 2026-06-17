@@ -32,6 +32,7 @@ interface ElectionSimulatorProps {
 }
 
 export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
+  const utils = api.useUtils();
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [selectedElection, setSelectedElection] = useState<string | null>(null);
@@ -156,6 +157,8 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
   const simulateElection = api.elections.simulateElection.useMutation({
     onSuccess: () => {
       refetchElections();
+      utils.elections.getCurrentParliament.invalidate({ countryId });
+      utils.elections.getLegislature.invalidate({ countryId });
     },
   });
 

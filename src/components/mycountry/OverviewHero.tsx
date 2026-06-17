@@ -580,10 +580,10 @@ export function OverviewHero({
       </button>
 
       <div className="relative z-10 grid gap-4 p-4 pt-3 md:grid-cols-5">
-        <div className="border-border/30 overflow-hidden rounded-xl border md:col-span-3 self-start">
+        <div className="border-border/30 overflow-hidden rounded-xl border md:col-span-3 h-[250px] md:h-full md:min-h-[300px]">
           <CountryMapEmbed
             countryId={countryId}
-            height="h-52"
+            height="h-full"
             showNeighbors={true}
             showCities={true}
             interactive={true}

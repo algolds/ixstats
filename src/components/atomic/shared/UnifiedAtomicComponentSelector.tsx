@@ -155,7 +155,6 @@ export function UnifiedAtomicComponentSelector<T extends string>({
               </TabsTrigger>
             ))}
           </TabsList>
-          // eslint-disable-next-line unused-imports/no-unused-vars
           {Object.entries(categories).map(([category, _componentIds]) => (
             <TabsContent key={category} value={category} className="mt-6 space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

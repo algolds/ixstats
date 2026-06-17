@@ -185,8 +185,8 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     const updated = chambers.map((c, idx) => {
       if (idx === index) {
         if (field === "seats") {
-          const num = Math.max(10, Math.min(5000, Number(value) || 10));
-          return { ...c, [field]: num };
+          const val = value === "" ? "" : Number(value);
+          return { ...c, [field]: val };
         }
         return { ...c, [field]: value };
       }
@@ -194,7 +194,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     });
     setChambers(updated);
 
-    const newTotal = updated.reduce((acc, c) => acc + c.seats, 0);
+    const newTotal = updated.reduce((acc, c) => acc + (Number(c.seats) || 0), 0);
     // Flag that this totalSeats change is from a per-chamber edit,
     // so the unicameral sync effect (which depends on totalSeats) won't
     // overwrite the user's manual edits.
@@ -202,11 +202,32 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     setFormData((prev) => ({ ...prev, totalSeats: newTotal }));
   }
 
+  function handleBlurChamber(index: number, value: any) {
+    const num = Math.max(10, Math.min(5000, Number(value) || 10));
+    const updated = chambers.map((c, idx) => {
+      if (idx === index) {
+        return { ...c, seats: num };
+      }
+      return c;
+    });
+    setChambers(updated);
+
+    const newTotal = updated.reduce((acc, c) => acc + (Number(c.seats) || 0), 0);
+    chamberEditInProgress.current = true;
+    setFormData((prev) => ({ ...prev, totalSeats: newTotal }));
+  }
+
   function handleSave() {
-    const computedTotal = chambers.reduce((acc, c) => acc + c.seats, 0);
+    const clampedChambers = chambers.map((c) => ({
+      ...c,
+      seats: Math.max(10, Math.min(5000, Number(c.seats) || 10))
+    }));
+    setChambers(clampedChambers);
+
+    const computedTotal = clampedChambers.reduce((acc, c) => acc + c.seats, 0);
     const clampedTotal = Math.max(10, Math.min(10000, computedTotal));
 
-    const serializedChambers = chambers
+    const serializedChambers = clampedChambers
       .map((c) => `${c.name}:${c.seats}:${c.electoralSystem}`)
       .join(";");
     const fullChamberType = `${formData.chamberType}|${serializedChambers}`;
@@ -277,8 +298,12 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 value={formData.totalSeats}
                 disabled={isMultiChamber}
                 onChange={(e) =>
-                  setFormData({ ...formData, totalSeats: Number(e.target.value) || 10 })
+                  setFormData({ ...formData, totalSeats: e.target.value === "" ? "" : Number(e.target.value) })
                 }
+                onBlur={(e) => {
+                  const val = Math.max(10, Math.min(5000, Number(e.target.value) || 10));
+                  setFormData({ ...formData, totalSeats: val });
+                }}
               />
               <p className="text-muted-foreground mt-1 text-[10px]">
                 {isMultiChamber
@@ -367,6 +392,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                         max={5000}
                         value={chamber.seats}
                         onChange={(e) => updateChamber(index, "seats", e.target.value)}
+                        onBlur={(e) => handleBlurChamber(index, e.target.value)}
                         className="h-8 bg-slate-900 text-xs"
                       />
                     </div>

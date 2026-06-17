@@ -691,23 +691,27 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-1.5">
             {ROUTE_TYPES.map((rt) => {
+              const isGeneratable = (GENERATABLE_ROUTE_TYPES as readonly string[]).includes(rt.value);
               const isSelected = selectedTypes.includes(rt.value);
               return (
                 <button
                   key={rt.value}
+                  disabled={!isGeneratable}
                   onClick={() =>
                     setSelectedTypes((prev) =>
                       isSelected ? prev.filter((t) => t !== rt.value) : [...prev, rt.value]
                     )
                   }
                   className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    isSelected
-                      ? "border-primary/50 bg-primary/10 text-primary"
-                      : "border-border bg-background text-muted-foreground hover:bg-accent"
+                    !isGeneratable
+                      ? "opacity-40 cursor-not-allowed border-dashed bg-slate-900/10 text-slate-500"
+                      : isSelected
+                        ? "border-primary/50 bg-primary/10 text-primary"
+                        : "border-border bg-background text-muted-foreground hover:bg-accent"
                   }`}
                 >
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: rt.color }} />
-                  {rt.label}
+                  {rt.label} {!isGeneratable && <span className="text-[9px] opacity-70">(Manual)</span>}
                 </button>
               );
             })}

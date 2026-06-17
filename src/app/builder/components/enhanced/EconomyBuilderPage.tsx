@@ -735,6 +735,7 @@ export function EconomyBuilderPage({
 
   // Handle existing configuration when data loads
   React.useEffect(() => {
+    if (persistedEconomyBuilder) return;
     if (existingConfiguration) {
       const existingLaborMarket = (existingConfiguration.laborMarket ?? {}) as Partial<
         EconomyBuilderState["laborMarket"]

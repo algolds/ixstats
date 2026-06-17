@@ -929,6 +929,14 @@ export default function MapEditorOverlay({
                     labels: layerStates.labels?.visible ?? true,
                     routes: layerStates.routes?.visible ?? true,
                   }}
+                  layerOpacity={{
+                    regions: layerStates.regions?.opacity ?? 0.6,
+                    cities: layerStates.cities?.opacity ?? 1,
+                    pois: layerStates.pois?.opacity ?? 1,
+                    stories: layerStates.stories?.opacity ?? 1,
+                    labels: layerStates.labels?.opacity ?? 1,
+                    routes: layerStates.routes?.opacity ?? 1,
+                  }}
                 />
               )}
 

@@ -119,6 +119,7 @@ export function PartyManager({ countryId }: PartyManagerProps) {
         color: formData.color,
         leaderName: formData.leaderName || undefined,
         baseSupport: formData.baseSupport,
+        currentSupport: formData.baseSupport,
       });
     } else {
       createParty.mutate({

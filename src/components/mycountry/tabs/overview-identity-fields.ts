@@ -1,5 +1,6 @@
 import { Landmark, MapPin, Globe2, DollarSign, Users, Globe, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { toTitleCase } from "~/lib/utils";
 
 /**
  * Identity field config rendered as pills in the MyCountry overview tab.
@@ -19,7 +20,7 @@ export const OVERVIEW_IDENTITY_FIELDS: Array<{
     label: "Government",
     icon: Landmark,
     color: "text-amber-600 dark:text-amber-400",
-    getValue: (ni) => ni.governmentType,
+    getValue: (ni) => ni.governmentType ? toTitleCase(ni.governmentType) : null,
   },
   {
     key: "capitalCity",

@@ -86,6 +86,8 @@ interface EditorMapProps {
   routeWaypoints?: [number, number][];
   /** Layer visibility state — controls which feature types are rendered */
   layerVisibility?: Record<string, boolean>;
+  /** Layer opacity state — controls opacity of lines, labels, etc. */
+  layerOpacity?: Record<string, number>;
   /** Route editing details */
   editingRouteId?: string | null;
   /** Route editing vertices */
@@ -116,6 +118,7 @@ const EditorMap = memo(
       onZoomChange,
       routeWaypoints,
       layerVisibility,
+      layerOpacity,
       editingRouteId,
       editingRouteVertices,
       onRouteVerticesUpdate,
@@ -156,6 +159,7 @@ const EditorMap = memo(
       countryColor,
       features,
       layerVisibility,
+      layerOpacity,
       pendingCoordinates,
       worldMapLayers,
       showGrid,

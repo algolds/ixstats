@@ -6,8 +6,8 @@ import type { AtomicComponentTheme } from "./types";
 
 export const TAX_THEME: AtomicComponentTheme = {
   type: "unified",
-  primary: "gold",
-  // Tailwind classes: gold-500, gold-600, gold-50, gold-950/30
+  primary: "amber",
+  // Tailwind classes: amber-500, amber-600, amber-50, amber-950/30
 };
 
 export const GOVERNMENT_THEME: AtomicComponentTheme = {

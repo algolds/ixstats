@@ -117,7 +117,8 @@ export default function CountriesSortBar({
               placeholder="Search countries..."
               value={searchTerm || ""}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-64 pl-9"
+              className="w-64 pl-9 focus:scale-100"
+              autoComplete="off"
             />
           </div>
         )}

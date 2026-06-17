@@ -87,9 +87,35 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
   );
 
   const totalSeats = legislature?.totalSeats ?? 0;
-  const filledSeats =
-    parliament?.partySummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
-  const seatSummary = parliament?.partySummary ?? [];
+  const { seatSummary, filledSeats } = useMemo(() => {
+    if (!parliament) return { seatSummary: [], filledSeats: 0 };
+    
+    let summary = parliament.partySummary ?? [];
+    if (summary.length === 0 && parliament.seats && parliament.seats.length > 0) {
+      const counts = new Map<string, { party: any; seats: number }>();
+      for (const seat of parliament.seats) {
+        if (seat.partyId) {
+          const existing = counts.get(seat.partyId);
+          if (existing) {
+            existing.seats++;
+          } else {
+            counts.set(seat.partyId, {
+              party: {
+                id: seat.partyId,
+                name: seat.partyName ?? "Unknown Party",
+                color: seat.partyColor ?? "#999999",
+              },
+              seats: 1,
+            });
+          }
+        }
+      }
+      summary = Array.from(counts.values()).sort((a, b) => b.seats - a.seats);
+    }
+    
+    const filled = summary.reduce((sum: number, s: any) => sum + s.seats, 0);
+    return { seatSummary: summary, filledSeats: filled };
+  }, [parliament]);
 
   const sortedParties = useMemo(
     () =>

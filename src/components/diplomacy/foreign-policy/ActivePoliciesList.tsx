@@ -13,11 +13,12 @@ import {
   ArrowDownRight,
   X,
 } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import {
   AlertDialog,
+  AlertDialogAction,
   AlertDialogClose,
   AlertDialogContent,
   AlertDialogDescription,
@@ -200,15 +201,13 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
                         <AlertDialogClose asChild>
                           <Button variant="outline">Cancel</Button>
                         </AlertDialogClose>
-                        <AlertDialogClose asChild>
-                          <Button
-                            variant="destructive"
-                            onClick={() => liftMutation.mutate({ actionId: policy.id })}
-                            disabled={liftMutation.isPending}
-                          >
-                            {liftMutation.isPending ? "Lifting..." : "Confirm Lift"}
-                          </Button>
-                        </AlertDialogClose>
+                        <AlertDialogAction
+                          className={buttonVariants({ variant: "destructive" })}
+                          onClick={() => liftMutation.mutate({ actionId: policy.id })}
+                          disabled={liftMutation.isPending}
+                        >
+                          {liftMutation.isPending ? "Lifting..." : "Confirm Lift"}
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

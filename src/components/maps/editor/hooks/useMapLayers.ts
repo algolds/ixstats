@@ -17,6 +17,7 @@ interface UseMapLayersProps {
   countryColor?: string;
   features: EditorFeature[];
   layerVisibility?: Record<string, boolean>;
+  layerOpacity?: Record<string, number>;
   pendingCoordinates: [number, number] | null;
   worldMapLayers?: MapLayerData[];
   showGrid?: boolean;
@@ -32,6 +33,7 @@ export function useMapLayers({
   countryColor,
   features,
   layerVisibility,
+  layerOpacity,
   pendingCoordinates,
   worldMapLayers,
   showGrid,
@@ -383,6 +385,12 @@ export function useMapLayers({
           name: f.name,
           featureType: f.type,
           isCapital: f.properties.isNationalCapital ?? false,
+          rotation: Number(f.properties.rotation) || 0,
+          opacity: f.properties.opacity !== undefined ? Number(f.properties.opacity) : 1,
+          color: f.properties.color || "#374151",
+          fontSize: Number(f.properties.fontSize) || 11,
+          fontWeight: f.properties.fontWeight || "normal",
+          letterSpacing: Number(f.properties.letterSpacing) || 0,
         },
       }));
 
@@ -457,6 +465,7 @@ export function useMapLayers({
         id: "editor-points-labels",
         type: "symbol",
         source: "editor-points",
+        filter: ["!=", ["get", "featureType"], "mapLabel"],
         layout: {
           "text-field": ["get", "name"],
           "text-size": 11,
@@ -467,6 +476,32 @@ export function useMapLayers({
         },
         paint: {
           "text-color": "#374151",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.5,
+        },
+      });
+      map.addLayer({
+        id: "editor-map-labels",
+        type: "symbol",
+        source: "editor-points",
+        filter: ["==", ["get", "featureType"], "mapLabel"],
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": ["get", "fontSize"],
+          "text-rotate": ["get", "rotation"],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+          "text-font": [
+            "match",
+            ["get", "fontWeight"],
+            "bold",
+            ["literal", MAP_SYMBOL_FONTS.bold],
+            ["literal", MAP_SYMBOL_FONTS.regular],
+          ],
+        },
+        paint: {
+          "text-color": ["get", "color"],
+          "text-opacity": ["get", "opacity"],
           "text-halo-color": "#ffffff",
           "text-halo-width": 1.5,
         },
@@ -485,6 +520,13 @@ export function useMapLayers({
 
     if (map.getSource("editor-subdivisions")) {
       getGeoJSONSource(map, "editor-subdivisions")?.setData(polysGeoJson);
+      const regionsOpacity = layerOpacity?.regions ?? 0.6;
+      if (map.getLayer("editor-subdivisions-stroke")) {
+        map.setPaintProperty("editor-subdivisions-stroke", "line-opacity", regionsOpacity);
+      }
+      if (map.getLayer("editor-subdivisions-labels")) {
+        map.setPaintProperty("editor-subdivisions-labels", "text-opacity", regionsOpacity);
+      }
     } else {
       map.addSource("editor-subdivisions", { type: "geojson", data: polysGeoJson });
       map.addLayer({
@@ -504,6 +546,7 @@ export function useMapLayers({
           "line-color": "#7c3aed",
           "line-width": 1.5,
           "line-dasharray": [3, 2],
+          "line-opacity": layerOpacity?.regions ?? 0.6,
         },
       });
       map.addLayer({
@@ -523,6 +566,7 @@ export function useMapLayers({
           "text-color": "#6d28d9",
           "text-halo-color": "#ffffff",
           "text-halo-width": 1.5,
+          "text-opacity": layerOpacity?.regions ?? 0.6,
         },
       });
 
@@ -537,7 +581,7 @@ export function useMapLayers({
         filter: ["==", ["get", "id"], ""],
       });
     }
-  }, [map, isLoaded, features, layerVisibility]);
+  }, [map, isLoaded, features, layerVisibility, layerOpacity]);
 
   // 5. Render pending coordinates marker
   useEffect(() => {

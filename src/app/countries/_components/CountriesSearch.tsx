@@ -131,7 +131,8 @@ export function CountriesSearch({
             placeholder="Search by country name..."
             value={searchTerm}
             onChange={(e) => onSearchChangeAction(e.target.value)}
-            className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground w-full border pr-10 pl-10 transition-all duration-200"
+            className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground w-full border pr-10 pl-10 transition-all duration-200 focus:scale-100"
+            autoComplete="off"
           />
           {searchTerm && (
             <Button
