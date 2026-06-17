@@ -17,6 +17,7 @@ import { StatCard } from "~/components/maps/core/components/StatCard";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/map-config";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { toTitleCase } from "~/lib/utils";
 import type { SelectedCountry } from "../IxWorldMap";
 import {
   formatPopulation,
@@ -151,7 +152,7 @@ export function CountryOverviewTab({
             )}
             {summary.governmentType && (
               <p>
-                Type: <span className="text-foreground font-medium">{summary.governmentType}</span>
+                Type: <span className="text-foreground font-medium">{toTitleCase(summary.governmentType)}</span>
               </p>
             )}
           </div>

@@ -25,7 +25,7 @@ import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
-import { cn } from "~/lib/utils";
+import { cn, toTitleCase } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { LocationBadge } from "~/components/ui/tier-badge";
 import { Badge } from "~/components/ui/badge";
@@ -769,7 +769,7 @@ export function OverviewHero({
             <div className="border-border/10 mt-3 flex gap-1.5 border-t pt-2">
               {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
               {stats.governmentType && (
-                <LocationBadge type="government" value={stats.governmentType} />
+                <LocationBadge type="government" value={toTitleCase(stats.governmentType)} />
               )}
             </div>
           </div>
