@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "~/components/ui/dropdown-menu";
-import { SortAsc, SortDesc, CheckCircle } from "lucide-react";
+import { SortAsc, SortDesc, CheckCircle, Search } from "lucide-react";
 
 const sortOptions = [
   { value: "name", label: "Country Name" },
@@ -111,12 +111,15 @@ export default function CountriesSortBar({
 
         {/* Search input (optional) */}
         {onSearchChange && (
-          <Input
-            placeholder="Search countries..."
-            value={searchTerm || ""}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-64"
-          />
+          <div className="relative">
+            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Input
+              placeholder="Search countries..."
+              value={searchTerm || ""}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-64 pl-9"
+            />
+          </div>
         )}
       </div>
       <Button className="ml-auto" onClick={onCompare}>

@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { safeFormatCurrency } from "~/lib/format-utils";
+import { toTitleCase } from "~/lib/utils";
 import {
   PieChart,
   Pie,
@@ -192,7 +193,7 @@ export function BudgetManagementDashboard({
             {governmentStructure.governmentName} Budget
           </h1>
           <p className="mt-1 text-[var(--color-text-muted)]">
-            {governmentStructure.governmentType} • {selectedYear} {governmentStructure.fiscalYear}
+            {toTitleCase(governmentStructure.governmentType)} • {selectedYear} {governmentStructure.fiscalYear}
           </p>
         </div>
         <div className="flex items-center gap-3">

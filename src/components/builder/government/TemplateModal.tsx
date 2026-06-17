@@ -8,6 +8,7 @@ import React from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { toTitleCase } from "~/lib/utils";
 import type { GovernmentTemplate } from "~/types/government";
 
 export interface TemplateModalProps {
@@ -41,7 +42,7 @@ export const TemplateModal = React.memo(function TemplateModal({
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <Badge variant="secondary">{template.governmentType}</Badge>
+                    <Badge variant="secondary">{toTitleCase(template.governmentType)}</Badge>
                     <Badge variant="outline" className="ml-2">
                       {template.departments.length} Departments
                     </Badge>

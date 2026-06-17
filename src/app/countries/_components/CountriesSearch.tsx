@@ -125,7 +125,7 @@ export function CountriesSearch({
     <div className="bg-card text-card-foreground border-border mb-8 rounded-lg p-4 shadow-sm sm:p-6">
       <div className="flex flex-col items-center gap-3 sm:flex-row">
         <div className="relative w-full grow sm:w-auto">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             type="text"
             placeholder="Search by country name..."

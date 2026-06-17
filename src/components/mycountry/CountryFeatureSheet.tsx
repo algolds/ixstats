@@ -30,6 +30,7 @@ import { Switch } from "~/components/ui/switch";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
+import { toTitleCase } from "~/lib/utils";
 import type { CountryMapFeature } from "~/components/maps/widgets/CountryMapEmbed";
 
 interface CountryFeatureSheetProps {
@@ -443,7 +444,7 @@ function SubdivisionReadOnly({ subdivision }: { subdivision: any }) {
         value={subdivision.budgetShare != null ? `${subdivision.budgetShare}%` : "—"}
       />
       <Stat label="Governor" value={subdivision.governorName || "—"} />
-      <Stat label="Government" value={subdivision.governmentType || "—"} />
+      <Stat label="Government" value={subdivision.governmentType ? toTitleCase(subdivision.governmentType) : "—"} />
     </div>
   );
 }

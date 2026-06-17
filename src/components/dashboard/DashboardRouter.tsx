@@ -44,7 +44,7 @@ import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { createUrl } from "~/lib/url-utils";
-import { cn } from "~/lib/utils";
+import { cn, toTitleCase } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -680,7 +680,7 @@ function DashboardHero({
             )}
             {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
             {stats.governmentType && (
-              <LocationBadge type="government" value={stats.governmentType} />
+              <LocationBadge type="government" value={toTitleCase(stats.governmentType)} />
             )}
           </div>
 

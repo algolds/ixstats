@@ -21,7 +21,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
-import { cn } from "~/lib/utils";
+import { cn, toTitleCase } from "~/lib/utils";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { PreText } from "~/components/ui/pretext";
 import {
@@ -307,7 +307,9 @@ function BuilderProgressView({ filter, context, onClose }: BuilderProgressViewPr
                   Government
                 </span>
                 <span className="max-w-[120px] truncate font-bold text-zinc-200">
-                  {builderState.governmentStructure?.structure?.governmentType || "Not configured"}
+                  {builderState.governmentStructure?.structure?.governmentType
+                    ? toTitleCase(builderState.governmentStructure.structure.governmentType)
+                    : "Not configured"}
                 </span>
               </div>
               <div className="flex items-center justify-between border-b border-white/5 py-1">

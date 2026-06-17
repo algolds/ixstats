@@ -9,6 +9,7 @@ import { Spotlight } from "~/components/ui/spotlight-new";
 import { TrendingUpIcon } from "~/components/ui/trending-up";
 import { ActivityIcon } from "~/components/ui/activity";
 import { LayersIcon } from "~/components/ui/layers";
+import { toTitleCase } from "~/lib/utils";
 import {
   RiMapPin2Line,
   RiBarChartLine,
@@ -168,7 +169,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
               </div>
               <div className="space-y-1 pl-0.5">
                 {country.governmentType && (
-                  <DetailRow label="Govt" value={country.governmentType} />
+                  <DetailRow label="Govt" value={toTitleCase(country.governmentType)} />
                 )}
                 {country.leader && <DetailRow label="Leader" value={country.leader} />}
                 {country.religion && <DetailRow label="Religion" value={country.religion} />}

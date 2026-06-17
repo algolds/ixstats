@@ -2,6 +2,7 @@
 
 import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/format-utils";
+import { toTitleCase } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Building, DollarSign, Crown } from "lucide-react";
 import { ChevronRight } from "lucide-react";
@@ -125,7 +126,7 @@ export function GovernmentTab({
                 <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
                   {metricView.structure === "government"
                     ? "Executive office"
-                    : governmentStructure?.governmentType || "Ceremonial office"}
+                    : toTitleCase(governmentStructure?.governmentType || "Ceremonial office")}
                 </p>
               </button>
 
@@ -278,9 +279,11 @@ export function GovernmentTab({
                       Government Type
                     </p>
                     <p className="text-foreground mt-0.5 truncate text-xs font-semibold">
-                      {governmentStructure?.governmentType ||
-                        country.nationalIdentity?.governmentType ||
-                        "N/A"}
+                      {toTitleCase(
+                        governmentStructure?.governmentType ||
+                          country.nationalIdentity?.governmentType ||
+                          "N/A"
+                      )}
                     </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">Constitution base</p>
                   </div>

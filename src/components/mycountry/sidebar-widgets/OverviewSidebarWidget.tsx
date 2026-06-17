@@ -13,6 +13,7 @@ import {
   FileText,
   Award,
 } from "lucide-react";
+import { toTitleCase } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
   SectionContextWidget,
@@ -129,7 +130,7 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
         id: "milestone-govt",
         icon: FileText,
         iconColor: "text-blue-400",
-        text: `Constitution Registered: Formed a ${country.governmentType || "Autonomous"} state.`,
+        text: `Constitution Registered: Formed a ${toTitleCase(country.governmentType || "Autonomous")} state.`,
         time: new Date(baseTime.getTime() + 1 * 3600 * 1000), // 1 hour after creation
       });
 

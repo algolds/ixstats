@@ -19,7 +19,7 @@ import { MapPin, Users, Crown, Globe, ExternalLink, Info, Flag, Building } from 
 import { formatPopulation } from "~/lib/chart-utils";
 import { getFlagColors } from "~/lib/flag-color-extractor";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { cn } from "~/lib/utils";
+import { cn, toTitleCase } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 interface CountryData {
@@ -200,7 +200,7 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
       title: "Government",
       icon: Building,
       items: [
-        { label: "Government Type", value: country.governmentType || wikiData?.government_type },
+        { label: "Government Type", value: toTitleCase(country.governmentType || wikiData?.government_type || "") },
         { label: "Head of State", value: wikiData?.head_of_state },
         { label: "Head of Government", value: wikiData?.head_of_government || country.leader },
         { label: "Legislature", value: wikiData?.legislature },
