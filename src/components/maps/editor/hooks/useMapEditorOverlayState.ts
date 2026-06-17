@@ -11,6 +11,12 @@ import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { useBorderEditor } from "~/hooks/useBorderEditor";
 import { useWikiScanner } from "~/hooks/useWikiScanner";
+import {
+  getSnapEnabled,
+  setSnapEnabled as persistSnapEnabled,
+  getSnapTolerance,
+  setSnapTolerance as persistSnapTolerance,
+} from "~/lib/editor-prefs";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
@@ -542,6 +548,17 @@ export function useMapEditorOverlayState({
   const [cursorCoords, setCursorCoords] = useState<[number, number] | null>(null);
   const [cursorZoom, setCursorZoom] = useState<number | undefined>(undefined);
   const [showGrid, setShowGrid] = useState(false);
+  const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled());
+  const [snapTolerance, setSnapToleranceState] = useState(getSnapTolerance());
+
+  const setSnapEnabled = useCallback((v: boolean) => {
+    setSnapEnabledState(v);
+    persistSnapEnabled(v);
+  }, []);
+  const setSnapTolerance = useCallback((v: number) => {
+    setSnapToleranceState(v);
+    persistSnapTolerance(v);
+  }, []);
   const [hoveredFeature, setHoveredFeature] = useState<{
     feature: (typeof editor.allFeatures)[number];
     screenPos: { x: number; y: number };
@@ -1243,6 +1260,10 @@ export function useMapEditorOverlayState({
     setCursorZoom,
     showGrid,
     setShowGrid,
+    snapEnabled,
+    setSnapEnabled,
+    snapTolerance,
+    setSnapTolerance,
     hoveredFeature,
     setHoveredFeature,
     showShortcuts,

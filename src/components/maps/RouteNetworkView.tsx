@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -9,18 +9,10 @@ import {
   useEdgesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Share2 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { buildRouteNetworkGraph } from "~/lib/route-network-graph";
-import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-} from "~/components/ui/dialog";
 
-function RouteNetworkView({ countryId }: { countryId: string }) {
+export function RouteNetworkView({ countryId }: { countryId: string }) {
   const { data: routeData } = api.transport.getCountryRoutes.useQuery(
     { countryId },
     { enabled: !!countryId }
@@ -63,30 +55,5 @@ function RouteNetworkView({ countryId }: { countryId: string }) {
       <Background color="#444" gap={16} size={1} />
       <Controls />
     </ReactFlow>
-  );
-}
-
-export function RouteNetworkButton({ countryId }: { countryId: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          className="absolute top-3 right-3 z-20 gap-1.5"
-          title="Route network view"
-        >
-          <Share2 className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Network</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="h-[80vh] max-w-5xl p-0">
-        <DialogTitle className="sr-only">Route Network</DialogTitle>
-        <div className="h-full w-full">
-          <RouteNetworkView countryId={countryId} />
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
