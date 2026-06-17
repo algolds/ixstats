@@ -348,7 +348,9 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           void (async () => {
             try {
               const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
-              const commentary = await narrateEvents(result.trace as any[], { sport: season.league.sportPreset });
+              const commentary = await narrateEvents(result.trace as any[], {
+                sport: season.league.sportPreset,
+              });
               if (commentary && commentary.length > 0) {
                 const latestMatch = await ctx.db.sportMatch.findUnique({
                   where: { id: match.id },
@@ -489,7 +491,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
               results: resultLines,
             });
 
-            await ctx.db.thinkpagesPost.create({
+            const post = await ctx.db.thinkpagesPost.create({
               data: {
                 accountId: acct.id,
                 content,
@@ -497,6 +499,35 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
                 ixTimeTimestamp: IxTime.timestampToDate(IxTime.getCurrentIxTime()),
               },
             });
+
+            // Fire-and-forget call to append LLM narration
+            (async () => {
+              try {
+                const { narrateBulletin } = await import("~/lib/sports/commentary/narrator");
+                const summary = await narrateBulletin(resultLines, {
+                  sport: season.league.sportPreset,
+                  leagueName: season.league.name,
+                  matchDay: input.matchDay,
+                });
+
+                if (summary) {
+                  const updatedContent = formatMatchDayBulletin({
+                    leagueName: season.league.name,
+                    sportEmoji: getSportEmoji(season.league.sportPreset),
+                    matchDay: input.matchDay,
+                    results: resultLines,
+                    llmSummary: summary,
+                  });
+
+                  await ctx.db.thinkpagesPost.update({
+                    where: { id: post.id },
+                    data: { content: updatedContent },
+                  });
+                }
+              } catch (narrateErr) {
+                console.error("[simulateMatchDay] Async narration failed:", narrateErr);
+              }
+            })();
           }
         } catch (err) {
           console.error("[simulateMatchDay] feed bulletin failed:", err);
@@ -637,7 +668,9 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           void (async () => {
             try {
               const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
-              const commentary = await narrateEvents(result.trace as any[], { sport: season.league.sportPreset });
+              const commentary = await narrateEvents(result.trace as any[], {
+                sport: season.league.sportPreset,
+              });
               if (commentary && commentary.length > 0) {
                 const latestBracket = await (ctx.db as any).sportBracket.findUnique({
                   where: { id: bm.id },

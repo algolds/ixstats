@@ -117,7 +117,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
       </div>
 
       {importer.hasCities && (
-        <div className="border-border bg-card/40 space-y-3 rounded-lg border p-3 mt-3">
+        <div className="border-border bg-card/40 mt-3 space-y-3 rounded-lg border p-3">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-foreground text-xs font-semibold">Import Cities</span>
@@ -147,7 +147,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                   <select
                     value={importer.citiesLayerId}
                     onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId)}
-                    className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
+                    className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
                   >
                     <option value="">-- Auto-detect --</option>
                     {importer.cityLayers.map((layer) => (
@@ -165,7 +165,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                   <select
                     value={importer.capitalLayerId}
                     onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value)}
-                    className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
+                    className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
                   >
                     <option value="">-- None --</option>
                     {importer.cityLayers.map((layer) => (
@@ -178,8 +178,10 @@ export const NameDetectionStep = memo(function NameDetectionStep({
               </div>
 
               {importer.snappedCitiesCount > 0 && (
-                <div className="bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg border px-2.5 py-1.5 text-[10px] leading-relaxed">
-                  <strong>Notice:</strong> {importer.snappedCitiesCount} city dot{importer.snappedCitiesCount !== 1 ? "s" : ""} detected slightly outside country boundaries and will be automatically snapped to the border.
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1.5 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+                  <strong>Notice:</strong> {importer.snappedCitiesCount} city dot
+                  {importer.snappedCitiesCount !== 1 ? "s" : ""} detected slightly outside country
+                  boundaries and will be automatically snapped to the border.
                 </div>
               )}
             </div>

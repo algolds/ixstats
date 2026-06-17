@@ -31,6 +31,7 @@ interface TeamSettingsModalProps {
     logo?: string | null;
     coverImage?: string | null;
     color: string;
+    wikiSlug?: string | null;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,6 +50,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
   const [logoUrl, setLogoUrl] = useState(team.logo ?? "");
   const [coverUrl, setCoverUrl] = useState(team.coverImage ?? "");
   const [color, setColor] = useState(team.color);
+  const [wikiSlug, setWikiSlug] = useState(team.wikiSlug ?? "");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingType, setUploadingType] = useState<"logo" | "cover">("logo");
   const [uploadedLogoFile, setUploadedLogoFile] = useState<File | null>(null);
@@ -61,6 +63,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
       setLogoUrl(team.logo ?? "");
       setCoverUrl(team.coverImage ?? "");
       setColor(team.color);
+      setWikiSlug(team.wikiSlug ?? "");
       setUploadedLogoFile(null);
       setUploadedCoverFile(null);
     }
@@ -140,6 +143,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
       color: color.trim() || "#3b82f6",
       logo: logoUrl || null,
       coverImage: coverUrl || null,
+      wikiSlug: wikiSlug.trim() || null,
     });
   };
 
@@ -189,6 +193,20 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                 className="h-9 flex-1 font-mono text-xs"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="team-wiki-slug">Wiki Article Slug</Label>
+            <Input
+              id="team-wiki-slug"
+              value={wikiSlug}
+              onChange={(e) => setWikiSlug(e.target.value)}
+              placeholder="e.g. Real_Capital"
+              maxLength={100}
+            />
+            <p className="text-muted-foreground text-[10px]">
+              Links this team to its IxWiki article.
+            </p>
           </div>
 
           <div className="space-y-2">

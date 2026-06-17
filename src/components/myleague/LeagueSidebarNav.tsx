@@ -7,7 +7,6 @@ import {
   Swords,
   MapPin,
   Users,
-  PlayCircle,
   Shield,
   Medal,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import { getSportEmoji } from "~/lib/sports/presets";
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { withBasePath } from "~/lib/base-path";
 
 export type LeagueSection =
   | "overview"
@@ -330,6 +330,10 @@ interface LeagueBrandCardProps {
   archetype: string;
   teamCount: number;
   logo?: string | null;
+  seasonNumber?: number;
+  completedCount?: number;
+  totalCount?: number;
+  progressLabel?: string;
 }
 
 export function LeagueBrandCard({
@@ -338,14 +342,19 @@ export function LeagueBrandCard({
   archetype,
   teamCount,
   logo,
+  seasonNumber,
+  completedCount,
+  totalCount,
+  progressLabel = "matches",
 }: LeagueBrandCardProps) {
   const emoji = getSportEmoji(sportPreset);
+  const pct = totalCount && totalCount > 0 ? Math.round(((completedCount ?? 0) / totalCount) * 100) : 0;
 
   return (
     <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
       <div className="mb-2 flex items-center gap-2">
         {logo ? (
-          <img src={logo} alt={leagueName} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+          <img src={withBasePath(logo)} alt={leagueName} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
         ) : (
           <span className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl">
             {emoji}
@@ -363,39 +372,18 @@ export function LeagueBrandCard({
       <div className="text-muted-foreground text-[11px]">
         {teamCount} {teamCount === 1 ? "team" : "teams"}
       </div>
-    </div>
-  );
-}
 
-/* ──── SeasonProgressWidget ──── */
-
-interface SeasonProgressWidgetProps {
-  seasonNumber: number;
-  completedCount: number;
-  totalCount: number;
-  label: string;
-}
-
-export function SeasonProgressWidget({
-  seasonNumber,
-  completedCount,
-  totalCount,
-  label,
-}: SeasonProgressWidgetProps) {
-  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-  return (
-    <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
-      <h4 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase">
-        Season {seasonNumber} Progress
-      </h4>
-      <div className="mb-1.5 flex items-baseline justify-between">
-        <span className="text-lg font-bold tabular-nums">{pct}%</span>
-        <span className="text-muted-foreground text-[11px]">
-          {completedCount}/{totalCount} {label}
-        </span>
-      </div>
-      <Progress value={pct} />
+      {seasonNumber !== undefined && completedCount !== undefined && totalCount !== undefined && (
+        <div className="mt-3 border-t border-border/10 pt-2.5">
+          <div className="mb-1 flex items-baseline justify-between text-[10px]">
+            <span className="text-muted-foreground font-semibold">Season {seasonNumber} Progress</span>
+            <span className="text-foreground/90 font-mono font-bold">
+              {completedCount}/{totalCount} {progressLabel} ({pct}%)
+            </span>
+          </div>
+          <Progress value={pct} className="h-1" />
+        </div>
+      )}
     </div>
   );
 }
@@ -466,63 +454,4 @@ export function RewardsBanner() {
   const packCount = data?.packs?.length ?? 0;
 
   return <RewardsBannerWidget packCount={packCount} />;
-}
-
-import { Loader2 } from "lucide-react";
-
-export function QuickSimWidget({
-  seasonId,
-  nextMatchDay,
-  onSimulated,
-}: {
-  seasonId: string;
-  nextMatchDay: number | null;
-  onSimulated?: () => void;
-}) {
-  const utils = api.useUtils();
-  const simulateMatchDay = api.sports.simulateMatchDay.useMutation({
-    onSuccess: () => {
-      utils.sports.getLeague.invalidate();
-      onSimulated?.();
-    },
-  });
-
-  return (
-    <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
-      <h4 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase">
-        <PlayCircle className="h-3.5 w-3.5 text-purple-400" /> QuickSim
-      </h4>
-      <p className="text-muted-foreground mb-3 text-[10px] leading-relaxed">
-        Advance the league schedule by simulating the next match day/round instantly from any page.
-      </p>
-      <Button
-        onClick={() => {
-          if (nextMatchDay == null) return;
-          simulateMatchDay.mutate({
-            seasonId,
-            matchDay: nextMatchDay,
-          });
-        }}
-        disabled={simulateMatchDay.isPending || nextMatchDay == null}
-        className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-purple-600 py-1.5 text-xs font-bold text-white shadow transition hover:bg-purple-500"
-      >
-        {simulateMatchDay.isPending ? (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            <span>Simulating...</span>
-          </>
-        ) : nextMatchDay == null ? (
-          <>
-            <PlayCircle className="h-3.5 w-3.5" />
-            <span>Season complete</span>
-          </>
-        ) : (
-          <>
-            <PlayCircle className="h-3.5 w-3.5" />
-            <span>Simulate Day {nextMatchDay}</span>
-          </>
-        )}
-      </Button>
-    </div>
-  );
 }

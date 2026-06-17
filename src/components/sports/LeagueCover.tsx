@@ -34,5 +34,7 @@ export function LeagueCover({
       </div>
     );
   }
-  return <img src={withBasePath(src)} alt={alt} onError={() => setFailed(true)} className={className} />;
+  return (
+    <img src={withBasePath(src)} alt={alt} onError={() => setFailed(true)} className={className} />
+  );
 }

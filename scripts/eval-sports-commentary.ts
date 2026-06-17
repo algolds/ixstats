@@ -3,20 +3,60 @@ import type { EventTraceStep } from "../src/lib/sports/resolver";
 
 const fixtures: Record<string, EventTraceStep[]> = {
   soccer: [
-    { t: 0, type: "tactic_shift", description: "Match begins. Home team using neutral tactics.", team: "home" },
-    { t: 23, type: "goal", description: "GOAL! John Smith fires a shot past the goalie!", team: "home" },
-    { t: 45, type: "card", description: "YELLOW CARD: Alex Jones gets booked for a late challenge.", team: "away" }
+    {
+      t: 0,
+      type: "tactic_shift",
+      description: "Match begins. Home team using neutral tactics.",
+      team: "home",
+    },
+    {
+      t: 23,
+      type: "goal",
+      description: "GOAL! John Smith fires a shot past the goalie!",
+      team: "home",
+    },
+    {
+      t: 45,
+      type: "card",
+      description: "YELLOW CARD: Alex Jones gets booked for a late challenge.",
+      team: "away",
+    },
   ],
   f1: [
-    { t: 0, type: "tactic_shift", description: "Race begins under clear skies. Drivers grid up.", team: "home" },
-    { t: 15, type: "tactic_shift", description: "COLLISION: Hamilton and Verstappen touch at turn 4!", team: "away" },
-    { t: 50, type: "goal", description: "CHEQUERED FLAG: Leclerc wins the race!", team: "home" }
+    {
+      t: 0,
+      type: "tactic_shift",
+      description: "Race begins under clear skies. Drivers grid up.",
+      team: "home",
+    },
+    {
+      t: 15,
+      type: "tactic_shift",
+      description: "COLLISION: Hamilton and Verstappen touch at turn 4!",
+      team: "away",
+    },
+    { t: 50, type: "goal", description: "CHEQUERED FLAG: Leclerc wins the race!", team: "home" },
   ],
   boxing: [
-    { t: 1, type: "tactic_shift", description: "Round 1 begins. Fighters touch gloves.", team: "home" },
-    { t: 2, type: "goal", description: "KNOCKDOWN: Tyson lands a devastating hook and sends Paul to the canvas!", team: "home" },
-    { t: 3, type: "goal", description: "DECISION: Tyson wins by Unanimous Decision!", team: "home" }
-  ]
+    {
+      t: 1,
+      type: "tactic_shift",
+      description: "Round 1 begins. Fighters touch gloves.",
+      team: "home",
+    },
+    {
+      t: 2,
+      type: "goal",
+      description: "KNOCKDOWN: Tyson lands a devastating hook and sends Paul to the canvas!",
+      team: "home",
+    },
+    {
+      t: 3,
+      type: "goal",
+      description: "DECISION: Tyson wins by Unanimous Decision!",
+      team: "home",
+    },
+  ],
 };
 
 const candidates = [
@@ -27,8 +67,8 @@ const candidates = [
       SPORTS_LLM_PROVIDER: "nvidia",
       SPORTS_LLM_API_KEY: process.env.NVIDIA_API_KEY || process.env.SPORTS_LLM_API_KEY || "",
       SPORTS_LLM_MODEL: "nvidia/nemotron-3-ultra-550b-a55b",
-      SPORTS_LLM_API_URL: "https://integrate.api.nvidia.com/v1/chat/completions"
-    }
+      SPORTS_LLM_API_URL: "https://integrate.api.nvidia.com/v1/chat/completions",
+    },
   },
   {
     name: "OpenRouter Llama 3.1 70B",
@@ -37,8 +77,8 @@ const candidates = [
       SPORTS_LLM_PROVIDER: "openrouter",
       SPORTS_LLM_API_KEY: process.env.OPENROUTER_API_KEY || "",
       SPORTS_LLM_MODEL: "meta-llama/llama-3.1-70b-instruct",
-      SPORTS_LLM_API_URL: "https://openrouter.ai/api/v1/chat/completions"
-    }
+      SPORTS_LLM_API_URL: "https://openrouter.ai/api/v1/chat/completions",
+    },
   },
   {
     name: "OpenAI GPT-4o-Mini Baseline",
@@ -47,9 +87,9 @@ const candidates = [
       SPORTS_LLM_PROVIDER: "openai",
       SPORTS_LLM_API_KEY: process.env.OPENAI_API_KEY || "",
       SPORTS_LLM_MODEL: "gpt-4o-mini",
-      SPORTS_LLM_API_URL: "https://api.openai.com/v1/chat/completions"
-    }
-  }
+      SPORTS_LLM_API_URL: "https://api.openai.com/v1/chat/completions",
+    },
+  },
 ];
 
 async function runEval() {
@@ -62,7 +102,7 @@ async function runEval() {
 
   for (const candidate of candidates) {
     console.log(`>>> Evaluating Candidate: ${candidate.name} ...`);
-    
+
     if (!candidate.env.SPORTS_LLM_API_KEY) {
       console.log(`    Status: SKIPPED (API Key missing)\n`);
       continue;
@@ -73,7 +113,7 @@ async function runEval() {
 
     for (const [sport, events] of Object.entries(fixtures)) {
       console.log(`    [Sport: ${sport.toUpperCase()}]`);
-      console.log(`      Input:  ${events.map(e => e.description).join(" | ")}`);
+      console.log(`      Input:  ${events.map((e) => e.description).join(" | ")}`);
 
       const start = Date.now();
       try {
@@ -99,7 +139,7 @@ async function runEval() {
   const latency = Date.now() - start;
   console.log(`    Output:  ${fallbackResults.join(" | ")}`);
   console.log(`    Latency: ${latency}ms (Expected near 0ms)\n`);
-  
+
   // Restore original environment
   process.env = { ...originalEnv };
   console.log("Evaluation run completed.");

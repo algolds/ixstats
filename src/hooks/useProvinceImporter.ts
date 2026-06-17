@@ -355,7 +355,10 @@ export function useProvinceImporter(countryId: string) {
     const aligned = applyCityAffine(rawCityPoints, transform);
     let snappedCount = 0;
     const snapped = aligned
-      .filter((c) => typeof c.lng === "number" && !isNaN(c.lng) && typeof c.lat === "number" && !isNaN(c.lat))
+      .filter(
+        (c) =>
+          typeof c.lng === "number" && !isNaN(c.lng) && typeof c.lat === "number" && !isNaN(c.lat)
+      )
       .map((c) => {
         const snappedCoords = snapPointToCountryBorderJS(
           [c.lng, c.lat],
@@ -363,7 +366,8 @@ export function useProvinceImporter(countryId: string) {
           alignedProvinces.length > 0 ? alignedProvinces : rawProvinces,
           10000 // 10km
         );
-        const wasSnapped = Math.abs(snappedCoords[0] - c.lng) > 1e-8 || Math.abs(snappedCoords[1] - c.lat) > 1e-8;
+        const wasSnapped =
+          Math.abs(snappedCoords[0] - c.lng) > 1e-8 || Math.abs(snappedCoords[1] - c.lat) > 1e-8;
         if (wasSnapped) {
           snappedCount++;
         }
@@ -497,9 +501,15 @@ export function useProvinceImporter(countryId: string) {
 
       const citiesToCommit = importCities
         ? alignedCities
-            .filter((c) => typeof c.lng === "number" && !isNaN(c.lng) && typeof c.lat === "number" && !isNaN(c.lat))
-            .map((c) => ({
-              name: c.name,
+            .filter(
+              (c) =>
+                typeof c.lng === "number" &&
+                !isNaN(c.lng) &&
+                typeof c.lat === "number" &&
+                !isNaN(c.lat)
+            )
+            .map((c, index) => ({
+              name: c.name.trim() || `Unnamed City ${index + 1}`,
               coordinates: [c.lng, c.lat],
               isCapital: c.isCapital,
             }))

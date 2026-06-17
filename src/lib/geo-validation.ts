@@ -655,7 +655,9 @@ export async function snapPointToCountryBorder(
       hasTarget = true;
     } else {
       // Fallback: use country centroid
-      const countryCentroidResult = await db.$queryRawUnsafe<Array<{ c_lng: number; c_lat: number }>>(
+      const countryCentroidResult = await db.$queryRawUnsafe<
+        Array<{ c_lng: number; c_lat: number }>
+      >(
         `SELECT ST_X(ST_Centroid(geom_postgis)) as c_lng, ST_Y(ST_Centroid(geom_postgis)) as c_lat
          FROM map_layers
          WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
@@ -740,4 +742,3 @@ export async function repairGeometryGeoJSON(
     return geometry;
   }
 }
-

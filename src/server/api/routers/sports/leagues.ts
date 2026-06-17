@@ -13,11 +13,14 @@ import {
   getPreset,
   generateTeamRoster,
   generateCoach,
+  generateSchedule,
   type SportPresetKey,
   type TeamRatingVector,
 } from "~/lib/sports";
 import { exchangeService } from "~/lib/exchange-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
+import { IxTime } from "~/lib/ixtime";
+import { generateMatchReport, generateMatchPreview } from "~/lib/sports/commentary/narrator";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -34,6 +37,93 @@ function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number)
     teamIndex * 13 +
     playerIndex * 3
   );
+}
+
+async function recalculateStandings(db: any, seasonId: string) {
+  const teams = await db.sportTeamSeason.findMany({
+    where: { seasonId },
+    select: { teamId: true },
+  });
+
+  const matches = await db.sportMatch.findMany({
+    where: { seasonId, status: "completed" },
+  });
+
+  const statsMap: Record<string, { wins: number; losses: number; draws: number; points: number; pointsFor: number; pointsAgainst: number }> = {};
+  for (const t of teams) {
+    statsMap[t.teamId] = { wins: 0, losses: 0, draws: 0, points: 0, pointsFor: 0, pointsAgainst: 0 };
+  }
+
+  for (const m of matches) {
+    const homeScore = m.homeScore ?? 0;
+    const awayScore = m.awayScore ?? 0;
+    
+    if (!statsMap[m.homeTeamId]) {
+      statsMap[m.homeTeamId] = { wins: 0, losses: 0, draws: 0, points: 0, pointsFor: 0, pointsAgainst: 0 };
+    }
+    if (!statsMap[m.awayTeamId]) {
+      statsMap[m.awayTeamId] = { wins: 0, losses: 0, draws: 0, points: 0, pointsFor: 0, pointsAgainst: 0 };
+    }
+
+    statsMap[m.homeTeamId].pointsFor += homeScore;
+    statsMap[m.homeTeamId].pointsAgainst += awayScore;
+    statsMap[m.awayTeamId].pointsFor += awayScore;
+    statsMap[m.awayTeamId].pointsAgainst += homeScore;
+
+    if (homeScore > awayScore) {
+      statsMap[m.homeTeamId].wins += 1;
+      statsMap[m.homeTeamId].points += 3;
+      statsMap[m.awayTeamId].losses += 1;
+    } else if (awayScore > homeScore) {
+      statsMap[m.awayTeamId].wins += 1;
+      statsMap[m.awayTeamId].points += 3;
+      statsMap[m.homeTeamId].losses += 1;
+    } else {
+      statsMap[m.homeTeamId].draws += 1;
+      statsMap[m.homeTeamId].points += 1;
+      statsMap[m.awayTeamId].draws += 1;
+      statsMap[m.awayTeamId].points += 1;
+    }
+  }
+
+  const standingsArray = Object.entries(statsMap).map(([teamId, stats]) => ({
+    teamId,
+    ...stats,
+    diff: stats.pointsFor - stats.pointsAgainst,
+  }));
+
+  standingsArray.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.diff !== a.diff) return b.diff - a.diff;
+    return b.pointsFor - a.pointsFor;
+  });
+
+  for (let idx = 0; idx < standingsArray.length; idx++) {
+    const item = standingsArray[idx];
+    await db.sportStanding.upsert({
+      where: { seasonId_teamId: { seasonId, teamId: item.teamId } },
+      create: {
+        seasonId,
+        teamId: item.teamId,
+        wins: item.wins,
+        losses: item.losses,
+        draws: item.draws,
+        points: item.points,
+        pointsFor: item.pointsFor,
+        pointsAgainst: item.pointsAgainst,
+        position: idx + 1,
+      },
+      update: {
+        wins: item.wins,
+        losses: item.losses,
+        draws: item.draws,
+        points: item.points,
+        pointsFor: item.pointsFor,
+        pointsAgainst: item.pointsAgainst,
+        position: idx + 1,
+      },
+    });
+  }
 }
 
 // eslint-disable-next-line unused-imports/no-unused-vars
@@ -445,6 +535,8 @@ export const sportsLeaguesRouter = createTRPCRouter({
         tier: z.number().int().min(1).optional(),
         promotionCount: z.number().int().min(0).optional(),
         relegationCount: z.number().int().min(0).optional(),
+        wikiSlug: z.string().nullable().optional(),
+        isCanonical: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -535,8 +627,8 @@ export const sportsLeaguesRouter = createTRPCRouter({
         const matches = await ctx.db.sportMatch.findMany({
           where: { seasonId: input.seasonId },
           include: {
-            homeTeam: { select: { id: true, name: true, shortName: true } },
-            awayTeam: { select: { id: true, name: true, shortName: true } },
+            homeTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
+            awayTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
           },
           orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
         });
@@ -614,4 +706,414 @@ export const sportsLeaguesRouter = createTRPCRouter({
       });
     }
   }),
+
+  resetSeason: protectedProcedure
+    .input(z.object({ seasonId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const season = await ctx.db.sportSeason.findUnique({
+          where: { id: input.seasonId },
+        });
+        if (!season) throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
+
+        await ctx.db.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        await ctx.db.sportStanding.deleteMany({ where: { seasonId: input.seasonId } });
+        await ctx.db.sportBracket.deleteMany({ where: { seasonId: input.seasonId } });
+        await ctx.db.sportRace.deleteMany({ where: { seasonId: input.seasonId } });
+
+        await ctx.db.sportSeason.update({
+          where: { id: input.seasonId },
+          data: { status: "upcoming", activeStage: 1, championTeamId: null },
+        });
+
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to reset season" });
+      }
+    }),
+
+  overrideMatchResult: protectedProcedure
+    .input(
+      z.object({
+        matchId: z.string(),
+        homeScore: z.number().int().min(0),
+        awayScore: z.number().int().min(0),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const match = await ctx.db.sportMatch.findUnique({
+          where: { id: input.matchId },
+        });
+        if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
+
+        const updatedMatch = await ctx.db.sportMatch.update({
+          where: { id: input.matchId },
+          data: {
+            homeScore: input.homeScore,
+            awayScore: input.awayScore,
+            status: "completed",
+            resolvedIxTime: Date.now() / 1000,
+          },
+        });
+
+        await recalculateStandings(ctx.db, match.seasonId);
+
+        return updatedMatch;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to override match result",
+        });
+      }
+    }),
+
+  transferTeam: protectedProcedure
+    .input(z.object({ teamId: z.string(), targetLeagueId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+
+        const targetLeague = await ctx.db.sportLeague.findUnique({
+          where: { id: input.targetLeagueId },
+        });
+        if (!targetLeague) throw new TRPCError({ code: "NOT_FOUND", message: "Target league not found" });
+
+        return ctx.db.sportTeam.update({
+          where: { id: input.teamId },
+          data: { leagueId: input.targetLeagueId },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to transfer team",
+        });
+      }
+    }),
+
+  exportLeagueData: publicProcedure
+    .input(z.object({ leagueId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const league = await ctx.db.sportLeague.findUnique({
+          where: { id: input.leagueId },
+          include: {
+            teams: true,
+            seasons: {
+              include: {
+                matches: true,
+                standings: true,
+              },
+            },
+          },
+        });
+        if (!league) throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
+        return league;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to export league data",
+        });
+      }
+    }),
+
+  regenerateSchedule: protectedProcedure
+    .input(z.object({ seasonId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const season = await ctx.db.sportSeason.findUnique({
+          where: { id: input.seasonId },
+          include: {
+            league: {
+              include: { teams: true },
+            },
+          },
+        });
+        if (!season) throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
+
+        const completedMatch = await ctx.db.sportMatch.findFirst({
+          where: { seasonId: input.seasonId, status: "completed" },
+        });
+        if (completedMatch) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot regenerate schedule once games have been played",
+          });
+        }
+
+        await ctx.db.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        await ctx.db.sportRace.deleteMany({ where: { seasonId: input.seasonId } });
+        await ctx.db.sportBracket.deleteMany({ where: { seasonId: input.seasonId } });
+
+        const teamIds = season.league.teams.map((t) => t.id);
+        const startIxTime = IxTime.getCurrentIxTime();
+
+        if (season.league.archetype === "circuit") {
+          const schedule = generateSchedule({
+            archetype: season.league.archetype as any,
+            teamCount: teamIds.length,
+            raceCount: (season.league.settings as Record<string, unknown> | null)?.raceCount as
+              | number
+              | undefined,
+          });
+          const races = Array.isArray(schedule) ? schedule : [];
+          for (const race of races) {
+            const rRec = race as any;
+            await ctx.db.sportRace.create({
+              data: {
+                seasonId: season.id,
+                raceNumber: rRec.raceNumber as number,
+                circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
+                status: "upcoming",
+                raceIxTime: startIxTime + (rRec.raceNumber as number) * 3 * 86400000,
+              },
+            });
+          }
+        } else if (season.league.archetype === "bracket") {
+          const shuffled = [...season.league.teams].sort(() => Math.random() - 0.5);
+          const pairs: Array<[any, any]> = [];
+          for (let i = 0; i < shuffled.length; i += 2) {
+            if (i + 1 < shuffled.length) {
+              pairs.push([shuffled[i], shuffled[i + 1]]);
+            }
+          }
+          for (const [fighter1, fighter2] of pairs) {
+            await ctx.db.sportBracket.create({
+              data: {
+                seasonId: season.id,
+                round: 1,
+                fighter1Id: fighter1.id,
+                fighter2Id: fighter2.id,
+                status: "scheduled",
+                scheduledIxTime: startIxTime,
+              },
+            });
+          }
+        } else {
+          const schedule = generateSchedule({
+            archetype: season.league.archetype as any,
+            teamCount: teamIds.length,
+          });
+          const matches = Array.isArray(schedule) ? schedule : [];
+          for (const m of matches) {
+            const mRec = m as any;
+            await ctx.db.sportMatch.create({
+              data: {
+                seasonId: season.id,
+                matchDay: (mRec.matchDay as number) ?? 1,
+                homeTeamId: teamIds[(mRec.homeTeamIndex as number) ?? 0] ?? teamIds[0],
+                awayTeamId:
+                  teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
+                status: "scheduled",
+                scheduledIxTime: startIxTime + ((mRec.matchDay as number) ?? 1) * 86400000,
+              },
+            });
+          }
+        }
+
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to regenerate schedule",
+        });
+      }
+    }),
+
+  generateMatchReport: publicProcedure
+    .input(z.object({ matchId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const match = await ctx.db.sportMatch.findUnique({
+          where: { id: input.matchId },
+          include: {
+            homeTeam: { select: { id: true, name: true } },
+            awayTeam: { select: { id: true, name: true } },
+            playerStats: {
+              include: {
+                player: { select: { firstName: true, lastName: true } }
+              }
+            },
+            season: {
+              include: {
+                league: { select: { sportPreset: true } }
+              }
+            }
+          }
+        });
+
+        if (!match) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
+        }
+
+        const stats = match.matchStats as any;
+        const events = stats?.trace ?? [];
+        
+        const report = await generateMatchReport({
+          homeTeamName: match.homeTeam.name,
+          awayTeamName: match.awayTeam.name,
+          homeScore: match.homeScore ?? 0,
+          awayScore: match.awayScore ?? 0,
+          sport: match.season.league.sportPreset,
+          events: events,
+          playerStats: match.playerStats as any[]
+        });
+
+        return { report };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate match report",
+        });
+      }
+    }),
+
+  generateMatchPreview: publicProcedure
+    .input(
+      z.object({
+        homeTeamId: z.string(),
+        awayTeamId: z.string(),
+        sport: z.string(),
+        standingsContext: z.string().optional()
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const [homeTeam, awayTeam] = await Promise.all([
+          ctx.db.sportTeam.findUnique({ where: { id: input.homeTeamId } }),
+          ctx.db.sportTeam.findUnique({ where: { id: input.awayTeamId } }),
+        ]);
+
+        if (!homeTeam || !awayTeam) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "One or both teams not found" });
+        }
+
+        const preview = await generateMatchPreview(
+          { name: homeTeam.name },
+          { name: awayTeam.name },
+          input.sport,
+          input.standingsContext
+        );
+
+        return { preview };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate match preview",
+        });
+      }
+    }),
+
+  getAdminGlobalStats: protectedProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const [totalMatches, totalPlayers, totalLeagues, llmPosts] = await Promise.all([
+          ctx.db.sportMatch.count(),
+          ctx.db.sportPlayer.count(),
+          ctx.db.sportLeague.count(),
+          ctx.db.thinkpagesPost.count({
+            where: { account: { username: "SportsNews" } },
+          }),
+        ]);
+        return {
+          totalMatches,
+          totalPlayers,
+          totalLeagues,
+          llmPosts,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch admin global stats",
+        });
+      }
+    }),
+
+  testLLMNarrator: protectedProcedure
+    .input(
+      z.object({
+        sport: z.string(),
+        events: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
+        const mappedEvents = input.events.map((desc, idx) => ({
+          t: idx * 10,
+          type: "goal" as const,
+          description: desc,
+          team: "home" as const,
+        }));
+        const outputs = await narrateEvents(mappedEvents, { sport: input.sport });
+        return { outputs };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to run LLM narrator test",
+        });
+      }
+    }),
+
+  generateMatchCommentary: publicProcedure
+    .input(z.object({ matchId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const match = await ctx.db.sportMatch.findUnique({
+          where: { id: input.matchId },
+          include: {
+            season: {
+              include: {
+                league: { select: { sportPreset: true } },
+              },
+            },
+          },
+        });
+
+        if (!match) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
+        }
+
+        const stats = (match.matchStats as Record<string, any>) ?? {};
+        const events = stats.trace ?? [];
+
+        if (events.length === 0) {
+          return { commentary: [] };
+        }
+
+        const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
+        const commentary = await narrateEvents(events, {
+          sport: match.season.league.sportPreset,
+        });
+
+        // Save back to database
+        const updatedStats = {
+          ...stats,
+          commentary,
+        };
+
+        await ctx.db.sportMatch.update({
+          where: { id: input.matchId },
+          data: {
+            matchStats: updatedStats,
+          },
+        });
+
+        return { commentary };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to generate match commentary",
+        });
+      }
+    }),
 });

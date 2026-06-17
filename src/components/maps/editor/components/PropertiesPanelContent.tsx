@@ -8,7 +8,6 @@ import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPa
 import { ProvinceGeneratorPanel } from "~/components/maps/editor/components/ProvinceGeneratorPanel";
 import { JsonViewer } from "~/components/json-viewer";
 
-
 interface PropertiesPanelContentProps {
   isWorldMode: boolean;
   activeEditorMode: "view" | "border_edit";
@@ -111,7 +110,6 @@ export function PropertiesPanelContent({
           onBrushTargetChange={setBrushTargetId ?? (() => {})}
         />
       );
-
     } else if (editor.mode !== "view") {
       // A feature-placement tool is active — show its form
       mainContent = (
@@ -438,8 +436,6 @@ export function PropertiesPanelContent({
 
     return <div className="space-y-4">{mainContent}</div>;
   }
-
-
 
   return (
     <FeaturePropertyPanel

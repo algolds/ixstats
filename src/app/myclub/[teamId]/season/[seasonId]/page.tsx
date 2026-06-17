@@ -3,9 +3,11 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { MatchCommentary } from "~/components/sports/MatchCommentary";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import {
@@ -82,10 +84,14 @@ function MatchCard({
   match,
   teamId,
   index,
+  isExpanded,
+  onToggleExpand,
 }: {
   match: Record<string, unknown>;
   teamId: string;
   index: number;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
 }) {
   const homeTeam = match.homeTeam as Record<string, string>;
   const awayTeam = match.awayTeam as Record<string, string>;
@@ -106,50 +112,68 @@ function MatchCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03 }}
+      layout
     >
       <Card
+        onClick={onToggleExpand}
         className={cn(
-          "overflow-hidden transition-colors",
+          "overflow-hidden transition-colors cursor-pointer select-none",
+          isCompleted && "hover:bg-muted/10 dark:hover:bg-slate-900/10",
           won && "border-emerald-500/30 bg-emerald-500/5",
           lost && "border-red-500/20 bg-red-500/5"
         )}
       >
-        <CardContent className="flex items-center gap-4 py-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
-            {won ? (
-              <ArrowUp className="h-5 w-5 text-emerald-500" />
-            ) : lost ? (
-              <ArrowDown className="h-5 w-5 text-red-500" />
-            ) : (
-              <Minus className="text-muted-foreground h-5 w-5" />
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className={cn("text-sm font-medium", isHome && "font-semibold")}>
-                {isHome ? homeTeam?.name : awayTeam?.name}
-              </p>
-              {isCompleted && (
-                <span className="text-lg font-bold tracking-tight tabular-nums">
-                  {teamScore} - {opponentScore}
-                </span>
+        <CardContent className="flex flex-col gap-0 py-4 px-6">
+          <div className="flex items-center gap-4 w-full">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+              {won ? (
+                <ArrowUp className="h-5 w-5 text-emerald-500" />
+              ) : lost ? (
+                <ArrowDown className="h-5 w-5 text-red-500" />
+              ) : (
+                <Minus className="text-muted-foreground h-5 w-5" />
               )}
-              {!isCompleted && <span className="text-muted-foreground text-xs">vs</span>}
-              <p className="text-muted-foreground text-sm">
-                {isHome ? awayTeam?.name : homeTeam?.name}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <p className={cn("text-sm font-medium", isHome && "font-semibold")}>
+                  {isHome ? homeTeam?.name : awayTeam?.name}
+                </p>
+                {isCompleted && (
+                  <span className="text-lg font-bold tracking-tight tabular-nums">
+                    {teamScore} - {opponentScore}
+                  </span>
+                )}
+                {!isCompleted && <span className="text-muted-foreground text-xs">vs</span>}
+                <p className="text-muted-foreground text-sm">
+                  {isHome ? awayTeam?.name : homeTeam?.name}
+                </p>
+              </div>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Match Day {match.matchDay as number}
+                {isHome ? " (Home)" : " (Away)"}
               </p>
             </div>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              Match Day {match.matchDay as number}
-              {isHome ? " (Home)" : " (Away)"}
-            </p>
+
+            <Badge variant={isCompleted ? "outline" : "secondary"} className="shrink-0 gap-1 text-xs">
+              {MATCH_STATUS_ICON[status] ?? null}
+              {MATCH_STATUS_LABEL[status] ?? status}
+            </Badge>
           </div>
 
-          <Badge variant={isCompleted ? "outline" : "secondary"} className="shrink-0 gap-1 text-xs">
-            {MATCH_STATUS_ICON[status] ?? null}
-            {MATCH_STATUS_LABEL[status] ?? status}
-          </Badge>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full mt-2"
+            >
+              <MatchCommentary matchId={match.id as string} />
+            </motion.div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -161,6 +185,7 @@ export default function MyClubSeasonDetailPage() {
   const teamId = typeof params.teamId === "string" ? params.teamId : "";
   const seasonId = typeof params.seasonId === "string" ? params.seasonId : "";
   const router = useRouter();
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
 
   const { data: season, isLoading } = api.sports.getSeason.useQuery(
     { id: seasonId },
@@ -360,12 +385,20 @@ export default function MyClubSeasonDetailPage() {
             <h2 className="mb-4 text-lg font-semibold">Match Results ({teamMatches.length})</h2>
             {teamMatches.length > 0 ? (
               <div className="space-y-2">
-                {teamMatches.map((match, i) => (
+                 {teamMatches.map((match, i) => (
                   <MatchCard
                     key={(match as Record<string, string>).id}
                     match={match as Record<string, unknown>}
                     teamId={teamId}
                     index={i}
+                    isExpanded={expandedMatchId === (match as Record<string, string>).id}
+                    onToggleExpand={() =>
+                      setExpandedMatchId(
+                        expandedMatchId === (match as Record<string, string>).id
+                          ? null
+                          : (match as Record<string, string>).id
+                      )
+                    }
                   />
                 ))}
               </div>

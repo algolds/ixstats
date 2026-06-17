@@ -193,10 +193,7 @@ export function useWorldMapOverlayFeatures({
             "text-optional": true,
             "text-padding": 8 as unknown as number,
             "text-font": [...MAP_SYMBOL_FONTS.regular],
-            "symbol-sort-key": [
-              "-",
-              ["coalesce", ["get", "areaSqKm"], 0]
-            ] as unknown as number,
+            "symbol-sort-key": ["-", ["coalesce", ["get", "areaSqKm"], 0]] as unknown as number,
           },
           paint: {
             "text-color": "#6d28d9",
@@ -329,10 +326,7 @@ export function useWorldMapOverlayFeatures({
             "text-allow-overlap": false,
             "text-optional": true,
             "text-font": [...MAP_SYMBOL_FONTS.regular],
-            "symbol-sort-key": [
-              "-",
-              ["coalesce", ["get", "population"], 0]
-            ] as unknown as number,
+            "symbol-sort-key": ["-", ["coalesce", ["get", "population"], 0]] as unknown as number,
           },
           paint: { "text-color": "#1e40af", "text-halo-color": "#fff", "text-halo-width": 1.5 },
           minzoom: 6,

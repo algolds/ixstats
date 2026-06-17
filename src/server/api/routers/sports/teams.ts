@@ -267,6 +267,7 @@ export const sportsTeamsRouter = createTRPCRouter({
         nationId: z.string().optional(),
         logo: z.string().nullable().optional(),
         coverImage: z.string().nullable().optional(),
+        wikiSlug: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -503,21 +504,46 @@ export const sportsTeamsRouter = createTRPCRouter({
         orderBy: { name: "asc" },
       });
 
-      const teamsWithSeasons = await Promise.all(
+      const teamsWithDetails = await Promise.all(
         teams.map(async (t) => {
           const activeSeason = await ctx.db.sportSeason.findFirst({
             where: { leagueId: t.leagueId, status: "in_progress" },
             select: { id: true, seasonNumber: true },
           });
 
+          let currentStandings = null;
+          if (activeSeason) {
+            const allStandings = await ctx.db.sportStanding.findMany({
+              where: { seasonId: activeSeason.id },
+              orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
+              select: { teamId: true, wins: true, losses: true, draws: true, points: true, rank: true, id: true, seasonId: true },
+            });
+
+            const index = allStandings.findIndex((s) => s.teamId === t.id);
+            if (index !== -1) {
+              const standing = allStandings[index]!;
+              currentStandings = {
+                ...standing,
+                position: index + 1,
+                rank: standing.rank ?? (index + 1),
+              };
+            }
+          }
+
+          const championships = await ctx.db.sportSeason.count({
+            where: { championTeamId: t.id, status: "completed" },
+          });
+
           return {
             ...t,
             activeSeason,
+            currentStandings,
+            championships,
           };
         })
       );
 
-      return teamsWithSeasons;
+      return teamsWithDetails;
     } catch (_error) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
