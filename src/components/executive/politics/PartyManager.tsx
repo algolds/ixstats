@@ -39,6 +39,7 @@ interface PartyManagerProps {
 }
 
 export function PartyManager({ countryId }: PartyManagerProps) {
+  const utils = api.useUtils();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingParty, setEditingParty] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -57,6 +58,8 @@ export function PartyManager({ countryId }: PartyManagerProps) {
 
   const createParty = api.elections.createParty.useMutation({
     onSuccess: () => {
+      void utils.elections.getParties.invalidate();
+      void utils.elections.getCurrentParliament.invalidate();
       refetch();
       resetForm();
       setDialogOpen(false);
@@ -65,6 +68,8 @@ export function PartyManager({ countryId }: PartyManagerProps) {
 
   const updateParty = api.elections.updateParty.useMutation({
     onSuccess: () => {
+      void utils.elections.getParties.invalidate();
+      void utils.elections.getCurrentParliament.invalidate();
       refetch();
       resetForm();
       setDialogOpen(false);
@@ -73,7 +78,11 @@ export function PartyManager({ countryId }: PartyManagerProps) {
   });
 
   const deleteParty = api.elections.deleteParty.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => {
+      void utils.elections.getParties.invalidate();
+      void utils.elections.getCurrentParliament.invalidate();
+      refetch();
+    },
   });
 
   function resetForm() {
