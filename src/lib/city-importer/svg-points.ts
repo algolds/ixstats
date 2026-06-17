@@ -22,6 +22,10 @@ export interface SvgLayerInfo {
   name: string; // inkscape:label / id / "Layer N"
   shapeCount: number;
   textCount: number;
+  /** Circles, ellipses, <use> refs, and small point-like shapes — the actual city markers. */
+  markerCount: number;
+  /** Nesting depth (0 = top-level child of <svg>) for UI indentation. */
+  depth: number;
 }
 
 export interface SvgCityPoint {
@@ -108,6 +112,42 @@ function isPointLikeElement(el: Element, viewBoxWidth: number, _viewBoxHeight: n
   }
 }
 
+// Count point-like markers (circles, ellipses, <use>, small shapes) by walking
+// the DOM directly. Unlike collectShapeElements, this does NOT drop shapes that
+// lack an inline fill= (city dots are usually styled via CSS class / default fill),
+// which is exactly the case collectShapeElements wrongly discards.
+function countPointLikeDescendants(
+  el: Element,
+  viewBoxWidth: number,
+  viewBoxHeight: number
+): number {
+  let count = 0;
+  const walk = (node: Element) => {
+    const tag = node.localName ?? node.tagName?.split(":").pop() ?? "";
+    if (tag === "circle" || tag === "ellipse" || tag === "use") {
+      count++;
+      return;
+    }
+    if (SHAPE_TAGS.has(tag)) {
+      if (isPointLikeElement(node, viewBoxWidth, viewBoxHeight)) count++;
+      return;
+    }
+    if (tag === "g") {
+      const children = node.childNodes;
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i] as Element;
+        if (child && child.nodeType === 1) walk(child);
+      }
+    }
+  };
+  const children = el.childNodes;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i] as Element;
+    if (child && child.nodeType === 1) walk(child);
+  }
+  return count;
+}
+
 function findLayerByIdOrName(svgRoot: Element, idOrName: string): Element | null {
   if (idOrName === "root") return svgRoot;
   const allG = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
@@ -179,103 +219,141 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
 
   const viewBox = extractViewBox(svgRoot);
 
-  // 1. Enumerate layers
+  // 1. Enumerate layers — recursively walk ALL named <g> groups so nested
+  //    groups (e.g. Labels > Province_Names) appear in the layer picker.
   const layers: SvgLayerInfo[] = [];
-  const rootShapes = collectShapeElements(svgRoot, svgRoot);
-  const rootTexts = extractAllTextLabels(svgRoot, svgRoot);
+  const seenIds = new Set<string>();
+  let syntheticIdx = 0;
 
-  const children = svgRoot.childNodes;
-  const topLevelGs: Element[] = [];
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i] as Element;
-    if (
-      child &&
-      child.nodeType === 1 &&
-      (child.localName === "g" || child.tagName?.split(":").pop() === "g")
-    ) {
-      topLevelGs.push(child);
+  const enumerateGroups = (parent: Element, depth: number) => {
+    const ch = parent.childNodes;
+    for (let i = 0; i < ch.length; i++) {
+      const child = ch[i] as Element;
+      if (!child || child.nodeType !== 1) continue;
+      const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
+      if (tag !== "g") continue;
+
+      const rawId = child.getAttribute("id");
+      const id = rawId || `layer-${++syntheticIdx}`;
+      // Skip duplicate ids (shouldn't happen in valid SVG, but guard)
+      if (seenIds.has(id)) {
+        enumerateGroups(child, depth + 1);
+        continue;
+      }
+      seenIds.add(id);
+
+      const name =
+        child.getAttributeNS(INKSCAPE_NS, "label") ||
+        child.getAttribute("inkscape:label") ||
+        child.getAttribute("data-name") ||
+        id;
+      const shapes = collectShapeElements(child, svgRoot);
+      const texts = extractAllTextLabels(child, svgRoot);
+      const markers = countPointLikeDescendants(child, viewBox.width, viewBox.height);
+
+      layers.push({
+        id,
+        name,
+        shapeCount: shapes.length,
+        textCount: texts.length,
+        markerCount: markers,
+        depth,
+      });
+
+      // Recurse into child groups
+      enumerateGroups(child, depth + 1);
     }
-  }
+  };
 
-  for (let i = 0; i < topLevelGs.length; i++) {
-    const g = topLevelGs[i]!;
-    const id = g.getAttribute("id") || `layer-${i + 1}`;
-    const name =
-      g.getAttributeNS(INKSCAPE_NS, "label") ||
-      g.getAttribute("inkscape:label") ||
-      g.getAttribute("data-name") ||
-      id;
-    const shapes = collectShapeElements(g, svgRoot);
-    const texts = extractAllTextLabels(g, svgRoot);
-    layers.push({
-      id,
-      name,
-      shapeCount: shapes.length,
-      textCount: texts.length,
-    });
-  }
+  enumerateGroups(svgRoot, 0);
 
+  // Add root entry if there are direct shapes/texts on <svg> or no groups at all
+  const children = svgRoot.childNodes;
   let rootDirectShapes = 0;
   let rootDirectTexts = 0;
   for (let i = 0; i < children.length; i++) {
     const child = children[i] as Element;
     if (child && child.nodeType === 1) {
       const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
-      if (SHAPE_TAGS.has(tag)) {
-        rootDirectShapes++;
-      }
-      if (tag === "text") {
-        rootDirectTexts++;
-      }
+      if (SHAPE_TAGS.has(tag)) rootDirectShapes++;
+      if (tag === "text") rootDirectTexts++;
     }
   }
-
   if (rootDirectShapes > 0 || rootDirectTexts > 0 || layers.length === 0) {
+    const rootShapes = collectShapeElements(svgRoot, svgRoot);
+    const rootTexts = extractAllTextLabels(svgRoot, svgRoot);
+    const rootMarkers = countPointLikeDescendants(svgRoot, viewBox.width, viewBox.height);
     layers.unshift({
       id: "root",
       name: "Root SVG",
       shapeCount: rootShapes.length,
       textCount: rootTexts.length,
+      markerCount: rootMarkers,
+      depth: 0,
     });
   }
 
   // 2. Select cities layer (auto-detect if not specified)
+  //    Strategy: semantic group name match first, then highest marker count.
   let targetLayerId = opts?.citiesLayerId;
   if (!targetLayerId) {
-    let maxPointsCount = -1;
-    let bestId = layers[0]?.id || "root";
+    // Pass 1: look for a group whose name semantically matches "cities"
+    //   Tier A (strong): name contains city/cities/town/towns/settlements — almost
+    //   certainly the right layer. Pick the one with the most markers.
+    //   Tier B (weak): name IS exactly dots/pins/markers (word boundary match to
+    //   avoid "decorative-dots" matching "dots"). Used only if tier A finds nothing.
+    const STRONG_PATTERNS = ["cities", "city", "towns", "town", "settlements"];
+    const WEAK_PATTERNS = /\b(dots|pins|markers)\b/i;
+
+    let bestStrongId: string | null = null;
+    let bestStrongMarkers = 0;
+    let bestWeakId: string | null = null;
+    let bestWeakMarkers = 0;
+
     for (const layer of layers) {
-      const g = findLayerByIdOrName(svgRoot, layer.id);
-      if (!g) continue;
-      const shapes = collectShapeElements(g, svgRoot);
-      let pointsCount = 0;
-      for (const s of shapes) {
-        if (isPointLikeElement(s, viewBox.width, viewBox.height)) {
-          pointsCount++;
+      if (layer.markerCount === 0) continue;
+      const nameLower = layer.name.toLowerCase();
+
+      if (STRONG_PATTERNS.some((p) => nameLower === p || nameLower.includes(p))) {
+        if (layer.markerCount > bestStrongMarkers) {
+          bestStrongMarkers = layer.markerCount;
+          bestStrongId = layer.id;
+        }
+      } else if (WEAK_PATTERNS.test(layer.name)) {
+        if (layer.markerCount > bestWeakMarkers) {
+          bestWeakMarkers = layer.markerCount;
+          bestWeakId = layer.id;
         }
       }
-      const nameLower = layer.name.toLowerCase();
-      if (
-        nameLower.includes("city") ||
-        nameLower.includes("cities") ||
-        nameLower.includes("town") ||
-        nameLower.includes("dot") ||
-        nameLower.includes("pin")
-      ) {
-        pointsCount += 100;
-      }
-      if (pointsCount > maxPointsCount && layer.shapeCount > 0) {
-        maxPointsCount = pointsCount;
-        bestId = layer.id;
-      }
     }
-    targetLayerId = bestId;
+    targetLayerId = bestStrongId ?? bestWeakId ?? null;
+
+    // Pass 2: fall back to the layer with the most markers
+    if (!targetLayerId) {
+      let maxMarkers = -1;
+      let bestId = layers[0]?.id || "root";
+      for (const layer of layers) {
+        if (layer.markerCount > maxMarkers) {
+          maxMarkers = layer.markerCount;
+          bestId = layer.id;
+        }
+      }
+      targetLayerId = bestId;
+    }
   }
 
   const targetGroup = findLayerByIdOrName(svgRoot, targetLayerId) || svgRoot;
 
   // 3. Extract points from target group
   const rawPoints: { x: number; y: number; el: Element; refIcon?: string; name?: string }[] = [];
+
+  // If the layer has explicit point primitives (circle/ellipse/use dots), those
+  // ARE the cities — ignore stray point-like <path>s, which are usually label
+  // glyphs (text converted to outlines) sharing the same group.
+  const hasPrimitiveMarkers =
+    targetGroup.getElementsByTagName("circle").length > 0 ||
+    targetGroup.getElementsByTagName("ellipse").length > 0 ||
+    targetGroup.getElementsByTagName("use").length > 0;
 
   const scanGroupForPoints = (el: Element) => {
     const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
@@ -303,7 +381,7 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     }
 
     if (SHAPE_TAGS.has(tag)) {
-      if (isPointLikeElement(el, viewBox.width, viewBox.height)) {
+      if (!hasPrimitiveMarkers && isPointLikeElement(el, viewBox.width, viewBox.height)) {
         try {
           const rings = elementToRings(el);
           if (rings.length > 0 && rings[0]!.length > 0) {

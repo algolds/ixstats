@@ -41,8 +41,8 @@ export function UploadStep({ importer }: UploadStepProps) {
       <div>
         <h3 className="text-foreground text-sm font-medium">Upload City Data</h3>
         <p className="text-muted-foreground mt-1 text-xs">
-          Upload a CSV, TSV, JSON, or SVG file containing your city data. Each row/dot becomes a city point
-          on your country map.
+          Upload a CSV, TSV, JSON, or SVG file containing your city data. Each row/dot becomes a
+          city point on your country map.
         </p>
       </div>
 
@@ -74,9 +74,7 @@ export function UploadStep({ importer }: UploadStepProps) {
         ) : (
           <>
             <Upload className="text-muted-foreground mb-3 h-8 w-8" />
-            <p className="text-foreground text-sm font-medium">
-              Drag & drop or click to upload
-            </p>
+            <p className="text-foreground text-sm font-medium">Drag & drop or click to upload</p>
             <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1">
                 <FileText className="h-3 w-3" /> CSV
@@ -97,18 +95,18 @@ export function UploadStep({ importer }: UploadStepProps) {
 
       {/* Error display */}
       {importer.error && (
-        <div className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-lg border border-destructive/20 px-3 py-2 text-xs">
+        <div className="bg-destructive/10 text-destructive border-destructive/20 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{importer.error}</span>
         </div>
       )}
 
       {/* Help block */}
-      <div className="bg-card rounded-lg border border-border p-3 space-y-2">
-        <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+      <div className="bg-card border-border space-y-2 rounded-lg border p-3">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Expected columns
         </p>
-        <div className="text-muted-foreground text-xs space-y-1">
+        <div className="text-muted-foreground space-y-1 text-xs">
           <p>
             <span className="text-foreground font-medium">Required:</span>{" "}
             <code className="bg-muted rounded px-1">name</code>,{" "}

@@ -14,7 +14,7 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
 
   // Find the current cities layer count for the sub-text
   const currentCitiesLayer = importer.layers.find((l) => l.id === importer.citiesLayerId);
-  const shapeCount = currentCitiesLayer ? currentCitiesLayer.shapeCount : 0;
+  const markerCount = currentCitiesLayer ? currentCitiesLayer.markerCount : 0;
 
   return (
     <div className="space-y-4">
@@ -44,7 +44,8 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
           >
             {importer.layers.map((layer) => (
               <option key={layer.id} value={layer.id}>
-                {layer.name} ({layer.shapeCount} shape{layer.shapeCount !== 1 ? "s" : ""})
+                {"\u00A0".repeat(layer.depth * 2)}
+                {layer.name} ({layer.markerCount} marker{layer.markerCount !== 1 ? "s" : ""})
               </option>
             ))}
           </select>
@@ -63,7 +64,8 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
             <option value="">None (Auto-detect from names/icons)</option>
             {importer.layers.map((layer) => (
               <option key={layer.id} value={layer.id}>
-                {layer.name} ({layer.shapeCount} shape{layer.shapeCount !== 1 ? "s" : ""})
+                {"\u00A0".repeat(layer.depth * 2)}
+                {layer.name} ({layer.markerCount} marker{layer.markerCount !== 1 ? "s" : ""})
               </option>
             ))}
           </select>
@@ -100,7 +102,7 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
       {hasAlignment && (
         <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-700 dark:text-green-400">
           <Check className="h-3.5 w-3.5 shrink-0" />
-          <span>Successfully aligned {shapeCount} city dots to country coordinates.</span>
+          <span>Successfully aligned {markerCount} city dots to country coordinates.</span>
         </div>
       )}
 

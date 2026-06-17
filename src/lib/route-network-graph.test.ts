@@ -11,7 +11,12 @@ describe("buildRouteNetworkGraph", () => {
 
   it("connects a route's endpoints to nearest hubs", () => {
     const route = {
-      geometry: { coordinates: [[0, 0], [2, 2]] },
+      geometry: {
+        coordinates: [
+          [0, 0],
+          [2, 2],
+        ],
+      },
       properties: { id: "r1", routeType: "rail" },
     };
     const { edges } = buildRouteNetworkGraph([route], [hubA, hubB]);
@@ -22,7 +27,12 @@ describe("buildRouteNetworkGraph", () => {
 
   it("skips a route with no hub near an endpoint", () => {
     const route = {
-      geometry: { coordinates: [[0, 0], [50, 50]] },
+      geometry: {
+        coordinates: [
+          [0, 0],
+          [50, 50],
+        ],
+      },
       properties: { id: "r2", routeType: "rail" },
     };
     const { edges } = buildRouteNetworkGraph([route], [hubA, hubB]);

@@ -349,13 +349,27 @@ export function useMapEditorOverlayState({
     propertiesJsonString,
   ]);
 
+  const handleExitBorderEdit = useCallback(() => {
+    if (borderState.isDirty) {
+      if (!confirm("You have unsaved changes. Discard edits and exit border editor?")) {
+        return;
+      }
+    }
+    borderActions.reset();
+    setActiveEditorMode("view");
+  }, [borderState.isDirty, borderActions]);
+
   const handleRequestExit = useCallback(() => {
+    if (activeEditorMode === "border_edit") {
+      handleExitBorderEdit();
+      return;
+    }
     if (hasUnsavedChanges) {
       setShowExitConfirm(true);
     } else {
       onExit();
     }
-  }, [hasUnsavedChanges, onExit]);
+  }, [activeEditorMode, handleExitBorderEdit, hasUnsavedChanges, onExit]);
 
   // --- Sovereignty States ---
   const [sovereigntySearch, setSovereigntySearch] = useState("");
@@ -1076,6 +1090,8 @@ export function useMapEditorOverlayState({
           editor.setMode("view");
         } else if (editor.mode !== "view") {
           editor.resetForm();
+        } else if (activeEditorMode === "border_edit") {
+          handleExitBorderEdit();
         } else {
           handleRequestExit();
         }
@@ -1093,7 +1109,15 @@ export function useMapEditorOverlayState({
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [editor, importer, handleSubmit, handleDeleteFeature, handleRequestExit]);
+  }, [
+    editor,
+    importer,
+    handleSubmit,
+    handleDeleteFeature,
+    handleRequestExit,
+    activeEditorMode,
+    handleExitBorderEdit,
+  ]);
 
   const handleMapMouseMove = useCallback(
     (e: any) => {
@@ -1289,6 +1313,7 @@ export function useMapEditorOverlayState({
     handleSaveFeatureProperties,
     handleConfirmBorderSave,
     enterBorderEdit,
+    handleExitBorderEdit,
     handleSplitConfirm,
     handleMergeConfirm,
     handleBorderToolbarSubmit,

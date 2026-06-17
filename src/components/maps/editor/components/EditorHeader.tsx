@@ -377,7 +377,9 @@ export function EditorHeader({
                               routeTypes: ["rail", "highway"],
                               clearExisting: true,
                             });
-                            alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`);
+                            alert(
+                              `Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`
+                            );
                           } catch (e) {
                             alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
                           }

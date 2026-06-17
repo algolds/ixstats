@@ -32,9 +32,7 @@ const PAD = 40;
 const MATCH_DEG = 1.5;
 
 function isLngLat(c: unknown): c is [number, number] {
-  return (
-    Array.isArray(c) && c.length >= 2 && typeof c[0] === "number" && typeof c[1] === "number"
-  );
+  return Array.isArray(c) && c.length >= 2 && typeof c[0] === "number" && typeof c[1] === "number";
 }
 
 export function buildRouteNetworkGraph(

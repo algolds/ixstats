@@ -2,12 +2,7 @@ import { greatCircle } from "@turf/turf";
 import type { LineString } from "geojson";
 
 /** Route types whose geometry should follow a great-circle arc. */
-const CURVED_TYPES = new Set([
-  "air_corridor",
-  "shipping_lane",
-  "ferry",
-  "military_naval",
-]);
+const CURVED_TYPES = new Set(["air_corridor", "shipping_lane", "ferry", "military_naval"]);
 
 /**
  * Build a GeoJSON LineString from clicked waypoints. For air/sea route types the
@@ -16,10 +11,7 @@ const CURVED_TYPES = new Set([
  * segments. Falls back to a straight segment if an arc can't be computed (e.g.
  * antimeridian crossing → Turf returns a MultiLineString) or on any error.
  */
-export function buildRouteGeometry(
-  waypoints: [number, number][],
-  routeType: string,
-): LineString {
+export function buildRouteGeometry(waypoints: [number, number][], routeType: string): LineString {
   if (waypoints.length < 2 || !CURVED_TYPES.has(routeType)) {
     return { type: "LineString", coordinates: waypoints };
   }

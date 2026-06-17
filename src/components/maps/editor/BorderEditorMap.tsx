@@ -2,14 +2,13 @@
 // @ts-nocheck
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Position, Polygon, MultiPolygon, Feature, FeatureCollection } from "geojson";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import type { VertexRef, EdgeRef } from "~/lib/border-editor";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { getVertices, findNearestVertex, findNearestEdge, getAllRings } from "~/lib/border-editor";
+import type { VertexRef } from "~/lib/border-editor";
+import { getVertices, getAllRings } from "~/lib/border-editor";
+import { useMapLayers } from "~/components/maps/editor/hooks/useMapLayers";
 
 interface BorderEditorMapProps {
   geometry: Polygon | MultiPolygon | null;
@@ -23,9 +22,35 @@ interface BorderEditorMapProps {
   onDragEnd?: () => void;
   center?: [number, number];
   zoom?: number;
+  worldMapLayers?: import("~/components/maps/core/IxWorldMap").MapLayerData[];
+  brushRadius?: number;
+  brushTargetId?: string | null;
+  onBrushStroke?: (
+    strokePoints: [number, number][],
+    radiusKm: number,
+    targetFeatureId: string
+  ) => boolean;
+  traceStart?: [number, number] | null;
 }
 
 const EMPTY_FC: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+function getCircleCoords(center: [number, number], radiusKm: number): number[][] {
+  const coords: number[][] = [];
+  const steps = 64;
+  const kmPerDegreeLng = 111.32 * Math.cos((center[1] * Math.PI) / 180);
+  const kmPerDegreeLat = 110.574;
+
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i * 2 * Math.PI) / steps;
+    const dx = radiusKm * Math.cos(angle);
+    const dy = radiusKm * Math.sin(angle);
+    const lng = center[0] + dx / kmPerDegreeLng;
+    const lat = center[1] + dy / kmPerDegreeLat;
+    coords.push([lng, lat]);
+  }
+  return coords;
+}
 
 export const BorderEditorMap = React.memo(function BorderEditorMap({
   geometry,
@@ -39,16 +64,56 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
   onDragEnd,
   center = [0, 20],
   zoom = 3,
+  worldMapLayers,
+  brushRadius = 20,
+  brushTargetId = null,
+  onBrushStroke,
+  traceStart = null,
 }: BorderEditorMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const draggingVertex = useRef<VertexRef | null>(null);
-  // Keep mode and callbacks in refs so event handlers always see current values
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Brush stroke state
+  const isBrushing = useRef(false);
+  const brushStrokePoints = useRef<[number, number][]>([]);
+
+  // Keep mode, brush params, and callbacks in refs so event handlers always see current values
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const brushRadiusRef = useRef(brushRadius);
+  brushRadiusRef.current = brushRadius;
+  const brushTargetIdRef = useRef(brushTargetId);
+  brushTargetIdRef.current = brushTargetId;
+  const onBrushStrokeRef = useRef(onBrushStroke);
+  onBrushStrokeRef.current = onBrushStroke;
   const onDragEndRef = useRef(onDragEnd);
   onDragEndRef.current = onDragEnd;
   const sourcesReady = useRef(false);
+
+  // Initialize map context layers
+  useMapLayers({
+    map: mapRef.current,
+    isLoaded,
+    countryGeometry: null,
+    countryBbox: null,
+    features: [],
+    layerVisibility: {
+      rivers: true,
+      lakes: true,
+      altitudes: true,
+      regions: false,
+      cities: false,
+      pois: false,
+      stories: false,
+      labels: false,
+      routes: false,
+    },
+    pendingCoordinates: null,
+    worldMapLayers,
+    gridZoomBucket: 0,
+  });
 
   // Initialize map
   useEffect(() => {
@@ -74,6 +139,8 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
     map.on("load", () => {
       sourcesReady.current = true;
+      setIsLoaded(true);
+
       // Neighbor features (light gray)
       map.addSource("neighbors", { type: "geojson", data: EMPTY_FC });
       map.addLayer({
@@ -166,9 +233,46 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
           "circle-stroke-width": 1,
         },
       });
+
+      // Trace start point layer
+      map.addSource("trace-start", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({
+        id: "trace-start-circle",
+        type: "circle",
+        source: "trace-start",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "#3b82f6",
+          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 1.5,
+        },
+      });
+
+      // Brush cursor source and layers
+      map.addSource("brush-cursor", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({
+        id: "brush-cursor-layer",
+        type: "line",
+        source: "brush-cursor",
+        paint: {
+          "line-color": "#a855f7",
+          "line-width": 1.5,
+          "line-dasharray": [2, 2],
+        },
+      });
+      map.addLayer({
+        id: "brush-cursor-fill",
+        type: "fill",
+        source: "brush-cursor",
+        paint: {
+          "fill-color": "#a855f7",
+          "fill-opacity": 0.1,
+        },
+      });
     });
 
     map.on("click", (e) => {
+      if (modeRef.current === "brush") return;
       onMapClick(e.lngLat.lng, e.lngLat.lat);
     });
 
@@ -184,6 +288,14 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
         coord: [e.lngLat.lng, e.lngLat.lat],
       };
       map.getCanvas().style.cursor = "grabbing";
+    });
+
+    map.on("mousedown", (e) => {
+      if (modeRef.current === "brush" && brushTargetIdRef.current) {
+        isBrushing.current = true;
+        brushStrokePoints.current = [[e.lngLat.lng, e.lngLat.lat]];
+        map.dragPan.disable();
+      }
     });
 
     map.on("mousemove", (e) => {
@@ -219,7 +331,54 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
         onVertexDrag(draggingVertex.current, to);
       }
+
+      if (modeRef.current === "brush") {
+        map.getCanvas().style.cursor = "crosshair";
+        const center: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        const circleCoords = getCircleCoords(center, brushRadiusRef.current);
+        const circleFC: FeatureCollection = {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: {
+                type: "Polygon",
+                coordinates: [circleCoords],
+              },
+              properties: {},
+            },
+          ],
+        };
+        safeSetData("brush-cursor", circleFC);
+
+        if (isBrushing.current && brushTargetIdRef.current) {
+          brushStrokePoints.current.push(center);
+        }
+      } else {
+        if (!draggingVertex.current) {
+          map.getCanvas().style.cursor = "";
+        }
+      }
     });
+
+    const finishBrushing = () => {
+      if (isBrushing.current) {
+        isBrushing.current = false;
+        map.dragPan.enable();
+        if (
+          brushStrokePoints.current.length > 0 &&
+          onBrushStrokeRef.current &&
+          brushTargetIdRef.current
+        ) {
+          onBrushStrokeRef.current(
+            brushStrokePoints.current,
+            brushRadiusRef.current,
+            brushTargetIdRef.current
+          );
+        }
+        brushStrokePoints.current = [];
+      }
+    };
 
     map.on("mouseup", () => {
       if (draggingVertex.current) {
@@ -227,6 +386,11 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
         map.getCanvas().style.cursor = "";
         onDragEndRef.current?.();
       }
+      finishBrushing();
+    });
+
+    map.on("mouseleave", () => {
+      finishBrushing();
     });
 
     map.on("mouseenter", "vertices-circles", () => {
@@ -256,6 +420,13 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
     return true;
   }, []);
 
+  // Clear brush cursor when leaving brush mode
+  useEffect(() => {
+    if (mode !== "brush") {
+      safeSetData("brush-cursor", EMPTY_FC);
+    }
+  }, [mode, safeSetData]);
+
   // Update active feature geometry
   useEffect(() => {
     const fc = geometry
@@ -266,7 +437,6 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
       : EMPTY_FC;
     if (safeSetData("active-feature", fc)) return;
 
-    // Sources not ready — wait for load
     const map = mapRef.current;
     if (!map) return;
     const handler = () => safeSetData("active-feature", fc);
@@ -298,23 +468,21 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
       // Edge midpoints
       const rings = getAllRings(geometry);
-      const midFeatures: Feature[] = [];
-      for (let ri = 0; ri < rings.length; ri++) {
-        const ring = rings[ri]!;
-        for (let i = 0; i < ring.length - 1; i++) {
-          const a = ring[i]!;
-          const b = ring[i + 1]!;
-          midFeatures.push({
+      const mFeatures: Feature[] = [];
+      for (let rIdx = 0; rIdx < rings.length; rIdx++) {
+        const ring = rings[rIdx]!;
+        for (let vIdx = 0; vIdx < ring.length - 1; vIdx++) {
+          const p1 = ring[vIdx]!;
+          const p2 = ring[vIdx + 1]!;
+          const mid: Position = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+          mFeatures.push({
             type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [(a[0]! + b[0]!) / 2, (a[1]! + b[1]!) / 2],
-            },
-            properties: { ringIndex: ri, startIndex: i },
+            geometry: { type: "Point", coordinates: mid },
+            properties: { ringIndex: rIdx, edgeIndex: vIdx },
           });
         }
       }
-      mFC = { type: "FeatureCollection", features: midFeatures };
+      mFC = { type: "FeatureCollection", features: mFeatures };
     }
 
     if (safeSetData("vertices", vFC) && safeSetData("midpoints", mFC)) return;
@@ -331,33 +499,52 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
     };
   }, [geometry, mode, selectedVertex, safeSetData]);
 
-  // Update neighbors
+  // Update neighbor geometries
   useEffect(() => {
-    let nFC: FeatureCollection = EMPTY_FC;
-    let mtFC: FeatureCollection = EMPTY_FC;
-
+    const features: Feature[] = [];
     if (neighborGeometries) {
-      const nFeatures: Feature[] = neighborGeometries.map((n) => ({
-        type: "Feature",
-        geometry: n.geometry as Polygon | MultiPolygon,
-        properties: { featureId: n.featureId },
-      }));
-      nFC = { type: "FeatureCollection", features: nFeatures };
-
-      const mtFeatures = nFeatures.filter((f) =>
-        mergeTargets.includes(f.properties?.featureId as string)
-      );
-      mtFC = { type: "FeatureCollection", features: mtFeatures };
+      for (const geom of neighborGeometries) {
+        if (geom.geometry) {
+          features.push({
+            type: "Feature",
+            geometry: geom.geometry as Polygon | MultiPolygon,
+            properties: { id: geom.featureId },
+          });
+        }
+      }
     }
-
-    if (safeSetData("neighbors", nFC) && safeSetData("merge-targets", mtFC)) return;
+    const fc = { type: "FeatureCollection" as const, features };
+    if (safeSetData("neighbors", fc)) return;
 
     const map = mapRef.current;
     if (!map) return;
-    const handler = () => {
-      safeSetData("neighbors", nFC);
-      safeSetData("merge-targets", mtFC);
+    const handler = () => safeSetData("neighbors", fc);
+    map.on("load", handler);
+    return () => {
+      map.off("load", handler);
     };
+  }, [neighborGeometries, safeSetData]);
+
+  // Update merge targets
+  useEffect(() => {
+    const features: Feature[] = [];
+    if (neighborGeometries && mergeTargets.length > 0) {
+      for (const geom of neighborGeometries) {
+        if (geom.geometry && mergeTargets.includes(geom.featureId)) {
+          features.push({
+            type: "Feature",
+            geometry: geom.geometry as Polygon | MultiPolygon,
+            properties: {},
+          });
+        }
+      }
+    }
+    const fc = { type: "FeatureCollection" as const, features };
+    if (safeSetData("merge-targets", fc)) return;
+
+    const map = mapRef.current;
+    if (!map) return;
+    const handler = () => safeSetData("merge-targets", fc);
     map.on("load", handler);
     return () => {
       map.off("load", handler);
@@ -366,9 +553,8 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
   // Update split line
   useEffect(() => {
-    let fc: FeatureCollection = EMPTY_FC;
-
-    if (splitLine.length > 0) {
+    let fc = EMPTY_FC;
+    if (mode === "split" && splitLine.length > 0) {
       const features: Feature[] = [];
       if (splitLine.length >= 2) {
         features.push({
@@ -396,9 +582,36 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
     return () => {
       map.off("load", handler);
     };
-  }, [splitLine, safeSetData]);
+  }, [splitLine, mode, safeSetData]);
+
+  // Update trace start point
+  useEffect(() => {
+    const fc = traceStart
+      ? {
+          type: "FeatureCollection" as const,
+          features: [
+            {
+              type: "Feature" as const,
+              geometry: { type: "Point" as const, coordinates: traceStart },
+              properties: {},
+            },
+          ],
+        }
+      : EMPTY_FC;
+
+    if (safeSetData("trace-start", fc)) return;
+
+    const map = mapRef.current;
+    if (!map) return;
+    const handler = () => safeSetData("trace-start", fc);
+    map.on("load", handler);
+    return () => {
+      map.off("load", handler);
+    };
+  }, [traceStart, safeSetData]);
 
   // Fly to feature when loaded
+  const hasGeometry = !!geometry;
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !geometry) return;
@@ -424,9 +637,8 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
       ],
       { padding: 60, duration: 1000 }
     );
-    // Only fly on initial geometry load
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!geometry]);
+  }, [hasGeometry]);
 
   return <div ref={containerRef} className="h-full w-full rounded-lg" style={{ minHeight: 400 }} />;
 });

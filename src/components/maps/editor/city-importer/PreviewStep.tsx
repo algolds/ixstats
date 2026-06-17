@@ -71,7 +71,7 @@ export function PreviewStep({ importer }: PreviewStepProps) {
         <button
           onClick={() => void importer.validate()}
           disabled={isProcessing}
-          className="ml-auto flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground transition-opacity disabled:opacity-50"
+          className="bg-primary text-primary-foreground ml-auto flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-opacity disabled:opacity-50"
         >
           {isProcessing ? (
             <>
@@ -105,7 +105,7 @@ export function PreviewStep({ importer }: PreviewStepProps) {
           {parsed.errors.map((e, i) => (
             <div
               key={i}
-              className="flex items-start gap-1.5 rounded-lg bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive"
+              className="bg-destructive/10 text-destructive flex items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-xs"
             >
               <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
               <span>{e}</span>
@@ -116,14 +116,14 @@ export function PreviewStep({ importer }: PreviewStepProps) {
 
       {/* Server error */}
       {error && (
-        <div className="flex items-start gap-1.5 rounded-lg bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive border border-destructive/20">
+        <div className="bg-destructive/10 text-destructive border-destructive/20 flex items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs">
           <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Row list */}
-      <div className="max-h-64 overflow-y-auto space-y-1 rounded-lg border border-border bg-background">
+      <div className="border-border bg-background max-h-64 space-y-1 overflow-y-auto rounded-lg border">
         {displayRows.map((row, idx) => {
           const hasBlockingError = row.issues.some(
             (i) =>
@@ -138,19 +138,19 @@ export function PreviewStep({ importer }: PreviewStepProps) {
           return (
             <div
               key={idx}
-              className={`flex flex-col gap-1 border-b border-border px-3 py-2 last:border-b-0 text-xs ${
+              className={`border-border flex flex-col gap-1 border-b px-3 py-2 text-xs last:border-b-0 ${
                 hasBlockingError ? "opacity-60" : ""
               }`}
             >
               <div className="flex items-center gap-2">
                 {hasBlockingError ? (
-                  <AlertCircle className="h-3 w-3 shrink-0 text-destructive" />
+                  <AlertCircle className="text-destructive h-3 w-3 shrink-0" />
                 ) : hasWarning ? (
                   <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />
                 ) : (
                   <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500" />
                 )}
-                <span className="text-foreground font-medium truncate">
+                <span className="text-foreground truncate font-medium">
                   {row.name || <span className="text-muted-foreground italic">unnamed</span>}
                 </span>
                 <span className="text-muted-foreground ml-auto shrink-0">
@@ -168,7 +168,7 @@ export function PreviewStep({ importer }: PreviewStepProps) {
                 )}
               </div>
               {row.issues.length > 0 && (
-                <div className="pl-5 space-y-0.5">
+                <div className="space-y-0.5 pl-5">
                   {row.issues.map((issue, ii) => (
                     <p
                       key={ii}

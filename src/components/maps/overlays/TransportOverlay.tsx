@@ -503,8 +503,7 @@ function useFilteredRouteData(
   visibleTypes: string[] | undefined,
   maxBuiltYear?: number | null
 ): FeatureCollection {
-  const typeSet =
-    visibleTypes && visibleTypes.length > 0 ? new Set(visibleTypes) : null;
+  const typeSet = visibleTypes && visibleTypes.length > 0 ? new Set(visibleTypes) : null;
   if (!typeSet && (maxBuiltYear === undefined || maxBuiltYear === null)) return data;
   return {
     type: "FeatureCollection",

@@ -82,6 +82,7 @@ export interface BorderEditorState {
   sharedVertices: SharedVertexData[];
   /** Active altitude snap indicator */
   altitudeSnap: AltitudeSnapResult | null;
+  traceStart: [number, number] | null;
 }
 
 export interface BorderEditorActions {
@@ -107,6 +108,7 @@ export interface BorderEditorActions {
   naturalize: () => void;
   simplify: () => void;
   reset: () => void;
+  revert: () => void;
   /** Provide the river/coast layer data used by "trace" mode. */
   setTraceLayerSource: (
     layers: Array<{ type: string; data: { features: TraceFeature[] } }> | undefined,
@@ -145,6 +147,7 @@ const INITIAL_STATE: BorderEditorState = {
   areaKm2: null,
   sharedVertices: [],
   altitudeSnap: null,
+  traceStart: null,
 };
 
 export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
@@ -160,9 +163,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const utils = api.useUtils();
   const dragStartGeom = useRef<Polygon | MultiPolygon | null>(null);
 
-  // ── Trace mode state (mutable refs — not React state) ──
-  /** Coordinate of the first click in "trace" mode; null before first click. */
-  const traceStartRef = useRef<[number, number] | null>(null);
+  // ── Trace mode state (mutable refs) ──
   /** River/coast layer data updated externally via setTraceLayerSource. */
   const traceLayersRef = useRef<
     Array<{ type: string; data: { features: TraceFeature[] } }> | undefined
@@ -255,6 +256,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
               areaKm2: calculateArea(geom),
               sharedVertices,
               altitudeSnap: null,
+              traceStart: null,
             }));
           },
           onError: (err) => {
@@ -267,16 +269,13 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   );
 
   const setMode = useCallback((mode: BorderEditMode) => {
-    // Clear trace first-click when leaving trace mode
-    if (mode !== "trace") {
-      traceStartRef.current = null;
-    }
     setState((s) => ({
       ...s,
       mode,
       selectedVertex: null,
       splitLine: mode === "split" ? [] : s.splitLine,
       mergeTargets: mode === "merge" ? [] : s.mergeTargets,
+      traceStart: mode === "trace" ? s.traceStart : null,
     }));
   }, []);
 
@@ -340,24 +339,20 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       }
 
       if (s.mode === "trace") {
-        const prev = traceStartRef.current;
+        const prev = s.traceStart;
         if (!prev) {
           // First click — store the trace start; wait for second click
-          traceStartRef.current = [lng, lat];
-          return s;
+          return { ...s, traceStart: [lng, lat] };
         }
 
-        // Second click — run the trace
-        traceStartRef.current = null;
-
-        const layers = traceLayersRef.current;
+        const traceLayers = traceLayersRef.current;
         const visibleLayers = traceVisibleLayersRef.current;
         const traceLayerTypes = ["rivers", "lakes"];
         const features: TraceFeature[] = [];
-        if (layers) {
+        if (traceLayers) {
           for (const layerType of traceLayerTypes) {
             if (!visibleLayers.has(layerType)) continue;
-            const layer = layers.find((l) => l.type === layerType);
+            const layer = traceLayers.find((l) => l.type === layerType);
             if (layer?.data?.features) {
               for (const f of layer.data.features) {
                 if (
@@ -372,11 +367,15 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         }
 
         const traced = traceAlongLayer(prev, [lng, lat], features, 0.05);
-        if (traced.length === 0) return s;
+        if (traced.length === 0) {
+          return s;
+        }
 
         // Find the edge nearest to the first trace point and splice the run in
         const nearestEdge = findNearestEdge(s.geometry, prev);
-        if (!nearestEdge) return s;
+        if (!nearestEdge) {
+          return { ...s, traceStart: null };
+        }
 
         // Insert all traced vertices one by one starting after the nearest edge
         let newGeom = s.geometry;
@@ -397,6 +396,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
           ...s,
           geometry: newGeom,
           undoStackState: newStack,
+          traceStart: null,
           isDirty: true,
           areaKm2: calculateArea(newGeom),
         };
@@ -628,6 +628,24 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     setState(INITIAL_STATE);
   }, []);
 
+  const revert = useCallback(() => {
+    setState((s) => {
+      if (!s.featureId) return s;
+      return {
+        ...s,
+        geometry: s.originalGeometry,
+        dirtyNeighbors: {},
+        undoStackState: createUndoStack(),
+        selectedVertex: null,
+        splitLine: [],
+        mergeTargets: [],
+        traceStart: null,
+        isDirty: false,
+        areaKm2: s.originalGeometry ? calculateArea(s.originalGeometry) : null,
+      };
+    });
+  }, []);
+
   const repairAction = useCallback(async () => {
     if (!state.geometry) return;
     const res = await repairGeometry.mutateAsync({
@@ -792,6 +810,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     naturalize: naturalizeAction,
     simplify: simplifyAction,
     reset,
+    revert,
     setTraceLayerSource: setTraceLayerSourceAction,
     applyBrushTransfer: applyBrushTransferAction,
   };

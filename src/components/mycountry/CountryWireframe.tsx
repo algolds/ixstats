@@ -93,7 +93,13 @@ export const CountryWireframe = React.memo(function CountryWireframe({
     ];
 
     const ringPaths = projRings.map((r) =>
-      r.map(([x, y]) => toScreen(x, y).map((n) => n.toFixed(1)).join(",")).join(" ")
+      r
+        .map(([x, y]) =>
+          toScreen(x, y)
+            .map((n) => n.toFixed(1))
+            .join(",")
+        )
+        .join(" ")
     );
 
     const cityDots = cities

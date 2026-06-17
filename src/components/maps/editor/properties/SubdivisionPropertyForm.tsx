@@ -34,7 +34,12 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
   onChange,
 }: SubdivisionPropertyFormProps) {
   const sampleArea = api.geoAdmin.sampleAreaSqKm.useQuery(
-    { geometry: (form.geometry as { type: string; coordinates: unknown }) ?? { type: "Polygon", coordinates: [[]] } },
+    {
+      geometry: (form.geometry as { type: string; coordinates: unknown }) ?? {
+        type: "Polygon",
+        coordinates: [[]],
+      },
+    },
     { enabled: !!form.geometry && (form.geometry as { type?: string }).type !== "Point" }
   );
   const derivedFromGeometry = form.areaSqKm === sampleArea.data;
@@ -121,7 +126,8 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
           </div>
           {sampleArea.data !== undefined && !derivedFromGeometry && (
             <div className="text-muted-foreground text-[10px]">
-              ≈ {sampleArea.data.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from geometry
+              ≈ {sampleArea.data.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from
+              geometry
             </div>
           )}
         </div>

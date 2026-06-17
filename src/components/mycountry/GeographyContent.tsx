@@ -51,14 +51,7 @@ export function GeographyContent() {
     return <p className="text-muted-foreground text-sm">No geographic data found.</p>;
   }
 
-  const {
-    cities,
-    subdivisions,
-    pois,
-    rollups,
-    country: countryData,
-    geometry,
-  } = bundle;
+  const { cities, subdivisions, pois, rollups, country: countryData, geometry } = bundle;
 
   return (
     <div className="space-y-4">

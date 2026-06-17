@@ -64,7 +64,9 @@ export function useCityImporter(countryId: string) {
   const [manualTransform, setManualTransform] = useState<ManualTransform>(DEFAULT_MANUAL_TRANSFORM);
   const [citiesLayerId, setCitiesLayerId] = useState<string>("");
   const [capitalLayerId, setCapitalLayerId] = useState<string>("");
-  const [alignedRows, setAlignedRows] = useState<Array<{ name: string; lat: number; lng: number; isCapital: boolean }>>([]);
+  const [alignedRows, setAlignedRows] = useState<
+    Array<{ name: string; lat: number; lng: number; isCapital: boolean }>
+  >([]);
 
   // ── tRPC ────────────────────────────────────────────────────────────────────
   const utils = api.useUtils();
@@ -306,7 +308,17 @@ export function useCityImporter(countryId: string) {
 
     const source = validated ?? parsed.rows.map((r) => ({ ...r, issues: r._parseErrors ?? [] }));
     const toCommit = source
-      .filter((row) => !row.issues.some((i) => i.includes("missing required field") || i.includes("out of range") || i.includes("invalid lat") || i.includes("invalid lng") || i.includes("outside country")))
+      .filter(
+        (row) =>
+          !row.issues.some(
+            (i) =>
+              i.includes("missing required field") ||
+              i.includes("out of range") ||
+              i.includes("invalid lat") ||
+              i.includes("invalid lng") ||
+              i.includes("outside country")
+          )
+      )
       .map((row) => ({
         name: row.name,
         lat: row.lat,

@@ -17,7 +17,19 @@ import {
   Scissors,
   Merge,
   CloudSun,
+  Undo2,
+  Redo2,
+  Wrench,
+  Spline,
+  Waves,
+  Minimize2,
+  Save,
+  Check,
+  X,
+  Paintbrush,
+  RefreshCw,
 } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
 import { FeatureList } from "~/components/maps/editor/FeatureList";
@@ -35,7 +47,6 @@ import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
-import { BorderEditorToolbar } from "~/components/maps/editor/BorderEditorToolbar";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 
 import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapEditorOverlayState";
@@ -210,6 +221,7 @@ export default function MapEditorOverlay({
     setLayerStates,
     handleMapSelect,
     handleBorderToolbarSubmit,
+    handleExitBorderEdit,
     simplifyAll,
     countryInfo,
     mapInstance,
@@ -224,7 +236,6 @@ export default function MapEditorOverlay({
     handleDeleteFeature,
     toolsDisabled,
     cursorTerrainInfo,
-    setActiveEditorMode,
     featureCounts,
   } = state;
 
@@ -432,7 +443,7 @@ export default function MapEditorOverlay({
       />
 
       {/* Photoshop-style context bar — shown when a feature tool is active */}
-      {(!isWorldMode || editor.mode !== "view") && (
+      {(!isWorldMode || editor.mode !== "view") && activeEditorMode !== "border_edit" && (
         <EditorErrorBoundary name="ToolOptions">
           <ToolOptionsBar
             mode={editor.mode}
@@ -475,56 +486,250 @@ export default function MapEditorOverlay({
         </EditorErrorBoundary>
       )}
 
+      {/* Border Editor context bar — shown when in border edit mode */}
+      {activeEditorMode === "border_edit" && borderState.featureId && (
+        <EditorErrorBoundary name="BorderToolOptions">
+          <div className="border-border bg-card/85 flex h-8 shrink-0 items-center justify-between border-b px-3 backdrop-blur-sm">
+            {/* Left Side: Active Tool Options */}
+            <div className="flex items-center gap-2">
+              <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
+                <Scissors className="text-muted-foreground h-3.5 w-3.5" />
+                <span className="text-foreground text-[11px] font-semibold">
+                  Border Editor ({countryInfo?.name || "unnamed"})
+                </span>
+              </div>
+
+              {/* Tool-specific configuration */}
+              {borderState.mode === "brush" && (
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                    Brush Size
+                  </span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="200"
+                    step="1"
+                    value={brushRadius}
+                    onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
+                    className="accent-primary h-4 w-24"
+                  />
+                  <span className="text-muted-foreground w-12 text-right font-mono text-[11px] tabular-nums">
+                    {brushRadius}km
+                  </span>
+                </div>
+              )}
+
+              {borderState.mode === "split" && borderState.splitLine.length > 0 && (
+                <span className="animate-pulse text-[11px] font-medium text-amber-500">
+                  Split Line: {borderState.splitLine.length} points
+                </span>
+              )}
+
+              {borderState.mode === "select" && (
+                <span className="text-muted-foreground text-[11px]">
+                  Click a vertex/edge to start editing.
+                </span>
+              )}
+
+              {borderState.mode === "vertex_edit" && (
+                <span className="text-muted-foreground text-[11px]">
+                  Drag vertices. Click midpoints to add vertices.
+                </span>
+              )}
+
+              {borderState.mode === "merge" && (
+                <span className="text-muted-foreground text-[11px]">
+                  Select neighbor subdivisions to merge.
+                </span>
+              )}
+
+              {borderState.mode === "trace" && (
+                <span className="text-muted-foreground text-[11px]">
+                  Click points on river/coast to trace.
+                </span>
+              )}
+            </div>
+
+            {/* Right Side: Actions (Undo/Redo, Stats, Advanced, Save, Apply, Cancel) */}
+            <div className="flex items-center gap-2">
+              {/* Undo / Redo */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  disabled={!(borderState.isDirty && borderState.undoStackState.position >= 0)}
+                  onClick={borderActions.undo}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  disabled={
+                    !(
+                      borderState.isDirty &&
+                      borderState.undoStackState.position <
+                        borderState.undoStackState.entries.length - 1
+                    )
+                  }
+                  onClick={borderActions.redo}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                  title="Redo (Ctrl+Shift+Z)"
+                >
+                  <Redo2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="bg-border h-4 w-px" />
+
+              {/* Area Stats */}
+              {borderState.areaKm2 !== null && (
+                <span className="text-muted-foreground text-[11px] font-medium select-none">
+                  {borderState.areaKm2 > 1000000
+                    ? `${(borderState.areaKm2 / 1000000).toFixed(2)}M km²`
+                    : `${Math.round(borderState.areaKm2).toLocaleString()} km²`}
+                </span>
+              )}
+
+              <div className="bg-border h-4 w-px" />
+
+              {/* Advanced operations popover */}
+              <Popover>
+                <PopoverTrigger className="bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-[11px] font-medium transition-colors">
+                  <Wrench className="h-3 w-3" />
+                  <span>Advanced</span>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="bg-popover border-border text-foreground z-[100] w-48 rounded-md border p-2 shadow-md"
+                  align="end"
+                >
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => void borderActions.repair()}
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
+                      title="Repair geometry spikes"
+                    >
+                      <Wrench className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Repair Spikes</span>
+                    </button>
+                    <button
+                      onClick={() => void borderActions.smooth()}
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
+                      title="Soften corners (Chaikin smoothing)"
+                    >
+                      <Spline className="h-3.5 w-3.5 text-blue-500" />
+                      <span>Smooth Geometry</span>
+                    </button>
+                    <button
+                      onClick={() => void borderActions.naturalize()}
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
+                      title="Subdivide and randomize for organic coastlines"
+                    >
+                      <Waves className="h-3.5 w-3.5 text-cyan-500" />
+                      <span>Naturalize Coastline</span>
+                    </button>
+                    <button
+                      onClick={() => void borderActions.simplify()}
+                      className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
+                      title="Reduce vertex count (Douglas-Peucker)"
+                    >
+                      <Minimize2 className="h-3.5 w-3.5 text-violet-500" />
+                      <span>Simplify (Reduce Vertices)</span>
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <div className="bg-border h-4 w-px" />
+
+              {/* Save Draft */}
+              <button
+                onClick={() => void borderActions.save()}
+                disabled={!borderState.isDirty || isSubmitting}
+                className="bg-muted/50 text-foreground hover:bg-accent flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-[11px] font-medium transition-colors disabled:opacity-30"
+                title="Save draft"
+              >
+                <Save className="h-3 w-3" />
+                <span>{isSubmitting ? "Saving..." : "Save"}</span>
+              </button>
+
+              {/* Revert edits */}
+              <button
+                onClick={borderActions.revert}
+                disabled={!borderState.isDirty}
+                className="flex h-6 cursor-pointer items-center gap-1 rounded bg-red-500/10 px-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-500/20 disabled:opacity-30"
+                title="Revert all unsaved changes for this feature"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Revert</span>
+              </button>
+
+              {/* Apply & Exit */}
+              <button
+                onClick={handleBorderToolbarSubmit}
+                disabled={!borderState.isDirty}
+                className="flex h-6 cursor-pointer items-center gap-1 rounded bg-emerald-600/20 px-2 text-[11px] font-medium text-emerald-500 transition-colors hover:bg-emerald-600/30 disabled:opacity-30"
+                title="Apply and exit"
+              >
+                <Check className="h-3 w-3" />
+                <span>Apply</span>
+              </button>
+
+              <div className="bg-border h-4 w-px" />
+
+              {/* Close / Exit Border Editor */}
+              <button
+                onClick={handleExitBorderEdit}
+                className="bg-muted hover:bg-accent text-foreground flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-[11px] font-medium transition-colors"
+                title="Close Border Editor"
+              >
+                <X className="h-3 w-3" />
+                <span>Close</span>
+              </button>
+            </div>
+          </div>
+        </EditorErrorBoundary>
+      )}
+
       {/* Main content: Rail + Canvas + Panel */}
       <div className="flex min-h-0 flex-1">
         {/* Left tool rail — desktop only */}
         <div className="hidden shrink-0 sm:block">
           {isWorldMode && activeEditorMode === "border_edit" ? (
-            <div className="border-border bg-card/45 z-10 flex h-full w-12 shrink-0 flex-col items-center gap-2 border-r py-3">
-              <button
-                onClick={() => borderActions.setMode("select")}
-                className={`rounded-md p-2 transition-colors ${
-                  borderState.mode === "select"
-                    ? "bg-blue-600 text-white"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-                title="Select Mode"
-              >
-                <MousePointer2 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => borderActions.setMode("vertex_edit")}
-                className={`rounded-md p-2 transition-colors ${
-                  borderState.mode === "vertex_edit"
-                    ? "bg-blue-600 text-white"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-                title="Edit Vertices"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => borderActions.setMode("split")}
-                className={`rounded-md p-2 transition-colors ${
-                  borderState.mode === "split"
-                    ? "bg-blue-600 text-white"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-                title="Split Borders"
-              >
-                <Scissors className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => borderActions.setMode("merge")}
-                className={`rounded-md p-2 transition-colors ${
-                  borderState.mode === "merge"
-                    ? "bg-blue-600 text-white"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-                title="Merge Borders"
-              >
-                <Merge className="h-4 w-4" />
-              </button>
+            <div className="border-border bg-card flex h-full w-10 flex-col items-center gap-0.5 border-r py-1">
+              {[
+                { id: "select", label: "Select Mode", icon: MousePointer2, shortcut: "V" },
+                { id: "vertex_edit", label: "Edit Vertices", icon: Pencil, shortcut: "P" },
+                { id: "split", label: "Split Borders", icon: Scissors, shortcut: "X" },
+                { id: "merge", label: "Merge Borders", icon: Merge, shortcut: "M" },
+                { id: "trace", label: "Trace Rivers", icon: Waves, shortcut: "T" },
+                { id: "brush", label: "Brush Territory", icon: Paintbrush, shortcut: "B" },
+              ].map((tool, i) => {
+                const isActive = borderState.mode === tool.id;
+                const FallbackIcon = tool.icon;
+                return (
+                  <div key={tool.id} className="group relative flex items-center">
+                    {i === 4 && <div className="bg-border my-0.5 h-px w-5" />}
+                    <button
+                      onClick={() => borderActions.setMode(tool.id)}
+                      className={`group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      }`}
+                      title={`${tool.label} (${tool.shortcut})`}
+                    >
+                      <FallbackIcon className="h-4 w-4" />
+
+                      <div className="bg-popover text-popover-foreground ring-border pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 hidden -translate-y-1/2 rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block">
+                        {tool.label}
+                        <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
+                          {tool.shortcut}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <MapEditorToolbar
@@ -634,6 +839,28 @@ export default function MapEditorOverlay({
         <div className="relative flex h-full min-w-0 flex-1 flex-col">
           {/* Map canvas */}
           <div className="relative min-h-0 min-w-0 flex-1">
+            {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#0a1628]/80 backdrop-blur-sm">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
+                <div className="relative z-10 flex flex-col items-center gap-4 text-center">
+                  <div className="relative h-16 w-16">
+                    <div className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full border border-dashed border-emerald-500/30" />
+                    <div className="absolute inset-2 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="border-muted-foreground/20 h-6 w-6 animate-spin rounded-full border-2 border-t-emerald-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-foreground text-xs font-semibold">
+                      Loading Border Editor...
+                    </h2>
+                    {countryInfo?.name && (
+                      <p className="text-muted-foreground mt-1 text-[10px]">{countryInfo.name}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             <EditorErrorBoundary name="Map">
               {isWorldMode && activeEditorMode === "view" ? (
                 <MapContainer
@@ -658,6 +885,11 @@ export default function MapEditorOverlay({
                   onMapClick={borderActions.handleMapClick}
                   onVertexDrag={borderActions.handleVertexDrag}
                   onDragEnd={borderActions.commitDrag}
+                  worldMapLayers={worldMapLayers}
+                  brushRadius={brushRadius}
+                  brushTargetId={brushTargetId}
+                  onBrushStroke={borderActions.applyBrushTransfer}
+                  traceStart={borderState.traceStart}
                 />
               ) : (
                 <EditorMap
@@ -688,39 +920,7 @@ export default function MapEditorOverlay({
                 />
               )}
 
-              {/* Border Editor Toolbar Overlay */}
-              {activeEditorMode === "border_edit" && borderState.featureId && (
-                <div className="absolute top-3 left-3 z-20">
-                  <BorderEditorToolbar
-                    mode={borderState.mode}
-                    onModeChange={borderActions.setMode}
-                    canUndo={borderState.isDirty && borderState.undoStackState.position >= 0}
-                    canRedo={
-                      borderState.isDirty &&
-                      borderState.undoStackState.position <
-                        borderState.undoStackState.entries.length - 1
-                    }
-                    onUndo={borderActions.undo}
-                    onRedo={borderActions.redo}
-                    onSave={() => void borderActions.save()}
-                    onSubmit={handleBorderToolbarSubmit}
-                    onCancel={() => {
-                      borderActions.reset();
-                      setActiveEditorMode("view");
-                    }}
-                    onRepair={() => void borderActions.repair()}
-                    onSmooth={() => void borderActions.smooth()}
-                    onNaturalize={() => void borderActions.naturalize()}
-                    onSimplify={() => void borderActions.simplify()}
-                    isDirty={borderState.isDirty}
-                    isSaving={isSubmitting}
-                    areaKm2={borderState.areaKm2}
-                    splitPointCount={borderState.splitLine.length}
-                    brushRadius={brushRadius}
-                    onBrushRadiusChange={setBrushRadius}
-                  />
-                </div>
-              )}
+              {/* Border Editor Toolbar Overlay removed - integrated in horizontal options bar */}
 
               {/* Region stats tooltip */}
               <RegionHoverTooltip hoveredFeature={hoveredFeature} editorMode={editor.mode} />

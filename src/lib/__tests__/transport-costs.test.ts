@@ -21,16 +21,22 @@ describe("calculateRouteCosts", () => {
 
   it("falls back to the road default (0.01) for unknown types", () => {
     const known = calculateRouteCosts({ routeType: "road", lengthKm: 100, terrainDifficulty: 0 });
-    const unknown = calculateRouteCosts({ routeType: "nonsense", lengthKm: 100, terrainDifficulty: 0 });
+    const unknown = calculateRouteCosts({
+      routeType: "nonsense",
+      lengthKm: 100,
+      terrainDifficulty: 0,
+    });
     expect(unknown.costBillion).toBe(known.costBillion);
   });
 
   it("covers the new types added in Plan 046", () => {
     expect(
-      calculateRouteCosts({ routeType: "pipeline", lengthKm: 100, terrainDifficulty: 0 }).costBillion
+      calculateRouteCosts({ routeType: "pipeline", lengthKm: 100, terrainDifficulty: 0 })
+        .costBillion
     ).toBe(3); // 100 * 0.03
     expect(
-      calculateRouteCosts({ routeType: "power_grid", lengthKm: 100, terrainDifficulty: 0 }).costBillion
+      calculateRouteCosts({ routeType: "power_grid", lengthKm: 100, terrainDifficulty: 0 })
+        .costBillion
     ).toBe(2); // 100 * 0.02
     expect(
       calculateRouteCosts({ routeType: "fiber", lengthKm: 100, terrainDifficulty: 0 }).costBillion
