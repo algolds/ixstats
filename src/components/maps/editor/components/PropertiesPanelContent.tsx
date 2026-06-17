@@ -7,6 +7,7 @@ import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
 import { ProvinceGeneratorPanel } from "~/components/maps/editor/components/ProvinceGeneratorPanel";
 import { JsonViewer } from "~/components/json-viewer";
+import { CityImportWizard } from "~/components/maps/editor/city-importer";
 
 interface PropertiesPanelContentProps {
   isWorldMode: boolean;
@@ -108,6 +109,14 @@ export function PropertiesPanelContent({
           isDirty={borderState.isDirty}
           brushTargetId={brushTargetId ?? null}
           onBrushTargetChange={setBrushTargetId ?? (() => {})}
+        />
+      );
+    } else if (editor.mode === "import-cities") {
+      mainContent = (
+        <CityImportWizard
+          countryId={activeCountryId ?? ""}
+          onComplete={() => editor.setMode("view")}
+          onCancel={() => editor.setMode("view")}
         />
       );
     } else if (editor.mode !== "view") {

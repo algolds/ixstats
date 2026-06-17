@@ -6,7 +6,7 @@
 // If any single router fails to import or initialize, it is replaced with an
 // empty router and a console.error is logged — the remaining routers still load.
 
-import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { createCallerFactory, createTRPCRouter, mergeRouters } from "~/server/api/trpc";
 
 // ─── Safe Router Import Helper ───────────────────────────────────────────────
 // Wraps a router import so that if it throws (broken dependency, circular import,
@@ -106,6 +106,7 @@ import { geoCoreRouter } from "./routers/geo/core";
 import { geoFeaturesRouter } from "./routers/geo/features";
 import { geoEditorRouter } from "./routers/geo/editor";
 import { geoAdminRouter } from "./routers/geo/admin";
+import { geoAdminCitiesRouter } from "./routers/geo/admin/cities";
 import { geoSovereigntyRouter } from "./routers/geo/sovereignty";
 import { geoWikiRouter } from "./routers/geo/wiki";
 import { resourcesRouter } from "./routers/resources";
@@ -230,7 +231,7 @@ export const appRouter = createTRPCRouter({
   geoCore: safeRouter("geoCore", () => geoCoreRouter),
   geoFeatures: safeRouter("geoFeatures", () => geoFeaturesRouter),
   geoEditor: safeRouter("geoEditor", () => geoEditorRouter),
-  geoAdmin: safeRouter("geoAdmin", () => geoAdminRouter),
+  geoAdmin: safeRouter("geoAdmin", () => mergeRouters(geoAdminRouter, geoAdminCitiesRouter)),
   geoSovereignty: safeRouter("geoSovereignty", () => geoSovereigntyRouter),
   geoWiki: safeRouter("geoWiki", () => geoWikiRouter),
   resources: safeRouter("resources", () => resourcesRouter),
