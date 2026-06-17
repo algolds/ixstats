@@ -43,6 +43,7 @@ export type EditorMode =
   | "edit-story-pin"
   | "edit-label"
   | "import-provinces"
+  | "import-cities"
   | "add-route"
   | "edit-route"
   | "paint";

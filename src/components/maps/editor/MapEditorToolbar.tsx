@@ -22,6 +22,7 @@ import {
   Landmark,
   // eslint-disable-next-line unused-imports/no-unused-imports
   FileUp,
+  Upload,
   Route,
   BookMarked,
   Type,
@@ -54,6 +55,7 @@ const TOOLS: ToolDef[] = [
   { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
   { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 1 },
   { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 1 },
+  { mode: "import-cities", icon: Upload, label: "Import Cities", shortcut: "U", group: 2 },
 ];
 
 /** Animated icon overrides for toolbar tools (only where a good visual match exists) */
