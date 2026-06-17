@@ -137,7 +137,7 @@ export function EditorDialogs({
                   setShowExitConfirm(false);
                   onExit();
                 }}
-                className="bg-red-650 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg px-4 py-2 text-xs font-semibold transition-colors"
               >
                 Discard & Leave
               </button>

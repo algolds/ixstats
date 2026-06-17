@@ -115,6 +115,69 @@ export const NameDetectionStep = memo(function NameDetectionStep({
           </button>
         </div>
       </div>
+
+      {importer.hasCities && (
+        <div className="border-border bg-card/40 space-y-3 rounded-lg border p-3 mt-3">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-foreground text-xs font-semibold">Import Cities</span>
+              <p className="text-muted-foreground text-[10px]">
+                Import city point markers detected in this SVG.
+              </p>
+            </div>
+            <button
+              onClick={() => importer.setImportCities(!importer.importCities)}
+              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors ${
+                importer.importCities
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {importer.importCities ? "Enabled" : "Disabled"}
+            </button>
+          </div>
+
+          {importer.importCities && (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="space-y-1">
+                <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                  Cities Layer
+                </label>
+                <select
+                  value={importer.citiesLayerId}
+                  onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId)}
+                  className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
+                >
+                  <option value="">-- Auto-detect --</option>
+                  {importer.cityLayers.map((layer) => (
+                    <option key={layer.id} value={layer.id}>
+                      {layer.name} ({layer.markerCount} points)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                  Capitals Layer (Optional)
+                </label>
+                <select
+                  value={importer.capitalLayerId}
+                  onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value)}
+                  className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
+                >
+                  <option value="">-- None --</option>
+                  {importer.cityLayers.map((layer) => (
+                    <option key={layer.id} value={layer.id}>
+                      {layer.name} ({layer.markerCount} points)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 });

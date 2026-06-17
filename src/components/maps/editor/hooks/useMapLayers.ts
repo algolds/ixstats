@@ -46,6 +46,29 @@ export function useMapLayers({
       (a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
     );
 
+    const firstEditorLayer = [
+      "neighbors-fill",
+      "neighbors-line",
+      "merge-targets-fill",
+      "active-fill",
+      "active-line",
+      "editor-country-fill",
+      "editor-country-stroke",
+      "editor-nonplayer-mask-fill",
+      "editor-subdivisions-fill",
+      "editor-subdivisions-stroke",
+      "editor-points-capital",
+      "editor-points-city",
+      "editor-points-poi",
+      "editor-points-story-pin",
+      "editor-points-map-label",
+      "editor-points-labels",
+      "editor-pending-point-layer",
+      "editor-route-line-layer",
+      "editor-draw-polygon-fill",
+      "editor-vedit-polygon-fill",
+    ].find((id) => map.getLayer(id));
+
     for (const layer of sorted) {
       if (layer.type === "political") continue;
 
@@ -85,7 +108,7 @@ export function useMapLayers({
                 "line-opacity": layer.visible ? 0.7 : 0,
               },
               layout: { "line-cap": "round", "line-join": "round" },
-            });
+            }, firstEditorLayer);
           }
 
           if (config.type === "fill") {
@@ -103,7 +126,7 @@ export function useMapLayers({
               type: "fill",
               source: sourceId,
               paint: fillPaint as Record<string, unknown>,
-            });
+            }, firstEditorLayer);
 
             if (config.strokeColor) {
               map.addLayer({
@@ -115,7 +138,7 @@ export function useMapLayers({
                   "line-width": config.strokeWidth ?? 1,
                   "line-opacity": layer.visible ? 0.8 : 0,
                 },
-              });
+              }, firstEditorLayer);
             }
           }
         }

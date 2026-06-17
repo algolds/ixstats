@@ -171,12 +171,26 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       // Prepend preprocessing log
       result.log.unshift(...preprocessed.log);
 
+      let cityData: any = null;
+      try {
+        const { parseCitySvg } = await import("~/lib/city-importer/svg-points");
+        const parsedCities = parseCitySvg(preprocessed.svgContent);
+        cityData = {
+          layers: parsedCities.layers,
+          points: parsedCities.points,
+          detectedCitiesLayerId: parsedCities.detectedCitiesLayerId,
+        };
+      } catch (err) {
+        console.warn("[parseProvinceUpload] Failed to parse cities from SVG:", err);
+      }
+
       return {
         provinces: result.provinces,
         viewBox: result.viewBox,
         log: result.log,
         layersFound: result.layersFound,
         countryBorder: mapLayer?.geometry ?? null,
+        cityData,
       };
     }),
 
@@ -281,6 +295,15 @@ export const geoAdminProvincesRouter = createTRPCRouter({
             color: z.string().optional(),
           })
         ),
+        cities: z
+          .array(
+            z.object({
+              name: z.string().min(1).max(100),
+              coordinates: z.array(z.number()).length(2),
+              isCapital: z.boolean().default(false),
+            })
+          )
+          .optional(),
         replaceExisting: z.boolean().default(false),
       })
     )
@@ -351,10 +374,33 @@ export const geoAdminProvincesRouter = createTRPCRouter({
           created.push({ id: subdivision.id, name: subdivision.name });
         }
 
+        // Batch create/upsert cities
+        let citiesCreated = 0;
+        if (input.cities && input.cities.length > 0) {
+          const { upsertCity } = await import("~/lib/country-geo-service");
+          for (const city of input.cities) {
+            try {
+              await upsertCity(tx, input.countryId, {
+                name: city.name,
+                type: "city",
+                coordinates: city.coordinates,
+                isNationalCapital: city.isCapital,
+              });
+              citiesCreated++;
+            } catch (err) {
+              console.error(
+                `[commitProvinceImport] Failed to upsert city "${city.name}":`,
+                err instanceof Error ? err.message : err
+              );
+            }
+          }
+        }
+
         return {
           created: created.length,
           replaced: input.replaceExisting,
           subdivisions: created,
+          citiesCreated,
         };
       });
     }),

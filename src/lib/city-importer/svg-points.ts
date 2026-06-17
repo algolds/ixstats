@@ -326,7 +326,7 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
         }
       }
     }
-    targetLayerId = bestStrongId ?? bestWeakId ?? null;
+    targetLayerId = bestStrongId ?? bestWeakId ?? undefined;
 
     // Pass 2: fall back to the layer with the most markers
     if (!targetLayerId) {

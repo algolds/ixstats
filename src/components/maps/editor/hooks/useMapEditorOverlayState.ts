@@ -565,6 +565,19 @@ export function useMapEditorOverlayState({
   const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled());
   const [snapTolerance, setSnapToleranceState] = useState(getSnapTolerance());
 
+  const [panelsLocked, setPanelsLockedState] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("ixworld-editor-panels-locked");
+      return stored === "true";
+    }
+    return false;
+  });
+
+  const setPanelsLocked = useCallback((v: boolean) => {
+    setPanelsLockedState(v);
+    localStorage.setItem("ixworld-editor-panels-locked", String(v));
+  }, []);
+
   const setSnapEnabled = useCallback((v: boolean) => {
     setSnapEnabledState(v);
     persistSnapEnabled(v);
@@ -1334,5 +1347,7 @@ export function useMapEditorOverlayState({
     handleDeleteFeature,
     handleSubmit,
     featureCounts,
+    panelsLocked,
+    setPanelsLocked,
   };
 }

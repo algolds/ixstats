@@ -70,6 +70,7 @@ interface EditorPanelProps {
   onTabChange?: (tab: TabId) => void;
   isWorldMode?: boolean;
   isStacked?: boolean;
+  panelsLocked?: boolean;
 }
 
 export function EditorPanel({
@@ -93,6 +94,7 @@ export function EditorPanel({
   onTabChange,
   isWorldMode = false,
   isStacked = false,
+  panelsLocked = false,
 }: EditorPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
     if (activeTabOverride) return activeTabOverride;
@@ -239,16 +241,18 @@ export function EditorPanel({
             }}
           >
             {/* Resize handle */}
-            <div
-              className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
-                placement === "bottom"
-                  ? "top-0 left-0 h-1 w-full cursor-row-resize"
-                  : placement === "left"
-                    ? "top-0 right-0 h-full w-1 cursor-col-resize"
-                    : "top-0 left-0 h-full w-1 cursor-col-resize"
-              }`}
-              onMouseDown={handleResizeStart}
-            />
+            {!panelsLocked && (
+              <div
+                className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
+                  placement === "bottom"
+                    ? "top-0 left-0 h-1 w-full cursor-row-resize"
+                    : placement === "left"
+                      ? "top-0 right-0 h-full w-1 cursor-col-resize"
+                      : "top-0 left-0 h-full w-1 cursor-col-resize"
+                }`}
+                onMouseDown={handleResizeStart}
+              />
+            )}
             {importWizardContent}
           </div>
         )}
@@ -276,7 +280,7 @@ export function EditorPanel({
       >
         <Layout className="text-muted-foreground/60 mb-1 h-4 w-4" />
         <span>Drag tab here</span>
-        {onChangePlacement && (
+        {onChangePlacement && !panelsLocked && (
           <div className="mt-2 flex gap-1">
             <button
               onClick={() => onChangePlacement("left")}
@@ -326,16 +330,18 @@ export function EditorPanel({
           }}
         >
           {/* Resize handle */}
-          <div
-            className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
-              placement === "bottom"
-                ? "top-0 left-0 h-1 w-full cursor-row-resize"
-                : placement === "left"
-                  ? "top-0 right-0 h-full w-1 cursor-col-resize"
-                  : "top-0 left-0 h-full w-1 cursor-col-resize"
-            }`}
-            onMouseDown={handleResizeStart}
-          />
+          {!panelsLocked && (
+            <div
+              className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
+                placement === "bottom"
+                  ? "top-0 left-0 h-1 w-full cursor-row-resize"
+                  : placement === "left"
+                    ? "top-0 right-0 h-full w-1 cursor-col-resize"
+                    : "top-0 left-0 h-full w-1 cursor-col-resize"
+              }`}
+              onMouseDown={handleResizeStart}
+            />
+          )}
 
           {/* Tab bar */}
           <div
@@ -356,10 +362,14 @@ export function EditorPanel({
                 return (
                   <button
                     key={tabId}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("tabId", tabId);
-                    }}
+                    draggable={!panelsLocked}
+                    onDragStart={
+                      panelsLocked
+                        ? undefined
+                        : (e) => {
+                            e.dataTransfer.setData("tabId", tabId);
+                          }
+                    }
                     onClick={() => handleTabClick(tabId)}
                     className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-[10px] font-medium transition-colors sm:text-[11px] ${
                       isActive
@@ -380,7 +390,7 @@ export function EditorPanel({
             </div>
 
             {/* Dock selector buttons */}
-            {onChangePlacement && (
+            {onChangePlacement && !panelsLocked && (
               <div className="border-border bg-muted/5 ml-auto flex shrink-0 items-center gap-1 border-l px-2 py-1">
                 <button
                   onClick={() => onChangePlacement("left")}

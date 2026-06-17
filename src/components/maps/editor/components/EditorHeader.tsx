@@ -47,6 +47,8 @@ interface EditorHeaderProps {
   setSnapEnabled: (v: boolean) => void;
   snapTolerance: number;
   setSnapTolerance: (v: number) => void;
+  panelsLocked: boolean;
+  setPanelsLocked: (v: boolean) => void;
 }
 
 export function EditorHeader({
@@ -71,6 +73,8 @@ export function EditorHeader({
   setSnapEnabled,
   snapTolerance,
   setSnapTolerance,
+  panelsLocked,
+  setPanelsLocked,
 }: EditorHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
@@ -359,6 +363,29 @@ export function EditorHeader({
                         </span>
                       </div>
                     )}
+                  </>
+
+                  {/* Lock Panels */}
+                  <>
+                    <div className="border-border/60 my-1 border-t" aria-hidden />
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Settings className="text-muted-foreground h-3 w-3" />
+                        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                          Lock Panels
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setPanelsLocked(!panelsLocked)}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                          panelsLocked
+                            ? "bg-amber-500/10 text-amber-500"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {panelsLocked ? "Locked" : "Unlocked"}
+                      </button>
+                    </div>
                   </>
 
                   {/* Admin: transport + recalc — gated, separated visually from the always-on items above */}

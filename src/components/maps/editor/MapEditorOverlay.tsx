@@ -42,6 +42,7 @@ import { MobileEditorSheet } from "~/components/maps/editor/MobileEditorSheet";
 import {
   ProvinceImportWizard,
   ProvincePreviewLayer,
+  FloatingImportPanel,
 } from "~/components/maps/editor/province-importer";
 import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
@@ -237,6 +238,8 @@ export default function MapEditorOverlay({
     toolsDisabled,
     cursorTerrainInfo,
     featureCounts,
+    panelsLocked,
+    setPanelsLocked,
   } = state;
 
   const renderLayersElement = () => (
@@ -406,6 +409,7 @@ export default function MapEditorOverlay({
         layersContent={renderLayersElement()}
         propertiesContent={renderRightPanelContent()}
         isStacked={isStacked}
+        panelsLocked={panelsLocked}
       />
     );
   };
@@ -440,6 +444,8 @@ export default function MapEditorOverlay({
         setSnapEnabled={setSnapEnabled}
         snapTolerance={snapTolerance}
         setSnapTolerance={setSnapTolerance}
+        panelsLocked={panelsLocked}
+        setPanelsLocked={setPanelsLocked}
       />
 
       {/* Photoshop-style context bar — shown when a feature tool is active */}
@@ -707,27 +713,29 @@ export default function MapEditorOverlay({
                 const isActive = borderState.mode === tool.id;
                 const FallbackIcon = tool.icon;
                 return (
-                  <div key={tool.id} className="group relative flex items-center">
-                    {i === 4 && <div className="bg-border my-0.5 h-px w-5" />}
-                    <button
-                      onClick={() => borderActions.setMode(tool.id)}
-                      className={`group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
-                      title={`${tool.label} (${tool.shortcut})`}
-                    >
-                      <FallbackIcon className="h-4 w-4" />
+                  <React.Fragment key={tool.id}>
+                    {i === 4 && <div className="bg-border my-0.5 h-px w-5 animate-none" />}
+                    <div className="group relative flex items-center">
+                      <button
+                        onClick={() => borderActions.setMode(tool.id)}
+                        className={`group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        }`}
+                        title={`${tool.label} (${tool.shortcut})`}
+                      >
+                        <FallbackIcon className="h-4 w-4" />
 
-                      <div className="bg-popover text-popover-foreground ring-border pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 hidden -translate-y-1/2 rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block">
-                        {tool.label}
-                        <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
-                          {tool.shortcut}
-                        </span>
-                      </div>
-                    </button>
-                  </div>
+                        <div className="bg-popover text-popover-foreground ring-border pointer-events-none absolute top-1/2 left-full z-50 ml-1.5 hidden -translate-y-1/2 rounded px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-md ring-1 group-hover:block">
+                          {tool.label}
+                          <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-[10px]">
+                            {tool.shortcut}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -820,10 +828,14 @@ export default function MapEditorOverlay({
                         {renderPanel("panelA")}
                       </EditorErrorBoundary>
                     </div>
-                    <div
-                      className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
-                      onMouseDown={handleVerticalSplitResize("left")}
-                    />
+                    {!panelsLocked ? (
+                      <div
+                        className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+                        onMouseDown={handleVerticalSplitResize("left")}
+                      />
+                    ) : (
+                      <div className="bg-border h-px w-full shrink-0" />
+                    )}
                     <div className="min-h-0 w-full flex-1">
                       <EditorErrorBoundary name="RightPanel-B">
                         {renderPanel("panelB")}
@@ -838,7 +850,7 @@ export default function MapEditorOverlay({
         {/* Center slot (Canvas + Bottom panels) */}
         <div className="relative flex h-full min-w-0 flex-1 flex-col">
           {/* Map canvas */}
-          <div className="relative min-h-0 min-w-0 flex-1">
+          <div className="relative min-h-0 min-w-0 flex-1" data-map-container>
             {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#0a1628]/80 backdrop-blur-sm">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
@@ -934,6 +946,7 @@ export default function MapEditorOverlay({
                     provinces={importer.currentProvinces}
                     countryBorder={importer.countryBorder}
                     visible
+                    cities={importer.alignedCities}
                   />
                 )}
 
@@ -1033,10 +1046,14 @@ export default function MapEditorOverlay({
                           {renderPanel("panelA")}
                         </EditorErrorBoundary>
                       </div>
-                      <div
-                        className="h-full w-1 shrink-0 cursor-col-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
-                        onMouseDown={handleHorizontalSplitResize}
-                      />
+                      {!panelsLocked ? (
+                        <div
+                          className="h-full w-1 shrink-0 cursor-col-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+                          onMouseDown={handleHorizontalSplitResize}
+                        />
+                      ) : (
+                        <div className="bg-border h-full w-px shrink-0" />
+                      )}
                       <div className="h-full min-w-0 flex-1">
                         <EditorErrorBoundary name="BottomPanel-B">
                           {renderPanel("panelB")}
@@ -1128,10 +1145,14 @@ export default function MapEditorOverlay({
                         {renderPanel("panelA")}
                       </EditorErrorBoundary>
                     </div>
-                    <div
-                      className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
-                      onMouseDown={handleVerticalSplitResize("right")}
-                    />
+                    {!panelsLocked ? (
+                      <div
+                        className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
+                        onMouseDown={handleVerticalSplitResize("right")}
+                      />
+                    ) : (
+                      <div className="bg-border h-px w-full shrink-0" />
+                    )}
                     <div className="min-h-0 w-full flex-1">
                       <EditorErrorBoundary name="RightPanel-B">
                         {renderPanel("panelB")}
@@ -1236,32 +1257,26 @@ export default function MapEditorOverlay({
       {/* Keyboard Shortcut Sheet */}
       {showShortcuts && <KeyboardShortcutSheet onClose={() => setShowShortcuts(false)} />}
 
-      {/* Province Import Wizard Dialog */}
+      {/* Province Import Wizard Floating Panel */}
       {editor.mode === "import-provinces" && (
-        <Dialog
-          open={true}
-          onOpenChange={(open) => {
-            if (!open) {
-              importer.reset();
-              editor.setMode("view");
-            }
+        <FloatingImportPanel
+          onClose={() => {
+            importer.reset();
+            editor.setMode("view");
           }}
         >
-          <DialogContent className="bg-card border-border flex h-[580px] max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-xl border p-0 shadow-2xl">
-            <DialogTitle className="sr-only">Import Provinces</DialogTitle>
-            <ProvinceImportWizard
-              importer={importer}
-              onComplete={() => {
-                editor.setMode("view");
-                editor.refetchFeatures();
-              }}
-              onCancel={() => {
-                importer.reset();
-                editor.setMode("view");
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+          <ProvinceImportWizard
+            importer={importer}
+            onComplete={() => {
+              editor.setMode("view");
+              editor.refetchFeatures();
+            }}
+            onCancel={() => {
+              importer.reset();
+              editor.setMode("view");
+            }}
+          />
+        </FloatingImportPanel>
       )}
 
       {/* Editor Dialogs */}

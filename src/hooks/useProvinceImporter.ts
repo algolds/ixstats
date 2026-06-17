@@ -27,6 +27,8 @@ import {
   applyAffineToProvinces,
   snapProvincesToBorderMultiRing,
 } from "~/lib/province-importer/alignment";
+import { applyCityAffine } from "~/lib/city-importer/align-cities";
+import type { SvgLayerInfo, SvgCityPoint } from "~/lib/city-importer/svg-points";
 import {
   validateTopology,
   autoFillGaps,
@@ -67,6 +69,15 @@ export function useProvinceImporter(countryId: string) {
   const [showConformanceModal, setShowConformanceModal] = useState(false);
   const [parseLog, setParseLog] = useState<string[]>([]);
   const [detectedLayers, setDetectedLayers] = useState<string[]>([]);
+
+  // City Importer integrated state
+  const [hasCities, setHasCities] = useState(false);
+  const [importCities, setImportCities] = useState(true);
+  const [cityLayers, setCityLayers] = useState<SvgLayerInfo[]>([]);
+  const [rawCityPoints, setRawCityPoints] = useState<SvgCityPoint[]>([]);
+  const [citiesLayerId, setCitiesLayerId] = useState("");
+  const [capitalLayerId, setCapitalLayerId] = useState("");
+  const [rawSvgContent, setRawSvgContent] = useState<string | null>(null);
 
   // ── tRPC Mutations ──
   const parseMutation = api.geoAdmin.parseProvinceUpload.useMutation();
@@ -175,8 +186,8 @@ export function useProvinceImporter(countryId: string) {
           throw new Error(errorData.error || "Upload failed");
         }
 
-        const uploadData = await uploadResponse.json();
-        setUploadId(uploadData.id);
+        const text = await file.text();
+        setRawSvgContent(text);
 
         // Parse the uploaded SVG
         const result = await parseMutation.mutateAsync({
@@ -190,6 +201,20 @@ export function useProvinceImporter(countryId: string) {
         }
         if (result.log) setParseLog(result.log as string[]);
         if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
+
+        if (result.cityData) {
+          setHasCities(result.cityData.points.length > 0);
+          setRawCityPoints(result.cityData.points);
+          setCityLayers(result.cityData.layers);
+          setCitiesLayerId(result.cityData.detectedCitiesLayerId || "");
+          setImportCities(result.cityData.points.length > 0);
+        } else {
+          setHasCities(false);
+          setRawCityPoints([]);
+          setCityLayers([]);
+          setCitiesLayerId("");
+          setImportCities(false);
+        }
 
         goToStep("names");
       } catch (err) {
@@ -205,6 +230,7 @@ export function useProvinceImporter(countryId: string) {
     async (svgContent: string) => {
       setIsProcessing(true);
       setError(null);
+      setRawSvgContent(svgContent);
 
       try {
         const result = await parseMutation.mutateAsync({
@@ -218,6 +244,20 @@ export function useProvinceImporter(countryId: string) {
         }
         if (result.log) setParseLog(result.log as string[]);
         if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
+
+        if (result.cityData) {
+          setHasCities(result.cityData.points.length > 0);
+          setRawCityPoints(result.cityData.points);
+          setCityLayers(result.cityData.layers);
+          setCitiesLayerId(result.cityData.detectedCitiesLayerId || "");
+          setImportCities(result.cityData.points.length > 0);
+        } else {
+          setHasCities(false);
+          setRawCityPoints([]);
+          setCityLayers([]);
+          setCitiesLayerId("");
+          setImportCities(false);
+        }
 
         goToStep("names");
       } catch (err) {
@@ -302,6 +342,43 @@ export function useProvinceImporter(countryId: string) {
     setTransform(matrix);
     setAlignedProvinces(applyAffineToProvinces(rawProvinces, matrix));
   }, [rawProvinces, manualTransform]);
+
+  // ── Aligned Cities Derived State & setLayer ──
+  const alignedCities = useMemo(() => {
+    if (!importCities || rawCityPoints.length === 0 || !transform) return [];
+    return applyCityAffine(rawCityPoints, transform);
+  }, [importCities, rawCityPoints, transform]);
+
+  const parseCitySvgMutation = api.geoAdmin.parseCitySvg.useMutation();
+
+  const setLayer = useCallback(
+    async (newCitiesLayerId: string, newCapitalLayerId?: string) => {
+      setCitiesLayerId(newCitiesLayerId);
+      if (newCapitalLayerId !== undefined) {
+        setCapitalLayerId(newCapitalLayerId);
+      }
+
+      setIsProcessing(true);
+      setError(null);
+      try {
+        if (!rawSvgContent) return;
+
+        const result = await parseCitySvgMutation.mutateAsync({
+          countryId,
+          svgContent: rawSvgContent,
+          citiesLayerId: newCitiesLayerId,
+          capitalLayerId: newCapitalLayerId !== undefined ? newCapitalLayerId : "",
+        });
+
+        setRawCityPoints(result.points);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to update layers");
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [countryId, rawSvgContent, parseCitySvgMutation]
+  );
 
   // ── Snap Step ──
   const applySnapping = useCallback(() => {
@@ -391,6 +468,14 @@ export function useProvinceImporter(countryId: string) {
 
       const included = source.filter((p) => p.included);
 
+      const citiesToCommit = importCities
+        ? alignedCities.map((c) => ({
+            name: c.name,
+            coordinates: [c.lng, c.lat],
+            isCapital: c.isCapital,
+          }))
+        : undefined;
+
       const result = await commitMutation.mutateAsync({
         countryId,
         provinces: included.map((p) => ({
@@ -400,6 +485,7 @@ export function useProvinceImporter(countryId: string) {
           level: 1,
           color: p.color,
         })),
+        cities: citiesToCommit,
         replaceExisting,
       });
 
@@ -418,6 +504,8 @@ export function useProvinceImporter(countryId: string) {
     commitMutation,
     countryBorder,
     simplifyTolerance,
+    importCities,
+    alignedCities,
   ]);
 
   // ── Reset ──
@@ -442,6 +530,13 @@ export function useProvinceImporter(countryId: string) {
     setParseLog([]);
     setDetectedLayers([]);
     hasAutoAligned.current = false;
+    setHasCities(false);
+    setImportCities(true);
+    setRawCityPoints([]);
+    setCityLayers([]);
+    setCitiesLayerId("");
+    setCapitalLayerId("");
+    setRawSvgContent(null);
   }, []);
 
   // ── Current Provinces (for display) ──
@@ -521,6 +616,17 @@ export function useProvinceImporter(countryId: string) {
     conformanceResult,
     showConformanceModal,
     setShowConformanceModal,
+
+    // City Importer integrated state
+    hasCities,
+    importCities,
+    setImportCities,
+    cityLayers,
+    rawCityPoints,
+    citiesLayerId,
+    capitalLayerId,
+    alignedCities,
+    setLayer,
 
     // Reset
     reset,

@@ -10,6 +10,7 @@ interface ProvincePreviewLayerProps {
   provinces: ProvinceFeature[];
   countryBorder: Polygon | MultiPolygon | null;
   visible: boolean;
+  cities?: Array<{ name: string; lat: number; lng: number; isCapital: boolean }>;
 }
 
 const SOURCE_ID = "province-import-preview";
@@ -62,6 +63,7 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
   provinces,
   countryBorder,
   visible,
+  cities,
 }: ProvincePreviewLayerProps) {
   // Debug mount
   console.log("[ProvincePreview] MOUNTED", {
@@ -374,6 +376,82 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     if (map.getLayer(LABEL_LAYER_ID)) map.setLayoutProperty(LABEL_LAYER_ID, "visibility", vis);
   }, [map, fc, provinces, visible]);
 
+  // ── Aligned cities reference layers ──
+  useEffect(() => {
+    if (!map) return;
+
+    const citiesList = cities || [];
+    const citiesFc: FeatureCollection = {
+      type: "FeatureCollection",
+      features: citiesList.map((c, i) => ({
+        type: "Feature",
+        id: i,
+        geometry: {
+          type: "Point",
+          coordinates: [c.lng, c.lat],
+        },
+        properties: {
+          name: c.name,
+          isCapital: c.isCapital,
+        },
+      })),
+    };
+
+    const sourceId = "province-import-preview-cities";
+    const circleLayerId = "province-import-preview-cities-circle";
+    const labelLayerId = "province-import-preview-cities-label";
+
+    try {
+      const source = map.getSource(sourceId);
+      if (source && "setData" in source) {
+        (source as { setData: (data: FeatureCollection) => void }).setData(citiesFc);
+      } else {
+        // Clean up stale layers
+        if (map.getLayer(labelLayerId)) map.removeLayer(labelLayerId);
+        if (map.getLayer(circleLayerId)) map.removeLayer(circleLayerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+
+        map.addSource(sourceId, { type: "geojson", data: citiesFc });
+
+        map.addLayer({
+          id: circleLayerId,
+          type: "circle",
+          source: sourceId,
+          paint: {
+            "circle-radius": 5,
+            "circle-color": ["case", ["get", "isCapital"], "#ef4444", "#3b82f6"],
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 1.5,
+          },
+        });
+
+        map.addLayer({
+          id: labelLayerId,
+          type: "symbol",
+          source: sourceId,
+          layout: {
+            "text-field": ["get", "name"],
+            "text-size": 10,
+            "text-offset": [0, 1.2],
+            "text-anchor": "top",
+            "text-allow-overlap": false,
+          },
+          paint: {
+            "text-color": "#1e293b",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 1.5,
+          },
+        });
+      }
+
+      const vis = visible ? "visible" : "none";
+      if (map.getLayer(circleLayerId)) map.setLayoutProperty(circleLayerId, "visibility", vis);
+      if (map.getLayer(labelLayerId)) map.setLayoutProperty(labelLayerId, "visibility", vis);
+    } catch (err) {
+      console.error("[ProvincePreview] Error rendering cities preview:", err);
+    }
+  }, [map, cities, visible]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -386,6 +464,14 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
         if (map.getLayer(BORDER_LINE_LAYER_ID)) map.removeLayer(BORDER_LINE_LAYER_ID);
         if (map.getLayer(BORDER_FILL_LAYER_ID)) map.removeLayer(BORDER_FILL_LAYER_ID);
         if (map.getSource(BORDER_SOURCE_ID)) map.removeSource(BORDER_SOURCE_ID);
+
+        // Clean up cities preview layers
+        const citiesSourceId = "province-import-preview-cities";
+        const citiesCircleLayerId = "province-import-preview-cities-circle";
+        const citiesLabelLayerId = "province-import-preview-cities-label";
+        if (map.getLayer(citiesLabelLayerId)) map.removeLayer(citiesLabelLayerId);
+        if (map.getLayer(citiesCircleLayerId)) map.removeLayer(citiesCircleLayerId);
+        if (map.getSource(citiesSourceId)) map.removeSource(citiesSourceId);
       } catch {
         // Map may already be destroyed
       }
