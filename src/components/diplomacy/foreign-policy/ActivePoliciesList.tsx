@@ -202,6 +202,7 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
                         </AlertDialogClose>
                         <AlertDialogClose asChild>
                           <Button
+                            variant="destructive"
                             onClick={() => liftMutation.mutate({ actionId: policy.id })}
                             disabled={liftMutation.isPending}
                           >
