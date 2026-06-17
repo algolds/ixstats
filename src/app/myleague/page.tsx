@@ -74,18 +74,14 @@ export default function MyLeaguePage() {
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const { data: leagues, isLoading } = api.sports.getLeagues.useQuery({});
-  const { data: canonicalLeagues } = api.sports.getLeagues.useQuery({ isCanonical: true });
 
-  // 1. Identify primary featured league
+  // 1. Identify primary featured league. ponytail: derive from `leagues`
+  //    instead of a second getLeagues({isCanonical}) fetch — isCanonical is on
+  //    each row and both queries share the same createdAt-desc ordering.
   const featuredLeague = useMemo(() => {
-    if (canonicalLeagues && canonicalLeagues.length > 0) {
-      return canonicalLeagues[0];
-    }
-    if (leagues && leagues.length > 0) {
-      return leagues[0];
-    }
-    return null;
-  }, [canonicalLeagues, leagues]);
+    if (!leagues || leagues.length === 0) return null;
+    return leagues.find((l) => l.isCanonical) ?? leagues[0] ?? null;
+  }, [leagues]);
 
   // 2. Filter leagues for the grid (excluding the one in the hero)
   const filteredLeagues = useMemo(() => {

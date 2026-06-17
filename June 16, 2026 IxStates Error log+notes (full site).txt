@@ -1,0 +1,64 @@
+DASHBOARD
+- All buttons work as expected.
+- UI issues all appear fixed, except Government Type remains lower-case (republic vs Republic; tested with other types as well)
+
+EXPLORE
+- Looking glass icon next to search bar is off-centered.
+- Search box pop-up appears in wrong location or jumbs screen down the list.
+
+VAULT/CARDS
+- Nothing to report
+
+MYCOUNTRY
+Executive: 
+- Top infobox map has a large blank section at the bottom.
+- Meeting and Policy activations now appear to work; straight-to-launch Policy function works
+Diplomacy: 
+- Ending a foreign policy works now. 
+- Foreign policy 'confirm lift' button in pop-up appears blank when not moused over. Functionally works fine.
+- Target Nation drop-down menu in 'Propose Foreign Policy' and Bilateral trade 'select partner' currently empty (expected).
+- Relations box empty (expected, locked behind Embassy upgrade?)
+Intelligence:
+- Alert Center offline (expected)
+- Lore and Archives leads to dummy information still (expected)
+Defense:
+- Launching and ending operations works
+- All nation selection drop-downs empty (expected)
+- PvNPC and PvP untested (due to drop-downs)
+Politics:
+- When changing Political Party support, re-opening the Parties pop-up still shows the old percentages until page is refreshed
+- Legislature Chamber seats counts try to autocorrect to 1000, like Total Seats used to (all multicameral setups)
+- Can't see legislature graphic through Legislature tab after first elections (Elections tab history works)
+- Legislature box lists all parties as 'Unknown Party' after elections complete. Does not fix on page refresh.
+
+MAPS (Editor)
+- Generate Pipeline, Power, Fiber, Mil Supply/Naval doesn't function. Code: [ { "code": "invalid_value", "values": [ "rail", "highway", "road", "shipping_lane", "canal", "air_corridor", "ferry" ], "path": [ "routeTypes", 0 ], "message": "Invalid option: expected one of \"rail\"|\"highway\"|\"road\"|\"shipping_lane\"|\"canal\"|\"air_corridor\"|\"ferry\"" } ]
+- New city creation layout/UI changes on features editing appear to work unless noted
+- Angling text and altering opacity does not work - resets to zero degrees/full opacity (tested with other alterations and independently)
+- Regions opacity slider does not seem to work
+- Snapping on regions *technically* works (tested on different thresholds) but not very well, esp, around vertices. Can be close enough for government work with slow going but not feature-complete.
+
+MYCOUNTRY (Editor)
+Identity:
+- Archetypes still mixed between economy/gov categories (expected)
+- Basic Info, Culture, Technical work fine
+- Changing Gov type fixed all lowercases issue in infoboxes in MyCountry/Dashboard
+Government Builder:
+- Components work as expected
+- Departments work well, slider/input box mix works well
+- Budget, Policies work as expected
+Economy Builder:
+- Components do not persist after leaving Economy Builder (within EB is fine, leaving, even to preview, removes component selections)
+- Components visually work, possibly telegraphy synergies in the infocard like Gov Components sections
+- Sectors interface is useable and works well
+- Labor and Demographics references world population and wrong GDP/GDPPC
+- Unrelated: tying Labor and Demo.: Geographic [regions] to select a list of province or state-level regions from the map could be a way to add information graphics in future
+- Labor/Demographics toggle in Labor and Demographics extremely easy to miss (I literally noticed the toggle *this time*) - possibly separate Labor and Demographics into separate tabs under Economy Builder, rather than nested into a third-level subtab in parallel with the regular third-level subtabs
+- Tax System: Components should highlight when selected.
+- Tax System: code line // eslint-disable-next-line unused-imports/no-unused-vars appears in Atomic Tax Components UI user-end.
+- Atomic Tax components also do not persist when leaving the Economy Builder (both Econ component sets appear to not cause issues/stay(maybe?) when using Continue button.
+
+And finally, Save button works.
+
+
+

@@ -121,7 +121,9 @@ export function LeagueSettingsModal({
   const activeSeason = league.seasons?.find((s) => s.status === "in_progress");
 
   // Fetch list of leagues for transferring teams
-  const { data: otherLeagues } = api.sports.getLeagues.useQuery(undefined, {
+  // ponytail: input `{}` (not `undefined`) so this shares the cache key used by
+  // the MyLeague page and admin views — identical data, one fetch instead of two.
+  const { data: otherLeagues } = api.sports.getLeagues.useQuery({}, {
     enabled: open,
   });
 
