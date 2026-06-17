@@ -90,25 +90,28 @@ export function useMapLayers({
           });
 
           if (config.type === "line") {
-            map.addLayer({
-              id: fillLayerId,
-              type: "line",
-              source: sourceId,
-              paint: {
-                "line-color": config.strokeColor ?? "#7cb5d2",
-                "line-width": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  0,
-                  config.strokeWidth ?? 1,
-                  6,
-                  (config.strokeWidth ?? 1) * 3,
-                ] as [string, ...unknown[]],
-                "line-opacity": layer.visible ? 0.7 : 0,
+            map.addLayer(
+              {
+                id: fillLayerId,
+                type: "line",
+                source: sourceId,
+                paint: {
+                  "line-color": config.strokeColor ?? "#7cb5d2",
+                  "line-width": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    0,
+                    config.strokeWidth ?? 1,
+                    6,
+                    (config.strokeWidth ?? 1) * 3,
+                  ] as [string, ...unknown[]],
+                  "line-opacity": layer.visible ? 0.7 : 0,
+                },
+                layout: { "line-cap": "round", "line-join": "round" },
               },
-              layout: { "line-cap": "round", "line-join": "round" },
-            }, firstEditorLayer);
+              firstEditorLayer
+            );
           }
 
           if (config.type === "fill") {
@@ -121,24 +124,30 @@ export function useMapLayers({
               fillPaint["fill-color"] = config.fillColor;
             }
 
-            map.addLayer({
-              id: fillLayerId,
-              type: "fill",
-              source: sourceId,
-              paint: fillPaint as Record<string, unknown>,
-            }, firstEditorLayer);
+            map.addLayer(
+              {
+                id: fillLayerId,
+                type: "fill",
+                source: sourceId,
+                paint: fillPaint as Record<string, unknown>,
+              },
+              firstEditorLayer
+            );
 
             if (config.strokeColor) {
-              map.addLayer({
-                id: strokeLayerId,
-                type: "line",
-                source: sourceId,
-                paint: {
-                  "line-color": config.strokeColor,
-                  "line-width": config.strokeWidth ?? 1,
-                  "line-opacity": layer.visible ? 0.8 : 0,
+              map.addLayer(
+                {
+                  id: strokeLayerId,
+                  type: "line",
+                  source: sourceId,
+                  paint: {
+                    "line-color": config.strokeColor,
+                    "line-width": config.strokeWidth ?? 1,
+                    "line-opacity": layer.visible ? 0.8 : 0,
+                  },
                 },
-              }, firstEditorLayer);
+                firstEditorLayer
+              );
             }
           }
         }

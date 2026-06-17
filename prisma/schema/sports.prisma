@@ -19,6 +19,7 @@ model SportLeague {
   parentLeagueId   String?
   relegationCount  Int           @default(3)
   promotionCount   Int           @default(3)
+  wikiSlug         String?
 
   parentLeague     SportLeague?  @relation("LeagueHierarchy", fields: [parentLeagueId], references: [id], onDelete: SetNull)
   subLeagues       SportLeague[] @relation("LeagueHierarchy")
@@ -54,6 +55,7 @@ model SportTeam {
   sponsor         Json?
   lineup          Json?
   patronSaint     String?
+  wikiSlug        String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 

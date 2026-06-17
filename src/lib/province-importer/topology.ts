@@ -658,7 +658,10 @@ export function clipGeometryToBorder(
 // ──────────────────────────────────────────────
 
 /** Ray-casting point-in-polygon algorithm. Handles Polygons, MultiPolygons, and holes. */
-export function isPointInPolygon(point: [number, number], polygon: Polygon | MultiPolygon): boolean {
+export function isPointInPolygon(
+  point: [number, number],
+  polygon: Polygon | MultiPolygon
+): boolean {
   if (!point || isNaN(point[0]) || isNaN(point[1])) return false;
   const [lng, lat] = point;
   const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
@@ -674,11 +677,12 @@ export function isPointInPolygon(point: [number, number], polygon: Polygon | Mul
       const pj = ring[j];
       if (!pi || !pj || isNaN(pi[0]) || isNaN(pi[1]) || isNaN(pj[0]) || isNaN(pj[1])) continue;
 
-      const xi = pi[0], yi = pi[1];
-      const xj = pj[0], yj = pj[1];
+      const xi = pi[0],
+        yi = pi[1];
+      const xj = pj[0],
+        yj = pj[1];
 
-      const intersect = ((yi > lat) !== (yj > lat))
-        && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+      const intersect = yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
       if (intersect) ringInside = !ringInside;
     }
 
@@ -693,11 +697,13 @@ export function isPointInPolygon(point: [number, number], polygon: Polygon | Mul
           const pj = hole[j];
           if (!pi || !pj || isNaN(pi[0]) || isNaN(pi[1]) || isNaN(pj[0]) || isNaN(pj[1])) continue;
 
-          const xi = pi[0], yi = pi[1];
-          const xj = pj[0], yj = pj[1];
+          const xi = pi[0],
+            yi = pi[1];
+          const xj = pj[0],
+            yj = pj[1];
 
-          const intersect = ((yi > lat) !== (yj > lat))
-            && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+          const intersect =
+            yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
           if (intersect) holeInside = !holeInside;
         }
         if (holeInside) {
@@ -713,7 +719,11 @@ export function isPointInPolygon(point: [number, number], polygon: Polygon | Mul
   return inside;
 }
 
-function closestPointOnSegment(p: [number, number], a: [number, number], b: [number, number]): [number, number] {
+function closestPointOnSegment(
+  p: [number, number],
+  a: [number, number],
+  b: [number, number]
+): [number, number] {
   const [px, py] = p;
   const [ax, ay] = a;
   const [bx, by] = b;
@@ -733,7 +743,10 @@ function closestPointOnSegment(p: [number, number], a: [number, number], b: [num
   return [ax + t * abx, ay + t * aby];
 }
 
-export function findClosestPointOnBoundary(point: [number, number], polygon: Polygon | MultiPolygon): [number, number] {
+export function findClosestPointOnBoundary(
+  point: [number, number],
+  polygon: Polygon | MultiPolygon
+): [number, number] {
   const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
 
   let closestPoint: [number, number] = point;
@@ -745,7 +758,7 @@ export function findClosestPointOnBoundary(point: [number, number], polygon: Pol
 
     for (let i = 0; i < ring.length - 1; i++) {
       const a = ring[i];
-      const b = ring[i+1];
+      const b = ring[i + 1];
       if (!a || !b || isNaN(a[0]) || isNaN(a[1]) || isNaN(b[0]) || isNaN(b[1])) continue;
 
       const cp = closestPointOnSegment(point, a as [number, number], b as [number, number]);
@@ -767,7 +780,9 @@ export function findClosestPointOnBoundary(point: [number, number], polygon: Pol
 
 function getCentroid(polygon: Polygon | MultiPolygon): [number, number] {
   const polys = polygon.type === "Polygon" ? [polygon.coordinates] : polygon.coordinates;
-  let sumX = 0, sumY = 0, count = 0;
+  let sumX = 0,
+    sumY = 0,
+    count = 0;
   for (const poly of polys) {
     const ring = poly[0];
     if (!ring) continue;
@@ -845,4 +860,3 @@ export function snapPointToCountryBorderJS(
 
   return closestPoint;
 }
-

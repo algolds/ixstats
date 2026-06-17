@@ -383,13 +383,13 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         include: {
           league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
           standings: {
-            include: { team: { select: { id: true, name: true, shortName: true } } },
+            include: { team: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } } },
             orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
           },
           matches: {
             include: {
-              homeTeam: { select: { id: true, name: true, shortName: true, color: true } },
-              awayTeam: { select: { id: true, name: true, shortName: true, color: true } },
+              homeTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
+              awayTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
             },
             orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
           },
@@ -399,7 +399,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           races: {
             orderBy: { raceNumber: "asc" },
           },
-          champion: { select: { id: true, name: true } },
+          champion: { select: { id: true, name: true, logo: true, color: true } },
         },
       });
 
@@ -425,10 +425,17 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           where: { id: input.matchId },
           include: {
             homeTeam: {
-              select: { id: true, name: true, shortName: true, logo: true, color: true },
+              select: { id: true, name: true, shortName: true, logo: true, color: true, wikiSlug: true },
             },
             awayTeam: {
-              select: { id: true, name: true, shortName: true, logo: true, color: true },
+              select: { id: true, name: true, shortName: true, logo: true, color: true, wikiSlug: true },
+            },
+            playerStats: {
+              include: {
+                player: {
+                  select: { firstName: true, lastName: true, position: true },
+                },
+              },
             },
           },
         });

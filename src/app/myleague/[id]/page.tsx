@@ -15,6 +15,7 @@ import { ScheduleView } from "~/components/myleague/ScheduleView";
 import { BracketView } from "~/components/myleague/BracketView";
 import { RaceResults } from "~/components/myleague/RaceResults";
 import { DraftPicksView } from "~/components/myleague/DraftPicksView";
+import MatchDetailModal from "~/components/myleague/MatchDetailModal";
 import { TeamRosterModal } from "~/components/myleague/TeamRosterModal";
 import { LeagueSettingsModal } from "~/components/myleague/LeagueSettingsModal";
 import { LeagueSidebarLayout } from "~/components/myleague/LeagueSidebarLayout";
@@ -22,9 +23,7 @@ import Standings from "~/components/sports/standings/Standings1";
 import LatestResults from "~/components/sports/latest-results/LatestResults1";
 import {
   LeagueBrandCard,
-  SeasonProgressWidget,
   ReigningChampionWidget,
-  QuickSimWidget,
   type LeagueSection,
 } from "~/components/myleague/LeagueSidebarNav";
 import { getSportColors, getPreset, type SportPresetKey } from "~/lib/sports/presets";
@@ -107,6 +106,7 @@ export default function LeagueDetailPage() {
   const [tab, setTab] = useState<LeagueSection>("overview");
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -219,6 +219,10 @@ export default function LeagueDetailPage() {
       awayColor: m.awayTeam.color,
       homeShortName: m.homeTeam.shortName,
       awayShortName: m.awayTeam.shortName,
+      homeLogo: m.homeTeam.logo,
+      awayLogo: m.awayTeam.logo,
+      homeWikiSlug: m.homeTeam.wikiSlug,
+      awayWikiSlug: m.awayTeam.wikiSlug,
     }));
   }, [schedule]);
 
@@ -289,24 +293,11 @@ export default function LeagueDetailPage() {
         archetype={archetypeLabel}
         teamCount={league.teamCount}
         logo={league.logo}
+        seasonNumber={activeSeason?.seasonNumber}
+        completedCount={completedCount}
+        totalCount={totalCount}
+        progressLabel={progressLabel}
       />
-      {activeSeason && (
-        <SeasonProgressWidget
-          seasonNumber={activeSeason.seasonNumber}
-          completedCount={completedCount}
-          totalCount={totalCount}
-          label={progressLabel}
-        />
-      )}
-      {activeSeason && activeSeason.id && (
-        <QuickSimWidget
-          seasonId={activeSeason.id}
-          nextMatchDay={nextMatchDay}
-          onSimulated={() => {
-            utils.sports.getLeague.invalidate({ id });
-          }}
-        />
-      )}
       {lastCompletedSeason?.champion && (
         <ReigningChampionWidget
           championName={lastCompletedSeason.champion.name}
@@ -550,10 +541,18 @@ export default function LeagueDetailPage() {
                                   {s.position ?? idx + 1}
                                 </td>
                                 <td className="flex min-w-0 items-center gap-2 py-2.5 font-bold">
-                                  <span
-                                    className="h-2 w-2 shrink-0 rounded-full"
-                                    style={{ backgroundColor: s.team.color ?? "#888" }}
-                                  />
+                                  {s.team.logo ? (
+                                    <img
+                                      src={withBasePath(s.team.logo)}
+                                      alt={s.team.name}
+                                      className="h-5 w-5 shrink-0 rounded-full object-cover border border-white/10"
+                                    />
+                                  ) : (
+                                    <span
+                                      className="h-2 w-2 shrink-0 rounded-full"
+                                      style={{ backgroundColor: s.team.color ?? "#888" }}
+                                    />
+                                  )}
                                   <span className="text-foreground truncate">{s.team.name}</span>
                                 </td>
                                 <td className="text-muted-foreground py-2.5 text-right font-semibold">
@@ -575,7 +574,11 @@ export default function LeagueDetailPage() {
 
                 {/* Latest Results Scoreboard */}
                 {latestResultsMatches.length > 0 && (
-                  <LatestResults matches={latestResultsMatches} onTeamClick={handleTeamClick} />
+                  <LatestResults
+                    matches={latestResultsMatches}
+                    onTeamClick={handleTeamClick}
+                    onMatchClick={(matchId) => setSelectedMatchId(matchId)}
+                  />
                 )}
               </div>
 
@@ -739,12 +742,20 @@ export default function LeagueDetailPage() {
                             className="border-border/10 relative flex cursor-pointer items-center justify-between overflow-hidden rounded-xl border bg-white/5 p-2.5 text-left transition hover:bg-white/10"
                           >
                             <div className="flex min-w-0 items-center gap-2.5">
-                              <div
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 text-[9px] font-black text-white shadow"
-                                style={{ backgroundColor: team.color ?? "#888" }}
-                              >
-                                {team.shortName || team.name.slice(0, 2).toUpperCase()}
-                              </div>
+                              {team.logo ? (
+                                <img
+                                  src={withBasePath(team.logo)}
+                                  alt={team.name}
+                                  className="h-6 w-6 shrink-0 rounded-full object-cover border border-white/10"
+                                />
+                              ) : (
+                                <div
+                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 text-[9px] font-black text-white shadow"
+                                  style={{ backgroundColor: team.color ?? "#888" }}
+                                >
+                                  {team.shortName || team.name.slice(0, 2).toUpperCase()}
+                                </div>
+                              )}
                               <span className="text-foreground truncate text-xs font-bold">
                                 {team.name}
                               </span>
@@ -799,6 +810,7 @@ export default function LeagueDetailPage() {
                 hasSubLeagues={false}
                 onSeasonTransition={handleSeasonTransition}
                 onTeamClick={handleTeamClick}
+                onMatchClick={(matchId) => setSelectedMatchId(matchId)}
               />
             )}
           </TabsContent>
@@ -929,7 +941,18 @@ export default function LeagueDetailPage() {
         onClose={() => setActiveTeamId(null)}
       />
 
-      <LeagueSettingsModal league={league} open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <LeagueSettingsModal
+        league={league}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onOpenRoster={(teamId) => setActiveTeamId(teamId)}
+      />
+
+      <MatchDetailModal
+        matchId={selectedMatchId}
+        isOpen={!!selectedMatchId}
+        onClose={() => setSelectedMatchId(null)}
+      />
     </>
   );
 }
@@ -1001,6 +1024,7 @@ function StandingsTab({
     division: s.division ?? undefined,
     conference: s.conference ?? undefined,
     color: s.team.color,
+    logo: s.team.logo,
   }));
 
   return (
@@ -1033,6 +1057,7 @@ function ScheduleTab({
   hasSubLeagues = false,
   onSeasonTransition,
   onTeamClick,
+  onMatchClick,
 }: {
   leagueId: string;
   activeSeasonId?: string;
@@ -1045,6 +1070,7 @@ function ScheduleTab({
   hasSubLeagues?: boolean;
   onSeasonTransition?: (newSeasonId: string) => void;
   onTeamClick?: (teamId: string) => void;
+  onMatchClick?: (matchId: string) => void;
 }) {
   const seasonId = activeSeasonId ?? latestSeasonId;
   const utils = api.useUtils();
@@ -1304,9 +1330,20 @@ function ScheduleTab({
       homeScore: m.homeScore ?? undefined,
       awayScore: m.awayScore ?? undefined,
       status: m.status,
+      homeColor: m.homeTeam.color ?? undefined,
+      awayColor: m.awayTeam.color ?? undefined,
+      homeTeam: { logo: m.homeTeam.logo, wikiSlug: m.homeTeam.wikiSlug },
+      awayTeam: { logo: m.awayTeam.logo, wikiSlug: m.awayTeam.wikiSlug },
     }));
 
-    return <ScheduleView matches={matches} archetype={archetype} onTeamClick={onTeamClick} />;
+    return (
+      <ScheduleView
+        matches={matches}
+        archetype={archetype}
+        onTeamClick={onTeamClick}
+        onMatchClick={onMatchClick}
+      />
+    );
   };
 
   return (

@@ -1,4 +1,8 @@
-import { formatMatchDayBulletin } from "./feed-bulletins";
+import {
+  formatMatchDayBulletin,
+  formatSeasonChampionBulletin,
+  formatPlayoffBulletin,
+} from "./feed-bulletins";
 
 describe("formatMatchDayBulletin", () => {
   test("returns header only when results are empty", () => {
@@ -8,7 +12,7 @@ describe("formatMatchDayBulletin", () => {
       matchDay: 1,
       results: [],
     });
-    expect(content).toBe("⚽ [Premier League] Match Day 1 results\n\n");
+    expect(content).toBe("⚽ **Premier League** — Matchday 1\n══════════════════════════════\n");
   });
 
   test("formats single result correctly", () => {
@@ -25,7 +29,7 @@ describe("formatMatchDayBulletin", () => {
         },
       ],
     });
-    expect(content).toBe("⚽ [Championship] Match Day 5 results\n\nUnited 2–1 City");
+    expect(content).toBe("⚽ **Championship** — Matchday 5\n══════════════════════════════\n🏆 **United** 2 – 1 City");
   });
 
   test("formats multiple results preserving order and format", () => {
@@ -49,7 +53,42 @@ describe("formatMatchDayBulletin", () => {
       ],
     });
     expect(content).toBe(
-      "🏀 [Slam Dunk League] Match Day 12 results\n\nLakers 102–99 Celtics\nWarriors 88–92 Bulls"
+      "🏀 **Slam Dunk League** — Matchday 12\n══════════════════════════════\n🏆 **Lakers** 102 – 99 Celtics\nWarriors 88 – 92 🏆 **Bulls**"
+    );
+  });
+});
+
+describe("formatSeasonChampionBulletin", () => {
+  test("formats champion bulletin correctly", () => {
+    const content = formatSeasonChampionBulletin({
+      leagueName: "La Liga",
+      sportEmoji: "⚽",
+      championName: "Real Madrid",
+      llmSummary: "A glorious finish to a legendary season.",
+    });
+    expect(content).toBe(
+      "⚽ 🏆 **La Liga CHAMPION CROWNED!**\n══════════════════════════════\nCongratulations to **Real Madrid** for winning the championship!\n\n📝 **Season Summary**\nA glorious finish to a legendary season."
+    );
+  });
+});
+
+describe("formatPlayoffBulletin", () => {
+  test("formats playoff bulletin correctly", () => {
+    const content = formatPlayoffBulletin({
+      leagueName: "Stanley Cup Playoffs",
+      sportEmoji: "🏒",
+      roundName: "Semifinals",
+      results: [
+        {
+          homeName: "Rangers",
+          awayName: "Devils",
+          homeScore: 4,
+          awayScore: 3,
+        },
+      ],
+    });
+    expect(content).toBe(
+      "🏒 **Stanley Cup Playoffs Playoff Semifinals Results**\n══════════════════════════════\n🏆 **Rangers** 4 – 3 Devils"
     );
   });
 });

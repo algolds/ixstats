@@ -1,0 +1,266 @@
+"use client";
+
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Trophy, Calendar, ArrowLeft, Swords, MapPin } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { withBasePath } from "~/lib/base-path";
+import Link from "next/link";
+import Standings from "~/components/sports/standings/Standings1";
+import { ScheduleView } from "~/components/myleague/ScheduleView";
+import { BracketView } from "~/components/myleague/BracketView";
+import { RaceResults } from "~/components/myleague/RaceResults";
+import MatchDetailModal from "~/components/myleague/MatchDetailModal";
+
+export default function SeasonDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const leagueId = params?.id as string;
+  const seasonId = params?.seasonId as string;
+
+  const [activeTab, setActiveTab] = useState<"standings" | "schedule" | "bracket" | "races">("standings");
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+
+  const { data: season, isLoading } = api.sports.getSeason.useQuery(
+    { id: seasonId ?? "" },
+    { enabled: !!seasonId }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-6xl space-y-6 py-8 px-4">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-48 w-full rounded-3xl" />
+        <div className="grid grid-cols-4 gap-6">
+          <Skeleton className="h-12 col-span-1" />
+          <Skeleton className="h-96 col-span-3 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!season) {
+    return (
+      <div className="container mx-auto max-w-6xl py-12 px-4 text-center">
+        <Trophy className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+        <h2 className="text-foreground text-2xl font-bold">Season Not Found</h2>
+        <p className="text-muted-foreground mt-2">The requested season details could not be loaded.</p>
+        <Button className="mt-6" onClick={() => router.push(withBasePath(`/myleague/${leagueId}`))}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to League
+        </Button>
+      </div>
+    );
+  }
+
+  const league = season.league;
+  const archetype = league.archetype;
+
+  // Format Standings data
+  const standingsData = season.standings.map((s) => ({
+    id: s.id,
+    teamId: s.teamId,
+    teamName: s.team.name,
+    wins: s.wins,
+    losses: s.losses,
+    draws: s.draws,
+    points: s.points,
+    pointsFor: s.pointsFor,
+    pointsAgainst: s.pointsAgainst,
+    rank: s.position,
+    division: s.division ?? undefined,
+    conference: s.conference ?? undefined,
+    color: s.team.color ?? "#3b82f6",
+    logo: s.team.logo,
+    wikiSlug: s.team.wikiSlug,
+  }));
+
+  // Format Matches data for ScheduleView
+  const matchesData = season.matches.map((m) => ({
+    id: m.id,
+    matchDay: m.matchDay,
+    homeTeamName: m.homeTeam.name,
+    awayTeamName: m.awayTeam.name,
+    homeTeamId: m.homeTeam.id,
+    awayTeamId: m.awayTeam.id,
+    homeScore: m.homeScore ?? undefined,
+    awayScore: m.awayScore ?? undefined,
+    status: m.status,
+    homeColor: m.homeTeam.color ?? undefined,
+    awayColor: m.awayTeam.color ?? undefined,
+    homeTeam: { logo: m.homeTeam.logo, wikiSlug: m.homeTeam.wikiSlug },
+    awayTeam: { logo: m.awayTeam.logo, wikiSlug: m.awayTeam.wikiSlug },
+  }));
+
+  const handleMatchClick = (matchId: string) => {
+    setSelectedMatchId(matchId);
+  };
+
+  return (
+    <div className="container mx-auto max-w-6xl space-y-6 py-8 px-4">
+      {/* Back to League */}
+      <div>
+        <Link
+          href={withBasePath(`/myleague/${leagueId}?tab=history`)}
+          className="text-muted-foreground hover:text-foreground inline-flex items-center text-sm font-semibold transition-colors"
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          Back to League History
+        </Link>
+      </div>
+
+      {/* Hero Banner */}
+      <div className="border-border/40 bg-card/60 relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-md">
+        {/* Glow overlay */}
+        <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full bg-purple-500/10 blur-[100px]" />
+        
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="bg-purple-500/10 text-purple-400 border-purple-500/20 rounded-full border px-3 py-1 text-xs font-bold uppercase">
+                Season {season.seasonNumber} History
+              </span>
+              {season.status === "completed" && (
+                <span className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-full border px-3 py-1 text-xs font-bold uppercase">
+                  Completed
+                </span>
+              )}
+            </div>
+            <h1 className="text-foreground mt-3 text-3xl font-extrabold tracking-tight">
+              {league.name}
+            </h1>
+            <p className="text-muted-foreground mt-1 text-sm font-semibold">
+              Archetype: <span className="text-purple-400 capitalize">{archetype.replace("_", " ")}</span>
+            </p>
+          </div>
+
+          {season.champion && (
+            <div className="bg-amber-500/10 border-amber-500/20 flex items-center gap-4 rounded-2xl border p-4 shadow-sm">
+              <div className="bg-amber-500/20 flex h-12 w-12 items-center justify-center rounded-xl">
+                <Trophy className="h-6 w-6 text-amber-400 animate-pulse" />
+              </div>
+              <div>
+                <span className="text-amber-400/80 block text-[10px] font-black tracking-wider uppercase">
+                  Champion
+                </span>
+                <span className="text-foreground text-lg font-black">
+                  {season.champion.name}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Sidebar Nav Tabs */}
+        <div className="space-y-2">
+          <button
+            onClick={() => setActiveTab("standings")}
+            className={cn(
+              "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+              activeTab === "standings"
+                ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              Standings
+            </span>
+          </button>
+          
+          {archetype !== "circuit" && archetype !== "bracket" && (
+            <button
+              onClick={() => setActiveTab("schedule")}
+              className={cn(
+                "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+                activeTab === "schedule"
+                  ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                  : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Schedule & Fixtures
+              </span>
+            </button>
+          )}
+
+          {archetype === "bracket" && (
+            <button
+              onClick={() => setActiveTab("bracket")}
+              className={cn(
+                "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+                activeTab === "bracket"
+                  ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                  : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <Swords className="h-4 w-4" />
+                Bracket
+              </span>
+            </button>
+          )}
+
+          {archetype === "circuit" && (
+            <button
+              onClick={() => setActiveTab("races")}
+              className={cn(
+                "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+                activeTab === "races"
+                  ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                  : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Race Results
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* Content Panel */}
+        <div className="col-span-1 md:col-span-3">
+          {activeTab === "standings" && (
+            <Standings
+              title="Season Final Standings"
+              standings={standingsData}
+              promotionCount={league.promotionCount}
+              relegationCount={league.relegationCount}
+            />
+          )}
+
+          {activeTab === "schedule" && (
+            <ScheduleView
+              matches={matchesData}
+              archetype={archetype}
+              onMatchClick={handleMatchClick}
+            />
+          )}
+
+          {activeTab === "bracket" && seasonId && (
+            <BracketView seasonId={seasonId} />
+          )}
+
+          {activeTab === "races" && seasonId && (
+            <RaceResults seasonId={seasonId} />
+          )}
+        </div>
+      </div>
+
+      {/* Match Detail Modal */}
+      <MatchDetailModal
+        matchId={selectedMatchId}
+        isOpen={!!selectedMatchId}
+        onClose={() => setSelectedMatchId(null)}
+      />
+    </div>
+  );
+}

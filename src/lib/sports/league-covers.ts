@@ -34,11 +34,7 @@ export const SPORT_COVER_POOL: Record<string, string[]> = {
     "Daejeon Hanbat Baseball Stadium Summer 2023.jpg",
     "Takahagi City Baseball Stadium 01.jpg",
   ],
-  f1: [
-    "2010 Malaysian GP opening lap.jpg",
-    "2015 Malaysian GP opening lap.jpg",
-    "Formula one.jpg",
-  ],
+  f1: ["2010 Malaysian GP opening lap.jpg", "2015 Malaysian GP opening lap.jpg", "Formula one.jpg"],
   boxing: [
     "Men boxing in ring with crowd watching, probably at picnic, Bloedel-Donovan Lumber Mills, 1922 (INDOCC 1129).jpg",
     "A crowd of soldiers watching a boxing match at the New Zealand Divisional Sports, Authie (21315001289).jpg",
@@ -56,10 +52,7 @@ function hashString(s: string): number {
  * team). Returns undefined if the sport has no pool. The filename is URL-encoded
  * so the proxy's decodeURIComponent recovers the exact Commons title.
  */
-export function sportCoverUrl(
-  sportPreset: string | undefined,
-  seed: string
-): string | undefined {
+export function sportCoverUrl(sportPreset: string | undefined, seed: string): string | undefined {
   const pool = SPORT_COVER_POOL[sportPreset ?? ""];
   if (!pool || pool.length === 0) return undefined;
   const file = pool[hashString(seed) % pool.length]!;

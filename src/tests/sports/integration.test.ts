@@ -443,4 +443,85 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
       );
     });
   });
+
+  describe("getMyClubs query", () => {
+    it("returns clubs owned by the user with active season standing, position, and championships", async () => {
+      mockPrisma.sportTeam.findMany.mockResolvedValue([
+        {
+          id: "team_1",
+          name: "Paris St. Germain",
+          leagueId: "league_1",
+          stadiumCapacity: 50000,
+          ticketPrice: 30,
+        },
+      ]);
+      mockPrisma.sportSeason.findFirst = jest.fn().mockResolvedValue({
+        id: "season_1",
+        seasonNumber: 1,
+      });
+      mockPrisma.sportStanding.findMany.mockResolvedValue([
+        {
+          id: "standing_2",
+          seasonId: "season_1",
+          teamId: "team_2",
+          wins: 5,
+          losses: 1,
+          draws: 0,
+          points: 15,
+          rank: 1,
+        },
+        {
+          id: "standing_1",
+          seasonId: "season_1",
+          teamId: "team_1",
+          wins: 4,
+          losses: 2,
+          draws: 0,
+          points: 12,
+          rank: 2,
+        },
+      ]);
+      mockPrisma.sportSeason.count = jest.fn().mockResolvedValue(3);
+
+      const result = await caller.getMyClubs();
+
+      expect(mockPrisma.sportTeam.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { ownerUserId: "test-manager-id" },
+        })
+      );
+      expect(mockPrisma.sportSeason.findFirst).toHaveBeenCalledWith({
+        where: { leagueId: "league_1", status: "in_progress" },
+        select: { id: true, seasonNumber: true },
+      });
+      expect(mockPrisma.sportStanding.findMany).toHaveBeenCalledWith({
+        where: { seasonId: "season_1" },
+        orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
+        select: { teamId: true, wins: true, losses: true, draws: true, points: true, rank: true, id: true, seasonId: true },
+      });
+      expect(mockPrisma.sportSeason.count).toHaveBeenCalledWith({
+        where: { championTeamId: "team_1", status: "completed" },
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: "team_1",
+          name: "Paris St. Germain",
+          stadiumCapacity: 50000,
+          ticketPrice: 30,
+          championships: 3,
+          activeSeason: { id: "season_1", seasonNumber: 1 },
+          currentStandings: expect.objectContaining({
+            teamId: "team_1",
+            wins: 4,
+            losses: 2,
+            points: 12,
+            position: 2,
+            rank: 2,
+          }),
+        })
+      );
+    });
+  });
 });

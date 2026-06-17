@@ -75,6 +75,7 @@ cd "$IXSTATS_DIR"
 # Step 1: Install & Build (isolated from the IxStats production .next)
 log "[1/4] Preparing build environment..."
 bun install --frozen-lockfile
+bun run prebuild
 
 # Save the existing IxStats .next so the IxWorld build does not clobber it. (D1)
 if [ -d ".next" ]; then
