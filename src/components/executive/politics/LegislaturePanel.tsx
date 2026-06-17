@@ -2,8 +2,9 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { api } from "~/trpc/react";
 import {
   Landmark,
   BarChart2,
@@ -16,6 +17,10 @@ import {
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { TabHeroBanner } from "~/components/mycountry/primitives/TabHeroBanner";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { ParliamentHemicycle } from "./ParliamentHemicycle";
 
 // ── Lazy-loaded sub-components (only mount when expanded) ─────────────────
 
@@ -93,6 +98,64 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
   const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [issuesExpanded, setIssuesExpanded] = useState(false);
 
+  // Current parliament data for the hemicycle
+  const { data: parliament } = api.elections.getCurrentParliament.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+
+  const chambers = parliament?.legislature?.chambers ?? [];
+  const [activeChamberTab, setActiveChamberTab] = useState<string>("");
+
+  useEffect(() => {
+    if (chambers.length > 0) {
+      if (!activeChamberTab || !chambers.some((c) => c.name === activeChamberTab)) {
+        setActiveChamberTab(chambers[0].name);
+      }
+    } else {
+      setActiveChamberTab("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chambers]);
+
+  const activeChamberSeats = useMemo(() => {
+    if (!parliament) return [];
+    if (chambers.length <= 1) return parliament.seats;
+    return parliament.seats.filter((s: any) => s.chamber === activeChamberTab);
+  }, [parliament, chambers, activeChamberTab]);
+
+  const activeChamberSeatsCount = useMemo(() => {
+    if (!parliament) return 0;
+    if (chambers.length <= 1) return parliament.legislature.totalSeats;
+    const activeChamber = chambers.find((c: any) => c.name === activeChamberTab);
+    return activeChamber ? activeChamber.seats : activeChamberSeats.length;
+  }, [parliament, chambers, activeChamberTab, activeChamberSeats]);
+
+  const activeChamberPartySummary = useMemo(() => {
+    if (!parliament) return [];
+    if (chambers.length <= 1) return parliament.partySummary;
+    const counts = new Map<string, { party: any; seats: number }>();
+    for (const seat of activeChamberSeats) {
+      if (seat.partyId) {
+        const existing = counts.get(seat.partyId);
+        if (existing) {
+          existing.seats++;
+        } else {
+          const refSummary = parliament.partySummary.find(
+            (ps: any) => ps.party.id === seat.partyId
+          );
+          counts.set(seat.partyId, {
+            party: refSummary?.party ?? { id: seat.partyId, name: seat.partyName, shortName: null, color: seat.partyColor },
+            seats: 1,
+          });
+        }
+      }
+    }
+    return Array.from(counts.values()).sort((a, b) => b.seats - a.seats);
+  }, [parliament, activeChamberSeats, chambers]);
+
+  const hasParliamentData = parliament && parliament.seats.length > 0;
+
   return (
     <div className="space-y-4">
       <TabHeroBanner
@@ -104,6 +167,53 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
         icon={Landmark}
         accentColor="indigo"
       />
+
+      {/* ─── Current Parliament Hemicycle (shows after first election) ─── */}
+      {hasParliamentData && (
+        <>
+          <Card className="glass-hierarchy-child border-indigo-500/20">
+            <CardHeader className="pb-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Landmark className="h-4 w-4 text-indigo-600" />
+                  <CardTitle className="text-base">Current Parliament</CardTitle>
+                  {activeChamberSeatsCount > 0 && (
+                    <Badge variant="outline" className="ml-auto text-[10px]">
+                      {activeChamberSeatsCount} seats
+                    </Badge>
+                  )}
+                </div>
+                {chambers.length > 1 && (
+                  <div className="mt-1 border-t border-slate-800 pt-2">
+                    <Tabs value={activeChamberTab} onValueChange={setActiveChamberTab}>
+                      <TabsList className="flex-wrap gap-1 bg-transparent p-0">
+                        {chambers.map((chamber: any) => (
+                          <TabsTrigger
+                            key={chamber.name}
+                            value={chamber.name}
+                            className="animate-in fade-in zoom-in h-7 border border-slate-800 bg-slate-900 px-2.5 py-1 text-[10px] duration-200 data-[state=active]:border-indigo-600 data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+                          >
+                            {chamber.name}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ParliamentHemicycle
+                seats={activeChamberSeats}
+                totalSeats={activeChamberSeatsCount}
+                partySummary={activeChamberPartySummary}
+                legislatureName={chambers.length > 1 ? activeChamberTab : parliament.legislature.name}
+              />
+            </CardContent>
+          </Card>
+          <Separator />
+        </>
+      )}
 
       {/* ─── Legislature Setup (default: expanded) ─── */}
       <section className="space-y-3">
