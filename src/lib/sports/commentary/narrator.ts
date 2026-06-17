@@ -29,7 +29,7 @@ export async function narrateEvents(
 
   if (provider === "nvidia") {
     apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    modelName = modelName || "nvidia/llama-3.1-nemotron-70b-instruct";
+    modelName = modelName || "nvidia/nemotron-3-ultra-550b-a55b";
   } else if (provider === "openrouter") {
     apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
     modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
@@ -49,7 +49,8 @@ Example Input: ["Match begins. Home team using neutral tactics.", "GOAL! John Sm
 Example Output: { "commentary": ["The referee blows the whistle and we are underway under the floodlights!", "GOAL! John Smith unleashes a thunderous volley into the top corner!"] }`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout guardrail
+    const timeoutMs = provider === "nvidia" ? 60000 : 8000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -66,6 +67,14 @@ Example Output: { "commentary": ["The referee blows the whistle and we are under
         temperature: 0.7,
         max_tokens: 2048,
         response_format: { type: "json_object" },
+        ...(provider === "nvidia" && {
+          reasoning_budget: 16384,
+          chat_template_kwargs: { enable_thinking: true },
+          extra_body: {
+            reasoning_budget: 16384,
+            chat_template_kwargs: { enable_thinking: true }
+          }
+        })
       }),
       signal: controller.signal,
     });

@@ -26,7 +26,7 @@ const candidates = [
       SPORTS_LLM_COMMENTARY: "true",
       SPORTS_LLM_PROVIDER: "nvidia",
       SPORTS_LLM_API_KEY: process.env.NVIDIA_API_KEY || process.env.SPORTS_LLM_API_KEY || "",
-      SPORTS_LLM_MODEL: "nvidia/llama-3.1-nemotron-70b-instruct",
+      SPORTS_LLM_MODEL: "nvidia/nemotron-3-ultra-550b-a55b",
       SPORTS_LLM_API_URL: "https://integrate.api.nvidia.com/v1/chat/completions"
     }
   },

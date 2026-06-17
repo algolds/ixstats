@@ -442,6 +442,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           ...match,
           evaluation: stats?.evaluation ?? null,
           trace: stats?.trace ?? null,
+          commentary: stats?.commentary ?? null,
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;

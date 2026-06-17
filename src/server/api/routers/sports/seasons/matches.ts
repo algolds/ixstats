@@ -345,6 +345,31 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
             },
           });
 
+          void (async () => {
+            try {
+              const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
+              const commentary = await narrateEvents(result.trace as any[], { sport: season.league.sportPreset });
+              if (commentary && commentary.length > 0) {
+                const latestMatch = await ctx.db.sportMatch.findUnique({
+                  where: { id: match.id },
+                  select: { matchStats: true },
+                });
+                const existingStats = (latestMatch?.matchStats as any) || {};
+                await ctx.db.sportMatch.update({
+                  where: { id: match.id },
+                  data: {
+                    matchStats: {
+                      ...existingStats,
+                      commentary,
+                    } as any,
+                  },
+                });
+              }
+            } catch (err) {
+              console.error("[simulateMatchDay] background commentary failed:", err);
+            }
+          })();
+
           // Update team season rating vectors
           await (ctx.db as any).sportTeamSeason.updateMany({
             where: { seasonId: input.seasonId, teamId: match.homeTeamId },
@@ -608,6 +633,31 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
               result: result as any,
             },
           });
+
+          void (async () => {
+            try {
+              const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
+              const commentary = await narrateEvents(result.trace as any[], { sport: season.league.sportPreset });
+              if (commentary && commentary.length > 0) {
+                const latestBracket = await (ctx.db as any).sportBracket.findUnique({
+                  where: { id: bm.id },
+                  select: { result: true },
+                });
+                const existingResult = (latestBracket?.result as any) || {};
+                await (ctx.db as any).sportBracket.update({
+                  where: { id: bm.id },
+                  data: {
+                    result: {
+                      ...existingResult,
+                      commentary,
+                    } as any,
+                  },
+                });
+              }
+            } catch (err) {
+              console.error("[simulatePlayoffRound] background commentary failed:", err);
+            }
+          })();
 
           results.push({ bracketId: bm.id, winnerId, f1Score, f2Score });
         }
