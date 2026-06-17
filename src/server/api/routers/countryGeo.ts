@@ -10,6 +10,7 @@ import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { ixnayWiki } from "~/lib/mediawiki-service";
 import { parseEntityAttributesFromWiki, type EntityKind } from "~/lib/wiki-entity-parser";
 import { checkGeoCompliance } from "~/lib/country-geo-compliance";
+import { getTerrainAtPoint } from "~/lib/base-layer-query";
 import {
   getCountryGeoBundle,
   upsertCity,
@@ -96,6 +97,26 @@ export const countryGeoRouter = createTRPCRouter({
     }),
 
   /**
+   * `sampleTerrainAt` — sample the terrain-zone elevation band at a (lng, lat) point.
+   * Returns the matching altitudes-layer zone { zoneId, zoneName,
+   * elevationMin, elevationMax, color, midpoint } or null if the point is
+   * outside any zone (e.g., over the ocean for a country whose altitudes
+   * layer is land-only). The `midpoint` is the deterministic value to use
+   * as the city's "elevation" — it's `(elevationMin + elevationMax) / 2`,
+   * rounded to the nearest integer, matching the convention already used
+   * by `src/lib/map-pipeline.ts:186`.
+   */
+  sampleTerrainAt: cachedPublicProcedure
+    .input(z.object({ lng: z.number(), lat: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const result = await getTerrainAtPoint(ctx.db, input.lng, input.lat);
+      if (!result.elevationZone) return null;
+      const { elevationMin, elevationMax, zoneId, zoneName, color } = result.elevationZone;
+      const midpoint = Math.round((elevationMin + elevationMax) / 2);
+      return { zoneId, zoneName, elevationMin, elevationMax, color, midpoint };
+    }),
+
+  /**
    * Create or update a City.
    */
   upsertCity: standardMutationCountryOwnerProcedure
@@ -111,6 +132,7 @@ export const countryGeoRouter = createTRPCRouter({
         isSubdivisionCapital: z.boolean().optional(),
         subdivisionId: z.string().optional(),
         wikiPageTitle: z.string().max(200).optional(),
+        elevation: z.number().int().min(-500).max(9000).optional(),
         gdpContribution: z.number().min(0).optional(),
         economyOutput: z.number().min(0).optional(),
         specialization: z.string().max(100).optional(),
@@ -160,6 +182,7 @@ export const countryGeoRouter = createTRPCRouter({
           .regex(/^#[0-9A-Fa-f]{6}$/)
           .optional(),
         population: z.number().min(0).optional(),
+        areaSqKm: z.number().min(0).optional(),
         gdpContribution: z.number().min(0).optional(),
       })
     )
