@@ -705,3 +705,39 @@ export async function snapPointToCountryBorder(
   }
 }
 
+/**
+ * Repair a (possibly self-intersecting) polygonal GeoJSON geometry with PostGIS
+ * ST_MakeValid, keeping only polygonal parts. Returns the repaired GeoJSON, or
+ * the original geometry unchanged if PostGIS is unavailable or repair fails.
+ * Never throws — geometry repair is best-effort and must not abort a commit.
+ */
+export async function repairGeometryGeoJSON(
+  db: PrismaClient,
+  geometry: Geometry | Record<string, unknown>
+): Promise<Geometry | Record<string, unknown>> {
+  if (!geometry || typeof geometry !== "object") return geometry;
+  if (!("coordinates" in geometry) || (geometry as any).type === "Point") return geometry;
+  if (!(await isPostGISAvailable(db))) return geometry;
+  try {
+    const rows = await db.$queryRawUnsafe<Array<{ repaired: string | null }>>(
+      `SELECT ST_AsGeoJSON(
+         ST_CollectionExtract(
+           ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)),
+           3
+         )
+       ) AS repaired`,
+      JSON.stringify(geometry)
+    );
+    const repaired = rows[0]?.repaired;
+    if (!repaired) return geometry;
+    const parsed = JSON.parse(repaired);
+    // ST_CollectionExtract returns an empty geometry (no coordinates) if there
+    // were no polygonal parts — fall back to the original in that case.
+    if (!parsed || !parsed.coordinates || parsed.coordinates.length === 0) return geometry;
+    return parsed;
+  } catch (err) {
+    console.warn(`[geo-validation] ST_MakeValid repair failed; storing original geometry:`, err);
+    return geometry;
+  }
+}
+

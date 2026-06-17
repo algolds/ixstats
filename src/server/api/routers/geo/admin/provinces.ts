@@ -357,18 +357,22 @@ export const geoAdminProvincesRouter = createTRPCRouter({
           });
         }
 
+        const { repairGeometryGeoJSON } = await import("~/lib/geo-validation");
+
         const created: Array<{ id: string; name: string }> = [];
         let createdCount = 0;
         let updatedCount = 0;
 
         for (const { province, existingId } of plan) {
+          const repairedGeom = await repairGeometryGeoJSON(tx as any, province.geometry);
+
           if (existingId) {
             const subdivision = await tx.subdivision.update({
               where: { id: existingId },
               data: {
                 type: province.type,
                 level: province.level,
-                geometry: province.geometry as any,
+                geometry: repairedGeom as any,
                 capital: province.capital,
                 population: province.population,
                 color: province.color,
@@ -377,6 +381,25 @@ export const geoAdminProvincesRouter = createTRPCRouter({
             });
             updatedCount++;
             created.push({ id: subdivision.id, name: subdivision.name });
+
+            if (
+              repairedGeom &&
+              (repairedGeom as any).coordinates &&
+              (repairedGeom as any).coordinates.length > 0
+            ) {
+              try {
+                await tx.$executeRawUnsafe(
+                  `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
+                  JSON.stringify(repairedGeom),
+                  subdivision.id
+                );
+              } catch (err) {
+                console.warn(
+                  `[commitProvinceImport] Failed to manually sync PostGIS geometry for updated subdivision ${subdivision.name}:`,
+                  err
+                );
+              }
+            }
           } else {
             const subdivision = await tx.subdivision.create({
               data: {
@@ -384,7 +407,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
                 countryId: input.countryId,
                 type: province.type,
                 level: province.level,
-                geometry: province.geometry as any,
+                geometry: repairedGeom as any,
                 capital: province.capital,
                 population: province.population,
                 color: province.color,
@@ -394,6 +417,25 @@ export const geoAdminProvincesRouter = createTRPCRouter({
             });
             createdCount++;
             created.push({ id: subdivision.id, name: subdivision.name });
+
+            if (
+              repairedGeom &&
+              (repairedGeom as any).coordinates &&
+              (repairedGeom as any).coordinates.length > 0
+            ) {
+              try {
+                await tx.$executeRawUnsafe(
+                  `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
+                  JSON.stringify(repairedGeom),
+                  subdivision.id
+                );
+              } catch (err) {
+                console.warn(
+                  `[commitProvinceImport] Failed to manually sync PostGIS geometry for created subdivision ${subdivision.name}:`,
+                  err
+                );
+              }
+            }
           }
         }
 

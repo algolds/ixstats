@@ -3,7 +3,7 @@
  */
 
 import type { Geometry } from "geojson";
-import { validateGeometryStructure } from "../geo-validation";
+import { validateGeometryStructure, repairGeometryGeoJSON, resetPostGISCache } from "../geo-validation";
 
 describe("validateGeometryStructure (pure)", () => {
   test("returns no errors for a valid closed square Polygon", () => {
@@ -53,5 +53,67 @@ describe("validateGeometryStructure (pure)", () => {
     const errors = validateGeometryStructure(tooSmall);
     expect(errors).toHaveLength(1);
     expect(errors[0]!.type).toBe("too_few_vertices");
+  });
+});
+
+describe("repairGeometryGeoJSON", () => {
+  beforeEach(() => {
+    resetPostGISCache();
+  });
+
+  test("returns original geometry if not a polygon or multipolygon", async () => {
+    const mockDb = {} as any;
+    const pt = { type: "Point", coordinates: [0, 0] };
+    const repaired = await repairGeometryGeoJSON(mockDb, pt);
+    expect(repaired).toBe(pt);
+  });
+
+  test("returns original geometry if PostGIS is not available", async () => {
+    const mockDb = {
+      $queryRawUnsafe: jest.fn().mockRejectedValue(new Error("No PostGIS")),
+    } as any;
+    const poly = { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]] };
+    const repaired = await repairGeometryGeoJSON(mockDb, poly);
+    expect(repaired).toBe(poly);
+    expect(mockDb.$queryRawUnsafe).toHaveBeenCalledWith("SELECT PostGIS_Version()");
+  });
+
+  test("returns repaired geometry from PostGIS if available", async () => {
+    const repairedPoly = { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] };
+    const mockDb = {
+      $queryRawUnsafe: jest
+        .fn()
+        .mockImplementation(async (sql: string) => {
+          if (sql.includes("PostGIS_Version")) {
+            return [{ version: "3.0" }];
+          }
+          if (sql.includes("ST_AsGeoJSON")) {
+            return [{ repaired: JSON.stringify(repairedPoly) }];
+          }
+          return [];
+        }),
+    } as any;
+
+    const poly = { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] };
+    const repaired = await repairGeometryGeoJSON(mockDb, poly);
+    expect(repaired).toEqual(repairedPoly);
+  });
+
+  test("falls back to original geometry if PostGIS query fails after check", async () => {
+    let callCount = 0;
+    const mockDb = {
+      $queryRawUnsafe: jest.fn().mockImplementation(async (sql: string) => {
+        callCount++;
+        if (sql.includes("PostGIS_Version")) {
+          return [{ version: "3.0" }];
+        }
+        throw new Error("Query failed");
+      }),
+    } as any;
+
+    const poly = { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] };
+    const repaired = await repairGeometryGeoJSON(mockDb, poly);
+    expect(repaired).toBe(poly);
+    expect(callCount).toBe(2);
   });
 });
