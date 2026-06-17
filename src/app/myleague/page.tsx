@@ -162,6 +162,7 @@ export default function MyLeaguePage() {
               <LeagueCover
                 sportPreset={featuredLeague.sportPreset}
                 coverImage={(featuredLeague as any).coverImage}
+                seed={featuredLeague.id}
                 alt=""
                 className="h-full w-full object-cover opacity-25 blur-[1px] transition-transform duration-700 group-hover:scale-105"
               />
@@ -340,6 +341,7 @@ export default function MyLeaguePage() {
                         <LeagueCover
                           sportPreset={league.sportPreset}
                           coverImage={(league as any).coverImage || (league as any).logo}
+                          seed={league.id}
                           alt={league.name}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />

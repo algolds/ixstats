@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
-import { SPORT_COVER } from "~/lib/sports/league-covers";
+import { sportCoverUrl } from "~/lib/sports/league-covers";
 import { Trophy, Users, ArrowRight } from "lucide-react";
 
 const SPORT_EMOJIS: Record<string, string> = {
@@ -64,8 +64,8 @@ export default function MyClubPage() {
             src: withBasePath(
               team.coverImage ||
                 team.logo ||
-                SPORT_COVER[team.league?.sportPreset ?? ""] ||
-                SPORT_COVER.soccer
+                sportCoverUrl(team.league?.sportPreset, team.id) ||
+                sportCoverUrl("soccer", team.id)!
             ),
             title: team.name,
             category: team.league?.name ?? "Custom Team",
