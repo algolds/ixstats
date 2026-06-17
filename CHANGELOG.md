@@ -10,6 +10,14 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Added
+
+- **Sports fixes (Plans 059–062)**:
+  - Wired QuickSim sidebar button to the page's computed `nextMatchDay` and added a disabled "Season complete" state (Plan 059).
+  - Gated the `isCanonical` league flag in the `createLeague` mutation to system owners (Plan 060).
+  - Resolved league cover images from a deterministic, verified Wikimedia Commons pool hashed by entity ID, with a CSS gradient/emoji fallback component `<LeagueCover>` (Plan 061).
+  - Scoped `getMyClubOverview` cache invalidations to the active `teamId` in the four team action components (Plan 062).
+
 ## [1.1.0 Ogma (Alpha)] - 2026-06-16
 
 ### Added
