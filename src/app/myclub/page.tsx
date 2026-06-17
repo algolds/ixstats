@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
+import { SPORT_COVER } from "~/lib/sports/league-covers";
 import { Trophy, Users, ArrowRight } from "lucide-react";
 
 const SPORT_EMOJIS: Record<string, string> = {
@@ -21,16 +22,6 @@ const SPORT_EMOJIS: Record<string, string> = {
   baseball: "\u26BE",
   f1: "\uD83C\uDFCE\uFE0F",
   boxing: "\uD83E\uDD4A",
-};
-
-const SPORT_FALLBACK_IMAGES: Record<string, string> = {
-  soccer: "/api/mediawiki/commons/Special:Filepath/Stade_V%C3%A9lodrome_interior_2018.jpg",
-  football: "/api/mediawiki/commons/Special:Filepath/Maracana_Stadium.jpg",
-  hockey: "/api/mediawiki/commons/Special:Filepath/Bell_Centre_interior_view.jpg",
-  basketball: "/api/mediawiki/commons/Special:Filepath/Madison_Square_Garden_interior.jpg",
-  baseball: "/api/mediawiki/commons/Special:Filepath/Scotiabank_Saddledome.jpg",
-  f1: "/api/mediawiki/commons/Special:Filepath/Monaco_Grand_Prix_stretching_past_the_harbour_in_Monte_Carlo%2C_Monaco.jpg",
-  boxing: "/api/mediawiki/commons/Special:Filepath/2021_CISM_Military_World_Games_Boxing.jpg",
 };
 
 function ClubCardSkeleton() {
@@ -73,8 +64,8 @@ export default function MyClubPage() {
             src: withBasePath(
               team.coverImage ||
                 team.logo ||
-                SPORT_FALLBACK_IMAGES[team.league?.sportPreset ?? ""] ||
-                "/api/mediawiki/commons/Special:Filepath/Stadion_Luzhniki_Moskva_July_2018.jpg"
+                SPORT_COVER[team.league?.sportPreset ?? ""] ||
+                SPORT_COVER.soccer
             ),
             title: team.name,
             category: team.league?.name ?? "Custom Team",
