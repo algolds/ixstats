@@ -20,7 +20,7 @@ interface PlayerTrainingButtonProps {
 export function PlayerTrainingButton({
   playerId,
   playerName: _playerName,
-  teamId: _teamId,
+  teamId,
   attributes,
   currentRatings,
   onTrained,
@@ -30,7 +30,7 @@ export function PlayerTrainingButton({
 
   const trainPlayer = api.sports.trainPlayer.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate();
+      utils.sports.getMyClubOverview.invalidate({ teamId });
       onTrained?.();
     },
   });
