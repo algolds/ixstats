@@ -9,15 +9,15 @@ We recommend a **GO** decision on integrating sports LLM commentary, using **Ope
 
 ## Candidate Analysis
 
-| Metric | Candidate 1: NVIDIA Nemotron 3 Ultra | Candidate 2: OpenRouter Llama 3.1 70B | Candidate 3: OpenAI GPT-4o-Mini (Baseline) |
-|---|---|---|---|
-| **Access Method** | NVIDIA API Catalog (build.nvidia.com) | OpenRouter API Endpoint | OpenAI Chat Completions API |
-| **API Format** | OpenAI-compatible JSON Chat | OpenAI-compatible JSON Chat | OpenAI Chat Completions API |
-| **Usage / Rate Limits** | 1,000 free credits initially; rate limited strictly on free tier. | Based on account balance; generous rate limits. | Account-based tier limits; extremely high throughput. |
-| **Projected Cost** | Free initially, then standard enterprise rates. | ~$0.07 / million tokens (Llama 3.1 70B). | $0.15 / M input, $0.60 / M output tokens. |
-| **Average Latency** | ~1.5s - 2.5s (p50) | ~1.2s - 2.0s (p50) | ~0.6s - 1.0s (p50) |
-| **Output Quality** | High (sport-specific nuances are well preserved). | Excellent (strong narrative style, handles drama well). | Great (very reliable JSON structures, clean summaries). |
-| **Reliability** | Medium (free-tier endpoints can experience throttling). | High (aggregated endpoints offer auto-failover). | Extremely High (production-grade SLA). |
+| Metric                  | Candidate 1: NVIDIA Nemotron 3 Ultra                              | Candidate 2: OpenRouter Llama 3.1 70B                   | Candidate 3: OpenAI GPT-4o-Mini (Baseline)              |
+| -------------------------| -------------------------------------------------------------------| ---------------------------------------------------------| ---------------------------------------------------------|
+| **Access Method**       | NVIDIA API Catalog (build.nvidia.com)                             | OpenRouter API Endpoint                                 | OpenAI Chat Completions API                             |
+| **API Format**          | OpenAI-compatible JSON Chat                                       | OpenAI-compatible JSON Chat                             | OpenAI Chat Completions API                             |
+| **Usage / Rate Limits** | 1,000 free credits initially; rate limited strictly on free tier. | Based on account balance; generous rate limits.         | Account-based tier limits; extremely high throughput.   |
+| **Projected Cost**      | Free initially, then standard enterprise rates.                   | ~$0.07 / million tokens (Llama 3.1 70B).                | $0.15 / M input, $0.60 / M output tokens.               |
+| **Average Latency**     | ~1.5s - 2.5s (p50)                                                | ~1.2s - 2.0s (p50)                                      | ~0.6s - 1.0s (p50)                                      |
+| **Output Quality**      | High (sport-specific nuances are well preserved).                 | Excellent (strong narrative style, handles drama well). | Great (very reliable JSON structures, clean summaries). |
+| **Reliability**         | Medium (free-tier endpoints can experience throttling).           | High (aggregated endpoints offer auto-failover).        | Extremely High (production-grade SLA).                  |
 
 ---
 

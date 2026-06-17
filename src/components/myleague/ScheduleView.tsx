@@ -120,6 +120,7 @@ function MatchCommentary({ matchId }: { matchId: string }) {
 
   const evaluation = (match as any).evaluation as Record<string, any> | null;
   const trace = (match as any).trace as Array<Record<string, any>> | null;
+  const commentary = (match as any).commentary as string[] | null;
 
   return (
     <div className="border-border/40 bg-accent/10 mt-2 space-y-3 rounded-lg border p-3 text-left">
@@ -189,7 +190,9 @@ function MatchCommentary({ matchId }: { matchId: string }) {
                     {step.t}'
                   </span>
                   <Icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", iconColor)} />
-                  <span className="text-foreground/80">{step.description}</span>
+                  <span className="text-foreground/80">
+                    {(commentary && commentary[idx]) || step.description}
+                  </span>
                 </div>
               );
             })}
