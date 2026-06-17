@@ -2,7 +2,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -74,6 +74,9 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   });
   const [chambers, setChambers] = useState<ChamberItem[]>([]);
   const [saved, setSaved] = useState(false);
+  // Track whether per-chamber edits are in progress to prevent the
+  // unicameral sync effect from overwriting manual seat edits
+  const chamberEditInProgress = useRef(false);
 
   const { data: legislature, refetch } = api.elections.getLegislature.useQuery(
     { countryId },
@@ -108,8 +111,14 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     }
   }, [legislature]);
 
-  // Sync single chamber config with main inputs if in unicameral mode
+  // Sync single chamber config with main inputs if in unicameral mode.
+  // Skip when the totalSeats change originated from a per-chamber edit
+  // (the updateChamber handler sets chamberEditInProgress.current = true).
   useEffect(() => {
+    if (chamberEditInProgress.current) {
+      chamberEditInProgress.current = false;
+      return;
+    }
     if (formData.chamberType === "unicameral") {
       setChambers([
         {
@@ -186,6 +195,10 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     setChambers(updated);
 
     const newTotal = updated.reduce((acc, c) => acc + c.seats, 0);
+    // Flag that this totalSeats change is from a per-chamber edit,
+    // so the unicameral sync effect (which depends on totalSeats) won't
+    // overwrite the user's manual edits.
+    chamberEditInProgress.current = true;
     setFormData((prev) => ({ ...prev, totalSeats: newTotal }));
   }
 
