@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { X, Upload, List, CheckCircle2, Loader2 } from "lucide-react";
+import { X, Upload, List, CheckCircle2, Loader2, Move } from "lucide-react";
 import { useCityImporter } from "~/hooks/useCityImporter";
 import { UploadStep } from "./UploadStep";
 import { PreviewStep } from "./PreviewStep";
+import { CityAlignStep } from "./CityAlignStep";
 import type { CityImportStep } from "~/hooks/useCityImporter";
 
 interface CityImportWizardProps {
@@ -13,35 +14,53 @@ interface CityImportWizardProps {
   onCancel?: () => void;
 }
 
-const STEP_CONFIG: { key: CityImportStep; label: string; icon: typeof Upload }[] = [
-  { key: "upload", label: "Upload", icon: Upload },
-  { key: "preview", label: "Preview", icon: List },
-  { key: "commit", label: "Done", icon: CheckCircle2 },
-];
-
 export function CityImportWizard({ countryId, onComplete, onCancel }: CityImportWizardProps) {
   const importer = useCityImporter(countryId);
 
-  const currentStepIdx = STEP_CONFIG.findIndex((s) => s.key === importer.step);
+  const steps = React.useMemo(() => {
+    const base = [{ key: "upload" as CityImportStep, label: "Upload", icon: Upload }];
+    if (importer.inputMode === "svg") {
+      base.push({ key: "align" as CityImportStep, label: "Align", icon: Move });
+    }
+    base.push(
+      { key: "preview" as CityImportStep, label: "Preview", icon: List },
+      { key: "commit" as CityImportStep, label: "Done", icon: CheckCircle2 }
+    );
+    return base;
+  }, [importer.inputMode]);
+
+  const currentStepIdx = steps.findIndex((s) => s.key === importer.step);
 
   const handleBack = () => {
-    if (importer.step === "preview") {
+    if (importer.step === "align") {
       importer.setStep("upload");
+    } else if (importer.step === "preview") {
+      if (importer.inputMode === "svg") {
+        importer.setStep("align");
+      } else {
+        importer.setStep("upload");
+      }
     } else if (importer.step === "commit") {
       importer.reset();
     }
   };
 
   const handleNext = async () => {
-    if (importer.step === "preview") {
+    if (importer.step === "align") {
+      importer.proceedFromAlignToPreview();
+    } else if (importer.step === "preview") {
       await importer.commitImport();
     } else if (importer.step === "commit") {
       onComplete?.();
     }
   };
 
-  const canGoBack = importer.step !== "upload";
-  const canGoNext = importer.step === "preview" ? importer.canCommit : importer.step === "commit";
+  const canGoNext =
+    importer.step === "align"
+      ? importer.alignedRows.length > 0
+      : importer.step === "preview"
+        ? importer.canCommit
+        : importer.step === "commit";
 
   return (
     <div className="bg-card flex h-full flex-col">
@@ -59,19 +78,13 @@ export function CityImportWizard({ countryId, onComplete, onCancel }: CityImport
 
       {/* Step indicator */}
       <div className="border-border flex items-center gap-2 border-b px-4 py-2">
-        {STEP_CONFIG.map((s, idx) => {
+        {steps.map((s, idx) => {
           const StepIcon = s.icon;
           const isActive = s.key === importer.step;
           const isPast = idx < currentStepIdx;
           return (
             <React.Fragment key={s.key}>
-              {idx > 0 && (
-                <div
-                  className={`h-px flex-1 ${
-                    isPast ? "bg-primary" : "bg-border"
-                  }`}
-                />
-              )}
+              {idx > 0 && <div className={`h-px flex-1 ${isPast ? "bg-primary" : "bg-border"}`} />}
               <div
                 className={`flex items-center gap-1.5 text-xs font-medium ${
                   isActive
@@ -92,14 +105,15 @@ export function CityImportWizard({ countryId, onComplete, onCancel }: CityImport
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {importer.step === "upload" && <UploadStep importer={importer} />}
+        {importer.step === "align" && <CityAlignStep importer={importer} countryId={countryId} />}
         {importer.step === "preview" && <PreviewStep importer={importer} />}
         {importer.step === "commit" && (
           <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
             <CheckCircle2 className="h-10 w-10 text-emerald-500" />
             <p className="text-foreground text-sm font-semibold">Import Complete</p>
             <p className="text-muted-foreground text-xs">
-              {importer.committedCount} {importer.committedCount === 1 ? "city" : "cities"} added
-              to your map.
+              {importer.committedCount} {importer.committedCount === 1 ? "city" : "cities"} added to
+              your map.
             </p>
           </div>
         )}
@@ -118,7 +132,7 @@ export function CityImportWizard({ countryId, onComplete, onCancel }: CityImport
           <button
             onClick={() => void handleNext()}
             disabled={!canGoNext || importer.isProcessing}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity disabled:opacity-50"
+            className="bg-primary text-primary-foreground flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-opacity disabled:opacity-50"
           >
             {importer.isProcessing ? (
               <>
@@ -127,6 +141,8 @@ export function CityImportWizard({ countryId, onComplete, onCancel }: CityImport
               </>
             ) : importer.step === "commit" ? (
               "Close"
+            ) : importer.step === "align" ? (
+              "Next"
             ) : (
               "Import"
             )}

@@ -41,7 +41,7 @@ export function UploadStep({ importer }: UploadStepProps) {
       <div>
         <h3 className="text-foreground text-sm font-medium">Upload City Data</h3>
         <p className="text-muted-foreground mt-1 text-xs">
-          Upload a CSV, TSV, or JSON file containing your city data. Each row becomes a city point
+          Upload a CSV, TSV, JSON, or SVG file containing your city data. Each row/dot becomes a city point
           on your country map.
         </p>
       </div>
@@ -60,7 +60,7 @@ export function UploadStep({ importer }: UploadStepProps) {
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,.tsv,.json"
+          accept=".csv,.tsv,.json,.svg"
           className="hidden"
           onChange={handleChange}
         />
@@ -86,6 +86,9 @@ export function UploadStep({ importer }: UploadStepProps) {
               </span>
               <span className="flex items-center gap-1">
                 <FileText className="h-3 w-3" /> JSON
+              </span>
+              <span className="flex items-center gap-1">
+                <FileText className="h-3 w-3" /> SVG
               </span>
             </div>
           </>

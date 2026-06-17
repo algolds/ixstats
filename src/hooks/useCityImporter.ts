@@ -5,33 +5,41 @@
 /**
  * useCityImporter - State machine hook for the city import wizard.
  *
- * Manages the 3-step wizard: upload → preview → commit.
+ * Manages the 4-step wizard: upload → align → preview → commit.
  * Integrates with tRPC endpoints geoAdmin.validateCityImport + geoAdmin.commitCityImport.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { parseCityImportText } from "~/lib/city-importer/parser";
 import type { RawCityRow, ParsedCityImport } from "~/lib/city-importer/parser";
+import type {
+  AlignmentMode,
+  ReferencePoint,
+  AffineMatrix,
+  ManualTransform,
+} from "~/lib/province-importer/types";
+import {
+  computeAffineFromReferencePoints,
+  manualTransformToMatrix,
+} from "~/lib/province-importer/alignment";
+import { calculateCentroid } from "~/lib/border-editor";
+import { applyCityAffine } from "~/lib/city-importer/align-cities";
+import type { SvgLayerInfo, SvgCityPoint, SvgProvinceRef } from "~/lib/city-importer/svg-points";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type CityImportStep = "upload" | "preview" | "commit";
+export type CityImportStep = "upload" | "align" | "preview" | "commit";
 
 export interface ValidatedCityRow extends RawCityRow {
   issues: string[];
 }
 
-export interface CityImportState {
-  step: CityImportStep;
-  rawText: string;
-  fileName: string;
-  parsed: ParsedCityImport | null;
-  validated: ValidatedCityRow[] | null;
-  isProcessing: boolean;
-  error: string | null;
-  committedCount: number;
-}
+const DEFAULT_MANUAL_TRANSFORM: ManualTransform = {
+  translate: [0, 0],
+  rotate: 0,
+  scale: 1,
+};
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -45,9 +53,37 @@ export function useCityImporter(countryId: string) {
   const [error, setError] = useState<string | null>(null);
   const [committedCount, setCommittedCount] = useState(0);
 
+  // ── SVG Align States ──
+  const [inputMode, setInputMode] = useState<"tabular" | "svg">("tabular");
+  const [layers, setLayers] = useState<SvgLayerInfo[]>([]);
+  const [svgPoints, setSvgPoints] = useState<SvgCityPoint[]>([]);
+  const [svgProvinces, setSvgProvinces] = useState<SvgProvinceRef[]>([]);
+  const [alignmentMode, setAlignmentMode] = useState<AlignmentMode>("auto-align");
+  const [referencePoints, setReferencePoints] = useState<ReferencePoint[]>([]);
+  const [transform, setTransform] = useState<AffineMatrix | null>(null);
+  const [manualTransform, setManualTransform] = useState<ManualTransform>(DEFAULT_MANUAL_TRANSFORM);
+  const [citiesLayerId, setCitiesLayerId] = useState<string>("");
+  const [capitalLayerId, setCapitalLayerId] = useState<string>("");
+  const [alignedRows, setAlignedRows] = useState<Array<{ name: string; lat: number; lng: number; isCapital: boolean }>>([]);
+
   // ── tRPC ────────────────────────────────────────────────────────────────────
   const utils = api.useUtils();
   const commitMutation = api.geoAdmin.commitCityImport.useMutation();
+  const parseSvgMutation = api.geoAdmin.parseCitySvg.useMutation();
+
+  // ── Real-time manual transform preview ──
+  useEffect(() => {
+    if (inputMode !== "svg" || alignmentMode !== "manual") return;
+    if (svgPoints.length === 0) return;
+
+    const mt = manualTransform;
+    const cx = svgPoints.reduce((s, p) => s + p.svgX, 0) / svgPoints.length;
+    const cy = svgPoints.reduce((s, p) => s + p.svgY, 0) / svgPoints.length;
+
+    const manualMatrix = manualTransformToMatrix(mt, [cx, cy]);
+    setTransform(manualMatrix);
+    setAlignedRows(applyCityAffine(svgPoints, manualMatrix));
+  }, [manualTransform, alignmentMode, svgPoints, inputMode]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -57,25 +93,158 @@ export function useCityImporter(countryId: string) {
       setIsProcessing(true);
       try {
         const text = await file.text();
-        const result = parseCityImportText(text, file.name);
         setRawText(text);
         setFileName(file.name);
-        setParsed(result);
         setValidated(null);
-        setStep("preview");
+
+        if (file.name.toLowerCase().endsWith(".svg") || file.type === "image/svg+xml") {
+          setInputMode("svg");
+          const result = await parseSvgMutation.mutateAsync({
+            countryId,
+            svgContent: text,
+          });
+
+          setLayers(result.layers);
+          setSvgPoints(result.points);
+          setSvgProvinces(result.svgProvinces);
+          setCitiesLayerId(result.detectedCitiesLayerId);
+          setCapitalLayerId("");
+          setTransform(null);
+          setAlignedRows([]);
+          setReferencePoints([]);
+          setManualTransform(DEFAULT_MANUAL_TRANSFORM);
+          setStep("align");
+        } else {
+          setInputMode("tabular");
+          const result = parseCityImportText(text, file.name);
+          setParsed(result);
+          setStep("preview");
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to read file");
       } finally {
         setIsProcessing(false);
       }
     },
-    []
+    [countryId, parseSvgMutation]
   );
+
+  const setLayer = useCallback(
+    async (newCitiesLayerId: string, newCapitalLayerId?: string) => {
+      setCitiesLayerId(newCitiesLayerId);
+      if (newCapitalLayerId !== undefined) {
+        setCapitalLayerId(newCapitalLayerId);
+      }
+
+      setIsProcessing(true);
+      setError(null);
+      try {
+        const result = await parseSvgMutation.mutateAsync({
+          countryId,
+          svgContent: rawText,
+          citiesLayerId: newCitiesLayerId,
+          capitalLayerId: newCapitalLayerId,
+        });
+
+        setSvgPoints(result.points);
+        setSvgProvinces(result.svgProvinces);
+
+        if (transform) {
+          setAlignedRows(applyCityAffine(result.points, transform));
+        } else {
+          setAlignedRows([]);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to update layers");
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [countryId, rawText, transform, parseSvgMutation]
+  );
+
+  const addReferencePoint = useCallback((point: ReferencePoint) => {
+    setReferencePoints((prev) => [...prev, point]);
+  }, []);
+
+  const removeReferencePoint = useCallback((index: number) => {
+    setReferencePoints((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const applyReferencePointAlignment = useCallback(() => {
+    if (referencePoints.length < 2) {
+      setError("At least 2 reference points required");
+      return;
+    }
+
+    const result = computeAffineFromReferencePoints(referencePoints);
+    setTransform(result.matrix);
+    setAlignedRows(applyCityAffine(svgPoints, result.matrix));
+    setError(null);
+  }, [referencePoints, svgPoints]);
+
+  const autoAdjust = useCallback(async () => {
+    if (svgProvinces.length === 0) {
+      setError("No provinces found in SVG for auto-alignment");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    try {
+      const data = await utils.geoAdmin.getProvinceImportPreview.fetch({ countryId });
+      const dbSubs = data.existingSubdivisions.map((sub: any) => {
+        const centroid = calculateCentroid(sub.geometry);
+        return {
+          name: sub.name,
+          centroid: centroid as [number, number],
+        };
+      });
+
+      const { deriveCityAffine } = await import("~/lib/city-importer/align-cities");
+      const result = deriveCityAffine(svgProvinces, dbSubs);
+
+      if (!result.matrix) {
+        setError(
+          `Auto-adjust failed: only matched ${result.matchCount} provinces by name. At least 3 matches are required. You can align manually or place reference points.`
+        );
+        return;
+      }
+
+      setTransform(result.matrix);
+      setAlignedRows(applyCityAffine(svgPoints, result.matrix));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Auto-adjust failed");
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [svgProvinces, svgPoints, countryId, utils]);
+
+  const proceedFromAlignToPreview = useCallback(() => {
+    if (alignedRows.length === 0) return;
+
+    const rows: RawCityRow[] = alignedRows.map((row) => ({
+      name: row.name,
+      lat: row.lat,
+      lng: row.lng,
+      cityType: row.isCapital ? "capital" : "city",
+      isNationalCapital: row.isCapital,
+      isSubdivisionCapital: false,
+      _parseErrors: [],
+    }));
+
+    setParsed({
+      rows,
+      errors: [],
+      warnings: [],
+    });
+    setValidated(null);
+    setStep("preview");
+  }, [alignedRows]);
 
   const validate = useCallback(async () => {
     if (!parsed || !countryId) return;
 
-    // Collect rows that passed parse-time checks (no parse errors for required fields)
     const queryRows = parsed.rows
       .filter((row) => {
         const hasErrors =
@@ -106,19 +275,16 @@ export function useCityImporter(countryId: string) {
     setIsProcessing(true);
     setError(null);
     try {
-      // Use imperative fetch via utils
       const serverResult = await utils.geoAdmin.validateCityImport.fetch({
         countryId,
         cities: queryRows,
       });
 
-      // Build map of server issues by name
       const serverIssuesByName: Record<string, string[]> = {};
       for (const r of serverResult.results) {
         serverIssuesByName[r.name] = r.issues;
       }
 
-      // Merge parse errors + server issues
       const merged: ValidatedCityRow[] = parsed.rows.map((row) => {
         const parseIssues = row._parseErrors ?? [];
         const serverIssues = serverIssuesByName[row.name] ?? [];
@@ -138,7 +304,6 @@ export function useCityImporter(countryId: string) {
   const commitImport = useCallback(async () => {
     if (!parsed || !countryId) return;
 
-    // Use validated rows if available, else fall back to parsed rows with no blocking parse errors
     const source = validated ?? parsed.rows.map((r) => ({ ...r, issues: r._parseErrors ?? [] }));
     const toCommit = source
       .filter((row) => !row.issues.some((i) => i.includes("missing required field") || i.includes("out of range") || i.includes("invalid lat") || i.includes("invalid lng") || i.includes("outside country")))
@@ -202,6 +367,17 @@ export function useCityImporter(countryId: string) {
     setError(null);
     setCommittedCount(0);
     setIsProcessing(false);
+    setInputMode("tabular");
+    setLayers([]);
+    setSvgPoints([]);
+    setSvgProvinces([]);
+    setAlignmentMode("auto-align");
+    setReferencePoints([]);
+    setTransform(null);
+    setManualTransform(DEFAULT_MANUAL_TRANSFORM);
+    setCitiesLayerId("");
+    setCapitalLayerId("");
+    setAlignedRows([]);
   }, []);
 
   return {
@@ -215,11 +391,33 @@ export function useCityImporter(countryId: string) {
     error,
     committedCount,
     canCommit,
+
+    // SVG Align State
+    inputMode,
+    layers,
+    svgPoints,
+    svgProvinces,
+    alignmentMode,
+    referencePoints,
+    transform,
+    manualTransform,
+    citiesLayerId,
+    capitalLayerId,
+    alignedRows,
+
     // Actions
     setStep,
     handleFile,
+    setLayer,
+    addReferencePoint,
+    removeReferencePoint,
+    applyReferencePointAlignment,
+    autoAdjust,
+    proceedFromAlignToPreview,
     validate,
     commitImport,
     reset,
+    setAlignmentMode,
+    setManualTransform,
   };
 }

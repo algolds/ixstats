@@ -200,4 +200,35 @@ export const geoAdminCitiesRouter = createTRPCRouter({
 
       return { created };
     }),
+
+  /**
+   * Parse an SVG city import file:
+   * - Extracts layers (Inkscape groups)
+   * - Extracts city points (circles, ellipses, uses, point-like paths)
+   * - Extracts province centroids for auto-alignment
+   */
+  parseCitySvg: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        svgContent: z.string().min(1),
+        citiesLayerId: z.string().optional(),
+        capitalLayerId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country as any;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only parse city SVGs for your own country",
+        });
+      }
+
+      const { parseCitySvg } = await import("~/lib/city-importer/svg-points");
+      return parseCitySvg(input.svgContent, {
+        citiesLayerId: input.citiesLayerId,
+        capitalLayerId: input.capitalLayerId,
+      });
+    }),
 });
