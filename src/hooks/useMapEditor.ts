@@ -1204,6 +1204,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       coordinates: coords,
       fontSize: mapLabelForm.fontSize,
       color: mapLabelForm.color,
+      rotation: mapLabelForm.rotation,
+      opacity: mapLabelForm.opacity,
+      letterSpacing: mapLabelForm.letterSpacing,
+      fontWeight: mapLabelForm.fontWeight,
+      minZoom: mapLabelForm.minZoom,
+      maxZoom: mapLabelForm.maxZoom,
     });
   }, [countryId, pendingCoordinates, mapLabelForm, createMapLabel, validateFeature]);
 
@@ -1387,6 +1393,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       coordinates: mapLabelForm.coordinates,
       fontSize: mapLabelForm.fontSize,
       color: mapLabelForm.color,
+      rotation: mapLabelForm.rotation,
+      opacity: mapLabelForm.opacity,
+      letterSpacing: mapLabelForm.letterSpacing,
+      fontWeight: mapLabelForm.fontWeight,
+      minZoom: mapLabelForm.minZoom,
+      maxZoom: mapLabelForm.maxZoom,
     });
   }, [countryId, selectedFeature, mapLabelForm, updateMapLabel, validateFeature]);
 
