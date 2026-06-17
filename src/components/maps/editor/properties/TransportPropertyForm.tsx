@@ -34,6 +34,12 @@ const ROUTE_TYPES = [
   { value: "military_naval", label: "Mil. Naval", color: "#7f1d1d" },
 ] as const;
 
+// Route types the server can generate procedurally (must match the generateRoutes
+// Zod enum in routeMutations.ts). All other ROUTE_TYPES are manual-draw only.
+const GENERATABLE_ROUTE_TYPES = [
+  "rail", "highway", "road", "shipping_lane", "canal", "air_corridor", "ferry",
+] as const;
+
 type SortKey = "name" | "length" | "type" | "status";
 
 interface TransportPropertyFormProps {
@@ -63,6 +69,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   // ── Generate tab state ──
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["rail", "highway"]);
   const [clearExisting, setClearExisting] = useState(false);
+  const [generateNotice, setGenerateNotice] = useState<string | null>(null);
 
   // ── Tab state: routes / draw / generate ──
   const [tab, setTab] = useState<"routes" | "draw" | "generate">(
@@ -730,18 +737,35 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
             </div>
           )}
 
+          {generateNotice && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              {generateNotice}
+            </div>
+          )}
+
           <button
             onClick={async () => {
               if (!countryId || selectedTypes.length === 0) return;
-              try {
-                await generateRoutes.mutateAsync({
-                  countryId,
-                  routeTypes: selectedTypes,
-                  clearExisting,
-                });
-              } catch {
-                /* shown via state */
+              const generatable = selectedTypes.filter((t) =>
+                (GENERATABLE_ROUTE_TYPES as readonly string[]).includes(t)
+              );
+              const manualOnly = selectedTypes.filter(
+                (t) => !(GENERATABLE_ROUTE_TYPES as readonly string[]).includes(t)
+              );
+              if (generatable.length === 0) {
+                setGenerateNotice(
+                  "These route types must be drawn manually — only rail, highway, road, shipping, canal, air, and ferry can be generated."
+                );
+                return;
               }
+              setGenerateNotice(
+                manualOnly.length > 0
+                  ? "Generating only the supported types; pipeline/power/fiber/military routes must be drawn manually."
+                  : null
+              );
+              try {
+                await generateRoutes.mutateAsync({ countryId, routeTypes: generatable, clearExisting });
+              } catch { /* shown via state */ }
             }}
             disabled={selectedTypes.length === 0 || generateRoutes.isPending}
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50"
