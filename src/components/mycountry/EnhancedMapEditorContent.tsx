@@ -459,6 +459,7 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 provinces={importer.currentProvinces}
                 countryBorder={importer.countryBorder}
                 visible={editor.mode === "import-provinces"}
+                cities={importer.alignedCities}
               />
 
               {/* Province import wizard — floating panel */}

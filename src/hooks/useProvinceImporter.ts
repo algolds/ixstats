@@ -35,6 +35,7 @@ import {
   resolveOverlaps,
   clipProvincesToBorder,
   simplifyProvinces,
+  snapPointToCountryBorderJS,
 } from "~/lib/province-importer/topology";
 import type { ConformanceResult } from "~/lib/province-importer/topology";
 import { sanitizeRegionShape } from "~/lib/border-editor";
@@ -185,6 +186,9 @@ export function useProvinceImporter(countryId: string) {
           const errorData = await uploadResponse.json();
           throw new Error(errorData.error || "Upload failed");
         }
+
+        const uploadData = await uploadResponse.json();
+        setUploadId(uploadData.id);
 
         const text = await file.text();
         setRawSvgContent(text);
@@ -344,10 +348,31 @@ export function useProvinceImporter(countryId: string) {
   }, [rawProvinces, manualTransform]);
 
   // ── Aligned Cities Derived State & setLayer ──
-  const alignedCities = useMemo(() => {
-    if (!importCities || rawCityPoints.length === 0 || !transform) return [];
-    return applyCityAffine(rawCityPoints, transform);
-  }, [importCities, rawCityPoints, transform]);
+  const { alignedCities, snappedCitiesCount } = useMemo(() => {
+    if (!importCities || rawCityPoints.length === 0 || !transform || !countryBorder) {
+      return { alignedCities: [], snappedCitiesCount: 0 };
+    }
+    const aligned = applyCityAffine(rawCityPoints, transform);
+    let snappedCount = 0;
+    const snapped = aligned.map((c) => {
+      const snappedCoords = snapPointToCountryBorderJS(
+        [c.lng, c.lat],
+        countryBorder,
+        alignedProvinces.length > 0 ? alignedProvinces : rawProvinces,
+        10000 // 10km
+      );
+      const wasSnapped = Math.abs(snappedCoords[0] - c.lng) > 1e-8 || Math.abs(snappedCoords[1] - c.lat) > 1e-8;
+      if (wasSnapped) {
+        snappedCount++;
+      }
+      return {
+        ...c,
+        lng: snappedCoords[0],
+        lat: snappedCoords[1],
+      };
+    });
+    return { alignedCities: snapped, snappedCitiesCount: snappedCount };
+  }, [importCities, rawCityPoints, transform, countryBorder, alignedProvinces, rawProvinces]);
 
   const parseCitySvgMutation = api.geoAdmin.parseCitySvg.useMutation();
 
@@ -626,6 +651,7 @@ export function useProvinceImporter(countryId: string) {
     citiesLayerId,
     capitalLayerId,
     alignedCities,
+    snappedCitiesCount,
     setLayer,
 
     // Reset

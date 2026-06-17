@@ -558,3 +558,150 @@ function validatePolygonRings(
     }
   }
 }
+
+/**
+ * Snap a point to the closest point inside the country border if it is outside.
+ * Throws TRPCError BAD_REQUEST if it is further than 10km.
+ */
+export async function snapPointToCountryBorder(
+  db: PrismaClient,
+  countryId: string,
+  lng: number,
+  lat: number,
+  maxDistanceMeters = 10000
+): Promise<[number, number]> {
+  validateCoordinateBounds(lng, lat);
+
+  if (!(await isPostGISAvailable(db))) {
+    return [lng, lat];
+  }
+
+  try {
+    // 1. Check if inside, and distance if outside
+    const checkResult = await db.$queryRawUnsafe<
+      Array<{ is_inside: boolean; distance_meters: number }>
+    >(
+      `SELECT
+         ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326)) as is_inside,
+         ST_Distance(geom_postgis::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography) as distance_meters
+       FROM map_layers
+       WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
+       LIMIT 1`,
+      countryId,
+      lng,
+      lat
+    );
+
+    const check = checkResult[0];
+    if (!check) {
+      return [lng, lat];
+    }
+
+    if (check.is_inside) {
+      return [lng, lat];
+    }
+
+    if (check.distance_meters > maxDistanceMeters) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Location is too far outside country boundaries (${Math.round(check.distance_meters / 1000)}km outside, max tolerance is ${maxDistanceMeters / 1000}km).`,
+      });
+    }
+
+    // 2. Get closest point on boundary
+    const closestResult = await db.$queryRawUnsafe<Array<{ closest_point: string }>>(
+      `SELECT ST_AsGeoJSON(
+         ST_ClosestPoint(
+           (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
+           ST_SetSRID(ST_MakePoint($2, $3), 4326)
+         )
+       ) as closest_point`,
+      countryId,
+      lng,
+      lat
+    );
+
+    const closestGeoJson = closestResult[0]?.closest_point;
+    if (!closestGeoJson) {
+      return [lng, lat];
+    }
+
+    const parsedClosest = JSON.parse(closestGeoJson);
+    const closestLng = parsedClosest.coordinates[0];
+    const closestLat = parsedClosest.coordinates[1];
+
+    // 3. Find closest subdivision centroid to pull the point inside
+    const centroidResult = await db.$queryRawUnsafe<Array<{ c_lng: number; c_lat: number }>>(
+      `SELECT ST_X(geom_centroid) as c_lng, ST_Y(geom_centroid) as c_lat
+       FROM (
+         SELECT ST_Centroid(geometry::geometry) as geom_centroid
+         FROM subdivisions
+         WHERE "countryId" = $1
+         ORDER BY geometry::geometry <-> ST_SetSRID(ST_MakePoint($2, $3), 4326)
+         LIMIT 1
+       ) sub`,
+      countryId,
+      closestLng,
+      closestLat
+    );
+
+    let targetLng = closestLng;
+    let targetLat = closestLat;
+    let hasTarget = false;
+
+    if (centroidResult[0]) {
+      targetLng = centroidResult[0].c_lng;
+      targetLat = centroidResult[0].c_lat;
+      hasTarget = true;
+    } else {
+      // Fallback: use country centroid
+      const countryCentroidResult = await db.$queryRawUnsafe<Array<{ c_lng: number; c_lat: number }>>(
+        `SELECT ST_X(ST_Centroid(geom_postgis)) as c_lng, ST_Y(ST_Centroid(geom_postgis)) as c_lat
+         FROM map_layers
+         WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
+         LIMIT 1`,
+        countryId
+      );
+      if (countryCentroidResult[0]) {
+        targetLng = countryCentroidResult[0].c_lng;
+        targetLat = countryCentroidResult[0].c_lat;
+        hasTarget = true;
+      }
+    }
+
+    if (hasTarget) {
+      const vx = targetLng - closestLng;
+      const vy = targetLat - closestLat;
+      const len = Math.hypot(vx, vy);
+
+      if (len > 0) {
+        // Try multiple nudge distances starting from 0.0001 (~11m) up to 0.001 (~111m)
+        for (const nudgeAmount of [0.0001, 0.0002, 0.0005, 0.001]) {
+          const nx = closestLng + (vx / len) * nudgeAmount;
+          const ny = closestLat + (vy / len) * nudgeAmount;
+
+          const insideCheck = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
+            `SELECT ST_Contains(
+               (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
+               ST_SetSRID(ST_MakePoint($2, $3), 4326)
+             ) as is_inside`,
+            countryId,
+            nx,
+            ny
+          );
+
+          if (insideCheck[0]?.is_inside) {
+            return [nx, ny];
+          }
+        }
+      }
+    }
+
+    return [closestLng, closestLat];
+  } catch (err) {
+    if (err instanceof TRPCError) throw err;
+    console.error("[geo-validation] snapPointToCountryBorder failed:", err);
+    return [lng, lat];
+  }
+}
+

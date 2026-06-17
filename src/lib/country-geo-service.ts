@@ -421,8 +421,15 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
-    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
+    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
+    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
+
+    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
+    lng = snapped[0];
+    lat = snapped[1];
+    data.coordinates = [lng, lat];
+
     await validatePointContainment(db, countryId, Number(lng), Number(lat), "City");
   }
 
@@ -742,8 +749,15 @@ export async function upsertPoi(db: any, countryId: string, data: any): Promise<
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
-    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
+    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
+    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
+
+    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
+    lng = snapped[0];
+    lat = snapped[1];
+    data.coordinates = [lng, lat];
+
     await validatePointContainment(db, countryId, Number(lng), Number(lat), "POI");
   }
 
@@ -830,8 +844,15 @@ export async function upsertStoryPin(db: any, countryId: string, data: any): Pro
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
-    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
+    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
+    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
+
+    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
+    lng = snapped[0];
+    lat = snapped[1];
+    data.coordinates = [lng, lat];
+
     await validatePointContainment(db, countryId, Number(lng), Number(lat), "Story Pin");
   }
 
@@ -898,8 +919,15 @@ export async function upsertMapLabel(db: any, countryId: string, data: any): Pro
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
-    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
+    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
+    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
+
+    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
+    lng = snapped[0];
+    lat = snapped[1];
+    data.coordinates = [lng, lat];
+
     await validatePointContainment(db, countryId, Number(lng), Number(lat), "Map Label");
   }
 

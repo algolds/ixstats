@@ -7,7 +7,7 @@ import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
 import { ProvinceGeneratorPanel } from "~/components/maps/editor/components/ProvinceGeneratorPanel";
 import { JsonViewer } from "~/components/json-viewer";
-import { CityImportWizard } from "~/components/maps/editor/city-importer";
+
 
 interface PropertiesPanelContentProps {
   isWorldMode: boolean;
@@ -111,14 +111,7 @@ export function PropertiesPanelContent({
           onBrushTargetChange={setBrushTargetId ?? (() => {})}
         />
       );
-    } else if (editor.mode === "import-cities") {
-      mainContent = (
-        <CityImportWizard
-          countryId={activeCountryId ?? ""}
-          onComplete={() => editor.setMode("view")}
-          onCancel={() => editor.setMode("view")}
-        />
-      );
+
     } else if (editor.mode !== "view") {
       // A feature-placement tool is active — show its form
       mainContent = (
@@ -446,16 +439,7 @@ export function PropertiesPanelContent({
     return <div className="space-y-4">{mainContent}</div>;
   }
 
-  // City import wizard — also available in the regular (non-world) country editor.
-  if (editor.mode === "import-cities") {
-    return (
-      <CityImportWizard
-        countryId={activeCountryId ?? ""}
-        onComplete={() => editor.setMode("view")}
-        onCancel={() => editor.setMode("view")}
-      />
-    );
-  }
+
 
   return (
     <FeaturePropertyPanel

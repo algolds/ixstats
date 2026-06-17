@@ -138,42 +138,50 @@ export const NameDetectionStep = memo(function NameDetectionStep({
           </div>
 
           {importer.importCities && (
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="space-y-1">
-                <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
-                  Cities Layer
-                </label>
-                <select
-                  value={importer.citiesLayerId}
-                  onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId)}
-                  className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
-                >
-                  <option value="">-- Auto-detect --</option>
-                  {importer.cityLayers.map((layer) => (
-                    <option key={layer.id} value={layer.id}>
-                      {layer.name} ({layer.markerCount} points)
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="space-y-1">
+                  <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                    Cities Layer
+                  </label>
+                  <select
+                    value={importer.citiesLayerId}
+                    onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId)}
+                    className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
+                  >
+                    <option value="">-- Auto-detect --</option>
+                    {importer.cityLayers.map((layer) => (
+                      <option key={layer.id} value={layer.id}>
+                        {layer.name} ({layer.markerCount} points)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                    Capitals Layer (Optional)
+                  </label>
+                  <select
+                    value={importer.capitalLayerId}
+                    onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value)}
+                    className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
+                  >
+                    <option value="">-- None --</option>
+                    {importer.cityLayers.map((layer) => (
+                      <option key={layer.id} value={layer.id}>
+                        {layer.name} ({layer.markerCount} points)
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
-                  Capitals Layer (Optional)
-                </label>
-                <select
-                  value={importer.capitalLayerId}
-                  onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value)}
-                  className="border-border bg-background text-foreground w-full rounded border px-2 py-1 outline-none focus:border-primary"
-                >
-                  <option value="">-- None --</option>
-                  {importer.cityLayers.map((layer) => (
-                    <option key={layer.id} value={layer.id}>
-                      {layer.name} ({layer.markerCount} points)
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {importer.snappedCitiesCount > 0 && (
+                <div className="bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg border px-2.5 py-1.5 text-[10px] leading-relaxed">
+                  <strong>Notice:</strong> {importer.snappedCitiesCount} city dot{importer.snappedCitiesCount !== 1 ? "s" : ""} detected slightly outside country boundaries and will be automatically snapped to the border.
+                </div>
+              )}
             </div>
           )}
         </div>
