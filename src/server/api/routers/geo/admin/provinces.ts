@@ -14,9 +14,11 @@ import {
   createTRPCRouter,
   countryOwnerProcedure,
   standardMutationCountryOwnerProcedure,
+  cachedPublicProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { checkNameUniqueness } from "~/lib/geo-validation";
+import { geometryAreaSqKm } from "~/lib/geo-math";
 
 // ──────────────────────────────────────────────
 // Router
@@ -395,6 +397,22 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         countryBorder: mapLayer?.geometry ?? null,
         featureId: mapLayer?.featureId ?? null,
       };
+    }),
+
+  /**
+   * `sampleAreaSqKm` — compute the area of a GeoJSON Polygon or MultiPolygon in km².
+   * Pure calculation, no DB writes. Returns 0 for unsupported geometry
+   * types (Point, LineString, etc.) — callers should validate geometry
+   * type before calling.
+   */
+  sampleAreaSqKm: cachedPublicProcedure
+    .input(
+      z.object({
+        geometry: z.object({ type: z.string(), coordinates: z.any() }),
+      })
+    )
+    .query(async ({ input }) => {
+      return geometryAreaSqKm(input.geometry as Parameters<typeof geometryAreaSqKm>[0]);
     }),
 
   // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────

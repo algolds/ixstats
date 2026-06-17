@@ -43,6 +43,7 @@ export type EditorMode =
   | "edit-story-pin"
   | "edit-label"
   | "import-provinces"
+  | "import-cities"
   | "add-route"
   | "edit-route"
   | "paint";
@@ -80,6 +81,7 @@ export interface SubdivisionFormData {
   areaSqKm?: number;
   color?: string;
   wikiPageTitle?: string;
+  geometry?: object;
 }
 
 export interface POIFormData {
@@ -1036,7 +1038,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         wikiPageTitle: undefined,
       }));
     } else if (currentMode === "add-subdivision") {
-      setSubdivisionForm((prev) => ({ ...prev, name: "", population: undefined }));
+      setSubdivisionForm((prev) => ({
+        ...prev,
+        name: "",
+        population: undefined,
+        areaSqKm: undefined,
+        geometry: undefined,
+      }));
     } else if (currentMode === "add-poi") {
       setPOIForm((prev) => ({ ...prev, name: "", description: "", wikiPageTitle: undefined }));
     } else if (currentMode === "add-story-pin") {
@@ -1092,9 +1100,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           }
         }
         setPendingGeometry(geometry);
+        setSubdivisionForm((prev) => ({ ...prev, geometry }));
       }
     },
-    [mode, countryGeo]
+    [mode, countryGeo, setSubdivisionForm]
   );
 
   // Submit handlers
@@ -1113,6 +1122,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       type: cityForm.cityType,
       coordinates: coords,
       population: cityForm.population,
+      elevation: cityForm.elevation,
       isNationalCapital: cityForm.isNationalCapital,
       isSubdivisionCapital: cityForm.isSubdivisionCapital,
       subdivisionId: cityForm.subdivisionId,
@@ -1135,6 +1145,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       level: subdivisionForm.level,
       geometry: pendingGeometry,
       population: subdivisionForm.population,
+      areaSqKm: subdivisionForm.areaSqKm,
     });
   }, [countryId, pendingGeometry, subdivisionForm, createSubdivision, validateFeature]);
 
@@ -1223,6 +1234,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           level: (feature.properties.level as number) ?? 1,
           capital: (feature.properties.capital as string | undefined) ?? undefined,
           population: (feature.properties.population as number | undefined) ?? undefined,
+          areaSqKm: (feature.properties.areaSqKm as number | undefined) ?? undefined,
+          color: (feature.properties.color as string | undefined) ?? undefined,
+          geometry: feature.geometry,
         });
         break;
       case "poi":
@@ -1292,6 +1306,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       type: cityForm.cityType,
       coordinates: cityForm.coordinates,
       population: cityForm.population,
+      elevation: cityForm.elevation,
       isNationalCapital: cityForm.isNationalCapital,
       isSubdivisionCapital: cityForm.isSubdivisionCapital,
       wikiPageTitle: cityForm.wikiPageTitle,
@@ -1313,6 +1328,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       type: subdivisionForm.type,
       level: subdivisionForm.level,
       population: subdivisionForm.population,
+      areaSqKm: subdivisionForm.areaSqKm,
     });
   }, [countryId, selectedFeature, subdivisionForm, updateSubdivision, validateFeature]);
 

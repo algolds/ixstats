@@ -3,8 +3,10 @@
 import React from "react";
 import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
+import { Ruler, Loader2 } from "lucide-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
+import { api } from "~/trpc/react";
 
 const SUBDIVISION_TYPES = [
   "province",
@@ -31,6 +33,12 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
   form,
   onChange,
 }: SubdivisionPropertyFormProps) {
+  const sampleArea = api.geoAdmin.sampleAreaSqKm.useQuery(
+    { geometry: (form.geometry as { type: string; coordinates: unknown }) ?? { type: "Polygon", coordinates: [[]] } },
+    { enabled: !!form.geometry && (form.geometry as { type?: string }).type !== "Point" }
+  );
+  const derivedFromGeometry = form.areaSqKm === sampleArea.data;
+
   return (
     <div className="space-y-2">
       <input
@@ -72,18 +80,51 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
           }
           className={inputClasses}
         />
-        <input
-          type="number"
-          placeholder="Area (km²)"
-          value={form.areaSqKm ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...form,
-              areaSqKm: e.target.value ? parseFloat(e.target.value) : undefined,
-            })
-          }
-          className={inputClasses}
-        />
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <label className="text-muted-foreground text-xs font-medium">Area (km²)</label>
+            {derivedFromGeometry && sampleArea.data !== undefined && (
+              <span className="text-muted-foreground text-[10px]">from geometry</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="Area (km²)"
+              value={form.areaSqKm ?? ""}
+              onChange={(e) =>
+                onChange({
+                  ...form,
+                  areaSqKm: e.target.value ? parseFloat(e.target.value) : undefined,
+                })
+              }
+              className={inputClasses}
+            />
+            <button
+              type="button"
+              disabled={sampleArea.data === undefined || sampleArea.isFetching}
+              onClick={() =>
+                onChange({
+                  ...form,
+                  areaSqKm: sampleArea.data ?? form.areaSqKm,
+                })
+              }
+              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-colors disabled:opacity-50"
+            >
+              {sampleArea.isFetching ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Ruler className="h-3.5 w-3.5" />
+              )}
+              <span>Auto</span>
+            </button>
+          </div>
+          {sampleArea.data !== undefined && !derivedFromGeometry && (
+            <div className="text-muted-foreground text-[10px]">
+              ≈ {sampleArea.data.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from geometry
+            </div>
+          )}
+        </div>
       </div>
       <div className="space-y-1.5">
         <Label className="text-muted-foreground text-xs">Color</Label>

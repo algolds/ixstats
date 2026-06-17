@@ -5,7 +5,8 @@ import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
-import { MapPin } from "lucide-react";
+import { MapPin, Mountain, Loader2 } from "lucide-react";
+import { api } from "~/trpc/react";
 
 const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];
 
@@ -14,6 +15,8 @@ const inputClasses =
 
 const selectClasses =
   "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+
+const labelClasses = "text-muted-foreground text-xs font-medium";
 
 interface CityPropertyFormProps {
   form: CityFormData;
@@ -33,6 +36,12 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
   const [isMapPickerOpen, setIsMapPickerOpen] = React.useState(false);
   const activeCoords = form.coordinates ?? pendingCoordinates;
   const subdivisions = (allFeatures ?? []).filter((f) => f.type === "subdivision");
+
+  const sampleTerrain = api.countryGeo.sampleTerrainAt.useQuery(
+    { lng: form.coordinates?.[0] ?? 0, lat: form.coordinates?.[1] ?? 0 },
+    { enabled: !!form.coordinates?.[0] && !!form.coordinates?.[1] }
+  );
+  const derivedFromZone = form.elevation === sampleTerrain.data?.midpoint;
 
   return (
     <div className="space-y-2">
@@ -106,18 +115,50 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
         className={inputClasses}
       />
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          placeholder="Elevation (m)"
-          value={form.elevation ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...form,
-              elevation: e.target.value ? parseInt(e.target.value, 10) : undefined,
-            })
-          }
-          className={inputClasses}
-        />
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <label className={labelClasses}>Elevation (m)</label>
+            {derivedFromZone && sampleTerrain.data && (
+              <span className="text-muted-foreground text-[10px]">
+                from zone: {sampleTerrain.data.zoneName}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="Elevation (m)"
+              value={form.elevation ?? ""}
+              readOnly={derivedFromZone && !!sampleTerrain.data}
+              onChange={(e) =>
+                onChange({
+                  ...form,
+                  elevation: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                })
+              }
+              className={inputClasses}
+            />
+            <button
+              type="button"
+              title={sampleTerrain.data ? `zone: ${sampleTerrain.data.zoneName}` : undefined}
+              disabled={!form.coordinates || sampleTerrain.isFetching || !sampleTerrain.data}
+              onClick={() =>
+                onChange({
+                  ...form,
+                  elevation: sampleTerrain.data?.midpoint ?? form.elevation,
+                })
+              }
+              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-colors disabled:opacity-50"
+            >
+              {sampleTerrain.isFetching ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Mountain className="h-3.5 w-3.5" />
+              )}
+              <span>Auto</span>
+            </button>
+          </div>
+        </div>
         <input
           type="number"
           placeholder="Founded year"

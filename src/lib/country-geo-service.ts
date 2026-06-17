@@ -1,5 +1,7 @@
 import { getCountryColor } from "~/lib/map-config";
 import { featureIdToDisplayName } from "~/lib/map-utils";
+import { getTerrainAtPoint } from "~/lib/base-layer-query";
+import { geometryAreaSqKm } from "~/lib/geo-math";
 
 /**
  * Sync helper to keep Country cached geo columns up to date with its MapLayer political geometry.
@@ -413,6 +415,7 @@ export async function syncGeographicDemographics(
  * Upsert a City and handle all cascading changes (NationalIdentity, largestCity, subdivisions, etc.)
  */
 export async function upsertCity(db: any, countryId: string, data: any): Promise<any> {
+  const input = data;
   const isNew = !data.id;
   const { validatePointContainment } = await import("~/lib/geo-validation");
 
@@ -437,6 +440,22 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
     data.subdivisionId = autoSub ? autoSub.id : null;
   } else if (data.subdivisionId === "none") {
     data.subdivisionId = null;
+  }
+
+  // Auto-derive elevation from the terrain zone at the city's coordinates when
+  // the caller did not supply an explicit value. The explicit value is kept as
+  // an override.
+  let autoElevation: number | undefined;
+  if (data.elevation === undefined && data.coordinates) {
+    const coords = data.coordinates as any;
+    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
+    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
+    const terrain = await getTerrainAtPoint(db, Number(lng), Number(lat));
+    if (terrain.elevationZone) {
+      autoElevation = Math.round(
+        (terrain.elevationZone.elevationMin + terrain.elevationZone.elevationMax) / 2
+      );
+    }
   }
 
   let city;
@@ -471,6 +490,7 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
         infrastructureLevel: data.infrastructureLevel,
         mayorName: data.mayorName,
         isPort: data.isPort,
+        ...(data.elevation !== undefined && { elevation: data.elevation }),
         status: "approved",
       },
     });
@@ -516,6 +536,7 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
         infrastructureLevel: data.infrastructureLevel,
         mayorName: data.mayorName,
         isPort: !!data.isPort,
+        elevation: input.elevation ?? autoElevation,
         status: "approved",
         submittedBy: data.submittedBy || "owner",
       },
@@ -608,12 +629,19 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
       updateData.geometry = geometry;
     }
 
+    if (data.areaSqKm !== undefined) {
+      updateData.areaSqKm = data.areaSqKm;
+    } else if (geometry) {
+      updateData.areaSqKm = geometryAreaSqKm(geometry);
+    }
+
     subdivision = await db.subdivision.update({
       where: { id: data.id },
       data: updateData,
     });
   } else {
     const defaultGeometry = geometry || { type: "Polygon", coordinates: [] };
+    const areaSqKm = data.areaSqKm ?? geometryAreaSqKm(defaultGeometry);
     subdivision = await db.subdivision.create({
       data: {
         countryId,
@@ -626,6 +654,7 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
         governmentType: data.governmentType,
         color: data.color,
         population: data.population || 0,
+        areaSqKm,
         gdpContribution: data.gdpContribution || 0,
         status: "approved",
         submittedBy: data.submittedBy || "owner",
