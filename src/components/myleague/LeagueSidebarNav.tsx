@@ -472,9 +472,11 @@ import { Loader2 } from "lucide-react";
 
 export function QuickSimWidget({
   seasonId,
+  nextMatchDay,
   onSimulated,
 }: {
   seasonId: string;
+  nextMatchDay: number | null;
   onSimulated?: () => void;
 }) {
   const utils = api.useUtils();
@@ -494,13 +496,14 @@ export function QuickSimWidget({
         Advance the league schedule by simulating the next match day/round instantly from any page.
       </p>
       <Button
-        onClick={() =>
+        onClick={() => {
+          if (nextMatchDay == null) return;
           simulateMatchDay.mutate({
             seasonId,
-            matchDay: 0,
-          })
-        }
-        disabled={simulateMatchDay.isPending}
+            matchDay: nextMatchDay,
+          });
+        }}
+        disabled={simulateMatchDay.isPending || nextMatchDay == null}
         className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-purple-600 py-1.5 text-xs font-bold text-white shadow transition hover:bg-purple-500"
       >
         {simulateMatchDay.isPending ? (
@@ -508,10 +511,15 @@ export function QuickSimWidget({
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             <span>Simulating...</span>
           </>
+        ) : nextMatchDay == null ? (
+          <>
+            <PlayCircle className="h-3.5 w-3.5" />
+            <span>Season complete</span>
+          </>
         ) : (
           <>
             <PlayCircle className="h-3.5 w-3.5" />
-            <span>Simulate Match Day</span>
+            <span>Simulate Day {nextMatchDay}</span>
           </>
         )}
       </Button>
