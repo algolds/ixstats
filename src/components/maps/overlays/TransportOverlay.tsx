@@ -10,7 +10,8 @@
  * - Status-based opacity (planned=40%, construction=70%, operational=100%, abandoned=30%)
  * - Animated dash-offset flow effect (toggleable, performance-capped)
  * - Color-coded by type: rail=gray, highway=orange, road=brown, shipping=blue,
- *   canal=cyan, air_corridor=purple, ferry=teal
+ *   canal=cyan, air_corridor=purple, ferry=teal, pipeline=yellow, power=amber,
+ *   fiber=light-gray, military_supply=red, military_naval=dark-red
  */
 
 import { useEffect, useRef, useCallback } from "react";
@@ -36,6 +37,11 @@ export const ROUTE_COLORS: Record<string, string> = {
   canal: "#06b6d4", // cyan-500
   air_corridor: "#a855f7", // purple-500
   ferry: "#14b8a6", // teal-500
+  pipeline: "#eab308", // yellow-500
+  power_grid: "#f59e0b", // amber-500
+  fiber: "#e5e7eb", // gray-200
+  military_supply: "#dc2626", // red-600
+  military_naval: "#7f1d1d", // red-900
 };
 
 const ROUTE_WIDTHS: Record<string, number> = {
@@ -46,6 +52,11 @@ const ROUTE_WIDTHS: Record<string, number> = {
   canal: 1.5,
   air_corridor: 2,
   ferry: 1.5,
+  pipeline: 2,
+  power_grid: 1.5,
+  fiber: 1,
+  military_supply: 2,
+  military_naval: 2,
 };
 
 // ── Status opacity mapping ──────────────────────────────────────────
@@ -60,52 +71,21 @@ const STATUS_OPACITY: Record<string, number> = {
 // ── MapLibre color expression (match by routeType) ──────────────────
 
 function buildColorExpression(): any[] {
-  return [
-    "match",
-    ["get", "routeType"],
-    "rail",
-    ROUTE_COLORS.rail!,
-    "highway",
-    ROUTE_COLORS.highway!,
-    "road",
-    ROUTE_COLORS.road!,
-    "shipping_lane",
-    ROUTE_COLORS.shipping_lane!,
-    "canal",
-    ROUTE_COLORS.canal!,
-    "air_corridor",
-    ROUTE_COLORS.air_corridor!,
-    "ferry",
-    ROUTE_COLORS.ferry!,
-    "#888888", // fallback
-  ];
+  const arms: any[] = ["match", ["get", "routeType"]];
+  for (const [type, color] of Object.entries(ROUTE_COLORS)) {
+    arms.push(type, color);
+  }
+  arms.push("#888888"); // fallback
+  return arms;
 }
 
 function buildWidthExpression(selectedRouteId: string | null | undefined): any[] {
-  return [
-    "case",
-    ["==", ["get", "id"], selectedRouteId ?? ""],
-    6,
-    [
-      "match",
-      ["get", "routeType"],
-      "rail",
-      ROUTE_WIDTHS.rail!,
-      "highway",
-      ROUTE_WIDTHS.highway!,
-      "road",
-      ROUTE_WIDTHS.road!,
-      "shipping_lane",
-      ROUTE_WIDTHS.shipping_lane!,
-      "canal",
-      ROUTE_WIDTHS.canal!,
-      "air_corridor",
-      ROUTE_WIDTHS.air_corridor!,
-      "ferry",
-      ROUTE_WIDTHS.ferry!,
-      1.5, // fallback
-    ],
-  ];
+  const typeArms: any[] = ["match", ["get", "routeType"]];
+  for (const [type, width] of Object.entries(ROUTE_WIDTHS)) {
+    typeArms.push(type, width);
+  }
+  typeArms.push(1.5); // fallback
+  return ["case", ["==", ["get", "id"], selectedRouteId ?? ""], 6, typeArms];
 }
 
 function buildOpacityExpression(selectedRouteId: string | null | undefined): any[] {
@@ -169,6 +149,8 @@ interface TransportOverlayProps {
   animateFlows?: boolean;
   /** Route type filter — only show these types (show all if empty/undefined) */
   visibleRouteTypes?: string[];
+  /** Hide routes built after this game year; null/undefined = show all */
+  maxBuiltYear?: number | null;
 }
 
 export function TransportOverlay({
@@ -181,12 +163,13 @@ export function TransportOverlay({
   selectedRouteId,
   animateFlows = false,
   visibleRouteTypes,
+  maxBuiltYear,
 }: TransportOverlayProps) {
   const animFrameRef = useRef<number>(0);
   const dashOffsetRef = useRef(0);
 
   // ── Filtered data based on route type visibility ──
-  const filteredData = useFilteredRouteData(routeData, visibleRouteTypes);
+  const filteredData = useFilteredRouteData(routeData, visibleRouteTypes, maxBuiltYear);
 
   // ── Animate dash offset for flow effect ──
   const animateRef = useRef(animateFlows);
@@ -517,15 +500,22 @@ export function TransportOverlay({
 
 function useFilteredRouteData(
   data: FeatureCollection,
-  visibleTypes: string[] | undefined
+  visibleTypes: string[] | undefined,
+  maxBuiltYear?: number | null
 ): FeatureCollection {
-  if (!visibleTypes || visibleTypes.length === 0) return data;
-
-  const typeSet = new Set(visibleTypes);
+  const typeSet =
+    visibleTypes && visibleTypes.length > 0 ? new Set(visibleTypes) : null;
+  if (!typeSet && (maxBuiltYear === undefined || maxBuiltYear === null)) return data;
   return {
     type: "FeatureCollection",
-    features: data.features.filter(
-      (f) => f.properties && typeSet.has(f.properties.routeType as string)
-    ),
+    features: data.features.filter((f) => {
+      if (!f.properties) return false;
+      if (typeSet && !typeSet.has(f.properties.routeType as string)) return false;
+      if (maxBuiltYear !== undefined && maxBuiltYear !== null) {
+        const by = f.properties.builtYear;
+        if (typeof by === "number" && by > maxBuiltYear) return false;
+      }
+      return true;
+    }),
   };
 }

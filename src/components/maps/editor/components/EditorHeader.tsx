@@ -17,9 +17,13 @@ import {
   Settings,
   FileUp,
   HelpCircle,
+  Network,
+  Magnet,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "~/components/ui/dialog";
+import { RouteNetworkView } from "~/components/maps/RouteNetworkView";
 
 interface EditorHeaderProps {
   countryInfo: { name: string } | null | undefined;
@@ -38,6 +42,11 @@ interface EditorHeaderProps {
   simplifyAll: any;
   handleRequestExit: () => void;
   onShowHelp?: () => void;
+  countryId?: string | null;
+  snapEnabled: boolean;
+  setSnapEnabled: (v: boolean) => void;
+  snapTolerance: number;
+  setSnapTolerance: (v: number) => void;
 }
 
 export function EditorHeader({
@@ -57,6 +66,11 @@ export function EditorHeader({
   simplifyAll,
   handleRequestExit,
   onShowHelp,
+  countryId,
+  snapEnabled,
+  setSnapEnabled,
+  snapTolerance,
+  setSnapTolerance,
 }: EditorHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
@@ -158,6 +172,38 @@ export function EditorHeader({
             title="Center on Country"
           >
             <Crosshair className="h-3.5 w-3.5" />
+          </button>
+
+          {/* Route network view (opens a Dialog with the React Flow graph) */}
+          {countryId && (
+            <Dialog>
+              <DialogTrigger
+                className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
+                title="Route network view"
+              >
+                <Network className="h-3.5 w-3.5" />
+              </DialogTrigger>
+              <DialogContent className="h-[80vh] max-w-5xl p-0">
+                <DialogTitle className="sr-only">Route Network</DialogTitle>
+                <div className="h-full w-full">
+                  <RouteNetworkView countryId={countryId} />
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Snap toggle (tolerance lives in the Settings popover below) */}
+          <button
+            onClick={() => setSnapEnabled(!snapEnabled)}
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+              snapEnabled
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
+            title={`Snap: ${snapEnabled ? "On" : "Off"} (tolerance in Settings)`}
+          >
+            <Magnet className="h-3.5 w-3.5" />
           </button>
         </div>
 
@@ -275,6 +321,102 @@ export function EditorHeader({
                       </span>
                     </button>
                   )}
+
+                  {/* Snap (always visible — universal editing feature) */}
+                  <>
+                    <div className="border-border/60 my-1 border-t" aria-hidden />
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Magnet className="text-muted-foreground h-3 w-3" />
+                        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                          Snap
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setSnapEnabled(!snapEnabled)}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                          snapEnabled
+                            ? "bg-emerald-500/10 text-emerald-500"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {snapEnabled ? "On" : "Off"}
+                      </button>
+                    </div>
+                    {snapEnabled && (
+                      <div className="flex items-center gap-2 px-2 pb-1.5">
+                        <input
+                          type="range"
+                          min="0.001"
+                          max="0.1"
+                          step="0.001"
+                          value={snapTolerance}
+                          onChange={(e) => setSnapTolerance(parseFloat(e.target.value))}
+                          className="h-1 flex-1 accent-blue-500"
+                        />
+                        <span className="text-muted-foreground w-10 text-right font-mono text-[10px] tabular-nums">
+                          {snapTolerance.toFixed(3)}°
+                        </span>
+                      </div>
+                    )}
+                  </>
+
+                  {/* Admin: transport + recalc — gated, separated visually from the always-on items above */}
+                  {isAdmin && activeCountryId && (
+                    <>
+                      <div className="border-border/60 my-1 border-t" aria-hidden />
+                      <div className="text-muted-foreground/80 px-2 text-[9px] font-semibold tracking-wider uppercase select-none">
+                        Admin
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setIsSettingsOpen(false);
+                          try {
+                            const result = await generateTransport.mutateAsync({
+                              countryId: activeCountryId,
+                              routeTypes: ["rail", "highway"],
+                              clearExisting: true,
+                            });
+                            alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`);
+                          } catch (e) {
+                            alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                          }
+                        }}
+                        disabled={generateTransport.isPending}
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
+                        title="Generate rail + highway routes procedurally (clears existing transport routes)"
+                      >
+                        <Train className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                        <span className="font-medium">
+                          {generateTransport.isPending ? "Generating..." : "Gen Transport"}
+                        </span>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setIsSettingsOpen(false);
+                          try {
+                            await recalculateGeo.mutateAsync({ countryId: activeCountryId });
+                            alert("Geographic profile recalculated");
+                          } catch (e) {
+                            alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                          }
+                        }}
+                        disabled={recalculateGeo.isPending}
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors disabled:opacity-50"
+                        title="Recalculate the geographic profile for the active country"
+                      >
+                        <RefreshCw
+                          className={cn(
+                            "h-3.5 w-3.5 shrink-0 text-emerald-500",
+                            recalculateGeo.isPending && "animate-spin"
+                          )}
+                        />
+                        <span className="font-medium">
+                          {recalculateGeo.isPending ? "Recalculating..." : "Recalc"}
+                        </span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </PopoverContent>
@@ -293,46 +435,6 @@ export function EditorHeader({
         >
           Delete {editor.selectedIds.size} Selected
         </button>
-      )}
-
-      {/* Admin: transport + recalc actions — available when a country is active */}
-      {isAdmin && activeCountryId && (
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={async () => {
-              try {
-                const result = await generateTransport.mutateAsync({
-                  countryId: activeCountryId,
-                  routeTypes: ["rail", "highway"],
-                  clearExisting: true,
-                });
-                alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`);
-              } catch (e) {
-                alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
-              }
-            }}
-            disabled={generateTransport.isPending}
-            className="flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-1 text-[11px] font-medium text-indigo-600 hover:bg-indigo-500/20 disabled:opacity-50 dark:text-indigo-400"
-          >
-            <Train className="h-3 w-3" />
-            {generateTransport.isPending ? "..." : "Gen Transport"}
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                alert("Geographic profile recalculated");
-              } catch (e) {
-                alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
-              }
-            }}
-            disabled={recalculateGeo.isPending}
-            className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-400"
-          >
-            <RefreshCw className={cn("h-3 w-3", recalculateGeo.isPending && "animate-spin")} />
-            Recalc
-          </button>
-        </div>
       )}
     </div>
   );

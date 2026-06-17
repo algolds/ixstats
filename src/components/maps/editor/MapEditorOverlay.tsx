@@ -95,12 +95,14 @@ interface MapEditorOverlayProps {
   mapLayers?: MapLayerData[];
   onExit: () => void;
   isWorldMode?: boolean;
+  historicalYear?: number | null;
 }
 
 export default function MapEditorOverlay({
   countryId,
   onExit,
   isWorldMode = false,
+  historicalYear,
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
 
@@ -195,6 +197,10 @@ export default function MapEditorOverlay({
     cursorZoom,
     showGrid,
     setShowGrid,
+    snapEnabled,
+    setSnapEnabled,
+    snapTolerance,
+    setSnapTolerance,
     hoveredFeature,
     showShortcuts,
     setShowShortcuts,
@@ -418,6 +424,11 @@ export default function MapEditorOverlay({
         simplifyAll={simplifyAll}
         handleRequestExit={handleRequestExit}
         onShowHelp={() => setShowWelcomeModal(true)}
+        countryId={countryId}
+        snapEnabled={snapEnabled}
+        setSnapEnabled={setSnapEnabled}
+        snapTolerance={snapTolerance}
+        setSnapTolerance={setSnapTolerance}
       />
 
       {/* Photoshop-style context bar — shown when a feature tool is active */}
@@ -734,6 +745,7 @@ export default function MapEditorOverlay({
                   visible={layerStates.routes?.visible ?? true}
                   selectedRouteId={selectedRouteId}
                   onRouteClick={handleRouteClick}
+                  maxBuiltYear={historicalYear}
                 />
               )}
             </EditorErrorBoundary>

@@ -11,6 +11,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { clampToGeometry, pointInGeometry } from "~/lib/border-editor";
+import { buildRouteGeometry } from "~/lib/route-geometry";
 
 // ── Undo/Redo Types ──
 
@@ -806,10 +807,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const finishRoute = useCallback(
     async (routeType = "road", name?: string) => {
       if (!countryId || routeWaypoints.length < 2) return;
-      const geometry = {
-        type: "LineString" as const,
-        coordinates: routeWaypoints,
-      };
+      const geometry = buildRouteGeometry(routeWaypoints, routeType);
       await createRoute.mutateAsync({
         countryId,
         routeType,

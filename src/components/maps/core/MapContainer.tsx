@@ -11,6 +11,7 @@ import { useIsAdmin } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
 import { MapControls } from "./MapControls";
 import { CountryInfoPanel } from "./CountryInfoPanel";
 import { FeatureInfoPanel } from "./FeatureInfoPanel";
@@ -203,6 +204,9 @@ export function MapContainer({
   // "as-of" political FeatureCollection and swap it into the political layer.
   // `null` = at "now", live data flows through.
   const [historicalIxTime, setHistoricalIxTime] = useState<number | null>(null);
+
+  const historicalYear =
+    historicalIxTime === null ? null : IxTime.getCurrentGameYear(historicalIxTime);
 
   const { data: historicalPolitical } = api.geoCore.getWorldMapAsOf.useQuery(
     { ixTime: historicalIxTime as number },
@@ -418,6 +422,7 @@ export function MapContainer({
           countryId={editingCountryId}
           mapLayers={mapLayers}
           onExit={handleExitEditor}
+          historicalYear={historicalYear}
         />
       )}
 
@@ -427,6 +432,7 @@ export function MapContainer({
           isWorldMode={true}
           mapLayers={mapLayers}
           onExit={() => setIsWorldEditing(false)}
+          historicalYear={historicalYear}
         />
       )}
 

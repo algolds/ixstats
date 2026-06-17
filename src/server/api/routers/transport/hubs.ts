@@ -9,40 +9,6 @@ import { z } from "zod/v4";
 import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
 import { standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 
-// eslint-disable-next-line unused-imports/no-unused-vars
-function calculateRouteCosts(routeType: string, lengthKm: number, terrainDifficulty: number) {
-  let baseCostPerKm = 0.01; // default road
-  switch (routeType) {
-    case "rail":
-      baseCostPerKm = 0.04;
-      break;
-    case "highway":
-      baseCostPerKm = 0.05;
-      break;
-    case "shipping_lane":
-      baseCostPerKm = 0.001;
-      break;
-    case "canal":
-      baseCostPerKm = 0.1;
-      break;
-    case "road":
-      baseCostPerKm = 0.01;
-      break;
-    case "air_corridor":
-      baseCostPerKm = 0.08;
-      break;
-    case "ferry":
-      baseCostPerKm = 0.02;
-      break;
-  }
-  const costBillion = lengthKm * baseCostPerKm * (1 + terrainDifficulty * 1.5);
-  const maintenanceCost = costBillion * 0.02; // 2% annual maintenance
-  return {
-    costBillion: Math.round(costBillion * 1000) / 1000,
-    maintenanceCost: Math.round(maintenanceCost * 1000) / 1000,
-  };
-}
-
 export async function syncTransportEconomicModifiers(db: any, countryId: string) {
   const routes = await db.transportRoute.findMany({
     where: { countryId, status: "operational" },
