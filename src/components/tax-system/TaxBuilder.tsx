@@ -95,7 +95,6 @@ export function TaxBuilder({
   const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [_selectedTaxComponents, _setSelectedTaxComponents] = useState<ComponentType[]>([]);
-  const [selectedAtomicTaxComponents, setSelectedAtomicTaxComponents] = useState<string[]>([]);
   const [templateToConfirm, setTemplateToConfirm] = useState<
     (typeof taxSystemTemplates)[number] | null
   >(null);
@@ -150,7 +149,22 @@ export function TaxBuilder({
     },
     [enableAutoSync, countryId, setAutoSyncState, setLocalBuilderState]
   );
-
+  const selectedAtomicTaxComponents = builderState.selectedAtomicTaxComponents || [];
+  const setSelectedAtomicTaxComponents = useCallback(
+    (components: string[] | ((prev: string[]) => string[])) => {
+      setBuilderState((prev) => {
+        const nextComponents =
+          typeof components === "function"
+            ? components(prev.selectedAtomicTaxComponents || [])
+            : components;
+        return {
+          ...prev,
+          selectedAtomicTaxComponents: nextComponents,
+        };
+      });
+    },
+    [setBuilderState]
+  );
   const updateValidation = useCallback(
     (validationVal: { isValid: boolean; errors: any }) => {
       setBuilderState((prev) => {

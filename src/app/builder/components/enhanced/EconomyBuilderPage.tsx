@@ -99,6 +99,7 @@ const DEFAULT_TAX_BUILDER_STATE: TaxBuilderState = {
   brackets: {},
   exemptions: [],
   deductions: {},
+  selectedAtomicTaxComponents: [],
   isValid: false,
   errors: {},
 };
@@ -265,14 +266,14 @@ export function EconomyBuilderPage({
         primarySectors: [],
         secondarySectors: [],
         tertiarySectors: [],
-        totalGDP: 0,
+        totalGDP: economicInputs.coreIndicators?.nominalGDP || 0,
         gdpCurrency: economicInputs.nationalIdentity?.currency || "USD",
         economicTier: "Developing" as const,
         growthStrategy: "Balanced",
       },
       sectors: [],
       laborMarket: {
-        totalWorkforce: 0,
+        totalWorkforce: Math.round((economicInputs.coreIndicators?.totalPopulation || 0) * 0.65),
         laborForceParticipationRate: 65,
         employmentRate: 95,
         unemploymentRate: 5,
@@ -376,8 +377,9 @@ export function EconomyBuilderPage({
     };
   });
 
-  const [selectedComponents, setSelectedComponents] =
-    useState<EconomicComponentType[]>(propsSelectedComponents);
+  const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>(() => {
+    return persistedEconomyBuilder?.selectedAtomicComponents || propsSelectedComponents;
+  });
 
   // Resolve current tab with backward compatibility for legacy tab values
   const currentTab = useMemo(() => {
@@ -402,32 +404,42 @@ export function EconomyBuilderPage({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
 
-  // Synchronize population changes from Core Indicators step into the economy builder's internal state
+  // Synchronize population and GDP changes from Core Indicators step into the economy builder's internal state
   useEffect(() => {
     const totalPopulation = economicInputs.coreIndicators?.totalPopulation;
-    if (
-      totalPopulation !== undefined &&
-      totalPopulation !== economyBuilder.demographics?.totalPopulation
-    ) {
-      setEconomyBuilder((prev) => {
+    const nominalGDP = economicInputs.coreIndicators?.nominalGDP;
+
+    setEconomyBuilder((prev) => {
+      let changed = false;
+      const next = { ...prev };
+
+      if (totalPopulation !== undefined && totalPopulation !== prev.demographics?.totalPopulation) {
         const participationRate = prev.laborMarket?.laborForceParticipationRate ?? 65;
         const totalWorkforce = Math.round(totalPopulation * (participationRate / 100));
-        return {
-          ...prev,
-          demographics: {
-            ...prev.demographics,
-            totalPopulation,
-          },
-          laborMarket: {
-            ...prev.laborMarket,
-            totalWorkforce,
-          },
+        next.demographics = {
+          ...prev.demographics,
+          totalPopulation,
         };
-      });
-    }
+        next.laborMarket = {
+          ...prev.laborMarket,
+          totalWorkforce,
+        };
+        changed = true;
+      }
+
+      if (nominalGDP !== undefined && nominalGDP !== prev.structure?.totalGDP) {
+        next.structure = {
+          ...prev.structure,
+          totalGDP: nominalGDP,
+        };
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
   }, [
     economicInputs.coreIndicators?.totalPopulation,
-    economyBuilder.demographics?.totalPopulation,
+    economicInputs.coreIndicators?.nominalGDP,
     setEconomyBuilder,
   ]);
 
@@ -557,10 +569,18 @@ export function EconomyBuilderPage({
     (components: EconomicComponentType[]) => {
       setSelectedComponents(components);
       economyIntegrationService.updateEconomicComponents(components);
+
+      // Update economyBuilder state and persist it
+      const updatedBuilder = {
+        ...economyBuilderRef.current,
+        selectedAtomicComponents: components,
+      };
+      handleEconomyBuilderChange(updatedBuilder);
+
       // Notify parent component
       onSelectedComponentsChange?.(components);
     },
-    [onSelectedComponentsChange]
+    [handleEconomyBuilderChange, onSelectedComponentsChange, economyBuilderRef]
   );
 
   // Economy Builder Change Handler - Memoized
@@ -759,6 +779,7 @@ export function EconomyBuilderPage({
           ...economyBuilder.demographics,
           ...existingConfiguration.demographics,
         },
+        selectedAtomicComponents: existingConfiguration.selectedAtomicComponents || [],
         version: existingConfiguration.version ?? economyBuilder.version,
         isValid: true,
         errors: {},

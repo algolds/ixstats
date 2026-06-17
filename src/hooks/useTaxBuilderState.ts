@@ -26,6 +26,7 @@ export interface TaxBuilderState {
   brackets: Record<string, TaxBracketInput[]>; // categoryIndex -> brackets
   exemptions: TaxExemptionInput[];
   deductions: Record<string, TaxDeductionInput[]>; // categoryIndex -> deductions
+  selectedAtomicTaxComponents?: string[];
   isValid: boolean;
   errors: Record<string, any>;
 }
@@ -55,6 +56,7 @@ export function useTaxBuilderState(options: UseTaxBuilderStateOptions = {}) {
     brackets: initialData?.brackets || {},
     exemptions: initialData?.exemptions || [],
     deductions: initialData?.deductions || {},
+    selectedAtomicTaxComponents: initialData?.selectedAtomicTaxComponents || [],
     isValid: false,
     errors: {},
   });

@@ -72,6 +72,7 @@ export const TaxBuilderStateSchema = z.object({
   brackets: z.record(z.string(), z.array(TaxBracketInputSchema)),
   exemptions: z.array(TaxExemptionInputSchema),
   deductions: z.record(z.string(), z.array(TaxDeductionInputSchema)),
+  selectedAtomicTaxComponents: z.array(z.string()).optional(),
   // UI-only flags omitted on server; zod schema for API should not include isValid/errors
 });
 

@@ -102,9 +102,15 @@ export function LaborEmploymentTab({
   }, [selectedComponents]);
 
   const handleLaborChange = (field: keyof LaborConfiguration, value: any) => {
+    const updatedLaborMarket = { ...economyBuilder.laborMarket, [field]: value };
+    if (field === "laborForceParticipationRate") {
+      const population = economyBuilder.demographics.totalPopulation || 0;
+      const rate = typeof value === "number" ? value : parseFloat(String(value ?? 0));
+      updatedLaborMarket.totalWorkforce = Math.round(population * (rate / 100));
+    }
     onEconomyBuilderChange({
       ...economyBuilder,
-      laborMarket: { ...economyBuilder.laborMarket, [field]: value },
+      laborMarket: updatedLaborMarket,
     });
   };
 
