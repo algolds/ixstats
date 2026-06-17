@@ -17,7 +17,7 @@ import {
   cachedPublicProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { checkNameUniqueness } from "~/lib/geo-validation";
+import { buildProvinceMergePlan } from "~/lib/province-importer/merge-plan";
 import { geometryAreaSqKm } from "~/lib/geo-math";
 
 // ──────────────────────────────────────────────
@@ -339,12 +339,15 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         nameSet.add(key);
       }
 
-      // Check for name conflicts with existing subdivisions (unless replacing)
-      if (!input.replaceExisting) {
-        for (const province of input.provinces) {
-          await checkNameUniqueness(ctx.db as any, input.countryId, province.name, "subdivision");
-        }
-      }
+      // Load existing subdivisions to merge against (empty set when replacing)
+      const existing = input.replaceExisting
+        ? []
+        : await ctx.db.subdivision.findMany({
+            where: { countryId: input.countryId },
+            select: { id: true, name: true },
+          });
+
+      const plan = buildProvinceMergePlan(input.provinces, existing, input.replaceExisting);
 
       return await ctx.db.$transaction(async (tx) => {
         // Optionally delete existing subdivisions
@@ -354,24 +357,44 @@ export const geoAdminProvincesRouter = createTRPCRouter({
           });
         }
 
-        // Batch create subdivisions
         const created: Array<{ id: string; name: string }> = [];
-        for (const province of input.provinces) {
-          const subdivision = await tx.subdivision.create({
-            data: {
-              name: province.name,
-              countryId: input.countryId,
-              type: province.type,
-              level: province.level,
-              geometry: province.geometry as any,
-              capital: province.capital,
-              population: province.population,
-              color: province.color,
-              status: "approved",
-              submittedBy: userId,
-            },
-          });
-          created.push({ id: subdivision.id, name: subdivision.name });
+        let createdCount = 0;
+        let updatedCount = 0;
+
+        for (const { province, existingId } of plan) {
+          if (existingId) {
+            const subdivision = await tx.subdivision.update({
+              where: { id: existingId },
+              data: {
+                type: province.type,
+                level: province.level,
+                geometry: province.geometry as any,
+                capital: province.capital,
+                population: province.population,
+                color: province.color,
+                status: "approved",
+              },
+            });
+            updatedCount++;
+            created.push({ id: subdivision.id, name: subdivision.name });
+          } else {
+            const subdivision = await tx.subdivision.create({
+              data: {
+                name: province.name,
+                countryId: input.countryId,
+                type: province.type,
+                level: province.level,
+                geometry: province.geometry as any,
+                capital: province.capital,
+                population: province.population,
+                color: province.color,
+                status: "approved",
+                submittedBy: userId,
+              },
+            });
+            createdCount++;
+            created.push({ id: subdivision.id, name: subdivision.name });
+          }
         }
 
         // Batch create/upsert cities
@@ -397,7 +420,8 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         }
 
         return {
-          created: created.length,
+          created: createdCount,
+          updated: updatedCount,
           replaced: input.replaceExisting,
           subdivisions: created,
           citiesCreated,
