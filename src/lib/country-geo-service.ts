@@ -622,8 +622,24 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
     geometry.coordinates &&
     geometry.coordinates.length > 0
   ) {
+    const rawGeometry = data.geometry;
     geometry = await clipAndValidatePolygon(db, countryId, geometry, "Subdivision");
     geometry = await alignSubdivisionBorders(db, countryId, data.id || null, geometry);
+    // Diagnostic: surface when server-side clip/snap materially reshapes the edit
+    // (a likely cause of "my geometry edit didn't stick"). Logs to ixworld-out.log.
+    try {
+      const beforeArea = geometryAreaSqKm(rawGeometry);
+      const afterArea = geometryAreaSqKm(geometry);
+      if (beforeArea > 0 && Math.abs(beforeArea - afterArea) / beforeArea > 0.01) {
+        console.warn(
+          `[upsertSubdivision] clip/align reshaped geometry (id=${data.id ?? "new"}): ` +
+            `${beforeArea.toFixed(1)} -> ${afterArea.toFixed(1)} km² ` +
+            `(${(((afterArea - beforeArea) / beforeArea) * 100).toFixed(1)}%)`
+        );
+      }
+    } catch {
+      /* diagnostic only — never block a save */
+    }
   }
 
   let subdivision;

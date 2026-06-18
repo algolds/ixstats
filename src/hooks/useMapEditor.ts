@@ -663,6 +663,40 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
+  // Dedicated mutation for geometry-only (vertex) edits. Unlike updateSubdivision
+  // it does NOT resetForm() (which would tear down the active vertex-edit session),
+  // and it reconciles the editor's feature cache with the server's AUTHORITATIVE
+  // saved geometry from the mutation response. That makes the map update live and
+  // show exactly what was persisted — including any server-side clip/snap — instead
+  // of waiting on a refetch that could re-serve the 60s-cached old geometry.
+  const updateSubdivisionGeom = api.countryGeo.upsertSubdivision.useMutation({
+    onSuccess: (saved) => {
+      if (saved?.id && countryId) {
+        utils.geoCore.getCountryFeatures.setData({ countryId }, (old) =>
+          old
+            ? {
+                ...old,
+                subdivisions: old.subdivisions.map((s) =>
+                  s.id === saved.id
+                    ? { ...s, geometry: saved.geometry, areaSqKm: saved.areaSqKm }
+                    : s
+                ),
+              }
+            : old
+        );
+      }
+      // Refresh the other world-map caches (other views), but intentionally do NOT
+      // invalidate/refetch getCountryFeatures here — the setData patch above is the
+      // authoritative source for the editor and a refetch could clobber it with a
+      // stale cached response.
+      void utils.geoCore.getMapBundle.invalidate();
+      void utils.geoCore.getWorldMap.invalidate();
+    },
+    onError: (err) => {
+      console.error("[useMapEditor] subdivision geometry save failed:", err);
+    },
+  });
+
   const deleteSubdivision = api.geoFeatures.deleteSubdivision.useMutation({
     onSuccess: () => {
       invalidateAllMapData();
@@ -1405,13 +1439,20 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const updateSubdivisionGeometry = useCallback(
     async (featureId: string, geometry: object) => {
       if (!countryId) return;
-      await updateSubdivision.mutateAsync({
-        countryId,
-        id: featureId,
-        geometry,
-      });
+      try {
+        await updateSubdivisionGeom.mutateAsync({
+          countryId,
+          id: featureId,
+          geometry,
+        });
+      } catch (err) {
+        // The vertex-edit handlers call this fire-and-forget; swallow here so the
+        // rejection is logged (via the mutation's onError) rather than surfacing as
+        // an unhandled promise rejection. The error is also exposed via mutationError.
+        console.error("[useMapEditor] updateSubdivisionGeometry failed:", err);
+      }
     },
-    [countryId, updateSubdivision]
+    [countryId, updateSubdivisionGeom]
   );
 
   const handleDeleteFeature = useCallback(
@@ -1667,6 +1708,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     deleteCity.isPending ||
     createSubdivision.isPending ||
     updateSubdivision.isPending ||
+    updateSubdivisionGeom.isPending ||
     deleteSubdivision.isPending ||
     createPOI.isPending ||
     updatePOI.isPending ||
@@ -1685,6 +1727,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     deleteCity.error ||
     createSubdivision.error ||
     updateSubdivision.error ||
+    updateSubdivisionGeom.error ||
     deleteSubdivision.error ||
     createPOI.error ||
     updatePOI.error ||

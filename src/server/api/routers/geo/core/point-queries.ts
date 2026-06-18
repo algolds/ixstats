@@ -6,6 +6,32 @@ import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { CLIMATE_COLOR_MAP } from "./shared";
 import { getColorForFeature } from "./layer-loader";
 
+/**
+ * Hard ceiling (ms) for point-in-polygon lookups. A slow/unindexed ST_Contains
+ * over world-scale layer geometry must never hold a pooled DB connection long
+ * enough to (a) saturate the browser's connection pool during map editing or
+ * (b) outlive a short-lived Clerk JWT on a queued mutation — which manifested as
+ * "province geometry won't save" (countryGeo.upsertSubdivision rejected
+ * UNAUTHORIZED because the token expired while the request waited in the queue).
+ */
+const POINT_QUERY_TIMEOUT_MS = 8000;
+
+/**
+ * Run a spatial point lookup under a per-statement timeout. On timeout PostgreSQL
+ * cancels the statement and this rejects; every caller already catches and degrades
+ * gracefully to "no info at this point" (returns null / empty). SET LOCAL is scoped
+ * to the surrounding transaction, so it cannot leak to other pooled queries.
+ */
+async function withPointQueryTimeout<T>(db: any, run: (tx: any) => Promise<T>): Promise<T> {
+  return db.$transaction(
+    async (tx: any) => {
+      await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = ${POINT_QUERY_TIMEOUT_MS}`);
+      return run(tx);
+    },
+    { timeout: POINT_QUERY_TIMEOUT_MS + 4000, maxWait: POINT_QUERY_TIMEOUT_MS + 4000 }
+  );
+}
+
 export const pointQueryProcedures = {
   getCountryAtPoint: rateLimitedPublicProcedure
     .input(
@@ -17,24 +43,26 @@ export const pointQueryProcedures = {
     .query(async ({ ctx, input }) => {
       // Use PostGIS spatial query
       try {
-        const results = await ctx.db.$queryRawUnsafe<
-          Array<{
-            id: string;
-            featureId: string;
-            displayName: string | null;
-            countryId: string | null;
-            properties: unknown;
-          }>
-        >(
-          `SELECT id, "featureId", "displayName", "countryId", properties
+        const results = await withPointQueryTimeout(ctx.db, (tx) =>
+          tx.$queryRawUnsafe<
+            Array<{
+              id: string;
+              featureId: string;
+              displayName: string | null;
+              countryId: string | null;
+              properties: unknown;
+            }>
+          >(
+            `SELECT id, "featureId", "displayName", "countryId", properties
            FROM map_layers
            WHERE "layerType" = 'political'
              AND "isActive" = true
              AND geom_postgis IS NOT NULL
              AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))
            LIMIT 1`,
-          input.lng,
-          input.lat
+            input.lng,
+            input.lat
+          )
         );
 
         if (results.length > 0) {
@@ -67,23 +95,25 @@ export const pointQueryProcedures = {
     .query(async ({ ctx, input }) => {
       try {
         // Query altitude, climate, and political layers at this point
-        const layerResults = await ctx.db.$queryRawUnsafe<
-          Array<{
-            layerType: string;
-            featureId: string;
-            displayName: string | null;
-            properties: Record<string, unknown>;
-            countryId: string | null;
-          }>
-        >(
-          `SELECT "layerType", "featureId", "displayName", properties, "countryId"
+        const layerResults = await withPointQueryTimeout(ctx.db, (tx) =>
+          tx.$queryRawUnsafe<
+            Array<{
+              layerType: string;
+              featureId: string;
+              displayName: string | null;
+              properties: Record<string, unknown>;
+              countryId: string | null;
+            }>
+          >(
+            `SELECT "layerType", "featureId", "displayName", properties, "countryId"
            FROM map_layers
            WHERE "isActive" = true
              AND geom_postgis IS NOT NULL
              AND "layerType" IN ('altitudes', 'climate', 'political')
              AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))`,
-          input.lng,
-          input.lat
+            input.lng,
+            input.lat
+          )
         );
 
         const altitude = layerResults.find((r) => r.layerType === "altitudes");
@@ -109,17 +139,17 @@ export const pointQueryProcedures = {
 
           // Check for subdivision at this point
           try {
-            const subResults = await ctx.db.$queryRawUnsafe<
-              Array<{ id: string; name: string; type: string | null }>
-            >(
-              `SELECT id, name, type FROM subdivisions
+            const subResults = await withPointQueryTimeout(ctx.db, (tx) =>
+              tx.$queryRawUnsafe<Array<{ id: string; name: string; type: string | null }>>(
+                `SELECT id, name, type FROM subdivisions
                WHERE "countryId" = $1 AND status = 'approved'
                  AND geom_postgis IS NOT NULL
                  AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326))
                LIMIT 1`,
-              political.countryId,
-              input.lng,
-              input.lat
+                political.countryId,
+                input.lng,
+                input.lat
+              )
             );
             if (subResults.length > 0) subdivision = subResults[0]!;
           } catch {
@@ -204,14 +234,16 @@ export const pointQueryProcedures = {
     )
     .query(async ({ ctx, input }) => {
       try {
-        const result = await ctx.db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
-          `SELECT ST_Contains(
+        const result = await withPointQueryTimeout(ctx.db, (tx) =>
+          tx.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
+            `SELECT ST_Contains(
              (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
              ST_SetSRID(ST_MakePoint($2, $3), 4326)
            ) as is_inside`,
-          input.countryId,
-          input.lng,
-          input.lat
+            input.countryId,
+            input.lng,
+            input.lat
+          )
         );
         return { isInside: result[0]?.is_inside ?? false };
       } catch {
