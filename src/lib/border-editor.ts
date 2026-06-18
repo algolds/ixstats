@@ -1000,7 +1000,37 @@ function snapPointToNeighborOrBorder(
   let bestNeighborId: string | null = null;
   let isBorderSnap = false;
 
-  // Check neighbor borders (higher priority for gap-filling)
+  // 1. Check neighbor vertices first (highest priority)
+  for (const neighbor of neighbors) {
+    const neighborRings = getAllRings(neighbor.geometry);
+    for (const ring of neighborRings) {
+      for (const vertex of ring) {
+        const d = distanceDeg(point, vertex);
+        if (d < bestDist && d <= tolerance) {
+          bestDist = d;
+          bestPos = vertex;
+          bestNeighborId = neighbor.id;
+          isBorderSnap = false;
+        }
+      }
+    }
+  }
+
+  // 2. Check country border vertices (second priority)
+  const borderRings = getAllRings(countryBorder);
+  for (const ring of borderRings) {
+    for (const vertex of ring) {
+      const d = distanceDeg(point, vertex);
+      if (d < bestDist && d <= tolerance) {
+        bestDist = d;
+        bestPos = vertex;
+        bestNeighborId = null;
+        isBorderSnap = true;
+      }
+    }
+  }
+
+  // 3. Fallback: check neighbor segments (third priority)
   for (const neighbor of neighbors) {
     const neighborRings = getAllRings(neighbor.geometry);
     for (const ring of neighborRings) {
@@ -1017,8 +1047,7 @@ function snapPointToNeighborOrBorder(
     }
   }
 
-  // Check country border (lower priority — only if no neighbor is closer)
-  const borderRings = getAllRings(countryBorder);
+  // 4. Fallback: check country border segments (lowest priority)
   for (const ring of borderRings) {
     for (let i = 0; i < ring.length - 1; i++) {
       const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
@@ -1109,6 +1138,111 @@ function getIntermediateVertices(
   }
 
   return intermediates;
+}
+
+/**
+ * Insert a point into a Polygon or MultiPolygon geometry if it lies on one of
+ * its boundary segments (within a small tolerance), but is not already a vertex.
+ */
+export function insertVertexIfOnSegment(
+  geometry: Polygon | MultiPolygon,
+  point: Position,
+  tolerance: number = 1e-7
+): { geometry: Polygon | MultiPolygon; modified: boolean } {
+  const rings = getAllRings(geometry).map((r) => [...r.map((c) => [...c])]);
+  let modified = false;
+
+  for (let ri = 0; ri < rings.length; ri++) {
+    const ring = rings[ri]!;
+    const newRing: Position[] = [];
+
+    for (let i = 0; i < ring.length - 1; i++) {
+      const a = ring[i]!;
+      const b = ring[i + 1]!;
+      newRing.push(a);
+
+      // Check if point is already equal to either endpoint of the segment
+      const distA = distanceDeg(point, a);
+      const distB = distanceDeg(point, b);
+
+      if (distA > tolerance && distB > tolerance) {
+        const proj = projectPointToSegment(point, a, b);
+        const distToProj = distanceDeg(point, proj);
+
+        if (distToProj <= tolerance) {
+          // Check parameter t to make sure it's strictly between the endpoints
+          const edgeLen = distanceDeg(a, b);
+          const distAProj = distanceDeg(a, proj);
+          const distBProj = distanceDeg(b, proj);
+          
+          if (edgeLen > tolerance && distAProj > tolerance && distBProj > tolerance) {
+            newRing.push([...point]);
+            modified = true;
+          }
+        }
+      }
+    }
+
+    if (ring.length > 0) {
+      newRing.push([...ring[ring.length - 1]!]);
+    }
+
+    if (modified) {
+      rings[ri] = newRing;
+    }
+  }
+
+  if (modified) {
+    return {
+      geometry: rebuildGeometry(geometry, rings),
+      modified: true,
+    };
+  }
+
+  return { geometry, modified: false };
+}
+
+/**
+ * For two geometries A and B, find any vertices of A that lie on edges of B,
+ * and insert them as vertices in B. Also find any vertices of B that lie on
+ * edges of A, and insert them as vertices in A.
+ */
+export function alignSharedVertices(
+  geomA: Polygon | MultiPolygon,
+  geomB: Polygon | MultiPolygon,
+  tolerance: number = 1e-7
+): {
+  geomA: Polygon | MultiPolygon;
+  geomB: Polygon | MultiPolygon;
+  modifiedA: boolean;
+  modifiedB: boolean;
+} {
+  let currentA = JSON.parse(JSON.stringify(geomA)) as Polygon | MultiPolygon;
+  let currentB = JSON.parse(JSON.stringify(geomB)) as Polygon | MultiPolygon;
+  let modifiedA = false;
+  let modifiedB = false;
+
+  // Insert vertices of A into B
+  const verticesA = getVertices(currentA);
+  for (const v of verticesA) {
+    const res = insertVertexIfOnSegment(currentB, v.coord, tolerance);
+    if (res.modified) {
+      currentB = res.geometry;
+      modifiedB = true;
+    }
+  }
+
+  // Insert vertices of B into A
+  const verticesB = getVertices(currentB);
+  for (const v of verticesB) {
+    const res = insertVertexIfOnSegment(currentA, v.coord, tolerance);
+    if (res.modified) {
+      currentA = res.geometry;
+      modifiedA = true;
+    }
+  }
+
+  return { geomA: currentA, geomB: currentB, modifiedA, modifiedB };
 }
 
 /**

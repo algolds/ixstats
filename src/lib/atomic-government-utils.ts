@@ -18,6 +18,10 @@ import { ComponentType } from "@prisma/client";
 import type { AtomicGovernmentComponent } from "./atomic-government-data";
 import { ATOMIC_COMPONENTS } from "./atomic-government-data";
 import type { EffectivenessMetrics } from "~/components/atomic/shared/types";
+import { EconomicComponentType } from "./atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "./atomic-economic-data";
+import { ATOMIC_TAX_COMPONENTS } from "~/components/tax-system/atoms/AtomicTaxComponents";
+import { IxTime } from "./ixtime";
 
 /**
  * Calculate government effectiveness metrics based on selected components
@@ -327,3 +331,147 @@ export function calculateComplexityDistribution(
 
   return distribution;
 }
+
+/**
+ * Calculate the country's civil service capacity limit
+ * @param population - Current country population
+ * @param governmentEffectiveness - Government effectiveness score (0-100)
+ */
+export function calculateCivilServiceCapacity(
+  population: number,
+  governmentEffectiveness: number
+): number {
+  return Math.max(50, 100 + Math.floor((population / 100000) * (governmentEffectiveness / 100)));
+}
+
+/**
+ * Calculate total staff consumed by active and implementing components
+ */
+export function calculateTotalConsumedStaff(
+  govComponents: ComponentType[],
+  econComponents: EconomicComponentType[],
+  taxComponents: string[]
+): number {
+  let totalStaff = 0;
+  
+  govComponents.forEach((type) => {
+    const component = ATOMIC_COMPONENTS[type];
+    if (component) {
+      totalStaff += component.metadata.staffRequired || 0;
+    }
+  });
+
+  econComponents.forEach((type) => {
+    const component = ATOMIC_ECONOMIC_COMPONENTS[type];
+    if (component) {
+      totalStaff += component.metadata.staffRequired || 0;
+    }
+  });
+
+  taxComponents.forEach((id) => {
+    const component = ATOMIC_TAX_COMPONENTS[id];
+    if (component) {
+      totalStaff += component.metadata.staffRequired || 0;
+    }
+  });
+
+  return totalStaff;
+}
+
+/**
+ * Calculate combined economic modifiers from active components
+ */
+export function calculateComponentEconomicModifiers(
+  govComponents: ComponentType[],
+  econComponents: EconomicComponentType[],
+  taxComponents: string[]
+) {
+  let maintenanceCost = 0;
+  let taxRevenueModifier = 0;
+  let unemploymentModifier = 0;
+  let inflationModifier = 0;
+
+  govComponents.forEach((type) => {
+    const component = ATOMIC_COMPONENTS[type];
+    if (component) {
+      maintenanceCost += component.maintenanceCost || 0;
+    }
+  });
+
+  econComponents.forEach((type) => {
+    const component = ATOMIC_ECONOMIC_COMPONENTS[type];
+    if (component) {
+      maintenanceCost += component.maintenanceCost || 0;
+      if (component.employmentImpact) {
+        unemploymentModifier += component.employmentImpact.unemploymentModifier || 0;
+      }
+      if (type === "PLANNED_ECONOMY" || type === "STATE_CAPITALISM") {
+        inflationModifier += 0.01;
+      } else if (type === "KNOWLEDGE_ECONOMY" || type === "FREE_TRADE") {
+        inflationModifier -= 0.005;
+      }
+    }
+  });
+
+  taxComponents.forEach((id) => {
+    const component = ATOMIC_TAX_COMPONENTS[id];
+    if (component) {
+      maintenanceCost += component.maintenanceCost || 0;
+      if (component.category === "Revenue Strategies" || component.id.includes("tax")) {
+        taxRevenueModifier += 0.5; // +0.5% GDP
+      } else if (component.category === "Compliance Systems") {
+        taxRevenueModifier += 0.3; // +0.3% GDP
+      } else if (component.category === "Incentive Structures") {
+        taxRevenueModifier -= 0.2; // Tax incentives/credits reduce tax revenue
+      }
+    }
+  });
+
+  return {
+    maintenanceCost,
+    taxRevenueModifier, // percentage points e.g. +0.5 means +0.5%
+    unemploymentModifier, // percentage points e.g. -0.5 means -0.5%
+    inflationModifier, // decimal fraction e.g. +0.01 means +1%
+  };
+}
+
+/**
+ * Helper to parse a timeToImplement string (e.g. "12 months", "2-3 years")
+ * and return the number of months or years to add.
+ */
+export function parseTimeToImplement(timeStr: string): { months?: number; years?: number } {
+  const str = timeStr.toLowerCase().trim();
+  if (str.includes("month")) {
+    const matches = str.match(/\d+/g);
+    if (matches && matches.length > 0) {
+      const val = parseInt(matches[matches.length - 1]!, 10);
+      return { months: val };
+    }
+    return { months: 12 };
+  }
+  if (str.includes("year")) {
+    const matches = str.match(/\d+/g);
+    if (matches && matches.length > 0) {
+      const val = parseInt(matches[matches.length - 1]!, 10);
+      return { years: val };
+    }
+    return { years: 1 };
+  }
+  return { months: 12 };
+}
+
+/**
+ * Calculate future implementation date based on timeToImplement string.
+ */
+export function calculateImplementationDate(timeToImplementStr: string): Date {
+  const parsed = parseTimeToImplement(timeToImplementStr);
+  const currentIxTime = IxTime.getCurrentIxTime();
+  let futureTime = currentIxTime;
+  if (parsed.years) {
+    futureTime = IxTime.addYears(currentIxTime, parsed.years);
+  } else if (parsed.months) {
+    futureTime = IxTime.addMonths(currentIxTime, parsed.months);
+  }
+  return new Date(futureTime);
+}
+

@@ -12,6 +12,7 @@ import {
 import { IxTime } from "~/lib/ixtime";
 import { IxStatsCalculator } from "~/lib/calculations";
 import type { SystemStatus, BaseCountryData } from "~/types/ixstats";
+import { prepareBaseCountryData, getCountryComponentsStatsData } from "../countries/utils";
 
 export const adminSystemRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -506,26 +507,8 @@ export const adminSystemRouter = createTRPCRouter({
         try {
           const calc = new IxStatsCalculator(econConfig, country.baselineDate.getTime());
 
-          const baseCountryData: BaseCountryData = {
-            country: country.name,
-            continent: country.continent,
-            region: country.region,
-            governmentType: country.governmentType,
-            religion: country.religion,
-            leader: country.leader,
-            population: country.baselinePopulation,
-            gdpPerCapita: country.baselineGdpPerCapita,
-            landArea: country.landArea,
-            areaSqMi: country.areaSqMi,
-            maxGdpGrowthRate: country.maxGdpGrowthRate,
-            adjustedGdpGrowth: country.adjustedGdpGrowth,
-            populationGrowthRate: country.populationGrowthRate,
-            projected2040Population: country.projected2040Population || 0,
-            projected2040Gdp: country.projected2040Gdp || 0,
-            projected2040GdpPerCapita: country.projected2040GdpPerCapita || 0,
-            actualGdpGrowth: country.actualGdpGrowth || 0,
-            localGrowthFactor: country.localGrowthFactor,
-          };
+          const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
+          const baseCountryData = prepareBaseCountryData(country, componentsData);
 
           const initialStats = calc.initializeCountryStats(baseCountryData);
           const effects = country.storytellerEffects.map((d) => ({

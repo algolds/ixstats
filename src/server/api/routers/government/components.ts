@@ -9,6 +9,8 @@ import { GovernmentBuilderStateSchema } from "~/types/validation/government";
 import { notificationHooks } from "~/lib/notification-hooks";
 import { notificationAPI } from "~/lib/notification-api";
 import { applyGovernmentComponentEffects } from "~/lib/government-component-effects";
+import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
+import { calculateImplementationDate } from "~/lib/atomic-government-utils";
 
 // Input validation schemas
 // eslint-disable-next-line unused-imports/no-unused-vars
@@ -273,11 +275,58 @@ export const governmentComponentsRouter = createTRPCRouter({
         });
       }
 
+      // Look up component data
+      const compData = ATOMIC_COMPONENTS[input.componentType];
+      if (!compData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Component not found in catalog",
+        });
+      }
+
+      // Check budget
+      const structure = await ctx.db.governmentStructure.findUnique({
+        where: { countryId: input.countryId },
+      });
+
+      if (!structure) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Government structure not found for this country. Please configure your government first.",
+        });
+      }
+
+      const cost = compData.implementationCost || 0;
+      if (structure.totalBudget < cost) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Insufficient budget. Required: ${cost}, Available: ${structure.totalBudget}`,
+        });
+      }
+
+      // Deduct budget
+      await ctx.db.governmentStructure.update({
+        where: { countryId: input.countryId },
+        data: {
+          totalBudget: { decrement: cost },
+        },
+      });
+
+      // Calculate implementationDate
+      const isImmediate = input.isActive ?? false;
+      const implementationDate = isImmediate
+        ? new Date()
+        : calculateImplementationDate(compData.metadata.timeToImplement);
+
       const component = await ctx.db.governmentComponent.create({
         data: {
           countryId: input.countryId,
           componentType: input.componentType,
-          isActive: input.isActive ?? true,
+          isActive: isImmediate,
+          implementationCost: cost,
+          maintenanceCost: compData.maintenanceCost || 0,
+          requiredCapacity: compData.metadata.staffRequired || compData.requiredCapacity || 50,
+          implementationDate,
         },
       });
 

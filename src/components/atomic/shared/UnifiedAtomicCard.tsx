@@ -147,7 +147,19 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       {component.prerequisites.length > 0 && (
         <div className="border-border/50 mt-1 border-t pt-1">
           <p className="text-muted-foreground truncate text-[10px]">
-            <span className="font-medium">Requires:</span> {component.prerequisites.join(", ")}
+            <span className="font-medium">Requires:</span>{" "}
+            {component.prerequisites
+              .map((p) =>
+                p
+                  .split("_")
+                  .map((word) => {
+                    if (word.toLowerCase() === "rd" || word.toLowerCase() === "r&d") return "R&D";
+                    if (word.toLowerCase() === "vat") return "VAT";
+                    return word.charAt(0).toUpperCase() + word.slice(1);
+                  })
+                  .join(" ")
+              )
+              .join(", ")}
           </p>
         </div>
       )}

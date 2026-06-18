@@ -9,6 +9,7 @@ import type {
   StorytellerEffect as StorytellerEffectRecord,
   HistoricalDataPoint,
 } from "../types/ixstats";
+import { calculateComponentEconomicModifiers } from "./atomic-government-utils";
 
 // FIXED: Updated tier enums to match user specifications
 export enum EconomicTier {
@@ -129,6 +130,12 @@ export class IxStatsCalculator {
       gdpDensity,
       localGrowthFactor: baseData.localGrowthFactor || 1.0,
       globalGrowthFactor: this.config.globalGrowthFactor || 1.0321,
+      activeGovComponents: baseData.activeGovComponents,
+      activeEconComponents: baseData.activeEconComponents,
+      activeTaxComponents: baseData.activeTaxComponents,
+      implementingGovComponents: baseData.implementingGovComponents,
+      implementingEconComponents: baseData.implementingEconComponents,
+      implementingTaxComponents: baseData.implementingTaxComponents,
     };
   }
 
@@ -198,6 +205,12 @@ export class IxStatsCalculator {
     const newPopulationDensity = landArea > 0 ? newPopulation / landArea : undefined;
     const newGdpDensity = landArea > 0 ? newTotalGdp / landArea : undefined;
 
+    const mods = calculateComponentEconomicModifiers(
+      (baselineStats.activeGovComponents || []) as any[],
+      (baselineStats.activeEconComponents || []) as any[],
+      (baselineStats.activeTaxComponents || []) as any[]
+    );
+
     const updatedStats: CountryStats = {
       ...baselineStats,
       currentPopulation: newPopulation,
@@ -208,6 +221,10 @@ export class IxStatsCalculator {
       populationDensity: newPopulationDensity,
       gdpDensity: newGdpDensity,
       lastCalculated: new Date(targetTimeMs),
+      totalGovernmentSpending: (baselineStats.totalGovernmentSpending ?? 0) + mods.maintenanceCost,
+      taxRevenueGDPPercent: Math.max(0, Math.min(100, (baselineStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)),
+      unemploymentRate: Math.max(0, Math.min(100, (baselineStats.unemploymentRate ?? 5) + mods.unemploymentModifier)),
+      inflationRate: Math.max(-0.5, Math.min(2, (baselineStats.inflationRate ?? 0.02) + mods.inflationModifier)),
     };
 
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
@@ -405,6 +422,12 @@ export class IxStatsCalculator {
     const newPopulationDensity = landArea > 0 ? newPopulation / landArea : undefined;
     const newGdpDensity = landArea > 0 ? newTotalGdp / landArea : undefined;
 
+    const mods = calculateComponentEconomicModifiers(
+      (currentStats.activeGovComponents || []) as any[],
+      (currentStats.activeEconComponents || []) as any[],
+      (currentStats.activeTaxComponents || []) as any[]
+    );
+
     const updatedStats: CountryStats = {
       ...currentStats,
       currentPopulation: newPopulation,
@@ -415,6 +438,10 @@ export class IxStatsCalculator {
       populationDensity: newPopulationDensity,
       gdpDensity: newGdpDensity,
       lastCalculated: new Date(nowIxTimeMs),
+      totalGovernmentSpending: (currentStats.totalGovernmentSpending ?? 0) + mods.maintenanceCost,
+      taxRevenueGDPPercent: Math.max(0, Math.min(100, (currentStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)),
+      unemploymentRate: Math.max(0, Math.min(100, (currentStats.unemploymentRate ?? 5) + mods.unemploymentModifier)),
+      inflationRate: Math.max(-0.5, Math.min(2, (currentStats.inflationRate ?? 0.02) + mods.inflationModifier)),
     };
 
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);

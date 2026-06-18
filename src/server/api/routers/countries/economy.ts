@@ -8,7 +8,7 @@ import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
-import { safelyIncludeRelations, prepareBaseCountryData, getGrowthRates, stddev } from "./utils";
+import { safelyIncludeRelations, prepareBaseCountryData, getGrowthRates, stddev, getCountryComponentsStatsData } from "./utils";
 
 export const economyProcedures = {
   getByIdWithEconomicData: rateLimitedPublicProcedure
@@ -79,7 +79,8 @@ export const economyProcedures = {
       const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
 
       const calc = new IxStatsCalculator(econCfg, baselineDate);
-      const base = prepareBaseCountryData(country);
+      const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
+      const base = prepareBaseCountryData(country, componentsData);
 
       const baselineStats = calc.initializeCountryStats(base);
 
@@ -274,7 +275,8 @@ export const economyProcedures = {
       const econCfg = await getEconomicConfigFromDB(ctx.db);
       const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
       const calc = new IxStatsCalculator(econCfg, baselineDate);
-      const base = prepareBaseCountryData(country);
+      const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
+      const base = prepareBaseCountryData(country, componentsData);
       const baselineStats = calc.initializeCountryStats(base);
 
       const effects = (country.storytellerEffects as any[]).map((i: any) => ({
@@ -386,7 +388,8 @@ export const economyProcedures = {
         const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = country.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
-        const base = prepareBaseCountryData(country);
+        const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
+        const base = prepareBaseCountryData(country, componentsData);
         const baselineStats = calc.initializeCountryStats(base);
         const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,

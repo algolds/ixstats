@@ -251,6 +251,13 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         input.geometry,
         "Subdivision"
       );
+      const { alignSubdivisionBorders } = await import("~/lib/country-geo-service");
+      const alignedGeometry = await alignSubdivisionBorders(
+        ctx.db as any,
+        input.countryId,
+        null,
+        clippedGeometry
+      );
       await checkNameUniqueness(ctx.db as any, input.countryId, input.name, "subdivision");
 
       const subdivision = await ctx.db.subdivision.create({
@@ -259,7 +266,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
           countryId: input.countryId,
           type: input.type,
           level: input.level,
-          geometry: clippedGeometry,
+          geometry: alignedGeometry,
           capital: input.capital,
           population: input.population,
           status: "approved",
@@ -272,7 +279,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
       try {
         terrainInfo = await getTerrainForArea(
           ctx.db as any,
-          clippedGeometry as unknown as import("geojson").Geometry
+          alignedGeometry as unknown as import("geojson").Geometry
         );
       } catch {
         // Terrain query failed — non-blocking
@@ -328,6 +335,13 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
           input.countryId,
           input.geometry,
           "Subdivision"
+        );
+        const { alignSubdivisionBorders } = await import("~/lib/country-geo-service");
+        clippedGeometry = await alignSubdivisionBorders(
+          ctx.db as any,
+          input.countryId,
+          input.subdivisionId,
+          clippedGeometry
         );
       }
       if (input.name) {

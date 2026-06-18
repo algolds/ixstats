@@ -623,6 +623,7 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
     geometry.coordinates.length > 0
   ) {
     geometry = await clipAndValidatePolygon(db, countryId, geometry, "Subdivision");
+    geometry = await alignSubdivisionBorders(db, countryId, data.id || null, geometry);
   }
 
   let subdivision;
@@ -1373,4 +1374,68 @@ export async function triggerGeographyPolicy(
   } catch (err) {
     console.warn(`[triggerGeographyPolicy] Failed to auto-generate policy for ${name}:`, err);
   }
+}
+
+/**
+ * Aligns the borders of a target subdivision with other subdivisions in the same country.
+ * Mutually inserts vertices where boundaries are shared/snapped to edges.
+ * Updates the neighbor subdivisions in the database if modified.
+ */
+export async function alignSubdivisionBorders(
+  db: any,
+  countryId: string,
+  targetId: string | null,
+  geometry: any,
+  tolerance = 1e-7
+): Promise<any> {
+  const { alignSharedVertices } = await import("~/lib/border-editor");
+  const subdivisions = await db.subdivision.findMany({
+    where: {
+      countryId,
+      status: "approved",
+      ...(targetId ? { id: { not: targetId } } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      geometry: true,
+    },
+  });
+
+  let alignedGeometry = JSON.parse(JSON.stringify(geometry));
+
+  for (const neighbor of subdivisions) {
+    if (
+      !neighbor.geometry ||
+      (neighbor.geometry as any).type === "Point" ||
+      !(neighbor.geometry as any).coordinates
+    ) {
+      continue;
+    }
+
+    const res = alignSharedVertices(alignedGeometry, neighbor.geometry as any, tolerance);
+    if (res.modifiedB) {
+      // Neighbor geometry was modified (inserted target's vertex into neighbor)
+      await db.subdivision.update({
+        where: { id: neighbor.id },
+        data: { geometry: res.geomB },
+      });
+      // Force PostGIS triggers to run
+      try {
+        await db.$executeRawUnsafe(
+          `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
+          JSON.stringify(res.geomB),
+          neighbor.id
+        );
+      } catch (err) {
+        console.warn(`[alignSubdivisionBorders] Failed to sync PostGIS for neighbor ${neighbor.name}:`, err);
+      }
+    }
+    if (res.modifiedA) {
+      // Target geometry was modified (inserted neighbor's vertex into target)
+      alignedGeometry = res.geomA;
+    }
+  }
+
+  return alignedGeometry;
 }

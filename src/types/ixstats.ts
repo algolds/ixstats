@@ -60,6 +60,18 @@ export interface BaseCountryData {
   projected2040GdpPerCapita: number;
 
   localGrowthFactor: number;
+
+  activeGovComponents?: string[];
+  activeEconComponents?: string[];
+  activeTaxComponents?: string[];
+  implementingGovComponents?: string[];
+  implementingEconComponents?: string[];
+  implementingTaxComponents?: string[];
+
+  totalGovernmentSpending?: number | null;
+  taxRevenueGDPPercent?: number | null;
+  unemploymentRate?: number | null;
+  inflationRate?: number | null;
 }
 
 // Current country statistics (calculated)

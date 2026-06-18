@@ -7,6 +7,8 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notification-api";
 import { notificationHooks } from "~/lib/notification-hooks";
+import { ATOMIC_ECONOMIC_COMPONENTS, EconomicComponentType } from "~/lib/atomic-economic-data";
+import { calculateImplementationDate } from "~/lib/atomic-government-utils";
 
 const economicsBuilderRouter = createTRPCRouter({
   // ==================== ECONOMIC PROFILE ====================
@@ -284,25 +286,72 @@ const economicsBuilderRouter = createTRPCRouter({
           },
         });
 
-        // Delete all old economic components for the country
-        await tx.economicComponent.deleteMany({
+        // Get existing economic components
+        const existingComps = await tx.economicComponent.findMany({
+          where: { countryId },
+        });
+        const existingMap = new Map(existingComps.map(c => [c.componentType as string, c]));
+
+        const selectedTypes = economyBuilder.selectedAtomicComponents || [];
+        const keptIds: string[] = [];
+
+        // Fetch GovernmentStructure for budget check
+        const structure = await tx.governmentStructure.findUnique({
           where: { countryId },
         });
 
-        // Insert new ones
-        if (
-          economyBuilder.selectedAtomicComponents &&
-          economyBuilder.selectedAtomicComponents.length > 0
-        ) {
-          await tx.economicComponent.createMany({
-            data: economyBuilder.selectedAtomicComponents.map((cType) => ({
-              countryId,
-              componentType: cType as any,
-              effectivenessScore: 50,
-              isActive: true,
-            })),
-          });
+        for (const cType of selectedTypes) {
+          const existing = existingMap.get(cType);
+          if (existing) {
+            keptIds.push(existing.id);
+          } else {
+            // New component being purchased
+            const compData = ATOMIC_ECONOMIC_COMPONENTS[cType as EconomicComponentType];
+            if (compData) {
+              const cost = compData.implementationCost || 0;
+              if (structure) {
+                if (structure.totalBudget < cost) {
+                  throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Insufficient budget for economic component ${compData.name}. Required: ${cost}, Available: ${structure.totalBudget}`,
+                  });
+                }
+                // Decrement budget in GovernmentStructure
+                await tx.governmentStructure.update({
+                  where: { countryId },
+                  data: {
+                    totalBudget: { decrement: cost },
+                  },
+                });
+              }
+
+              // Calculate implementation date
+              const implementationDate = calculateImplementationDate(compData.metadata.timeToImplement);
+
+              const created = await tx.economicComponent.create({
+                data: {
+                  countryId,
+                  componentType: cType as any,
+                  effectivenessScore: 50,
+                  isActive: false, // starts implementing
+                  implementationCost: cost,
+                  maintenanceCost: compData.maintenanceCost || 0,
+                  requiredCapacity: compData.metadata.staffRequired || compData.requiredCapacity || 50,
+                  implementationDate,
+                },
+              });
+              keptIds.push(created.id);
+            }
+          }
         }
+
+        // Delete components that were not kept
+        await tx.economicComponent.deleteMany({
+          where: {
+            countryId,
+            id: { notIn: keptIds },
+          },
+        });
 
         // Update Country with comprehensive economy data
         const country = await tx.country.update({
