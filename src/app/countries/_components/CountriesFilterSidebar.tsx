@@ -84,14 +84,14 @@ export default function CountriesFilterSidebar({
       <div>
         <label className="text-muted-foreground mb-1 block text-xs font-medium">Search</label>
         <div className="relative flex items-center">
-          <Search className="text-muted-foreground pointer-events-none absolute left-3 h-4 w-4 z-10" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 z-10" />
           <Input
             type="text"
             placeholder="Search by country name..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="glass-input w-full pl-9 h-10"
-            autoComplete="new-password"
+            autoComplete="off"
           />
         </div>
       </div>

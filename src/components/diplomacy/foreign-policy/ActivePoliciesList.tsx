@@ -201,12 +201,14 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
                         <AlertDialogClose asChild>
                           <Button variant="outline">Cancel</Button>
                         </AlertDialogClose>
-                        <AlertDialogAction
-                          className={buttonVariants({ variant: "destructive" })}
-                          onClick={() => liftMutation.mutate({ actionId: policy.id })}
-                          disabled={liftMutation.isPending}
-                        >
-                          {liftMutation.isPending ? "Lifting..." : "Confirm Lift"}
+                        <AlertDialogAction asChild>
+                          <Button
+                            variant="destructive"
+                            onClick={() => liftMutation.mutate({ actionId: policy.id })}
+                            disabled={liftMutation.isPending}
+                          >
+                            {liftMutation.isPending ? "Lifting..." : "Confirm Lift"}
+                          </Button>
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

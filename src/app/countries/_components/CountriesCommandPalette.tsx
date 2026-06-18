@@ -108,7 +108,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
 
                 {/* Search */}
                 <div className="relative flex items-center">
-                  <RiSearchLine className="text-muted-foreground pointer-events-none absolute left-3 h-4 w-4 z-10" />
+                  <RiSearchLine className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 z-10" />
                   <input
                     ref={inputRef}
                     type="text"
@@ -116,7 +116,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                     value={searchInput}
                     onChange={(e) => onSearchChange(e.target.value)}
                     className="bg-muted/50 text-foreground placeholder:text-muted-foreground focus:ring-ring w-full rounded-lg border border-transparent py-2.5 pr-3 pl-10 text-sm transition-all focus:border-blue-400/50 focus:ring-1 focus:outline-none"
-                    autoComplete="new-password"
+                    autoComplete="off"
                   />
                 </div>
 

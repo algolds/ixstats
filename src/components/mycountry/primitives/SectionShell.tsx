@@ -5,7 +5,6 @@ import { MyCountrySidebarLayout } from "~/components/mycountry/MyCountrySidebarL
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
 import { useCountryData } from "./CountryDataProvider";
 import { OverviewHero } from "../OverviewHero";
-import { AgendaBar } from "../PillarCards";
 
 interface SectionShellProps {
   /** Which section this shell renders (defaults the active nav state). */
@@ -62,15 +61,6 @@ export function SectionShell({
       onNavigate={onNavigate}
       notifications={notifications}
     >
-      {/* Daily Agenda Bar — actionable national issues & tasks */}
-      {country?.id && onNavigate && (
-        <AgendaBar
-          countryId={country.id}
-          onNavigateAction={onNavigate}
-          activeSection={activeSection ?? section}
-        />
-      )}
-
       {children}
     </MyCountrySidebarLayout>
   );

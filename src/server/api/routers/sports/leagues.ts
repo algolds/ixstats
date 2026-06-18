@@ -1051,7 +1051,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         const prisma = ctx.db;
-        const userId = ctx.session.userId;
+        const userId = ctx.user.id;
 
         // Find a fallback country if none exists
         const firstCountry = await prisma.country.findFirst({ select: { id: true } });

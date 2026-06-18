@@ -232,7 +232,7 @@ export function MapDynamicIsland({
                   {user && totalUnread > 0 && (
                     <button
                       onClick={() =>
-                        router.push(messageUnreadCount > 0 ? "/messages" : "/notifications")
+                        router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                       }
                       className={cn(
                         "relative shrink-0 rounded-full p-1 transition-all duration-300",

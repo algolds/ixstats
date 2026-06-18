@@ -157,8 +157,9 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
   const simulateElection = api.elections.simulateElection.useMutation({
     onSuccess: () => {
       refetchElections();
-      utils.elections.getCurrentParliament.invalidate({ countryId });
-      utils.elections.getLegislature.invalidate({ countryId });
+      void utils.elections.getCurrentParliament.invalidate({ countryId });
+      void utils.elections.getLegislature.invalidate({ countryId });
+      void utils.elections.getParties.invalidate({ countryId });
     },
   });
 

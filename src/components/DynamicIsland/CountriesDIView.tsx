@@ -86,7 +86,7 @@ export function CountriesDIView({
 
         {/* Search */}
         <div className="relative flex items-center">
-          <RiSearchLine className="text-muted-foreground pointer-events-none absolute left-3 h-4 w-4 z-10" />
+          <RiSearchLine className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 z-10" />
           <input
             ref={inputRef}
             type="text"

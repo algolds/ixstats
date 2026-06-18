@@ -38,6 +38,7 @@ const ROUTE_TYPES = [
 // Zod enum in routeMutations.ts). All other ROUTE_TYPES are manual-draw only.
 const GENERATABLE_ROUTE_TYPES = [
   "rail", "highway", "road", "shipping_lane", "canal", "air_corridor", "ferry",
+  "pipeline", "power_grid", "fiber", "military_supply", "military_naval",
 ] as const;
 
 type SortKey = "name" | "length" | "type" | "status";

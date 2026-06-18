@@ -99,6 +99,7 @@ const CUSTOM_CURRENCIES: Record<string, CustomCurrency> = {
   Lira: { code: "Lira", symbol: "₤", name: "Lira", decimalPlaces: 2 },
   Peso: { code: "Peso", symbol: "₱", name: "Peso", decimalPlaces: 2 },
   Real: { code: "Real", symbol: "R$", name: "Real", decimalPlaces: 2 },
+  Aureus: { code: "Aureus", symbol: "₷", name: "Aureus", decimalPlaces: 2 },
 };
 
 const DYNAMIC_CUSTOM_CURRENCIES: Record<string, CustomCurrency> = {};
@@ -124,7 +125,19 @@ function isISOCurrency(currency: string): boolean {
  * Get custom currency configuration
  */
 function getCustomCurrency(currency: string): CustomCurrency | null {
-  return CUSTOM_CURRENCIES[currency] || DYNAMIC_CUSTOM_CURRENCIES[currency] || null;
+  if (!currency) return null;
+  const upper = currency.toUpperCase();
+  const customKey = Object.keys(CUSTOM_CURRENCIES).find(
+    (k) => k.toUpperCase() === upper
+  );
+  if (customKey) return CUSTOM_CURRENCIES[customKey] || null;
+
+  const dynamicKey = Object.keys(DYNAMIC_CUSTOM_CURRENCIES).find(
+    (k) => k.toUpperCase() === upper
+  );
+  if (dynamicKey) return DYNAMIC_CUSTOM_CURRENCIES[dynamicKey] || null;
+
+  return null;
 }
 
 /**
@@ -718,6 +731,9 @@ export function formatCompactCurrency(
       } else {
         return `${customCurrency.symbol}${value.toFixed(0)}`;
       }
+    } else {
+      // Fallback for unregistered custom currencies to avoid RangeError from Intl.NumberFormat
+      return `${currency} ${formatCompactNumber(value, fallback)}`;
     }
   }
 

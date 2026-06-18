@@ -44,6 +44,8 @@ capability integer. Each release entry below lists which components advanced and
   - Researched and integrated reasoning-capable AI commentary into match Details and Schedule views (Plans 065, 068).
 
 - **Full-Site Triage & Polish (Plans 069–083)**:
+  - Fixed maps DI notifications redirect link to route to the user's intelligence and alert center at `/mycountry/intelligence` instead of a non-existent `/notifications` route.
+  - Optimized the geography tab layout in MyCountry to dynamically replace the standard country hero banner with the interactive wireframe map when active, removing the redundant inline preview card.
   - Stopped maps "Generate Routes" form proposing manual-only route types (Plan 069).
   - Removed stray `//` comment rendering as text in Atomic Tax UI (Plan 070).
   - Verified and deployed dashboard stale-build Alerts fix (Plan 071).

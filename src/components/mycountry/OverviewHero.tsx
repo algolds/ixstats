@@ -19,6 +19,8 @@ import {
   Target,
   AlertTriangle,
   Landmark,
+  Mail,
+  Layers,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -32,8 +34,8 @@ import { Badge } from "~/components/ui/badge";
 import { usePremium } from "~/hooks/usePremium";
 import { useCountryData } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
+import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
-import { HealthRing } from "~/components/ui/health-ring";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -56,81 +58,6 @@ function normalizeGrowth(value: number | null | undefined): number {
   let v = value;
   while (Math.abs(v) > 50) v /= 100;
   return Math.min(20, Math.max(-20, v));
-}
-
-const indicatorColor = (label: string) => {
-  switch (label.toLowerCase()) {
-    case "exec":
-      return "#f59e0b"; // Amber
-    case "diplo":
-      return "#06b6d4"; // Cyan
-    case "pol":
-      return "#8b5cf6"; // Purple/Violet
-    case "intel":
-      return "#3b82f6"; // Blue
-    case "def":
-      return "#ef4444"; // Red
-    default:
-      return "#10b981"; // Green
-  }
-};
-
-const SECTION_MAP: Record<string, MyCountrySection> = {
-  Exec: "executive",
-  Diplo: "diplomacy",
-  Pol: "politics",
-  Intel: "intelligence",
-  Def: "defense",
-};
-
-const LABEL_NAMES: Record<string, string> = {
-  Exec: "Executive",
-  Diplo: "Diplomacy",
-  Pol: "Politics",
-  Intel: "Intelligence",
-  Def: "Defense",
-};
-
-function StatusIndicator({
-  icon: Icon,
-  label,
-  health,
-  onNavigate,
-}: {
-  icon: any;
-  label: string;
-  health: number;
-  onNavigate?: (section: MyCountrySection) => void;
-}) {
-  const status = health < 40 ? "critical" : health < 70 ? "warning" : "healthy";
-  const colorClass =
-    status === "critical"
-      ? "text-red-500 bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
-      : status === "warning"
-        ? "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20"
-        : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20";
-
-  const section = SECTION_MAP[label] || "overview";
-
-  return (
-    <button
-      type="button"
-      onClick={() => onNavigate?.(section)}
-      className={cn(
-        "flex flex-1 cursor-pointer flex-col items-center rounded-lg border px-1 py-1.5 text-center text-[9px] font-semibold transition-all hover:scale-105 active:scale-95",
-        colorClass
-      )}
-    >
-      <div className="relative mb-1 flex h-8 w-8 shrink-0 items-center justify-center">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <HealthRing value={health} size={32} color={indicatorColor(label)} hideValue={true} />
-        </div>
-        <Icon className="relative z-10 h-3 w-3 shrink-0" style={{ color: indicatorColor(label) }} />
-      </div>
-      <span className="font-bold tracking-tight">{LABEL_NAMES[label] || label}</span>
-      <span className="mt-0.5 text-[8px] opacity-80">{Math.round(health)}%</span>
-    </button>
-  );
 }
 
 export function OverviewHero({
@@ -179,20 +106,14 @@ export function OverviewHero({
     { countryId },
     { enabled: hasCountry }
   );
-  const { data: parliament } = api.elections.getCurrentParliament.useQuery(
-    { countryId },
-    { enabled: hasCountry }
-  );
+
   const { data: elections } = api.elections.getElections.useQuery(
     { countryId },
     { enabled: hasCountry }
   );
 
   // Intelligence (Premium)
-  const { data: defenseOverview } = api.security.getDefenseOverview.useQuery(
-    { countryId },
-    { enabled: hasCountry && isPremium }
-  );
+
   const { data: intelligenceOverview } = api.intelCore.getOverview.useQuery(
     { countryId },
     { enabled: hasCountry && isPremium }
@@ -241,26 +162,10 @@ export function OverviewHero({
 
   // ── Executive Derived Stats ──
   const activePolicies = policies?.filter((p) => p.status === "active").length ?? 0;
-  const activeMeetings =
-    meetings?.filter((m) => m.status === "in_progress" || m.status === "IN_PROGRESS").length ?? 0;
   const pActions =
     meetings
       ?.flatMap((m) => m.actionItems ?? [])
       .filter((a) => a.status === "pending" || a.status === "PENDING").length ?? 0;
-  const executiveHealth = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        50 +
-          Math.min(activePolicies * 4, 20) +
-          Math.min(activeMeetings * 5, 10) -
-          Math.min(issueCount * 3, 15) -
-          Math.min(urgentIssueCount * 5, 15) -
-          Math.min(pActions * 2, 10)
-      )
-    )
-  );
 
   // ── Diplomacy Derived Stats ──
   const activeEmbassies =
@@ -270,54 +175,13 @@ export function OverviewHero({
     totalRelations > 0
       ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
       : 0;
-  const totalEmbassies = embassies?.length ?? 0;
-  const embassyRatio = totalEmbassies > 0 ? activeEmbassies / totalEmbassies : 0;
-  const diplomaticHealth = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(avgStrength * 0.5 + embassyRatio * 30 + Math.min(totalRelations * 2, 20))
-    )
-  );
 
   // ── Politics Derived Stats ──
   const partyCount = parties?.length ?? 0;
   const totalSeats = legislature?.totalSeats ?? 0;
-  const filledSeats =
-    parliament?.partySummary?.reduce((sum: number, s: any) => sum + s.seats, 0) ?? 0;
-  const pendingElections =
-    elections?.filter(
-      (e: any) =>
-        e.status === "SCHEDULED" ||
-        e.status === "scheduled" ||
-        e.status === "IN_PROGRESS" ||
-        e.status === "in_progress"
-    ).length ?? 0;
-  const politicsHealth = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        50 +
-          Math.min(partyCount * 10, 30) +
-          (totalSeats > 0 ? Math.min((filledSeats / totalSeats) * 30, 30) : 0) -
-          (pendingElections > 0 ? 10 : 0)
-      )
-    )
-  );
 
   // ── Intelligence Derived Stats ──
   const critAlerts = intelligenceOverview?.alerts?.critical ?? 0;
-  const totalAlerts = intelligenceOverview?.alerts?.total ?? 0;
-  const otherAlerts = Math.max(totalAlerts - critAlerts, 0);
-  const defOverviewScore = defenseOverview?.overallScore ?? 50;
-  const intelligenceHealth = Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(defOverviewScore - Math.min(critAlerts * 10, 20) - Math.min(otherAlerts * 2, 10))
-    )
-  );
 
   // ── Defense Derived Stats ──
   const threats = securityData?.activeThreatCount ?? 0;
@@ -329,10 +193,219 @@ export function OverviewHero({
         )
       : 0;
   const securityScore = securityData?.overallSecurityScore ?? 50;
-  const defenseHealth = Math.max(
-    0,
-    Math.min(100, Math.round(securityScore * 0.6 + avgReadiness * 0.4))
-  );
+
+  // ── Daily Agenda States and Items ──
+  const { totalUnread: messageUnreadCount = 0 } = useMessageUnreadCount();
+  const [agendaViewMode, setAgendaViewMode] = useState<"widgets" | "stack">("widgets");
+  const [activeStackIndex, setActiveStackIndex] = useState(0);
+
+  const pendingElections =
+    elections?.filter(
+      (e: any) =>
+        e.status === "SCHEDULED" ||
+        e.status === "scheduled" ||
+        e.status === "IN_PROGRESS" ||
+        e.status === "in_progress"
+    ).length ?? 0;
+
+  const agendaItems = useMemo(() => {
+    const list: {
+      id: string;
+      label: string;
+      text: string;
+      section: MyCountrySection;
+      colorClass: string;
+      bgClass: string;
+      borderClass: string;
+      icon: any;
+      priority: number;
+    }[] = [];
+
+    // 1. Cabinet Issues (Urgent or Pending)
+    if (urgentIssueCount > 0) {
+      list.push({
+        id: "exec-urgent",
+        label: "Urgent Issues",
+        text: `${urgentIssueCount} urgent issue${urgentIssueCount !== 1 ? "s" : ""} require response`,
+        section: "executive",
+        colorClass: "text-red-500",
+        bgClass: "hover:bg-red-500/5",
+        borderClass: "border-red-500/40 text-red-500 bg-red-500/5 dark:bg-red-500/10",
+        icon: Crown,
+        priority: 1,
+      });
+    } else if (issueCount > 0) {
+      list.push({
+        id: "exec-pending",
+        label: "Cabinet Issues",
+        text: `${issueCount} pending issue${issueCount !== 1 ? "s" : ""} in cabinet`,
+        section: "executive",
+        colorClass: "text-amber-500",
+        bgClass: "hover:bg-amber-500/5",
+        borderClass: "border-amber-500/40 text-amber-500 bg-amber-500/5 dark:bg-amber-500/10",
+        icon: Crown,
+        priority: 2,
+      });
+    }
+
+    // 2. Active Policies Setup
+    if (policies && policies.length > 0 && activePolicies < policies.length) {
+      const inactive = policies.length - activePolicies;
+      list.push({
+        id: "exec-policies",
+        label: "Policy Setup",
+        text: `${inactive} draft/inactive polic${inactive !== 1 ? "ies" : "y"} pending`,
+        section: "executive",
+        colorClass: "text-emerald-500",
+        bgClass: "hover:bg-emerald-500/5",
+        borderClass:
+          "border-emerald-500/40 text-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10",
+        icon: Landmark,
+        priority: 3,
+      });
+    }
+
+    // 3. Meeting Action Items
+    if (pActions > 0) {
+      list.push({
+        id: "exec-actions",
+        label: "Meeting Actions",
+        text: `${pActions} action item${pActions !== 1 ? "s" : ""} pending`,
+        section: "executive",
+        colorClass: "text-orange-500",
+        bgClass: "hover:bg-orange-500/5",
+        borderClass: "border-orange-500/40 text-orange-500 bg-orange-500/5 dark:bg-orange-500/10",
+        icon: Layers,
+        priority: 2,
+      });
+    }
+
+    // 4. Unread Messages
+    if (messageUnreadCount > 0) {
+      list.push({
+        id: "diplo-unread-messages",
+        label: "Unread Messages",
+        text: `${messageUnreadCount} unread message${messageUnreadCount !== 1 ? "s" : ""} in inbox`,
+        section: "diplomacy",
+        colorClass: "text-blue-500",
+        bgClass: "hover:bg-blue-500/5",
+        borderClass: "border-blue-500/40 text-blue-500 bg-blue-500/5 dark:bg-blue-500/10",
+        icon: Mail,
+        priority: 2,
+      });
+    }
+
+    // 5. Defense Threats / Assessment
+    if (threats > 0) {
+      list.push({
+        id: "def-threats",
+        label: "Security Threats",
+        text: `${threats} active threat${threats !== 1 ? "s" : ""} detected`,
+        section: "defense",
+        colorClass: "text-red-500",
+        bgClass: "hover:bg-red-500/5",
+        borderClass: "border-red-500/40 text-red-500 bg-red-500/5 dark:bg-red-500/10",
+        icon: Shield,
+        priority: 1,
+      });
+    } else if (securityScore < 60) {
+      list.push({
+        id: "def-low-score",
+        label: "Defense Readiness",
+        text: `Defense Readiness Score is low: ${securityScore}/100`,
+        section: "defense",
+        colorClass: "text-amber-500",
+        bgClass: "hover:bg-amber-500/5",
+        borderClass: "border-amber-500/40 text-amber-500 bg-amber-500/5 dark:bg-amber-500/10",
+        icon: Shield,
+        priority: 2,
+      });
+    }
+
+    // 6. Intelligence Security Alerts
+    if (critAlerts > 0) {
+      list.push({
+        id: "intel-critical",
+        label: "Intel Security",
+        text: `${critAlerts} critical intelligence alert${critAlerts !== 1 ? "s" : ""}`,
+        section: "intelligence",
+        colorClass: "text-red-500",
+        bgClass: "hover:bg-red-500/5",
+        borderClass: "border-red-500/40 text-red-500 bg-red-500/5 dark:bg-red-500/10",
+        icon: Brain,
+        priority: 1,
+      });
+    }
+
+    // 7. Elections
+    if (pendingElections > 0) {
+      list.push({
+        id: "pol-elections",
+        label: "Elections",
+        text: `${pendingElections} active/scheduled election${pendingElections !== 1 ? "s" : ""}`,
+        section: "politics",
+        colorClass: "text-purple-500",
+        bgClass: "hover:bg-purple-500/5",
+        borderClass: "border-purple-500/40 text-purple-500 bg-purple-500/5 dark:bg-purple-500/10",
+        icon: Vote,
+        priority: 3,
+      });
+    }
+
+    // 8. Embassies Setup
+    if (activeEmbassies === 0 && embassies?.length === 0) {
+      list.push({
+        id: "diplo-no-emb",
+        label: "Diplomatic Embassies",
+        text: "Establish your first embassy",
+        section: "diplomacy",
+        colorClass: "text-cyan-500",
+        bgClass: "hover:bg-cyan-500/5",
+        borderClass: "border-cyan-500/40 text-cyan-500 bg-cyan-500/5 dark:bg-cyan-500/10",
+        icon: Handshake,
+        priority: 3,
+      });
+    }
+
+    return list;
+  }, [
+    urgentIssueCount,
+    issueCount,
+    policies,
+    activePolicies,
+    pActions,
+    messageUnreadCount,
+    threats,
+    securityScore,
+    critAlerts,
+    pendingElections,
+    activeEmbassies,
+    embassies,
+  ]);
+
+  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const months = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+  ];
+  const today = useMemo(() => new Date(), []);
+
+  const nextEventText = useMemo(() => {
+    if (pendingElections > 0) return "Election Pending";
+    if (meetings?.some((m) => m.status?.toLowerCase() === "scheduled")) return "Cabinet Meet";
+    if (pActions > 0) return "Action Items";
+    return "All Clear";
+  }, [pendingElections, meetings, pActions]);
 
   // ── Dynamic Alerts List ──
   const alertsList = useMemo(() => {
@@ -540,6 +613,11 @@ export function OverviewHero({
             onClick={() => onCollapsedChange(false)}
             className="text-muted-foreground hover:bg-muted/30 border-border/40 flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
           >
+            {agendaItems.length > 0 && (
+              <span className="flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-black">
+                {agendaItems.length}
+              </span>
+            )}
             <span>Expand Overview</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0" />
           </button>
@@ -580,10 +658,11 @@ export function OverviewHero({
       </button>
 
       <div className="relative z-10 grid gap-4 p-4 pt-3 md:grid-cols-5">
-        <div className="border-border/30 overflow-hidden rounded-xl border md:col-span-3 h-[250px] md:h-full md:min-h-[300px]">
+        <div className="border-border/30 h-[250px] overflow-hidden rounded-xl border md:col-span-3 md:h-full md:min-h-[300px] flex flex-col">
           <CountryMapEmbed
             countryId={countryId}
             height="h-full"
+            className="w-full flex-1"
             showNeighbors={true}
             showCities={true}
             interactive={true}
@@ -618,9 +697,24 @@ export function OverviewHero({
                     Overview
                   </span>
                 </div>
-                <div className="flex items-center gap-1 rounded border border-emerald-500/10 bg-emerald-500/5 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400/90">
-                  <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
-                  <span>ONLINE</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      setAgendaViewMode((v) => (v === "widgets" ? "stack" : "widgets"))
+                    }
+                    title={
+                      agendaViewMode === "widgets"
+                        ? "Switch to Smart Stack"
+                        : "Switch to Split Widgets"
+                    }
+                    className="text-muted-foreground hover:text-foreground rounded border border-white/5 p-1 transition-all hover:bg-white/5 active:scale-95"
+                  >
+                    <Layers className="h-3 w-3" />
+                  </button>
+                  <div className="flex items-center gap-1 rounded border border-emerald-500/10 bg-emerald-500/5 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400/90">
+                    <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
+                    <span>ONLINE</span>
+                  </div>
                 </div>
               </div>
 
@@ -660,41 +754,149 @@ export function OverviewHero({
                 </div>
               </div>
 
-              {/* Status Row */}
-              <div className="mt-1.5 mb-3 flex justify-between gap-1.5">
-                <StatusIndicator
-                  icon={Crown}
-                  label="Exec"
-                  health={executiveHealth}
-                  onNavigate={onNavigate}
-                />
-                <StatusIndicator
-                  icon={Users}
-                  label="Diplo"
-                  health={diplomaticHealth}
-                  onNavigate={onNavigate}
-                />
-                <StatusIndicator
-                  icon={Vote}
-                  label="Pol"
-                  health={politicsHealth}
-                  onNavigate={onNavigate}
-                />
-                {isPremium && (
-                  <>
-                    <StatusIndicator
-                      icon={Brain}
-                      label="Intel"
-                      health={intelligenceHealth}
-                      onNavigate={onNavigate}
-                    />
-                    <StatusIndicator
-                      icon={Shield}
-                      label="Def"
-                      health={defenseHealth}
-                      onNavigate={onNavigate}
-                    />
-                  </>
+              {/* Apple-style Daily Agenda Widget */}
+              <div className="mt-2 mb-3">
+                {agendaViewMode === "widgets" ? (
+                  <div className="grid h-[105px] grid-cols-5 gap-2.5">
+                    {/* Left Column: iOS Calendar widget */}
+                    <div className="col-span-2 flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] shadow-inner backdrop-blur-md select-none">
+                      <div className="bg-red-500 px-1 py-0.5 text-center text-[8px] leading-none font-extrabold tracking-widest text-white uppercase">
+                        {months[today.getMonth()]}
+                      </div>
+                      <div className="flex flex-grow flex-col items-center justify-center p-1">
+                        <span className="text-[8px] leading-none font-bold tracking-wider text-red-500 uppercase">
+                          {days[today.getDay()]}
+                        </span>
+                        <span className="text-foreground mt-0.5 text-xl leading-none font-black tracking-tighter">
+                          {today.getDate()}
+                        </span>
+                        <span className="text-muted-foreground/60 mt-1 max-w-full truncate px-1 text-center text-[7px] font-semibold tracking-tight uppercase">
+                          Up Next: {nextEventText}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right Column: iOS Reminders widget */}
+                    <div className="col-span-3 flex h-full flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-2">
+                      <div className="text-muted-foreground/60 mb-1 flex items-center justify-between text-[8px] font-extrabold tracking-wider uppercase">
+                        <span>Reminders</span>
+                        <span className="text-foreground/80 rounded-full bg-white/10 px-1 text-[7px] font-bold">
+                          {agendaItems.length}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 scrollbar-thin space-y-1 overflow-y-auto pr-0.5">
+                        {agendaItems.length > 0 ? (
+                          agendaItems.slice(0, 3).map((item) => {
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={() => onNavigate?.(item.section)}
+                                className="group text-foreground/80 hover:text-foreground flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[9px] font-medium transition-colors hover:bg-white/[0.05] active:scale-[0.98]"
+                              >
+                                <div
+                                  className={cn(
+                                    "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border transition-all",
+                                    item.borderClass
+                                  )}
+                                >
+                                  <Check className="h-2 w-2 scale-0 transition-transform group-hover:scale-100" />
+                                </div>
+                                <span className="flex-1 truncate">{item.text}</span>
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center p-1 text-center text-emerald-500/80">
+                            <Check className="mb-0.5 h-4 w-4" />
+                            <span className="text-[8px] font-medium">All Tasks Complete</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // SMART STACK VIEW
+                  <div className="relative flex h-[105px] w-full items-center justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-2.5 backdrop-blur-md">
+                    {agendaItems.length > 0 ? (
+                      (() => {
+                        const currentStackItem = agendaItems[activeStackIndex] ?? agendaItems[0];
+                        if (!currentStackItem) return null;
+                        const ItemIcon = currentStackItem.icon;
+                        return (
+                          <div className="flex w-full items-center gap-3">
+                            <div
+                              className={cn(
+                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
+                                currentStackItem.borderClass
+                              )}
+                            >
+                              <ItemIcon className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0 flex-1 pr-6">
+                              <span className="text-muted-foreground/60 text-[8px] font-bold tracking-wider uppercase">
+                                {currentStackItem.label}
+                              </span>
+                              <p className="text-foreground mt-0.5 truncate text-[10px] leading-tight font-semibold">
+                                {currentStackItem.text}
+                              </p>
+                              <button
+                                onClick={() => onNavigate?.(currentStackItem.section)}
+                                className="mt-1 flex items-center gap-0.5 text-[8px] font-bold text-amber-500 hover:text-amber-400 hover:underline"
+                              >
+                                Resolve Task <ChevronRight className="h-2.5 w-2.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div className="flex w-full flex-col items-center justify-center py-2 text-center text-emerald-500">
+                        <Check className="mb-1 h-5 w-5" />
+                        <span className="text-[10px] font-bold">
+                          All sectors operating normally
+                        </span>
+                        <p className="text-muted-foreground/60 mt-0.5 text-[8px]">
+                          Your daily agenda is completely clear.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Pagination for Smart Stack */}
+                    {agendaItems.length > 1 && (
+                      <div className="absolute top-0 right-2 bottom-0 z-20 flex flex-col justify-center gap-1">
+                        <button
+                          onClick={() =>
+                            setActiveStackIndex(
+                              (prev) => (prev - 1 + agendaItems.length) % agendaItems.length
+                            )
+                          }
+                          className="text-muted-foreground/50 hover:text-foreground/80 p-0.5 transition-colors active:scale-90"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                        </button>
+                        <div className="my-0.5 flex flex-col items-center gap-1">
+                          {agendaItems.map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={cn(
+                                "h-1 w-1 rounded-full transition-all duration-300",
+                                idx === activeStackIndex ? "scale-125 bg-amber-500" : "bg-white/20"
+                              )}
+                            />
+                          ))}
+                        </div>
+                        <button
+                          onClick={() =>
+                            setActiveStackIndex((prev) => (prev + 1) % agendaItems.length)
+                          }
+                          className="text-muted-foreground/50 hover:text-foreground/80 p-0.5 transition-colors active:scale-90"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 

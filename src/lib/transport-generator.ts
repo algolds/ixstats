@@ -19,7 +19,12 @@ export type RouteType =
   | "shipping_lane"
   | "canal"
   | "air_corridor"
-  | "ferry";
+  | "ferry"
+  | "pipeline"
+  | "power_grid"
+  | "fiber"
+  | "military_supply"
+  | "military_naval";
 
 export interface CityNode {
   id: string;
@@ -110,6 +115,41 @@ const ROUTE_CONFIGS: Record<
     maxElevation: 0,
     maxGrade: 0,
     waterCost: 0.3,
+    elevationCostFactor: 0,
+    baseSpeed: 40,
+  },
+  pipeline: {
+    maxElevation: 4000,
+    maxGrade: 20,
+    waterCost: Infinity,
+    elevationCostFactor: 1.5,
+    baseSpeed: 10,
+  },
+  power_grid: {
+    maxElevation: 5000,
+    maxGrade: 30,
+    waterCost: Infinity,
+    elevationCostFactor: 1.0,
+    baseSpeed: 300000,
+  },
+  fiber: {
+    maxElevation: 5000,
+    maxGrade: 30,
+    waterCost: Infinity,
+    elevationCostFactor: 1.0,
+    baseSpeed: 200000,
+  },
+  military_supply: {
+    maxElevation: 4000,
+    maxGrade: 15,
+    waterCost: Infinity,
+    elevationCostFactor: 2.0,
+    baseSpeed: 80,
+  },
+  military_naval: {
+    maxElevation: 0,
+    maxGrade: 0,
+    waterCost: 0.5,
     elevationCostFactor: 0,
     baseSpeed: 40,
   },
@@ -322,57 +362,80 @@ export function generateTransportNetwork(
   const routes: GeneratedRoute[] = [];
 
   // Build MST for land routes
-  if (routeTypes.some((t) => t !== "shipping_lane")) {
+  const nonLandTypes = ["shipping_lane", "ferry", "air_corridor", "military_naval"];
+  const landTypesRequested = routeTypes.filter((t) => !nonLandTypes.includes(t));
+
+  if (landTypesRequested.length > 0) {
     const mstEdges = buildMST(sorted);
 
     for (const edge of mstEdges) {
       const from = sorted[edge.from]!;
       const to = sorted[edge.to]!;
       const dist = haversineKm(from.coordinates, to.coordinates);
-
-      // Classify route type by importance
       const combinedPop = from.population + to.population;
-      let routeType: RouteType;
+
+      // Classify standard transport route type by importance
+      let transportType: RouteType;
       if (combinedPop > 5_000_000 || from.isCapital || to.isCapital) {
-        routeType = "rail";
+        transportType = "rail";
       } else if (combinedPop > 1_000_000 || dist > 200) {
-        routeType = "highway";
+        transportType = "highway";
       } else {
-        routeType = "road";
+        transportType = "road";
       }
 
-      // Skip if this route type wasn't requested
-      if (!routeTypes.includes(routeType)) continue;
+      // Collect all land route types we should generate for this edge
+      const typesToGenerate = new Set<RouteType>();
+      if (routeTypes.includes(transportType)) {
+        typesToGenerate.add(transportType);
+      }
+      for (const t of ["pipeline", "power_grid", "fiber", "military_supply"] as RouteType[]) {
+        if (routeTypes.includes(t)) {
+          typesToGenerate.add(t);
+        }
+      }
 
-      // Generate route geometry
-      const pointCount = Math.max(10, Math.round(dist / 20));
-      let coords = generateDirectRoute(from, to, pointCount);
-      coords = deflectForTerrain(coords, elevationGrid, gridResolution, countryBbox, routeType);
+      for (const t of typesToGenerate) {
+        // Generate route geometry
+        const pointCount = Math.max(10, Math.round(dist / 20));
+        let coords = generateDirectRoute(from, to, pointCount);
+        coords = deflectForTerrain(coords, elevationGrid, gridResolution, countryBbox, t);
 
-      // Compute terrain difficulty from elevation variance along route
-      const difficulty = computeTerrainDifficulty(
-        coords,
-        elevationGrid,
-        gridResolution,
-        countryBbox
-      );
+        // Compute terrain difficulty from elevation variance along route
+        const difficulty = computeTerrainDifficulty(
+          coords,
+          elevationGrid,
+          gridResolution,
+          countryBbox
+        );
 
-      routes.push({
-        routeType,
-        name: `${from.name}–${to.name} ${routeType === "rail" ? "Railway" : routeType === "highway" ? "Highway" : "Road"}`,
-        geometry: { type: "LineString", coordinates: coords },
-        stops: [
-          { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
-          { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
-        ],
-        terrainDifficulty: difficulty,
-        lengthKm: Math.round(dist * 1.15), // 15% longer than straight-line due to terrain
-        isInternational: false,
-        properties: {
-          speed_kmh: ROUTE_CONFIGS[routeType].baseSpeed,
-          combinedPopulation: combinedPop,
-        },
-      });
+        let typeLabel = "";
+        if (t === "rail") typeLabel = "Railway";
+        else if (t === "highway") typeLabel = "Highway";
+        else if (t === "road") typeLabel = "Road";
+        else if (t === "pipeline") typeLabel = "Pipeline";
+        else if (t === "power_grid") typeLabel = "Power Grid";
+        else if (t === "fiber") typeLabel = "Fiber Link";
+        else if (t === "military_supply") typeLabel = "Military Supply Route";
+        else typeLabel = t;
+
+        routes.push({
+          routeType: t,
+          name: `${from.name}–${to.name} ${typeLabel}`,
+          geometry: { type: "LineString", coordinates: coords },
+          stops: [
+            { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
+            { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
+          ],
+          terrainDifficulty: difficulty,
+          lengthKm: Math.round(dist * 1.15), // 15% longer than straight-line due to terrain
+          isInternational: false,
+          properties: {
+            speed_kmh: ROUTE_CONFIGS[t].baseSpeed,
+            combinedPopulation: combinedPop,
+          },
+        });
+      }
     }
   }
 
@@ -398,6 +461,32 @@ export function generateTransportNetwork(
           lengthKm: Math.round(dist),
           isInternational: false,
           properties: { speed_kmh: 30 },
+        });
+      }
+    }
+  }
+
+  // Military naval routes between coastal cities (similar to shipping lanes)
+  if (routeTypes.includes("military_naval")) {
+    const coastalCities = sorted.filter((c) => c.isCoastal);
+    if (coastalCities.length >= 2) {
+      for (let i = 0; i < coastalCities.length - 1; i++) {
+        const from = coastalCities[i]!;
+        const to = coastalCities[i + 1]!;
+        const dist = haversineKm(from.coordinates, to.coordinates);
+
+        routes.push({
+          routeType: "military_naval",
+          name: `${from.name}–${to.name} Naval Route`,
+          geometry: { type: "LineString", coordinates: generateDirectRoute(from, to, 15) },
+          stops: [
+            { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
+            { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
+          ],
+          terrainDifficulty: 0.1,
+          lengthKm: Math.round(dist),
+          isInternational: false,
+          properties: { speed_kmh: 40 },
         });
       }
     }

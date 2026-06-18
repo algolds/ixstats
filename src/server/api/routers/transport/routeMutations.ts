@@ -138,7 +138,20 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         countryId: z.string(),
         routeTypes: z
           .array(
-            z.enum(["rail", "highway", "road", "shipping_lane", "canal", "air_corridor", "ferry"])
+            z.enum([
+              "rail",
+              "highway",
+              "road",
+              "shipping_lane",
+              "canal",
+              "air_corridor",
+              "ferry",
+              "pipeline",
+              "power_grid",
+              "fiber",
+              "military_supply",
+              "military_naval",
+            ])
           )
           .default(["rail", "highway"]),
         clearExisting: z.boolean().default(false),

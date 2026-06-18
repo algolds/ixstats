@@ -3,7 +3,7 @@
 import React from "react";
 import { DollarSign, TrendingUp, Building2, Users, Crown, Globe, Landmark } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { cn } from "~/lib/utils";
+import { cn, toTitleCase } from "~/lib/utils";
 
 // ── Economic Tier Config — solid colors, no gradients ──
 
@@ -376,7 +376,7 @@ export function LocationBadge({ type, value, className }: LocationBadgeProps) {
       )}
     >
       <Landmark className="h-2.5 w-2.5 text-indigo-400" />
-      {value}
+      {toTitleCase(value)}
     </span>
   );
 }

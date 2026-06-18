@@ -652,7 +652,61 @@ function DashboardHero({
 
             <div className="min-h-[48px]">{renderSectionContent()}</div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px] mt-1.5">
+              {vaultData && (
+                <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-400">
+                  <Wallet className="h-3 w-3 shrink-0" />
+                  <UnifiedCountryFlag
+                    showTooltip={false}
+                    countryName={stats.countryName}
+                    size="sm"
+                    className="mr-0.5 h-3.5 w-auto shrink-0 rounded-sm border border-white/10"
+                  />
+                  {vaultData.credits.toLocaleString()}
+                  <Flame className="ml-0.5 h-2.5 w-2.5 shrink-0" />
+                  {vaultData.loginStreak}d
+                </span>
+              )}
+              {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
+              {stats.governmentType && (
+                <LocationBadge type="government" value={toTitleCase(stats.governmentType)} />
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-1">
+              {HERO_NAV.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.label;
+                const colors = SECTION_THEME_CLASSES[item.label] ?? {};
+                return (
+                  <button
+                    key={item.label}
+                    onMouseEnter={() => handlePillHover(item.label)}
+                    onMouseLeave={handlePillLeave}
+                    onClick={() => handlePillClick(item.label)}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[9px] transition-all",
+                      isActive
+                        ? cn("font-semibold", colors.bg, colors.text)
+                        : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {item.label}
+                  </button>
+                );
+              })}
+              <Link
+                href={createUrl("/mycountry")}
+                className="text-muted-foreground hover:text-foreground ml-auto flex items-center gap-0.5 text-[9px] transition-colors"
+              >
+                Go to MyCountry →
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
               {econTier && <EconomicTierBadge tier={econTier} />}
               {popTier && <PopulationTierBadge tier={popTier} />}
               {gdpRank && (
@@ -661,58 +715,6 @@ function DashboardHero({
                 </span>
               )}
             </div>
-          </div>
-
-          <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px]">
-            {vaultData && (
-              <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-400">
-                <Wallet className="h-3 w-3 shrink-0" />
-                <UnifiedCountryFlag
-                  showTooltip={false}
-                  countryName={stats.countryName}
-                  size="sm"
-                  className="mr-0.5 h-3.5 w-auto shrink-0 rounded-sm border border-white/10"
-                />
-                {vaultData.credits.toLocaleString()}
-                <Flame className="ml-0.5 h-2.5 w-2.5 shrink-0" />
-                {vaultData.loginStreak}d
-              </span>
-            )}
-            {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
-            {stats.governmentType && (
-              <LocationBadge type="government" value={toTitleCase(stats.governmentType)} />
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1">
-            {HERO_NAV.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.label;
-              const colors = SECTION_THEME_CLASSES[item.label] ?? {};
-              return (
-                <button
-                  key={item.label}
-                  onMouseEnter={() => handlePillHover(item.label)}
-                  onMouseLeave={handlePillLeave}
-                  onClick={() => handlePillClick(item.label)}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[9px] transition-all",
-                    isActive
-                      ? cn("font-semibold", colors.bg, colors.text)
-                      : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
-                  )}
-                >
-                  <Icon className="h-3 w-3" />
-                  {item.label}
-                </button>
-              );
-            })}
-            <Link
-              href={createUrl("/mycountry")}
-              className="text-muted-foreground hover:text-foreground ml-auto flex items-center gap-0.5 text-[9px] transition-colors"
-            >
-              Go to MyCountry →
-            </Link>
           </div>
         </div>
       </div>
