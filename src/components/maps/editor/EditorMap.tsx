@@ -221,8 +221,21 @@ const EditorMap = memo(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
       const newStyle = buildBaseStyle(theme);
+      
+      setIsLoaded(false);
       map.setStyle(newStyle as any, { diff: true });
-    }, [theme, isLoaded]);
+      
+      const onStyleLoad = () => {
+        setIsLoaded(true);
+      };
+      
+      map.once("style.load", onStyleLoad);
+      
+      return () => {
+        map.off("style.load", onStyleLoad);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [theme]);
 
     // ── Initialize map ──
     useEffect(() => {

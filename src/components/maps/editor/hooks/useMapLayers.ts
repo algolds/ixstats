@@ -76,9 +76,9 @@ export function useMapLayers({
     for (const layer of sorted) {
       if (layer.type === "political") continue;
 
-      const sourceId = `editor-ctx-${layer.type}`;
-      const fillLayerId = `editor-ctx-fill-${layer.type}`;
-      const strokeLayerId = `editor-ctx-stroke-${layer.type}`;
+      const sourceId = `source-${layer.type}`;
+      const fillLayerId = `fill-${layer.type}`;
+      const strokeLayerId = `stroke-${layer.type}`;
       const config = LAYER_CONFIGS[layer.type];
       if (!config) continue;
 
@@ -165,8 +165,8 @@ export function useMapLayers({
       if (type === "political") continue;
       const activeLayer = worldMapLayers.find((l) => l.type === type);
       const isVisible = activeLayer ? activeLayer.visible : false;
-      const fillLayerId = `editor-ctx-fill-${type}`;
-      const strokeLayerId = `editor-ctx-stroke-${type}`;
+      const fillLayerId = `fill-${type}`;
+      const strokeLayerId = `stroke-${type}`;
       const config = LAYER_CONFIGS[type];
       if (!config) continue;
 
@@ -176,7 +176,16 @@ export function useMapLayers({
         }
       } else if (config.type === "fill") {
         if (map.getLayer(fillLayerId)) {
-          map.setPaintProperty(fillLayerId, "fill-opacity", isVisible ? config.fillOpacity : 0);
+          if (type === "altitudes") {
+            const politicalVisible = worldMapLayers.some((l) => l.type === "political" && l.visible);
+            map.setPaintProperty(
+              fillLayerId,
+              "fill-opacity",
+              isVisible ? (politicalVisible ? config.fillOpacity : 1.0) : 0
+            );
+          } else {
+            map.setPaintProperty(fillLayerId, "fill-opacity", isVisible ? config.fillOpacity : 0);
+          }
         }
         if (map.getLayer(strokeLayerId)) {
           map.setPaintProperty(strokeLayerId, "line-opacity", isVisible ? 0.8 : 0);
