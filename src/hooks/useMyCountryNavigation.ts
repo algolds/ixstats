@@ -48,8 +48,12 @@ export function useMyCountryNavigation(): UseMyCountryNavigationResult {
     const newIndex = TAB_ORDER.indexOf(newTab);
     setTabDirection(newIndex > oldIndex ? 1 : -1);
     setActiveTab(newTab);
-    // Update URL hash
+    // Update URL hash. replaceState does NOT emit a hashchange event, so other
+    // instances of this hook (each holds its own local state) would never learn
+    // the tab changed — e.g. the EnhancedMyCountryContent hero that swaps to the
+    // geography wireframe. Dispatch hashchange manually to keep all consumers in sync.
     window.history.replaceState(null, "", "#" + newTab);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
   };
 
   // Handle URL hash navigation

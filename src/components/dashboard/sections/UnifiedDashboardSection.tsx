@@ -184,6 +184,7 @@ export function UnifiedDashboardSection({
                 tone="accent"
                 size="md"
                 className="flex-1"
+                indicatorClassName="rounded-xl"
               />
               {/* Settings gear */}
               {isSignedIn && (

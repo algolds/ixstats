@@ -24,6 +24,7 @@ export function FacetTabs({
   tone = "accent",
   springPreset = "fluid",
   className,
+  indicatorClassName,
 }: FacetTabsProps) {
   const metrics = sizeClasses[size];
   const { bounds, containerRef } = useTabBounds(tabs);
@@ -139,7 +140,8 @@ export function FacetTabs({
                   .split(" ")
                   .map((c) => `dark:${c}`)
                   .join(" ")
-              )
+              ),
+            indicatorClassName
           )}
         >
           {/* Frosted Satin Sheen Overlay (follows pointer relative to indicator bounds) */}

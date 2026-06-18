@@ -39,6 +39,7 @@ import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import * as LucideIcons from "lucide-react";
 import { useUser } from "~/context/auth-context";
+import { usePremium } from "~/hooks/usePremium";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 // eslint-disable-next-line unused-imports/no-unused-imports
@@ -128,6 +129,60 @@ function StatPill({
   );
 }
 
+function MiniBar({
+  value,
+  max = 100,
+  color = "bg-amber-500",
+}: {
+  value: number;
+  max?: number;
+  color?: string;
+}) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  return (
+    <div className="h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+      <div className={cn("h-full rounded-full", color)} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+function IndicatorRow({
+  label,
+  value,
+  valueClass = "text-foreground",
+  barValue,
+  barMax = 100,
+  barColor = "bg-amber-500",
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+  barValue?: number;
+  barMax?: number;
+  barColor?: string;
+}) {
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center justify-between gap-2 text-[9px]">
+        <span className="text-muted-foreground/70 truncate">{label}</span>
+        <span className={cn("shrink-0 font-bold", valueClass)}>{value}</span>
+      </div>
+      {barValue != null && <MiniBar value={barValue} max={barMax} color={barColor} />}
+    </div>
+  );
+}
+
+function DetailList({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="mt-1.5 flex min-h-0 flex-1 flex-col gap-1 rounded-lg bg-white/[0.02] p-2">
+      <p className="text-muted-foreground/50 text-[8px] font-semibold tracking-wider uppercase">
+        {title}
+      </p>
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-1.5">{children}</div>
+    </div>
+  );
+}
+
 function DashboardHero({
   // eslint-disable-next-line unused-imports/no-unused-vars
   collapsed,
@@ -137,6 +192,11 @@ function DashboardHero({
   onCollapsedChange: (v: boolean) => void;
 }) {
   const { user, isSignedIn } = useUser();
+  // Intelligence & Defense are MyCountry-premium only
+  const { isPremium } = usePremium();
+  const visibleNav = isPremium
+    ? HERO_NAV
+    : HERO_NAV.filter((i) => i.section !== "Intelligence" && i.section !== "Defense");
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
   const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
   const [activeSection, setActiveSection] = useState<HeroSection>("Overview");
@@ -220,13 +280,9 @@ function DashboardHero({
       const elapsed = Date.now() - lastInteractionRef.current;
       if (elapsed >= 60_000) {
         setActiveSection((prev) => {
-          const sections: HeroSection[] = [
-            "Overview",
-            "Executive",
-            "Diplomacy",
-            "Intelligence",
-            "Defense",
-          ];
+          const sections: HeroSection[] = isPremium
+            ? ["Overview", "Executive", "Diplomacy", "Intelligence", "Defense"]
+            : ["Overview", "Executive", "Diplomacy"];
           const idx = sections.indexOf(prev);
           return sections[(idx + 1) % sections.length]!;
         });
@@ -235,7 +291,7 @@ function DashboardHero({
     return () => {
       if (autoCycleRef.current) clearInterval(autoCycleRef.current);
     };
-  }, []);
+  }, [isPremium]);
 
   const handlePillHover = useCallback(
     (label: HeroSection) => {
@@ -295,6 +351,7 @@ function DashboardHero({
       <AnimatePresence mode="wait">
         <motion.div
           key={activeSection}
+          className="h-full"
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
@@ -303,8 +360,8 @@ function DashboardHero({
           {activeSection === "Overview" && renderOverviewSnapshot()}
           {activeSection === "Executive" && renderExecutiveSnapshot()}
           {activeSection === "Diplomacy" && renderDiplomacySnapshot()}
-          {activeSection === "Intelligence" && renderIntelligenceSnapshot()}
-          {activeSection === "Defense" && renderDefenseSnapshot()}
+          {activeSection === "Intelligence" && isPremium && renderIntelligenceSnapshot()}
+          {activeSection === "Defense" && isPremium && renderDefenseSnapshot()}
         </motion.div>
       </AnimatePresence>
     );
@@ -312,7 +369,8 @@ function DashboardHero({
 
   // ── Overview: At a Glance (toggleable) ──
   const renderOverviewSnapshot = () => (
-    <Tooltip>
+    <div className="flex h-full flex-col">
+      <Tooltip>
       <TooltipTrigger asChild>
         <div className="grid grid-cols-3 gap-1.5 py-1">
           <button
@@ -405,7 +463,7 @@ function DashboardHero({
                   )}
                 >
                   {stats.gdpGrowth > 0 ? "+" : ""}
-                  {stats.gdpGrowth.toFixed(1)}%
+                  {stats.gdpGrowth.toFixed(2)}%
                 </span>
               </p>
             )}
@@ -419,14 +477,43 @@ function DashboardHero({
                   )}
                 >
                   {stats.popGrowth > 0 ? "+" : ""}
-                  {stats.popGrowth.toFixed(1)}%
+                  {stats.popGrowth.toFixed(2)}%
                 </span>
               </p>
             )}
           </div>
         </div>
       </TooltipContent>
-    </Tooltip>
+      </Tooltip>
+      <DetailList title="Momentum & Standing">
+        <IndicatorRow
+          label="GDP Growth"
+          value={`${stats.gdpGrowth >= 0 ? "+" : ""}${stats.gdpGrowth.toFixed(2)}%`}
+          valueClass={stats.gdpGrowth >= 0 ? "text-emerald-400" : "text-red-400"}
+          barValue={Math.abs(stats.gdpGrowth)}
+          barMax={10}
+          barColor={stats.gdpGrowth >= 0 ? "bg-emerald-500" : "bg-red-500"}
+        />
+        <IndicatorRow
+          label="Population Growth"
+          value={`${stats.popGrowth >= 0 ? "+" : ""}${stats.popGrowth.toFixed(2)}%`}
+          valueClass={stats.popGrowth >= 0 ? "text-emerald-400" : "text-red-400"}
+          barValue={Math.abs(stats.popGrowth)}
+          barMax={5}
+          barColor={stats.popGrowth >= 0 ? "bg-blue-500" : "bg-red-500"}
+        />
+        {gdpRank && (
+          <IndicatorRow
+            label="Global Rank · GDP/cap"
+            value={`#${gdpRank.global.position} / ${gdpRank.global.total}`}
+            valueClass="text-amber-400"
+            barValue={gdpRank.global.total - gdpRank.global.position}
+            barMax={gdpRank.global.total}
+            barColor="bg-amber-500"
+          />
+        )}
+      </DetailList>
+    </div>
   );
 
   // ── Executive snapshot ──
@@ -435,22 +522,46 @@ function DashboardHero({
     const totalPolicies = policies?.length ?? 0;
     const pendingActions =
       meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
+    const activeList = (policies?.filter((p) => p.status === "active") ?? []).slice(0, 3);
 
     return (
-      <div className="grid grid-cols-3 gap-1.5 py-1">
-        <StatPill icon={Bell} label="Issues" value="Pending" color="text-amber-500" />
-        <StatPill
-          icon={FileText}
-          label="Policies"
-          value={`${activePolicies}/${totalPolicies}`}
-          color="text-amber-500"
-        />
-        <StatPill
-          icon={Layers}
-          label="Actions"
-          value={pendingActions > 0 ? `${pendingActions} pending` : "All clear"}
-          color={pendingActions > 0 ? "text-orange-500" : "text-emerald-500"}
-        />
+      <div className="flex h-full flex-col">
+        <div className="grid grid-cols-3 gap-1.5 py-1">
+          <StatPill icon={Bell} label="Issues" value="Pending" color="text-amber-500" />
+          <StatPill
+            icon={FileText}
+            label="Policies"
+            value={`${activePolicies}/${totalPolicies}`}
+            color="text-amber-500"
+          />
+          <StatPill
+            icon={Layers}
+            label="Actions"
+            value={pendingActions > 0 ? `${pendingActions} pending` : "All clear"}
+            color={pendingActions > 0 ? "text-orange-500" : "text-emerald-500"}
+          />
+        </div>
+        <DetailList title="Active Policies">
+          {activeList.length > 0 ? (
+            activeList.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-2 text-[9px]">
+                <span className="text-foreground/80 flex min-w-0 items-center gap-1">
+                  <FileText className="h-2.5 w-2.5 shrink-0 text-amber-500" />
+                  <span className="truncate">{p.name}</span>
+                </span>
+                <span className="text-muted-foreground/60 shrink-0 capitalize">{p.category}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground/50 text-[9px]">No active policies yet.</p>
+          )}
+          {pendingActions > 0 && (
+            <div className="mt-0.5 flex items-center justify-between border-t border-white/5 pt-1 text-[9px]">
+              <span className="text-muted-foreground/70">Action Items</span>
+              <span className="font-bold text-orange-400">{pendingActions} pending</span>
+            </div>
+          )}
+        </DetailList>
       </div>
     );
   };
@@ -465,33 +576,51 @@ function DashboardHero({
         ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
         : 0;
     const strongTies = relations?.filter((r) => (r.strength ?? 0) >= 70).length ?? 0;
+    const topTies = (relations ?? []).slice(0, 3);
 
     return (
-      <div className="grid grid-cols-4 gap-1 py-1">
-        <StatPill
-          icon={Building2}
-          label="Embassies"
-          value={`${activeEmbs}`}
-          color="text-cyan-500"
-        />
-        <StatPill
-          icon={Handshake}
-          label="Relations"
-          value={`${totalRelations}`}
-          color="text-blue-500"
-        />
-        <StatPill
-          icon={Globe}
-          label="Avg Str."
-          value={`${avgStrength}%`}
-          color="text-emerald-500"
-        />
-        <StatPill
-          icon={Sparkles}
-          label="Allies"
-          value={`${strongTies}`}
-          color={strongTies > 0 ? "text-purple-500" : "text-slate-500"}
-        />
+      <div className="flex h-full flex-col">
+        <div className="grid grid-cols-4 gap-1 py-1">
+          <StatPill
+            icon={Building2}
+            label="Embassies"
+            value={`${activeEmbs}`}
+            color="text-cyan-500"
+          />
+          <StatPill
+            icon={Handshake}
+            label="Relations"
+            value={`${totalRelations}`}
+            color="text-blue-500"
+          />
+          <StatPill
+            icon={Globe}
+            label="Avg Str."
+            value={`${avgStrength}%`}
+            color="text-emerald-500"
+          />
+          <StatPill
+            icon={Sparkles}
+            label="Allies"
+            value={`${strongTies}`}
+            color={strongTies > 0 ? "text-purple-500" : "text-slate-500"}
+          />
+        </div>
+        <DetailList title="Strongest Ties">
+          {topTies.length > 0 ? (
+            topTies.map((r) => (
+              <div key={r.id} className="space-y-0.5">
+                <div className="flex items-center justify-between gap-2 text-[9px]">
+                  <span className="text-foreground/80 truncate">{r.targetCountryName}</span>
+                  <span className="shrink-0 font-bold text-cyan-400">{r.strength}%</span>
+                </div>
+                <MiniBar value={r.strength ?? 0} color="bg-cyan-500" />
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground/50 text-[9px]">No diplomatic relations yet.</p>
+          )}
+        </DetailList>
       </div>
     );
   };
@@ -502,22 +631,66 @@ function DashboardHero({
     const critAlerts = intelligenceOverview?.alerts?.critical ?? 0;
     const activeEmbs =
       embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
+    const alertItems = (intelligenceOverview?.alerts?.items ?? []) as any[];
 
     return (
-      <div className="grid grid-cols-3 gap-1.5 py-1">
-        <StatPill icon={Shield} label="Security" value={`${secScore}/100`} color="text-blue-500" />
-        <StatPill
-          icon={AlertTriangle}
-          label="Alerts"
-          value={critAlerts > 0 ? `${critAlerts} critical` : "Clear"}
-          color={critAlerts > 0 ? "text-red-500" : "text-emerald-500"}
-        />
-        <StatPill
-          icon={Globe}
-          label="Network"
-          value={`${activeEmbs} active`}
-          color="text-blue-500"
-        />
+      <div className="flex h-full flex-col">
+        <div className="grid grid-cols-3 gap-1.5 py-1">
+          <StatPill
+            icon={Shield}
+            label="Security"
+            value={`${secScore}/100`}
+            color="text-blue-500"
+          />
+          <StatPill
+            icon={AlertTriangle}
+            label="Alerts"
+            value={critAlerts > 0 ? `${critAlerts} critical` : "Clear"}
+            color={critAlerts > 0 ? "text-red-500" : "text-emerald-500"}
+          />
+          <StatPill
+            icon={Globe}
+            label="Network"
+            value={`${activeEmbs} active`}
+            color="text-blue-500"
+          />
+        </div>
+        <DetailList title="Threat Picture">
+          <IndicatorRow
+            label="Security Index"
+            value={`${secScore}/100`}
+            valueClass={
+              secScore >= 75
+                ? "text-emerald-400"
+                : secScore >= 50
+                  ? "text-blue-400"
+                  : "text-orange-400"
+            }
+            barValue={secScore}
+            barColor={
+              secScore >= 75 ? "bg-emerald-500" : secScore >= 50 ? "bg-blue-500" : "bg-orange-500"
+            }
+          />
+          {alertItems.length > 0 ? (
+            alertItems.slice(0, 2).map((a) => (
+              <div key={a.id} className="flex items-center gap-1 text-[9px]">
+                <AlertTriangle
+                  className={cn(
+                    "h-2.5 w-2.5 shrink-0",
+                    a.severity === "CRITICAL" || a.severity === "critical"
+                      ? "text-red-500"
+                      : "text-amber-500"
+                  )}
+                />
+                <span className="text-foreground/80 truncate">{a.title}</span>
+              </div>
+            ))
+          ) : (
+            <p className="flex items-center gap-1 text-[9px] text-emerald-400/80">
+              <Shield className="h-2.5 w-2.5" /> No active alerts.
+            </p>
+          )}
+        </DetailList>
       </div>
     );
   };
@@ -533,34 +706,65 @@ function DashboardHero({
           )
         : 0;
     const threats = securityData?.activeThreatCount ?? 0;
+    const topBranches = (militaryBranches ?? []).slice(0, 3);
 
     return (
-      <div className="grid grid-cols-4 gap-1 py-1">
-        <StatPill
-          icon={Shield}
-          label="Security"
-          value={`${secScore}/100`}
-          color={
-            secScore >= 75
-              ? "text-emerald-500"
-              : secScore >= 50
-                ? "text-blue-500"
-                : "text-orange-500"
-          }
-        />
-        <StatPill icon={Sword} label="Branches" value={`${branchCount}`} color="text-red-500" />
-        <StatPill
-          icon={Target}
-          label="Readiness"
-          value={`${avgReadiness}%`}
-          color={avgReadiness >= 70 ? "text-emerald-500" : "text-yellow-500"}
-        />
-        <StatPill
-          icon={Activity}
-          label="Threats"
-          value={`${threats}`}
-          color={threats > 0 ? "text-red-500" : "text-emerald-500"}
-        />
+      <div className="flex h-full flex-col">
+        <div className="grid grid-cols-4 gap-1 py-1">
+          <StatPill
+            icon={Shield}
+            label="Security"
+            value={`${secScore}/100`}
+            color={
+              secScore >= 75
+                ? "text-emerald-500"
+                : secScore >= 50
+                  ? "text-blue-500"
+                  : "text-orange-500"
+            }
+          />
+          <StatPill icon={Sword} label="Branches" value={`${branchCount}`} color="text-red-500" />
+          <StatPill
+            icon={Target}
+            label="Readiness"
+            value={`${avgReadiness}%`}
+            color={avgReadiness >= 70 ? "text-emerald-500" : "text-yellow-500"}
+          />
+          <StatPill
+            icon={Activity}
+            label="Threats"
+            value={`${threats}`}
+            color={threats > 0 ? "text-red-500" : "text-emerald-500"}
+          />
+        </div>
+        <DetailList title="Force Readiness">
+          {topBranches.length > 0 ? (
+            topBranches.map((b: any) => {
+              const r = Math.round(b.readinessLevel ?? 0);
+              return (
+                <div key={b.id} className="space-y-0.5">
+                  <div className="flex items-center justify-between gap-2 text-[9px]">
+                    <span className="text-foreground/80 truncate">{b.name}</span>
+                    <span
+                      className={cn(
+                        "shrink-0 font-bold",
+                        r >= 70 ? "text-emerald-400" : r >= 40 ? "text-yellow-400" : "text-red-400"
+                      )}
+                    >
+                      {r}%
+                    </span>
+                  </div>
+                  <MiniBar
+                    value={r}
+                    color={r >= 70 ? "bg-emerald-500" : r >= 40 ? "bg-yellow-500" : "bg-red-500"}
+                  />
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-muted-foreground/50 text-[9px]">No military branches configured.</p>
+          )}
+        </DetailList>
       </div>
     );
   };
@@ -613,44 +817,56 @@ function DashboardHero({
 
         <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-3 md:col-span-2">
           <TextureOverlay texture="paperGrain" opacity={0.09} />
-          <div>
-            <div className="mb-2 flex items-center gap-2.5">
-              <div
-                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/20 shadow-sm"
-                style={
-                  avatarGlow.enabled
-                    ? {
-                        boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
-                        border: `1px solid ${avatarGlow.color}`,
-                      }
-                    : undefined
-                }
-              >
-                <UnifiedCountryFlag
-                  showTooltip={false}
-                  countryName={stats.countryName}
-                  size="lg"
-                  className="shrink-0"
-                />
-              </div>
-              <div>
-                <Link
-                  href={createUrl(`/countries/${stats.slug}`)}
-                  className="flex items-center gap-1.5 text-sm font-bold hover:underline"
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="mb-2 flex items-start justify-between gap-2.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div
+                  className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/20 shadow-sm"
+                  style={
+                    avatarGlow.enabled
+                      ? {
+                          boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
+                          border: `1px solid ${avatarGlow.color}`,
+                        }
+                      : undefined
+                  }
                 >
-                  <span>{stats.countryName}</span>
-                  {chatBadge.enabled && (
-                    <CrownIcon
-                      className="h-3.5 w-3.5 shrink-0"
-                      style={{ color: chatBadge.color }}
-                    />
-                  )}
-                </Link>
-                <p className="text-muted-foreground text-[10px]">{stats.leader}</p>
+                  <UnifiedCountryFlag
+                    showTooltip={false}
+                    countryName={stats.countryName}
+                    size="lg"
+                    className="shrink-0"
+                  />
+                </div>
+                <div>
+                  <Link
+                    href={createUrl(`/countries/${stats.slug}`)}
+                    className="flex items-center gap-1.5 text-sm font-bold hover:underline"
+                  >
+                    <span>{stats.countryName}</span>
+                    {chatBadge.enabled && (
+                      <CrownIcon
+                        className="h-3.5 w-3.5 shrink-0"
+                        style={{ color: chatBadge.color }}
+                      />
+                    )}
+                  </Link>
+                  <p className="text-muted-foreground text-[10px]">{stats.leader}</p>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-1.5">
+                {econTier && <EconomicTierBadge tier={econTier} />}
+                {popTier && <PopulationTierBadge tier={popTier} />}
+                {gdpRank && (
+                  <span className="bg-muted/50 text-muted-foreground rounded-md px-2 py-0.5 text-[10px]">
+                    #{gdpRank.global.position}/{gdpRank.global.total}
+                  </span>
+                )}
               </div>
             </div>
 
-            <div className="min-h-[48px]">{renderSectionContent()}</div>
+            <div className="min-h-0 flex-1">{renderSectionContent()}</div>
 
             <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px] mt-1.5">
               {vaultData && (
@@ -674,9 +890,9 @@ function DashboardHero({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-1">
-              {HERO_NAV.map((item) => {
+          <div className="flex items-center justify-between gap-x-2 gap-y-1.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
+              {visibleNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeSection === item.label;
                 const colors = SECTION_THEME_CLASSES[item.label] ?? {};
@@ -698,23 +914,14 @@ function DashboardHero({
                   </button>
                 );
               })}
-              <Link
-                href={createUrl("/mycountry")}
-                className="text-muted-foreground hover:text-foreground ml-auto flex items-center gap-0.5 text-[9px] transition-colors"
-              >
-                Go to MyCountry →
-              </Link>
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-1.5">
-              {econTier && <EconomicTierBadge tier={econTier} />}
-              {popTier && <PopulationTierBadge tier={popTier} />}
-              {gdpRank && (
-                <span className="bg-muted/50 text-muted-foreground rounded-md px-2 py-0.5 text-[10px]">
-                  #{gdpRank.global.position}/{gdpRank.global.total}
-                </span>
-              )}
-            </div>
+            <Link
+              href={createUrl("/mycountry")}
+              className="text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-0.5 text-[9px] whitespace-nowrap transition-colors"
+            >
+              Go to MyCountry →
+            </Link>
           </div>
         </div>
       </div>

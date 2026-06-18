@@ -12,6 +12,7 @@ import { BotIntegrationCenter } from "./BotIntegrationCenter";
 import { NotificationsAdmin } from "./NotificationsAdmin";
 import { StashSettingsContent } from "./StashSettingsContent";
 import { ThinkPagesSettingsContent } from "./ThinkPagesSettingsContent";
+import { ThinkpagesDiscordFeedContent } from "./ThinkpagesDiscordFeedContent";
 import { Loader2, Settings, Sparkles, BookOpen } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
@@ -143,6 +144,8 @@ export function AdminRouter() {
         return <StashSettingsContent />;
       case "thinkpages":
         return <ThinkPagesSettingsContent />;
+      case "thinkpages-feed":
+        return <ThinkpagesDiscordFeedContent />;
       case "blurbs":
         return <BlurbsPanel />;
 

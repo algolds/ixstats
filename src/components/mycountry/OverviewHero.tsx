@@ -27,6 +27,7 @@ import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
+import { IxTime } from "~/lib/ixtime";
 import { cn, toTitleCase } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { LocationBadge } from "~/components/ui/tier-badge";
@@ -398,7 +399,8 @@ export function OverviewHero({
     "NOV",
     "DEC",
   ];
-  const today = useMemo(() => new Date(), []);
+  // Calendar reflects in-game IxTime, not real-world time
+  const today = useMemo(() => new Date(IxTime.getCurrentIxTime()), []);
 
   const nextEventText = useMemo(() => {
     if (pendingElections > 0) return "Election Pending";

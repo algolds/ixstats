@@ -584,6 +584,19 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
       }
     }
 
+    // 📰 Mirror to the admin-configured #thinkpages Discord feed (filtered, deduped).
+    // Independent of the IxTwitter autopost above; the filter/enable lives in admin config.
+    if (post.visibility === "public") {
+      try {
+        const { mirrorThinkPagesPostToDiscordFeed } = await import("~/lib/thinkpages-discord-feed");
+        mirrorThinkPagesPostToDiscordFeed(db as any, post.id, input.mediaUrls).catch((err) =>
+          console.error("[ThinkPages] Discord feed mirror promise error:", err)
+        );
+      } catch (error) {
+        console.error("[ThinkPages] Failed to trigger Discord feed mirror:", error);
+      }
+    }
+
     await invalidateFeeds();
 
     return {

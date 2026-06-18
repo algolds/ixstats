@@ -26,6 +26,7 @@ import {
   Coins,
   Terminal,
   Newspaper,
+  Rss,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -123,6 +124,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/blurbs",
     icon: MessageCircle,
     description: "Topic Prompts & Responses",
+  },
+  {
+    label: "ThinkPages Feed",
+    href: "/admin/thinkpages-feed",
+    icon: Rss,
+    description: "Mirror Posts to Discord",
   },
   {
     label: "Polls",

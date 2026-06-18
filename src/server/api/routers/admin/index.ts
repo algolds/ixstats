@@ -19,6 +19,7 @@ import { adminUsersRouter } from "./users";
 import { adminCountriesRouter } from "./countries";
 import { adminWorldEventsRouter } from "./worldEvents";
 import { adminWikiRouter } from "./wiki";
+import { adminThinkpagesDiscordFeedRouter } from "./thinkpagesDiscordFeed";
 
 export const adminRouter = mergeRouters(
   adminSystemRouter,
@@ -26,5 +27,6 @@ export const adminRouter = mergeRouters(
   adminUsersRouter,
   adminCountriesRouter,
   adminWorldEventsRouter,
-  adminWikiRouter
+  adminWikiRouter,
+  adminThinkpagesDiscordFeedRouter
 );

@@ -12,6 +12,15 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **ThinkPages → Discord feed mirror**: New admin-configurable integration that mirrors public ThinkPages feed posts to a dedicated `#thinkpages` Discord channel as an RSS-style feed.
+  - New `/admin/thinkpages-feed` admin page (`ThinkpagesDiscordFeedContent`): master enable toggle, editable channel ID, account-type (government / media / citizen) + verified-only + exclude-replies + exclude-auto-generated + minimum-engagement filters, account and hashtag allow/block lists, a "send test message" button, and a live preview showing which recent posts the current filter would mirror.
+  - New `adminThinkpagesDiscordFeedRouter` (`api.admin.getThinkpagesDiscordFeedConfig` / `saveThinkpagesDiscordFeedConfig` / `sendThinkpagesDiscordFeedTest` / `getThinkpagesDiscordFeedPreview`), merged into the admin router and protected by `adminProcedure`.
+  - New `src/lib/thinkpages-discord-feed.ts`: a pure `evaluateFeedFilter` (precedence: blocklists win → account allowlist force-includes → standard filters) and `mirrorThinkPagesPostToDiscordFeed`, which posts an embed via the bot token (reusing `formatThinkPagesEmbed`) and records each send to avoid duplicates.
+  - Wired into `createPost` so eligible public posts mirror immediately on creation, independent of the legacy IxTwitter autopost.
+  - New Prisma models `ThinkpagesDiscordFeedConfig` (singleton config) and `ThinkpagesDiscordMirror` (per-post dedupe + audit, FK to `ThinkpagesPost` with cascade) — additive migration, no changes to existing tables.
+
+- **Dashboard hero — richer per-tab snapshots**: Each command-card section (Overview, Executive, Diplomacy, Intelligence, Defense) now fills the previously empty right-column space with a section-specific detail panel below the summary pills — Overview "Momentum & Standing" (GDP/population growth + global-rank bars), Executive active policies + pending actions, Diplomacy strongest ties with strength bars, Intelligence security index + active-alert preview, and Defense per-branch readiness bars. Backed by new `MiniBar` / `IndicatorRow` / `DetailList` helpers and a flex-fill layout; per-section queries stay lazily gated so the landing page's load cost is unchanged.
+
 - **MyLeague Configurable Sports Reseeding & Admin Consolidation**:
   - Implemented configurable re-seeding backend mutation `reseedSportsData` in sports leagues tRPC router with customized options.
   - Consolidated `/admin/sports` (Oversight/Creator/AI Narrator Lab) and `/admin/sports-labs` (ReactFlow Sim Sandbox) into a unified `/admin/myleague` dashboard under three tabs: Oversight, Sandbox, and Data Lab.
@@ -61,6 +70,20 @@ capability integer. Each release entry below lists which components advanced and
   - Gated multicameral chamber seat updates from auto-snapping to wrong totals (Plan 081).
   - Persisted map label rotation/opacity and wired regions opacity slider (Plan 082).
   - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
+
+### Changed
+
+- **Dashboard hero layout**: Moved the economic/population tier and global-rank badges into the card's top-right header (across from the country flag and name), and collapsed the section tabs and the "Go to MyCountry →" link onto a single bottom-aligned row.
+- **MyCountry hero calendar now runs on IxTime**: the Overview hero's iOS-style calendar widget reads the in-game date via `new Date(IxTime.getCurrentIxTime())` instead of real-world wall-clock time.
+- **Dashboard hero — premium gating**: the Intelligence and Defense section tabs (and their tRPC queries) are now restricted to MyCountry-premium members; non-premium users see Overview / Executive / Diplomacy only, and the inactivity auto-cycle skips the gated sections.
+- **Dashboard growth precision**: GDP and population growth figures in the hero now display two decimal places.
+- **`FacetTabs` indicator override**: added an optional `indicatorClassName` prop to the shared Facet tab component so individual usages can restyle the moving active indicator (e.g. match a container's corner radius) without changing the global default.
+
+### Fixed
+
+- **MyLeague re-seeding crashed on `wikiSlug`**: the Prisma schema declared `wikiSlug` on `SportLeague` and `SportTeam`, but the columns had never been pushed to the database, so re-seeding from the MyLeague admin failed with `The column sport_leagues.wikiSlug does not exist`. Applied the missing additive columns to `sport_leagues` and `sport_teams`.
+- **Geography wireframe never appeared**: switching to the MyCountry Geography tab was meant to swap the hero into the SVG country wireframe, but `useMyCountryNavigation` updated the URL via `history.replaceState`, which does not emit a `hashchange` event — so `EnhancedMyCountryContent`'s separate hook instance never learned the tab changed and never swapped the hero. The hook now dispatches a `hashchange` after the `replaceState`, keeping all consumers in sync.
+- **Dashboard activity-feed tab corners**: the active pill (`All Activity / Following / Community`) read as squarer on the right than the container; the dashboard's `FacetTabs` now rounds the active indicator to `rounded-xl` to match the container corner via the new `indicatorClassName` override.
 
 ## [1.1.0 Ogma (Alpha)] - 2026-06-16
 
