@@ -139,14 +139,14 @@ export const NameDetectionStep = memo(function NameDetectionStep({
 
           {importer.importCities && (
             <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="space-y-1">
                   <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
                     Cities Layer
                   </label>
                   <select
                     value={importer.citiesLayerId}
-                    onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId)}
+                    onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId, importer.cityNameLayerId)}
                     className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
                   >
                     <option value="">-- Auto-detect --</option>
@@ -164,13 +164,31 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                   </label>
                   <select
                     value={importer.capitalLayerId}
-                    onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value)}
+                    onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value, importer.cityNameLayerId)}
                     className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
                   >
                     <option value="">-- None --</option>
                     {importer.cityLayers.map((layer) => (
                       <option key={layer.id} value={layer.id}>
                         {layer.name} ({layer.markerCount} points)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-muted-foreground block text-[10px] font-semibold uppercase">
+                    City Names (Optional)
+                  </label>
+                  <select
+                    value={importer.cityNameLayerId}
+                    onChange={(e) => importer.setLayer(importer.citiesLayerId, importer.capitalLayerId, e.target.value)}
+                    className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
+                  >
+                    <option value="">-- None (Auto) --</option>
+                    {importer.cityLayers.map((layer) => (
+                      <option key={layer.id} value={layer.id}>
+                        {layer.name} ({layer.textCount} label{layer.textCount !== 1 ? "s" : ""})
                       </option>
                     ))}
                   </select>

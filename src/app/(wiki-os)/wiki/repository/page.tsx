@@ -12,6 +12,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Search, X, Globe, Database, HelpCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { withBasePath } from "~/lib/base-path";
 import { RepositoryWelcomeModal } from "~/components/mediawiki/commons/RepositoryWelcomeModal";
 
 interface CommonsImage {
@@ -185,9 +186,9 @@ export default function RepositoryPage() {
           ) => {
             const rawUrl = img.url || "";
             const proxiedUrl = rawUrl.includes("iiwiki.com/")
-              ? rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
+              ? withBasePath(rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/"))
               : rawUrl.includes("ixwiki.com/")
-                ? rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
+                ? withBasePath(rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/"))
                 : rawUrl;
 
             return {

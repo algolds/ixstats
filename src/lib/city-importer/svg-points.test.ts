@@ -257,4 +257,37 @@ describe("parseCitySvg", () => {
     expect(result.detectedCitiesLayerId).toBe("cities");
     expect(result.points).toHaveLength(2);
   });
+
+  it("auto-detects and prioritizes name layer for text labels", () => {
+    const svgWithNamesLayer = `
+      <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+        <g id="cities">
+          <circle cx="150" cy="150" r="5" />
+          <circle cx="350" cy="150" r="5" />
+        </g>
+        <g id="city-names" inkscape:label="City Names">
+          <text x="150" y="160">London</text>
+        </g>
+        <g id="other-labels">
+          <text x="350" y="160">Paris</text>
+        </g>
+      </svg>
+    `;
+
+    // 1. Check auto-detection of name layer
+    const resultAuto = parseCitySvg(svgWithNamesLayer);
+    expect(resultAuto.detectedCityNameLayerId).toBe("city-names");
+    // "London" is in the names layer, "Paris" is in "other-labels" which is ignored
+    const p1 = resultAuto.points.find((p) => p.svgX === 150);
+    expect(p1!.name).toBe("London");
+    const p2 = resultAuto.points.find((p) => p.svgX === 350);
+    expect(p2!.name).toBe(""); // Ignored because Paris is in other-labels group
+
+    // 2. Explicitly pass cityNameLayerId for other-labels
+    const resultExplicit = parseCitySvg(svgWithNamesLayer, { cityNameLayerId: "other-labels" });
+    const p1Exp = resultExplicit.points.find((p) => p.svgX === 150);
+    expect(p1Exp!.name).toBe("");
+    const p2Exp = resultExplicit.points.find((p) => p.svgX === 350);
+    expect(p2Exp!.name).toBe("Paris");
+  });
 });

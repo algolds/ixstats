@@ -387,12 +387,16 @@ export default function LeagueDetailPage() {
               <h1 className="text-foreground text-2xl font-black tracking-tight">{league.name}</h1>
               <Badge
                 variant="outline"
-                className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase select-none border-border"
-                style={sportColors ? {
-                  borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
-                  backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
-                  color: `hsl(${sportColors.highlightColor})`
-                } : undefined}
+                className="border-border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase select-none"
+                style={
+                  sportColors
+                    ? {
+                        borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
+                        backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
+                        color: `hsl(${sportColors.highlightColor})`,
+                      }
+                    : undefined
+                }
               >
                 {SPORT_LABELS[league.sportPreset] || league.sportPreset}
               </Badge>
@@ -408,7 +412,11 @@ export default function LeagueDetailPage() {
           {/* Card 1: Season */}
           <div className="flex min-w-[125px] flex-col justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 shadow-sm backdrop-blur-md dark:border-white/5 dark:bg-black/20">
             <span className="text-muted-foreground flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase">
-              <Calendar className="h-3 w-3 text-muted-foreground" style={sportColors ? { color: `hsl(${sportColors.highlightColor})` } : undefined} /> Season
+              <Calendar
+                className="text-muted-foreground h-3 w-3"
+                style={sportColors ? { color: `hsl(${sportColors.highlightColor})` } : undefined}
+              />{" "}
+              Season
             </span>
             <span className="mt-1 text-base font-extrabold tracking-tight">
               {activeSeason
@@ -421,12 +429,16 @@ export default function LeagueDetailPage() {
               {activeSeason ? (
                 <Badge
                   variant="outline"
-                  className="px-1.5 py-0 text-[9px] font-bold border-border"
-                  style={sportColors ? {
-                    borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
-                    backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
-                    color: `hsl(${sportColors.highlightColor})`
-                  } : undefined}
+                  className="border-border px-1.5 py-0 text-[9px] font-bold"
+                  style={
+                    sportColors
+                      ? {
+                          borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
+                          backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
+                          color: `hsl(${sportColors.highlightColor})`,
+                        }
+                      : undefined
+                  }
                 >
                   In Progress
                 </Badge>
@@ -515,7 +527,7 @@ export default function LeagueDetailPage() {
                     {seasonId && (
                       <button
                         onClick={() => handleNavigate("standings")}
-                        className="cursor-pointer text-[10px] font-bold text-neutral-400 hover:text-neutral-250 transition-colors select-none"
+                        className="hover:text-neutral-250 cursor-pointer text-[10px] font-bold text-neutral-400 transition-colors select-none"
                       >
                         View Full Standings
                       </button>
@@ -558,7 +570,7 @@ export default function LeagueDetailPage() {
                                     <img
                                       src={withBasePath(s.team.logo)}
                                       alt={s.team.name}
-                                      className="h-5 w-5 shrink-0 rounded-full object-cover border border-white/10"
+                                      className="h-5 w-5 shrink-0 rounded-full border border-white/10 object-cover"
                                     />
                                   ) : (
                                     <span
@@ -598,10 +610,20 @@ export default function LeagueDetailPage() {
               {/* Right Column: Simulation controls & Teams directory */}
               <div className="facet-layout-sidebar-span-1 space-y-6">
                 {/* Live Simulation Panel */}
-                <Card className="facet-hierarchy-child bg-card/65 border border-border/40 backdrop-blur-md">
+                <Card className="facet-hierarchy-child bg-card/65 border-border/40 border backdrop-blur-md">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
-                      <Play className="h-3.5 w-3.5 text-muted-foreground" style={sportColors ? { fill: `hsl(${sportColors.highlightColor})`, color: `hsl(${sportColors.highlightColor})` } : undefined} />
+                      <Play
+                        className="text-muted-foreground h-3.5 w-3.5"
+                        style={
+                          sportColors
+                            ? {
+                                fill: `hsl(${sportColors.highlightColor})`,
+                                color: `hsl(${sportColors.highlightColor})`,
+                              }
+                            : undefined
+                        }
+                      />
                       Next Match Hub
                     </CardTitle>
                   </CardHeader>
@@ -629,7 +651,7 @@ export default function LeagueDetailPage() {
                                 })
                               }
                               disabled={simulateMatchDay.isPending}
-                              className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
+                              className="border-slate-650 flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600"
                             >
                               {simulateMatchDay.isPending ? (
                                 <>
@@ -686,7 +708,7 @@ export default function LeagueDetailPage() {
                             transitionToNextSeason.mutate({ seasonId: latestSeason.id })
                           }
                           disabled={transitionToNextSeason.isPending}
-                          className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
+                          className="border-slate-650 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600"
                         >
                           {transitionToNextSeason.isPending ? (
                             <>
@@ -708,7 +730,7 @@ export default function LeagueDetailPage() {
                           size="sm"
                           onClick={() => startSeason.mutate({ leagueId: league.id })}
                           disabled={startSeason.isPending || league.teams.length === 0}
-                          className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
+                          className="border-slate-650 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600"
                         >
                           {startSeason.isPending ? (
                             <>
@@ -759,7 +781,7 @@ export default function LeagueDetailPage() {
                                 <img
                                   src={withBasePath(team.logo)}
                                   alt={team.name}
-                                  className="h-6 w-6 shrink-0 rounded-full object-cover border border-white/10"
+                                  className="h-6 w-6 shrink-0 rounded-full border border-white/10 object-cover"
                                 />
                               ) : (
                                 <div
@@ -1058,7 +1080,7 @@ function ScheduleTab({
   leagueId,
   activeSeasonId,
   latestSeasonId,
-  // eslint-disable-next-line unused-imports/no-unused-vars
+   
   sportPreset,
   archetype,
   // eslint-disable-next-line unused-imports/no-unused-vars
@@ -1088,6 +1110,7 @@ function ScheduleTab({
 }) {
   const seasonId = activeSeasonId ?? latestSeasonId;
   const utils = api.useUtils();
+  const sportColors = getSportColors(sportPreset as SportPresetKey);
 
   const { data: season, isLoading: seasonLoading } = api.sports.getSeason.useQuery(
     { id: seasonId ?? "" },
@@ -1173,7 +1196,7 @@ function ScheduleTab({
 
   const renderSimulationDeck = () => {
     return (
-      <div className="bg-card/60 relative mb-6 overflow-hidden rounded-2xl border border-border/40 p-6 shadow-md backdrop-blur-md">
+      <div className="bg-card/60 border-border/40 relative mb-6 overflow-hidden rounded-2xl border p-6 shadow-md backdrop-blur-md">
         <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2">
@@ -1199,14 +1222,18 @@ function ScheduleTab({
               <Badge
                 variant={isInProgress ? "default" : isCompleted ? "secondary" : "outline"}
                 className={cn(
-                  "rounded border px-2 py-0.5 text-[9px] font-bold uppercase shadow-sm border-border",
+                  "border-border rounded border px-2 py-0.5 text-[9px] font-bold uppercase shadow-sm",
                   !isInProgress && "bg-muted text-muted-foreground border-border"
                 )}
-                style={isInProgress && sportColors ? {
-                  borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
-                  backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
-                  color: `hsl(${sportColors.highlightColor})`
-                } : undefined}
+                style={
+                  isInProgress && sportColors
+                    ? {
+                        borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
+                        backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
+                        color: `hsl(${sportColors.highlightColor})`,
+                      }
+                    : undefined
+                }
               >
                 {season.status}
               </Badge>
@@ -1231,7 +1258,7 @@ function ScheduleTab({
                       })
                     }
                     disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
-                    className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
+                    className="border-slate-650 flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600"
                   >
                     {simulateMatchDay.isPending ? (
                       <>
@@ -1251,7 +1278,7 @@ function ScheduleTab({
                   variant="outline"
                   onClick={() => simulateFullSeason.mutate({ seasonId: season.id })}
                   disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
-                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border-slate-700 text-xs font-bold text-slate-350 shadow-sm transition hover:bg-slate-800"
+                  className="text-slate-350 flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border-slate-700 text-xs font-bold shadow-sm transition hover:bg-slate-800"
                 >
                   {simulateFullSeason.isPending ? (
                     <>
@@ -1272,7 +1299,7 @@ function ScheduleTab({
               <Button
                 onClick={() => transitionToNextSeason.mutate({ seasonId: season.id })}
                 disabled={transitionToNextSeason.isPending}
-                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
+                className="border-slate-650 flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600"
               >
                 {transitionToNextSeason.isPending ? (
                   <>

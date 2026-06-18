@@ -80,6 +80,7 @@ export function useProvinceImporter(countryId: string) {
   const [rawCityPoints, setRawCityPoints] = useState<SvgCityPoint[]>([]);
   const [citiesLayerId, setCitiesLayerId] = useState("");
   const [capitalLayerId, setCapitalLayerId] = useState("");
+  const [cityNameLayerId, setCityNameLayerId] = useState("");
   const [rawSvgContent, setRawSvgContent] = useState<string | null>(null);
 
   useEffect(() => {
@@ -266,12 +267,14 @@ export function useProvinceImporter(countryId: string) {
           setRawCityPoints(result.cityData.points);
           setCityLayers(result.cityData.layers);
           setCitiesLayerId(result.cityData.detectedCitiesLayerId || "");
+          setCityNameLayerId(result.cityData.detectedCityNameLayerId || "");
           setImportCities(result.cityData.points.length > 0);
         } else {
           setHasCities(false);
           setRawCityPoints([]);
           setCityLayers([]);
           setCitiesLayerId("");
+          setCityNameLayerId("");
           setImportCities(false);
         }
 
@@ -309,12 +312,14 @@ export function useProvinceImporter(countryId: string) {
           setRawCityPoints(result.cityData.points);
           setCityLayers(result.cityData.layers);
           setCitiesLayerId(result.cityData.detectedCitiesLayerId || "");
+          setCityNameLayerId(result.cityData.detectedCityNameLayerId || "");
           setImportCities(result.cityData.points.length > 0);
         } else {
           setHasCities(false);
           setRawCityPoints([]);
           setCityLayers([]);
           setCitiesLayerId("");
+          setCityNameLayerId("");
           setImportCities(false);
         }
 
@@ -446,10 +451,13 @@ export function useProvinceImporter(countryId: string) {
   const parseCitySvgMutation = api.geoAdmin.parseCitySvg.useMutation();
 
   const setLayer = useCallback(
-    async (newCitiesLayerId: string, newCapitalLayerId?: string) => {
+    async (newCitiesLayerId: string, newCapitalLayerId?: string, newCityNameLayerId?: string) => {
       setCitiesLayerId(newCitiesLayerId);
       if (newCapitalLayerId !== undefined) {
         setCapitalLayerId(newCapitalLayerId);
+      }
+      if (newCityNameLayerId !== undefined) {
+        setCityNameLayerId(newCityNameLayerId);
       }
 
       setIsProcessing(true);
@@ -461,7 +469,8 @@ export function useProvinceImporter(countryId: string) {
           countryId,
           svgContent: rawSvgContent,
           citiesLayerId: newCitiesLayerId,
-          capitalLayerId: newCapitalLayerId !== undefined ? newCapitalLayerId : "",
+          capitalLayerId: newCapitalLayerId !== undefined ? newCapitalLayerId : capitalLayerId,
+          cityNameLayerId: newCityNameLayerId !== undefined ? newCityNameLayerId : cityNameLayerId,
         });
 
         setRawCityPoints(result.points);
@@ -471,7 +480,7 @@ export function useProvinceImporter(countryId: string) {
         setIsProcessing(false);
       }
     },
-    [countryId, rawSvgContent, parseCitySvgMutation]
+    [countryId, rawSvgContent, parseCitySvgMutation, capitalLayerId, cityNameLayerId]
   );
 
   // ── Snap Step ──
@@ -673,6 +682,7 @@ export function useProvinceImporter(countryId: string) {
     setCityLayers([]);
     setCitiesLayerId("");
     setCapitalLayerId("");
+    setCityNameLayerId("");
     setRawSvgContent(null);
   }, []);
 
@@ -764,6 +774,7 @@ export function useProvinceImporter(countryId: string) {
     rawCityPoints,
     citiesLayerId,
     capitalLayerId,
+    cityNameLayerId,
     alignedCities,
     snappedCitiesCount,
     setLayer,

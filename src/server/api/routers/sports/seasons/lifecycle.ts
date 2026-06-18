@@ -383,13 +383,42 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         include: {
           league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
           standings: {
-            include: { team: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } } },
+            include: {
+              team: {
+                select: {
+                  id: true,
+                  name: true,
+                  shortName: true,
+                  color: true,
+                  logo: true,
+                  wikiSlug: true,
+                },
+              },
+            },
             orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
           },
           matches: {
             include: {
-              homeTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
-              awayTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
+              homeTeam: {
+                select: {
+                  id: true,
+                  name: true,
+                  shortName: true,
+                  color: true,
+                  logo: true,
+                  wikiSlug: true,
+                },
+              },
+              awayTeam: {
+                select: {
+                  id: true,
+                  name: true,
+                  shortName: true,
+                  color: true,
+                  logo: true,
+                  wikiSlug: true,
+                },
+              },
             },
             orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
           },
@@ -425,10 +454,24 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           where: { id: input.matchId },
           include: {
             homeTeam: {
-              select: { id: true, name: true, shortName: true, logo: true, color: true, wikiSlug: true },
+              select: {
+                id: true,
+                name: true,
+                shortName: true,
+                logo: true,
+                color: true,
+                wikiSlug: true,
+              },
             },
             awayTeam: {
-              select: { id: true, name: true, shortName: true, logo: true, color: true, wikiSlug: true },
+              select: {
+                id: true,
+                name: true,
+                shortName: true,
+                logo: true,
+                color: true,
+                wikiSlug: true,
+              },
             },
             playerStats: {
               include: {
@@ -445,8 +488,87 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         }
 
         const stats = match.matchStats as any;
+        let playerStats = match.playerStats || [];
+        const trace = stats?.trace as any[];
+
+        if (playerStats.length === 0 && Array.isArray(trace) && trace.length > 0) {
+          const playerMap = new Map<string, { goals: number; assists: number; shots: number }>();
+          const actorNames = new Map<string, string>();
+
+          for (let i = 0; i < trace.length; i++) {
+            const event = trace[i];
+            const actorId = event.actorId;
+            if (!actorId) continue;
+
+            if (event.actorName) {
+              actorNames.set(actorId, event.actorName);
+            }
+
+            if (!playerMap.has(actorId)) {
+              playerMap.set(actorId, { goals: 0, assists: 0, shots: 0 });
+            }
+
+            const pStat = playerMap.get(actorId)!;
+
+            if (event.type === "goal") {
+              pStat.goals++;
+            } else if (
+              event.type === "tactic_shift" &&
+              typeof event.description === "string" &&
+              event.description.toLowerCase().includes("shot")
+            ) {
+              pStat.shots++;
+            }
+          }
+
+          // Assign assists to teammates
+          for (let i = 0; i < trace.length; i++) {
+            const event = trace[i];
+            if (event.type === "goal" && event.actorId) {
+              const scorerId = event.actorId;
+              const candidates = Array.from(playerMap.keys()).filter((id) => id !== scorerId);
+              if (candidates.length > 0) {
+                const idx = (i * 7) % candidates.length;
+                const candidateId = candidates[idx];
+                playerMap.get(candidateId)!.assists++;
+              }
+            }
+          }
+
+          const playerIds = Array.from(playerMap.keys());
+          const dbPlayers = await ctx.db.sportPlayer.findMany({
+            where: { id: { in: playerIds } },
+            select: { id: true, firstName: true, lastName: true, position: true },
+          });
+
+          const dbPlayersMap = new Map(dbPlayers.map((p) => [p.id, p]));
+
+          playerStats = playerIds.map((id) => {
+            const dbPlayer = dbPlayersMap.get(id);
+            const fullName = actorNames.get(id) || "Player";
+            const parts = fullName.split(" ");
+            const firstName = dbPlayer?.firstName || parts[0] || "Unknown";
+            const lastName = dbPlayer?.lastName || parts.slice(1).join(" ") || "Player";
+            const position = dbPlayer?.position || "MID";
+
+            return {
+              id: `temp-${id}`,
+              matchId: input.matchId,
+              playerId: id,
+              stats: playerMap.get(id) || { goals: 0, assists: 0, shots: 0 },
+              createdAt: new Date(),
+              player: {
+                firstName,
+                lastName,
+                position,
+              },
+            } as any;
+          });
+        }
+
         return {
           ...match,
+          playerStats,
           evaluation: stats?.evaluation ?? null,
           trace: stats?.trace ?? null,
           commentary: stats?.commentary ?? null,

@@ -446,7 +446,59 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           }
 
           // Create match stats for key player performances
-          const playerStats = resRec.playerStats as Array<Record<string, unknown>> | undefined;
+          let playerStats = resRec.playerStats as Array<Record<string, unknown>> | undefined;
+
+          if (!playerStats && Array.isArray(result.trace)) {
+            const playerMap = new Map<string, { goals: number; assists: number; shots: number }>();
+            const homeIds = new Set(match.homeTeam.players.map((p: any) => p.id));
+
+            for (const event of result.trace) {
+              const actorId = event.actorId;
+              if (!actorId) continue;
+
+              if (!playerMap.has(actorId)) {
+                playerMap.set(actorId, { goals: 0, assists: 0, shots: 0 });
+              }
+
+              const pStat = playerMap.get(actorId)!;
+
+              if (event.type === "goal") {
+                pStat.goals++;
+              } else if (
+                event.type === "tactic_shift" &&
+                typeof event.description === "string" &&
+                event.description.toLowerCase().includes("shot")
+              ) {
+                pStat.shots++;
+              }
+            }
+
+            // Assign assists to teammates for goals
+            for (let idx = 0; idx < result.trace.length; idx++) {
+              const event = result.trace[idx];
+              if (event.type === "goal" && event.actorId) {
+                const scorerId = event.actorId;
+                const isHome = homeIds.has(scorerId);
+                const teammates = isHome
+                  ? match.homeTeam.players.filter((p: any) => p.id !== scorerId)
+                  : match.awayTeam.players.filter((p: any) => p.id !== scorerId);
+
+                if (teammates.length > 0 && Math.random() < 0.7) {
+                  const assister = teammates[Math.floor(Math.random() * teammates.length)];
+                  if (!playerMap.has(assister.id)) {
+                    playerMap.set(assister.id, { goals: 0, assists: 0, shots: 0 });
+                  }
+                  playerMap.get(assister.id)!.assists++;
+                }
+              }
+            }
+
+            playerStats = Array.from(playerMap.entries()).map(([playerId, stats]) => ({
+              playerId,
+              stats,
+            })) as any;
+          }
+
           if (Array.isArray(playerStats)) {
             for (const ps of playerStats) {
               if (ps.playerId) {

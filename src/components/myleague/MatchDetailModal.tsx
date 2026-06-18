@@ -52,7 +52,23 @@ export default function MatchDetailModal({
 
   const handleGenerateReport = () => {
     if (matchId) {
-      generateReportMutation.mutate({ matchId });
+      let config: any = undefined;
+      try {
+        const saved = localStorage.getItem("ixstats:sports:ai-config");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          config = {
+            provider: parsed.provider,
+            apiKey: parsed.apiKey || undefined,
+            apiUrl: parsed.apiUrl || undefined,
+            modelName: parsed.modelName || undefined,
+            temperature: parsed.temperature,
+          };
+        }
+      } catch (e) {
+        console.error("Failed to load AI config from localStorage", e);
+      }
+      generateReportMutation.mutate({ matchId, config });
     }
   };
 
@@ -273,6 +289,14 @@ export default function MatchDetailModal({
                           <div
                             key={idx}
                             className="bg-muted/10 border-border/10 flex items-start gap-3 rounded-xl border p-3 text-xs leading-relaxed"
+                            style={
+                              step.type !== "tactic_shift" && sportColors?.accentColor
+                                ? {
+                                    borderColor: `hsla(${sportColors.accentColor}, 0.45)`,
+                                    boxShadow: `0 0 8px hsla(${sportColors.accentColor}, 0.15)`,
+                                  }
+                                : undefined
+                            }
                           >
                             <span className="text-muted-foreground w-8 shrink-0 text-right font-mono font-bold">
                               {step.t}'

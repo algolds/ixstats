@@ -46,11 +46,13 @@ export interface ParsedCitySvg {
   points: SvgCityPoint[];
   svgProvinces: SvgProvinceRef[];
   detectedCitiesLayerId: string;
+  detectedCityNameLayerId?: string;
 }
 
 export interface ParseCitySvgOptions {
   citiesLayerId?: string; // which layer holds the dots; auto-detect if unset
   capitalLayerId?: string; // layer (or marker) that marks capitals; optional
+  cityNameLayerId?: string; // layer holding city names/labels; optional
 }
 
 function sanitizeSvg(svgContent: string): string {
@@ -442,7 +444,50 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
   }
 
   // 4. Match names (nearest label)
-  const allLabels = extractAllTextLabels(svgRoot, svgRoot);
+  let targetNameLayerId = opts?.cityNameLayerId;
+  if (!targetNameLayerId) {
+    const NAME_STRONG_PATTERNS = ["city names", "city labels", "town names", "names", "labels", "text"];
+    let bestNameId: string | null = null;
+    let bestNameTextCount = 0;
+
+    for (const layer of layers) {
+      if (layer.textCount === 0) continue;
+      const nameLower = layer.name.toLowerCase();
+
+      if (NAME_STRONG_PATTERNS.some((p) => nameLower === p || nameLower.includes(p))) {
+        if (layer.textCount > bestNameTextCount) {
+          bestNameTextCount = layer.textCount;
+          bestNameId = layer.id;
+        }
+      }
+    }
+    targetNameLayerId = bestNameId ?? undefined;
+  }
+
+  const nameLayerContainer = targetNameLayerId ? findLayerByIdOrName(svgRoot, targetNameLayerId) : null;
+  let allLabels = nameLayerContainer ? extractAllTextLabels(nameLayerContainer, svgRoot) : [];
+
+  if (allLabels.length === 0) {
+    // Try to find any layer whose name contains "city", "label", or "name" and has text
+    for (const layer of layers) {
+      if (layer.textCount > 0) {
+        const nameLower = layer.name.toLowerCase();
+        if (nameLower.includes("city") || nameLower.includes("label") || nameLower.includes("name")) {
+          const fallbackContainer = findLayerByIdOrName(svgRoot, layer.id);
+          if (fallbackContainer) {
+            allLabels = extractAllTextLabels(fallbackContainer, svgRoot);
+            if (allLabels.length > 0) break;
+          }
+        }
+      }
+    }
+  }
+
+  // Still empty? Fallback to the entire SVG
+  if (allLabels.length === 0) {
+    allLabels = extractAllTextLabels(svgRoot, svgRoot);
+  }
+
   const points: SvgCityPoint[] = [];
 
   for (const pt of rawPoints) {
@@ -561,5 +606,6 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     points,
     svgProvinces,
     detectedCitiesLayerId: targetLayerId,
+    detectedCityNameLayerId: targetNameLayerId,
   };
 }

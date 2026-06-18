@@ -64,6 +64,7 @@ export function useCityImporter(countryId: string) {
   const [manualTransform, setManualTransform] = useState<ManualTransform>(DEFAULT_MANUAL_TRANSFORM);
   const [citiesLayerId, setCitiesLayerId] = useState<string>("");
   const [capitalLayerId, setCapitalLayerId] = useState<string>("");
+  const [cityNameLayerId, setCityNameLayerId] = useState<string>("");
   const [alignedRows, setAlignedRows] = useState<
     Array<{ name: string; lat: number; lng: number; isCapital: boolean }>
   >([]);
@@ -111,6 +112,7 @@ export function useCityImporter(countryId: string) {
           setSvgProvinces(result.svgProvinces);
           setCitiesLayerId(result.detectedCitiesLayerId);
           setCapitalLayerId("");
+          setCityNameLayerId(result.detectedCityNameLayerId || "");
           setTransform(null);
           setAlignedRows([]);
           setReferencePoints([]);
@@ -132,10 +134,13 @@ export function useCityImporter(countryId: string) {
   );
 
   const setLayer = useCallback(
-    async (newCitiesLayerId: string, newCapitalLayerId?: string) => {
+    async (newCitiesLayerId: string, newCapitalLayerId?: string, newCityNameLayerId?: string) => {
       setCitiesLayerId(newCitiesLayerId);
       if (newCapitalLayerId !== undefined) {
         setCapitalLayerId(newCapitalLayerId);
+      }
+      if (newCityNameLayerId !== undefined) {
+        setCityNameLayerId(newCityNameLayerId);
       }
 
       setIsProcessing(true);
@@ -145,7 +150,8 @@ export function useCityImporter(countryId: string) {
           countryId,
           svgContent: rawText,
           citiesLayerId: newCitiesLayerId,
-          capitalLayerId: newCapitalLayerId,
+          capitalLayerId: newCapitalLayerId !== undefined ? newCapitalLayerId : capitalLayerId,
+          cityNameLayerId: newCityNameLayerId !== undefined ? newCityNameLayerId : cityNameLayerId,
         });
 
         setSvgPoints(result.points);
@@ -162,7 +168,7 @@ export function useCityImporter(countryId: string) {
         setIsProcessing(false);
       }
     },
-    [countryId, rawText, transform, parseSvgMutation]
+    [countryId, rawText, transform, parseSvgMutation, capitalLayerId, cityNameLayerId]
   );
 
   const addReferencePoint = useCallback((point: ReferencePoint) => {
@@ -389,6 +395,7 @@ export function useCityImporter(countryId: string) {
     setManualTransform(DEFAULT_MANUAL_TRANSFORM);
     setCitiesLayerId("");
     setCapitalLayerId("");
+    setCityNameLayerId("");
     setAlignedRows([]);
   }, []);
 
@@ -415,6 +422,7 @@ export function useCityImporter(countryId: string) {
     manualTransform,
     citiesLayerId,
     capitalLayerId,
+    cityNameLayerId,
     alignedRows,
 
     // Actions

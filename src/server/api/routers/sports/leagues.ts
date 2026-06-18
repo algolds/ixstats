@@ -6,7 +6,12 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getAllPresets,
@@ -49,20 +54,51 @@ async function recalculateStandings(db: any, seasonId: string) {
     where: { seasonId, status: "completed" },
   });
 
-  const statsMap: Record<string, { wins: number; losses: number; draws: number; points: number; pointsFor: number; pointsAgainst: number }> = {};
+  const statsMap: Record<
+    string,
+    {
+      wins: number;
+      losses: number;
+      draws: number;
+      points: number;
+      pointsFor: number;
+      pointsAgainst: number;
+    }
+  > = {};
   for (const t of teams) {
-    statsMap[t.teamId] = { wins: 0, losses: 0, draws: 0, points: 0, pointsFor: 0, pointsAgainst: 0 };
+    statsMap[t.teamId] = {
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      points: 0,
+      pointsFor: 0,
+      pointsAgainst: 0,
+    };
   }
 
   for (const m of matches) {
     const homeScore = m.homeScore ?? 0;
     const awayScore = m.awayScore ?? 0;
-    
+
     if (!statsMap[m.homeTeamId]) {
-      statsMap[m.homeTeamId] = { wins: 0, losses: 0, draws: 0, points: 0, pointsFor: 0, pointsAgainst: 0 };
+      statsMap[m.homeTeamId] = {
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        points: 0,
+        pointsFor: 0,
+        pointsAgainst: 0,
+      };
     }
     if (!statsMap[m.awayTeamId]) {
-      statsMap[m.awayTeamId] = { wins: 0, losses: 0, draws: 0, points: 0, pointsFor: 0, pointsAgainst: 0 };
+      statsMap[m.awayTeamId] = {
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        points: 0,
+        pointsFor: 0,
+        pointsAgainst: 0,
+      };
     }
 
     statsMap[m.homeTeamId].pointsFor += homeScore;
@@ -627,8 +663,26 @@ export const sportsLeaguesRouter = createTRPCRouter({
         const matches = await ctx.db.sportMatch.findMany({
           where: { seasonId: input.seasonId },
           include: {
-            homeTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
-            awayTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
+            homeTeam: {
+              select: {
+                id: true,
+                name: true,
+                shortName: true,
+                color: true,
+                logo: true,
+                wikiSlug: true,
+              },
+            },
+            awayTeam: {
+              select: {
+                id: true,
+                name: true,
+                shortName: true,
+                color: true,
+                logo: true,
+                wikiSlug: true,
+              },
+            },
           },
           orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
         });
@@ -780,7 +834,8 @@ export const sportsLeaguesRouter = createTRPCRouter({
         const targetLeague = await ctx.db.sportLeague.findUnique({
           where: { id: input.targetLeagueId },
         });
-        if (!targetLeague) throw new TRPCError({ code: "NOT_FOUND", message: "Target league not found" });
+        if (!targetLeague)
+          throw new TRPCError({ code: "NOT_FOUND", message: "Target league not found" });
 
         return ctx.db.sportTeam.update({
           where: { id: input.teamId },
@@ -927,7 +982,20 @@ export const sportsLeaguesRouter = createTRPCRouter({
     }),
 
   generateMatchReport: publicProcedure
-    .input(z.object({ matchId: z.string() }))
+    .input(
+      z.object({
+        matchId: z.string(),
+        config: z
+          .object({
+            provider: z.string().optional(),
+            apiKey: z.string().optional(),
+            apiUrl: z.string().optional(),
+            modelName: z.string().optional(),
+            temperature: z.number().optional(),
+          })
+          .optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const match = await ctx.db.sportMatch.findUnique({
@@ -937,15 +1005,15 @@ export const sportsLeaguesRouter = createTRPCRouter({
             awayTeam: { select: { id: true, name: true } },
             playerStats: {
               include: {
-                player: { select: { firstName: true, lastName: true } }
-              }
+                player: { select: { firstName: true, lastName: true } },
+              },
             },
             season: {
               include: {
-                league: { select: { sportPreset: true } }
-              }
-            }
-          }
+                league: { select: { sportPreset: true } },
+              },
+            },
+          },
         });
 
         if (!match) {
@@ -954,7 +1022,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
         const stats = match.matchStats as any;
         const events = stats?.trace ?? [];
-        
+
         const report = await generateMatchReport({
           homeTeamName: match.homeTeam.name,
           awayTeamName: match.awayTeam.name,
@@ -962,7 +1030,8 @@ export const sportsLeaguesRouter = createTRPCRouter({
           awayScore: match.awayScore ?? 0,
           sport: match.season.league.sportPreset,
           events: events,
-          playerStats: match.playerStats as any[]
+          playerStats: match.playerStats as any[],
+          config: input.config,
         });
 
         return { report };
@@ -981,7 +1050,16 @@ export const sportsLeaguesRouter = createTRPCRouter({
         homeTeamId: z.string(),
         awayTeamId: z.string(),
         sport: z.string(),
-        standingsContext: z.string().optional()
+        standingsContext: z.string().optional(),
+        config: z
+          .object({
+            provider: z.string().optional(),
+            apiKey: z.string().optional(),
+            apiUrl: z.string().optional(),
+            modelName: z.string().optional(),
+            temperature: z.number().optional(),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -999,7 +1077,8 @@ export const sportsLeaguesRouter = createTRPCRouter({
           { name: homeTeam.name },
           { name: awayTeam.name },
           input.sport,
-          input.standingsContext
+          input.standingsContext,
+          input.config
         );
 
         return { preview };
@@ -1012,30 +1091,29 @@ export const sportsLeaguesRouter = createTRPCRouter({
       }
     }),
 
-  getAdminGlobalStats: protectedProcedure
-    .query(async ({ ctx }) => {
-      try {
-        const [totalMatches, totalPlayers, totalLeagues, llmPosts] = await Promise.all([
-          ctx.db.sportMatch.count(),
-          ctx.db.sportPlayer.count(),
-          ctx.db.sportLeague.count(),
-          ctx.db.thinkpagesPost.count({
-            where: { account: { username: "SportsNews" } },
-          }),
-        ]);
-        return {
-          totalMatches,
-          totalPlayers,
-          totalLeagues,
-          llmPosts,
-        };
-      } catch (_error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch admin global stats",
-        });
-      }
-    }),
+  getAdminGlobalStats: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const [totalMatches, totalPlayers, totalLeagues, llmPosts] = await Promise.all([
+        ctx.db.sportMatch.count(),
+        ctx.db.sportPlayer.count(),
+        ctx.db.sportLeague.count(),
+        ctx.db.thinkpagesPost.count({
+          where: { account: { username: "SportsNews" } },
+        }),
+      ]);
+      return {
+        totalMatches,
+        totalPlayers,
+        totalLeagues,
+        llmPosts,
+      };
+    } catch (_error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch admin global stats",
+      });
+    }
+  }),
 
   reseedSportsData: adminProcedure
     .input(
@@ -1110,6 +1188,15 @@ export const sportsLeaguesRouter = createTRPCRouter({
       z.object({
         sport: z.string(),
         events: z.array(z.string()),
+        config: z
+          .object({
+            provider: z.string().optional(),
+            apiKey: z.string().optional(),
+            apiUrl: z.string().optional(),
+            modelName: z.string().optional(),
+            temperature: z.number().optional(),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -1121,7 +1208,10 @@ export const sportsLeaguesRouter = createTRPCRouter({
           description: desc,
           team: "home" as const,
         }));
-        const outputs = await narrateEvents(mappedEvents, { sport: input.sport });
+        const outputs = await narrateEvents(mappedEvents, {
+          sport: input.sport,
+          config: input.config,
+        });
         return { outputs };
       } catch (error) {
         throw new TRPCError({
@@ -1132,7 +1222,20 @@ export const sportsLeaguesRouter = createTRPCRouter({
     }),
 
   generateMatchCommentary: publicProcedure
-    .input(z.object({ matchId: z.string() }))
+    .input(
+      z.object({
+        matchId: z.string(),
+        config: z
+          .object({
+            provider: z.string().optional(),
+            apiKey: z.string().optional(),
+            apiUrl: z.string().optional(),
+            modelName: z.string().optional(),
+            temperature: z.number().optional(),
+          })
+          .optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const match = await ctx.db.sportMatch.findUnique({
@@ -1160,6 +1263,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
         const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
         const commentary = await narrateEvents(events, {
           sport: match.season.league.sportPreset,
+          config: input.config,
         });
 
         // Save back to database
@@ -1185,17 +1289,16 @@ export const sportsLeaguesRouter = createTRPCRouter({
       }
     }),
 
-  clearSportsCache: adminProcedure
-    .mutation(async () => {
-      try {
-        const { invalidateCache } = await import("~/lib/trpc-cache");
-        await invalidateCache(["sports."]);
-        return { success: true };
-      } catch (error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to clear sports cache",
-        });
-      }
-    }),
+  clearSportsCache: adminProcedure.mutation(async () => {
+    try {
+      const { invalidateCache } = await import("~/lib/trpc-cache");
+      await invalidateCache(["sports."]);
+      return { success: true };
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to clear sports cache",
+      });
+    }
+  }),
 });

@@ -2,6 +2,8 @@
 // Transforms MediaWiki Action API HTML into WikiOS-ready content.
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
+import { withBasePath } from "~/lib/base-path";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -280,14 +282,14 @@ function transformImages(
   wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki"
 ): string {
   let origin = "https://ixwiki.com";
-  let proxyBase = "/api/mediawiki/ixwiki";
+  let proxyBase = withBasePath("/api/mediawiki/ixwiki");
 
   if (wikiSource === "iiwiki") {
     origin = "https://iiwiki.com";
-    proxyBase = "/api/mediawiki/iiwiki";
+    proxyBase = withBasePath("/api/mediawiki/iiwiki");
   } else if (wikiSource === "althistory") {
     origin = "https://althistory.fandom.com";
-    proxyBase = "/api/mediawiki/althistory";
+    proxyBase = withBasePath("/api/mediawiki/althistory");
   }
 
   // 1. Make relative image/asset URLs absolute or proxied

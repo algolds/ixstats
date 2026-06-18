@@ -2080,6 +2080,7 @@ export function resolveMatch(args: {
     };
 
     const runSoccerTick = (t: number) => {
+      const initialTraceLength = trace.length;
       if (t === 60) {
         if (homeScore > awayScore && awayTactical !== "all_out_attack") {
           awayTactical = "all_out_attack";
@@ -2263,6 +2264,30 @@ export function resolveMatch(args: {
               team: injuryTeam,
             });
           }
+        }
+      }
+
+      if (trace.length === initialTraceLength) {
+        if (rng() < 0.5) {
+          const passiveEvents = [
+            "Midfield battle intensifies as both teams contest possession.",
+            "A patient build-up play in the middle third by the home side.",
+            "Solid defensive shape prevents any progression into the penalty area.",
+            "Strong tackles flying in from both sides in a high-intensity period.",
+            "A long cross into the box is confidently collected by the goalkeeper.",
+            "The home team spreads the play wide, trying to pull the defense apart.",
+            "A quick counter-attack opportunity is shut down by a tactical interception.",
+            "Crowd rises as the ball shifts rapidly between the penalty boxes.",
+            "Excellent pressing forces a hurried clearance into touch.",
+            "Strategic passes are swapped along the back line as players seek an opening.",
+          ];
+          const desc = passiveEvents[Math.floor(rng() * passiveEvents.length)];
+          trace.push({
+            t,
+            type: "tactic_shift",
+            description: desc,
+            team: rng() < 0.5 ? "home" : "away",
+          });
         }
       }
     };

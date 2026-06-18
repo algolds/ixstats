@@ -39,7 +39,7 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
           </label>
           <select
             value={importer.citiesLayerId}
-            onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId)}
+            onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId, importer.cityNameLayerId)}
             className="bg-background border-border text-foreground w-full rounded border px-2.5 py-1 text-xs"
           >
             {importer.layers.map((layer) => (
@@ -58,7 +58,7 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
           </label>
           <select
             value={importer.capitalLayerId}
-            onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value)}
+            onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value, importer.cityNameLayerId)}
             className="bg-background border-border text-foreground w-full rounded border px-2.5 py-1 text-xs"
           >
             <option value="">None (Auto-detect from names/icons)</option>
@@ -66,6 +66,26 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
               <option key={layer.id} value={layer.id}>
                 {"\u00A0".repeat(layer.depth * 2)}
                 {layer.name} ({layer.markerCount} marker{layer.markerCount !== 1 ? "s" : ""})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* City Names Layer */}
+        <div className="space-y-1">
+          <label className="text-muted-foreground block text-[10px] font-medium">
+            City Names Layer (Optional)
+          </label>
+          <select
+            value={importer.cityNameLayerId}
+            onChange={(e) => importer.setLayer(importer.citiesLayerId, importer.capitalLayerId, e.target.value)}
+            className="bg-background border-border text-foreground w-full rounded border px-2.5 py-1 text-xs"
+          >
+            <option value="">None (Search whole SVG / Auto-detect)</option>
+            {importer.layers.map((layer) => (
+              <option key={layer.id} value={layer.id}>
+                {"\u00A0".repeat(layer.depth * 2)}
+                {layer.name} ({layer.textCount} text label{layer.textCount !== 1 ? "s" : ""})
               </option>
             ))}
           </select>

@@ -12,6 +12,9 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **AI Narrator Lab options & config persistence**: Implemented browser `localStorage` integration for the AI Narrator Lab configuration variables (`provider`, `apiKey`, `apiUrl`, `modelName`, `temperature`) so choices survive page reloads. Added auto-filled default placeholders for Nvidia, OpenRouter, and OpenAI providers, alongside a "Reset Defaults" action to clear dynamic overrides.
+- **Dynamic AI Commentary & Report overrides**: Wired the client-side play-by-play "Generate AI Commentary" and details "Generate Newspaper Match Report" actions to check for saved `localStorage` AI overrides and automatically pass them down to the backend mutations.
+- **City names layer configuration in map importer**: Added a new "City Names Layer (Optional)" dropdown selection option to the city import wizards (both standalone and integrated province/city steps). Equipped the SVG parser with automated text-layer detection, name scoping, and fallback resolution to scan selected layers or match generic text containers (e.g. layers named `names`, `labels`, `text`) before falling back to the entire SVG.
 - **Economy Builder & Tax System Persistence**: Added database persistence for selected economic components and atomic tax components (using dynamic enum-to-ID mapping helpers), ensuring selections are saved and loaded correctly across sessions.
 - **Labor & Demographics Tab Separation**: Promoted Demographics and Labor into separate, first-class wizard tabs under the Economy Builder, replacing the previous nested third-level sub-tab layout.
 - **Active Synergies and Conflicts display**: Added real-time tracking and list display of all active selected synergies and conflicts directly within the System Analysis alert inside both Economy and Tax Component selectors.
@@ -78,6 +81,7 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Changed
 
+- **Live-Wired AI Narrator Library & tRPC Routers**: Refactored the core `queryLLM` and all commentary-related generators (`generateMatchReport`, `generateMatchPreview`, `generateSeasonSummary`, and `narrateBulletin`) to accept and execute with client-specified provider, URL, API key, model, and temperature settings overrides. Updated the schemas of `generateMatchReport`, `generateMatchPreview`, and `generateMatchCommentary` in the sports leagues tRPC router to accept the optional config payload.
 - **Dashboard hero layout**: Moved the economic/population tier and global-rank badges into the card's top-right header (across from the country flag and name), and collapsed the section tabs and the "Go to MyCountry →" link onto a single bottom-aligned row.
 - **MyCountry hero calendar now runs on IxTime**: the Overview hero's iOS-style calendar widget reads the in-game date via `new Date(IxTime.getCurrentIxTime())` instead of real-world wall-clock time.
 - **Dashboard hero — premium gating**: the Intelligence and Defense section tabs (and their tRPC queries) are now restricted to MyCountry-premium members; non-premium users see Overview / Executive / Diplomacy only, and the inactivity auto-cycle skips the gated sections.
@@ -86,6 +90,10 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Fixed
 
+- **LeagueCreator Dialog Nesting**: Eliminated double dialog nesting and backdrop conflicts by instantiating `<LeagueCreator>` directly as a top-level Dialog wrapper in `SportsOversightPanel.tsx`, correcting a TypeScript prop check error in the process.
+- **ScheduleTab Dynamic Coloring Scope**: Fixed a TypeScript compile error where `sportColors` was not defined inside the `ScheduleTab` render context by calculating the colors object locally using `sportPreset`.
+- **iiwiki Flag Loading & Texture 404s**: Fixed image resolution and proxy routing issues caused by the Next.js `basePath` mount (`/projects/ixstates`) by prepending the active base path prefix to flag URLs in categories grids, background textures (`groovepaper`), repository search results, and transformed wiki HTML images.
+- **DynamicIslandSearch Image Error Handler**: Corrected the error handler callback function call on flag load errors.
 - **Atomic Card Highlighting**: Resolved a class concatenation bug in `UnifiedAtomicCard.tsx` that prevented selected, synergy, or conflict component cards from highlighting.
 - **Mount Synchronization Overwrite**: Prevented `economyIntegrationService` from overwriting loaded builder states with defaults on hook mount by pushing client-loaded states directly on mount.
 - **World Baseline Fallback**: Fixed the issue where labor/demographics metrics (such as workforce size and average wage baselines) initialized to global/world averages (e.g. 10M population, 25k GDPPC) during edit mode initialization and wiki data imports, instead scaling them relative to the country's actual stats.

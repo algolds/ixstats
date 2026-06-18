@@ -227,6 +227,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
         svgContent: z.string().min(1),
         citiesLayerId: z.string().optional(),
         capitalLayerId: z.string().optional(),
+        cityNameLayerId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -242,6 +243,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
       return parseCitySvg(input.svgContent, {
         citiesLayerId: input.citiesLayerId,
         capitalLayerId: input.capitalLayerId,
+        cityNameLayerId: input.cityNameLayerId,
       });
     }),
 });

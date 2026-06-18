@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -37,6 +37,7 @@ import {
   Shield,
   ArrowLeft,
   Sparkles,
+  Settings,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
@@ -144,7 +145,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
               }
             }}
             disabled={resetSeasonMutation.isPending}
-            className="text-xs font-bold border-red-500/20 text-red-400 hover:bg-red-500/5"
+            className="border-red-500/20 text-xs font-bold text-red-400 hover:bg-red-500/5"
           >
             {resetSeasonMutation.isPending ? "Resetting..." : "Reset Season Data"}
           </Button>
@@ -193,11 +194,13 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
 
           <form onSubmit={handleOverrideScore} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase block">Select Match</label>
+              <label className="text-muted-foreground block text-xs font-bold uppercase">
+                Select Match
+              </label>
               <select
                 value={selectedMatchId}
                 onChange={(e) => setSelectedMatchId(e.target.value)}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-xs text-foreground"
+                className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 text-xs"
                 required
               >
                 <option value="">-- Choose Match --</option>
@@ -211,24 +214,28 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase block">Home Score</label>
+                <label className="text-muted-foreground block text-xs font-bold uppercase">
+                  Home Score
+                </label>
                 <input
                   type="number"
                   min="0"
                   value={homeScore}
                   onChange={(e) => setHomeScore(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-xs text-foreground font-mono"
+                  className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 font-mono text-xs"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase block">Away Score</label>
+                <label className="text-muted-foreground block text-xs font-bold uppercase">
+                  Away Score
+                </label>
                 <input
                   type="number"
                   min="0"
                   value={awayScore}
                   onChange={(e) => setAwayScore(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-xs text-foreground font-mono"
+                  className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 font-mono text-xs"
                   required
                 />
               </div>
@@ -254,49 +261,125 @@ function AINarratorLab() {
   const [events, setEvents] = useState<string[]>([
     "Match begins. Home team using neutral tactics.",
     "GOAL! John Smith fires a shot past the goalie!",
-    "YELLOW CARD: Alex Jones gets booked for a late challenge."
+    "YELLOW CARD: Alex Jones gets booked for a late challenge.",
   ]);
   const [outputs, setOutputs] = useState<string[]>([]);
   const [latency, setLatency] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
   const notify = useNotify();
 
+  const [showConfig, setShowConfig] = useState(false);
+  const [provider, setProvider] = useState("nvidia");
+  const [apiKey, setApiKey] = useState("");
+  const [apiUrl, setApiUrl] = useState("");
+  const [modelName, setModelName] = useState("");
+  const [temperature, setTemperature] = useState(0.7);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ixstats:sports:ai-config");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.provider) setProvider(parsed.provider);
+        if (parsed.apiKey) setApiKey(parsed.apiKey);
+        if (parsed.apiUrl) setApiUrl(parsed.apiUrl);
+        if (parsed.modelName) setModelName(parsed.modelName);
+        if (parsed.temperature !== undefined) setTemperature(parsed.temperature);
+      }
+    } catch (e) {
+      console.error("Failed to load AI config from localStorage", e);
+    }
+  }, []);
+
+  const saveConfig = (key: string, val: any) => {
+    try {
+      const saved = localStorage.getItem("ixstats:sports:ai-config");
+      const current = saved ? JSON.parse(saved) : {};
+      current[key] = val;
+      localStorage.setItem("ixstats:sports:ai-config", JSON.stringify(current));
+    } catch (e) {
+      console.error("Failed to save AI config to localStorage", e);
+    }
+  };
+
+  const handleResetConfig = () => {
+    try {
+      localStorage.removeItem("ixstats:sports:ai-config");
+      setProvider("nvidia");
+      setApiKey("");
+      setApiUrl("");
+      setModelName("");
+      setTemperature(0.7);
+      notify.success("Config Reset", "AI Narrator configurations reverted to defaults.");
+    } catch (e) {
+      console.error("Failed to reset AI config", e);
+    }
+  };
+
+  const getPlaceholders = () => {
+    if (provider === "nvidia") {
+      return {
+        apiUrl: "https://integrate.api.nvidia.com/v1/chat/completions",
+        modelName: "nvidia/nemotron-3-ultra-550b-a55b",
+      };
+    }
+    if (provider === "openrouter") {
+      return {
+        apiUrl: "https://openrouter.ai/api/v1/chat/completions",
+        modelName: "meta-llama/llama-3.1-70b-instruct",
+      };
+    }
+    if (provider === "openai") {
+      return {
+        apiUrl: "https://api.openai.com/v1/chat/completions",
+        modelName: "gpt-4o-mini",
+      };
+    }
+    return {
+      apiUrl: "https://your-custom-endpoint/v1/chat/completions",
+      modelName: "your-custom-model",
+    };
+  };
+
+  const placeholders = getPlaceholders();
+
   const templates: Record<string, string[]> = {
     soccer: [
       "Match begins. Home team using neutral tactics.",
       "GOAL! John Smith fires a shot past the goalie!",
-      "YELLOW CARD: Alex Jones gets booked for a late challenge."
+      "YELLOW CARD: Alex Jones gets booked for a late challenge.",
     ],
     f1: [
       "Race begins under clear skies. Drivers grid up.",
       "COLLISION: Hamilton and Verstappen touch at turn 4!",
-      "CHEQUERED FLAG: Leclerc wins the race!"
+      "CHEQUERED FLAG: Leclerc wins the race!",
     ],
     boxing: [
       "Round 1 begins. Fighters touch gloves.",
       "KNOCKDOWN: Tyson lands a devastating hook and sends Paul to the canvas!",
-      "DECISION: Tyson wins by Unanimous Decision!"
+      "DECISION: Tyson wins by Unanimous Decision!",
     ],
     basketball: [
       "Tip-off! Lakers win the possession and run transition offense.",
       "THREE POINTER: Curry drains a deep shot from the logo!",
-      "STEAL & SLAM: Antetokounmpo steals and runs the length of the court for an emphatic dunk!"
+      "STEAL & SLAM: Antetokounmpo steals and runs the length of the court for an emphatic dunk!",
     ],
     football: [
       "Kickoff! The home team returns the kick to the 25-yard line.",
       "TOUCHDOWN: Mahomes connects with Kelce in the corner of the endzone!",
-      "INTERCEPTION: Bosa tips the pass and Warner runs it back for a pick-six!"
+      "INTERCEPTION: Bosa tips the pass and Warner runs it back for a pick-six!",
     ],
     hockey: [
       "Faceoff! The puck is dropped and the Rangers gain control.",
       "GOAL: McDavid dekes past two defenders and slides it under the pads!",
-      "FIGHT: Kane and Reaves drop the gloves behind the net after a heavy hit!"
+      "FIGHT: Kane and Reaves drop the gloves behind the net after a heavy hit!",
     ],
     baseball: [
       "Play ball! The pitcher strikes out the first batter with a high fastball.",
       "HOME RUN: Ohtani crushes a 450-foot shot deep into the right-field stands!",
-      "DOUBLE PLAY: Judge hits a grounder to shortstop, turned to second, then to first!"
-    ]
+      "DOUBLE PLAY: Judge hits a grounder to shortstop, turned to second, then to first!",
+    ],
   };
 
   const handleLoadTemplate = (selectedSport: string) => {
@@ -338,7 +421,7 @@ function AINarratorLab() {
     onError: (e) => {
       setLatency(null);
       notify.error("Narration Failed", e.message ?? "Failed to run narration playground.");
-    }
+    },
   });
 
   const handleRunTest = () => {
@@ -350,34 +433,43 @@ function AINarratorLab() {
     runTestMutation.mutate({
       sport,
       events: filteredEvents,
+      config: {
+        provider,
+        apiKey: apiKey || undefined,
+        apiUrl: apiUrl || undefined,
+        modelName: modelName || undefined,
+        temperature,
+      },
     });
   };
 
   return (
-    <Card className="facet-hierarchy-child border-border/50 bg-card/40 p-6 relative overflow-hidden">
+    <Card className="facet-hierarchy-child border-border/50 bg-card/40 relative overflow-hidden p-6">
       {/* Background radial glow */}
-      <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
+      <div className="pointer-events-none absolute -top-20 -right-20 h-44 w-44 rounded-full bg-amber-500/5 blur-3xl" />
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-foreground text-xl font-black flex items-center gap-2">
+          <h2 className="text-foreground flex items-center gap-2 text-xl font-black">
             <Sparkles className="h-5 w-5 text-amber-400" />
             AI Narrator Test Lab
           </h2>
-          <p className="text-muted-foreground text-xs mt-1">
+          <p className="text-muted-foreground mt-1 text-xs">
             Test and preview live generated commentary across different sports configurations.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-12">
           {/* Controls & Inputs (Left) */}
-          <div className="md:col-span-6 space-y-4">
+          <div className="space-y-4 md:col-span-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase block">Sport Preset</label>
+              <label className="text-muted-foreground block text-xs font-bold uppercase">
+                Sport Preset
+              </label>
               <select
                 value={sport}
                 onChange={(e) => handleLoadTemplate(e.target.value)}
-                className="w-full bg-slate-900 border border-white/10 rounded-xl p-2.5 text-xs text-foreground font-semibold"
+                className="text-foreground w-full rounded-xl border border-white/10 bg-slate-900 p-2.5 text-xs font-semibold"
               >
                 <option value="soccer">Soccer ⚽</option>
                 <option value="f1">Formula 1 🏎️</option>
@@ -389,24 +481,144 @@ function AINarratorLab() {
               </select>
             </div>
 
+            {/* Advanced Settings Toggle */}
+            <div className="pt-1 select-none">
+              <button
+                type="button"
+                onClick={() => setShowConfig(!showConfig)}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-[11px] font-bold transition select-none"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                {showConfig ? "Hide Advanced Settings" : "Configure AI Settings"}
+              </button>
+            </div>
+
+            {/* Config Fields */}
+            {showConfig && (
+              <div className="space-y-3.5 rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                      Provider
+                    </label>
+                    <select
+                      value={provider}
+                      onChange={(e) => {
+                        setProvider(e.target.value);
+                        saveConfig("provider", e.target.value);
+                      }}
+                      className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 text-xs font-semibold"
+                    >
+                      <option value="nvidia">Nvidia</option>
+                      <option value="openrouter">OpenRouter</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="custom">Custom (OpenAI-like)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                      Temp ({temperature})
+                    </label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.1}
+                      value={temperature}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        setTemperature(v);
+                        saveConfig("temperature", v);
+                      }}
+                      className="h-8 w-full cursor-pointer accent-amber-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => {
+                      setApiKey(e.target.value);
+                      saveConfig("apiKey", e.target.value);
+                    }}
+                    placeholder="Read from env if empty"
+                    className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    Model Name
+                  </label>
+                  <input
+                    type="text"
+                    value={modelName}
+                    onChange={(e) => {
+                      setModelName(e.target.value);
+                      saveConfig("modelName", e.target.value);
+                    }}
+                    placeholder={placeholders.modelName}
+                    className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 font-mono text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-muted-foreground block text-[10px] font-bold uppercase">
+                    Base API URL
+                  </label>
+                  <input
+                    type="text"
+                    value={apiUrl}
+                    onChange={(e) => {
+                      setApiUrl(e.target.value);
+                      saveConfig("apiUrl", e.target.value);
+                    }}
+                    placeholder={placeholders.apiUrl}
+                    className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 font-mono text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                  <span className="text-muted-foreground text-[9px]">
+                    Auto-saved to LocalStorage.
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleResetConfig}
+                    className="h-6 rounded-lg border-rose-500/30 bg-rose-500/5 px-2.5 text-[10px] text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
+                  >
+                    Reset Defaults
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-muted-foreground uppercase">Play-by-Play Events</label>
+                <label className="text-muted-foreground text-xs font-bold uppercase">
+                  Play-by-Play Events
+                </label>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleAddEvent}
-                  className="text-[10px] h-6 px-2.5 font-bold rounded-full bg-white/5 border-white/10 text-white"
+                  className="h-6 rounded-full border-white/10 bg-white/5 px-2.5 text-[10px] font-bold text-white"
                 >
                   + Add Event
                 </Button>
               </div>
 
-              <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+              <div className="max-h-[380px] space-y-2 overflow-y-auto pr-1">
                 {events.map((event, idx) => (
-                  <div key={idx} className="flex gap-2 items-center">
-                    <span className="text-muted-foreground font-mono text-xs w-6 text-right font-black">
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-6 text-right font-mono text-xs font-black">
                       {idx * 10}'
                     </span>
                     <input
@@ -414,14 +626,14 @@ function AINarratorLab() {
                       value={event}
                       onChange={(e) => handleEventChange(idx, e.target.value)}
                       placeholder="e.g. Referee blows whistle / Goal scored..."
-                      className="flex-1 bg-slate-900 border border-white/10 rounded-xl p-2 text-xs text-foreground"
+                      className="text-foreground flex-1 rounded-xl border border-white/10 bg-slate-900 p-2 text-xs"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveEvent(idx)}
-                      className="text-red-400 hover:text-red-300 h-8 w-8 rounded-full p-0"
+                      className="h-8 w-8 rounded-full p-0 text-red-400 hover:text-red-300"
                     >
                       ×
                     </Button>
@@ -434,7 +646,7 @@ function AINarratorLab() {
               type="button"
               onClick={handleRunTest}
               disabled={runTestMutation.isPending}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl gap-2 mt-2"
+              className="mt-2 w-full gap-2 rounded-xl bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
             >
               {runTestMutation.isPending ? (
                 <>
@@ -451,43 +663,56 @@ function AINarratorLab() {
           </div>
 
           {/* Results Card (Right) */}
-          <div className="md:col-span-6 space-y-4">
+          <div className="space-y-4 md:col-span-6">
             <div className="flex items-center justify-between select-none">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Generated Broadcast Output</label>
+              <label className="text-muted-foreground text-xs font-bold uppercase">
+                Generated Broadcast Output
+              </label>
               {latency != null && (
-                <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-[9px] font-bold">
+                <Badge
+                  variant="outline"
+                  className="border-cyan-500/30 bg-cyan-500/10 text-[9px] font-bold text-cyan-400"
+                >
                   Latency: {latency.toLocaleString()}ms
                 </Badge>
               )}
             </div>
 
-            <div className="border border-white/10 bg-slate-950/50 rounded-2xl p-4 min-h-[360px] max-h-[460px] overflow-y-auto backdrop-blur-md relative">
+            <div className="relative max-h-[460px] min-h-[360px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/50 p-4 backdrop-blur-md">
               {runTestMutation.isPending ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 space-y-3">
-                  <Sparkles className="h-8 w-8 text-amber-400 animate-spin" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 p-6 text-center">
+                  <Sparkles className="h-8 w-8 animate-spin text-amber-400" />
                   <div>
-                    <p className="text-xs font-bold text-white">Transmitting mock telemetry to LLM...</p>
-                    <p className="text-[10px] text-white/50 mt-1 max-w-[280px]">Generating immersive, custom-style commentary via the Nvidia Nemotron engine.</p>
+                    <p className="text-xs font-bold text-white">
+                      Transmitting mock telemetry to LLM...
+                    </p>
+                    <p className="mt-1 max-w-[280px] text-[10px] text-white/50">
+                      Generating immersive, custom-style commentary via the Nvidia Nemotron engine.
+                    </p>
                   </div>
                 </div>
               ) : outputs.length === 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-white/40 text-xs italic">
-                  <Sparkles className="h-7 w-7 mb-2 opacity-55 text-amber-500/40" />
-                  Set up event inputs on the left and click run to stream generated play-by-play commentary.
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-xs text-white/40 italic">
+                  <Sparkles className="mb-2 h-7 w-7 text-amber-500/40 opacity-55" />
+                  Set up event inputs on the left and click run to stream generated play-by-play
+                  commentary.
                 </div>
               ) : (
                 <div className="space-y-4">
                   {outputs.map((out, idx) => (
-                    <div key={idx} className="border-b border-white/5 pb-3 last:border-b-0 last:pb-0 text-xs leading-relaxed">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded">
+                    <div
+                      key={idx}
+                      className="border-b border-white/5 pb-3 text-xs leading-relaxed last:border-b-0 last:pb-0"
+                    >
+                      <div className="mb-1.5 flex items-center gap-2">
+                        <span className="rounded border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-amber-300">
                           {idx * 10}' Event
                         </span>
-                        <span className="text-white/40 text-[9px] italic truncate max-w-[200px]">
+                        <span className="max-w-[200px] truncate text-[9px] text-white/40 italic">
                           "{events[idx]}"
                         </span>
                       </div>
-                      <p className="text-white/90 font-medium pl-1 bg-white/5 border-l border-amber-400 p-2 rounded-r-xl">
+                      <p className="rounded-r-xl border-l border-amber-400 bg-white/5 p-2 pl-1 font-medium text-white/90">
                         {out}
                       </p>
                     </div>
@@ -553,7 +778,10 @@ export default function SportsOversightPanel() {
 
   // Derived data
   const canonicalLeagues = useMemo(() => leagues?.filter((l) => l.isCanonical) ?? [], [leagues]);
-  const managedLeague = useMemo(() => leagues?.find((l) => l.id === managedLeagueId), [leagues, managedLeagueId]);
+  const managedLeague = useMemo(
+    () => leagues?.find((l) => l.id === managedLeagueId),
+    [leagues, managedLeagueId]
+  );
 
   const handleDelete = () => {
     if (deleteTarget) {
@@ -663,10 +891,19 @@ export default function SportsOversightPanel() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => handleView(league.id)} title="View Main League Page">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleView(league.id)}
+                      title="View Main League Page"
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setManagedLeagueId(league.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setManagedLeagueId(league.id)}
+                    >
                       Manage
                     </Button>
                     <Button
@@ -698,7 +935,9 @@ export default function SportsOversightPanel() {
             </div>
             <div>
               <h1 className="text-foreground text-2xl font-bold">Sports Admin Oversight</h1>
-              <p className="text-muted-foreground text-sm">System oversight, canonical league creation and simulated state auditing</p>
+              <p className="text-muted-foreground text-sm">
+                System oversight, canonical league creation and simulated state auditing
+              </p>
             </div>
           </div>
           <Button onClick={() => setCreatorOpen(true)} className="gap-2">
@@ -708,7 +947,7 @@ export default function SportsOversightPanel() {
         </div>
 
         {/* Global stats row */}
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
             <span className="text-muted-foreground text-[11px] font-medium uppercase">
               Total Leagues
@@ -746,11 +985,11 @@ export default function SportsOversightPanel() {
 
       {managedLeagueId && managedLeague ? (
         /* Expanded Drill-down League Manage Panel */
-        <Card className="facet-hierarchy-child border-border/50 bg-card/40 p-6 relative">
+        <Card className="facet-hierarchy-child border-border/50 bg-card/40 relative p-6">
           <Button
             variant="ghost"
             onClick={() => setManagedLeagueId(null)}
-            className="absolute right-4 top-4 text-xs font-bold text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground absolute top-4 right-4 text-xs font-bold"
           >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to List
           </Button>
@@ -762,7 +1001,7 @@ export default function SportsOversightPanel() {
                   {getSportIcon(managedLeague.sportPreset)} {managedLeague.sportPreset}
                 </Badge>
                 {managedLeague.isCanonical ? (
-                  <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/20">
+                  <Badge className="border-purple-500/20 bg-purple-500/10 text-purple-400">
                     Canonical League
                   </Badge>
                 ) : (
@@ -770,7 +1009,7 @@ export default function SportsOversightPanel() {
                 )}
               </div>
               <h2 className="text-foreground mt-2 text-2xl font-black">{managedLeague.name}</h2>
-              <p className="text-muted-foreground text-xs mt-1">ID: {managedLeague.id}</p>
+              <p className="text-muted-foreground mt-1 text-xs">ID: {managedLeague.id}</p>
             </div>
 
             <Tabs defaultValue="actions" className="w-full">
@@ -780,48 +1019,73 @@ export default function SportsOversightPanel() {
                 <TabsTrigger value="danger">Danger Zone</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="actions" className="space-y-4 mt-6">
+              <TabsContent value="actions" className="mt-6 space-y-4">
                 <AdminAdvancedControls league={managedLeague} onRefetch={refetch} />
               </TabsContent>
 
-              <TabsContent value="info" className="space-y-4 mt-6">
+              <TabsContent value="info" className="mt-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">Archetype</span>
-                    <span className="text-foreground text-sm font-semibold capitalize">{managedLeague.archetype}</span>
+                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                      Archetype
+                    </span>
+                    <span className="text-foreground text-sm font-semibold capitalize">
+                      {managedLeague.archetype}
+                    </span>
                   </div>
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">Teams Count</span>
-                    <span className="text-foreground text-sm font-semibold">{managedLeague.teamCount} Teams</span>
+                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                      Teams Count
+                    </span>
+                    <span className="text-foreground text-sm font-semibold">
+                      {managedLeague.teamCount} Teams
+                    </span>
                   </div>
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">promotion Zone</span>
-                    <span className="text-foreground text-sm font-semibold">{managedLeague.promotionCount} Teams</span>
+                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                      promotion Zone
+                    </span>
+                    <span className="text-foreground text-sm font-semibold">
+                      {managedLeague.promotionCount} Teams
+                    </span>
                   </div>
                   <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">relegation Zone</span>
-                    <span className="text-foreground text-sm font-semibold">{managedLeague.relegationCount} Teams</span>
+                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                      relegation Zone
+                    </span>
+                    <span className="text-foreground text-sm font-semibold">
+                      {managedLeague.relegationCount} Teams
+                    </span>
                   </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="danger" className="space-y-4 mt-6">
-                <div className="bg-red-500/10 border-red-500/20 rounded-2xl border p-4">
-                  <h3 className="text-red-400 font-bold text-sm">Destructive Actions</h3>
-                  <p className="text-muted-foreground text-xs mt-1">These operations are irreversibly destructive and will wipe out season matches, standings or the league completely.</p>
-                  
+              <TabsContent value="danger" className="mt-6 space-y-4">
+                <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+                  <h3 className="text-sm font-bold text-red-400">Destructive Actions</h3>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    These operations are irreversibly destructive and will wipe out season matches,
+                    standings or the league completely.
+                  </p>
+
                   <div className="mt-4 flex flex-wrap gap-3">
                     <Button
                       variant="outline"
-                      onClick={() => handleToggleCanonical(managedLeague.id, managedLeague.isCanonical)}
-                      className="text-amber-400 border-amber-500/20 hover:bg-amber-500/5 text-xs font-bold"
+                      onClick={() =>
+                        handleToggleCanonical(managedLeague.id, managedLeague.isCanonical)
+                      }
+                      className="border-amber-500/20 text-xs font-bold text-amber-400 hover:bg-amber-500/5"
                     >
-                      {managedLeague.isCanonical ? "Remove Canonical Status" : "Make League Canonical"}
+                      {managedLeague.isCanonical
+                        ? "Remove Canonical Status"
+                        : "Make League Canonical"}
                     </Button>
-                    
+
                     <Button
                       variant="destructive"
-                      onClick={() => setDeleteTarget({ id: managedLeague.id, name: managedLeague.name })}
+                      onClick={() =>
+                        setDeleteTarget({ id: managedLeague.id, name: managedLeague.name })
+                      }
                       className="text-xs font-bold"
                     >
                       Force-Delete League Completely
@@ -874,9 +1138,12 @@ export default function SportsOversightPanel() {
                     <Shield className="text-primary h-8 w-8" />
                   </div>
                   <div>
-                    <h3 className="text-foreground text-sm font-semibold">Standard League Builder</h3>
-                    <p className="text-muted-foreground text-xs mt-1 max-w-[280px]">
-                      Construct a custom canonical league structure bound to the global system presets.
+                    <h3 className="text-foreground text-sm font-semibold">
+                      Standard League Builder
+                    </h3>
+                    <p className="text-muted-foreground mt-1 max-w-[280px] text-xs">
+                      Construct a custom canonical league structure bound to the global system
+                      presets.
                     </p>
                   </div>
                   <Button onClick={() => setCreatorOpen(true)}>Open Creator Dialog</Button>
@@ -892,27 +1159,16 @@ export default function SportsOversightPanel() {
       )}
 
       {/* Creator dialog */}
-      <Dialog open={creatorOpen} onOpenChange={setCreatorOpen}>
-        <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden bg-slate-950 border-white/10">
-          <div className="p-6">
-            <DialogHeader className="mb-4">
-              <DialogTitle>Create Canonical League</DialogTitle>
-              <DialogDescription>
-                Build a new canonical sports competition. System presets will define draft size and tactics.
-              </DialogDescription>
-            </DialogHeader>
-            <LeagueCreator
-              onClose={() => setCreatorOpen(false)}
-              onSuccess={() => {
-                setCreatorOpen(false);
-                void refetch();
-                void refetchStats();
-              }}
-              defaultCanonical={true}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <LeagueCreator
+        open={creatorOpen}
+        onOpenChange={setCreatorOpen}
+        onCreated={() => {
+          setCreatorOpen(false);
+          void refetch();
+          void refetchStats();
+        }}
+        isCanonical={true}
+      />
 
       {/* Delete confirmation dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
@@ -920,8 +1176,9 @@ export default function SportsOversightPanel() {
           <DialogHeader>
             <DialogTitle className="text-red-400">Irreversible Deletion</DialogTitle>
             <DialogDescription>
-              Are you absolutely certain you want to delete <span className="font-bold text-white">"{deleteTarget?.name}"</span>?
-              All associated matches, teams, rosters, historical standings, and records will be deleted forever.
+              Are you absolutely certain you want to delete{" "}
+              <span className="font-bold text-white">"{deleteTarget?.name}"</span>? All associated
+              matches, teams, rosters, historical standings, and records will be deleted forever.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 gap-2">
@@ -952,5 +1209,3 @@ export default function SportsOversightPanel() {
     </div>
   );
 }
-
-

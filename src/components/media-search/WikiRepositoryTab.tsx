@@ -3,6 +3,7 @@
 
 // eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import {
   Search,
@@ -151,9 +152,9 @@ export function WikiRepositoryTab({
       const mapped = wikiFileData.map((img: any, index: number) => {
         const rawUrl = img.url || "";
         const proxiedUrl = rawUrl.includes("iiwiki.com/")
-          ? rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
+          ? withBasePath(rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/"))
           : rawUrl.includes("ixwiki.com/")
-            ? rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
+            ? withBasePath(rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/"))
             : rawUrl;
 
         return {

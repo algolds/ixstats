@@ -18,7 +18,6 @@ import * as path from "path";
 import { getArticleWikitext, type WikiSource } from "./wiki-bridge";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-wiki-parser";
 import { withRetrySafe } from "./with-retry";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "./base-path";
 
 // ──────────────────────────────────────────────
@@ -553,12 +552,15 @@ async function fetchEligibleCountriesRaw(
   const finalResults: EligibleCountryResult[] = allResults.map(({ result, flagFilename }) => {
     if (flagFilename) {
       if (site === "iiwiki") {
-        result.flagUrl = `/api/mediawiki/iiwiki/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
+        result.flagUrl = withBasePath(
+          `/api/mediawiki/iiwiki/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`
+        );
       } else {
         const lookupKey = flagFilename.toLowerCase().replace(/_/g, " ").trim();
-        result.flagUrl =
+        result.flagUrl = withBasePath(
           urlMap.get(lookupKey) ||
-          `/api/mediawiki/althistory/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`;
+            `/api/mediawiki/althistory/wiki/Special:FilePath/${encodeURIComponent(flagFilename)}`
+        );
       }
     }
     return result;

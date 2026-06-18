@@ -182,6 +182,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
           layers: parsedCities.layers,
           points: parsedCities.points,
           detectedCitiesLayerId: parsedCities.detectedCitiesLayerId,
+          detectedCityNameLayerId: parsedCities.detectedCityNameLayerId,
         };
       } catch (err) {
         console.warn("[parseProvinceUpload] Failed to parse cities from SVG:", err);
