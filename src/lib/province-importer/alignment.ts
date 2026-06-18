@@ -388,6 +388,25 @@ export function findNearestBorderRing(
   let bestRing = rings[0]!;
   let bestDist = Infinity;
   for (const ring of rings) {
+    // ponytail: check ring bounding box first to skip detailed coordinate checks
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const pt of ring) {
+      if (pt[0]! < minX) minX = pt[0]!;
+      if (pt[0]! > maxX) maxX = pt[0]!;
+      if (pt[1]! < minY) minY = pt[1]!;
+      if (pt[1]! > maxY) maxY = pt[1]!;
+    }
+    let boxDx = 0;
+    if (centroid[0]! < minX) boxDx = minX - centroid[0]!;
+    else if (centroid[0]! > maxX) boxDx = centroid[0]! - maxX;
+    let boxDy = 0;
+    if (centroid[1]! < minY) boxDy = minY - centroid[1]!;
+    else if (centroid[1]! > maxY) boxDy = centroid[1]! - maxY;
+    const boxDist = Math.sqrt(boxDx * boxDx + boxDy * boxDy);
+    if (boxDist >= bestDist) {
+      continue;
+    }
+
     for (const pt of ring) {
       const d = distanceDeg(centroid, pt);
       if (d < bestDist) {
@@ -495,8 +514,31 @@ function snapAndConformRing(
     let bestEdge = -1;
     let bestT = 0;
 
+    const px = coord[0]!;
+    const py = coord[1]!;
+
     for (let ei = 0; ei < borderEdges.length; ei++) {
       const [a, b] = borderEdges[ei]!;
+      // ponytail: bounding box distance check to prune segment projections
+      const minX = Math.min(a[0]!, b[0]!);
+      const maxX = Math.max(a[0]!, b[0]!);
+      const minY = Math.min(a[1]!, b[1]!);
+      const maxY = Math.max(a[1]!, b[1]!);
+
+      let boxDx = 0;
+      if (px < minX) boxDx = minX - px;
+      else if (px > maxX) boxDx = px - maxX;
+
+      let boxDy = 0;
+      if (py < minY) boxDy = minY - py;
+      else if (py > maxY) boxDy = py - maxY;
+
+      const boxD2 = boxDx * boxDx + boxDy * boxDy;
+      const maxAllowedD = Math.min(tolerance, bestDist);
+      if (boxD2 > maxAllowedD * maxAllowedD) {
+        continue;
+      }
+
       const proj = projectPointToSegment(coord, a, b);
       const dist = distanceDeg(coord, proj);
       if (dist < bestDist && dist <= tolerance) {

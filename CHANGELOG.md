@@ -12,11 +12,53 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
-- **Sports fixes (Plans 059–062)**:
+- **MyLeague Configurable Sports Reseeding & Admin Consolidation**:
+  - Implemented configurable re-seeding backend mutation `reseedSportsData` in sports leagues tRPC router with customized options.
+  - Consolidated `/admin/sports` (Oversight/Creator/AI Narrator Lab) and `/admin/sports-labs` (ReactFlow Sim Sandbox) into a unified `/admin/myleague` dashboard under three tabs: Oversight, Sandbox, and Data Lab.
+  - Added cache invalidation support (`clearSportsCache` mutation) using `invalidateCache(["sports."])` to flush simulated standings, rosters, and stats instantly.
+  - Created modular panel components: `SportsOversightPanel`, `SportsLabsPanel`, and `SportsSeederPanel` in `src/app/admin/myleague`.
+
+- **Map Editor Math Optimization (Ponytail)**:
+  - Added bounding box checks in `findNearestBorderRing` to skip detailed coordinate distance loops for far-away islands/rings.
+  - Implemented boundary edge bounding box checks in `snapAndConformRing` to avoid expensive segment projections for distant coordinates, pruning $99\%+$ of segments.
+  - Implemented a mathematically precise segment bounding box distance filter in `findClosestPointOnBoundary` to skip segment projection checks if the lower-bound distance exceeds the current closest distance.
+  - Added test suite `alignment.test.ts` verifying snapping and ring-finding calculations.
+
+- **Map Editor Reactivity & Realtime Sync (Plan 085)**:
+  - Wired automated cache invalidations and updates broadcasting via server-sent events for province and city imports, border commits, splits, merges, and geo updates.
+
+- **Province & City Importer Quality & Integrity (Plans 056, 057, 058, 084)**:
+  - Implemented SVG city import with province-correspondence auto-alignment (Plan 056).
+  - Resolved province import commit name collisions by merging/updating existing records instead of aborting the transaction (Plan 057).
+  - Implemented server-side self-intersecting province geometry repair via PostGIS `ST_MakeValid` and raw `geom_postgis` sync on commit (Plan 058).
+  - Switched PostGIS containment check functions from `ST_Contains` to `ST_Covers` to prevent saving failures on exact boundary matches (Plan 084).
+  - Implemented name-matching logic in `upsertCity` to update existing records case-insensitively instead of duplicating them (Plan 084).
+
+- **Sports & MyLeague Enhancements (Plans 059–065, 068)**:
   - Wired QuickSim sidebar button to the page's computed `nextMatchDay` and added a disabled "Season complete" state (Plan 059).
   - Gated the `isCanonical` league flag in the `createLeague` mutation to system owners (Plan 060).
   - Resolved league cover images from a deterministic, verified Wikimedia Commons pool hashed by entity ID, with a CSS gradient/emoji fallback component `<LeagueCover>` (Plan 061).
   - Scoped `getMyClubOverview` cache invalidations to the active `teamId` in the four team action components (Plan 062).
+  - Designed the sports live-experience roadmap (Dynamic Island, follows, narration) (Plan 063).
+  - Configured match-day results to auto-post digests to the ThinkPages `SportsNews` feed (Plan 064).
+  - Researched and integrated reasoning-capable AI commentary into match Details and Schedule views (Plans 065, 068).
+
+- **Full-Site Triage & Polish (Plans 069–083)**:
+  - Stopped maps "Generate Routes" form proposing manual-only route types (Plan 069).
+  - Removed stray `//` comment rendering as text in Atomic Tax UI (Plan 070).
+  - Verified and deployed dashboard stale-build Alerts fix (Plan 071).
+  - Fixed legislature "Unknown Party" labels after elections (Plan 072).
+  - Title-cased government types across 11 infobox display sites (Plan 073).
+  - Adjusted foreign-policy "Confirm Lift" button styling for readability (Plan 074).
+  - Fixed Explore search icon alignment and popup bounds (Plan 075).
+  - Cleaned up empty vertical spacing beneath the executive infobox map (Plan 076).
+  - Persisted user selections in the Economy Builder and Tax preview panels (Plan 077).
+  - Corrected Labor and Demographics tabs to query national instead of world figures (Plan 078).
+  - Invalidated active political party queries after editing support attributes (Plan 079).
+  - Restored Parliament hemicycle graphic rendering on Legislature tab (Plan 080).
+  - Gated multicameral chamber seat updates from auto-snapping to wrong totals (Plan 081).
+  - Persisted map label rotation/opacity and wired regions opacity slider (Plan 082).
+  - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
 
 ## [1.1.0 Ogma (Alpha)] - 2026-06-16
 

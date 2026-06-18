@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getAllPresets,
@@ -1029,10 +1029,78 @@ export const sportsLeaguesRouter = createTRPCRouter({
           totalLeagues,
           llmPosts,
         };
-      } catch (error) {
+      } catch (_error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch admin global stats",
+        });
+      }
+    }),
+
+  reseedSportsData: adminProcedure
+    .input(
+      z.object({
+        clearExisting: z.boolean().default(true),
+        seedCaphirianSoccer: z.boolean().default(true),
+        seedYonderreSoccer: z.boolean().default(true),
+        seedOHLHockey: z.boolean().default(true),
+        seedF1: z.boolean().default(true),
+        seedBoxing: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const prisma = ctx.db;
+        const userId = ctx.session.userId;
+
+        // Find a fallback country if none exists
+        const firstCountry = await prisma.country.findFirst({ select: { id: true } });
+        const countryId = firstCountry?.id ?? "unknown";
+
+        let deletedCount = 0;
+        if (input.clearExisting) {
+          // Find canonical leagues to delete
+          const canonicalLeagues = await prisma.sportLeague.findMany({
+            where: { isCanonical: true },
+            select: { id: true },
+          });
+
+          if (canonicalLeagues.length > 0) {
+            const leagueIds = canonicalLeagues.map((l) => l.id);
+            // Cascade delete will automatically clean up associated records
+            const deleted = await prisma.sportLeague.deleteMany({
+              where: { id: { in: leagueIds } },
+            });
+            deletedCount = deleted.count;
+          }
+        }
+
+        const { seedSportsLeagues } = await import("~/lib/demo-seed/seed-sports");
+        const seededCount = await seedSportsLeagues(prisma, countryId, userId, {
+          seedCaphirianSoccer: input.seedCaphirianSoccer,
+          seedYonderreSoccer: input.seedYonderreSoccer,
+          seedOHLHockey: input.seedOHLHockey,
+          seedF1: input.seedF1,
+          seedBoxing: input.seedBoxing,
+        });
+
+        // Invalidate sports tRPC query caches
+        try {
+          const { invalidateCache } = await import("~/lib/trpc-cache");
+          await invalidateCache(["sports."]);
+        } catch (cacheErr) {
+          console.warn("Failed to invalidate sports cache:", cacheErr);
+        }
+
+        return {
+          success: true,
+          deletedCount,
+          seededCount,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to re-seed sports data",
         });
       }
     }),
@@ -1113,6 +1181,20 @@ export const sportsLeaguesRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: error instanceof Error ? error.message : "Failed to generate match commentary",
+        });
+      }
+    }),
+
+  clearSportsCache: adminProcedure
+    .mutation(async () => {
+      try {
+        const { invalidateCache } = await import("~/lib/trpc-cache");
+        await invalidateCache(["sports."]);
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to clear sports cache",
         });
       }
     }),

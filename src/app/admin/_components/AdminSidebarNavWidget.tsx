@@ -241,11 +241,11 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       {
         label: "MyLeague Settings",
-        href: "/admin/sports-labs",
+        href: "/admin/myleague",
         icon: Trophy,
         description: "Simulation sandbox & pipeline viz",
         activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
-        section: "sports-labs",
+        section: "myleague",
       },
     ],
   },

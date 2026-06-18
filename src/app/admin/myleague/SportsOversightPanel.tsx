@@ -1,10 +1,6 @@
-// src/app/admin/sports/page.tsx
-// Admin sports management — canonical league oversight
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useState, useMemo } from "react";
-import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -40,17 +36,10 @@ import {
   AlertTriangle,
   Shield,
   ArrowLeft,
-  Settings,
   Sparkles,
-  Database,
-  Users,
-  Calendar,
-  FastForward,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const statusMeta: Record<string, { label: string; className: string }> = {
   active: {
@@ -78,10 +67,7 @@ function getSportIcon(sportPreset: string): string {
   return preset?.icon ?? "🏆";
 }
 
-// ─── Page Component ───────────────────────────────────────────────────────────
-
-export default function SportsAdminPage() {
-  usePageTitle({ title: "Sports Admin" });
+export default function SportsOversightPanel() {
   const router = useRouter();
   const notify = useNotify();
 
@@ -90,7 +76,7 @@ export default function SportsAdminPage() {
   const [creatorOpen, setCreatorOpen] = useState(false);
   const [managedLeagueId, setManagedLeagueId] = useState<string | null>(null);
 
-  // ── Queries ──────────────────────────────────────────────────────────────
+  // Queries
   const {
     data: leagues,
     isLoading,
@@ -100,14 +86,14 @@ export default function SportsAdminPage() {
 
   const { data: globalStats, refetch: refetchStats } = api.sports.getAdminGlobalStats.useQuery();
 
-  // ── Mutations ────────────────────────────────────────────────────────────
+  // Mutations
   const deleteMutation = api.sports.deleteLeague.useMutation({
     onSuccess: () => {
       notify.success("League Deleted", `${deleteTarget?.name ?? "League"} has been removed.`);
       setDeleteTarget(null);
       setManagedLeagueId(null);
-      refetch();
-      refetchStats();
+      void refetch();
+      void refetchStats();
     },
     onError: (error) => {
       notify.error("Delete Failed", error.message ?? "Could not delete league.");
@@ -117,14 +103,14 @@ export default function SportsAdminPage() {
   const updateLeagueMutation = api.sports.updateLeague.useMutation({
     onSuccess: () => {
       notify.success("League Updated", "Canonical status has been toggled.");
-      refetch();
+      void refetch();
     },
     onError: (error) => {
       notify.error("Update Failed", error.message ?? "Could not update league.");
     },
   });
 
-  // ── Derived data ─────────────────────────────────────────────────────────
+  // Derived data
   const canonicalLeagues = useMemo(() => leagues?.filter((l) => l.isCanonical) ?? [], [leagues]);
   const managedLeague = useMemo(() => leagues?.find((l) => l.id === managedLeagueId), [leagues, managedLeagueId]);
 
@@ -142,8 +128,7 @@ export default function SportsAdminPage() {
     router.push(withBasePath(`/myleague/${id}`));
   };
 
-  // ── Shared table rendering ──────────────────────────────────────────────
-  const renderTable = (leagueList: typeof leagues, showManageButton: boolean) => {
+  const renderTable = (leagueList: typeof leagues, _showManageButton: boolean) => {
     if (isLoading) {
       return (
         <div className="space-y-3 py-6">
@@ -159,7 +144,7 @@ export default function SportsAdminPage() {
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <AlertTriangle className="h-10 w-10 text-red-400" />
           <p className="text-muted-foreground text-sm">Failed to load leagues.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
             Retry
           </Button>
         </div>
@@ -263,15 +248,15 @@ export default function SportsAdminPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Overview stats cards */}
       <div className="facet-hierarchy-parent border-border/60 bg-card/40 rounded-xl border p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border">
-              <Trophy className="text-purple-400 h-6 w-6" />
+            <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-purple-400">
+              <Trophy className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-foreground text-2xl font-bold">Sports Admin Dashboard</h1>
+              <h1 className="text-foreground text-2xl font-bold">Sports Admin Oversight</h1>
               <p className="text-muted-foreground text-sm">System oversight, canonical league creation and simulated state auditing</p>
             </div>
           </div>
@@ -448,15 +433,12 @@ export default function SportsAdminPage() {
                     <Shield className="text-primary h-8 w-8" />
                   </div>
                   <div>
-                    <p className="text-foreground font-medium">Create a Canonical League</p>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                      Canonical leagues are official and available to all nations.
+                    <h3 className="text-foreground text-sm font-semibold">Standard League Builder</h3>
+                    <p className="text-muted-foreground text-xs mt-1 max-w-[280px]">
+                      Construct a custom canonical league structure bound to the global system presets.
                     </p>
                   </div>
-                  <Button onClick={() => setCreatorOpen(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Open League Creator
-                  </Button>
+                  <Button onClick={() => setCreatorOpen(true)}>Open Creator Dialog</Button>
                 </div>
               </CardContent>
             </Card>
@@ -468,35 +450,41 @@ export default function SportsAdminPage() {
         </Tabs>
       )}
 
-      {/* LeagueCreator dialog */}
-      <LeagueCreator
-        open={creatorOpen}
-        onOpenChange={setCreatorOpen}
-        isCanonical
-        onCreated={() => {
-          refetch();
-          refetchStats();
-          setCreatorOpen(false);
-        }}
-      />
+      {/* Creator dialog */}
+      <Dialog open={creatorOpen} onOpenChange={setCreatorOpen}>
+        <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden bg-slate-950 border-white/10">
+          <div className="p-6">
+            <DialogHeader className="mb-4">
+              <DialogTitle>Create Canonical League</DialogTitle>
+              <DialogDescription>
+                Build a new canonical sports competition. System presets will define draft size and tactics.
+              </DialogDescription>
+            </DialogHeader>
+            <LeagueCreator
+              onClose={() => setCreatorOpen(false)}
+              onSuccess={() => {
+                setCreatorOpen(false);
+                void refetch();
+                void refetchStats();
+              }}
+              defaultCanonical={true}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
-      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete League</DialogTitle>
+            <DialogTitle className="text-red-400">Irreversible Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete{" "}
-              <span className="text-foreground font-semibold">{deleteTarget?.name}</span>? This
-              action cannot be undone.
+              Are you absolutely certain you want to delete <span className="font-bold text-white">"{deleteTarget?.name}"</span>?
+              All associated matches, teams, rosters, historical standings, and records will be deleted forever.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setDeleteTarget(null)}
-              disabled={deleteMutation.isPending}
-            >
+          <DialogFooter className="mt-4 gap-2">
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
               Cancel
             </Button>
             <Button
@@ -547,7 +535,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
     onSuccess: () => {
       notify.success("Season Reset", "The active season fixtures and standings have been wiped.");
       onRefetch();
-      if (activeSeasonId) utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
+      if (activeSeasonId) void utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
     },
     onError: (e) => notify.error("Reset Failed", e.message),
   });
@@ -557,7 +545,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
       notify.success("Result Saved", "Match score has been overridden successfully.");
       setMatchOverrideOpen(false);
       onRefetch();
-      if (activeSeasonId) utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
+      if (activeSeasonId) void utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
     },
     onError: (e) => notify.error("Override Failed", e.message),
   });
@@ -566,7 +554,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
     onSuccess: () => {
       notify.success("Schedule Regenerated", "A fresh fixture list has been constructed.");
       onRefetch();
-      if (activeSeasonId) utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
+      if (activeSeasonId) void utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
     },
     onError: (e) => notify.error("Regeneration Failed", e.message),
   });

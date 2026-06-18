@@ -99,8 +99,8 @@ const FacetLabPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
-const SportsLabsPanel = dynamic(
-  () => import("../sports-labs/SportsLabsPanel").then((m) => m.default),
+const MyLeagueAdminPanel = dynamic(
+  () => import("../myleague/MyLeagueAdminPanel").then((m) => m.default),
   { loading: Loader, ssr: false }
 );
 
@@ -251,8 +251,8 @@ export function AdminRouter() {
         );
 
       // Labs
-      case "sports-labs":
-        return <SportsLabsPanel />;
+      case "myleague":
+        return <MyLeagueAdminPanel />;
 
       // Ungrouped
       case "facet-lab":

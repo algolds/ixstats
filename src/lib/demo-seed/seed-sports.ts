@@ -2257,27 +2257,52 @@ async function seedBoxingLeague(prisma: Prisma, userId: string, ixNow: number): 
   return count;
 }
 
-// ─── Main Entry Point ───────────────────────────────────────────────
+export interface SeedingOptions {
+  seedCaphirianSoccer?: boolean;
+  seedYonderreSoccer?: boolean;
+  seedOHLHockey?: boolean;
+  seedF1?: boolean;
+  seedBoxing?: boolean;
+}
 
 export async function seedSportsLeagues(
   prisma: Prisma,
   countryId: string,
-  userId: string
+  userId: string,
+  options?: SeedingOptions
 ): Promise<number> {
   let count = 0;
   const ixNow = IxTime.getCurrentIxTime();
 
-  // Check if canonical leagues already exist
-  const existing = await prisma.sportLeague.count({ where: { isCanonical: true } });
-  if (existing > 0) {
-    return 0;
+  // If options are not provided, require no canonical leagues exist to prevent duplicate seedings
+  if (!options) {
+    const existing = await prisma.sportLeague.count({ where: { isCanonical: true } });
+    if (existing > 0) {
+      return 0;
+    }
   }
 
-  count += await seedCaphirianSoccerLeague(prisma, userId, ixNow);
-  count += await seedYonderreSoccerLeague(prisma, userId, ixNow);
-  count += await seedOHLHockeyLeague(prisma, userId, ixNow);
-  count += await seedF1League(prisma, userId, ixNow);
-  count += await seedBoxingLeague(prisma, userId, ixNow);
+  const seedCaphirian = options ? !!options.seedCaphirianSoccer : true;
+  const seedYonderre = options ? !!options.seedYonderreSoccer : true;
+  const seedOHL = options ? !!options.seedOHLHockey : true;
+  const seedF1 = options ? !!options.seedF1 : true;
+  const seedBoxing = options ? !!options.seedBoxing : true;
+
+  if (seedCaphirian) {
+    count += await seedCaphirianSoccerLeague(prisma, userId, ixNow);
+  }
+  if (seedYonderre) {
+    count += await seedYonderreSoccerLeague(prisma, userId, ixNow);
+  }
+  if (seedOHL) {
+    count += await seedOHLHockeyLeague(prisma, userId, ixNow);
+  }
+  if (seedF1) {
+    count += await seedF1League(prisma, userId, ixNow);
+  }
+  if (seedBoxing) {
+    count += await seedBoxingLeague(prisma, userId, ixNow);
+  }
 
   return count;
 }

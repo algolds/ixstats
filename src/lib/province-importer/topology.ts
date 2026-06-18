@@ -752,6 +752,9 @@ export function findClosestPointOnBoundary(
   let closestPoint: [number, number] = point;
   let minDistance2 = Infinity;
 
+  const px = point[0];
+  const py = point[1];
+
   for (const poly of polys) {
     const ring = poly[0];
     if (!ring || ring.length < 2) continue;
@@ -761,11 +764,30 @@ export function findClosestPointOnBoundary(
       const b = ring[i + 1];
       if (!a || !b || isNaN(a[0]) || isNaN(a[1]) || isNaN(b[0]) || isNaN(b[1])) continue;
 
+      // ponytail: bounding box filter to prune segment projection checks
+      const minX = Math.min(a[0], b[0]);
+      const maxX = Math.max(a[0], b[0]);
+      const minY = Math.min(a[1], b[1]);
+      const maxY = Math.max(a[1], b[1]);
+
+      let boxDx = 0;
+      if (px < minX) boxDx = minX - px;
+      else if (px > maxX) boxDx = px - maxX;
+
+      let boxDy = 0;
+      if (py < minY) boxDy = minY - py;
+      else if (py > maxY) boxDy = py - maxY;
+
+      const boxD2 = boxDx * boxDx + boxDy * boxDy;
+      if (boxD2 >= minDistance2) {
+        continue;
+      }
+
       const cp = closestPointOnSegment(point, a as [number, number], b as [number, number]);
       if (!cp || isNaN(cp[0]) || isNaN(cp[1])) continue;
 
-      const dx = point[0] - cp[0];
-      const dy = point[1] - cp[1];
+      const dx = px - cp[0];
+      const dy = py - cp[1];
       const d2 = dx * dx + dy * dy;
 
       if (!isNaN(d2) && d2 < minDistance2) {
