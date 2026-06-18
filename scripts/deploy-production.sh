@@ -13,6 +13,25 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
+# Auto git sync if in production VPS directory
+if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
+    echo "🔄 Production VPS directory detected. Force-syncing with the latest git commit..."
+    if command -v git &> /dev/null; then
+        git fetch master
+        CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "v2")
+        if [ -z "$CURRENT_BRANCH" ]; then
+            CURRENT_BRANCH="v2"
+        fi
+        echo "📄 Resetting --hard to master/$CURRENT_BRANCH..."
+        git checkout -f "$CURRENT_BRANCH"
+        git reset --hard "master/$CURRENT_BRANCH"
+        git clean -fd
+        echo "✅ Git sync complete. Current commit: $(git log -1 --oneline)"
+    else
+        echo "⚠️ Warning: git command not found. Skipping git sync."
+    fi
+fi
+
 # Set production environment
 export NODE_ENV=production
 

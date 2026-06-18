@@ -228,14 +228,22 @@ if [ -d ".git" ]; then
     log "Current branch: $CURRENT_BRANCH"
     log "Current commit: $CURRENT_COMMIT"
 
-    # Stash any local changes
-    if ! git diff-index --quiet HEAD --; then
-        warn "Local changes detected, stashing..."
-        git stash
-    fi
+    if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
+        log "Production VPS directory detected. Force-syncing with the latest git commit..."
+        git fetch master
+        git checkout -f "$CURRENT_BRANCH"
+        git reset --hard "master/$CURRENT_BRANCH"
+        git clean -fd
+    else
+        # Stash any local changes
+        if ! git diff-index --quiet HEAD --; then
+            warn "Local changes detected, stashing..."
+            git stash
+        fi
 
-    # Pull latest changes
-    git pull origin "$CURRENT_BRANCH" || error "Failed to pull latest code"
+        # Pull latest changes
+        git pull master "$CURRENT_BRANCH" || error "Failed to pull latest code"
+    fi
 
     NEW_COMMIT=$(git rev-parse --short HEAD)
     if [ "$CURRENT_COMMIT" != "$NEW_COMMIT" ]; then
