@@ -2,7 +2,16 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Settings, Upload, Loader2, Trash2, ImageIcon, Download, RefreshCw, AlertTriangle } from "lucide-react";
+import {
+  Settings,
+  Upload,
+  Loader2,
+  Trash2,
+  ImageIcon,
+  Download,
+  RefreshCw,
+  AlertTriangle,
+} from "lucide-react";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
@@ -101,9 +110,15 @@ export function LeagueSettingsModal({
   );
 
   // Advanced settings custom rules
-  const [gamesPerSeason, setGamesPerSeason] = useState<number>(initialSettings.gamesPerSeason ?? 14);
-  const [doubleRoundRobin, setDoubleRoundRobin] = useState<boolean>(initialSettings.doubleRoundRobin ?? true);
-  const [playoffFormat, setPlayoffFormat] = useState<string>(initialSettings.playoffFormat ?? "none");
+  const [gamesPerSeason, setGamesPerSeason] = useState<number>(
+    initialSettings.gamesPerSeason ?? 14
+  );
+  const [doubleRoundRobin, setDoubleRoundRobin] = useState<boolean>(
+    initialSettings.doubleRoundRobin ?? true
+  );
+  const [playoffFormat, setPlayoffFormat] = useState<string>(
+    initialSettings.playoffFormat ?? "none"
+  );
   const [seed, setSeed] = useState<string>(initialSettings.seed ?? "");
 
   // Advanced forms states
@@ -123,9 +138,12 @@ export function LeagueSettingsModal({
   // Fetch list of leagues for transferring teams
   // ponytail: input `{}` (not `undefined`) so this shares the cache key used by
   // the MyLeague page and admin views — identical data, one fetch instead of two.
-  const { data: otherLeagues } = api.sports.getLeagues.useQuery({}, {
-    enabled: open,
-  });
+  const { data: otherLeagues } = api.sports.getLeagues.useQuery(
+    {},
+    {
+      enabled: open,
+    }
+  );
 
   // Fetch schedule of matches for manual results override
   const { data: scheduleData } = api.sports.getSchedule.useQuery(
@@ -600,13 +618,15 @@ export function LeagueSettingsModal({
           </TabsContent>
 
           <TabsContent value="advanced" className="py-3">
-            <div className="max-h-[350px] overflow-y-auto pr-2 space-y-5 thin-scrollbar">
+            <div className="thin-scrollbar max-h-[350px] space-y-5 overflow-y-auto pr-2">
               {/* 1. Roster Editor */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Force-Edit Roster</Label>
+                <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  Force-Edit Roster
+                </Label>
                 <div className="flex gap-2">
                   <Select value={forceEditTeamId} onValueChange={setForceEditTeamId}>
-                    <SelectTrigger className="h-9 text-xs flex-1">
+                    <SelectTrigger className="h-9 flex-1 text-xs">
                       <SelectValue placeholder="Select team to edit..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -637,8 +657,10 @@ export function LeagueSettingsModal({
 
               {/* 2. Active Season Actions */}
               {activeSeason && (
-                <div className="border-t border-border/10 pt-4 space-y-3">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Season Operations (Season {activeSeason.seasonNumber})</Label>
+                <div className="border-border/10 space-y-3 border-t pt-4">
+                  <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                    Season Operations (Season {activeSeason.seasonNumber})
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
@@ -646,7 +668,11 @@ export function LeagueSettingsModal({
                       size="sm"
                       disabled={resetSeason.isPending}
                       onClick={() => {
-                        if (confirm("WARNING: This will permanently delete all matches, standings, brackets, and races for the current season. Roster data is preserved. Are you sure?")) {
+                        if (
+                          confirm(
+                            "WARNING: This will permanently delete all matches, standings, brackets, and races for the current season. Roster data is preserved. Are you sure?"
+                          )
+                        ) {
                           resetSeason.mutate({ seasonId: activeSeason.id });
                         }
                       }}
@@ -666,11 +692,15 @@ export function LeagueSettingsModal({
                       size="sm"
                       disabled={regenerateSchedule.isPending}
                       onClick={() => {
-                        if (confirm("This will delete all matches and regenerate a fresh schedule of matches. This can only be done if no matches have been played yet. Proceed?")) {
+                        if (
+                          confirm(
+                            "This will delete all matches and regenerate a fresh schedule of matches. This can only be done if no matches have been played yet. Proceed?"
+                          )
+                        ) {
                           regenerateSchedule.mutate({ seasonId: activeSeason.id });
                         }
                       }}
-                      className="text-xs text-amber-500 border-amber-500/20 hover:bg-amber-500/5"
+                      className="border-amber-500/20 text-xs text-amber-500 hover:bg-amber-500/5"
                     >
                       {regenerateSchedule.isPending ? (
                         <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -684,11 +714,15 @@ export function LeagueSettingsModal({
               )}
 
               {/* 3. Custom Simulation Rules */}
-              <div className="border-t border-border/10 pt-4 space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Custom Engine Rules</Label>
+              <div className="border-border/10 space-y-3 border-t pt-4">
+                <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  Custom Engine Rules
+                </Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="games-per-season" className="text-[11px]">Games Per Season</Label>
+                    <Label htmlFor="games-per-season" className="text-[11px]">
+                      Games Per Season
+                    </Label>
                     <Input
                       id="games-per-season"
                       type="number"
@@ -699,8 +733,13 @@ export function LeagueSettingsModal({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="double-rr" className="text-[11px]">Double Round Robin</Label>
-                    <Select value={doubleRoundRobin ? "true" : "false"} onValueChange={(val) => setDoubleRoundRobin(val === "true")}>
+                    <Label htmlFor="double-rr" className="text-[11px]">
+                      Double Round Robin
+                    </Label>
+                    <Select
+                      value={doubleRoundRobin ? "true" : "false"}
+                      onValueChange={(val) => setDoubleRoundRobin(val === "true")}
+                    >
                       <SelectTrigger id="double-rr" className="h-8 text-xs">
                         <SelectValue />
                       </SelectTrigger>
@@ -711,7 +750,9 @@ export function LeagueSettingsModal({
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="playoff-format" className="text-[11px]">Playoff Format</Label>
+                    <Label htmlFor="playoff-format" className="text-[11px]">
+                      Playoff Format
+                    </Label>
                     <Select value={playoffFormat} onValueChange={setPlayoffFormat}>
                       <SelectTrigger id="playoff-format" className="h-8 text-xs">
                         <SelectValue />
@@ -724,14 +765,16 @@ export function LeagueSettingsModal({
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="rng-seed" className="text-[11px]">RNG Seed Override</Label>
+                    <Label htmlFor="rng-seed" className="text-[11px]">
+                      RNG Seed Override
+                    </Label>
                     <Input
                       id="rng-seed"
                       type="number"
                       value={seed}
                       onChange={(e) => setSeed(e.target.value)}
                       placeholder="Automatic RNG seed..."
-                      className="h-8 text-xs font-mono"
+                      className="h-8 font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -739,8 +782,10 @@ export function LeagueSettingsModal({
 
               {/* 4. Manual Result Override */}
               {activeSeason && activeMatches.length > 0 && (
-                <div className="border-t border-border/10 pt-4 space-y-3">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Manual Result Override</Label>
+                <div className="border-border/10 space-y-3 border-t pt-4">
+                  <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                    Manual Result Override
+                  </Label>
                   <div className="space-y-2">
                     <Select value={overrideMatchId} onValueChange={setOverrideMatchId}>
                       <SelectTrigger className="h-9 text-xs">
@@ -749,37 +794,48 @@ export function LeagueSettingsModal({
                       <SelectContent>
                         {activeMatches.map((m: any) => (
                           <SelectItem key={m.id} value={m.id}>
-                            Md {m.matchDay}: {m.homeTeam.name} {m.homeScore ?? "?"} - {m.awayScore ?? "?"} {m.awayTeam.name} ({m.status})
+                            Md {m.matchDay}: {m.homeTeam.name} {m.homeScore ?? "?"} -{" "}
+                            {m.awayScore ?? "?"} {m.awayTeam.name} ({m.status})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
 
                     {overrideMatchId && (
-                      <div className="bg-muted/30 border border-border/10 rounded-lg p-3 space-y-3">
+                      <div className="bg-muted/30 border-border/10 space-y-3 rounded-lg border p-3">
                         <div className="flex items-center justify-around gap-2">
-                          <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                            <span className="text-[10px] font-bold text-muted-foreground truncate w-full text-center">
-                              {activeMatches.find((m: any) => m.id === overrideMatchId)?.homeTeam.name}
+                          <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                            <span className="text-muted-foreground w-full truncate text-center text-[10px] font-bold">
+                              {
+                                activeMatches.find((m: any) => m.id === overrideMatchId)?.homeTeam
+                                  .name
+                              }
                             </span>
                             <Input
                               type="number"
                               min={0}
                               value={overrideHomeScore}
-                              onChange={(e) => setOverrideHomeScore(Math.max(0, Number(e.target.value) || 0))}
+                              onChange={(e) =>
+                                setOverrideHomeScore(Math.max(0, Number(e.target.value) || 0))
+                              }
                               className="h-9 w-16 text-center text-sm font-bold"
                             />
                           </div>
                           <span className="text-muted-foreground/45 text-sm font-semibold">VS</span>
-                          <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                            <span className="text-[10px] font-bold text-muted-foreground truncate w-full text-center">
-                              {activeMatches.find((m: any) => m.id === overrideMatchId)?.awayTeam.name}
+                          <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                            <span className="text-muted-foreground w-full truncate text-center text-[10px] font-bold">
+                              {
+                                activeMatches.find((m: any) => m.id === overrideMatchId)?.awayTeam
+                                  .name
+                              }
                             </span>
                             <Input
                               type="number"
                               min={0}
                               value={overrideAwayScore}
-                              onChange={(e) => setOverrideAwayScore(Math.max(0, Number(e.target.value) || 0))}
+                              onChange={(e) =>
+                                setOverrideAwayScore(Math.max(0, Number(e.target.value) || 0))
+                              }
                               className="h-9 w-16 text-center text-sm font-bold"
                             />
                           </div>
@@ -790,7 +846,11 @@ export function LeagueSettingsModal({
                           size="sm"
                           disabled={overrideMatchResult.isPending}
                           onClick={() => {
-                            if (confirm("Are you sure you want to force set this score? Standings will be automatically recalculated.")) {
+                            if (
+                              confirm(
+                                "Are you sure you want to force set this score? Standings will be automatically recalculated."
+                              )
+                            ) {
                               overrideMatchResult.mutate({
                                 matchId: overrideMatchId,
                                 homeScore: overrideHomeScore,
@@ -800,7 +860,9 @@ export function LeagueSettingsModal({
                           }}
                           className="w-full text-xs"
                         >
-                          {overrideMatchResult.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                          {overrideMatchResult.isPending && (
+                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          )}
                           Save Overridden Score
                         </Button>
                       </div>
@@ -810,8 +872,10 @@ export function LeagueSettingsModal({
               )}
 
               {/* 5. Transfer / Swap Teams */}
-              <div className="border-t border-border/10 pt-4 space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transfer Team to League</Label>
+              <div className="border-border/10 space-y-3 border-t pt-4">
+                <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  Transfer Team to League
+                </Label>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <Select value={transferTeamId} onValueChange={setTransferTeamId}>
@@ -827,7 +891,10 @@ export function LeagueSettingsModal({
                       </SelectContent>
                     </Select>
 
-                    <Select value={transferTargetLeagueId} onValueChange={setTransferTargetLeagueId}>
+                    <Select
+                      value={transferTargetLeagueId}
+                      onValueChange={setTransferTargetLeagueId}
+                    >
                       <SelectTrigger className="h-9 text-xs">
                         <SelectValue placeholder="Target league..." />
                       </SelectTrigger>
@@ -850,33 +917,47 @@ export function LeagueSettingsModal({
                     disabled={!transferTeamId || !transferTargetLeagueId || transferTeam.isPending}
                     onClick={() => {
                       const teamName = league.teams?.find((t) => t.id === transferTeamId)?.name;
-                      const targetName = otherLeagues?.find((l) => l.id === transferTargetLeagueId)?.name;
-                      if (confirm(`Are you sure you want to move the team "${teamName}" to "${targetName}"?`)) {
+                      const targetName = otherLeagues?.find(
+                        (l) => l.id === transferTargetLeagueId
+                      )?.name;
+                      if (
+                        confirm(
+                          `Are you sure you want to move the team "${teamName}" to "${targetName}"?`
+                        )
+                      ) {
                         transferTeam.mutate({
                           teamId: transferTeamId,
                           targetLeagueId: transferTargetLeagueId,
                         });
                       }
                     }}
-                    className="w-full text-xs text-amber-400 border-amber-400/20 hover:bg-amber-400/5"
+                    className="w-full border-amber-400/20 text-xs text-amber-400 hover:bg-amber-400/5"
                   >
-                    {transferTeam.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                    {transferTeam.isPending && (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    )}
                     Move Team
                   </Button>
                 </div>
               </div>
 
               {/* 6. Export League Data */}
-              <div className="border-t border-border/10 pt-4 space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Backup & Data Portability</Label>
+              <div className="border-border/10 space-y-2 border-t pt-4">
+                <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  Backup & Data Portability
+                </Label>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={async () => {
                     try {
-                      const exportData = await utils.sports.exportLeagueData.fetch({ leagueId: league.id });
-                      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+                      const exportData = await utils.sports.exportLeagueData.fetch({
+                        leagueId: league.id,
+                      });
+                      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                        type: "application/json",
+                      });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
@@ -887,7 +968,7 @@ export function LeagueSettingsModal({
                       notify.error("Export Failed", "Could not retrieve league records.");
                     }
                   }}
-                  className="w-full text-xs gap-1.5"
+                  className="w-full gap-1.5 text-xs"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Export League Database JSON

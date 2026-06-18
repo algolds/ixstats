@@ -792,6 +792,26 @@ export function snapToBorderEdge(
   tolerance: number = 0.015 // ~1.7km at equator
 ): Position {
   const rings = getAllRings(borderGeometry);
+
+  // 1. Prioritize snapping to vertices first
+  let bestVertexDist = Infinity;
+  let bestVertex: Position = point;
+
+  for (const ring of rings) {
+    for (const vertex of ring) {
+      const d = distanceDeg(point, vertex);
+      if (d < bestVertexDist && d <= tolerance) {
+        bestVertexDist = d;
+        bestVertex = vertex;
+      }
+    }
+  }
+
+  if (bestVertexDist <= tolerance) {
+    return bestVertex;
+  }
+
+  // 2. Fallback: snap to the nearest projected point on segment/edge
   let bestDist = Infinity;
   let bestProj: Position = point;
 
@@ -807,6 +827,57 @@ export function snapToBorderEdge(
   }
 
   return bestDist <= tolerance ? bestProj : point;
+}
+
+/**
+ * Snap a point to the nearest vertex or edge across a collection of geometries.
+ * Prioritizes vertex snapping globally over line projection snapping.
+ */
+export function snapPointToGeometries(
+  point: Position,
+  geometries: (Polygon | MultiPolygon)[],
+  tolerance: number = 0.015
+): Position {
+  let bestVertexDist = Infinity;
+  let bestVertex: Position = point;
+
+  // 1. Search for nearest vertex across all geometries first
+  for (const geom of geometries) {
+    const rings = getAllRings(geom);
+    for (const ring of rings) {
+      for (const vertex of ring) {
+        const d = distanceDeg(point, vertex);
+        if (d < bestVertexDist && d <= tolerance) {
+          bestVertexDist = d;
+          bestVertex = vertex;
+        }
+      }
+    }
+  }
+
+  if (bestVertexDist <= tolerance) {
+    return bestVertex;
+  }
+
+  // 2. Fall back to segment projection across all geometries
+  let bestEdgeDist = Infinity;
+  let bestEdgeProj: Position = point;
+
+  for (const geom of geometries) {
+    const rings = getAllRings(geom);
+    for (const ring of rings) {
+      for (let i = 0; i < ring.length - 1; i++) {
+        const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
+        const d = distanceDeg(point, proj);
+        if (d < bestEdgeDist && d <= tolerance) {
+          bestEdgeDist = d;
+          bestEdgeProj = proj;
+        }
+      }
+    }
+  }
+
+  return bestEdgeDist <= tolerance ? bestEdgeProj : point;
 }
 
 // ──────────────────────────────────────────────

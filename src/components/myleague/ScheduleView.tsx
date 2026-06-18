@@ -11,12 +11,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
-import {
-  MapPin,
-  ChevronDown,
-  ChevronUp,
-  Calendar,
-} from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 import { useState } from "react";
 import { MatchCommentary } from "~/components/sports/MatchCommentary";
 import MatchSchedule1 from "~/components/sports/match-schedules/MatchSchedule1";
@@ -161,9 +156,7 @@ export function ScheduleView({
     const completedCount = dayMatches.filter((m) => m.status === "completed").length;
 
     return (
-      <div
-        className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-md transition mb-3"
-      >
+      <div className="border-border/40 bg-card/60 mb-3 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-md transition">
         <button
           onClick={() => setCollapsedDays((prev) => ({ ...prev, [day]: !isCollapsed }))}
           className="bg-muted/20 hover:bg-muted/30 focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between p-4 text-sm font-bold transition-colors outline-none select-none focus-visible:ring-1"
@@ -177,11 +170,7 @@ export function ScheduleView({
           </div>
           <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
             <span>{isCollapsed ? "Expand" : "Collapse"}</span>
-            {isCollapsed ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronUp className="h-4 w-4" />
-            )}
+            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </div>
         </button>
 
@@ -214,12 +203,7 @@ export function ScheduleView({
 
   return (
     <div className={className}>
-      <Virtuoso
-        useWindowScroll
-        data={sortedDays}
-        overscan={4}
-        itemContent={renderMatchDayItem}
-      />
+      <Virtuoso useWindowScroll data={sortedDays} overscan={4} itemContent={renderMatchDayItem} />
     </div>
   );
 }

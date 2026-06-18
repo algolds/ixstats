@@ -17,10 +17,10 @@ export function formatMatchDayBulletin(args: {
   llmSummary?: string;
 }): string {
   const { leagueName, sportEmoji, matchDay, results, llmSummary } = args;
-  
+
   const header = `${sportEmoji} **${leagueName}** — Matchday ${matchDay}`;
   const separator = "═".repeat(30);
-  
+
   const matchLines = results.map((r) => {
     const homeText = r.homeScore > r.awayScore ? `🏆 **${r.homeName}**` : r.homeName;
     const awayText = r.awayScore > r.homeScore ? `🏆 **${r.awayName}**` : r.awayName;
@@ -28,13 +28,18 @@ export function formatMatchDayBulletin(args: {
   });
 
   const upsets = results.filter((r) => r.isUpset);
-  const upsetSection = upsets.length > 0
-    ? `\n\n⭐ **Upsets of the Day**\n` + upsets.map((u) => `• ${u.homeScore > u.awayScore ? u.homeName : u.awayName} defeats ${u.homeScore > u.awayScore ? u.awayName : u.homeName}!`).join("\n")
-    : "";
+  const upsetSection =
+    upsets.length > 0
+      ? `\n\n⭐ **Upsets of the Day**\n` +
+        upsets
+          .map(
+            (u) =>
+              `• ${u.homeScore > u.awayScore ? u.homeName : u.awayName} defeats ${u.homeScore > u.awayScore ? u.awayName : u.homeName}!`
+          )
+          .join("\n")
+      : "";
 
-  const summarySection = llmSummary
-    ? `\n\n📝 **Matchday Summary**\n${llmSummary}`
-    : "";
+  const summarySection = llmSummary ? `\n\n📝 **Matchday Summary**\n${llmSummary}` : "";
 
   return `${header}\n${separator}\n${matchLines.join("\n")}${upsetSection}${summarySection}`;
 }

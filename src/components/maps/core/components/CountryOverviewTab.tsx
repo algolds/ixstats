@@ -152,7 +152,10 @@ export function CountryOverviewTab({
             )}
             {summary.governmentType && (
               <p>
-                Type: <span className="text-foreground font-medium">{toTitleCase(summary.governmentType)}</span>
+                Type:{" "}
+                <span className="text-foreground font-medium">
+                  {toTitleCase(summary.governmentType)}
+                </span>
               </p>
             )}
           </div>

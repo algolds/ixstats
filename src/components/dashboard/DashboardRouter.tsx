@@ -371,119 +371,119 @@ function DashboardHero({
   const renderOverviewSnapshot = () => (
     <div className="flex h-full flex-col">
       <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="grid grid-cols-3 gap-1.5 py-1">
-          <button
-            onClick={() =>
-              setMetricView((v) => ({
-                ...v,
-                gdp: v.gdp === "perCapita" ? "total" : "perCapita",
-              }))
-            }
-            className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
-          >
-            <Coins className="h-3 w-3 shrink-0 text-amber-500" />
-            <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
-                {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
-              </p>
-              <p className="text-foreground text-[11px] font-bold">
-                $
-                {metricView.gdp === "perCapita"
-                  ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
-                  : Math.round(stats.currentTotalGdp).toLocaleString("en-US")}
-              </p>
-            </div>
-          </button>
+        <TooltipTrigger asChild>
+          <div className="grid grid-cols-3 gap-1.5 py-1">
+            <button
+              onClick={() =>
+                setMetricView((v) => ({
+                  ...v,
+                  gdp: v.gdp === "perCapita" ? "total" : "perCapita",
+                }))
+              }
+              className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+            >
+              <Coins className="h-3 w-3 shrink-0 text-amber-500" />
+              <div className="min-w-0">
+                <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
+                  {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
+                </p>
+                <p className="text-foreground text-[11px] font-bold">
+                  $
+                  {metricView.gdp === "perCapita"
+                    ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
+                    : Math.round(stats.currentTotalGdp).toLocaleString("en-US")}
+                </p>
+              </div>
+            </button>
 
-          <button
-            onClick={() =>
-              setMetricView((v) => ({
-                ...v,
-                population: v.population === "total" ? "density" : "total",
-              }))
-            }
-            className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
-          >
-            <Users className="h-3 w-3 shrink-0 text-amber-500" />
-            <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
-                {metricView.population === "total" ? "Population" : "Density"}
-              </p>
-              <p className="text-foreground text-[11px] font-bold">
-                {metricView.population === "total"
-                  ? Math.round(stats.population).toLocaleString("en-US")
-                  : stats.populationDensity
-                    ? `${Math.round(stats.populationDensity).toLocaleString()}/km²`
-                    : "N/A"}
-              </p>
-            </div>
-          </button>
+            <button
+              onClick={() =>
+                setMetricView((v) => ({
+                  ...v,
+                  population: v.population === "total" ? "density" : "total",
+                }))
+              }
+              className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all hover:bg-white/[0.07] active:scale-[0.98]"
+            >
+              <Users className="h-3 w-3 shrink-0 text-amber-500" />
+              <div className="min-w-0">
+                <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
+                  {metricView.population === "total" ? "Population" : "Density"}
+                </p>
+                <p className="text-foreground text-[11px] font-bold">
+                  {metricView.population === "total"
+                    ? Math.round(stats.population).toLocaleString("en-US")
+                    : stats.populationDensity
+                      ? `${Math.round(stats.populationDensity).toLocaleString()}/km²`
+                      : "N/A"}
+                </p>
+              </div>
+            </button>
 
-          <button
-            onClick={
-              stats.areaSqMi && stats.landArea
-                ? () => setMetricView((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
-                : undefined
-            }
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all",
-              stats.areaSqMi && stats.landArea && "hover:bg-white/[0.07] active:scale-[0.98]"
-            )}
-          >
-            <MapIcon className="h-3 w-3 shrink-0 text-amber-500" />
-            <div className="min-w-0">
-              <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
-                Land Area
-              </p>
-              <p className="text-foreground text-[11px] font-bold">
-                {metricView.area === "km"
-                  ? stats.landArea
-                    ? `${Math.round(stats.landArea).toLocaleString()} km²`
-                    : "N/A"
-                  : stats.areaSqMi
-                    ? `${Math.round(stats.areaSqMi).toLocaleString()} mi²`
-                    : "N/A"}
-              </p>
-            </div>
-          </button>
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <div className="space-y-1 text-xs">
-          <p className="text-foreground font-semibold">Click metrics to toggle views</p>
-          <div className="text-muted-foreground my-1 space-y-0.5 border-t border-white/10 pt-1">
-            {stats.gdpGrowth !== 0 && (
-              <p className="flex items-center gap-1">
-                GDP Growth:{" "}
-                <span
-                  className={cn(
-                    "flex items-center gap-0.5 font-bold",
-                    stats.gdpGrowth > 0 ? "text-emerald-400" : "text-red-400"
-                  )}
-                >
-                  {stats.gdpGrowth > 0 ? "+" : ""}
-                  {stats.gdpGrowth.toFixed(2)}%
-                </span>
-              </p>
-            )}
-            {stats.popGrowth !== 0 && (
-              <p className="flex items-center gap-1">
-                Pop Growth:{" "}
-                <span
-                  className={cn(
-                    "font-bold",
-                    stats.popGrowth > 0 ? "text-emerald-400" : "text-red-400"
-                  )}
-                >
-                  {stats.popGrowth > 0 ? "+" : ""}
-                  {stats.popGrowth.toFixed(2)}%
-                </span>
-              </p>
-            )}
+            <button
+              onClick={
+                stats.areaSqMi && stats.landArea
+                  ? () => setMetricView((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
+                  : undefined
+              }
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1.5 text-left transition-all",
+                stats.areaSqMi && stats.landArea && "hover:bg-white/[0.07] active:scale-[0.98]"
+              )}
+            >
+              <MapIcon className="h-3 w-3 shrink-0 text-amber-500" />
+              <div className="min-w-0">
+                <p className="text-muted-foreground/60 text-[8px] tracking-wider uppercase">
+                  Land Area
+                </p>
+                <p className="text-foreground text-[11px] font-bold">
+                  {metricView.area === "km"
+                    ? stats.landArea
+                      ? `${Math.round(stats.landArea).toLocaleString()} km²`
+                      : "N/A"
+                    : stats.areaSqMi
+                      ? `${Math.round(stats.areaSqMi).toLocaleString()} mi²`
+                      : "N/A"}
+                </p>
+              </div>
+            </button>
           </div>
-        </div>
-      </TooltipContent>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <div className="space-y-1 text-xs">
+            <p className="text-foreground font-semibold">Click metrics to toggle views</p>
+            <div className="text-muted-foreground my-1 space-y-0.5 border-t border-white/10 pt-1">
+              {stats.gdpGrowth !== 0 && (
+                <p className="flex items-center gap-1">
+                  GDP Growth:{" "}
+                  <span
+                    className={cn(
+                      "flex items-center gap-0.5 font-bold",
+                      stats.gdpGrowth > 0 ? "text-emerald-400" : "text-red-400"
+                    )}
+                  >
+                    {stats.gdpGrowth > 0 ? "+" : ""}
+                    {stats.gdpGrowth.toFixed(2)}%
+                  </span>
+                </p>
+              )}
+              {stats.popGrowth !== 0 && (
+                <p className="flex items-center gap-1">
+                  Pop Growth:{" "}
+                  <span
+                    className={cn(
+                      "font-bold",
+                      stats.popGrowth > 0 ? "text-emerald-400" : "text-red-400"
+                    )}
+                  >
+                    {stats.popGrowth > 0 ? "+" : ""}
+                    {stats.popGrowth.toFixed(2)}%
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+        </TooltipContent>
       </Tooltip>
       <DetailList title="Momentum & Standing">
         <IndicatorRow
@@ -804,7 +804,7 @@ function DashboardHero({
       </button>
 
       <div className="relative z-10 grid gap-4 p-4 pt-1 md:grid-cols-5">
-        <div className="border-border/30 overflow-hidden rounded-xl border md:col-span-3 h-[250px] md:h-full md:min-h-[300px]">
+        <div className="border-border/30 h-[250px] overflow-hidden rounded-xl border md:col-span-3 md:h-full md:min-h-[300px]">
           <CountryMapEmbed
             countryId={countryId}
             height="h-full"
@@ -868,7 +868,7 @@ function DashboardHero({
 
             <div className="min-h-0 flex-1">{renderSectionContent()}</div>
 
-            <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px] mt-1.5">
+            <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-2 text-[10px]">
               {vaultData && (
                 <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-400">
                   <Wallet className="h-3 w-3 shrink-0" />

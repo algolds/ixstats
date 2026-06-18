@@ -63,9 +63,7 @@ describe("narrator tests", () => {
     });
     global.fetch = mockFetch;
 
-    const matches = [
-      { homeName: "United", awayName: "City", homeScore: 2, awayScore: 1 },
-    ];
+    const matches = [{ homeName: "United", awayName: "City", homeScore: 2, awayScore: 1 }];
     const result = await narrateBulletin(matches, {
       sport: "soccer",
       leagueName: "Premier League",

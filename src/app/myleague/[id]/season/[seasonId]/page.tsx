@@ -23,7 +23,9 @@ export default function SeasonDetailPage() {
   const leagueId = params?.id as string;
   const seasonId = params?.seasonId as string;
 
-  const [activeTab, setActiveTab] = useState<"standings" | "schedule" | "bracket" | "races">("standings");
+  const [activeTab, setActiveTab] = useState<"standings" | "schedule" | "bracket" | "races">(
+    "standings"
+  );
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   const { data: season, isLoading } = api.sports.getSeason.useQuery(
@@ -33,12 +35,12 @@ export default function SeasonDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-6xl space-y-6 py-8 px-4">
+      <div className="container mx-auto max-w-6xl space-y-6 px-4 py-8">
         <Skeleton className="h-10 w-32" />
         <Skeleton className="h-48 w-full rounded-3xl" />
         <div className="grid grid-cols-4 gap-6">
-          <Skeleton className="h-12 col-span-1" />
-          <Skeleton className="h-96 col-span-3 rounded-2xl" />
+          <Skeleton className="col-span-1 h-12" />
+          <Skeleton className="col-span-3 h-96 rounded-2xl" />
         </div>
       </div>
     );
@@ -46,10 +48,12 @@ export default function SeasonDetailPage() {
 
   if (!season) {
     return (
-      <div className="container mx-auto max-w-6xl py-12 px-4 text-center">
+      <div className="container mx-auto max-w-6xl px-4 py-12 text-center">
         <Trophy className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
         <h2 className="text-foreground text-2xl font-bold">Season Not Found</h2>
-        <p className="text-muted-foreground mt-2">The requested season details could not be loaded.</p>
+        <p className="text-muted-foreground mt-2">
+          The requested season details could not be loaded.
+        </p>
         <Button className="mt-6" onClick={() => router.push(withBasePath(`/myleague/${leagueId}`))}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to League
         </Button>
@@ -102,7 +106,7 @@ export default function SeasonDetailPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-6xl space-y-6 py-8 px-4">
+    <div className="container mx-auto max-w-6xl space-y-6 px-4 py-8">
       {/* Back to League */}
       <div>
         <Link
@@ -117,9 +121,12 @@ export default function SeasonDetailPage() {
       {/* Hero Banner */}
       <div className="border-border/40 bg-card/60 relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-md">
         {/* Glow overlay */}
-        <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full blur-[100px]" style={{ backgroundColor: `hsla(${sportColors.accentColor}, 0.15)` }} />
-        
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">
+        <div
+          className="pointer-events-none absolute -top-32 -right-32 h-64 w-64 rounded-full blur-[100px]"
+          style={{ backgroundColor: `hsla(${sportColors.accentColor}, 0.15)` }}
+        />
+
+        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2">
               <span
@@ -127,13 +134,13 @@ export default function SeasonDetailPage() {
                 style={{
                   backgroundColor: `hsla(${sportColors.accentColor}, 0.1)`,
                   color: `hsl(${sportColors.highlightColor})`,
-                  borderColor: `hsla(${sportColors.accentColor}, 0.2)`
+                  borderColor: `hsla(${sportColors.accentColor}, 0.2)`,
                 }}
               >
                 Season {season.seasonNumber} History
               </span>
               {season.status === "completed" && (
-                <span className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-full border px-3 py-1 text-xs font-bold uppercase">
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400 uppercase">
                   Completed
                 </span>
               )}
@@ -142,22 +149,26 @@ export default function SeasonDetailPage() {
               {league.name}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm font-semibold">
-              Archetype: <span className="capitalize font-bold animate-pulse" style={{ color: `hsl(${sportColors.highlightColor})` }}>{archetype.replace("_", " ")}</span>
+              Archetype:{" "}
+              <span
+                className="animate-pulse font-bold capitalize"
+                style={{ color: `hsl(${sportColors.highlightColor})` }}
+              >
+                {archetype.replace("_", " ")}
+              </span>
             </p>
           </div>
 
           {season.champion && (
-            <div className="bg-amber-500/10 border-amber-500/20 flex items-center gap-4 rounded-2xl border p-4 shadow-sm">
-              <div className="bg-amber-500/20 flex h-12 w-12 items-center justify-center rounded-xl">
-                <Trophy className="h-6 w-6 text-amber-400 animate-pulse" />
+            <div className="flex items-center gap-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-sm">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
+                <Trophy className="h-6 w-6 animate-pulse text-amber-400" />
               </div>
               <div>
-                <span className="text-amber-400/80 block text-[10px] font-black tracking-wider uppercase">
+                <span className="block text-[10px] font-black tracking-wider text-amber-400/80 uppercase">
                   Champion
                 </span>
-                <span className="text-foreground text-lg font-black">
-                  {season.champion.name}
-                </span>
+                <span className="text-foreground text-lg font-black">{season.champion.name}</span>
               </div>
             </div>
           )}
@@ -165,16 +176,16 @@ export default function SeasonDetailPage() {
       </div>
 
       {/* Tabs Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         {/* Sidebar Nav Tabs */}
         <div className="space-y-2">
           <button
             onClick={() => setActiveTab("standings")}
             className={cn(
-              "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+              "w-full cursor-pointer rounded-xl border p-3 text-left text-sm font-bold transition-all outline-none",
               activeTab === "standings"
-                ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
-                : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                ? "border-slate-700 bg-slate-800 text-slate-100 shadow-md shadow-slate-900/5"
+                : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
             )}
           >
             <span className="flex items-center gap-2">
@@ -182,15 +193,15 @@ export default function SeasonDetailPage() {
               Standings
             </span>
           </button>
-          
+
           {archetype !== "circuit" && archetype !== "bracket" && (
             <button
               onClick={() => setActiveTab("schedule")}
               className={cn(
-                "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+                "w-full cursor-pointer rounded-xl border p-3 text-left text-sm font-bold transition-all outline-none",
                 activeTab === "schedule"
-                  ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
-                  : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  ? "border-slate-700 bg-slate-800 text-slate-100 shadow-md shadow-slate-900/5"
+                  : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
               )}
             >
               <span className="flex items-center gap-2">
@@ -204,10 +215,10 @@ export default function SeasonDetailPage() {
             <button
               onClick={() => setActiveTab("bracket")}
               className={cn(
-                "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+                "w-full cursor-pointer rounded-xl border p-3 text-left text-sm font-bold transition-all outline-none",
                 activeTab === "bracket"
-                  ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
-                  : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  ? "border-slate-700 bg-slate-800 text-slate-100 shadow-md shadow-slate-900/5"
+                  : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
               )}
             >
               <span className="flex items-center gap-2">
@@ -221,10 +232,10 @@ export default function SeasonDetailPage() {
             <button
               onClick={() => setActiveTab("races")}
               className={cn(
-                "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
+                "w-full cursor-pointer rounded-xl border p-3 text-left text-sm font-bold transition-all outline-none",
                 activeTab === "races"
-                  ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
-                  : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  ? "border-slate-700 bg-slate-800 text-slate-100 shadow-md shadow-slate-900/5"
+                  : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
               )}
             >
               <span className="flex items-center gap-2">
@@ -254,13 +265,9 @@ export default function SeasonDetailPage() {
             />
           )}
 
-          {activeTab === "bracket" && seasonId && (
-            <BracketView seasonId={seasonId} />
-          )}
+          {activeTab === "bracket" && seasonId && <BracketView seasonId={seasonId} />}
 
-          {activeTab === "races" && seasonId && (
-            <RaceResults seasonId={seasonId} />
-          )}
+          {activeTab === "races" && seasonId && <RaceResults seasonId={seasonId} />}
         </div>
       </div>
 

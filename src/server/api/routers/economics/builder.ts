@@ -290,7 +290,10 @@ const economicsBuilderRouter = createTRPCRouter({
         });
 
         // Insert new ones
-        if (economyBuilder.selectedAtomicComponents && economyBuilder.selectedAtomicComponents.length > 0) {
+        if (
+          economyBuilder.selectedAtomicComponents &&
+          economyBuilder.selectedAtomicComponents.length > 0
+        ) {
           await tx.economicComponent.createMany({
             data: economyBuilder.selectedAtomicComponents.map((cType) => ({
               countryId,
@@ -459,7 +462,10 @@ const economicsBuilderRouter = createTRPCRouter({
 
       // Fallback values if current stats are empty/0
       const totalPopulation = country.currentPopulation || country.baselinePopulation || 10000000;
-      const totalGDP = country.currentTotalGdp || (country.baselinePopulation * country.baselineGdpPerCapita) || 250000000000;
+      const totalGDP =
+        country.currentTotalGdp ||
+        country.baselinePopulation * country.baselineGdpPerCapita ||
+        250000000000;
 
       // Transform database data back to economy builder format
       const sectorBreakdown = country.economicProfile?.sectorBreakdown

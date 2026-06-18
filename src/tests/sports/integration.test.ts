@@ -497,7 +497,16 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
       expect(mockPrisma.sportStanding.findMany).toHaveBeenCalledWith({
         where: { seasonId: "season_1" },
         orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
-        select: { teamId: true, wins: true, losses: true, draws: true, points: true, rank: true, id: true, seasonId: true },
+        select: {
+          teamId: true,
+          wins: true,
+          losses: true,
+          draws: true,
+          points: true,
+          rank: true,
+          id: true,
+          seasonId: true,
+        },
       });
       expect(mockPrisma.sportSeason.count).toHaveBeenCalledWith({
         where: { championTeamId: "team_1", status: "completed" },

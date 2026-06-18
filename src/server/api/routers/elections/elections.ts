@@ -416,7 +416,7 @@ export const electionsElectionsRouter = createTRPCRouter({
               const seat = chamberSeats[chamberSeatIdx]!;
               await ctx.db.legislativeSeat.update({
                 where: { id: seat.id },
-                data: { 
+                data: {
                   partyId,
                   region: chamberName,
                 },
@@ -431,7 +431,7 @@ export const electionsElectionsRouter = createTRPCRouter({
           const seat = chamberSeats[chamberSeatIdx]!;
           await ctx.db.legislativeSeat.update({
             where: { id: seat.id },
-            data: { 
+            data: {
               partyId: null,
               region: chamberName,
             },

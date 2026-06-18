@@ -117,14 +117,14 @@ function MatchCard({
       <Card
         onClick={onToggleExpand}
         className={cn(
-          "overflow-hidden transition-colors cursor-pointer select-none",
+          "cursor-pointer overflow-hidden transition-colors select-none",
           isCompleted && "hover:bg-muted/10 dark:hover:bg-slate-900/10",
           won && "border-emerald-500/30 bg-emerald-500/5",
           lost && "border-red-500/20 bg-red-500/5"
         )}
       >
-        <CardContent className="flex flex-col gap-0 py-4 px-6">
-          <div className="flex items-center gap-4 w-full">
+        <CardContent className="flex flex-col gap-0 px-6 py-4">
+          <div className="flex w-full items-center gap-4">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
               {won ? (
                 <ArrowUp className="h-5 w-5 text-emerald-500" />
@@ -156,7 +156,10 @@ function MatchCard({
               </p>
             </div>
 
-            <Badge variant={isCompleted ? "outline" : "secondary"} className="shrink-0 gap-1 text-xs">
+            <Badge
+              variant={isCompleted ? "outline" : "secondary"}
+              className="shrink-0 gap-1 text-xs"
+            >
               {MATCH_STATUS_ICON[status] ?? null}
               {MATCH_STATUS_LABEL[status] ?? status}
             </Badge>
@@ -169,7 +172,7 @@ function MatchCard({
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full mt-2"
+              className="mt-2 w-full"
             >
               <MatchCommentary matchId={match.id as string} />
             </motion.div>
@@ -385,7 +388,7 @@ export default function MyClubSeasonDetailPage() {
             <h2 className="mb-4 text-lg font-semibold">Match Results ({teamMatches.length})</h2>
             {teamMatches.length > 0 ? (
               <div className="space-y-2">
-                 {teamMatches.map((match, i) => (
+                {teamMatches.map((match, i) => (
                   <MatchCard
                     key={(match as Record<string, string>).id}
                     match={match as Record<string, unknown>}

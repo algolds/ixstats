@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import { snapToBorderEdge } from "~/lib/border-editor";
+import { snapToBorderEdge, snapPointToGeometries } from "~/lib/border-editor";
 import { getSnapEnabled, getSnapTolerance } from "~/lib/editor-prefs";
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
 import {
@@ -146,11 +146,11 @@ export function useSubdivisionDraw({
         clickPoint = snapToLayerFeatures(clickPoint, worldMapLayers, editorVisibleLayers, snapTol);
       }
 
-      const border = countryGeometry;
-      if (snapOn && border) {
-        clickPoint = snapToBorderEdge(clickPoint, border, snapTol);
-      }
       if (snapOn) {
+        const snapGeoms: (Polygon | MultiPolygon)[] = [];
+        if (countryGeometry) {
+          snapGeoms.push(countryGeometry);
+        }
         for (const feat of features) {
           if (
             feat.type === "subdivision" &&
@@ -158,16 +158,10 @@ export function useSubdivisionDraw({
             (feat.geometry as any).coordinates &&
             (feat.geometry as any).coordinates.length > 0
           ) {
-            const snapped = snapToBorderEdge(
-              clickPoint,
-              feat.geometry as Polygon | MultiPolygon,
-              snapTol
-            );
-            if (snapped !== clickPoint) {
-              clickPoint = snapped;
-            }
+            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
           }
         }
+        clickPoint = snapPointToGeometries(clickPoint, snapGeoms, snapTol) as [number, number];
       }
       drawVerticesRef.current.push(clickPoint);
       updateDrawVisualization();

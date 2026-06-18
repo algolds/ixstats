@@ -132,7 +132,9 @@ export function useEconomyBuilderSync({
   useEffect(() => {
     if (economyBuilder) {
       if (economyBuilder.selectedAtomicComponents) {
-        void economyIntegrationService.updateEconomicComponents(economyBuilder.selectedAtomicComponents);
+        void economyIntegrationService.updateEconomicComponents(
+          economyBuilder.selectedAtomicComponents
+        );
       }
       void economyIntegrationService.updateEconomyBuilder(economyBuilder);
     }

@@ -146,7 +146,13 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                   </label>
                   <select
                     value={importer.citiesLayerId}
-                    onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId, importer.cityNameLayerId)}
+                    onChange={(e) =>
+                      importer.setLayer(
+                        e.target.value,
+                        importer.capitalLayerId,
+                        importer.cityNameLayerId
+                      )
+                    }
                     className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
                   >
                     <option value="">-- Auto-detect --</option>
@@ -164,7 +170,13 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                   </label>
                   <select
                     value={importer.capitalLayerId}
-                    onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value, importer.cityNameLayerId)}
+                    onChange={(e) =>
+                      importer.setLayer(
+                        importer.citiesLayerId,
+                        e.target.value,
+                        importer.cityNameLayerId
+                      )
+                    }
                     className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
                   >
                     <option value="">-- None --</option>
@@ -182,7 +194,13 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                   </label>
                   <select
                     value={importer.cityNameLayerId}
-                    onChange={(e) => importer.setLayer(importer.citiesLayerId, importer.capitalLayerId, e.target.value)}
+                    onChange={(e) =>
+                      importer.setLayer(
+                        importer.citiesLayerId,
+                        importer.capitalLayerId,
+                        e.target.value
+                      )
+                    }
                     className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
                   >
                     <option value="">-- None (Auto) --</option>

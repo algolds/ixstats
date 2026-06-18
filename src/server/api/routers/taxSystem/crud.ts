@@ -155,7 +155,9 @@ export const taxSystemCrudRouter = createTRPCRouter({
           },
           {} as Record<string, any[]>
         ),
-        selectedAtomicTaxComponents: taxComponents.map((tc) => mapTaxComponentTypeToId(tc.componentType)),
+        selectedAtomicTaxComponents: taxComponents.map((tc) =>
+          mapTaxComponentTypeToId(tc.componentType)
+        ),
         isValid: true,
         errors: {},
       };

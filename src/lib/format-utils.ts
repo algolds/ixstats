@@ -127,14 +127,10 @@ function isISOCurrency(currency: string): boolean {
 function getCustomCurrency(currency: string): CustomCurrency | null {
   if (!currency) return null;
   const upper = currency.toUpperCase();
-  const customKey = Object.keys(CUSTOM_CURRENCIES).find(
-    (k) => k.toUpperCase() === upper
-  );
+  const customKey = Object.keys(CUSTOM_CURRENCIES).find((k) => k.toUpperCase() === upper);
   if (customKey) return CUSTOM_CURRENCIES[customKey] || null;
 
-  const dynamicKey = Object.keys(DYNAMIC_CUSTOM_CURRENCIES).find(
-    (k) => k.toUpperCase() === upper
-  );
+  const dynamicKey = Object.keys(DYNAMIC_CUSTOM_CURRENCIES).find((k) => k.toUpperCase() === upper);
   if (dynamicKey) return DYNAMIC_CUSTOM_CURRENCIES[dynamicKey] || null;
 
   return null;

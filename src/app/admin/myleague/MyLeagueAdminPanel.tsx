@@ -19,30 +19,39 @@ export default function MyLeagueAdminPanel() {
       />
 
       <Tabs defaultValue="oversight" className="w-full space-y-4">
-        <TabsList className="grid w-full grid-cols-3 md:w-[600px] bg-muted/20 border border-border/50 rounded-xl p-1">
-          <TabsTrigger value="oversight" className="flex items-center gap-1.5 py-2 rounded-lg data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+        <TabsList className="bg-muted/20 border-border/50 grid w-full grid-cols-3 rounded-xl border p-1 md:w-[600px]">
+          <TabsTrigger
+            value="oversight"
+            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
+          >
             <Trophy className="h-4 w-4" />
             Oversight Dashboard
           </TabsTrigger>
-          <TabsTrigger value="sandbox" className="flex items-center gap-1.5 py-2 rounded-lg data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+          <TabsTrigger
+            value="sandbox"
+            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
+          >
             <FlaskConical className="h-4 w-4" />
             Simulation Sandbox
           </TabsTrigger>
-          <TabsTrigger value="seeder" className="flex items-center gap-1.5 py-2 rounded-lg data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+          <TabsTrigger
+            value="seeder"
+            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
+          >
             <Database className="h-4 w-4" />
             Data Lab & Seeder
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="oversight" className="focus-visible:outline-none focus-visible:ring-0">
+        <TabsContent value="oversight" className="focus-visible:ring-0 focus-visible:outline-none">
           <SportsOversightPanel />
         </TabsContent>
 
-        <TabsContent value="sandbox" className="focus-visible:outline-none focus-visible:ring-0">
+        <TabsContent value="sandbox" className="focus-visible:ring-0 focus-visible:outline-none">
           <SportsLabsPanel />
         </TabsContent>
 
-        <TabsContent value="seeder" className="focus-visible:outline-none focus-visible:ring-0">
+        <TabsContent value="seeder" className="focus-visible:ring-0 focus-visible:outline-none">
           <SportsSeederPanel />
         </TabsContent>
       </Tabs>

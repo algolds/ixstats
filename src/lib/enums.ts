@@ -275,4 +275,3 @@ export function mapIdToTaxComponentType(id: string): string {
 export function mapTaxComponentTypeToId(enumVal: string): string {
   return ENUM_TO_ID_MAP[enumVal] || enumVal.toLowerCase();
 }
-

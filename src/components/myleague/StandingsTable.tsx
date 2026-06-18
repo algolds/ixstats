@@ -152,7 +152,7 @@ function StandingsTableInner({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onTeamClick?.(s.teamId)}
-                className="cursor-pointer text-left hover:underline font-medium"
+                className="cursor-pointer text-left font-medium hover:underline"
               >
                 {s.teamName ?? s.teamId}
               </button>
@@ -174,9 +174,7 @@ function StandingsTableInner({
         accessorKey: "wins",
         header: () => (
           <EnhancedTooltip content="Wins">
-            <span className="decoration-border/60 cursor-help underline decoration-dotted">
-              W
-            </span>
+            <span className="decoration-border/60 cursor-help underline decoration-dotted">W</span>
           </EnhancedTooltip>
         ),
         cell: ({ getValue }) => getValue(),
@@ -185,9 +183,7 @@ function StandingsTableInner({
         accessorKey: "losses",
         header: () => (
           <EnhancedTooltip content="Losses">
-            <span className="decoration-border/60 cursor-help underline decoration-dotted">
-              L
-            </span>
+            <span className="decoration-border/60 cursor-help underline decoration-dotted">L</span>
           </EnhancedTooltip>
         ),
         cell: ({ getValue }) => getValue(),
@@ -196,9 +192,7 @@ function StandingsTableInner({
         accessorKey: "draws",
         header: () => (
           <EnhancedTooltip content="Draws">
-            <span className="decoration-border/60 cursor-help underline decoration-dotted">
-              D
-            </span>
+            <span className="decoration-border/60 cursor-help underline decoration-dotted">D</span>
           </EnhancedTooltip>
         ),
         cell: ({ getValue }) => getValue(),
@@ -218,9 +212,7 @@ function StandingsTableInner({
         accessorKey: "pointsFor",
         header: () => (
           <EnhancedTooltip content="Points For (Goals/Points Scored)">
-            <span className="decoration-border/60 cursor-help underline decoration-dotted">
-              PF
-            </span>
+            <span className="decoration-border/60 cursor-help underline decoration-dotted">PF</span>
           </EnhancedTooltip>
         ),
         cell: ({ getValue }) => getValue(),
@@ -229,9 +221,7 @@ function StandingsTableInner({
         accessorKey: "pointsAgainst",
         header: () => (
           <EnhancedTooltip content="Points Against (Goals/Points Allowed)">
-            <span className="decoration-border/60 cursor-help underline decoration-dotted">
-              PA
-            </span>
+            <span className="decoration-border/60 cursor-help underline decoration-dotted">PA</span>
           </EnhancedTooltip>
         ),
         cell: ({ getValue }) => getValue(),
@@ -240,9 +230,7 @@ function StandingsTableInner({
         id: "gamesPlayed",
         header: () => (
           <EnhancedTooltip content="Games Played (Total matches played this season)">
-            <span className="decoration-border/60 cursor-help underline decoration-dotted">
-              GP
-            </span>
+            <span className="decoration-border/60 cursor-help underline decoration-dotted">GP</span>
           </EnhancedTooltip>
         ),
         accessorFn: (row) => row.wins + row.losses + row.draws,
@@ -296,13 +284,15 @@ function StandingsTableInner({
 
   const TableComponents = useMemo(
     () => ({
-      Table: React.forwardRef<HTMLTableElement, any>(({ className: tableClassName, ...props }, ref) => (
-        <table
-          ref={ref}
-          {...props}
-          className={cn("w-full min-w-full caption-bottom text-xs sm:text-sm", tableClassName)}
-        />
-      )),
+      Table: React.forwardRef<HTMLTableElement, any>(
+        ({ className: tableClassName, ...props }, ref) => (
+          <table
+            ref={ref}
+            {...props}
+            className={cn("w-full min-w-full caption-bottom text-xs sm:text-sm", tableClassName)}
+          />
+        )
+      ),
       TableHead: React.forwardRef<HTMLTableSectionElement, any>((props, ref) => (
         <TableHeader {...props} ref={ref} />
       )),
@@ -347,7 +337,7 @@ function StandingsTableInner({
               className={cn(
                 "bg-background sticky top-0 z-10",
                 getHeaderClass(header.id),
-                canSort && "select-none cursor-pointer hover:bg-muted/55"
+                canSort && "hover:bg-muted/55 cursor-pointer select-none"
               )}
               onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
             >
@@ -355,12 +345,14 @@ function StandingsTableInner({
                 <div
                   className={cn(
                     "flex items-center gap-1",
-                    header.id !== "rank" && header.id !== "team" ? "justify-center" : "justify-start"
+                    header.id !== "rank" && header.id !== "team"
+                      ? "justify-center"
+                      : "justify-start"
                   )}
                 >
                   {flexRender(header.column.columnDef.header, header.getContext())}
                   {canSort && (
-                    <span className="text-xs text-muted-foreground/60 w-3">
+                    <span className="text-muted-foreground/60 w-3 text-xs">
                       {isSorted === "asc" ? " ▴" : isSorted === "desc" ? " ▾" : ""}
                     </span>
                   )}

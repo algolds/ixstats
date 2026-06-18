@@ -338,6 +338,12 @@ export const countryGeoRouter = createTRPCRouter({
           .string()
           .regex(/^#[0-9a-fA-F]{6}$/)
           .optional(),
+        rotation: z.number().min(-180).max(180).optional(),
+        opacity: z.number().min(0.1).max(1).optional(),
+        letterSpacing: z.number().min(0).max(0.5).optional(),
+        fontWeight: z.string().optional(),
+        minZoom: z.number().min(0).max(24).optional(),
+        maxZoom: z.number().min(0).max(24).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

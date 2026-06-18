@@ -346,8 +346,10 @@ export const sportsTeamsRouter = createTRPCRouter({
         const lineup = (team.lineup as Record<string, any>) ?? {};
         const updatedLineup = {
           ...lineup,
-          attackFocus: input.attackFocus !== undefined ? input.attackFocus : (lineup.attackFocus ?? 50),
-          teamIntensity: input.teamIntensity !== undefined ? input.teamIntensity : (lineup.teamIntensity ?? 50),
+          attackFocus:
+            input.attackFocus !== undefined ? input.attackFocus : (lineup.attackFocus ?? 50),
+          teamIntensity:
+            input.teamIntensity !== undefined ? input.teamIntensity : (lineup.teamIntensity ?? 50),
         };
 
         return ctx.db.sportTeam.update({
@@ -534,7 +536,16 @@ export const sportsTeamsRouter = createTRPCRouter({
             const allStandings = await ctx.db.sportStanding.findMany({
               where: { seasonId: activeSeason.id },
               orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
-              select: { teamId: true, wins: true, losses: true, draws: true, points: true, rank: true, id: true, seasonId: true },
+              select: {
+                teamId: true,
+                wins: true,
+                losses: true,
+                draws: true,
+                points: true,
+                rank: true,
+                id: true,
+                seasonId: true,
+              },
             });
 
             const index = allStandings.findIndex((s) => s.teamId === t.id);
@@ -543,7 +554,7 @@ export const sportsTeamsRouter = createTRPCRouter({
               currentStandings = {
                 ...standing,
                 position: index + 1,
-                rank: standing.rank ?? (index + 1),
+                rank: standing.rank ?? index + 1,
               };
             }
           }

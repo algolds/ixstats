@@ -149,7 +149,7 @@ export default function LatestResults1({
                                 <img
                                   src={withBasePath(match.homeLogo)}
                                   alt={match.homeTeamName}
-                                  className="h-4.5 w-4.5 shrink-0 rounded-full object-cover border border-white/10 transition-transform group-hover:scale-110"
+                                  className="h-4.5 w-4.5 shrink-0 rounded-full border border-white/10 object-cover transition-transform group-hover:scale-110"
                                 />
                               ) : (
                                 <svg
@@ -177,7 +177,7 @@ export default function LatestResults1({
                               <Link
                                 href={titleToWikiOSPath(match.homeWikiSlug)}
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-cyan-400 hover:text-cyan-300 inline-flex items-center shrink-0"
+                                className="inline-flex shrink-0 items-center text-cyan-400 hover:text-cyan-300"
                                 title={`View ${match.homeTeamName} Wiki Article`}
                               >
                                 <BookOpen className="h-3 w-3" />
@@ -211,7 +211,7 @@ export default function LatestResults1({
                                 <img
                                   src={withBasePath(match.awayLogo)}
                                   alt={match.awayTeamName}
-                                  className="h-4.5 w-4.5 shrink-0 rounded-full object-cover border border-white/10 transition-transform group-hover:scale-110"
+                                  className="h-4.5 w-4.5 shrink-0 rounded-full border border-white/10 object-cover transition-transform group-hover:scale-110"
                                 />
                               ) : (
                                 <svg
@@ -239,7 +239,7 @@ export default function LatestResults1({
                               <Link
                                 href={titleToWikiOSPath(match.awayWikiSlug)}
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-cyan-400 hover:text-cyan-300 inline-flex items-center shrink-0"
+                                className="inline-flex shrink-0 items-center text-cyan-400 hover:text-cyan-300"
                                 title={`View ${match.awayTeamName} Wiki Article`}
                               >
                                 <BookOpen className="h-3 w-3" />

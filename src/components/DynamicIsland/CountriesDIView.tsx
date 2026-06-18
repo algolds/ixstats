@@ -86,7 +86,7 @@ export function CountriesDIView({
 
         {/* Search */}
         <div className="relative flex items-center">
-          <RiSearchLine className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 z-10" />
+          <RiSearchLine className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
           <input
             ref={inputRef}
             type="text"
@@ -170,9 +170,7 @@ export function CountriesDIView({
             size="sm"
           >
             <span className="relative z-10">Lucky</span>
-            <kbd className="relative z-10 rounded bg-black/30 px-1 py-0.5 text-[9px]">
-              Ctrl+Tab
-            </kbd>
+            <kbd className="relative z-10 rounded bg-black/30 px-1 py-0.5 text-[9px]">Ctrl+Tab</kbd>
           </RainbowButton>
         </div>
 

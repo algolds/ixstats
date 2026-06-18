@@ -348,13 +348,18 @@ export function LeagueBrandCard({
   progressLabel = "matches",
 }: LeagueBrandCardProps) {
   const emoji = getSportEmoji(sportPreset);
-  const pct = totalCount && totalCount > 0 ? Math.round(((completedCount ?? 0) / totalCount) * 100) : 0;
+  const pct =
+    totalCount && totalCount > 0 ? Math.round(((completedCount ?? 0) / totalCount) * 100) : 0;
 
   return (
     <div className="border-border bg-card/60 dark:bg-card/40 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
       <div className="mb-2 flex items-center gap-2">
         {logo ? (
-          <img src={withBasePath(logo)} alt={leagueName} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+          <img
+            src={withBasePath(logo)}
+            alt={leagueName}
+            className="h-10 w-10 shrink-0 rounded-lg object-cover"
+          />
         ) : (
           <span className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl">
             {emoji}
@@ -374,9 +379,11 @@ export function LeagueBrandCard({
       </div>
 
       {seasonNumber !== undefined && completedCount !== undefined && totalCount !== undefined && (
-        <div className="mt-3 border-t border-border/10 pt-2.5">
+        <div className="border-border/10 mt-3 border-t pt-2.5">
           <div className="mb-1 flex items-baseline justify-between text-[10px]">
-            <span className="text-muted-foreground font-semibold">Season {seasonNumber} Progress</span>
+            <span className="text-muted-foreground font-semibold">
+              Season {seasonNumber} Progress
+            </span>
             <span className="text-foreground/90 font-mono font-bold">
               {completedCount}/{totalCount} {progressLabel} ({pct}%)
             </span>

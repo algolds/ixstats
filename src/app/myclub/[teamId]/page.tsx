@@ -342,7 +342,7 @@ export default function MyClubTeamDetailPage() {
               {teamPublic.league && (
                 <Link
                   href={withBasePath(`/myleague/${teamPublic.leagueId}`)}
-                  className="hover:underline hover:text-foreground inline-flex items-center gap-1"
+                  className="hover:text-foreground inline-flex items-center gap-1 hover:underline"
                 >
                   <span>{teamPublic.league.name}</span>
                   <ExternalLink className="h-3 w-3" />
@@ -974,7 +974,8 @@ export default function MyClubTeamDetailPage() {
                           strokeDashoffset={
                             team.tacticalIntent === "all_out_attack"
                               ? "32"
-                              : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                              : team.tacticalIntent === "park_the_bus" ||
+                                  team.tacticalIntent === "catenaccio"
                                 ? "130"
                                 : team.tacticalIntent === "tiki_taka"
                                   ? "45"
@@ -991,7 +992,8 @@ export default function MyClubTeamDetailPage() {
                       <div className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold">
                         {team.tacticalIntent === "all_out_attack"
                           ? "+10"
-                          : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                          : team.tacticalIntent === "park_the_bus" ||
+                              team.tacticalIntent === "catenaccio"
                             ? "-12"
                             : team.tacticalIntent === "tiki_taka"
                               ? "+8"
@@ -1034,7 +1036,8 @@ export default function MyClubTeamDetailPage() {
                           strokeDashoffset={
                             team.tacticalIntent === "all_out_attack"
                               ? "125"
-                              : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                              : team.tacticalIntent === "park_the_bus" ||
+                                  team.tacticalIntent === "catenaccio"
                                 ? "20"
                                 : team.tacticalIntent === "tiki_taka"
                                   ? "70"
@@ -1051,7 +1054,8 @@ export default function MyClubTeamDetailPage() {
                       <div className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold">
                         {team.tacticalIntent === "all_out_attack"
                           ? "-12"
-                          : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                          : team.tacticalIntent === "park_the_bus" ||
+                              team.tacticalIntent === "catenaccio"
                             ? "+15"
                             : team.tacticalIntent === "tiki_taka"
                               ? "+4"
@@ -1073,9 +1077,11 @@ export default function MyClubTeamDetailPage() {
                   </div>
 
                   {/* Sliders Separator */}
-                  <div className="border-t border-white/10 my-4 pt-4 space-y-4">
-                    <h5 className="text-xs font-extrabold text-foreground tracking-widest uppercase">Custom Sliders</h5>
-                    
+                  <div className="my-4 space-y-4 border-t border-white/10 pt-4">
+                    <h5 className="text-foreground text-xs font-extrabold tracking-widest uppercase">
+                      Custom Sliders
+                    </h5>
+
                     {/* Attack Focus Slider */}
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-[11px] font-bold">
@@ -1104,10 +1110,10 @@ export default function MyClubTeamDetailPage() {
                             teamIntensity,
                           });
                         }}
-                        className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                        className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-slate-800"
                         style={{ accentColor: team.color }}
                       />
-                      <div className="flex justify-between text-[9px] text-muted-foreground/60">
+                      <div className="text-muted-foreground/60 flex justify-between text-[9px]">
                         <span>Defensive (-8 Off)</span>
                         <span>Balanced</span>
                         <span>Attacking (+8 Off)</span>
@@ -1142,10 +1148,10 @@ export default function MyClubTeamDetailPage() {
                             teamIntensity,
                           });
                         }}
-                        className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                        className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-slate-800"
                         style={{ accentColor: team.color }}
                       />
-                      <div className="flex justify-between text-[9px] text-muted-foreground/60">
+                      <div className="text-muted-foreground/60 flex justify-between text-[9px]">
                         <span>Conservative (-0.5 Vol)</span>
                         <span>Standard</span>
                         <span>Intense (+0.5 Vol)</span>
@@ -1591,7 +1597,7 @@ export default function MyClubTeamDetailPage() {
                     {team.league && (
                       <Link
                         href={withBasePath(`/myleague/${team.leagueId}`)}
-                        className="hover:underline hover:text-foreground inline-flex items-center gap-1"
+                        className="hover:text-foreground inline-flex items-center gap-1 hover:underline"
                       >
                         <span>{team.league.name}</span>
                         <ExternalLink className="h-2.5 w-2.5" />

@@ -29,7 +29,9 @@ describe("formatMatchDayBulletin", () => {
         },
       ],
     });
-    expect(content).toBe("⚽ **Championship** — Matchday 5\n══════════════════════════════\n🏆 **United** 2 – 1 City");
+    expect(content).toBe(
+      "⚽ **Championship** — Matchday 5\n══════════════════════════════\n🏆 **United** 2 – 1 City"
+    );
   });
 
   test("formats multiple results preserving order and format", () => {

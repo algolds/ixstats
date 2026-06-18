@@ -389,7 +389,10 @@ export function findNearestBorderRing(
   let bestDist = Infinity;
   for (const ring of rings) {
     // ponytail: check ring bounding box first to skip detailed coordinate checks
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
     for (const pt of ring) {
       if (pt[0]! < minX) minX = pt[0]!;
       if (pt[0]! > maxX) maxX = pt[0]!;

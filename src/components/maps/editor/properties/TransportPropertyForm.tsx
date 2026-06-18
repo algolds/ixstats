@@ -37,8 +37,18 @@ const ROUTE_TYPES = [
 // Route types the server can generate procedurally (must match the generateRoutes
 // Zod enum in routeMutations.ts). All other ROUTE_TYPES are manual-draw only.
 const GENERATABLE_ROUTE_TYPES = [
-  "rail", "highway", "road", "shipping_lane", "canal", "air_corridor", "ferry",
-  "pipeline", "power_grid", "fiber", "military_supply", "military_naval",
+  "rail",
+  "highway",
+  "road",
+  "shipping_lane",
+  "canal",
+  "air_corridor",
+  "ferry",
+  "pipeline",
+  "power_grid",
+  "fiber",
+  "military_supply",
+  "military_naval",
 ] as const;
 
 type SortKey = "name" | "length" | "type" | "status";
@@ -692,7 +702,9 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-1.5">
             {ROUTE_TYPES.map((rt) => {
-              const isGeneratable = (GENERATABLE_ROUTE_TYPES as readonly string[]).includes(rt.value);
+              const isGeneratable = (GENERATABLE_ROUTE_TYPES as readonly string[]).includes(
+                rt.value
+              );
               const isSelected = selectedTypes.includes(rt.value);
               return (
                 <button
@@ -705,14 +717,15 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                   }
                   className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
                     !isGeneratable
-                      ? "opacity-40 cursor-not-allowed border-dashed bg-slate-900/10 text-slate-500"
+                      ? "cursor-not-allowed border-dashed bg-slate-900/10 text-slate-500 opacity-40"
                       : isSelected
                         ? "border-primary/50 bg-primary/10 text-primary"
                         : "border-border bg-background text-muted-foreground hover:bg-accent"
                   }`}
                 >
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: rt.color }} />
-                  {rt.label} {!isGeneratable && <span className="text-[9px] opacity-70">(Manual)</span>}
+                  {rt.label}{" "}
+                  {!isGeneratable && <span className="text-[9px] opacity-70">(Manual)</span>}
                 </button>
               );
             })}
@@ -769,8 +782,14 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                   : null
               );
               try {
-                await generateRoutes.mutateAsync({ countryId, routeTypes: generatable, clearExisting });
-              } catch { /* shown via state */ }
+                await generateRoutes.mutateAsync({
+                  countryId,
+                  routeTypes: generatable,
+                  clearExisting,
+                });
+              } catch {
+                /* shown via state */
+              }
             }}
             disabled={selectedTypes.length === 0 || generateRoutes.isPending}
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50"

@@ -39,7 +39,9 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
           </label>
           <select
             value={importer.citiesLayerId}
-            onChange={(e) => importer.setLayer(e.target.value, importer.capitalLayerId, importer.cityNameLayerId)}
+            onChange={(e) =>
+              importer.setLayer(e.target.value, importer.capitalLayerId, importer.cityNameLayerId)
+            }
             className="bg-background border-border text-foreground w-full rounded border px-2.5 py-1 text-xs"
           >
             {importer.layers.map((layer) => (
@@ -58,7 +60,9 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
           </label>
           <select
             value={importer.capitalLayerId}
-            onChange={(e) => importer.setLayer(importer.citiesLayerId, e.target.value, importer.cityNameLayerId)}
+            onChange={(e) =>
+              importer.setLayer(importer.citiesLayerId, e.target.value, importer.cityNameLayerId)
+            }
             className="bg-background border-border text-foreground w-full rounded border px-2.5 py-1 text-xs"
           >
             <option value="">None (Auto-detect from names/icons)</option>
@@ -78,7 +82,9 @@ export const CityAlignStep = memo(function CityAlignStep({ importer }: CityAlign
           </label>
           <select
             value={importer.cityNameLayerId}
-            onChange={(e) => importer.setLayer(importer.citiesLayerId, importer.capitalLayerId, e.target.value)}
+            onChange={(e) =>
+              importer.setLayer(importer.citiesLayerId, importer.capitalLayerId, e.target.value)
+            }
             className="bg-background border-border text-foreground w-full rounded border px-2.5 py-1 text-xs"
           >
             <option value="">None (Search whole SVG / Auto-detect)</option>

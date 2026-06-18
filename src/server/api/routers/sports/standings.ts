@@ -203,7 +203,16 @@ export const sportsStandingsRouter = createTRPCRouter({
         const standings = await ctx.db.sportStanding.findMany({
           where: { seasonId: input.seasonId },
           include: {
-            team: { select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true } },
+            team: {
+              select: {
+                id: true,
+                name: true,
+                shortName: true,
+                color: true,
+                logo: true,
+                wikiSlug: true,
+              },
+            },
           },
           orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
         });

@@ -140,7 +140,7 @@ export default function Standings1({
                           <img
                             src={withBasePath(team.logo)}
                             alt={team.teamName ?? ""}
-                            className="h-5 w-5 shrink-0 rounded-full object-cover border border-white/10 transition-transform group-hover:scale-110"
+                            className="h-5 w-5 shrink-0 rounded-full border border-white/10 object-cover transition-transform group-hover:scale-110"
                           />
                         ) : (
                           <svg
@@ -162,7 +162,7 @@ export default function Standings1({
                         <Link
                           href={titleToWikiOSPath((team as any).wikiSlug)}
                           onClick={(e) => e.stopPropagation()}
-                          className="text-cyan-400 hover:text-cyan-300 ml-1 inline-flex items-center"
+                          className="ml-1 inline-flex items-center text-cyan-400 hover:text-cyan-300"
                           title={`View ${team.teamName} Wiki Article`}
                         >
                           <BookOpen className="h-3 w-3" />

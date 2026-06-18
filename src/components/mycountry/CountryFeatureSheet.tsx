@@ -444,7 +444,10 @@ function SubdivisionReadOnly({ subdivision }: { subdivision: any }) {
         value={subdivision.budgetShare != null ? `${subdivision.budgetShare}%` : "—"}
       />
       <Stat label="Governor" value={subdivision.governorName || "—"} />
-      <Stat label="Government" value={subdivision.governmentType ? toTitleCase(subdivision.governmentType) : "—"} />
+      <Stat
+        label="Government"
+        value={subdivision.governmentType ? toTitleCase(subdivision.governmentType) : "—"}
+      />
     </div>
   );
 }

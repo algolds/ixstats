@@ -10,8 +10,20 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 
 export interface ScheduleMatch {
   id: string;
-  homeTeam: { id: string; name: string; color: string; logo?: string | null; wikiSlug?: string | null };
-  awayTeam: { id: string; name: string; color: string; logo?: string | null; wikiSlug?: string | null };
+  homeTeam: {
+    id: string;
+    name: string;
+    color: string;
+    logo?: string | null;
+    wikiSlug?: string | null;
+  };
+  awayTeam: {
+    id: string;
+    name: string;
+    color: string;
+    logo?: string | null;
+    wikiSlug?: string | null;
+  };
   homeScore?: number | null;
   awayScore?: number | null;
   status: string;
@@ -143,7 +155,7 @@ export default function MatchSchedule1({
                     <Link
                       href={titleToWikiOSPath(match.homeTeam.wikiSlug)}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-cyan-400 hover:text-cyan-300 inline-flex items-center shrink-0"
+                      className="inline-flex shrink-0 items-center text-cyan-400 hover:text-cyan-300"
                       title={`View ${match.homeTeam.name} Wiki Article`}
                     >
                       <BookOpen className="h-3 w-3" />
@@ -183,7 +195,7 @@ export default function MatchSchedule1({
                     <Link
                       href={titleToWikiOSPath(match.awayTeam.wikiSlug)}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-cyan-400 hover:text-cyan-300 inline-flex items-center shrink-0"
+                      className="inline-flex shrink-0 items-center text-cyan-400 hover:text-cyan-300"
                       title={`View ${match.awayTeam.name} Wiki Article`}
                     >
                       <BookOpen className="h-3 w-3" />

@@ -337,18 +337,22 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                   )}
                 </ul>
                 {activeSynergies.length > 0 && (
-                  <div className="mt-2 border-t border-green-500/20 pt-2 text-xs text-green-700 dark:text-green-400 space-y-0.5">
+                  <div className="mt-2 space-y-0.5 border-t border-green-500/20 pt-2 text-xs text-green-700 dark:text-green-400">
                     <p className="font-semibold">Active Synergies:</p>
                     {activeSynergies.map((syn, idx) => (
-                      <p key={idx}>✓ {syn.comp1} + {syn.comp2}</p>
+                      <p key={idx}>
+                        ✓ {syn.comp1} + {syn.comp2}
+                      </p>
                     ))}
                   </div>
                 )}
                 {activeConflicts.length > 0 && (
-                  <div className="mt-2 border-t border-red-500/20 pt-2 text-xs text-red-700 dark:text-red-400 space-y-0.5">
+                  <div className="mt-2 space-y-0.5 border-t border-red-500/20 pt-2 text-xs text-red-700 dark:text-red-400">
                     <p className="font-semibold">Active Conflicts:</p>
                     {activeConflicts.map((con, idx) => (
-                      <p key={idx}>⚠ {con.comp1} + {con.comp2}</p>
+                      <p key={idx}>
+                        ⚠ {con.comp1} + {con.comp2}
+                      </p>
                     ))}
                   </div>
                 )}

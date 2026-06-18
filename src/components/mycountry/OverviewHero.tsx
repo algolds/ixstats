@@ -660,7 +660,7 @@ export function OverviewHero({
       </button>
 
       <div className="relative z-10 grid gap-4 p-4 pt-3 md:grid-cols-5">
-        <div className="border-border/30 h-[250px] overflow-hidden rounded-xl border md:col-span-3 md:h-full md:min-h-[300px] flex flex-col">
+        <div className="border-border/30 flex h-[250px] flex-col overflow-hidden rounded-xl border md:col-span-3 md:h-full md:min-h-[300px]">
           <CountryMapEmbed
             countryId={countryId}
             height="h-full"

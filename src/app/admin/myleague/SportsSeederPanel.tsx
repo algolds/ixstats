@@ -9,16 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import {
-  Database,
-  RefreshCw,
-  Trash2,
-  Sparkles,
-  Activity,
-  Layers,
-  Cpu,
-  Trophy,
-} from "lucide-react";
+import { Database, RefreshCw, Trash2, Sparkles, Activity, Layers, Cpu, Trophy } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 export default function SportsSeederPanel() {
@@ -104,7 +95,8 @@ export default function SportsSeederPanel() {
       archetype: "League (Round-Robin)",
       state: seedCaphirianSoccer,
       setter: setSeedCaphirianSoccer,
-      description: "Classical association football structure. Top tier league featuring Caphirian teams.",
+      description:
+        "Classical association football structure. Top tier league featuring Caphirian teams.",
     },
     {
       key: "yonderre_soccer",
@@ -115,7 +107,8 @@ export default function SportsSeederPanel() {
       archetype: "League (Round-Robin)",
       state: seedYonderreSoccer,
       setter: setSeedYonderreSoccer,
-      description: "Alternative soccer structure featuring canonical Yonderian clubs and rivalries.",
+      description:
+        "Alternative soccer structure featuring canonical Yonderian clubs and rivalries.",
     },
     {
       key: "ohl_hockey",
@@ -126,7 +119,8 @@ export default function SportsSeederPanel() {
       archetype: "League (Round-Robin)",
       state: seedOHLHockey,
       setter: setSeedOHLHockey,
-      description: "Hockey league with custom rulesets, overtime intervals, shootout resolves and line rosters.",
+      description:
+        "Hockey league with custom rulesets, overtime intervals, shootout resolves and line rosters.",
     },
     {
       key: "f1",
@@ -137,7 +131,8 @@ export default function SportsSeederPanel() {
       archetype: "Circuit Racing",
       state: seedF1,
       setter: setSeedF1,
-      description: "High-octane motorsport circuit. Features driver ratings, constructor ratings, and qualifying sessions.",
+      description:
+        "High-octane motorsport circuit. Features driver ratings, constructor ratings, and qualifying sessions.",
     },
     {
       key: "boxing",
@@ -148,7 +143,8 @@ export default function SportsSeederPanel() {
       archetype: "Bracket Elimination",
       state: seedBoxing,
       setter: setSeedBoxing,
-      description: "Knockout heavyweight tournament matching fighters head-to-head until a champion is crowned.",
+      description:
+        "Knockout heavyweight tournament matching fighters head-to-head until a champion is crowned.",
     },
   ];
 
@@ -156,16 +152,16 @@ export default function SportsSeederPanel() {
     <div className="space-y-6">
       {/* Visual Header */}
       <div className="facet-hierarchy-parent border-border/60 bg-card/40 relative overflow-hidden rounded-xl border p-6">
-        <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none" />
+        <div className="pointer-events-none absolute -top-20 -right-20 h-44 w-44 rounded-full bg-indigo-500/5 blur-3xl" />
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-indigo-400">
               <Database className="h-6 w-6 animate-pulse" />
             </div>
             <div>
-              <h1 className="text-foreground text-2xl font-bold flex items-center gap-2">
+              <h1 className="text-foreground flex items-center gap-2 text-2xl font-bold">
                 Data Lab & Seeder
-                <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 text-[9px] font-bold">
+                <Badge className="border-indigo-500/20 bg-indigo-500/10 text-[9px] font-bold text-indigo-400">
                   ADMIN TOOLS
                 </Badge>
               </h1>
@@ -179,10 +175,10 @@ export default function SportsSeederPanel() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Seeding Configuration Panel (Left) */}
-        <div className="lg:col-span-8 space-y-6">
-          <Card className="facet-hierarchy-child border-border/50 bg-card/40 overflow-hidden relative">
+        <div className="space-y-6 lg:col-span-8">
+          <Card className="facet-hierarchy-child border-border/50 bg-card/40 relative overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <RefreshCw className="h-4 w-4 text-indigo-400" />
                 Configurable Reseeding Pipeline
               </CardTitle>
@@ -192,14 +188,18 @@ export default function SportsSeederPanel() {
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
               {/* Wipe Option */}
-              <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-4 flex items-center justify-between">
-                <div className="space-y-0.5 max-w-[80%]">
-                  <Label htmlFor="wipe-db" className="text-sm font-bold text-red-400 flex items-center gap-1.5 cursor-pointer">
+              <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                <div className="max-w-[80%] space-y-0.5">
+                  <Label
+                    htmlFor="wipe-db"
+                    className="flex cursor-pointer items-center gap-1.5 text-sm font-bold text-red-400"
+                  >
                     <Trash2 className="h-4 w-4" />
                     Wipe Existing Canonical Records First
                   </Label>
-                  <span className="text-muted-foreground text-xs block">
-                    Removes all existing canonical leagues and cascade-clears all dependent seasons, teams, matches, and players.
+                  <span className="text-muted-foreground block text-xs">
+                    Removes all existing canonical leagues and cascade-clears all dependent seasons,
+                    teams, matches, and players.
                   </span>
                 </div>
                 <Switch
@@ -212,18 +212,18 @@ export default function SportsSeederPanel() {
 
               {/* Leagues selector grid */}
               <div className="space-y-3">
-                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                <Label className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
                   Leagues to Seed
                 </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {leaguePresets.map((preset) => (
                     <div
                       key={preset.key}
                       onClick={() => preset.setter(!preset.state)}
                       className={cn(
-                        "border rounded-xl p-4 flex gap-3 transition-all duration-300 cursor-pointer select-none",
+                        "flex cursor-pointer gap-3 rounded-xl border p-4 transition-all duration-300 select-none",
                         preset.state
-                          ? "bg-indigo-500/5 border-indigo-500/30 hover:border-indigo-500/50"
+                          ? "border-indigo-500/30 bg-indigo-500/5 hover:border-indigo-500/50"
                           : "bg-card/25 border-border/50 opacity-60 hover:opacity-85"
                       )}
                     >
@@ -232,23 +232,26 @@ export default function SportsSeederPanel() {
                           id={preset.key}
                           checked={preset.state}
                           onCheckedChange={() => {}} // Controlled via card onClick
-                          className="data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
+                          className="data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-500"
                         />
                       </div>
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 justify-between">
-                          <span className="text-sm font-bold text-foreground truncate flex items-center gap-1.5">
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-foreground flex items-center gap-1.5 truncate text-sm font-bold">
                             <span className="text-lg">{preset.icon}</span>
                             {preset.name}
                           </span>
-                          <Badge variant="outline" className="text-[9px] uppercase border-indigo-500/20 text-indigo-400">
+                          <Badge
+                            variant="outline"
+                            className="border-indigo-500/20 text-[9px] text-indigo-400 uppercase"
+                          >
                             {preset.teams} teams
                           </Badge>
                         </div>
                         <p className="text-muted-foreground text-[11px] leading-relaxed">
                           {preset.description}
                         </p>
-                        <div className="text-[10px] text-muted-foreground/60 flex gap-2">
+                        <div className="text-muted-foreground/60 flex gap-2 text-[10px]">
                           <span className="font-semibold">{preset.archetype}</span>
                         </div>
                       </div>
@@ -261,7 +264,7 @@ export default function SportsSeederPanel() {
               <Button
                 onClick={handleReseed}
                 disabled={reseedMutation.isPending}
-                className="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-xl gap-2 h-11"
+                className="h-11 w-full gap-2 rounded-xl bg-indigo-500 font-bold text-white hover:bg-indigo-400"
               >
                 {reseedMutation.isPending ? (
                   <>
@@ -280,26 +283,31 @@ export default function SportsSeederPanel() {
         </div>
 
         {/* Global Admin Diagnostics & Cache Controls (Right) */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="space-y-6 lg:col-span-4">
           {/* Cache Controls */}
           <Card className="facet-hierarchy-child border-border/50 bg-card/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+              <CardTitle className="flex items-center gap-1.5 text-sm font-semibold">
                 <Layers className="h-4 w-4 text-amber-500" />
                 Cache Optimization
               </CardTitle>
-              <CardDescription>Flushes the Redis query and tRPC endpoints cache layer.</CardDescription>
+              <CardDescription>
+                Flushes the Redis query and tRPC endpoints cache layer.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-2">
-              <div className="bg-muted/10 border-border/20 rounded-xl p-3 text-xs leading-relaxed text-muted-foreground">
-                <span className="text-foreground font-semibold block mb-1">Active Caching Layer:</span>
-                MyLeague features optimized static cache limits on standings, rosters, and stats. Reseeding might show delayed results unless manually cleared.
+              <div className="bg-muted/10 border-border/20 text-muted-foreground rounded-xl p-3 text-xs leading-relaxed">
+                <span className="text-foreground mb-1 block font-semibold">
+                  Active Caching Layer:
+                </span>
+                MyLeague features optimized static cache limits on standings, rosters, and stats.
+                Reseeding might show delayed results unless manually cleared.
               </div>
               <Button
                 variant="outline"
                 onClick={handleClearCache}
                 disabled={clearCacheMutation.isPending}
-                className="w-full text-xs font-bold border-amber-500/20 text-amber-400 hover:bg-amber-500/5 gap-2 h-9"
+                className="h-9 w-full gap-2 border-amber-500/20 text-xs font-bold text-amber-400 hover:bg-amber-500/5"
               >
                 {clearCacheMutation.isPending ? (
                   <>
@@ -319,37 +327,46 @@ export default function SportsSeederPanel() {
           {/* System Diagnostics */}
           <Card className="facet-hierarchy-child border-border/50 bg-card/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+              <CardTitle className="flex items-center gap-1.5 text-sm font-semibold">
                 <Activity className="h-4 w-4 text-emerald-500" />
                 Simulation Diagnostics
               </CardTitle>
               <CardDescription>Live health checks of the sports engine components.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
-              <div className="flex items-center justify-between text-xs border-b border-white/5 pb-2">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2 text-xs">
                 <span className="text-muted-foreground flex items-center gap-1.5">
                   <Cpu className="h-3.5 w-3.5 text-emerald-400" />
                   Sports Presets Engine
                 </span>
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[9px] uppercase font-bold">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                >
                   Operational
                 </Badge>
               </div>
-              <div className="flex items-center justify-between text-xs border-b border-white/5 pb-2">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2 text-xs">
                 <span className="text-muted-foreground flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
                   AI Commentary Narrator
                 </span>
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[9px] uppercase font-bold">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                >
                   Connected
                 </Badge>
               </div>
-              <div className="flex items-center justify-between text-xs border-b border-white/5 pb-2">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2 text-xs">
                 <span className="text-muted-foreground flex items-center gap-1.5">
                   <Database className="h-3.5 w-3.5 text-emerald-400" />
                   Redis Cache Connection
                 </span>
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[9px] uppercase font-bold">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                >
                   Online
                 </Badge>
               </div>
@@ -358,7 +375,10 @@ export default function SportsSeederPanel() {
                   <Trophy className="h-3.5 w-3.5 text-emerald-400" />
                   Simulation Kernel Status
                 </span>
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[9px] uppercase font-bold">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase"
+                >
                   Active Loop
                 </Badge>
               </div>

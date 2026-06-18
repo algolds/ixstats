@@ -1974,10 +1974,11 @@ function PostInlineLinkPreview({ url }: { url: string }) {
 }
 
 function MyLeagueInlinePreview({ leagueId, url: _url }: { leagueId: string; url: string }) {
-  const { data: league, isLoading, error } = api.sports.getLeague.useQuery(
-    { id: leagueId },
-    { staleTime: 10 * 60_000 }
-  );
+  const {
+    data: league,
+    isLoading,
+    error,
+  } = api.sports.getLeague.useQuery({ id: leagueId }, { staleTime: 10 * 60_000 });
 
   if (isLoading) {
     return (
@@ -2004,7 +2005,7 @@ function MyLeagueInlinePreview({ leagueId, url: _url }: { leagueId: string; url:
           <img
             src={league.logo}
             alt={league.name}
-            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 object-contain bg-black/20"
+            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 bg-black/20 object-contain"
           />
         ) : (
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-xl text-blue-500">
@@ -2051,10 +2052,11 @@ function MyLeagueInlinePreview({ leagueId, url: _url }: { leagueId: string; url:
 }
 
 function MyClubInlinePreview({ teamId, url: _url }: { teamId: string; url: string }) {
-  const { data: team, isLoading, error } = api.sports.getTeam.useQuery(
-    { id: teamId },
-    { staleTime: 10 * 60_000 }
-  );
+  const {
+    data: team,
+    isLoading,
+    error,
+  } = api.sports.getTeam.useQuery({ id: teamId }, { staleTime: 10 * 60_000 });
 
   if (isLoading) {
     return (
@@ -2085,7 +2087,7 @@ function MyClubInlinePreview({ teamId, url: _url }: { teamId: string; url: strin
           <img
             src={team.logo}
             alt={team.name}
-            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 object-contain bg-black/20"
+            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 bg-black/20 object-contain"
           />
         ) : (
           <div
@@ -2121,7 +2123,7 @@ function MyClubInlinePreview({ teamId, url: _url }: { teamId: string; url: strin
               <img
                 src={flagUrl}
                 alt={team.nation?.name || "Nation"}
-                className="h-3 w-4.5 rounded object-cover border border-white/10 inline-block align-middle"
+                className="inline-block h-3 w-4.5 rounded border border-white/10 object-cover align-middle"
               />
             )}
           </div>
@@ -2140,7 +2142,10 @@ function MyClubInlinePreview({ teamId, url: _url }: { teamId: string; url: strin
               </>
             )}
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium" style={{ color: teamColor }}>
+          <div
+            className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium"
+            style={{ color: teamColor }}
+          >
             <span>View Club Hub</span>
             <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
           </div>

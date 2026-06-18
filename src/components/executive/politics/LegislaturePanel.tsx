@@ -145,7 +145,12 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
             (ps: any) => ps.party.id === seat.partyId
           );
           counts.set(seat.partyId, {
-            party: refSummary?.party ?? { id: seat.partyId, name: seat.partyName, shortName: null, color: seat.partyColor },
+            party: refSummary?.party ?? {
+              id: seat.partyId,
+              name: seat.partyName,
+              shortName: null,
+              color: seat.partyColor,
+            },
             seats: 1,
           });
         }
@@ -207,7 +212,9 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
                 seats={activeChamberSeats}
                 totalSeats={activeChamberSeatsCount}
                 partySummary={activeChamberPartySummary}
-                legislatureName={chambers.length > 1 ? activeChamberTab : parliament.legislature.name}
+                legislatureName={
+                  chambers.length > 1 ? activeChamberTab : parliament.legislature.name
+                }
               />
             </CardContent>
           </Card>

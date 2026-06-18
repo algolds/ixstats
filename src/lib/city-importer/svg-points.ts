@@ -468,7 +468,14 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
 
   // If still no labels, auto-detect a separate names layer
   if (allLabels.length === 0 && !opts?.cityNameLayerId) {
-    const NAME_STRONG_PATTERNS = ["city names", "city labels", "town names", "names", "labels", "text"];
+    const NAME_STRONG_PATTERNS = [
+      "city names",
+      "city labels",
+      "town names",
+      "names",
+      "labels",
+      "text",
+    ];
     let bestNameId: string | null = null;
     let bestNameTextCount = 0;
 
@@ -485,7 +492,9 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     }
     targetNameLayerId = bestNameId ?? undefined;
 
-    const nameLayerContainer = targetNameLayerId ? findLayerByIdOrName(svgRoot, targetNameLayerId) : null;
+    const nameLayerContainer = targetNameLayerId
+      ? findLayerByIdOrName(svgRoot, targetNameLayerId)
+      : null;
     if (nameLayerContainer) {
       allLabels = extractAllTextLabels(nameLayerContainer, svgRoot);
     }
@@ -496,7 +505,11 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     for (const layer of layers) {
       if (layer.textCount > 0) {
         const nameLower = layer.name.toLowerCase();
-        if (nameLower.includes("city") || nameLower.includes("label") || nameLower.includes("name")) {
+        if (
+          nameLower.includes("city") ||
+          nameLower.includes("label") ||
+          nameLower.includes("name")
+        ) {
           const fallbackContainer = findLayerByIdOrName(svgRoot, layer.id);
           if (fallbackContainer) {
             allLabels = extractAllTextLabels(fallbackContainer, svgRoot);

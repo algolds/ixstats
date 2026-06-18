@@ -13,6 +13,7 @@ import {
   clampToGeometry,
   simplifyGeometry,
   snapToBorderEdge,
+  snapPointToGeometries,
   snapToNeighborBorders,
   sanitizeRegionShape,
 } from "~/lib/border-editor";
@@ -369,25 +370,19 @@ export function useSubdivisionVertexEdit({
       const border = countryGeometryRef.current;
       if (border) {
         target = clampToGeometry(target, border);
-        if (snapOn) {
-          target = snapToBorderEdge(target, border, snapTol);
-        }
       }
-
       if (snapOn) {
+        const snapGeoms: (Polygon | MultiPolygon)[] = [];
+        if (border) {
+          snapGeoms.push(border);
+        }
         const editingId = vertexEditRef.current.featureId;
         for (const feat of featuresRef.current) {
-          if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-          const snapped = snapToBorderEdge(
-            target,
-            feat.geometry as Polygon | MultiPolygon,
-            snapTol
-          );
-          if (snapped !== target) {
-            target = snapped;
-            break;
+          if (feat.type === "subdivision" && feat.id !== editingId && feat.geometry) {
+            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
           }
         }
+        target = snapPointToGeometries(target, snapGeoms, snapTol);
       }
 
       const origTarget: Position = [lngLat.lng, lngLat.lat];
@@ -554,25 +549,19 @@ export function useSubdivisionVertexEdit({
       const border = countryGeometryRef.current;
       if (border) {
         target = clampToGeometry(target, border);
-        if (snapOn) {
-          target = snapToBorderEdge(target, border, snapTol);
-        }
       }
-
       if (snapOn) {
+        const snapGeoms: (Polygon | MultiPolygon)[] = [];
+        if (border) {
+          snapGeoms.push(border);
+        }
         const editingId = vertexEditRef.current.featureId;
         for (const feat of featuresRef.current) {
-          if (feat.type !== "subdivision" || feat.id === editingId || !feat.geometry) continue;
-          const snapped = snapToBorderEdge(
-            target,
-            feat.geometry as Polygon | MultiPolygon,
-            snapTol
-          );
-          if (snapped !== target) {
-            target = snapped;
-            break;
+          if (feat.type === "subdivision" && feat.id !== editingId && feat.geometry) {
+            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
           }
         }
+        target = snapPointToGeometries(target, snapGeoms, snapTol);
       }
 
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);

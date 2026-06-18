@@ -165,7 +165,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
       priority: 25, // Higher priority to override general plugins on this page
       center: (
         <span className="flex items-center gap-1.5 select-none">
-          <Globe className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+          <Globe className="h-3.5 w-3.5 shrink-0 text-purple-400" />
           <span className="text-foreground/80 text-xs font-semibold">Countries Search</span>
         </span>
       ),

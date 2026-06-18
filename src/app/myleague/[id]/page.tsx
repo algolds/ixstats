@@ -1080,7 +1080,7 @@ function ScheduleTab({
   leagueId,
   activeSeasonId,
   latestSeasonId,
-   
+
   sportPreset,
   archetype,
   // eslint-disable-next-line unused-imports/no-unused-vars

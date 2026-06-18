@@ -152,9 +152,13 @@ export function WikiRepositoryTab({
       const mapped = wikiFileData.map((img: any, index: number) => {
         const rawUrl = img.url || "";
         const proxiedUrl = rawUrl.includes("iiwiki.com/")
-          ? withBasePath(rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/"))
+          ? withBasePath(
+              rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
+            )
           : rawUrl.includes("ixwiki.com/")
-            ? withBasePath(rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/"))
+            ? withBasePath(
+                rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
+              )
             : rawUrl;
 
         return {

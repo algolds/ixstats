@@ -20,7 +20,7 @@ export const OVERVIEW_IDENTITY_FIELDS: Array<{
     label: "Government",
     icon: Landmark,
     color: "text-amber-600 dark:text-amber-400",
-    getValue: (ni) => ni.governmentType ? toTitleCase(ni.governmentType) : null,
+    getValue: (ni) => (ni.governmentType ? toTitleCase(ni.governmentType) : null),
   },
   {
     key: "capitalCity",

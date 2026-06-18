@@ -91,10 +91,22 @@ describe("alignment optimization tests", () => {
   it("snapGeometryToBorder snaps geometry correctly", () => {
     // Define target border edges
     const borderEdges: Array<[[number, number], [number, number]]> = [
-      [[0, 0], [10, 0]],
-      [[10, 0], [10, 10]],
-      [[10, 10], [0, 10]],
-      [[0, 10], [0, 0]],
+      [
+        [0, 0],
+        [10, 0],
+      ],
+      [
+        [10, 0],
+        [10, 10],
+      ],
+      [
+        [10, 10],
+        [0, 10],
+      ],
+      [
+        [0, 10],
+        [0, 0],
+      ],
     ];
     const borderRing = [
       [0, 0],

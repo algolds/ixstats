@@ -1141,8 +1141,6 @@ export const TAX_COMPONENT_CATEGORIES: Record<TaxComponentCategory, string[]> = 
   ],
 };
 
-
-
 // ==================== REACT COMPONENT ====================
 
 import { UnifiedAtomicComponentSelector } from "~/components/atomic/shared/UnifiedAtomicComponentSelector";

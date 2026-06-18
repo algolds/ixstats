@@ -220,7 +220,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   function handleSave() {
     const clampedChambers = chambers.map((c) => ({
       ...c,
-      seats: Math.max(10, Math.min(5000, Number(c.seats) || 10))
+      seats: Math.max(10, Math.min(5000, Number(c.seats) || 10)),
     }));
     setChambers(clampedChambers);
 
@@ -298,7 +298,10 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 value={formData.totalSeats}
                 disabled={isMultiChamber}
                 onChange={(e) =>
-                  setFormData({ ...formData, totalSeats: e.target.value === "" ? "" : Number(e.target.value) })
+                  setFormData({
+                    ...formData,
+                    totalSeats: e.target.value === "" ? "" : Number(e.target.value),
+                  })
                 }
                 onBlur={(e) => {
                   const val = Math.max(10, Math.min(5000, Number(e.target.value) || 10));

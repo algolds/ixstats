@@ -232,7 +232,9 @@ export function CountryComparisonModal({
                 onOpenAutoFocus={(e) => {
                   e.preventDefault();
                   const target = e.currentTarget as HTMLElement;
-                  const input = target.querySelector('[data-slot="command-input"]') as HTMLInputElement;
+                  const input = target.querySelector(
+                    '[data-slot="command-input"]'
+                  ) as HTMLInputElement;
                   if (input) {
                     input.focus({ preventScroll: true });
                   }

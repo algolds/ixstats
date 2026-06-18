@@ -384,7 +384,9 @@ export function EconomyBuilderPage({
   // Resolve current tab with backward compatibility for legacy tab values
   const currentTab = useMemo(() => {
     const raw = activeTab || "components";
-    if (["components", "sectors", "labor", "demographics", "fiscal", "tax", "preview"].includes(raw)) {
+    if (
+      ["components", "sectors", "labor", "demographics", "fiscal", "tax", "preview"].includes(raw)
+    ) {
       return raw;
     }
     // Legacy mapping: old tab names → new tab names
@@ -1084,10 +1086,7 @@ export function EconomyBuilderPage({
                 texture="chevron"
                 textureOpacity={0.04}
               >
-                <EconomyTabHeader
-                  title="Labor Market & Employment"
-                  icon={Users}
-                />
+                <EconomyTabHeader title="Labor Market & Employment" icon={Users} />
                 <GlassCardContent className="p-6">
                   <Suspense fallback={<TabLoadingFallback />}>
                     <LaborEmploymentTab
@@ -1110,10 +1109,7 @@ export function EconomyBuilderPage({
                 texture="chevron"
                 textureOpacity={0.04}
               >
-                <EconomyTabHeader
-                  title="Demographics & Population"
-                  icon={Globe}
-                />
+                <EconomyTabHeader title="Demographics & Population" icon={Globe} />
                 <GlassCardContent className="p-6">
                   <Suspense fallback={<TabLoadingFallback />}>
                     <DemographicsPopulationTab
