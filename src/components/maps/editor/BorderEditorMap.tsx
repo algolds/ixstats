@@ -134,7 +134,7 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
       },
       center,
       zoom,
-      projection: { type: "globe" } as any,
+      projection: { type: "mercator" } as any,
     });
 
     map.on("load", () => {

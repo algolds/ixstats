@@ -58,10 +58,7 @@
     },
     "source-overlay-cities": {
       "type": "geojson",
-      "data": { "type": "FeatureCollection", "features": [] },
-      "cluster": true,
-      "clusterMaxZoom": 8,
-      "clusterRadius": 40
+      "data": { "type": "FeatureCollection", "features": [] }
     },
     "source-overlay-pois": {
       "type": "geojson",
@@ -375,38 +372,9 @@
       }
     },
     {
-      "id": "overlay-cities-circle-cluster",
-      "type": "circle",
-      "source": "source-overlay-cities",
-      "filter": ["has", "point_count"],
-      "paint": {
-        "circle-radius": ["step", ["get", "point_count"], 12, 10, 16, 50, 22],
-        "circle-color": ["step", ["get", "point_count"], "#93c5fd", 10, "#3b82f6", 50, "#1e40af"],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5
-      },
-      "minzoom": 3
-    },
-    {
-      "id": "overlay-cities-circle-cluster-count",
-      "type": "symbol",
-      "source": "source-overlay-cities",
-      "filter": ["has", "point_count"],
-      "layout": {
-        "text-field": "{point_count_abbreviated}",
-        "text-size": 11,
-        "text-font": ["__FONT_REGULAR__"]
-      },
-      "paint": {
-        "text-color": "#ffffff"
-      },
-      "minzoom": 3
-    },
-    {
       "id": "overlay-cities-circle",
       "type": "circle",
       "source": "source-overlay-cities",
-      "filter": ["!", ["has", "point_count"]],
       "paint": {
         "circle-radius": [
           "interpolate",
@@ -427,7 +395,6 @@
       "id": "overlay-cities-label",
       "type": "symbol",
       "source": "source-overlay-cities",
-      "filter": ["!", ["has", "point_count"]],
       "layout": {
         "text-field": ["get", "name"],
         "text-size": ["interpolate", ["linear"], ["zoom"], 6, 9, 10, 12],

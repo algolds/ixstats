@@ -91,8 +91,6 @@ export function useWorldMapDataOverlays({
     const overlayLayers = {
       cities: [
         "overlay-cities-circle",
-        "overlay-cities-circle-cluster",
-        "overlay-cities-circle-cluster-count",
         "overlay-cities-label",
       ],
       pois: [

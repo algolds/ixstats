@@ -237,6 +237,15 @@ const EditorMap = memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [theme]);
 
+    // Ensure map is locked to flat projection on load and style changes
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded) return;
+      if ("setProjection" in map) {
+        (map as any).setProjection({ type: "mercator" });
+      }
+    }, [isLoaded, theme]);
+
     // ── Initialize map ──
     useEffect(() => {
       if (!containerRef.current || mapRef.current) return;
@@ -262,6 +271,7 @@ const EditorMap = memo(
           minZoom: 1,
           maxZoom: 14,
           attributionControl: false,
+          projection: { type: "mercator" } as any,
         });
 
         map.addControl(
