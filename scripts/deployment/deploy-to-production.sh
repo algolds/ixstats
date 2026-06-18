@@ -230,9 +230,9 @@ if [ -d ".git" ]; then
 
     if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
         log "Production VPS directory detected. Force-syncing with the latest git commit..."
-        git fetch master
+        git fetch master "$CURRENT_BRANCH"
         git checkout -f "$CURRENT_BRANCH"
-        git reset --hard "master/$CURRENT_BRANCH"
+        git reset --hard FETCH_HEAD
         git clean -fd
     else
         # Stash any local changes

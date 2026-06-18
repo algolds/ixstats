@@ -75,14 +75,14 @@ cd "$IXSTATS_DIR"
 # Auto git sync if in production VPS directory
 if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
     log "Production directory detected. Force-syncing with the latest git commit..."
-    git fetch master
     CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "v2")
     if [ -z "$CURRENT_BRANCH" ]; then
         CURRENT_BRANCH="v2"
     fi
-    log "Checking out and resetting --hard to master/$CURRENT_BRANCH..."
+    log "Fetching $CURRENT_BRANCH from master and resetting --hard to FETCH_HEAD..."
+    git fetch master "$CURRENT_BRANCH"
     git checkout -f "$CURRENT_BRANCH"
-    git reset --hard "master/$CURRENT_BRANCH"
+    git reset --hard FETCH_HEAD
     git clean -fd
     log "Git sync complete. Current commit: $(git log -1 --oneline)"
 fi
