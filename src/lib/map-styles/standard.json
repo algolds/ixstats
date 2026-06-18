@@ -170,7 +170,7 @@
       "source": "source-lakes",
       "paint": {
         "fill-color": "#7cb5d2",
-        "fill-opacity": 0.65
+        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 1.0, 0.0, 2.0, 0.65]
       }
     },
     {
@@ -184,7 +184,7 @@
       "paint": {
         "line-color": "#7cb5d2",
         "line-width": ["interpolate", ["linear"], ["zoom"], 0, 1.2, 6, 3.6],
-        "line-opacity": 0.7
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 2.5, 0.0, 4.0, 0.7]
       }
     },
     {
@@ -274,7 +274,7 @@
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.8,
         "text-halo-blur": 0.5,
-        "text-opacity": 0.85
+        "text-opacity": ["interpolate", ["linear"], ["zoom"], 1.5, 0.85, 5.5, 0.85, 7.0, 0.0]
       }
     },
     {
@@ -372,32 +372,81 @@
       }
     },
     {
-      "id": "overlay-cities-circle",
+      "id": "overlay-cities-major-circle",
       "type": "circle",
       "source": "source-overlay-cities",
+      "filter": ["any", ["==", ["get", "cityType"], "major"], [">=", ["coalesce", ["get", "population"], 0], 500000]],
       "paint": {
         "circle-radius": [
           "interpolate",
           ["linear"],
           ["zoom"],
-          4,
-          ["case", ["==", ["get", "cityType"], "major"], 4.5, 3],
-          8,
-          ["case", ["==", ["get", "cityType"], "major"], 8, 6]
+          4, 4.5,
+          8, 8.0
+        ],
+        "circle-color": "#3b82f6",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5
+      },
+      "minzoom": 4
+    },
+    {
+      "id": "overlay-cities-major-label",
+      "type": "symbol",
+      "source": "source-overlay-cities",
+      "filter": ["any", ["==", ["get", "cityType"], "major"], [">=", ["coalesce", ["get", "population"], 0], 500000]],
+      "layout": {
+        "text-field": ["get", "name"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 4.5, 10, 10, 13],
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+        "text-optional": true,
+        "text-font": ["__FONT_BOLD__"],
+        "symbol-sort-key": ["-", ["coalesce", ["get", "population"], 0]]
+      },
+      "paint": {
+        "text-color": "#1e40af",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      },
+      "minzoom": 4.5
+    },
+    {
+      "id": "overlay-cities-medium-circle",
+      "type": "circle",
+      "source": "source-overlay-cities",
+      "filter": [
+        "all",
+        ["!", ["any", ["==", ["get", "cityType"], "major"], [">=", ["coalesce", ["get", "population"], 0], 500000]]],
+        ["any", ["==", ["get", "isSubdivisionCapital"], true], [">=", ["coalesce", ["get", "population"], 0], 100000]]
+      ],
+      "paint": {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5, 3.5,
+          9, 6.5
         ],
         "circle-color": "#3b82f6",
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1.2
       },
-      "minzoom": 4
+      "minzoom": 5.5
     },
     {
-      "id": "overlay-cities-label",
+      "id": "overlay-cities-medium-label",
       "type": "symbol",
       "source": "source-overlay-cities",
+      "filter": [
+        "all",
+        ["!", ["any", ["==", ["get", "cityType"], "major"], [">=", ["coalesce", ["get", "population"], 0], 500000]]],
+        ["any", ["==", ["get", "isSubdivisionCapital"], true], [">=", ["coalesce", ["get", "population"], 0], 100000]]
+      ],
       "layout": {
         "text-field": ["get", "name"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 6, 9, 10, 12],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 6, 9.5, 10, 12],
         "text-offset": [0, 1.2],
         "text-anchor": "top",
         "text-allow-overlap": false,
@@ -410,7 +459,56 @@
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5
       },
-      "minzoom": 6
+      "minzoom": 5.8
+    },
+    {
+      "id": "overlay-cities-minor-circle",
+      "type": "circle",
+      "source": "source-overlay-cities",
+      "filter": [
+        "all",
+        ["!", ["any", ["==", ["get", "cityType"], "major"], [">=", ["coalesce", ["get", "population"], 0], 500000]]],
+        ["!", ["any", ["==", ["get", "isSubdivisionCapital"], true], [">=", ["coalesce", ["get", "population"], 0], 100000]]]
+      ],
+      "paint": {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          7, 2.5,
+          10, 5.0
+        ],
+        "circle-color": "#3b82f6",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.0
+      },
+      "minzoom": 7
+    },
+    {
+      "id": "overlay-cities-minor-label",
+      "type": "symbol",
+      "source": "source-overlay-cities",
+      "filter": [
+        "all",
+        ["!", ["any", ["==", ["get", "cityType"], "major"], [">=", ["coalesce", ["get", "population"], 0], 500000]]],
+        ["!", ["any", ["==", ["get", "isSubdivisionCapital"], true], [">=", ["coalesce", ["get", "population"], 0], 100000]]]
+      ],
+      "layout": {
+        "text-field": ["get", "name"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 7, 8.5, 10, 11],
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+        "text-optional": true,
+        "text-font": ["__FONT_REGULAR__"],
+        "symbol-sort-key": ["-", ["coalesce", ["get", "population"], 0]]
+      },
+      "paint": {
+        "text-color": "#1e40af",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5
+      },
+      "minzoom": 7.2
     },
     {
       "id": "overlay-pois-circle-cluster",
@@ -423,7 +521,7 @@
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1
       },
-      "minzoom": 5
+      "minzoom": 1.5
     },
     {
       "id": "overlay-pois-circle-cluster-count",
@@ -438,7 +536,7 @@
       "paint": {
         "text-color": "#78350f"
       },
-      "minzoom": 5
+      "minzoom": 1.5
     },
     {
       "id": "overlay-pois-circle",
@@ -451,7 +549,7 @@
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1
       },
-      "minzoom": 6
+      "minzoom": 5.5
     },
     {
       "id": "overlay-pois-label",
@@ -472,7 +570,7 @@
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.2
       },
-      "minzoom": 8
+      "minzoom": 7.0
     },
     {
       "id": "story-pins-cluster",
@@ -486,7 +584,7 @@
         "circle-stroke-width": 2,
         "circle-opacity": 0.85
       },
-      "minzoom": 3
+      "minzoom": 1.5
     },
     {
       "id": "story-pins-cluster-count",
@@ -500,7 +598,8 @@
       },
       "paint": {
         "text-color": "#ffffff"
-      }
+      },
+      "minzoom": 1.5
     },
     {
       "id": "story-pins-glow",
@@ -545,7 +644,7 @@
         "circle-opacity": ["case", [">=", ["get", "importance"], 2], 0.25, 0.15],
         "circle-blur": 0.6
       },
-      "minzoom": 3
+      "minzoom": 1.5
     },
     {
       "id": "story-pins-icon",
@@ -564,7 +663,7 @@
         "icon-allow-overlap": true,
         "icon-anchor": "center"
       },
-      "minzoom": 3
+      "minzoom": 1.5
     },
     {
       "id": "story-pins-label",
@@ -613,7 +712,7 @@
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5
       },
-      "minzoom": 5
+      "minzoom": 4.5
     },
     {
       "id": "custom-map-labels",

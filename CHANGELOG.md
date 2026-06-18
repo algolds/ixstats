@@ -12,6 +12,22 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Flat Projection Locking for Map Editors**:
+  - Locked [BorderEditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/BorderEditorMap.tsx) and [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx) to mercator projection.
+  - Added a `useEffect` hook in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx) to explicitly enforce flat mercator projection whenever stylesheets or themes are loaded.
+
+- **Hierarchical City Visibility & De-Clustering (LOD)**:
+  - Disabled city grouping/clustering across [standard.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/standard.json), [dark.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/dark.json), and [paper.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/paper.json) to render cities as individual standard points rather than cluster bubbles.
+  - Formulated a client-side three-tier city visibility hierarchy using disjoint filters (Major Tier showing at Zoom 4+ for cities $\ge$ 500k pop or type `"major"`; Medium Tier showing at Zoom 5.5+ for subdivision capitals or cities $\ge$ 100k pop; Minor Tier showing at Zoom 7+ for other cities).
+  - Selected and mapped `isSubdivisionCapital` from the database in the `getMapBundle` procedure inside [world-map.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/world-map.ts) to support subdivision capital visibility.
+  - Configured tiered visual weights (larger, bolded labels for Major Tier; standard for Medium Tier; smaller, regular labels for Minor Tier).
+  - Updated the city toggle references list in [useWorldMapDataOverlays.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapDataOverlays.ts) to toggle visibility for all six new tiered layers.
+
+- **Comprehensive MapLibre LOD Optimizations**:
+  - Implemented dynamic opacity zoom-level interpolations to fade country labels out between zoom 5.5 and 7.0 across standard, dark, and paper map styles.
+  - Set up dynamic line and fill opacity zoom-level interpolations to fade rivers in between zoom 2.5 and 4.0, and lakes in between zoom 1.0 and 2.0.
+  - Lowered minimum zoom bounds for Points of Interest (POIs) and Story Pins to Zoom 1.5+ to allow global cluster discoverability, and lowered individual POI icon/label gates to Zoom 5.5+/7.0+ (and story pin labels to Zoom 4.5+).
+
 - **Declarative Map Overlays Integration**:
   - Migrated dynamic map overlay layers (national capitals, subdivisions, cities, points of interest, story pins, and custom map labels) from imperative JavaScript hook additions to declarative MapLibre GL style templates ([standard.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/standard.json), [dark.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/dark.json), [paper.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/paper.json)).
   - Cleaned up client-side hooks [useWorldMapOverlayFeatures.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapOverlayFeatures.ts) and [useWorldMapDataOverlays.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapDataOverlays.ts) to eliminate all `addSource` and `addLayer` calls, leaving only reactive `setData` and layout visibility toggles.

@@ -90,8 +90,12 @@ export function useWorldMapDataOverlays({
 
     const overlayLayers = {
       cities: [
-        "overlay-cities-circle",
-        "overlay-cities-label",
+        "overlay-cities-major-circle",
+        "overlay-cities-major-label",
+        "overlay-cities-medium-circle",
+        "overlay-cities-medium-label",
+        "overlay-cities-minor-circle",
+        "overlay-cities-minor-label",
       ],
       pois: [
         "overlay-pois-circle",
