@@ -84,6 +84,7 @@ model ThinkpagesDiscordFeedConfig {
   includeGovernment    Boolean  @default(true)
   includeMedia         Boolean  @default(true)
   includeCitizen       Boolean  @default(true)
+  includeSports        Boolean  @default(true)
   verifiedOnly         Boolean  @default(false)
   accountAllowlist     String? // JSON string[] of usernames (always include)
   accountBlocklist     String? // JSON string[] of usernames (never include)

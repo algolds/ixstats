@@ -588,6 +588,17 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
                 }
               } catch (narrateErr) {
                 console.error("[simulateMatchDay] Async narration failed:", narrateErr);
+              } finally {
+                try {
+                  const { mirrorThinkPagesPostToDiscordFeed } =
+                    await import("~/lib/thinkpages-discord-feed");
+                  await mirrorThinkPagesPostToDiscordFeed(ctx.db as any, post.id);
+                } catch (mirrorErr) {
+                  console.error(
+                    "[simulateMatchDay] Failed to mirror sports post to Discord:",
+                    mirrorErr
+                  );
+                }
               }
             })();
           }

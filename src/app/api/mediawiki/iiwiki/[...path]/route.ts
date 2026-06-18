@@ -66,7 +66,38 @@ export async function GET(
       }
 
       if (!directUrl) {
-        // Aligned with wiki-bridge.ts iiWikiApiCall pattern: add origin=* and proper headers
+        // 1. Try to guess the MediaWiki upload path using MD5 hash to bypass Cloudflare
+        try {
+          const crypto = await import("crypto");
+          const normalizedName = filename.replace(/ /g, "_");
+          const hash = crypto.createHash("md5").update(normalizedName).digest("hex");
+          const guessedUrl = `https://iiwiki.com/images/${hash[0]}/${hash.slice(0, 2)}/${encodeURIComponent(normalizedName)}`;
+
+          console.log(`[IIWiki Proxy] Guessing upload path for ${filename} -> ${guessedUrl}`);
+
+          const wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(guessedUrl)}`;
+          const testResp = await fetch(wsrvUrl, {
+            method: "GET",
+            headers: { "User-Agent": "IxStats-Builder" },
+            signal: AbortSignal.timeout(8000),
+          });
+
+          if (testResp.ok) {
+            directUrl = guessedUrl;
+            console.log(`[IIWiki Proxy] Verified guessed URL for ${filename} -> ${directUrl}`);
+            await externalApiCache.set(cacheOptions, { url: directUrl }).catch(() => {});
+          } else {
+            console.warn(
+              `[IIWiki Proxy] Guessed URL test failed (status ${testResp.status}) for ${filename}`
+            );
+          }
+        } catch (guessErr) {
+          console.error("[IIWiki Proxy] Error guessing upload path:", guessErr);
+        }
+      }
+
+      if (!directUrl) {
+        // 2. Fallback: Query via api.php
         const apiUrl = new URL("https://iiwiki.com/api.php");
         apiUrl.searchParams.set("action", "query");
         apiUrl.searchParams.set("titles", `File:${filename}`);

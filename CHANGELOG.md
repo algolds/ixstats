@@ -23,7 +23,9 @@ capability integer. Each release entry below lists which components advanced and
 
 
 - **ThinkPages → Discord feed mirror**: New admin-configurable integration that mirrors public ThinkPages feed posts to a dedicated `#thinkpages` Discord channel as an RSS-style feed.
-  - New `/admin/thinkpages-feed` admin page (`ThinkpagesDiscordFeedContent`): master enable toggle, editable channel ID, account-type (government / media / citizen) + verified-only + exclude-replies + exclude-auto-generated + minimum-engagement filters, account and hashtag allow/block lists, a "send test message" button, and a live preview showing which recent posts the current filter would mirror.
+  - New `/admin/thinkpages-feed` admin page (`ThinkpagesDiscordFeedContent`): master enable toggle, editable channel ID, account-type (government / media / citizen / sports) + verified-only + exclude-replies + exclude-auto-generated + minimum-engagement filters, account and hashtag allow/block lists, a "send test message" button, and a live preview showing which recent posts the current filter would mirror.
+  - Added configurable **Sports accounts** toggle (mirroring `@SportsNews` bulletins/results) to bypass the default auto-generated posts block and account-type filters when enabled.
+  - Wired automated transitions (champion summary, world cup final, promotion/relegation swaps) and simulated matches feed bulletins to trigger the Discord mirror feed immediately after post creation (or after LLM narration completes).
   - New `adminThinkpagesDiscordFeedRouter` (`api.admin.getThinkpagesDiscordFeedConfig` / `saveThinkpagesDiscordFeedConfig` / `sendThinkpagesDiscordFeedTest` / `getThinkpagesDiscordFeedPreview`), merged into the admin router and protected by `adminProcedure`.
   - New `src/lib/thinkpages-discord-feed.ts`: a pure `evaluateFeedFilter` (precedence: blocklists win → account allowlist force-includes → standard filters) and `mirrorThinkPagesPostToDiscordFeed`, which posts an embed via the bot token (reusing `formatThinkPagesEmbed`) and records each send to avoid duplicates.
   - Wired into `createPost` so eligible public posts mirror immediately on creation, independent of the legacy IxTwitter autopost.
@@ -80,6 +82,10 @@ capability integer. Each release entry below lists which components advanced and
   - Gated multicameral chamber seat updates from auto-snapping to wrong totals (Plan 081).
   - Persisted map label rotation/opacity and wired regions opacity slider (Plan 082).
   - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
+
+### Fixed
+
+- **IIWiki Flag Image Resolution (Cloudflare Bypass)**: Implemented a deterministic MD5-based upload directory guessing mechanism inside the IIWiki file proxy route `/api/mediawiki/iiwiki/[...path]/route.ts`. This construct instantly resolves MediaWiki local image paths (`images/{first_char}/{first_two_chars}/{filename}`) and verifies the result via `wsrv.nl` before falling back to the standard `api.php` query, bypassing Cloudflare's production 403 API blocks and resolving the import builder 404 image errors.
 
 ### Changed
 

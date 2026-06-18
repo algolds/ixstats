@@ -86,7 +86,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
           llmSummary: llmSummary || undefined,
         });
 
-        await prisma.thinkpagesPost.create({
+        const post = await prisma.thinkpagesPost.create({
           data: {
             accountId: sportsAccount.id,
             content,
@@ -94,6 +94,17 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
             ixTimeTimestamp: IxTime.timestampToDate(IxTime.getCurrentIxTime()),
           },
         });
+
+        try {
+          const { mirrorThinkPagesPostToDiscordFeed } =
+            await import("~/lib/thinkpages-discord-feed");
+          await mirrorThinkPagesPostToDiscordFeed(prisma, post.id);
+        } catch (mirrorErr) {
+          console.error(
+            "[Post-Season Summary] Failed to mirror sports post to Discord:",
+            mirrorErr
+          );
+        }
       }
     }
   } catch (summaryErr) {
@@ -305,7 +316,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
             const parentNames = parentTeams.map((t: any) => t.name).join(", ");
             const childNames = childTeams.map((t: any) => t.name).join(", ");
 
-            await tx.thinkpagesPost.create({
+            const post = await tx.thinkpagesPost.create({
               data: {
                 accountId: sportsAccount.id,
                 content: `📢 [League System Bulletin] Promotion & Relegation Swaps Completed!\n\nRelegated from ${season.league.name} to ${subLeague.name}: ${parentNames}\nPromoted to ${season.league.name} from ${subLeague.name}: ${childNames}`,
@@ -313,6 +324,17 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
                 ixTimeTimestamp: IxTime.timestampToDate(IxTime.getCurrentIxTime()),
               },
             });
+
+            try {
+              const { mirrorThinkPagesPostToDiscordFeed } =
+                await import("~/lib/thinkpages-discord-feed");
+              await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
+            } catch (mirrorErr) {
+              console.error(
+                "[Promotion Relegation bulletin] Failed to mirror to Discord:",
+                mirrorErr
+              );
+            }
           }
         } catch (bulletinErr) {
           console.error("[Promotion Relegation Bulletin Error]", bulletinErr);
@@ -893,7 +915,7 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
         });
 
         if (sportsAccount) {
-          await tx.thinkpagesPost.create({
+          const post = await tx.thinkpagesPost.create({
             data: {
               accountId: sportsAccount.id,
               content: `🏆 WAFF World Cup Final: ${champName} humbles ${runnerUpName} ${champScore}-${runnerUpScore}! ${champName} wins the World Cup! #WorldCup`,
@@ -901,6 +923,14 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
               ixTimeTimestamp: IxTime.timestampToDate(IxTime.getCurrentIxTime()),
             },
           });
+
+          try {
+            const { mirrorThinkPagesPostToDiscordFeed } =
+              await import("~/lib/thinkpages-discord-feed");
+            await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
+          } catch (mirrorErr) {
+            console.error("[World Cup Final bulletin] Failed to mirror to Discord:", mirrorErr);
+          }
         }
 
         // Trophy card minting
