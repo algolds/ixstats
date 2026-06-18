@@ -41,7 +41,7 @@ export async function narrateEvents(
 
   if (provider === "nvidia") {
     apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    modelName = modelName || "nvidia/nemotron-3-ultra-550b-a55b";
+    modelName = modelName || "deepseek-ai/deepseek-v4-flash";
   } else if (provider === "openrouter") {
     apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
     modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
@@ -77,15 +77,11 @@ Example Output: { "commentary": ["The referee blows the whistle and we are under
           { role: "user", content: JSON.stringify(inputDescriptions) },
         ],
         temperature: config?.temperature ?? 0.7,
-        max_tokens: 2048,
-        response_format: { type: "json_object" },
+        max_tokens: provider === "nvidia" ? 16384 : 2048,
+        ...(provider !== "nvidia" && { response_format: { type: "json_object" } }),
         ...(provider === "nvidia" && {
-          reasoning_budget: 16384,
-          chat_template_kwargs: { enable_thinking: true },
-          extra_body: {
-            reasoning_budget: 16384,
-            chat_template_kwargs: { enable_thinking: true },
-          },
+          top_p: 0.95,
+          chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
         }),
       }),
       signal: controller.signal,
@@ -105,7 +101,37 @@ Example Output: { "commentary": ["The referee blows the whistle and we are under
 
     let results: any = null;
     try {
-      const parsed = JSON.parse(content);
+      let jsonText = content.trim();
+
+      // Strip <thinking>...</thinking> tags if present
+      if (jsonText.includes("</thinking>")) {
+        jsonText = jsonText.split("</thinking>").pop()!.trim();
+      }
+
+      // Match and extract any ```json ... ``` or ``` ... ``` block
+      const mdJsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (mdJsonMatch && mdJsonMatch[1]) {
+        jsonText = mdJsonMatch[1].trim();
+      }
+
+      // Find first occurrence of { or [ and last occurrence of } or ] to isolate the raw JSON block
+      const firstBrace = jsonText.indexOf("{");
+      const firstBracket = jsonText.indexOf("[");
+      const lastBrace = jsonText.lastIndexOf("}");
+      const lastBracket = jsonText.lastIndexOf("]");
+
+      let candidate = jsonText;
+      if (
+        firstBrace !== -1 &&
+        lastBrace !== -1 &&
+        (firstBracket === -1 || firstBrace < firstBracket)
+      ) {
+        candidate = jsonText.substring(firstBrace, lastBrace + 1);
+      } else if (firstBracket !== -1 && lastBracket !== -1) {
+        candidate = jsonText.substring(firstBracket, lastBracket + 1);
+      }
+
+      const parsed = JSON.parse(candidate);
       if (Array.isArray(parsed)) {
         results = parsed;
       } else if (typeof parsed === "object" && parsed !== null) {
@@ -114,10 +140,16 @@ Example Output: { "commentary": ["The referee blows the whistle and we are under
           results = parsed[firstArrayKey];
         }
       }
-    } catch {
+    } catch (parseErr) {
+      console.warn(
+        "[sports-narrator] Standard JSON parse failed, attempting regex array matching...",
+        parseErr
+      );
       const match = content.match(/\[\s*"[\s\S]*"\s*\]/);
       if (match) {
-        results = JSON.parse(match[0]);
+        try {
+          results = JSON.parse(match[0]);
+        } catch (_) {}
       }
     }
 
@@ -168,7 +200,7 @@ async function queryLLM(
 
   if (provider === "nvidia") {
     apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    modelName = modelName || "nvidia/nemotron-3-ultra-550b-a55b";
+    modelName = modelName || "deepseek-ai/deepseek-v4-flash";
   } else if (provider === "openrouter") {
     apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
     modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
@@ -195,15 +227,11 @@ async function queryLLM(
           { role: "user", content: userPrompt },
         ],
         temperature: config?.temperature ?? 0.7,
-        max_tokens: jsonMode ? 2048 : 4096,
-        ...(jsonMode && { response_format: { type: "json_object" } }),
+        max_tokens: provider === "nvidia" ? 16384 : jsonMode ? 2048 : 4096,
+        ...(jsonMode && provider !== "nvidia" && { response_format: { type: "json_object" } }),
         ...(provider === "nvidia" && {
-          reasoning_budget: 16384,
-          chat_template_kwargs: { enable_thinking: true },
-          extra_body: {
-            reasoning_budget: 16384,
-            chat_template_kwargs: { enable_thinking: true },
-          },
+          top_p: 0.95,
+          chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
         }),
       }),
       signal: controller.signal,

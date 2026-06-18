@@ -62,12 +62,15 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
       const { generateSeasonSummary } = await import("./commentary/narrator");
       const { formatSeasonChampionBulletin } = await import("./feed-bulletins");
+      const { getGlobalLLMConfig } = await import("./commentary/db-config");
+      const dbConfig = await getGlobalLLMConfig(prisma);
 
       const llmSummary = await generateSeasonSummary(
         season.league.name,
         fullSeasonData.champion.name,
         standingsSummary,
-        season.league.sportPreset
+        season.league.sportPreset,
+        dbConfig
       );
 
       const sportsAccount = await prisma.thinkpagesAccount.findUnique({

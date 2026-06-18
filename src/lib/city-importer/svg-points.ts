@@ -445,7 +445,29 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
 
   // 4. Match names (nearest label)
   let targetNameLayerId = opts?.cityNameLayerId;
-  if (!targetNameLayerId) {
+  let allLabels: any[] = [];
+
+  // If the user explicitly passed a names layer, use it
+  if (targetNameLayerId) {
+    const nameLayerContainer = findLayerByIdOrName(svgRoot, targetNameLayerId);
+    if (nameLayerContainer) {
+      allLabels = extractAllTextLabels(nameLayerContainer, svgRoot);
+    }
+  }
+
+  // If no explicit names layer was passed, first check if the selected cities group itself has text labels (same group as dots)
+  if (allLabels.length === 0 && !opts?.cityNameLayerId) {
+    if (targetGroup) {
+      const directTexts = extractAllTextLabels(targetGroup, svgRoot);
+      if (directTexts.length > 0) {
+        allLabels = directTexts;
+        targetNameLayerId = targetLayerId;
+      }
+    }
+  }
+
+  // If still no labels, auto-detect a separate names layer
+  if (allLabels.length === 0 && !opts?.cityNameLayerId) {
     const NAME_STRONG_PATTERNS = ["city names", "city labels", "town names", "names", "labels", "text"];
     let bestNameId: string | null = null;
     let bestNameTextCount = 0;
@@ -462,10 +484,12 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
       }
     }
     targetNameLayerId = bestNameId ?? undefined;
-  }
 
-  const nameLayerContainer = targetNameLayerId ? findLayerByIdOrName(svgRoot, targetNameLayerId) : null;
-  let allLabels = nameLayerContainer ? extractAllTextLabels(nameLayerContainer, svgRoot) : [];
+    const nameLayerContainer = targetNameLayerId ? findLayerByIdOrName(svgRoot, targetNameLayerId) : null;
+    if (nameLayerContainer) {
+      allLabels = extractAllTextLabels(nameLayerContainer, svgRoot);
+    }
+  }
 
   if (allLabels.length === 0) {
     // Try to find any layer whose name contains "city", "label", or "name" and has text

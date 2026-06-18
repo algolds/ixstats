@@ -290,4 +290,31 @@ describe("parseCitySvg", () => {
     const p2Exp = resultExplicit.points.find((p) => p.svgX === 350);
     expect(p2Exp!.name).toBe("Paris");
   });
+
+  it("prioritizes same-group text labels when no explicit names layer is provided", () => {
+    const svgSameGroup = `
+      <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+        <g id="cities">
+          <circle cx="150" cy="150" r="5" />
+          <circle cx="350" cy="150" r="5" />
+          <text x="150" y="160">London</text>
+          <text x="350" y="160">Paris</text>
+        </g>
+        <g id="other-labels">
+          <text x="150" y="160">Berlin</text>
+        </g>
+      </svg>
+    `;
+
+    const result = parseCitySvg(svgSameGroup);
+    // Should auto-select "cities" as both the cities layer and the names layer
+    expect(result.detectedCitiesLayerId).toBe("cities");
+    expect(result.detectedCityNameLayerId).toBe("cities");
+    expect(result.points).toHaveLength(2);
+
+    const p1 = result.points.find((p) => p.svgX === 150);
+    expect(p1!.name).toBe("London"); // Should resolve to same-group "London" not other-group "Berlin"
+    const p2 = result.points.find((p) => p.svgX === 350);
+    expect(p2!.name).toBe("Paris");
+  });
 });

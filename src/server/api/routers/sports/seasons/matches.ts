@@ -352,8 +352,11 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           void (async () => {
             try {
               const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
+              const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
+              const dbConfig = await getGlobalLLMConfig(ctx.db);
               const commentary = await narrateEvents(result.trace as any[], {
                 sport: season.league.sportPreset,
+                config: dbConfig,
               });
               if (commentary && commentary.length > 0) {
                 const latestMatch = await ctx.db.sportMatch.findUnique({
@@ -560,10 +563,13 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
             (async () => {
               try {
                 const { narrateBulletin } = await import("~/lib/sports/commentary/narrator");
+                const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
+                const dbConfig = await getGlobalLLMConfig(ctx.db);
                 const summary = await narrateBulletin(resultLines, {
                   sport: season.league.sportPreset,
                   leagueName: season.league.name,
                   matchDay: input.matchDay,
+                  config: dbConfig,
                 });
 
                 if (summary) {
@@ -728,8 +734,11 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           void (async () => {
             try {
               const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
+              const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
+              const dbConfig = await getGlobalLLMConfig(ctx.db);
               const commentary = await narrateEvents(result.trace as any[], {
                 sport: season.league.sportPreset,
+                config: dbConfig,
               });
               if (commentary && commentary.length > 0) {
                 const latestBracket = await (ctx.db as any).sportBracket.findUnique({

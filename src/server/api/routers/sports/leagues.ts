@@ -1289,6 +1289,83 @@ export const sportsLeaguesRouter = createTRPCRouter({
       }
     }),
 
+  saveGlobalAINarratorSettings: adminProcedure
+    .input(
+      z.object({
+        provider: z.string().optional(),
+        apiKey: z.string().optional(),
+        apiUrl: z.string().optional(),
+        modelName: z.string().optional(),
+        temperature: z.number().optional(),
+        applyGlobally: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const keys = [
+          { key: "sports:llm:provider", value: input.provider || "" },
+          { key: "sports:llm:apiKey", value: input.apiKey || "" },
+          { key: "sports:llm:apiUrl", value: input.apiUrl || "" },
+          { key: "sports:llm:modelName", value: input.modelName || "" },
+          {
+            key: "sports:llm:temperature",
+            value: input.temperature !== undefined ? String(input.temperature) : "",
+          },
+          { key: "sports:llm:applyGlobally", value: String(input.applyGlobally) },
+        ];
+
+        for (const item of keys) {
+          await ctx.db.systemConfig.upsert({
+            where: { key: item.key },
+            update: { value: item.value },
+            create: { key: item.key, value: item.value, description: "AI Narrator global setting" },
+          });
+        }
+
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to save global AI settings",
+        });
+      }
+    }),
+
+  getGlobalAINarratorSettings: adminProcedure.query(async ({ ctx }) => {
+    try {
+      const configs = await ctx.db.systemConfig.findMany({
+        where: {
+          key: {
+            in: [
+              "sports:llm:provider",
+              "sports:llm:apiKey",
+              "sports:llm:apiUrl",
+              "sports:llm:modelName",
+              "sports:llm:temperature",
+              "sports:llm:applyGlobally",
+            ],
+          },
+        },
+      });
+
+      return {
+        provider: configs.find((c) => c.key === "sports:llm:provider")?.value || undefined,
+        apiKey: configs.find((c) => c.key === "sports:llm:apiKey")?.value || undefined,
+        apiUrl: configs.find((c) => c.key === "sports:llm:apiUrl")?.value || undefined,
+        modelName: configs.find((c) => c.key === "sports:llm:modelName")?.value || undefined,
+        temperature: configs.find((c) => c.key === "sports:llm:temperature")?.value
+          ? parseFloat(configs.find((c) => c.key === "sports:llm:temperature")!.value)
+          : undefined,
+        applyGlobally: configs.find((c) => c.key === "sports:llm:applyGlobally")?.value === "true",
+      };
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to load global AI settings",
+      });
+    }
+  }),
+
   clearSportsCache: adminProcedure.mutation(async () => {
     try {
       const { invalidateCache } = await import("~/lib/trpc-cache");

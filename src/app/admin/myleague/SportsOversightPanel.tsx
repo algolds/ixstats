@@ -274,6 +274,10 @@ function AINarratorLab() {
   const [apiUrl, setApiUrl] = useState("");
   const [modelName, setModelName] = useState("");
   const [temperature, setTemperature] = useState(0.7);
+  const [applyGlobally, setApplyGlobally] = useState(false);
+
+  const { data: dbSettings } = api.sports.getGlobalAINarratorSettings.useQuery();
+  const saveGlobalSettingsMutation = api.sports.saveGlobalAINarratorSettings.useMutation();
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -286,11 +290,24 @@ function AINarratorLab() {
         if (parsed.apiUrl) setApiUrl(parsed.apiUrl);
         if (parsed.modelName) setModelName(parsed.modelName);
         if (parsed.temperature !== undefined) setTemperature(parsed.temperature);
+        if (parsed.applyGlobally !== undefined) setApplyGlobally(parsed.applyGlobally);
       }
     } catch (e) {
       console.error("Failed to load AI config from localStorage", e);
     }
   }, []);
+
+  // Sync loaded DB settings if applyGlobally was true
+  useEffect(() => {
+    if (dbSettings) {
+      if (dbSettings.provider) setProvider(dbSettings.provider);
+      if (dbSettings.apiKey) setApiKey(dbSettings.apiKey);
+      if (dbSettings.apiUrl) setApiUrl(dbSettings.apiUrl);
+      if (dbSettings.modelName) setModelName(dbSettings.modelName);
+      if (dbSettings.temperature !== undefined) setTemperature(dbSettings.temperature);
+      setApplyGlobally(dbSettings.applyGlobally);
+    }
+  }, [dbSettings]);
 
   const saveConfig = (key: string, val: any) => {
     try {
@@ -311,6 +328,7 @@ function AINarratorLab() {
       setApiUrl("");
       setModelName("");
       setTemperature(0.7);
+      setApplyGlobally(false);
       notify.success("Config Reset", "AI Narrator configurations reverted to defaults.");
     } catch (e) {
       console.error("Failed to reset AI config", e);
@@ -321,7 +339,7 @@ function AINarratorLab() {
     if (provider === "nvidia") {
       return {
         apiUrl: "https://integrate.api.nvidia.com/v1/chat/completions",
-        modelName: "nvidia/nemotron-3-ultra-550b-a55b",
+        modelName: "deepseek-ai/deepseek-v4-flash",
       };
     }
     if (provider === "openrouter") {
@@ -496,6 +514,26 @@ function AINarratorLab() {
             {/* Config Fields */}
             {showConfig && (
               <div className="space-y-3.5 rounded-2xl border border-white/5 bg-white/5 p-4">
+                <div className="flex items-center gap-2 border-b border-white/5 pb-2.5 select-none">
+                  <input
+                    type="checkbox"
+                    id="applyGlobally"
+                    checked={applyGlobally}
+                    onChange={(e) => {
+                      const v = e.target.checked;
+                      setApplyGlobally(v);
+                      saveConfig("applyGlobally", v);
+                    }}
+                    className="h-3.5 w-3.5 cursor-pointer rounded border-white/10 bg-slate-950 text-amber-400 accent-amber-400"
+                  />
+                  <label
+                    htmlFor="applyGlobally"
+                    className="cursor-pointer text-[10px] font-bold tracking-wider text-white uppercase"
+                  >
+                    Apply settings globally (Write to DB)
+                  </label>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-muted-foreground block text-[10px] font-bold uppercase">
@@ -583,18 +621,54 @@ function AINarratorLab() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-2">
                   <span className="text-muted-foreground text-[9px]">
-                    Auto-saved to LocalStorage.
+                    {applyGlobally ? "Settings will be written globally." : "Local storage only."}
                   </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleResetConfig}
-                    className="h-6 rounded-lg border-rose-500/30 bg-rose-500/5 px-2.5 text-[10px] text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
-                  >
-                    Reset Defaults
-                  </Button>
+                  <div className="flex gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleResetConfig}
+                      className="h-6 rounded-lg border-rose-500/30 bg-rose-500/5 px-2 text-[10px] font-bold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
+                    >
+                      Reset Defaults
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="default"
+                      onClick={() => {
+                        saveGlobalSettingsMutation.mutate(
+                          {
+                            provider,
+                            apiKey: apiKey || undefined,
+                            apiUrl: apiUrl || undefined,
+                            modelName: modelName || undefined,
+                            temperature,
+                            applyGlobally,
+                          },
+                          {
+                            onSuccess: () => {
+                              notify.success(
+                                "Settings Saved",
+                                "Global AI settings have been committed successfully."
+                              );
+                            },
+                            onError: (e) => {
+                              notify.error(
+                                "Failed to Save",
+                                e.message || "Could not write to global settings."
+                              );
+                            },
+                          }
+                        );
+                      }}
+                      disabled={saveGlobalSettingsMutation.isPending}
+                      className="h-6 rounded-lg bg-amber-500 px-2.5 text-[10px] font-bold text-slate-950 hover:bg-amber-600"
+                    >
+                      {saveGlobalSettingsMutation.isPending ? "Saving..." : "Save Config"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
