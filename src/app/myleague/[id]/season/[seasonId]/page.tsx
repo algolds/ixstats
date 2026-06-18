@@ -15,6 +15,7 @@ import { ScheduleView } from "~/components/myleague/ScheduleView";
 import { BracketView } from "~/components/myleague/BracketView";
 import { RaceResults } from "~/components/myleague/RaceResults";
 import MatchDetailModal from "~/components/myleague/MatchDetailModal";
+import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
 
 export default function SeasonDetailPage() {
   const params = useParams();
@@ -58,6 +59,7 @@ export default function SeasonDetailPage() {
 
   const league = season.league;
   const archetype = league.archetype;
+  const sportColors = getSportColors(league.sportPreset as SportPresetKey);
 
   // Format Standings data
   const standingsData = season.standings.map((s) => ({
@@ -115,12 +117,19 @@ export default function SeasonDetailPage() {
       {/* Hero Banner */}
       <div className="border-border/40 bg-card/60 relative overflow-hidden rounded-3xl border p-6 shadow-xl backdrop-blur-md">
         {/* Glow overlay */}
-        <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full bg-purple-500/10 blur-[100px]" />
+        <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full blur-[100px]" style={{ backgroundColor: `hsla(${sportColors.accentColor}, 0.15)` }} />
         
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">
           <div>
             <div className="flex items-center gap-2">
-              <span className="bg-purple-500/10 text-purple-400 border-purple-500/20 rounded-full border px-3 py-1 text-xs font-bold uppercase">
+              <span
+                className="rounded-full border px-3 py-1 text-xs font-bold uppercase"
+                style={{
+                  backgroundColor: `hsla(${sportColors.accentColor}, 0.1)`,
+                  color: `hsl(${sportColors.highlightColor})`,
+                  borderColor: `hsla(${sportColors.accentColor}, 0.2)`
+                }}
+              >
                 Season {season.seasonNumber} History
               </span>
               {season.status === "completed" && (
@@ -133,7 +142,7 @@ export default function SeasonDetailPage() {
               {league.name}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm font-semibold">
-              Archetype: <span className="text-purple-400 capitalize">{archetype.replace("_", " ")}</span>
+              Archetype: <span className="capitalize font-bold animate-pulse" style={{ color: `hsl(${sportColors.highlightColor})` }}>{archetype.replace("_", " ")}</span>
             </p>
           </div>
 
@@ -164,7 +173,7 @@ export default function SeasonDetailPage() {
             className={cn(
               "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
               activeTab === "standings"
-                ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
                 : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
             )}
           >
@@ -180,13 +189,13 @@ export default function SeasonDetailPage() {
               className={cn(
                 "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
                 activeTab === "schedule"
-                  ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                  ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
                   : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
               )}
             >
               <span className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Schedule & Fixtures
+                Schedule & Matches
               </span>
             </button>
           )}
@@ -197,7 +206,7 @@ export default function SeasonDetailPage() {
               className={cn(
                 "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
                 activeTab === "bracket"
-                  ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                  ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
                   : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
               )}
             >
@@ -214,7 +223,7 @@ export default function SeasonDetailPage() {
               className={cn(
                 "w-full rounded-xl p-3 text-left text-sm font-bold transition-all border outline-none cursor-pointer",
                 activeTab === "races"
-                  ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-md shadow-purple-500/5"
+                  ? "bg-slate-800 border-slate-700 text-slate-100 shadow-md shadow-slate-900/5"
                   : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground"
               )}
             >
@@ -260,6 +269,7 @@ export default function SeasonDetailPage() {
         matchId={selectedMatchId}
         isOpen={!!selectedMatchId}
         onClose={() => setSelectedMatchId(null)}
+        sportColors={sportColors}
       />
     </div>
   );

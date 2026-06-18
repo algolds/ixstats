@@ -387,7 +387,12 @@ export default function LeagueDetailPage() {
               <h1 className="text-foreground text-2xl font-black tracking-tight">{league.name}</h1>
               <Badge
                 variant="outline"
-                className="border-purple-500/20 bg-purple-500/5 px-2 py-0.5 text-[10px] font-bold tracking-wider text-purple-400 uppercase select-none"
+                className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase select-none border-border"
+                style={sportColors ? {
+                  borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
+                  backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
+                  color: `hsl(${sportColors.highlightColor})`
+                } : undefined}
               >
                 {SPORT_LABELS[league.sportPreset] || league.sportPreset}
               </Badge>
@@ -403,7 +408,7 @@ export default function LeagueDetailPage() {
           {/* Card 1: Season */}
           <div className="flex min-w-[125px] flex-col justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 shadow-sm backdrop-blur-md dark:border-white/5 dark:bg-black/20">
             <span className="text-muted-foreground flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase">
-              <Calendar className="h-3 w-3 text-purple-400" /> Season
+              <Calendar className="h-3 w-3 text-muted-foreground" style={sportColors ? { color: `hsl(${sportColors.highlightColor})` } : undefined} /> Season
             </span>
             <span className="mt-1 text-base font-extrabold tracking-tight">
               {activeSeason
@@ -414,7 +419,15 @@ export default function LeagueDetailPage() {
             </span>
             <div className="mt-1.5 flex">
               {activeSeason ? (
-                <Badge className="border border-purple-500/20 bg-purple-500/10 px-1.5 py-0 text-[9px] font-bold text-purple-400">
+                <Badge
+                  variant="outline"
+                  className="px-1.5 py-0 text-[9px] font-bold border-border"
+                  style={sportColors ? {
+                    borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
+                    backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
+                    color: `hsl(${sportColors.highlightColor})`
+                  } : undefined}
+                >
                   In Progress
                 </Badge>
               ) : latestSeason && latestSeason.status === "completed" ? (
@@ -502,7 +515,7 @@ export default function LeagueDetailPage() {
                     {seasonId && (
                       <button
                         onClick={() => handleNavigate("standings")}
-                        className="cursor-pointer text-[10px] font-bold text-purple-400 transition-colors select-none hover:text-purple-300"
+                        className="cursor-pointer text-[10px] font-bold text-neutral-400 hover:text-neutral-250 transition-colors select-none"
                       >
                         View Full Standings
                       </button>
@@ -585,10 +598,10 @@ export default function LeagueDetailPage() {
               {/* Right Column: Simulation controls & Teams directory */}
               <div className="facet-layout-sidebar-span-1 space-y-6">
                 {/* Live Simulation Panel */}
-                <Card className="facet-hierarchy-child bg-card/65 border border-purple-500/20 backdrop-blur-md">
+                <Card className="facet-hierarchy-child bg-card/65 border border-border/40 backdrop-blur-md">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
-                      <Play className="h-3.5 w-3.5 fill-purple-400 text-purple-400" />
+                      <Play className="h-3.5 w-3.5 text-muted-foreground" style={sportColors ? { fill: `hsl(${sportColors.highlightColor})`, color: `hsl(${sportColors.highlightColor})` } : undefined} />
                       Next Match Hub
                     </CardTitle>
                   </CardHeader>
@@ -616,7 +629,7 @@ export default function LeagueDetailPage() {
                                 })
                               }
                               disabled={simulateMatchDay.isPending}
-                              className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-purple-600 text-xs font-bold text-white shadow transition hover:bg-purple-500"
+                              className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
                             >
                               {simulateMatchDay.isPending ? (
                                 <>
@@ -641,7 +654,7 @@ export default function LeagueDetailPage() {
                           </div>
                           <div className="border-border/10 relative h-1.5 w-full overflow-hidden rounded-full border bg-slate-200 dark:bg-slate-800">
                             <motion.div
-                              className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                              className="h-full bg-slate-500"
                               initial={{ width: 0 }}
                               animate={{ width: `${progressPct}%` }}
                               transition={{ duration: 0.5 }}
@@ -673,7 +686,7 @@ export default function LeagueDetailPage() {
                             transitionToNextSeason.mutate({ seasonId: latestSeason.id })
                           }
                           disabled={transitionToNextSeason.isPending}
-                          className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-purple-600 text-xs font-bold text-white shadow transition hover:bg-purple-500"
+                          className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
                         >
                           {transitionToNextSeason.isPending ? (
                             <>
@@ -695,7 +708,7 @@ export default function LeagueDetailPage() {
                           size="sm"
                           onClick={() => startSeason.mutate({ leagueId: league.id })}
                           disabled={startSeason.isPending || league.teams.length === 0}
-                          className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-purple-600 text-xs font-bold text-white shadow transition hover:bg-purple-500"
+                          className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
                         >
                           {startSeason.isPending ? (
                             <>
@@ -952,6 +965,7 @@ export default function LeagueDetailPage() {
         matchId={selectedMatchId}
         isOpen={!!selectedMatchId}
         onClose={() => setSelectedMatchId(null)}
+        sportColors={sportColors}
       />
     </>
   );
@@ -1159,7 +1173,7 @@ function ScheduleTab({
 
   const renderSimulationDeck = () => {
     return (
-      <div className="bg-card/60 relative mb-6 overflow-hidden rounded-2xl border border-purple-500/25 p-6 shadow-lg shadow-purple-500/5 backdrop-blur-md">
+      <div className="bg-card/60 relative mb-6 overflow-hidden rounded-2xl border border-border/40 p-6 shadow-md backdrop-blur-md">
         <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2">
@@ -1167,13 +1181,13 @@ function ScheduleTab({
                 <span
                   className={cn(
                     "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-                    isInProgress ? "bg-purple-400" : "bg-slate-400"
+                    isInProgress ? "bg-emerald-400" : "bg-slate-400"
                   )}
                 />
                 <span
                   className={cn(
                     "relative inline-flex h-2 w-2 rounded-full",
-                    isInProgress ? "bg-purple-500" : "bg-slate-500"
+                    isInProgress ? "bg-emerald-500" : "bg-slate-500"
                   )}
                 />
               </span>
@@ -1185,11 +1199,14 @@ function ScheduleTab({
               <Badge
                 variant={isInProgress ? "default" : isCompleted ? "secondary" : "outline"}
                 className={cn(
-                  "rounded border px-2 py-0.5 text-[9px] font-bold uppercase shadow-sm",
-                  isInProgress
-                    ? "border-purple-500/20 bg-purple-500/10 text-purple-400 hover:bg-purple-500/15"
-                    : "bg-muted text-muted-foreground border-border"
+                  "rounded border px-2 py-0.5 text-[9px] font-bold uppercase shadow-sm border-border",
+                  !isInProgress && "bg-muted text-muted-foreground border-border"
                 )}
+                style={isInProgress && sportColors ? {
+                  borderColor: `hsla(${sportColors.accentColor}, 0.25)`,
+                  backgroundColor: `hsla(${sportColors.accentColor}, 0.08)`,
+                  color: `hsl(${sportColors.highlightColor})`
+                } : undefined}
               >
                 {season.status}
               </Badge>
@@ -1214,7 +1231,7 @@ function ScheduleTab({
                       })
                     }
                     disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
-                    className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-purple-600 text-xs font-bold text-white shadow transition hover:bg-purple-500"
+                    className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
                   >
                     {simulateMatchDay.isPending ? (
                       <>
@@ -1234,7 +1251,7 @@ function ScheduleTab({
                   variant="outline"
                   onClick={() => simulateFullSeason.mutate({ seasonId: season.id })}
                   disabled={simulateMatchDay.isPending || simulateFullSeason.isPending}
-                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border-purple-500/30 text-xs font-bold text-purple-400 shadow-sm transition hover:bg-purple-500/10"
+                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border-slate-700 text-xs font-bold text-slate-350 shadow-sm transition hover:bg-slate-800"
                 >
                   {simulateFullSeason.isPending ? (
                     <>
@@ -1255,7 +1272,7 @@ function ScheduleTab({
               <Button
                 onClick={() => transitionToNextSeason.mutate({ seasonId: season.id })}
                 disabled={transitionToNextSeason.isPending}
-                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-purple-600 text-xs font-bold text-white shadow transition hover:bg-purple-500"
+                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-slate-700 text-xs font-bold text-white shadow transition hover:bg-slate-600 border border-slate-650"
               >
                 {transitionToNextSeason.isPending ? (
                   <>
@@ -1282,7 +1299,7 @@ function ScheduleTab({
             </div>
             <div className="border-border/20 relative h-2 w-full overflow-hidden rounded-full border bg-slate-200 shadow-inner dark:bg-slate-800">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                className="h-full rounded-full bg-slate-500"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPct}%` }}
                 transition={{ duration: 0.5, ease: "easeOut" }}

@@ -41,6 +41,33 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
         </p>
       </div>
 
+      {/* Scope picker */}
+      <div className="space-y-2">
+        <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          Import Scope
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { id: "both", label: "Provinces & Cities" },
+            { id: "provinces", label: "Provinces Only" },
+            { id: "cities", label: "Cities Only" },
+          ].map((scope) => (
+            <button
+              key={scope.id}
+              type="button"
+              onClick={() => importer.setImportScope(scope.id as any)}
+              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-all ${
+                importer.importScope === scope.id
+                  ? "border-primary bg-primary/10 text-primary shadow-sm"
+                  : "border-border hover:bg-accent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {scope.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div
         {...getRootProps()}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors ${

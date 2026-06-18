@@ -15,17 +15,12 @@ import {
   MapPin,
   ChevronDown,
   ChevronUp,
-  Trophy,
-  AlertTriangle,
-  Activity,
-  TrendingUp,
-  Loader2,
   Calendar,
 } from "lucide-react";
 import { useState } from "react";
-import { api } from "~/trpc/react";
-import MatchSchedule1 from "~/components/sports/match-schedules/MatchSchedule1";
 import { MatchCommentary } from "~/components/sports/MatchCommentary";
+import MatchSchedule1 from "~/components/sports/match-schedules/MatchSchedule1";
+import { Virtuoso } from "react-virtuoso";
 
 interface ScheduleViewProps {
   matches: Array<{
@@ -104,9 +99,13 @@ function RaceCalendarView({ races, className }: RaceViewProps) {
   );
 }
 
-
-
-export function ScheduleView({ matches, archetype, onTeamClick, onMatchClick, className }: ScheduleViewProps) {
+export function ScheduleView({
+  matches,
+  archetype,
+  onTeamClick,
+  onMatchClick,
+  className,
+}: ScheduleViewProps) {
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [collapsedDays, setCollapsedDays] = useState<Record<number, boolean>>({});
 
@@ -134,87 +133,93 @@ export function ScheduleView({ matches, archetype, onTeamClick, onMatchClick, cl
     sortedDays.find((day) => matchDays.get(day)!.some((m) => m.status === "scheduled")) ??
     sortedDays[0];
 
-  return (
-    <div className={cn("space-y-3", className)}>
-      {sortedDays.map((day) => {
-        const dayMatches = matchDays.get(day)!;
-        const isCollapsed = collapsedDays[day] ?? day !== activeDay;
+  const renderMatchDayItem = (_index: number, day: number) => {
+    const dayMatches = matchDays.get(day)!;
+    const isCollapsed = collapsedDays[day] ?? day !== activeDay;
 
-        const mappedMatches = dayMatches.map((m: any) => ({
-          id: m.id,
-          homeTeam: {
-            id: m.homeTeamId ?? m.homeTeam?.id ?? "",
-            name: m.homeTeamName ?? m.homeTeam?.name ?? "TBD",
-            color: m.homeColor ?? m.homeTeam?.color ?? "#3b82f6",
-            logo: m.homeTeam?.logo,
-            wikiSlug: m.homeTeam?.wikiSlug,
-          },
-          awayTeam: {
-            id: m.awayTeamId ?? m.awayTeam?.id ?? "",
-            name: m.awayTeamName ?? m.awayTeam?.name ?? "TBD",
-            color: m.awayColor ?? m.awayTeam?.color ?? "#ef4444",
-            logo: m.awayTeam?.logo,
-            wikiSlug: m.awayTeam?.wikiSlug,
-          },
-          homeScore: m.homeScore,
-          awayScore: m.awayScore,
-          status: m.status,
-        }));
+    const mappedMatches = dayMatches.map((m: any) => ({
+      id: m.id,
+      homeTeam: {
+        id: m.homeTeamId ?? m.homeTeam?.id ?? "",
+        name: m.homeTeamName ?? m.homeTeam?.name ?? "TBD",
+        color: m.homeColor ?? m.homeTeam?.color ?? "#3b82f6",
+        logo: m.homeTeam?.logo,
+        wikiSlug: m.homeTeam?.wikiSlug,
+      },
+      awayTeam: {
+        id: m.awayTeamId ?? m.awayTeam?.id ?? "",
+        name: m.awayTeamName ?? m.awayTeam?.name ?? "TBD",
+        color: m.awayColor ?? m.awayTeam?.color ?? "#ef4444",
+        logo: m.awayTeam?.logo,
+        wikiSlug: m.awayTeam?.wikiSlug,
+      },
+      homeScore: m.homeScore,
+      awayScore: m.awayScore,
+      status: m.status,
+    }));
 
-        const completedCount = dayMatches.filter((m) => m.status === "completed").length;
+    const completedCount = dayMatches.filter((m) => m.status === "completed").length;
 
-        return (
-          <div
-            key={day}
-            className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-md transition"
-          >
-            <button
-              onClick={() => setCollapsedDays((prev) => ({ ...prev, [day]: !isCollapsed }))}
-              className="bg-muted/20 hover:bg-muted/30 focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between p-4 text-sm font-bold transition-colors outline-none select-none focus-visible:ring-1"
-            >
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-cyan-400" />
-                <span className="text-foreground">Match Day {day}</span>
-                <span className="text-muted-foreground bg-muted border-border/20 rounded-full border px-2 py-0.5 text-[10px] font-bold">
-                  {completedCount}/{dayMatches.length} Completed
-                </span>
-              </div>
-              <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
-                <span>{isCollapsed ? "Expand" : "Collapse"}</span>
-                {isCollapsed ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronUp className="h-4 w-4" />
-                )}
-              </div>
-            </button>
-
-            {!isCollapsed && (
-              <div className="border-border/10 border-t bg-transparent p-4">
-                <MatchSchedule1
-                  matchday={day}
-                  matches={mappedMatches}
-                  title=""
-                  onTeamClick={onTeamClick}
-                  expandedMatchId={expandedMatchId}
-                  onMatchClick={(matchId) => {
-                    if (onMatchClick) {
-                      onMatchClick(matchId);
-                    } else {
-                      setExpandedMatchId(expandedMatchId === matchId ? null : matchId);
-                    }
-                  }}
-                  renderMatchExtension={(match) => (
-                    <div className="mt-1 px-1">
-                      <MatchCommentary matchId={match.id} />
-                    </div>
-                  )}
-                />
-              </div>
+    return (
+      <div
+        className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-md transition mb-3"
+      >
+        <button
+          onClick={() => setCollapsedDays((prev) => ({ ...prev, [day]: !isCollapsed }))}
+          className="bg-muted/20 hover:bg-muted/30 focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between p-4 text-sm font-bold transition-colors outline-none select-none focus-visible:ring-1"
+        >
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-cyan-400" />
+            <span className="text-foreground">Match Day {day}</span>
+            <span className="text-muted-foreground bg-muted border-border/20 rounded-full border px-2 py-0.5 text-[10px] font-bold">
+              {completedCount}/{dayMatches.length} Completed
+            </span>
+          </div>
+          <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
+            <span>{isCollapsed ? "Expand" : "Collapse"}</span>
+            {isCollapsed ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronUp className="h-4 w-4" />
             )}
           </div>
-        );
-      })}
+        </button>
+
+        {!isCollapsed && (
+          <div className="border-border/10 border-t bg-transparent p-4">
+            <MatchSchedule1
+              matchday={day}
+              matches={mappedMatches}
+              title=""
+              onTeamClick={onTeamClick}
+              expandedMatchId={expandedMatchId}
+              onMatchClick={(matchId) => {
+                if (onMatchClick) {
+                  onMatchClick(matchId);
+                } else {
+                  setExpandedMatchId(expandedMatchId === matchId ? null : matchId);
+                }
+              }}
+              renderMatchExtension={(match) => (
+                <div className="mt-1 px-1">
+                  <MatchCommentary matchId={match.id} />
+                </div>
+              )}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className={className}>
+      <Virtuoso
+        useWindowScroll
+        data={sortedDays}
+        overscan={4}
+        itemContent={renderMatchDayItem}
+      />
     </div>
   );
 }

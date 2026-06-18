@@ -327,7 +327,14 @@ export const sportsTeamsRouter = createTRPCRouter({
     }),
 
   updateTeamTactics: protectedProcedure
-    .input(z.object({ teamId: z.string(), tacticalIntent: z.string() }))
+    .input(
+      z.object({
+        teamId: z.string(),
+        tacticalIntent: z.string(),
+        attackFocus: z.number().min(0).max(100).optional(),
+        teamIntensity: z.number().min(0).max(100).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
@@ -335,9 +342,20 @@ export const sportsTeamsRouter = createTRPCRouter({
         if (team.ownerUserId !== ctx.user.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
+
+        const lineup = (team.lineup as Record<string, any>) ?? {};
+        const updatedLineup = {
+          ...lineup,
+          attackFocus: input.attackFocus !== undefined ? input.attackFocus : (lineup.attackFocus ?? 50),
+          teamIntensity: input.teamIntensity !== undefined ? input.teamIntensity : (lineup.teamIntensity ?? 50),
+        };
+
         return ctx.db.sportTeam.update({
           where: { id: input.teamId },
-          data: { tacticalIntent: input.tacticalIntent },
+          data: {
+            tacticalIntent: input.tacticalIntent,
+            lineup: updatedLineup,
+          },
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;

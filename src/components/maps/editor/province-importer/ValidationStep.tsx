@@ -27,7 +27,18 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
         </p>
       </div>
 
-      {!report ? (
+      {importer.importScope === "cities" ? (
+        <div className="flex flex-col gap-2 rounded-lg bg-green-500/10 px-3 py-4 text-xs text-green-700 dark:text-green-400">
+          <div className="flex items-center gap-2 font-medium">
+            <CheckCircle className="h-4 w-4" />
+            Ready for City Import
+          </div>
+          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+            Province topology checks are skipped for cities-only import.{" "}
+            {importer.rawCityPoints.length} cities detected in SVG layers.
+          </p>
+        </div>
+      ) : !report ? (
         <div className="bg-accent text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-3 text-xs">
           <div className="border-primary h-3 w-3 animate-spin rounded-full border-2 border-t-transparent" />
           Running validation...

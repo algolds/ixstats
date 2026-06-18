@@ -1278,6 +1278,7 @@ export default function MapEditorOverlay({
             onComplete={() => {
               editor.setMode("view");
               editor.refetchFeatures();
+              importer.reset();
             }}
             onCancel={() => {
               importer.reset();

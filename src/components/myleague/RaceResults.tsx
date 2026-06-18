@@ -249,7 +249,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                             <TableCell className="text-center font-bold">{r.points}</TableCell>
                             <TableCell className="text-center">
                               {r.fastestLap && (
-                                <Zap className="inline h-3.5 w-3.5 text-purple-400" />
+                                <Zap className="inline h-3.5 w-3.5 text-amber-400" />
                               )}
                             </TableCell>
                           </TableRow>

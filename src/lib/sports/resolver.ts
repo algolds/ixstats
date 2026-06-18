@@ -280,6 +280,8 @@ export function resolveMatch(args: {
   };
   homeTacticalIntent?: string;
   awayTacticalIntent?: string;
+  homeLineup?: any;
+  awayLineup?: any;
   homeRoster?: Array<{
     id: string;
     firstName: string;
@@ -381,13 +383,25 @@ export function resolveMatch(args: {
       o = Math.min(99, o + 10);
       d = Math.max(1, d - 12);
       vMod = 0.8;
-    } else if (intent === "park_the_bus") {
-      o = Math.max(1, o - 15);
-      d = Math.min(99, d + 12);
-      vMod = -0.8;
+    } else if (intent === "park_the_bus" || intent === "catenaccio") {
+      o = Math.max(1, o - 12);
+      d = Math.min(99, d + 15);
+      vMod = -1.0;
     } else if (intent === "counter_attack") {
       o = Math.min(99, o + 5);
       d = Math.min(99, d + 5);
+    } else if (intent === "tiki_taka") {
+      o = Math.min(99, o + 8);
+      d = Math.min(99, d + 4);
+      vMod = -0.5;
+    } else if (intent === "gegenpressing") {
+      o = Math.min(99, o + 12);
+      d = Math.max(1, d - 5);
+      vMod = 0.6;
+    } else if (intent === "kick_and_rush") {
+      o = Math.min(99, o + 6);
+      d = Math.max(1, d - 8);
+      vMod = 1.0;
     }
     return { o, d, vMod };
   };
@@ -400,17 +414,44 @@ export function resolveMatch(args: {
   awayOffense = aTactRes.o;
   awayDefense = aTactRes.d;
   baseVariance += hTactRes.vMod + aTactRes.vMod;
+
+  // Apply customizable sliders from lineups
+  const hLineup = (args.homeLineup as Record<string, any>) ?? {};
+  const aLineup = (args.awayLineup as Record<string, any>) ?? {};
+  const hAttackFocus = typeof hLineup.attackFocus === "number" ? hLineup.attackFocus : 50;
+  const hTeamIntensity = typeof hLineup.teamIntensity === "number" ? hLineup.teamIntensity : 50;
+  const aAttackFocus = typeof aLineup.attackFocus === "number" ? aLineup.attackFocus : 50;
+  const aTeamIntensity = typeof aLineup.teamIntensity === "number" ? aLineup.teamIntensity : 50;
+
+  const hOffAdjust = (hAttackFocus - 50) * 0.16;
+  const hDefAdjust = (50 - hAttackFocus) * 0.16;
+  const aOffAdjust = (aAttackFocus - 50) * 0.16;
+  const aDefAdjust = (50 - aAttackFocus) * 0.16;
+
+  homeOffense = Math.max(1, Math.min(99, homeOffense + hOffAdjust));
+  homeDefense = Math.max(1, Math.min(99, homeDefense + hDefAdjust));
+  awayOffense = Math.max(1, Math.min(99, awayOffense + aOffAdjust));
+  awayDefense = Math.max(1, Math.min(99, awayDefense + aDefAdjust));
+
+  baseVariance += (hTeamIntensity - 50) * 0.01 + (aTeamIntensity - 50) * 0.01;
   baseVariance = Math.max(0.5, baseVariance);
 
-  // Rock-Paper-Scissors bonuses: Counter-Attack counters All-Out Attack
-  let homeTacticalBonus = 0;
-  let awayTacticalBonus = 0;
-  if (homeTactical === "counter_attack" && awayTactical === "all_out_attack") {
-    homeTacticalBonus = 8;
-  }
-  if (awayTactical === "counter_attack" && homeTactical === "all_out_attack") {
-    awayTacticalBonus = 8;
-  }
+  // Rock-Paper-Scissors / tactical counter bonuses
+  const getTacticalBonus = (tactical: string, opponentTactical: string): number => {
+    const t = tactical === "park_the_bus" ? "catenaccio" : tactical;
+    const opp = opponentTactical === "park_the_bus" ? "catenaccio" : opponentTactical;
+
+    if (t === "counter_attack" && opp === "all_out_attack") return 8;
+    if (t === "gegenpressing" && opp === "tiki_taka") return 6;
+    if (t === "tiki_taka" && opp === "catenaccio") return 6;
+    if (t === "catenaccio" && opp === "gegenpressing") return 6;
+    if (t === "kick_and_rush" && opp === "catenaccio") return 4;
+    if (t === "counter_attack" && opp === "gegenpressing") return 4;
+    return 0;
+  };
+
+  const homeTacticalBonus = getTacticalBonus(homeTactical, awayTactical);
+  const awayTacticalBonus = getTacticalBonus(awayTactical, homeTactical);
 
   // Recalculate adjusted strengths
   const computeAdjustedStrength = (

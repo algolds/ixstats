@@ -126,12 +126,6 @@ const NAV_ITEMS: NavItem[] = [
     description: "Topic Prompts & Responses",
   },
   {
-    label: "ThinkPages Feed",
-    href: "/admin/thinkpages-feed",
-    icon: Rss,
-    description: "Mirror Posts to Discord",
-  },
-  {
     label: "Polls",
     href: "/admin/polls",
     icon: Vote,

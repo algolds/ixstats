@@ -235,11 +235,19 @@ export function BuilderNotchBar({
         },
         {
           id: "labor",
-          label: "Labor & Demographics",
+          label: "Labor Market",
           icon: Users,
           isActive: (st: any) => st.builderState.activeEconomicsTab === "labor",
           onClick: (st: any) =>
             st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "labor" })),
+        },
+        {
+          id: "demographics",
+          label: "Demographics",
+          icon: Globe,
+          isActive: (st: any) => st.builderState.activeEconomicsTab === "demographics",
+          onClick: (st: any) =>
+            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "demographics" })),
         },
         {
           id: "tax",

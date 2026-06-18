@@ -226,7 +226,7 @@ export function LeagueSettingsModal({
 
   const regenerateSchedule = api.sports.regenerateSchedule.useMutation({
     onSuccess: () => {
-      notify.success("Schedule Regenerated", "A fresh fixture schedule has been generated.");
+      notify.success("Schedule Regenerated", "A fresh match schedule has been generated.");
       utils.sports.getLeague.invalidate({ id: league.id });
       if (activeSeason?.id) {
         utils.sports.getSchedule.invalidate({ seasonId: activeSeason.id });
@@ -666,7 +666,7 @@ export function LeagueSettingsModal({
                       size="sm"
                       disabled={regenerateSchedule.isPending}
                       onClick={() => {
-                        if (confirm("This will delete all matches and regenerate a fresh schedule of fixtures. This can only be done if no matches have been played yet. Proceed?")) {
+                        if (confirm("This will delete all matches and regenerate a fresh schedule of matches. This can only be done if no matches have been played yet. Proceed?")) {
                           regenerateSchedule.mutate({ seasonId: activeSeason.id });
                         }
                       }}
@@ -677,7 +677,7 @@ export function LeagueSettingsModal({
                       ) : (
                         <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                       )}
-                      Regenerate Fixtures
+                      Regenerate Matches
                     </Button>
                   </div>
                 </div>

@@ -165,7 +165,7 @@ Large flat routers are split into a domain subdirectory and recombined with `mer
 
 ## Platform & Versioning
 
-Current release: **IxStates 1.1.0 "Ogma"** (channel: Alpha). Version source of truth: `src/lib/buildVersion.ts`. After any major change, check `docs/reference/revision.md` and ask whether the platform version, component capability integer, channel, or changelog need updating.
+Current release: **IxStates 1.1.1 "Ogma"** (channel: Alpha). Version source of truth: `src/lib/buildVersion.ts`. After any major change, check `docs/reference/revision.md` and ask whether the platform version, component capability integer, channel, or changelog need updating.
 
 **Apps** (independent capability integer): IxWorld, WikiOS (with Canvas), IxVault  
 **Engines** (sim cores): MyCountry, Concord (time/diplomacy/crises/NPCs), Atlas (geo/worldgen)  

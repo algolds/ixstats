@@ -130,6 +130,15 @@ export function useEconomyBuilderSync({
   // INTEGRATION SERVICE UPDATES (push changes to service)
   // ============================================================
   useEffect(() => {
+    if (economyBuilder) {
+      if (economyBuilder.selectedAtomicComponents) {
+        void economyIntegrationService.updateEconomicComponents(economyBuilder.selectedAtomicComponents);
+      }
+      void economyIntegrationService.updateEconomyBuilder(economyBuilder);
+    }
+  }, []); // Run once on mount
+
+  useEffect(() => {
     if (economicInputs) {
       economyIntegrationService.updateEconomicInputs(economicInputs);
     }

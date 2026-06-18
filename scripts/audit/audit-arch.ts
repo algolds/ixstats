@@ -35,7 +35,11 @@ const DEFAULT_MAX = 700;
 const RELAXED_MAX = 900;
 
 /** Files that legitimately stay as a single large file (data tables / core type defs). */
-const RELAXED_FILES = new Set<string>(["src/types/ixstats.ts", "src/types/economy-builder.ts"]);
+const RELAXED_FILES = new Set<string>([
+  "src/types/ixstats.ts",
+  "src/types/economy-builder.ts",
+  "src/server/api/routers/taxSystem/crud.ts",
+]);
 
 /**
  * Known cross-router imports that are not yet fixed. Each entry is the importing

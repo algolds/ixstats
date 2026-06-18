@@ -78,6 +78,7 @@ import {
 } from "~/lib/text-formatter";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { getSportEmoji } from "~/lib/sports/presets";
 
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 
@@ -843,18 +844,7 @@ const ThinkpagesPostComponent = ({
 
         {/* Inline Link Previews */}
         {(() => {
-          const content = post.content ?? "";
-          const matchedLink = (() => {
-            const wikiMatch = content.match(
-              /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
-            );
-            if (wikiMatch) return wikiMatch[0];
-            const forumMatch = content.match(
-              /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
-            );
-            if (forumMatch) return forumMatch[0];
-            return null;
-          })();
+          const matchedLink = getInlinePreviewLink(post.content);
           if (matchedLink) {
             return <PostInlineLinkPreview url={matchedLink} />;
           }
@@ -1299,20 +1289,9 @@ const ThinkpagesPostComponent = ({
           {/* Embedded Poll */}
           {post.poll && <FeedPollWidget poll={post.poll} />}
 
-          {/* Inline Link Previews (Wiki / Forum) */}
+          {/* Inline Link Previews (Wiki / Forum / Sports) */}
           {(() => {
-            const content = post.content ?? "";
-            const matchedLink = (() => {
-              const wikiMatch = content.match(
-                /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
-              );
-              if (wikiMatch) return wikiMatch[0];
-              const forumMatch = content.match(
-                /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
-              );
-              if (forumMatch) return forumMatch[0];
-              return null;
-            })();
+            const matchedLink = getInlinePreviewLink(post.content);
             if (matchedLink) {
               return <PostInlineLinkPreview url={matchedLink} />;
             }
@@ -1927,13 +1906,55 @@ ThinkpagesPost.displayName = "ThinkpagesPost";
 // Premium Native Inline Link Previews
 // ──────────────────────────────────────────────
 
+function getInlinePreviewLink(content: string | null | undefined): string | null {
+  if (!content) return null;
+
+  const myLeagueMatch = content.match(
+    /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)*(?:ixwiki\.com|localhost:\d+)?(?:\/projects\/ixstates)?\/myleague\/([a-zA-Z0-9_-]+)/i
+  );
+  if (myLeagueMatch) return myLeagueMatch[0];
+
+  const myClubMatch = content.match(
+    /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)*(?:ixwiki\.com|localhost:\d+)?(?:\/projects\/ixstates)?\/myclub\/([a-zA-Z0-9_-]+)/i
+  );
+  if (myClubMatch) return myClubMatch[0];
+
+  const wikiMatch = content.match(
+    /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
+  );
+  if (wikiMatch) return wikiMatch[0];
+
+  const forumMatch = content.match(
+    /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
+  );
+  if (forumMatch) return forumMatch[0];
+
+  return null;
+}
+
 function PostInlineLinkPreview({ url }: { url: string }) {
+  const myLeagueMatch = url.match(
+    /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)*(?:ixwiki\.com|localhost:\d+)?(?:\/projects\/ixstates)?\/myleague\/([a-zA-Z0-9_-]+)/i
+  );
+  const myClubMatch = url.match(
+    /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)*(?:ixwiki\.com|localhost:\d+)?(?:\/projects\/ixstates)?\/myclub\/([a-zA-Z0-9_-]+)/i
+  );
   const wikiMatch = url.match(
     /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
   );
   const forumMatch = url.match(
     /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
   );
+
+  if (myLeagueMatch) {
+    const leagueId = myLeagueMatch[1]!;
+    return <MyLeagueInlinePreview leagueId={leagueId} url={url} />;
+  }
+
+  if (myClubMatch) {
+    const teamId = myClubMatch[1]!;
+    return <MyClubInlinePreview teamId={teamId} url={url} />;
+  }
 
   if (wikiMatch) {
     const domain = wikiMatch[1] || "ixwiki.com";
@@ -1950,6 +1971,183 @@ function PostInlineLinkPreview({ url }: { url: string }) {
   }
 
   return null;
+}
+
+function MyLeagueInlinePreview({ leagueId, url: _url }: { leagueId: string; url: string }) {
+  const { data: league, isLoading, error } = api.sports.getLeague.useQuery(
+    { id: leagueId },
+    { staleTime: 10 * 60_000 }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="glass-hierarchy-child mt-3 animate-pulse p-3.5">
+        <div className="bg-muted/50 mb-2 h-4 w-1/3 rounded dark:bg-white/10" />
+        <div className="bg-muted/30 h-3 w-2/3 rounded dark:bg-white/5" />
+      </div>
+    );
+  }
+
+  if (error || !league) return null;
+
+  const emoji = getSportEmoji(league.sportPreset);
+  const archetypeLabel = league.archetype.replace(/_/g, " ").toUpperCase();
+  const currentSeason = league.seasons?.[0];
+
+  return (
+    <Link
+      href={withBasePath(`/myleague/${leagueId}`)}
+      className="glass-hierarchy-child group hover:glass-hierarchy-interactive mt-3 block p-3.5 transition-all duration-300 hover:-translate-y-0.5"
+    >
+      <div className="flex items-start gap-3">
+        {league.logo ? (
+          <img
+            src={league.logo}
+            alt={league.name}
+            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 object-contain bg-black/20"
+          />
+        ) : (
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-xl text-blue-500">
+            {emoji}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-blue-400">
+              {league.name}
+            </span>
+            <Badge
+              variant="outline"
+              className="shrink-0 border-blue-500/30 bg-blue-500/5 text-[9px] text-blue-400"
+            >
+              {league.sportPreset.toUpperCase()}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="shrink-0 border-white/20 bg-white/5 text-[9px] text-neutral-400"
+            >
+              {archetypeLabel}
+            </Badge>
+          </div>
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            <span>{league.teamCount} Teams</span>
+            <span className="text-white/20">•</span>
+            {currentSeason ? (
+              <span>
+                Season {currentSeason.seasonNumber} ({currentSeason.status.replace(/_/g, " ")})
+              </span>
+            ) : (
+              <span>No active seasons</span>
+            )}
+          </div>
+          <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium text-blue-500/80">
+            <span>View League Workspace</span>
+            <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function MyClubInlinePreview({ teamId, url: _url }: { teamId: string; url: string }) {
+  const { data: team, isLoading, error } = api.sports.getTeam.useQuery(
+    { id: teamId },
+    { staleTime: 10 * 60_000 }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="glass-hierarchy-child mt-3 animate-pulse p-3.5">
+        <div className="bg-muted/50 mb-2 h-4 w-1/3 rounded dark:bg-white/10" />
+        <div className="bg-muted/30 h-3 w-2/3 rounded dark:bg-white/5" />
+      </div>
+    );
+  }
+
+  if (error || !team) return null;
+
+  const emoji = team.league?.sportPreset ? getSportEmoji(team.league.sportPreset) : "⚽";
+  const teamColor = team.color || "#3b82f6";
+  const budgetFormatted = team.budget ? `$${(team.budget / 1e6).toFixed(1)}M` : null;
+  const flagUrl = team.nationId ? normalizeFlagUrl(team.nationId) : null;
+
+  return (
+    <Link
+      href={withBasePath(`/myclub/${teamId}`)}
+      className="glass-hierarchy-child group hover:glass-hierarchy-interactive mt-3 block p-3.5 transition-all duration-300 hover:-translate-y-0.5"
+      style={{
+        borderLeft: `3px solid ${teamColor}`,
+      }}
+    >
+      <div className="flex items-start gap-3">
+        {team.logo ? (
+          <img
+            src={team.logo}
+            alt={team.name}
+            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 object-contain bg-black/20"
+          />
+        ) : (
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-xl"
+            style={{
+              borderColor: `${teamColor}40`,
+              backgroundColor: `${teamColor}15`,
+              color: teamColor,
+            }}
+          >
+            {emoji}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span
+              className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-blue-400"
+              style={{
+                color: teamColor,
+              }}
+            >
+              {team.name}
+            </span>
+            {team.league && (
+              <Badge
+                variant="outline"
+                className="shrink-0 border-white/20 bg-white/5 text-[9px] text-neutral-400"
+              >
+                {team.league.name}
+              </Badge>
+            )}
+            {flagUrl && (
+              <img
+                src={flagUrl}
+                alt={team.nation?.name || "Nation"}
+                className="h-3 w-4.5 rounded object-cover border border-white/10 inline-block align-middle"
+              />
+            )}
+          </div>
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            {team.foundedIxTime && <span>Founded Year: {team.foundedIxTime}</span>}
+            {budgetFormatted && (
+              <>
+                <span className="text-white/20">•</span>
+                <span>Budget: {budgetFormatted}</span>
+              </>
+            )}
+            {team.popularity && (
+              <>
+                <span className="text-white/20">•</span>
+                <span>Popularity: {team.popularity.toFixed(0)}%</span>
+              </>
+            )}
+          </div>
+          <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium" style={{ color: teamColor }}>
+            <span>View Club Hub</span>
+            <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
 }
 
 function WikiInlinePreview({

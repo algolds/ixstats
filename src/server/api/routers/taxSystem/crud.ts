@@ -11,6 +11,7 @@ import {
 import { TaxBuilderStateSchema } from "~/types/validation/tax";
 
 import { notificationHooks } from "~/lib/notification-hooks";
+import { mapIdToTaxComponentType, mapTaxComponentTypeToId } from "~/lib/enums";
 
 // Validation helpers for brackets
 function validateBracketsState(
@@ -66,18 +67,23 @@ export const taxSystemCrudRouter = createTRPCRouter({
   getByCountryId: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const taxSystem = await ctx.db.taxSystem.findUnique({
-        where: { countryId: input.countryId },
-        include: {
-          taxCategories: {
-            include: {
-              taxBrackets: true,
-              taxExemptions: true,
-              taxDeductions: true,
+      const [taxSystem, taxComponents] = await Promise.all([
+        ctx.db.taxSystem.findUnique({
+          where: { countryId: input.countryId },
+          include: {
+            taxCategories: {
+              include: {
+                taxBrackets: true,
+                taxExemptions: true,
+                taxDeductions: true,
+              },
             },
           },
-        },
-      });
+        }),
+        ctx.db.taxComponent.findMany({
+          where: { countryId: input.countryId, isActive: true },
+        }),
+      ]);
 
       if (!taxSystem) {
         return null;
@@ -149,6 +155,7 @@ export const taxSystemCrudRouter = createTRPCRouter({
           },
           {} as Record<string, any[]>
         ),
+        selectedAtomicTaxComponents: taxComponents.map((tc) => mapTaxComponentTypeToId(tc.componentType)),
         isValid: true,
         errors: {},
       };
@@ -359,6 +366,23 @@ export const taxSystemCrudRouter = createTRPCRouter({
         });
       }
 
+      // Save tax components
+      if (data.selectedAtomicTaxComponents) {
+        await ctx.db.taxComponent.deleteMany({
+          where: { countryId: input.countryId },
+        });
+        if (data.selectedAtomicTaxComponents.length > 0) {
+          await ctx.db.taxComponent.createMany({
+            data: data.selectedAtomicTaxComponents.map((id) => ({
+              countryId: input.countryId,
+              componentType: mapIdToTaxComponentType(id) as any,
+              effectivenessScore: 50,
+              isActive: true,
+            })),
+          });
+        }
+      }
+
       // Sync with FiscalSystem table
       const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);
 
@@ -495,6 +519,23 @@ export const taxSystemCrudRouter = createTRPCRouter({
           },
         },
       });
+
+      // Save tax components
+      if (data.selectedAtomicTaxComponents) {
+        await ctx.db.taxComponent.deleteMany({
+          where: { countryId: input.countryId },
+        });
+        if (data.selectedAtomicTaxComponents.length > 0) {
+          await ctx.db.taxComponent.createMany({
+            data: data.selectedAtomicTaxComponents.map((id) => ({
+              countryId: input.countryId,
+              componentType: mapIdToTaxComponentType(id) as any,
+              effectivenessScore: 50,
+              isActive: true,
+            })),
+          });
+        }
+      }
 
       // Sync with FiscalSystem table
       const syncResult = await syncTaxData(ctx.db as any, input.countryId, data);

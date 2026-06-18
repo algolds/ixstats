@@ -319,25 +319,33 @@ export function useBuilderState(
     if (mode === "edit" && existingCountry && !editModeInitialized.current && !isLoadingCountry) {
       editModeInitialized.current = true;
 
-      const inputs = createDefaultEconomicInputs();
+      const typedCountry = existingCountry as CountryWithEditorFields;
+      const calculatedStats = typedCountry.calculatedStats;
+      const currentPop =
+        Number(calculatedStats?.currentPopulation) || Number(typedCountry.baselinePopulation) || 10000000;
+      const currentGdpPerCap =
+        Number(calculatedStats?.currentGdpPerCapita) ||
+        Number(typedCountry.baselineGdpPerCapita) ||
+        25000;
+      const currentTotalGdp = Number(calculatedStats?.currentTotalGdp) || (currentPop * currentGdpPerCap);
+
+      const inputs = createDefaultEconomicInputs({
+        name: existingCountry.name,
+        countryCode: (existingCountry as any).countryCode || "us",
+        population: currentPop,
+        gdpPerCapita: currentGdpPerCap,
+        gdp: currentTotalGdp,
+        unemploymentRate: typedCountry.unemploymentRate ?? 5,
+        taxRevenuePercent: typedCountry.taxRevenueGDPPercent ?? 20,
+      });
 
       // Populate with live country data
       inputs.countryName = existingCountry.name;
 
-      const typedCountry = existingCountry as CountryWithEditorFields;
-      const calculatedStats = typedCountry.calculatedStats;
-      const currentPop =
-        Number(calculatedStats?.currentPopulation) || Number(typedCountry.baselinePopulation) || 0;
-      const currentGdpPerCap =
-        Number(calculatedStats?.currentGdpPerCapita) ||
-        Number(typedCountry.baselineGdpPerCapita) ||
-        0;
-      const currentTotalGdp = Number(calculatedStats?.currentTotalGdp) || 0;
-
       inputs.coreIndicators = {
-        totalPopulation: !isNaN(currentPop) ? currentPop : 0,
-        gdpPerCapita: !isNaN(currentGdpPerCap) ? currentGdpPerCap : 0,
-        nominalGDP: !isNaN(currentTotalGdp) ? currentTotalGdp : 0,
+        totalPopulation: currentPop,
+        gdpPerCapita: currentGdpPerCap,
+        nominalGDP: currentTotalGdp,
         realGDPGrowthRate: typedCountry.realGDPGrowthRate ?? 0,
         inflationRate: typedCountry.inflationRate ?? 0,
         currencyExchangeRate: typedCountry.currencyExchangeRate ?? 1.0,
@@ -800,6 +808,25 @@ export function useBuilderState(
             if (wikiData.coatOfArmsUrl || wikiData.coat_of_arms)
               inputs.coatOfArmsUrl =
                 normalizeFlagUrl(wikiData.coatOfArmsUrl || wikiData.coat_of_arms) || "";
+
+            // Recalculate workforce size, wages, and fiscal metrics based on parsed population and gdp
+            if (inputs.coreIndicators.totalPopulation) {
+              const participation = inputs.laborEmployment.laborForceParticipationRate || 65;
+              inputs.laborEmployment.totalWorkforce = Math.round(inputs.coreIndicators.totalPopulation * (participation / 100));
+            }
+            if (inputs.coreIndicators.gdpPerCapita) {
+              inputs.laborEmployment.minimumWage = Math.round(inputs.coreIndicators.gdpPerCapita * 0.02);
+              inputs.laborEmployment.averageAnnualIncome = Math.round(inputs.coreIndicators.gdpPerCapita * 0.8);
+            }
+            const basePopulation = inputs.coreIndicators.totalPopulation;
+            const baseNominalGDP = inputs.coreIndicators.nominalGDP;
+            const baseTaxRevenuePercent = inputs.fiscalSystem.taxRevenueGDPPercent || 20;
+            if (baseNominalGDP) {
+              inputs.fiscalSystem.governmentRevenueTotal = (baseNominalGDP * baseTaxRevenuePercent) / 100;
+              if (basePopulation) {
+                inputs.fiscalSystem.taxRevenuePerCapita = (baseNominalGDP * baseTaxRevenuePercent) / (100 * basePopulation);
+              }
+            }
 
             // Prepare builder state update
             const stateUpdate: Partial<typeof builderState> = {

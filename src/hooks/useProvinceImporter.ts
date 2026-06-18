@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import type {
   ProvinceFeature,
@@ -72,6 +73,7 @@ export function useProvinceImporter(countryId: string) {
   const [detectedLayers, setDetectedLayers] = useState<string[]>([]);
 
   // City Importer integrated state
+  const [importScope, setImportScope] = useState<"both" | "provinces" | "cities">("both");
   const [hasCities, setHasCities] = useState(false);
   const [importCities, setImportCities] = useState(true);
   const [cityLayers, setCityLayers] = useState<SvgLayerInfo[]>([]);
@@ -80,9 +82,62 @@ export function useProvinceImporter(countryId: string) {
   const [capitalLayerId, setCapitalLayerId] = useState("");
   const [rawSvgContent, setRawSvgContent] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (importScope === "provinces") {
+      setImportCities(false);
+    } else if (importScope === "cities") {
+      setImportCities(true);
+    } else if (importScope === "both") {
+      setImportCities(hasCities);
+    }
+  }, [importScope, hasCities]);
+
   // ── tRPC Mutations ──
+  const utils = api.useUtils();
   const parseMutation = api.geoAdmin.parseProvinceUpload.useMutation();
-  const commitMutation = api.geoAdmin.commitProvinceImport.useMutation();
+  const commitCityMutation = api.geoAdmin.commitCityImport.useMutation({
+    onSuccess: (data) => {
+      void utils.geoCore.getCountryFeatures.invalidate();
+      void utils.geoCore.getWorldMap.invalidate();
+      void utils.geoCore.getMapBundle.invalidate();
+      void utils.geoCore.getCapitalCities.invalidate();
+      void utils.geoCore.getCountryGeometry.invalidate();
+
+      const summary = data?.created ? `${data.created} cities added/updated` : "no changes";
+      toast.success(`Cities imported (${summary})`);
+    },
+    onError: (err) => {
+      toast.error(err?.message || "City import failed");
+    },
+  });
+  const commitMutation = api.geoAdmin.commitProvinceImport.useMutation({
+    onSuccess: (data) => {
+      // Invalidate every client-side cache that renders provinces/cities so the
+      // map editor's feature layer AND the base "political" world-map layer
+      // refetch and display the newly imported data. The server already cleared
+      // its own caches in commitProvinceImport; without these client-side
+      // invalidations the map never visually updates after an import.
+      void utils.geoCore.getCountryFeatures.invalidate();
+      void utils.geoCore.getWorldMap.invalidate();
+      void utils.geoCore.getMapBundle.invalidate();
+      void utils.geoCore.getCapitalCities.invalidate();
+      void utils.geoCore.getCountryGeometry.invalidate();
+      void utils.geoAdmin.getProvinceImportPreview.invalidate();
+
+      const parts: string[] = [];
+      if (data?.created) parts.push(`${data.created} added`);
+      if (data?.updated) parts.push(`${data.updated} updated`);
+      if (data?.citiesCreated)
+        parts.push(`${data.citiesCreated} cit${data.citiesCreated === 1 ? "y" : "ies"}`);
+      const summary = parts.length > 0 ? parts.join(", ") : "no changes";
+      toast.success(
+        data?.replaced ? `Provinces replaced (${summary})` : `Provinces imported (${summary})`
+      );
+    },
+    onError: (err) => {
+      toast.error(err?.message || "Province import failed");
+    },
+  });
   const previewQuery = api.geoAdmin.getProvinceImportPreview.useQuery(
     { countryId },
     { enabled: step === "upload" || step === "commit" }
@@ -336,7 +391,14 @@ export function useProvinceImporter(countryId: string) {
 
   const applyManualAlignment = useCallback(() => {
     const provinces = rawProvinces.filter((p) => p.included);
-    if (provinces.length === 0) return;
+    if (provinces.length === 0) {
+      if (rawCityPoints.length === 0) return;
+      const cx = rawCityPoints.reduce((s, p) => s + p.x, 0) / rawCityPoints.length;
+      const cy = rawCityPoints.reduce((s, p) => s + p.y, 0) / rawCityPoints.length;
+      const matrix = manualTransformToMatrix(manualTransform, [cx, cy]);
+      setTransform(matrix);
+      return;
+    }
 
     // Compute center from included provinces
     const cx = provinces.reduce((s, p) => s + p.centroid[0], 0) / provinces.length;
@@ -345,14 +407,15 @@ export function useProvinceImporter(countryId: string) {
     const matrix = manualTransformToMatrix(manualTransform, [cx, cy]);
     setTransform(matrix);
     setAlignedProvinces(applyAffineToProvinces(rawProvinces, matrix));
-  }, [rawProvinces, manualTransform]);
+  }, [rawProvinces, rawCityPoints, manualTransform]);
 
   // ── Aligned Cities Derived State & setLayer ──
   const { alignedCities, snappedCitiesCount } = useMemo(() => {
-    if (!importCities || rawCityPoints.length === 0 || !transform || !countryBorder) {
+    if (!importCities || rawCityPoints.length === 0 || !countryBorder) {
       return { alignedCities: [], snappedCitiesCount: 0 };
     }
-    const aligned = applyCityAffine(rawCityPoints, transform);
+    const activeTransform = transform ?? { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+    const aligned = applyCityAffine(rawCityPoints, activeTransform);
     let snappedCount = 0;
     const snapped = aligned
       .filter(
@@ -475,6 +538,37 @@ export function useProvinceImporter(countryId: string) {
     setError(null);
 
     try {
+      if (importScope === "cities") {
+        if (!importCities || alignedCities.length === 0) {
+          setError("No cities aligned/available to import");
+          return null;
+        }
+
+        const citiesToCommit = alignedCities
+          .filter(
+            (c) =>
+              typeof c.lng === "number" &&
+              !isNaN(c.lng) &&
+              typeof c.lat === "number" &&
+              !isNaN(c.lat)
+          )
+          .map((c, index) => ({
+            name: c.name.trim() || `Unnamed City ${index + 1}`,
+            lat: c.lat,
+            lng: c.lng,
+            cityType: "city",
+            isNationalCapital: c.isCapital,
+          }));
+
+        const result = await commitCityMutation.mutateAsync({
+          countryId,
+          cities: citiesToCommit,
+        });
+
+        return result;
+      }
+
+      // provinces-only or both
       let source = alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
 
       // Final conformance: sanitize shapes + simplify + clip to border
@@ -499,21 +593,22 @@ export function useProvinceImporter(countryId: string) {
 
       const included = source.filter((p) => p.included);
 
-      const citiesToCommit = importCities
-        ? alignedCities
-            .filter(
-              (c) =>
-                typeof c.lng === "number" &&
-                !isNaN(c.lng) &&
-                typeof c.lat === "number" &&
-                !isNaN(c.lat)
-            )
-            .map((c, index) => ({
-              name: c.name.trim() || `Unnamed City ${index + 1}`,
-              coordinates: [c.lng, c.lat],
-              isCapital: c.isCapital,
-            }))
-        : undefined;
+      const citiesToCommit =
+        importCities && importScope === "both"
+          ? alignedCities
+              .filter(
+                (c) =>
+                  typeof c.lng === "number" &&
+                  !isNaN(c.lng) &&
+                  typeof c.lat === "number" &&
+                  !isNaN(c.lat)
+              )
+              .map((c, index) => ({
+                name: c.name.trim() || `Unnamed City ${index + 1}`,
+                coordinates: [c.lng, c.lat],
+                isCapital: c.isCapital,
+              }))
+          : undefined;
 
       const result = await commitMutation.mutateAsync({
         countryId,
@@ -536,11 +631,13 @@ export function useProvinceImporter(countryId: string) {
       setIsProcessing(false);
     }
   }, [
+    importScope,
     alignedProvinces,
     rawProvinces,
     countryId,
     replaceExisting,
     commitMutation,
+    commitCityMutation,
     countryBorder,
     simplifyTolerance,
     importCities,
@@ -549,6 +646,7 @@ export function useProvinceImporter(countryId: string) {
 
   // ── Reset ──
   const reset = useCallback(() => {
+    setImportScope("both");
     setStep("upload");
     setUploadId(null);
     setRawProvinces([]);
@@ -607,6 +705,7 @@ export function useProvinceImporter(countryId: string) {
     countryBorder,
     replaceExisting,
     existingSubdivisions: previewQuery.data?.existingSubdivisions ?? [],
+    importScope,
 
     // Navigation
     canGoNext,
@@ -618,6 +717,7 @@ export function useProvinceImporter(countryId: string) {
     // Upload
     handleUpload,
     handleDirectSvg,
+    setImportScope,
 
     // Names
     updateProvinceName,

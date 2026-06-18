@@ -284,6 +284,23 @@ const economicsBuilderRouter = createTRPCRouter({
           },
         });
 
+        // Delete all old economic components for the country
+        await tx.economicComponent.deleteMany({
+          where: { countryId },
+        });
+
+        // Insert new ones
+        if (economyBuilder.selectedAtomicComponents && economyBuilder.selectedAtomicComponents.length > 0) {
+          await tx.economicComponent.createMany({
+            data: economyBuilder.selectedAtomicComponents.map((cType) => ({
+              countryId,
+              componentType: cType as any,
+              effectivenessScore: 50,
+              isActive: true,
+            })),
+          });
+        }
+
         // Update Country with comprehensive economy data
         const country = await tx.country.update({
           where: { id: countryId },
@@ -432,12 +449,17 @@ const economicsBuilderRouter = createTRPCRouter({
           demographics: true,
           economicModel: true,
           nationalIdentity: true,
+          economicComponents: true,
         },
       });
 
       if (!country) {
         return null;
       }
+
+      // Fallback values if current stats are empty/0
+      const totalPopulation = country.currentPopulation || country.baselinePopulation || 10000000;
+      const totalGDP = country.currentTotalGdp || (country.baselinePopulation * country.baselineGdpPerCapita) || 250000000000;
 
       // Transform database data back to economy builder format
       const sectorBreakdown = country.economicProfile?.sectorBreakdown
@@ -456,7 +478,7 @@ const economicsBuilderRouter = createTRPCRouter({
           tertiarySectors: sectorBreakdown
             .filter((s: any) => s.category === "Tertiary")
             .map((s: any) => s.name),
-          totalGDP: country.currentTotalGdp || 0,
+          totalGDP,
           gdpCurrency: country.nationalIdentity?.currency || "USD",
           economicTier: country.economicTier || "Developing",
           growthStrategy: "Balanced",
@@ -481,7 +503,7 @@ const economicsBuilderRouter = createTRPCRouter({
         })),
         laborMarket: {
           totalWorkforce: Math.round(
-            ((country.currentPopulation || 0) * (country.laborForceParticipationRate || 65)) / 100
+            (totalPopulation * (country.laborForceParticipationRate || 65)) / 100
           ),
           laborForceParticipationRate: country.laborForceParticipationRate || 65,
           employmentRate: 100 - (country.unemploymentRate || 5),
@@ -500,7 +522,7 @@ const economicsBuilderRouter = createTRPCRouter({
           laborRightsScore: 68,
         },
         demographics: {
-          totalPopulation: country.currentPopulation || 0,
+          totalPopulation,
           populationGrowthRate: country.populationGrowthRate || 0,
           urbanRuralSplit: {
             urban: country.urbanPopulationPercent || 50,
@@ -512,7 +534,9 @@ const economicsBuilderRouter = createTRPCRouter({
           infantMortalityRate: 5,
           healthExpenditureGDP: 8.5,
         },
-        selectedAtomicComponents: [], // Will be populated from government components
+        selectedAtomicComponents: country.economicComponents
+          ? country.economicComponents.map((c) => c.componentType as any)
+          : [],
         lastUpdated: country.updatedAt,
         version: "1.0.0",
       };

@@ -166,7 +166,7 @@ export default function MyClubPage() {
                 </div>
                 <p className="text-muted-foreground text-sm">
                   Official hub for managing roster details, configuring pricing, scouting active
-                  sponsorships, and playing fixtures.
+                  sponsorships, and playing matches.
                 </p>
                 <div className="bg-muted grid grid-cols-2 gap-4 rounded-xl p-4">
                   <div>

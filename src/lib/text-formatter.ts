@@ -75,6 +75,16 @@ export function formatContentEnhanced(content: string): string {
     '<blockquote class="border-l-2 border-muted-foreground/30 pl-2 my-1 text-muted-foreground/90 italic">$1</blockquote>'
   );
 
+  // Format myleague/myclub links in text before replacing remaining raw URLs
+  formattedContent = formattedContent.replace(
+    /(?:https?:\/\/[^\s/]+)?(?:\/projects\/ixstates)?\/myleague\/([a-zA-Z0-9_-]+)/gi,
+    '<a href="/projects/ixstates/myleague/$1" class="text-blue-500 hover:underline font-medium">/myleague/$1</a>'
+  );
+  formattedContent = formattedContent.replace(
+    /(?:https?:\/\/[^\s/]+)?(?:\/projects\/ixstates)?\/myclub\/([a-zA-Z0-9_-]+)/gi,
+    '<a href="/projects/ixstates/myclub/$1" class="text-blue-500 hover:underline font-medium">/myclub/$1</a>'
+  );
+
   // Replace remaining raw URLs first (before hashtags and mentions to avoid conflicts)
   formattedContent = formattedContent.replace(
     /(https?:\/\/[^\s<]+)/g,

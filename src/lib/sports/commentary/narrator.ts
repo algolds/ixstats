@@ -261,7 +261,7 @@ export async function generateMatchPreview(
   sport: string,
   standingsContext?: string
 ): Promise<string> {
-  const systemPrompt = `You are a sports analyst. Write a concise pre-match preview and prediction for an upcoming ${sport} fixture between ${homeTeam.name} and ${awayTeam.name}. Give a 1-2 paragraph preview highlighting who is favored based on their standing position and form, and finish with a bold scoreline prediction.`;
+  const systemPrompt = `You are a sports analyst. Write a concise pre-match preview and prediction for an upcoming ${sport} match between ${homeTeam.name} and ${awayTeam.name}. Give a 1-2 paragraph preview highlighting who is favored based on their standing position and form, and finish with a bold scoreline prediction.`;
   const userPrompt = `Home Team: ${homeTeam.name} (Standings Rank: ${homeTeam.position ?? "N/A"})
 Away Team: ${awayTeam.name} (Standings Rank: ${awayTeam.position ?? "N/A"})
 Standings Overview:

@@ -146,10 +146,14 @@ export function LeagueSidebarLayout({
             <div
               className={cn(
                 "rounded-t-xl border-t-2 pt-2 transition-all duration-500 ease-in-out",
-                theme.borderClass,
+                sportAccent ? "" : theme.borderClass,
                 theme.shadowClass
               )}
-              style={{ ...contentFrameStyle, ...sportShadowStyle }}
+              style={{
+                ...contentFrameStyle,
+                ...sportShadowStyle,
+                borderTopColor: sportAccent ? `hsl(${sportAccent})` : undefined,
+              }}
             >
               <div className="space-y-3 sm:space-y-4">{children}</div>
             </div>

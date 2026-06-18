@@ -202,7 +202,7 @@ export function useBuilderActions({
         break;
 
       case "economics": {
-        const econTabs = ["components", "sectors", "labor"];
+        const econTabs = ["components", "sectors", "labor", "demographics"];
         if (!TAX_SYSTEM_TEMP_DISABLED) {
           econTabs.push("tax");
         }
@@ -248,7 +248,7 @@ export function useBuilderActions({
     }
 
     if (step === "economics") {
-      const econTabs = ["components", "sectors", "labor"];
+      const econTabs = ["components", "sectors", "labor", "demographics"];
       if (!TAX_SYSTEM_TEMP_DISABLED) {
         econTabs.push("tax");
       }
@@ -288,7 +288,7 @@ export function useBuilderActions({
       } else if (prevStep === "government") {
         updatedState.activeGovernmentTab = "preview";
       } else if (prevStep === "economics") {
-        const lastEconTab = !TAX_SYSTEM_TEMP_DISABLED ? "tax" : "labor";
+        const lastEconTab = !TAX_SYSTEM_TEMP_DISABLED ? "tax" : "demographics";
         updatedState.activeEconomicsTab = lastEconTab;
       }
 

@@ -1141,45 +1141,7 @@ export const TAX_COMPONENT_CATEGORIES: Record<TaxComponentCategory, string[]> = 
   ],
 };
 
-// ==================== ICON MAPPING ====================
 
-// eslint-disable-next-line unused-imports/no-unused-vars
-const CATEGORY_ICONS: Record<TaxComponentCategory, React.ReactNode> = {
-  "Collection Methods": <Smartphone className="h-5 w-5" />,
-  "Revenue Strategies": <DollarSign className="h-5 w-5" />,
-  "Compliance Systems": <Shield className="h-5 w-5" />,
-  "Incentive Structures": <Award className="h-5 w-5" />,
-  Administration: <Building2 className="h-5 w-5" />,
-};
-
-// eslint-disable-next-line unused-imports/no-unused-vars
-const COMPONENT_ICONS: Record<string, React.ReactNode> = {
-  digital_filing: <FileText className="h-4 w-4" />,
-  withholding_system: <Receipt className="h-4 w-4" />,
-  real_time_reporting: <Clock className="h-4 w-4" />,
-  mobile_payment: <Smartphone className="h-4 w-4" />,
-  blockchain_ledger: <Database className="h-4 w-4" />,
-  automated_verification: <Zap className="h-4 w-4" />,
-  biometric_auth: <Shield className="h-4 w-4" />,
-  progressive_tax: <TrendingUp className="h-4 w-4" />,
-  flat_tax: <Scale className="h-4 w-4" />,
-  vat: <Receipt className="h-4 w-4" />,
-  carbon_tax: <Globe className="h-4 w-4" />,
-  wealth_tax: <DollarSign className="h-4 w-4" />,
-  audit_system: <Search className="h-4 w-4" />,
-  risk_based_auditing: <Target className="h-4 w-4" />,
-  third_party_reporting: <Users className="h-4 w-4" />,
-  tax_education: <BookOpen className="h-4 w-4" />,
-  simplified_filing: <FileText className="h-4 w-4" />,
-  rd_credits: <Award className="h-4 w-4" />,
-  green_credits: <Award className="h-4 w-4" />,
-  small_business_relief: <Building2 className="h-4 w-4" />,
-  e_filing_infrastructure: <Database className="h-4 w-4" />,
-  tax_courts: <Landmark className="h-4 w-4" />,
-  advanced_analytics: <BarChart3 className="h-4 w-4" />,
-  taxpayer_portal: <Globe className="h-4 w-4" />,
-  appeals_process: <Scale className="h-4 w-4" />,
-};
 
 // ==================== REACT COMPONENT ====================
 

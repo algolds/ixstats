@@ -82,7 +82,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
 
   const resetSeasonMutation = api.sports.resetSeason.useMutation({
     onSuccess: () => {
-      notify.success("Season Reset", "The active season fixtures and standings have been wiped.");
+      notify.success("Season Reset", "The active season games and standings have been wiped.");
       onRefetch();
       if (activeSeasonId) void utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
     },
@@ -101,7 +101,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
 
   const regenerateScheduleMutation = api.sports.regenerateSchedule.useMutation({
     onSuccess: () => {
-      notify.success("Schedule Regenerated", "A fresh fixture list has been constructed.");
+      notify.success("Schedule Regenerated", "A fresh schedule has been constructed.");
       onRefetch();
       if (activeSeasonId) void utils.sports.getSchedule.invalidate({ seasonId: activeSeasonId });
     },
@@ -169,7 +169,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
             disabled={regenerateScheduleMutation.isPending}
             className="text-xs font-bold"
           >
-            {regenerateScheduleMutation.isPending ? "Regenerating..." : "Regenerate Fixtures"}
+            {regenerateScheduleMutation.isPending ? "Regenerating..." : "Regenerate Matches"}
           </Button>
         )}
 
@@ -188,7 +188,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Override Match Result</DialogTitle>
-            <DialogDescription>Input manual scores for any matchday fixture.</DialogDescription>
+            <DialogDescription>Input manual scores for any matchday.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleOverrideScore} className="space-y-4">
@@ -200,7 +200,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                 className="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-xs text-foreground"
                 required
               >
-                <option value="">-- Choose Match Fixture --</option>
+                <option value="">-- Choose Match --</option>
                 {schedule?.matches?.map((m: any) => (
                   <option key={m.id} value={m.id}>
                     Matchday {m.matchDay}: {m.homeTeam.name} vs {m.awayTeam.name} ({m.status})

@@ -4,17 +4,11 @@ import React, { useState, useMemo } from "react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { TableCell, TableHead, TableRow } from "~/components/ui/table";
 import { Search } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
+import { TableVirtuoso } from "react-virtuoso";
 
 interface DraftPick {
   id: string;
@@ -41,10 +35,52 @@ interface DraftPicksViewProps {
   className?: string;
 }
 
+const TableComponents = {
+  Table: (props: React.ComponentProps<"table">) => (
+    <table
+      {...props}
+      data-slot="table"
+      className={cn(
+        "w-full min-w-full caption-bottom border-collapse text-xs sm:text-sm",
+        props.className
+      )}
+    />
+  ),
+  TableHead: React.forwardRef<HTMLTableSectionElement, React.ComponentProps<"thead">>(
+    (props, ref) => (
+      <thead
+        ref={ref}
+        {...props}
+        data-slot="table-header"
+        className={cn("bg-background/95 sticky top-0 z-10 [&_tr]:border-b", props.className)}
+      />
+    )
+  ),
+  TableBody: React.forwardRef<HTMLTableSectionElement, React.ComponentProps<"tbody">>(
+    (props, ref) => (
+      <tbody
+        ref={ref}
+        {...props}
+        data-slot="table-body"
+        className={cn("[&_tr:last-child]:border-0", props.className)}
+      />
+    )
+  ),
+  TableRow: (props: React.ComponentProps<"tr">) => (
+    <tr
+      {...props}
+      data-slot="table-row"
+      className={cn(
+        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        props.className
+      )}
+    />
+  ),
+};
+
 export function DraftPicksView({
   picks,
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  isSoccer = false,
+  isSoccer: _isSoccer = false,
   onTeamClick,
   className,
 }: DraftPicksViewProps) {
@@ -151,9 +187,12 @@ export function DraftPicksView({
       </div>
 
       <div className="facet-surface border-border/40 overflow-hidden rounded-xl border">
-        <Table>
-          <TableHeader>
-            <TableRow>
+        <TableVirtuoso
+          style={{ height: "600px" }}
+          data={filteredPicks}
+          components={TableComponents}
+          fixedHeaderContent={() => (
+            <TableRow className="bg-muted/40 backdrop-blur-md">
               <TableHead className="w-16 text-center">Pick</TableHead>
               <TableHead className="w-20 text-center">Round</TableHead>
               <TableHead>Team</TableHead>
@@ -161,81 +200,79 @@ export function DraftPicksView({
               <TableHead className="w-24 text-center">Position</TableHead>
               <TableHead className="w-24 text-center">Overall</TableHead>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredPicks.map((pick) => {
-              const overall = pick.player ? getPlayerOverall(pick.player.ratings) : 50;
+          )}
+          itemContent={(_index, pick) => {
+            const overall = pick.player ? getPlayerOverall(pick.player.ratings) : 50;
 
-              return (
-                <TableRow key={pick.id}>
-                  <TableCell className="text-muted-foreground text-center font-bold">
-                    #{pick.pickNumber}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-center">
+            return (
+              <>
+                <TableCell className="text-muted-foreground w-16 text-center font-bold">
+                  #{pick.pickNumber}
+                </TableCell>
+                <TableCell className="text-muted-foreground w-20 text-center">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-help">R{pick.round}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>Round {pick.round}</TooltipContent>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: pick.team.color ?? "#aaa" }}
+                    />
+                    <button
+                      onClick={() => onTeamClick?.(pick.team.id)}
+                      className="cursor-pointer text-left font-medium hover:underline"
+                    >
+                      {pick.team.name}
+                    </button>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {pick.player ? (
+                    <span className="text-foreground font-semibold">
+                      {pick.player.firstName} {pick.player.lastName}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground italic">Skipped / No Pick</span>
+                  )}
+                </TableCell>
+                <TableCell className="w-24 text-center">
+                  {pick.player && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="cursor-help">R{pick.round}</span>
+                        <Badge variant="secondary" className="cursor-help font-semibold">
+                          {pick.player.position}
+                        </Badge>
                       </TooltipTrigger>
-                      <TooltipContent>Round {pick.round}</TooltipContent>
+                      <TooltipContent>
+                        {SPORTS_ABBREVIATIONS[pick.player.position] ?? pick.player.position}
+                      </TooltipContent>
                     </Tooltip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 shrink-0 rounded-full"
-                        style={{ backgroundColor: pick.team.color ?? "#aaa" }}
-                      />
-                      <button
-                        onClick={() => onTeamClick?.(pick.team.id)}
-                        className="cursor-pointer text-left font-medium hover:underline"
-                      >
-                        {pick.team.name}
-                      </button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {pick.player ? (
-                      <span className="text-foreground font-semibold">
-                        {pick.player.firstName} {pick.player.lastName}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground italic">Skipped / No Pick</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {pick.player && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="secondary" className="cursor-help font-semibold">
-                            {pick.player.position}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {SPORTS_ABBREVIATIONS[pick.player.position] ?? pick.player.position}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {pick.player && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="outline"
-                            className={cn("cursor-help font-bold", getRatingBadgeClass(overall))}
-                          >
-                            {overall}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>Overall Rating</TooltipContent>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                  )}
+                </TableCell>
+                <TableCell className="w-24 text-center">
+                  {pick.player && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className={cn("cursor-help font-bold", getRatingBadgeClass(overall))}
+                        >
+                          {overall}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>Overall Rating</TooltipContent>
+                    </Tooltip>
+                  )}
+                </TableCell>
+              </>
+            );
+          }}
+        />
       </div>
     </div>
   );

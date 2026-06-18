@@ -35,6 +35,34 @@ export function UnifiedAtomicComponentSelector<T extends string>({
     [selectedComponents, calculateEffectiveness]
   );
 
+  const activeSynergies = useMemo(() => {
+    const list: Array<{ comp1: string; comp2: string }> = [];
+    for (let i = 0; i < selectedComponents.length; i++) {
+      for (let j = i + 1; j < selectedComponents.length; j++) {
+        const id1 = selectedComponents[i]!;
+        const id2 = selectedComponents[j]!;
+        if (checkSynergy(id1, id2) > 0) {
+          list.push({ comp1: components[id1]?.name || id1, comp2: components[id2]?.name || id2 });
+        }
+      }
+    }
+    return list;
+  }, [selectedComponents, components, checkSynergy]);
+
+  const activeConflicts = useMemo(() => {
+    const list: Array<{ comp1: string; comp2: string }> = [];
+    for (let i = 0; i < selectedComponents.length; i++) {
+      for (let j = i + 1; j < selectedComponents.length; j++) {
+        const id1 = selectedComponents[i]!;
+        const id2 = selectedComponents[j]!;
+        if (checkConflict(id1, id2)) {
+          list.push({ comp1: components[id1]?.name || id1, comp2: components[id2]?.name || id2 });
+        }
+      }
+    }
+    return list;
+  }, [selectedComponents, components, checkConflict]);
+
   const themeClasses = getThemeColorClasses(theme, activeCategory);
 
   const toggleComponent = (componentId: string) => {
@@ -308,6 +336,22 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                     </li>
                   )}
                 </ul>
+                {activeSynergies.length > 0 && (
+                  <div className="mt-2 border-t border-green-500/20 pt-2 text-xs text-green-700 dark:text-green-400 space-y-0.5">
+                    <p className="font-semibold">Active Synergies:</p>
+                    {activeSynergies.map((syn, idx) => (
+                      <p key={idx}>✓ {syn.comp1} + {syn.comp2}</p>
+                    ))}
+                  </div>
+                )}
+                {activeConflicts.length > 0 && (
+                  <div className="mt-2 border-t border-red-500/20 pt-2 text-xs text-red-700 dark:text-red-400 space-y-0.5">
+                    <p className="font-semibold">Active Conflicts:</p>
+                    {activeConflicts.map((con, idx) => (
+                      <p key={idx}>⚠ {con.comp1} + {con.comp2}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             </AlertDescription>
           </Alert>

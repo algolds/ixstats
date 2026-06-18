@@ -210,3 +210,69 @@ export const TaxComponentType = {
 } as const;
 
 export type TaxComponentType = (typeof TaxComponentType)[keyof typeof TaxComponentType];
+
+// Bidirectional mapping for Tax Components (Frontend ID <-> DB Enum)
+const ID_TO_ENUM_MAP: Record<string, string> = {
+  digital_filing: "E_FILING_SYSTEM",
+  withholding_system: "WITHHOLDING_SYSTEM",
+  real_time_reporting: "AUTOMATED_COLLECTION",
+  mobile_payment: "DIGITAL_PAYMENTS",
+  blockchain_ledger: "BLOCKCHAIN_TRACKING",
+  automated_verification: "COMPLIANCE_MONITORING",
+  biometric_auth: "AI_AUDIT",
+  progressive_tax: "PROGRESSIVE_TAX",
+  flat_tax: "FLAT_TAX",
+  vat: "VAT_TAX",
+  carbon_tax: "CARBON_TAX",
+  wealth_tax: "WEALTH_TAX",
+  land_value_tax: "PROPERTY_TAX",
+  financial_transaction_tax: "FINANCIAL_TRANSACTION_TAX",
+  digital_services_tax: "DIGITAL_SERVICES_TAX",
+  luxury_tax: "CONSUMPTION_TAX",
+  resource_extraction_tax: "REGRESSIVE_TAX",
+  audit_system: "AUDIT_SYSTEM",
+  risk_based_auditing: "RISK_ASSESSMENT",
+  whistleblower_rewards: "TAX_EVASION_PREVENTION",
+  third_party_reporting: "THIRD_PARTY_REPORTING",
+  tax_education: "TAX_SIMPLIFICATION",
+  simplified_filing: "TAX_FAIRNESS",
+  taxpayer_assistance: "TAX_AMNESTY",
+  rd_credits: "TAX_CREDITS",
+  green_credits: "TAX_INCENTIVES",
+  small_business_relief: "TAX_DEDUCTIONS",
+  export_incentives: "TAX_HOLIDAYS",
+  investment_zones: "TAX_EXEMPTIONS",
+  apprenticeship_credits: "TAX_AVOIDANCE_PREVENTION",
+  childcare_credits: "PAYROLL_TAX",
+  education_credits: "INHERITANCE_TAX",
+  e_filing_infrastructure: "E_FILING_SYSTEM",
+  tax_courts: "TAX_COURTS",
+  advanced_analytics: "PREDICTIVE_ANALYTICS",
+  integrated_systems: "DATA_MINING",
+  taxpayer_portal: "E_FILING_SYSTEM",
+  regional_offices: "MANUAL_COLLECTION",
+  appeals_process: "APPEALS_PROCESS",
+  innovation_incentives: "TAX_INCENTIVES",
+  entrepreneurship_incentives: "TAX_INCENTIVES",
+  international_cooperation: "CROSS_BORDER_COORDINATION",
+};
+
+// Build reverse map dynamically
+const ENUM_TO_ID_MAP: Record<string, string> = {};
+Object.entries(ID_TO_ENUM_MAP).forEach(([id, enumVal]) => {
+  if (!ENUM_TO_ID_MAP[enumVal]) {
+    ENUM_TO_ID_MAP[enumVal] = id;
+  }
+});
+
+// Explicit override to ensure digital_filing wins for E_FILING_SYSTEM
+ENUM_TO_ID_MAP["E_FILING_SYSTEM"] = "digital_filing";
+
+export function mapIdToTaxComponentType(id: string): string {
+  return ID_TO_ENUM_MAP[id] || "TAX_INCENTIVES";
+}
+
+export function mapTaxComponentTypeToId(enumVal: string): string {
+  return ENUM_TO_ID_MAP[enumVal] || enumVal.toLowerCase();
+}
+

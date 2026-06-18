@@ -2,8 +2,9 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
@@ -58,6 +59,7 @@ import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   Briefcase,
   Search,
+  ExternalLink,
 } from "lucide-react";
 
 const SPORT_EMOJIS: Record<string, string> = {
@@ -168,6 +170,8 @@ export default function MyClubTeamDetailPage() {
   // eslint-disable-next-line unused-imports/no-unused-vars
   const [biddingTeamId, setBiddingTeamId] = useState("");
   const [comparePlayer, setComparePlayer] = useState<any | null>(null);
+  const [attackFocus, setAttackFocus] = useState(50);
+  const [teamIntensity, setTeamIntensity] = useState(50);
 
   const utils = api.useUtils();
 
@@ -190,6 +194,22 @@ export default function MyClubTeamDetailPage() {
   );
 
   const { data: history } = api.sports.getTeamHistory.useQuery({ teamId }, { enabled: !!teamId });
+
+  const teamLineup = overview?.team?.lineup as any;
+  useEffect(() => {
+    if (teamLineup) {
+      if (typeof teamLineup.attackFocus === "number") {
+        setAttackFocus(teamLineup.attackFocus);
+      } else {
+        setAttackFocus(50);
+      }
+      if (typeof teamLineup.teamIntensity === "number") {
+        setTeamIntensity(teamLineup.teamIntensity);
+      } else {
+        setTeamIntensity(50);
+      }
+    }
+  }, [teamLineup]);
 
   const listPlayer = api.sports.listPlayerForTransfer.useMutation({
     onSuccess: () => {
@@ -318,7 +338,17 @@ export default function MyClubTeamDetailPage() {
               )}
               <h1 className="truncate text-3xl font-bold">{teamPublic.name}</h1>
             </div>
-            <p className="text-muted-foreground">{teamPublic.league?.name}</p>
+            <p className="text-muted-foreground">
+              {teamPublic.league && (
+                <Link
+                  href={withBasePath(`/myleague/${teamPublic.leagueId}`)}
+                  className="hover:underline hover:text-foreground inline-flex items-center gap-1"
+                >
+                  <span>{teamPublic.league.name}</span>
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
+              )}
+            </p>
           </div>
         </div>
 
@@ -536,7 +566,7 @@ export default function MyClubTeamDetailPage() {
                         </div>
                         <p className="text-muted-foreground text-xs leading-relaxed">
                           Adjust tactical layouts, team shapes, and player roles to outclass your
-                          rivals in upcoming fixtures.
+                          rivals in upcoming matches.
                         </p>
                       </div>
 
@@ -597,7 +627,7 @@ export default function MyClubTeamDetailPage() {
               )}
             </div>
 
-            {/* Right side fixtures & history list */}
+            {/* Right side matches & history list */}
             <div className="space-y-6">
               <TeamTrainingButton
                 teamId={team.id}
@@ -609,7 +639,7 @@ export default function MyClubTeamDetailPage() {
                   <CardHeader>
                     <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
                       <Calendar className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
-                      Upcoming Fixtures
+                      Upcoming Matches
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -830,11 +860,11 @@ export default function MyClubTeamDetailPage() {
                       stats: "Offense: +10 · Defense: -12 · Volatility & Tempo: High (+0.8)",
                     },
                     {
-                      key: "park_the_bus",
-                      name: "Park the Bus",
+                      key: "catenaccio",
+                      name: "Catenaccio (Bus Parking)",
                       description:
-                        "Locks down defense. Drastically reduces conceding probability at the cost of your own scoring chances. Best for defending leads.",
-                      stats: "Offense: -15 · Defense: +12 · Volatility & Tempo: Low (-0.8)",
+                        "Extreme defensive lock-out. Maximizes defensive resistance while shutting down offense and dropping match volatility to a minimum.",
+                      stats: "Offense: -12 · Defense: +15 · Volatility & Tempo: Very Low (-1.0)",
                     },
                     {
                       key: "counter_attack",
@@ -842,6 +872,27 @@ export default function MyClubTeamDetailPage() {
                       description:
                         "Absorbs pressure and breaks rapidly. Moderately buffs both offense and defense. Automatically counters All-Out Attack (+8 overall bonus).",
                       stats: "Offense: +5 · Defense: +5 · Counter bonus vs All-Out Attack",
+                    },
+                    {
+                      key: "tiki_taka",
+                      name: "Tiki-Taka",
+                      description:
+                        "Focuses on short passing, high possession, and spatial control. Buffs offense and defense while keeping volatility low.",
+                      stats: "Offense: +8 · Defense: +4 · Volatility & Tempo: Low (-0.5)",
+                    },
+                    {
+                      key: "gegenpressing",
+                      name: "Gegenpressing",
+                      description:
+                        "Aggressive press upon losing possession. Heavy offensive bonus, high volatility, but leaves backline exposed if bypassed.",
+                      stats: "Offense: +12 · Defense: -5 · Volatility & Tempo: High (+0.6)",
+                    },
+                    {
+                      key: "kick_and_rush",
+                      name: "Kick and Rush",
+                      description:
+                        "Direct, high-tempo long-ball play. Direct offensive threat at the cost of defensive organization and higher volatility.",
+                      stats: "Offense: +6 · Defense: -8 · Volatility & Tempo: Very High (+1.0)",
                     },
                   ].map((tactic) => {
                     const isActive = team.tacticalIntent === tactic.key;
@@ -868,6 +919,8 @@ export default function MyClubTeamDetailPage() {
                           updateTeamTactics.mutate({
                             teamId: team.id,
                             tacticalIntent: tactic.key,
+                            attackFocus,
+                            teamIntensity,
                           });
                         }}
                       >
@@ -898,10 +951,10 @@ export default function MyClubTeamDetailPage() {
                 <CardHeader>
                   <CardTitle className="text-base font-bold">Strategic Weighting</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col items-center space-y-6 py-6">
+                <CardContent className="flex flex-col items-stretch space-y-6 py-6">
                   {/* Offense Ring */}
-                  <div className="flex w-full items-center justify-around gap-4">
-                    <div className="relative h-16 w-16">
+                  <div className="flex w-full items-center justify-start gap-4">
+                    <div className="relative h-16 w-16 shrink-0">
                       <svg className="h-full w-full -rotate-90">
                         <circle
                           cx="32"
@@ -921,22 +974,34 @@ export default function MyClubTeamDetailPage() {
                           strokeDashoffset={
                             team.tacticalIntent === "all_out_attack"
                               ? "32"
-                              : team.tacticalIntent === "park_the_bus"
-                                ? "120"
-                                : team.tacticalIntent === "counter_attack"
-                                  ? "80"
-                                  : "90"
+                              : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                                ? "130"
+                                : team.tacticalIntent === "tiki_taka"
+                                  ? "45"
+                                  : team.tacticalIntent === "gegenpressing"
+                                    ? "20"
+                                    : team.tacticalIntent === "kick_and_rush"
+                                      ? "60"
+                                      : team.tacticalIntent === "counter_attack"
+                                        ? "80"
+                                        : "90"
                           }
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold">
                         {team.tacticalIntent === "all_out_attack"
                           ? "+10"
-                          : team.tacticalIntent === "park_the_bus"
-                            ? "-15"
-                            : team.tacticalIntent === "counter_attack"
-                              ? "+5"
-                              : "0"}
+                          : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                            ? "-12"
+                            : team.tacticalIntent === "tiki_taka"
+                              ? "+8"
+                              : team.tacticalIntent === "gegenpressing"
+                                ? "+12"
+                                : team.tacticalIntent === "kick_and_rush"
+                                  ? "+6"
+                                  : team.tacticalIntent === "counter_attack"
+                                    ? "+5"
+                                    : "0"}
                       </div>
                     </div>
                     <div>
@@ -948,8 +1013,8 @@ export default function MyClubTeamDetailPage() {
                   </div>
 
                   {/* Defense Ring */}
-                  <div className="flex w-full items-center justify-around gap-4">
-                    <div className="relative h-16 w-16">
+                  <div className="flex w-full items-center justify-start gap-4">
+                    <div className="relative h-16 w-16 shrink-0">
                       <svg className="h-full w-full -rotate-90">
                         <circle
                           cx="32"
@@ -969,22 +1034,34 @@ export default function MyClubTeamDetailPage() {
                           strokeDashoffset={
                             team.tacticalIntent === "all_out_attack"
                               ? "125"
-                              : team.tacticalIntent === "park_the_bus"
-                                ? "30"
-                                : team.tacticalIntent === "counter_attack"
-                                  ? "80"
-                                  : "90"
+                              : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                                ? "20"
+                                : team.tacticalIntent === "tiki_taka"
+                                  ? "70"
+                                  : team.tacticalIntent === "gegenpressing"
+                                    ? "110"
+                                    : team.tacticalIntent === "kick_and_rush"
+                                      ? "120"
+                                      : team.tacticalIntent === "counter_attack"
+                                        ? "80"
+                                        : "90"
                           }
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold">
                         {team.tacticalIntent === "all_out_attack"
                           ? "-12"
-                          : team.tacticalIntent === "park_the_bus"
-                            ? "+12"
-                            : team.tacticalIntent === "counter_attack"
-                              ? "+5"
-                              : "0"}
+                          : team.tacticalIntent === "park_the_bus" || team.tacticalIntent === "catenaccio"
+                            ? "+15"
+                            : team.tacticalIntent === "tiki_taka"
+                              ? "+4"
+                              : team.tacticalIntent === "gegenpressing"
+                                ? "-5"
+                                : team.tacticalIntent === "kick_and_rush"
+                                  ? "-8"
+                                  : team.tacticalIntent === "counter_attack"
+                                    ? "+5"
+                                    : "0"}
                       </div>
                     </div>
                     <div>
@@ -992,6 +1069,87 @@ export default function MyClubTeamDetailPage() {
                       <p className="text-muted-foreground mt-1 text-[10px] leading-tight">
                         Concede probability coefficient
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Sliders Separator */}
+                  <div className="border-t border-white/10 my-4 pt-4 space-y-4">
+                    <h5 className="text-xs font-extrabold text-foreground tracking-widest uppercase">Custom Sliders</h5>
+                    
+                    {/* Attack Focus Slider */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[11px] font-bold">
+                        <span className="text-muted-foreground">Attack Focus</span>
+                        <span style={{ color: team.color }}>{attackFocus}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={attackFocus}
+                        onChange={(e) => setAttackFocus(Number(e.target.value))}
+                        onMouseUp={() => {
+                          updateTeamTactics.mutate({
+                            teamId: team.id,
+                            tacticalIntent: team.tacticalIntent,
+                            attackFocus,
+                            teamIntensity,
+                          });
+                        }}
+                        onTouchEnd={() => {
+                          updateTeamTactics.mutate({
+                            teamId: team.id,
+                            tacticalIntent: team.tacticalIntent,
+                            attackFocus,
+                            teamIntensity,
+                          });
+                        }}
+                        className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                        style={{ accentColor: team.color }}
+                      />
+                      <div className="flex justify-between text-[9px] text-muted-foreground/60">
+                        <span>Defensive (-8 Off)</span>
+                        <span>Balanced</span>
+                        <span>Attacking (+8 Off)</span>
+                      </div>
+                    </div>
+
+                    {/* Team Intensity Slider */}
+                    <div className="space-y-1.5 pt-2">
+                      <div className="flex justify-between text-[11px] font-bold">
+                        <span className="text-muted-foreground">Team Intensity</span>
+                        <span style={{ color: team.color }}>{teamIntensity}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={teamIntensity}
+                        onChange={(e) => setTeamIntensity(Number(e.target.value))}
+                        onMouseUp={() => {
+                          updateTeamTactics.mutate({
+                            teamId: team.id,
+                            tacticalIntent: team.tacticalIntent,
+                            attackFocus,
+                            teamIntensity,
+                          });
+                        }}
+                        onTouchEnd={() => {
+                          updateTeamTactics.mutate({
+                            teamId: team.id,
+                            tacticalIntent: team.tacticalIntent,
+                            attackFocus,
+                            teamIntensity,
+                          });
+                        }}
+                        className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                        style={{ accentColor: team.color }}
+                      />
+                      <div className="flex justify-between text-[9px] text-muted-foreground/60">
+                        <span>Conservative (-0.5 Vol)</span>
+                        <span>Standard</span>
+                        <span>Intense (+0.5 Vol)</span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1429,7 +1587,17 @@ export default function MyClubTeamDetailPage() {
                       <Settings className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-muted-foreground mt-0.5 text-xs">{team.league?.name}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {team.league && (
+                      <Link
+                        href={withBasePath(`/myleague/${team.leagueId}`)}
+                        className="hover:underline hover:text-foreground inline-flex items-center gap-1"
+                      >
+                        <span>{team.league.name}</span>
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </Link>
+                    )}
+                  </p>
                 </div>
               </div>
 

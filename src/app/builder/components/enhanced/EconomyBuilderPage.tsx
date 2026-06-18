@@ -384,10 +384,8 @@ export function EconomyBuilderPage({
   // Resolve current tab with backward compatibility for legacy tab values
   const currentTab = useMemo(() => {
     const raw = activeTab || "components";
-    // Map legacy/removed 'demographics' tab into the merged 'labor' tab
-    const normalized = raw === "demographics" ? "labor" : raw;
-    if (["components", "sectors", "labor", "fiscal", "tax", "preview"].includes(normalized)) {
-      return normalized;
+    if (["components", "sectors", "labor", "demographics", "fiscal", "tax", "preview"].includes(raw)) {
+      return raw;
     }
     // Legacy mapping: old tab names → new tab names
     const legacyMap: Record<string, string> = {
@@ -442,6 +440,18 @@ export function EconomyBuilderPage({
     economicInputs.coreIndicators?.nominalGDP,
     setEconomyBuilder,
   ]);
+
+  // Synchronize selectedComponents when database-loaded builder resolves or changes
+  useEffect(() => {
+    if (persistedEconomyBuilder?.selectedAtomicComponents) {
+      setSelectedComponents((prev) => {
+        if (isEqual(prev, persistedEconomyBuilder.selectedAtomicComponents)) {
+          return prev;
+        }
+        return persistedEconomyBuilder.selectedAtomicComponents;
+      });
+    }
+  }, [persistedEconomyBuilder?.selectedAtomicComponents]);
 
   // Get builder context if available (returns null if used standalone, not within BuilderStateProvider)
   const builderContext = useBuilderContextOptional();
@@ -564,25 +574,6 @@ export function EconomyBuilderPage({
     }
   }, [governmentBuilderData]);
 
-  // Component Change Handler - Memoized
-  const handleComponentChange = useCallback(
-    (components: EconomicComponentType[]) => {
-      setSelectedComponents(components);
-      economyIntegrationService.updateEconomicComponents(components);
-
-      // Update economyBuilder state and persist it
-      const updatedBuilder = {
-        ...economyBuilderRef.current,
-        selectedAtomicComponents: components,
-      };
-      handleEconomyBuilderChange(updatedBuilder);
-
-      // Notify parent component
-      onSelectedComponentsChange?.(components);
-    },
-    [handleEconomyBuilderChange, onSelectedComponentsChange, economyBuilderRef]
-  );
-
   // Economy Builder Change Handler - Memoized
   const handleEconomyBuilderChange = useCallback(
     (builder: EconomyBuilderState) => {
@@ -606,6 +597,25 @@ export function EconomyBuilderPage({
       economyBuilderRef,
       economicInputsRef,
     ]
+  );
+
+  // Component Change Handler - Memoized
+  const handleComponentChange = useCallback(
+    (components: EconomicComponentType[]) => {
+      setSelectedComponents(components);
+      economyIntegrationService.updateEconomicComponents(components);
+
+      // Update economyBuilder state and persist it
+      const updatedBuilder = {
+        ...economyBuilderRef.current,
+        selectedAtomicComponents: components,
+      };
+      handleEconomyBuilderChange(updatedBuilder);
+
+      // Notify parent component
+      onSelectedComponentsChange?.(components);
+    },
+    [handleEconomyBuilderChange, onSelectedComponentsChange, economyBuilderRef]
   );
 
   // Track handler in a ref to avoid infinite loops in government sync effects
@@ -969,7 +979,8 @@ export function EconomyBuilderPage({
   const tabs: TabDefinition[] = [
     { id: "components", label: "Components", icon: Zap },
     { id: "sectors", label: "Sectors", icon: Factory },
-    { id: "labor", label: "Labor & Demographics", icon: Users },
+    { id: "labor", label: "Labor Market", icon: Users },
+    { id: "demographics", label: "Demographics", icon: Globe },
     { id: "tax", label: "Tax System", icon: Receipt },
     // Per-economy preview removed — core preview lives in BuilderPreviewStep
   ];
@@ -1074,50 +1085,48 @@ export function EconomyBuilderPage({
                 textureOpacity={0.04}
               >
                 <EconomyTabHeader
-                  title="Demographics & Population"
-                  icon={Globe}
-                  extra={
-                    <>
-                      <Button
-                        size="sm"
-                        variant={activeLaborSubTab === "demographics" ? "default" : "ghost"}
-                        onClick={() => setActiveLaborSubTab("demographics")}
-                      >
-                        Demographics
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={activeLaborSubTab === "labor" ? "default" : "ghost"}
-                        onClick={() => setActiveLaborSubTab("labor")}
-                      >
-                        Labor
-                      </Button>
-                    </>
-                  }
+                  title="Labor Market & Employment"
+                  icon={Users}
                 />
                 <GlassCardContent className="p-6">
                   <Suspense fallback={<TabLoadingFallback />}>
-                    {activeLaborSubTab === "demographics" ? (
-                      <DemographicsPopulationTab
-                        economyBuilder={economyBuilder}
-                        onEconomyBuilderChange={handleEconomyBuilderChange}
-                        selectedComponents={selectedComponents}
-                        showAdvanced={showAdvanced}
-                      />
-                    ) : (
-                      <LaborEmploymentTab
-                        economyBuilder={economyBuilder}
-                        onEconomyBuilderChange={handleEconomyBuilderChange}
-                        selectedComponents={selectedComponents}
-                      />
-                    )}
+                    <LaborEmploymentTab
+                      economyBuilder={economyBuilder}
+                      onEconomyBuilderChange={handleEconomyBuilderChange}
+                      selectedComponents={selectedComponents}
+                    />
                   </Suspense>
                 </GlassCardContent>
               </GlassCard>
             </div>
           )}
 
-          {/* Demographics is now merged into the Labor tab (Labor & Demographics) */}
+          {currentTab === "demographics" && (
+            <div className="space-y-6">
+              <GlassCard
+                depth="base"
+                theme="emerald"
+                className="border-emerald-500/20"
+                texture="chevron"
+                textureOpacity={0.04}
+              >
+                <EconomyTabHeader
+                  title="Demographics & Population"
+                  icon={Globe}
+                />
+                <GlassCardContent className="p-6">
+                  <Suspense fallback={<TabLoadingFallback />}>
+                    <DemographicsPopulationTab
+                      economyBuilder={economyBuilder}
+                      onEconomyBuilderChange={handleEconomyBuilderChange}
+                      selectedComponents={selectedComponents}
+                      showAdvanced={showAdvanced}
+                    />
+                  </Suspense>
+                </GlassCardContent>
+              </GlassCard>
+            </div>
+          )}
 
           {currentTab === "fiscal" && (
             <Suspense fallback={<TabLoadingFallback />}>

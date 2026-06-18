@@ -12,6 +12,11 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Economy Builder & Tax System Persistence**: Added database persistence for selected economic components and atomic tax components (using dynamic enum-to-ID mapping helpers), ensuring selections are saved and loaded correctly across sessions.
+- **Labor & Demographics Tab Separation**: Promoted Demographics and Labor into separate, first-class wizard tabs under the Economy Builder, replacing the previous nested third-level sub-tab layout.
+- **Active Synergies and Conflicts display**: Added real-time tracking and list display of all active selected synergies and conflicts directly within the System Analysis alert inside both Economy and Tax Component selectors.
+
+
 - **ThinkPages → Discord feed mirror**: New admin-configurable integration that mirrors public ThinkPages feed posts to a dedicated `#thinkpages` Discord channel as an RSS-style feed.
   - New `/admin/thinkpages-feed` admin page (`ThinkpagesDiscordFeedContent`): master enable toggle, editable channel ID, account-type (government / media / citizen) + verified-only + exclude-replies + exclude-auto-generated + minimum-engagement filters, account and hashtag allow/block lists, a "send test message" button, and a live preview showing which recent posts the current filter would mirror.
   - New `adminThinkpagesDiscordFeedRouter` (`api.admin.getThinkpagesDiscordFeedConfig` / `saveThinkpagesDiscordFeedConfig` / `sendThinkpagesDiscordFeedTest` / `getThinkpagesDiscordFeedPreview`), merged into the admin router and protected by `adminProcedure`.
@@ -81,9 +86,37 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Fixed
 
+- **Atomic Card Highlighting**: Resolved a class concatenation bug in `UnifiedAtomicCard.tsx` that prevented selected, synergy, or conflict component cards from highlighting.
+- **Mount Synchronization Overwrite**: Prevented `economyIntegrationService` from overwriting loaded builder states with defaults on hook mount by pushing client-loaded states directly on mount.
+- **World Baseline Fallback**: Fixed the issue where labor/demographics metrics (such as workforce size and average wage baselines) initialized to global/world averages (e.g. 10M population, 25k GDPPC) during edit mode initialization and wiki data imports, instead scaling them relative to the country's actual stats.
+- **ESLint Comment Leaks**: Cleaned up stray ESLint suppression comments and unused icons leaking text representation to the UI in `AtomicTaxComponents.tsx`.
+- **Sports Tactics Test Assertion**: Updated the test assertion in `src/tests/sports/tactics.test.ts` to reflect changes to the defensive parameters of the `park_the_bus` tactic.
+
+
 - **MyLeague re-seeding crashed on `wikiSlug`**: the Prisma schema declared `wikiSlug` on `SportLeague` and `SportTeam`, but the columns had never been pushed to the database, so re-seeding from the MyLeague admin failed with `The column sport_leagues.wikiSlug does not exist`. Applied the missing additive columns to `sport_leagues` and `sport_teams`.
 - **Geography wireframe never appeared**: switching to the MyCountry Geography tab was meant to swap the hero into the SVG country wireframe, but `useMyCountryNavigation` updated the URL via `history.replaceState`, which does not emit a `hashchange` event — so `EnhancedMyCountryContent`'s separate hook instance never learned the tab changed and never swapped the hero. The hook now dispatches a `hashchange` after the `replaceState`, keeping all consumers in sync.
 - **Dashboard activity-feed tab corners**: the active pill (`All Activity / Following / Community`) read as squarer on the right than the container; the dashboard's `FacetTabs` now rounds the active indicator to `rounded-xl` to match the container corner via the new `indicatorClassName` override.
+
+## [1.1.1 Ogma (Alpha)] - 2026-06-18
+
+### Added
+
+- **myleague/myclub tactical expansions & customizable sliders**:
+  - Expanded tactical templates in MyClub with _Tiki-Taka_, _Gegenpressing_, _Kick and Rush_, and _Catenaccio (Bus Parking)_.
+  - Built a comprehensive strategic counter-attack matrix in the match simulation resolver (e.g. Gegenpressing counters Tiki-Taka, Tiki-Taka counters Catenaccio, etc.).
+  - Integrated interactive _Attack Focus_ and _Team Intensity_ sliders on the team tactics page that save directly to the team's lineup JSON column without database migrations.
+  - Forwarded team tactical intent and slider adjustments directly into the simulation resolver to affect offensive/defensive strength and match volatility.
+  - Added parent league workspace navigation links to MyClub headers (public and owner views).
+  - Dynamically themed MyLeague headers and status badges based on the sport's preset HSL colors, while styling control buttons and progress indicators in clean, premium neutral gray.
+
+- **MyLeague subsystem virtualization & dynamic theming**:
+  - Virtualized the **League Standings** (`StandingsTable`), **Match Schedules** (`ScheduleView`), and **Draft Board** (`DraftPicksView`) components using `TableVirtuoso` / `Virtuoso` from `react-virtuoso` and `@tanstack/react-table` to support scaling up to 100k+ players and decades of history without DOM bloat.
+  - Refactored `MatchDetailModal` to accept an optional `sportColors` prop and apply HSL accent/highlight styling dynamically to the AI report card, active tab indicators, and commentary trace steps, while keeping action buttons and progress bars clean and neutral gray.
+  - Updated parent layout `LeagueSidebarLayout` to override static top border colors with dynamic HSL sport colors.
+
+### Changed
+
+- **myleague/myclub term renaming**: Replaced all visible occurrences of "Fixtures" with "Matches" or "Games/Matches" across pages, settings modals, admin oversight panels, narration systems, and documentation.
 
 ## [1.1.0 Ogma (Alpha)] - 2026-06-16
 
@@ -108,6 +141,7 @@ capability integer. Each release entry below lists which components advanced and
     - **POI** → `description`
 
     All applied through the existing `upsertCity / upsertSubdivision / upsertPoi` paths so validation, cache invalidation, and `broadcastMapUpdate` keep working unchanged. Pure-function mapper lives in `src/lib/wiki-entity-parser.ts` (parse only — no I/O). New `PopulateFromWikiButton` component (Sparkles icon) lives next to "Edit" in each CityEditor / SubdivisionEditor and in the POI card header; click → fetch + parse + apply + refetch. Works today on the existing dev DB (no schema migration required — subdivisions fall back to `name` as the wiki title when `wikiPageTitle` is unset).
+
   - **Geographic data compliance panel** (`src/components/mycountry/GeoCompliancePanel.tsx` + `src/lib/country-geo-compliance.ts`): collapsible section under the header stats. Pure-function validator covers: entity population/GDP exceeding the national total, sub + city sums exceeding the national total, missing or duplicate national capitals, orphan subdivision `capital` references, founded years before 0 or in the future, and city/POI coordinates that fall outside the country's bounding box. Bottom-up mode with <50% pop or GDP coverage also surfaces a warning. New `getGeoCompliance` tRPC query exposes `{ issues, summary: { errors, warnings, info } }`. Lazy-runs on first expand + a "Re-run" button.
   - **Wiki contradiction detection**: every parsed wiki field is now classified as `match` / `soft-mismatch` / `hard-mismatch` / `new` against the existing entity value (numeric ±5% match, ±10% soft; string case-insensitive substring match). `PopulateFromWikiButton`'s result alert buckets the fields accordingly, escalates its border tone (emerald → amber → red), and shows explicit `old → new` diffs for hard contradictions with the source infobox key. Users can see at a glance whether the wiki data matches what they have stored.
   - **Brush Territory discoverability**: the new "Brush Territory…" button in `PropertiesPanelContent` enters the border editor in brush mode directly. `enterBorderEdit` in `useMapEditorOverlayState` now takes an optional `initialMode` argument (`"select" | "vertex_edit" | "split" | "merge" | "trace" | "brush"`) and sets the border mode after loading the feature, so users don't have to click "Edit Borders" then re-click the brush tool in the toolbar.

@@ -27,13 +27,13 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
 
   const getCardClasses = () => {
     if (isSelected) {
-      return `border-2 ${themeClasses.selectedBorder} ${themeClasses.selectedBg} dark:${themeClasses.selectedBgDark} shadow-lg`;
+      return `border-2 border-${themeClasses.selectedBorder} bg-${themeClasses.selectedBg} dark:bg-${themeClasses.selectedBgDark} shadow-lg`;
     }
     if (hasConflict && !isSelected) {
-      return `border-2 ${themeClasses.conflictBorder} ${themeClasses.conflictBg} dark:${themeClasses.conflictBgDark} opacity-60`;
+      return `border-2 border-${themeClasses.conflictBorder} bg-${themeClasses.conflictBg} dark:bg-${themeClasses.conflictBgDark} opacity-60`;
     }
     if (hasSynergy && !isSelected) {
-      return `border-2 ${themeClasses.synergyBorder} ${themeClasses.synergyBg} dark:${themeClasses.synergyBgDark}`;
+      return `border-2 border-${themeClasses.synergyBorder} bg-${themeClasses.synergyBg} dark:bg-${themeClasses.synergyBgDark}`;
     }
     if (isDisabled) {
       return "border-2 border-border opacity-50 cursor-not-allowed";

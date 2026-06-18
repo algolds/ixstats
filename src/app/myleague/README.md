@@ -46,7 +46,7 @@ teams and players, and watch a full season resolve on the IxTime clock.
 ## Simulation Loop
 
 1. Create league → teams + rosters auto-generated
-2. Start season → fixtures generated per archetype
+2. Start season → matches generated per archetype
 3. Simulate match days → bounded probabilistic engine resolves outcomes
 4. Postseason → playoffs / bracket / final race determine champion
 5. Season end → champion recorded, records written to history

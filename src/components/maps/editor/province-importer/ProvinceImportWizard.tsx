@@ -57,7 +57,13 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
     <div className="bg-card flex h-full flex-col">
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-foreground text-sm font-semibold">Import Provinces</h2>
+        <h2 className="text-foreground text-sm font-semibold">
+          {importer.importScope === "cities"
+            ? "Import Cities"
+            : importer.importScope === "provinces"
+              ? "Import Provinces"
+              : "Import Provinces & Cities"}
+        </h2>
         <button
           onClick={handleClose}
           className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
@@ -122,7 +128,9 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         </button>
 
         <div className="text-muted-foreground text-[10px]">
-          {importer.includedCount} province{importer.includedCount !== 1 ? "s" : ""} selected
+          {importer.importScope === "cities"
+            ? `${importer.alignedCities.length} city/cities aligned`
+            : `${importer.includedCount} province${importer.includedCount !== 1 ? "s" : ""} selected`}
         </div>
 
         {importer.step !== "commit" ? (
@@ -131,7 +139,10 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
             disabled={
               !importer.canGoNext ||
               importer.isProcessing ||
-              (importer.step === "upload" && importer.rawProvinces.length === 0)
+              (importer.step === "upload" &&
+                (importer.importScope === "cities"
+                  ? importer.rawCityPoints.length === 0
+                  : importer.rawProvinces.length === 0))
             }
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
           >
@@ -141,10 +152,19 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         ) : (
           <button
             onClick={handleCommit}
-            disabled={importer.isProcessing || importer.includedCount === 0}
+            disabled={
+              importer.isProcessing ||
+              (importer.importScope === "cities"
+                ? importer.alignedCities.length === 0
+                : importer.includedCount === 0)
+            }
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
           >
-            {importer.isProcessing ? "Importing..." : "Import Provinces"}
+            {importer.isProcessing
+              ? "Importing..."
+              : importer.importScope === "cities"
+                ? "Import Cities"
+                : "Import Provinces"}
             <Save className="h-3.5 w-3.5" />
           </button>
         )}

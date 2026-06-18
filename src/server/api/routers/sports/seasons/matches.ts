@@ -300,6 +300,10 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
             awayTeamModifiers,
             homeRoster: match.homeTeam.players as any,
             awayRoster: match.awayTeam.players as any,
+            homeTacticalIntent: match.homeTeam.tacticalIntent,
+            awayTacticalIntent: match.awayTeam.tacticalIntent,
+            homeLineup: match.homeTeam.lineup,
+            awayLineup: match.awayTeam.lineup,
           });
 
           const resRec = result as any;
@@ -648,6 +652,10 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
             awayTeamModifiers,
             homeRoster: fighter1Team.players as any,
             awayRoster: fighter2Team.players as any,
+            homeTacticalIntent: fighter1Team.tacticalIntent,
+            awayTacticalIntent: fighter2Team.tacticalIntent,
+            homeLineup: fighter1Team.lineup,
+            awayLineup: fighter2Team.lineup,
           });
 
           const resRec = result as any;

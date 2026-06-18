@@ -361,7 +361,10 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       const tab = builderState.activeEconomicsTab || "components";
       const labels: Record<string, string> = {
         components: "Econ Components",
-        structure: "Econ Structure",
+        sectors: "Sectors",
+        labor: "Labor Market",
+        demographics: "Demographics",
+        tax: "Tax System",
       };
       return labels[tab] || tab;
     }

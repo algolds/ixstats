@@ -89,6 +89,7 @@ export function useNotify(): NotifyAPI {
         silent = false,
         href,
         metadata,
+        persistent = false,
       } = options;
 
       // 1. Enqueue to toast queue for DI banner display (unless silent or low priority)
@@ -104,47 +105,49 @@ export function useNotify(): NotifyAPI {
         });
       }
 
-      // 2. Add to notification store for notification center
-      void addNotification({
-        source: "user",
-        title,
-        message: message ?? "",
-        category,
-        type,
-        priority,
-        severity: toSeverity(priority),
-        context: {
-          userId: "",
-          isExecutiveMode: false,
-          currentRoute: typeof window !== "undefined" ? window.location.pathname : "",
-          ixTime: 0,
-          realTime: Date.now(),
-          timeMultiplier: 2,
-          activeFeatures: [],
-          recentActions: [],
-          focusMode: false,
-          sessionDuration: 0,
-          isUserActive: true,
-          deviceType: "desktop",
-          screenSize: "large",
-          networkQuality: "high",
-          userPreferences: {} as any,
-          historicalEngagement: [],
-          interactionHistory: [],
-          contextualFactors: {},
-          urgencyFactors: [],
-          contextualRelevance: 0.5,
-        },
-        triggers: [],
-        relevanceScore: priority === "critical" ? 95 : priority === "high" ? 80 : 50,
-        deliveryMethod: "dynamic-island",
-        status: "delivered",
-        actionable: !!actions?.length || !!href,
-        metadata: {
-          ...(metadata ?? {}),
-          ...(href ? { href } : {}),
-        },
-      });
+      // 2. Add to notification store for notification center (only if persistent)
+      if (persistent) {
+        void addNotification({
+          source: "user",
+          title,
+          message: message ?? "",
+          category,
+          type,
+          priority,
+          severity: toSeverity(priority),
+          context: {
+            userId: "",
+            isExecutiveMode: false,
+            currentRoute: typeof window !== "undefined" ? window.location.pathname : "",
+            ixTime: 0,
+            realTime: Date.now(),
+            timeMultiplier: 2,
+            activeFeatures: [],
+            recentActions: [],
+            focusMode: false,
+            sessionDuration: 0,
+            isUserActive: true,
+            deviceType: "desktop",
+            screenSize: "large",
+            networkQuality: "high",
+            userPreferences: {} as any,
+            historicalEngagement: [],
+            interactionHistory: [],
+            contextualFactors: {},
+            urgencyFactors: [],
+            contextualRelevance: 0.5,
+          },
+          triggers: [],
+          relevanceScore: priority === "critical" ? 95 : priority === "high" ? 80 : 50,
+          deliveryMethod: "dynamic-island",
+          status: "delivered",
+          actionable: !!actions?.length || !!href,
+          metadata: {
+            ...(metadata ?? {}),
+            ...(href ? { href } : {}),
+          },
+        });
+      }
     },
     [enqueue, addNotification]
   );
@@ -198,6 +201,7 @@ export function notifyFromStore(options: NotifyOptions): void {
     silent = false,
     href,
     metadata,
+    persistent = false,
   } = options;
 
   // 1. Toast queue
@@ -214,48 +218,50 @@ export function notifyFromStore(options: NotifyOptions): void {
     });
   }
 
-  // 2. Notification store
-  const notifStore = useNotificationStore.getState();
-  void notifStore.addNotification({
-    source: "user",
-    title,
-    message: message ?? "",
-    category,
-    type,
-    priority,
-    severity: toSeverity(priority),
-    context: {
-      userId: "",
-      isExecutiveMode: false,
-      currentRoute: typeof window !== "undefined" ? window.location.pathname : "",
-      ixTime: 0,
-      realTime: Date.now(),
-      timeMultiplier: 2,
-      activeFeatures: [],
-      recentActions: [],
-      focusMode: false,
-      sessionDuration: 0,
-      isUserActive: true,
-      deviceType: "desktop",
-      screenSize: "large",
-      networkQuality: "high",
-      userPreferences: {} as any,
-      historicalEngagement: [],
-      interactionHistory: [],
-      contextualFactors: {},
-      urgencyFactors: [],
-      contextualRelevance: 0.5,
-    },
-    triggers: [],
-    relevanceScore: priority === "critical" ? 95 : priority === "high" ? 80 : 50,
-    deliveryMethod: "dynamic-island",
-    status: "delivered",
-    actionable: !!actions?.length || !!href,
-    metadata: {
-      ...(metadata ?? {}),
-      ...(href ? { href } : {}),
-    },
-  });
+  // 2. Notification store (only if persistent)
+  if (persistent) {
+    const notifStore = useNotificationStore.getState();
+    void notifStore.addNotification({
+      source: "user",
+      title,
+      message: message ?? "",
+      category,
+      type,
+      priority,
+      severity: toSeverity(priority),
+      context: {
+        userId: "",
+        isExecutiveMode: false,
+        currentRoute: typeof window !== "undefined" ? window.location.pathname : "",
+        ixTime: 0,
+        realTime: Date.now(),
+        timeMultiplier: 2,
+        activeFeatures: [],
+        recentActions: [],
+        focusMode: false,
+        sessionDuration: 0,
+        isUserActive: true,
+        deviceType: "desktop",
+        screenSize: "large",
+        networkQuality: "high",
+        userPreferences: {} as any,
+        historicalEngagement: [],
+        interactionHistory: [],
+        contextualFactors: {},
+        urgencyFactors: [],
+        contextualRelevance: 0.5,
+      },
+      triggers: [],
+      relevanceScore: priority === "critical" ? 95 : priority === "high" ? 80 : 50,
+      deliveryMethod: "dynamic-island",
+      status: "delivered",
+      actionable: !!actions?.length || !!href,
+      metadata: {
+        ...(metadata ?? {}),
+        ...(href ? { href } : {}),
+      },
+    });
+  }
 }
 
 export default useNotify;
