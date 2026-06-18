@@ -226,6 +226,7 @@ const createPrismaClient = () => {
     "MapEditorSession",
     "WorldTemplate",
     "ProceduralWorld",
+    "MapStyleOverride",
     // Transport infrastructure (generated routes, hubs)
     "TransportRoute",
     "TransportHub",

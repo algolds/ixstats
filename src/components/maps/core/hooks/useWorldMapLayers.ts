@@ -10,10 +10,9 @@ import {
   WATER_BODY_LABELS,
   MAP_SYMBOL_FONTS,
   getProjectionSpec,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  DEMOTED_COUNTRY_NAMES,
   MAP_LAYER_TYPES,
 } from "~/lib/map-config";
+import type { MapTheme } from "~/lib/map-styles/registry";
 import { getMinArea, filterByArea, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
 interface UseWorldMapLayersProps {
@@ -25,6 +24,7 @@ interface UseWorldMapLayersProps {
   updateDistanceFade: () => void;
   labelFeaturesRef: React.MutableRefObject<FeatureCollection | null>;
   fullLayerDataRef: React.MutableRefObject<Map<string, FeatureCollection>>;
+  theme?: MapTheme;
 }
 
 export function useWorldMapLayers({
@@ -36,6 +36,7 @@ export function useWorldMapLayers({
   updateDistanceFade,
   labelFeaturesRef,
   fullLayerDataRef,
+  theme,
 }: UseWorldMapLayersProps) {
   // Update projection spec when mode changes
   useEffect(() => {
@@ -51,36 +52,51 @@ export function useWorldMapLayers({
     if (!map || !isLoaded) return;
 
     try {
-      if (!map.getSource("graticule")) {
+      const graticuleData = {
+        type: "FeatureCollection" as const,
+        features: [
+          {
+            type: "Feature" as const,
+            properties: { label: "Equator" },
+            geometry: {
+              type: "LineString" as const,
+              coordinates: [
+                [-180, 0],
+                [180, 0],
+              ],
+            },
+          },
+          {
+            type: "Feature" as const,
+            properties: { label: "Prime Meridian" },
+            geometry: {
+              type: "LineString" as const,
+              coordinates: [
+                [56.1842, -90],
+                [56.1842, 90],
+              ],
+            },
+          },
+        ],
+      };
+
+      const oceanLabelsData = {
+        type: "FeatureCollection" as const,
+        features: WATER_BODY_LABELS.map((wb, i) => ({
+          type: "Feature" as const,
+          id: i,
+          geometry: { type: "Point" as const, coordinates: wb.coordinates },
+          properties: { name: wb.name, wbType: wb.type, rank: wb.rank },
+        })),
+      };
+
+      const graticuleSource = map.getSource("graticule");
+      if (graticuleSource) {
+        (graticuleSource as GeoJSONSource).setData(graticuleData);
+      } else {
         map.addSource("graticule", {
           type: "geojson",
-          data: {
-            type: "FeatureCollection",
-            features: [
-              {
-                type: "Feature",
-                properties: { label: "Equator" },
-                geometry: {
-                  type: "LineString",
-                  coordinates: [
-                    [-180, 0],
-                    [180, 0],
-                  ],
-                },
-              },
-              {
-                type: "Feature",
-                properties: { label: "Prime Meridian" },
-                geometry: {
-                  type: "LineString",
-                  coordinates: [
-                    [56.1842, -90],
-                    [56.1842, 90],
-                  ],
-                },
-              },
-            ],
-          },
+          data: graticuleData,
         });
         map.addLayer({
           id: "graticule-lines",
@@ -94,79 +110,76 @@ export function useWorldMapLayers({
         });
       }
 
-      if (!map.getSource("source-ocean-labels")) {
+      const oceanLabelsSource = map.getSource("source-ocean-labels");
+      if (oceanLabelsSource) {
+        (oceanLabelsSource as GeoJSONSource).setData(oceanLabelsData);
+      } else {
         map.addSource("source-ocean-labels", {
           type: "geojson",
-          data: {
-            type: "FeatureCollection",
-            features: WATER_BODY_LABELS.map((wb, i) => ({
-              type: "Feature" as const,
-              id: i,
-              geometry: { type: "Point" as const, coordinates: wb.coordinates },
-              properties: { name: wb.name, wbType: wb.type, rank: wb.rank },
-            })),
-          },
+          data: oceanLabelsData,
         });
-        map.addLayer({
-          id: "ocean-labels",
-          type: "symbol",
-          source: "source-ocean-labels",
-          layout: {
-            "text-field": ["get", "name"] as unknown as string,
-            "text-font": [...MAP_SYMBOL_FONTS.regular],
-            "text-size": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              0.5,
-              ["match", ["get", "rank"], "major", 14, "medium", 10, 8],
-              3,
-              ["match", ["get", "rank"], "major", 20, "medium", 14, 11],
-              6,
-              ["match", ["get", "rank"], "major", 26, "medium", 18, 14],
-            ] as unknown as number,
-            "text-letter-spacing": [
-              "match",
-              ["get", "rank"],
-              "major",
-              0.2,
-              "medium",
-              0.1,
-              0.05,
-            ] as unknown as number,
-            "text-allow-overlap": false,
-            "text-max-width": 12,
-            "text-padding": 5,
-          },
-          paint: {
-            "text-color": [
-              "match",
-              ["get", "rank"],
-              "major",
-              "#1a5276",
-              "medium",
-              "#2874a6",
-              "#3498db",
-            ] as unknown as string,
-            "text-halo-color": "rgba(179, 205, 224, 0.6)",
-            "text-halo-width": 1,
-            "text-opacity": [
-              "step",
-              ["zoom"],
-              ["match", ["get", "rank"], "major", 0.8, 0],
-              1.5,
-              ["match", ["get", "rank"], "major", 0.9, "medium", 0.7, 0],
-              3,
-              0.9,
-            ] as unknown as number,
-          },
-          minzoom: 0.5,
-        });
+        if (!map.getLayer("ocean-labels")) {
+          map.addLayer({
+            id: "ocean-labels",
+            type: "symbol",
+            source: "source-ocean-labels",
+            layout: {
+              "text-field": ["get", "name"] as unknown as string,
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
+              "text-size": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                0.5,
+                ["match", ["get", "rank"], "major", 14, "medium", 10, 8],
+                3,
+                ["match", ["get", "rank"], "major", 20, "medium", 14, 11],
+                6,
+                ["match", ["get", "rank"], "major", 26, "medium", 18, 14],
+              ] as unknown as number,
+              "text-letter-spacing": [
+                "match",
+                ["get", "rank"],
+                "major",
+                0.2,
+                "medium",
+                0.1,
+                0.05,
+              ] as unknown as number,
+              "text-allow-overlap": false,
+              "text-max-width": 12,
+              "text-padding": 5,
+            },
+            paint: {
+              "text-color": [
+                "match",
+                ["get", "rank"],
+                "major",
+                "#1a5276",
+                "medium",
+                "#2874a6",
+                "#3498db",
+              ] as unknown as string,
+              "text-halo-color": "rgba(179, 205, 224, 0.6)",
+              "text-halo-width": 1,
+              "text-opacity": [
+                "step",
+                ["zoom"],
+                ["match", ["get", "rank"], "major", 0.8, 0],
+                1.5,
+                ["match", ["get", "rank"], "major", 0.9, "medium", 0.7, 0],
+                3,
+                0.9,
+              ] as unknown as number,
+            },
+            minzoom: 0.5,
+          });
+        }
       }
     } catch (err) {
       console.error("[useWorldMapLayers] Failed to add base components", err);
     }
-  }, [map, isLoaded]);
+  }, [map, isLoaded, theme]);
 
   // Render/update base sorted layers
   useEffect(() => {
@@ -430,5 +443,6 @@ export function useWorldMapLayers({
     updateDistanceFade,
     labelFeaturesRef,
     fullLayerDataRef,
+    theme,
   ]);
 }

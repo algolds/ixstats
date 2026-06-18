@@ -16,6 +16,7 @@ import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } fr
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/map-config";
 import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
+import type { MapTheme } from "~/lib/map-styles/registry";
 
 import { Suspense } from "react";
 
@@ -100,6 +101,7 @@ export type OverlayVisibility = Record<string, boolean>;
 
 export interface IxWorldMapProps {
   layers: any[];
+  theme?: MapTheme;
   capitals?: CapitalsGeoJson;
   overlayFeatures?: MapOverlayFeatures;
   overlayVisibility?: OverlayVisibility;
@@ -132,6 +134,7 @@ const IxWorldMap = memo(
   forwardRef<IxWorldMapRef, IxWorldMapProps>(function IxWorldMap(
     {
       layers,
+      theme = "standard",
       capitals,
       overlayFeatures,
       overlayVisibility,
@@ -205,6 +208,7 @@ const IxWorldMap = memo(
       updateDistanceFade,
       labelFeaturesRef,
       fullLayerDataRef,
+      theme,
     });
 
     // ── 3. Hook: Manage Capitals & subdivisions Overlays ──
@@ -213,6 +217,7 @@ const IxWorldMap = memo(
       isLoaded,
       capitals,
       overlayFeatures,
+      theme,
     });
 
     // ── 4. Hook: Manage Story Pins, Labels & Data Overlays ──
@@ -222,7 +227,16 @@ const IxWorldMap = memo(
       overlayFeatures,
       overlayVisibility,
       labelsVisible,
+      theme,
     });
+
+    // Handle theme changes
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded) return;
+      const newStyle = buildBaseStyle(theme);
+      map.setStyle(newStyle as any, { diff: true });
+    }, [theme, isLoaded]);
 
     // Initialize MapLibre Map instance
     useEffect(() => {
@@ -248,7 +262,7 @@ const IxWorldMap = memo(
 
           const map = new maplibregl.Map({
             container: containerRef.current,
-            style: buildBaseStyle() as maplibregl.StyleSpecification,
+            style: buildBaseStyle(theme) as maplibregl.StyleSpecification,
             center: initialCenter || MAP_DEFAULTS.center,
             zoom: initialZoom ?? MAP_DEFAULTS.zoom,
             minZoom: MAP_DEFAULTS.minZoom,

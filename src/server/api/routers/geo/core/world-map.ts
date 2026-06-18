@@ -1,10 +1,12 @@
 import { z } from "zod";
-import { cachedPublicProcedure } from "~/server/api/trpc";
+import { cachedPublicProcedure, publicProcedure } from "~/server/api/trpc";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Geometry } from "geojson";
-import { MAP_LAYER_TYPES } from "~/lib/map-config";
+import { MAP_LAYER_TYPES, MAP_SYMBOL_FONTS } from "~/lib/map-config";
 import { getZoomBucket } from "./cache";
 import { loadLayerFromDB, loadGeoJSONFromFile } from "./layer-loader";
+import { getMapGlyphsUrl } from "~/lib/base-path";
+import { getStyleForTheme, resolveStylePlaceholders } from "~/lib/map-styles/registry";
 
 export const worldMapProcedures = {
   getWorldMap: cachedPublicProcedure
@@ -362,5 +364,26 @@ export const worldMapProcedures = {
     };
   }),
 
-  /** Get all national capital cities as GeoJSON FeatureCollection for map display. */
+  getResolvedStyle: publicProcedure
+    .input(z.object({ theme: z.enum(["standard", "dark", "paper"]) }))
+    .query(async ({ ctx, input }) => {
+      const { theme } = input;
+
+      const override = await ctx.db.mapStyleOverride.findUnique({
+        where: { theme },
+      });
+
+      let styleJson: any;
+
+      if (override) {
+        styleJson = JSON.parse(JSON.stringify(override.styleJson));
+      } else {
+        styleJson = getStyleForTheme(theme, getMapGlyphsUrl(), MAP_SYMBOL_FONTS);
+      }
+
+      styleJson.glyphs = getMapGlyphsUrl();
+      const resolved = resolveStylePlaceholders(styleJson, getMapGlyphsUrl(), MAP_SYMBOL_FONTS);
+
+      return resolved as Record<string, unknown>;
+    }),
 };

@@ -26,8 +26,9 @@ import {
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import { MAP_DEFAULTS, OCEAN_COLOR } from "~/lib/map-config";
+import { MAP_DEFAULTS, OCEAN_COLOR, buildBaseStyle } from "~/lib/map-config";
 import { getMapGlyphsUrl } from "~/lib/base-path";
+import type { MapTheme } from "~/lib/map-styles/registry";
 
 // Hooks & Sub-components
 import { useMapLayers } from "./hooks/useMapLayers";
@@ -95,6 +96,8 @@ interface EditorMapProps {
   onRouteVerticesUpdate?: (vertices: [number, number][]) => void;
   onRouteEditCommit?: () => void;
   onRouteEditCancel?: () => void;
+  /** Theme for the map styling */
+  theme?: MapTheme;
 }
 
 const EditorMap = memo(
@@ -124,6 +127,7 @@ const EditorMap = memo(
       onRouteVerticesUpdate,
       onRouteEditCommit,
       onRouteEditCancel,
+      theme = "standard",
     },
     ref
   ) {
@@ -165,6 +169,7 @@ const EditorMap = memo(
       showGrid,
       gridZoomBucket,
       routeWaypoints,
+      theme,
     });
 
     // ── 2. Hook: Manage Subdivision Drawing ──
@@ -211,6 +216,14 @@ const EditorMap = memo(
       onRouteEditCancel,
     });
 
+    // Handle theme changes
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded) return;
+      const newStyle = buildBaseStyle(theme);
+      map.setStyle(newStyle as any, { diff: true });
+    }, [theme, isLoaded]);
+
     // ── Initialize map ──
     useEffect(() => {
       if (!containerRef.current || mapRef.current) return;
@@ -230,19 +243,7 @@ const EditorMap = memo(
 
         const map = new maplibregl.Map({
           container: containerRef.current,
-          style: {
-            version: 8,
-            name: "IxEarth-Editor",
-            glyphs: getMapGlyphsUrl(),
-            sources: {},
-            layers: [
-              {
-                id: "ocean-background",
-                type: "background",
-                paint: { "background-color": OCEAN_COLOR },
-              },
-            ],
-          } as maplibregl.StyleSpecification,
+          style: buildBaseStyle(theme) as maplibregl.StyleSpecification,
           center,
           zoom: 4,
           minZoom: 1,
@@ -400,7 +401,7 @@ const EditorMap = memo(
         map.off("mouseleave", "editor-subdivisions-fill", onMouseLeave);
         map.off("click", onClickFeature);
       };
-    }, [isLoaded, isVertexEditing]);
+    }, [isLoaded, isVertexEditing, theme]);
 
     // Handle map clicks for insertion (city, POI, story pin, labels, routes)
     useEffect(() => {

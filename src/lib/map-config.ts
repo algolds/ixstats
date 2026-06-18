@@ -642,26 +642,15 @@ export const MAP_SYMBOL_FONTS =
         sans: ["DejaVu Sans"] as [string],
       };
 
-/** Build the base MapLibre style with no data sources (added dynamically) */
-export function buildBaseStyle(): Record<string, unknown> {
-  return {
-    version: 8,
-    name: "IxEarth",
-    glyphs: getMapGlyphsUrl(),
-    sources: {},
-    layers: [
-      {
-        id: "ocean-background",
-        type: "background",
-        paint: {
-          "background-color": OCEAN_COLOR,
-        },
-      },
-    ],
-    projection: {
-      type: ["interpolate", ["linear"], ["zoom"], 2.5, "globe", 4, "mercator"],
-    },
+import { getStyleForTheme, type MapTheme } from "./map-styles/registry";
+
+/** Build the base MapLibre style for a given theme */
+export function buildBaseStyle(theme: MapTheme = "standard"): Record<string, unknown> {
+  const base = getStyleForTheme(theme, getMapGlyphsUrl(), MAP_SYMBOL_FONTS);
+  base.projection = {
+    type: ["interpolate", ["linear"], ["zoom"], 2.5, "globe", 4, "mercator"],
   };
+  return base;
 }
 
 // ── Framework: World-aware configuration ────────────────────────────

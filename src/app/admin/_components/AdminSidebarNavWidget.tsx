@@ -28,6 +28,7 @@ import {
   Trophy,
   Search,
   Newspaper,
+  Palette,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
@@ -143,6 +144,14 @@ const NAV_GROUPS: NavGroup[] = [
         description: "World map editor & assignments",
         activeColor: "text-teal-500 dark:text-teal-400 border-l-teal-500",
         section: "worldstudio",
+      },
+      {
+        label: "Map Style Editor",
+        href: "/admin/maps/style-editor",
+        icon: Palette,
+        description: "Visual map theme styles",
+        activeColor: "text-blue-500 dark:text-blue-400 border-l-blue-500",
+        section: "style-editor",
       },
       {
         label: "Card Settings",
@@ -335,6 +344,9 @@ export function AdminSidebarNavWidget({ onNavigate, activeSection }: AdminSideba
     );
 
     const handleClick = (e: React.MouseEvent) => {
+      if (item.section === "style-editor") {
+        return;
+      }
       // Middle click, Cmd+click, Ctrl+click, Shift+click should behave normally (open in new tab/window)
       if (isControlled && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
         e.preventDefault();

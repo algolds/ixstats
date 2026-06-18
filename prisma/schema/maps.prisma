@@ -608,3 +608,13 @@ model TransportHub {
   @@index([cityId])
   @@map("transport_hubs")
 }
+
+model MapStyleOverride {
+  id        String   @id @default(cuid())
+  theme     String   @unique // "standard" | "dark" | "paper"
+  styleJson Json     // MapLibre Style Specification JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("map_style_overrides")
+}

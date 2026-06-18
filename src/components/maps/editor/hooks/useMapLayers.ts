@@ -5,9 +5,9 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS, MAP_LAYER_TYPES } from "~/lib/map-config";
 import { getGeoJSONSource, EMPTY_FC, haversineDistance } from "../utils/map-helpers";
+import type { MapTheme } from "~/lib/map-styles/registry";
 
 interface UseMapLayersProps {
   map: MapLibreMap | null;
@@ -23,6 +23,7 @@ interface UseMapLayersProps {
   showGrid?: boolean;
   gridZoomBucket: number;
   routeWaypoints?: [number, number][];
+  theme?: MapTheme;
 }
 
 export function useMapLayers({
@@ -39,6 +40,7 @@ export function useMapLayers({
   showGrid,
   gridZoomBucket,
   routeWaypoints,
+  theme,
 }: UseMapLayersProps) {
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
   useEffect(() => {
@@ -181,7 +183,7 @@ export function useMapLayers({
         }
       }
     }
-  }, [map, isLoaded, worldMapLayers]);
+  }, [map, isLoaded, worldMapLayers, theme]);
 
   // 2. Render country boundary
   useEffect(() => {
@@ -261,7 +263,7 @@ export function useMapLayers({
         });
       }
     }
-  }, [map, isLoaded, countryGeometry, countryColor]);
+  }, [map, isLoaded, countryGeometry, countryColor, theme]);
 
   // 3. Coordinate grid overlay
   useEffect(() => {
@@ -355,7 +357,7 @@ export function useMapLayers({
         },
       });
     }
-  }, [map, isLoaded, showGrid, gridZoomBucket, countryBbox]);
+  }, [map, isLoaded, showGrid, gridZoomBucket, countryBbox, theme]);
 
   // 4. Render existing features (subdivisions, cities, POIs, story pins, map labels)
   useEffect(() => {
@@ -581,7 +583,7 @@ export function useMapLayers({
         filter: ["==", ["get", "id"], ""],
       });
     }
-  }, [map, isLoaded, features, layerVisibility, layerOpacity]);
+  }, [map, isLoaded, features, layerVisibility, layerOpacity, theme]);
 
   // 5. Render pending coordinates marker
   useEffect(() => {
@@ -617,7 +619,7 @@ export function useMapLayers({
         },
       });
     }
-  }, [map, isLoaded, pendingCoordinates]);
+  }, [map, isLoaded, pendingCoordinates, theme]);
 
   // 6. Render in-progress route waypoints
   useEffect(() => {
@@ -726,7 +728,7 @@ export function useMapLayers({
         },
       });
     }
-  }, [map, isLoaded, routeWaypoints]);
+  }, [map, isLoaded, routeWaypoints, theme]);
 
   // 7. Initialize empty sources/layers for drawing, vertex editing, and route editing
   useEffect(() => {
@@ -907,12 +909,12 @@ export function useMapLayers({
         },
       });
     }
-  }, [map, isLoaded]);
+  }, [map, isLoaded, theme]);
 
   // 8. Subdivisions fill — kept transparent (paint mode was removed in Plan 024).
   useEffect(() => {
     if (!map || !isLoaded || !map.getLayer("editor-subdivisions-fill")) return;
     map.setPaintProperty("editor-subdivisions-fill", "fill-color", "transparent");
     map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0);
-  }, [map, isLoaded]);
+  }, [map, isLoaded, theme]);
 }

@@ -27,6 +27,7 @@ import {
   Terminal,
   Newspaper,
   Rss,
+  Palette,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -76,6 +77,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/maps",
     icon: Map,
     description: "World Map & Assignments",
+  },
+  {
+    label: "Style Editor",
+    href: "/admin/maps/style-editor",
+    icon: Palette,
+    description: "Visual Theme Editor",
   },
   {
     label: "World Studio",

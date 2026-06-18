@@ -12,6 +12,13 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Declarative Map Overlays Integration**:
+  - Migrated dynamic map overlay layers (national capitals, subdivisions, cities, points of interest, story pins, and custom map labels) from imperative JavaScript hook additions to declarative MapLibre GL style templates ([standard.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/standard.json), [dark.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/dark.json), [paper.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/paper.json)).
+  - Cleaned up client-side hooks [useWorldMapOverlayFeatures.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapOverlayFeatures.ts) and [useWorldMapDataOverlays.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapDataOverlays.ts) to eliminate all `addSource` and `addLayer` calls, leaving only reactive `setData` and layout visibility toggles.
+  - Implemented static source-level clustering properties (`clusterMaxZoom`, `clusterRadius`, and `generateId: true`) inside stylesheet sources.
+  - Created a comprehensive test suite in [route.test.ts](file:///ixwiki/public/projects/ixstats/src/app/api/maps/editor-source/%5Blayer%5D/__tests__/route.test.ts) validating the `/api/maps/editor-source/[layer]` endpoint GeoJSON formatting.
+  - Fixed MapLibre spec font validation check in [map-style-spec.test.ts](file:///ixwiki/public/projects/ixstats/src/lib/__tests__/map-style-spec.test.ts) to support advanced conditional formatting expressions.
+
 - **Canonical Cosmetics Catalog & Server-Backed Equipment**:
   - Created a canonical catalog in [cosmetics.ts](file:///ixwiki/public/projects/ixstats/src/lib/cosmetics.ts) to map cosmetic item IDs directly to visual style configurations, resolving avatar glow, cyber frame, and chat badge effects even if database effects are null.
   - Added `equippedCosmetics` column (String? default "") to `MyVault` model in [cards.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/cards.prisma) to persist active equipped states database-wide.

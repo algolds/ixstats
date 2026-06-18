@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return <AccessDeniedScreen />;
   }
 
-  if (pathname === "/admin/maps/editor") {
+  if (pathname === "/admin/maps/editor" || pathname === "/admin/maps/style-editor") {
     return <AdminErrorBoundary>{children}</AdminErrorBoundary>;
   }
 
