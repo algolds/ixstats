@@ -188,6 +188,7 @@ export function useDynamicIslandState() {
     (newMode: ViewMode) => {
       setMode(newMode);
       setIsUserInteracting(true);
+      window.dispatchEvent(new CustomEvent("ix:di-mode-changed", { detail: { mode: newMode } }));
 
       // Clear existing timeout before setting new one
       if (interactionTimeoutRef.current) {
@@ -230,6 +231,19 @@ export function useDynamicIslandState() {
     },
     [isWikiActive, setSearchFilter]
   );
+
+  useEffect(() => {
+    const handleSwitch = (e: Event) => {
+      const customEvent = e as CustomEvent<{ mode: ViewMode }>;
+      if (customEvent.detail?.mode) {
+        switchMode(customEvent.detail.mode);
+      }
+    };
+    window.addEventListener("ix:switch-di-mode", handleSwitch);
+    return () => {
+      window.removeEventListener("ix:switch-di-mode", handleSwitch);
+    };
+  }, [switchMode]);
 
   // Pre-compute lowercase search indexes for static data (avoids repeated .toLowerCase() per keystroke)
   const commandIndex = useMemo(() => {

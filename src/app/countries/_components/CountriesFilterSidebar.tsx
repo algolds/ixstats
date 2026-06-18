@@ -2,6 +2,7 @@ import React from "react";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Search } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -82,13 +83,17 @@ export default function CountriesFilterSidebar({
       )}
       <div>
         <label className="text-muted-foreground mb-1 block text-xs font-medium">Search</label>
-        <Input
-          type="text"
-          placeholder="Search by country name..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="glass-input w-full"
-        />
+        <div className="relative flex items-center">
+          <Search className="text-muted-foreground pointer-events-none absolute left-3 h-4 w-4 z-10" />
+          <Input
+            type="text"
+            placeholder="Search by country name..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="glass-input w-full pl-9 h-10"
+            autoComplete="new-password"
+          />
+        </div>
       </div>
       <div>
         <label className="text-muted-foreground mb-1 block text-xs font-medium">

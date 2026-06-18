@@ -111,14 +111,14 @@ export default function CountriesSortBar({
 
         {/* Search input (optional) */}
         {onSearchChange && (
-          <div className="relative">
-            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <div className="relative flex items-center">
+            <Search className="text-muted-foreground pointer-events-none absolute left-3 h-4 w-4 z-10" />
             <Input
               placeholder="Search countries..."
               value={searchTerm || ""}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-64 pl-9 focus:scale-100"
-              autoComplete="off"
+              className="h-10 w-64 pl-9 focus:scale-100"
+              autoComplete="new-password"
             />
           </div>
         )}

@@ -52,6 +52,16 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
   onImFeelingLucky,
   resultsCount,
 }) => {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
   return (
     <AnimatePresence>
       {isOpen && (
@@ -67,11 +77,11 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
 
           {/* Command Palette */}
           <motion.div
-            initial={{ x: -400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -400, opacity: 0 }}
+            initial={{ x: "-50%", y: "-60%", opacity: 0 }}
+            animate={{ x: "-50%", y: "-50%", opacity: 1 }}
+            exit={{ x: "-50%", y: "-60%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bg-popover border-border fixed top-1/2 left-4 z-[10002] w-80 -translate-y-1/2 rounded-xl border shadow-xl md:w-96"
+            className="bg-popover border-border fixed top-1/2 left-1/2 z-[10002] w-80 rounded-xl border shadow-xl md:w-96"
           >
             <div className="p-5">
               <div className="space-y-4">
@@ -97,15 +107,16 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                 </div>
 
                 {/* Search */}
-                <div className="relative">
-                  <RiSearchLine className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <div className="relative flex items-center">
+                  <RiSearchLine className="text-muted-foreground pointer-events-none absolute left-3 h-4 w-4 z-10" />
                   <input
+                    ref={inputRef}
                     type="text"
                     placeholder="Search countries..."
                     value={searchInput}
                     onChange={(e) => onSearchChange(e.target.value)}
                     className="bg-muted/50 text-foreground placeholder:text-muted-foreground focus:ring-ring w-full rounded-lg border border-transparent py-2.5 pr-3 pl-10 text-sm transition-all focus:border-blue-400/50 focus:ring-1 focus:outline-none"
-                    autoFocus
+                    autoComplete="new-password"
                   />
                 </div>
 

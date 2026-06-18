@@ -229,6 +229,14 @@ export function CountryComparisonModal({
               <PopoverContent
                 className="bg-background text-foreground border-border w-80 backdrop-blur-md"
                 align="start"
+                onOpenAutoFocus={(e) => {
+                  e.preventDefault();
+                  const target = e.currentTarget as HTMLElement;
+                  const input = target.querySelector('[data-slot="command-input"]') as HTMLInputElement;
+                  if (input) {
+                    input.focus({ preventScroll: true });
+                  }
+                }}
               >
                 <Command className="text-foreground bg-transparent">
                   <CommandInput

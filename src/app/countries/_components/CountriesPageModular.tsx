@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Globe } from "lucide-react";
 import { CountriesHeader } from "./CountriesHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
-import { CountriesCommandPalette } from "./CountriesCommandPalette";
 import { type CountryCardData } from "~/components/countries/CountryFocusCard";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+import { useDIPlugin } from "~/components/DynamicIsland";
+import { CountriesDIView } from "~/components/DynamicIsland/CountriesDIView";
 
 interface CountriesPageModularProps {
   countries: CountryCardData[];
@@ -37,9 +38,21 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [showDynamicIsland, setShowDynamicIsland] = useState(false);
+  const [isDIPaletteOpen, setIsDIPaletteOpen] = useState(false);
   const [randomSeed, setRandomSeed] = useState(Date.now());
   const [continentFilter, setContinentFilter] = useState<string | null>(null);
+
+  // Sync isDIPaletteOpen with actual Dynamic Island mode
+  useEffect(() => {
+    const handleDiModeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ mode: string }>;
+      setIsDIPaletteOpen(customEvent.detail?.mode === "plugin:countries");
+    };
+    window.addEventListener("ix:di-mode-changed", handleDiModeChange);
+    return () => {
+      window.removeEventListener("ix:di-mode-changed", handleDiModeChange);
+    };
+  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -145,6 +158,51 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     }
   };
 
+  // Register the Countries Search Dynamic Island plugin
+  const countriesDIPlugin = useMemo(() => {
+    return {
+      id: "countries",
+      priority: 25, // Higher priority to override general plugins on this page
+      center: (
+        <span className="flex items-center gap-1.5 select-none">
+          <Globe className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+          <span className="text-foreground/80 text-xs font-semibold">Countries Search</span>
+        </span>
+      ),
+      expandedViews: {
+        countries: () => (
+          <CountriesDIView
+            onClose={() => {
+              window.dispatchEvent(
+                new CustomEvent("ix:switch-di-mode", { detail: { mode: "compact" } })
+              );
+            }}
+            searchInput={searchInput}
+            onSearchChange={setSearchInput}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            filterBy={filterBy}
+            onFilterChange={setFilterBy}
+            onReshuffle={handleReshuffle}
+            onImFeelingLucky={handleImFeelingLucky}
+            resultsCount={processedCountries.length}
+          />
+        ),
+      },
+      accentColor: "#a855f7",
+      stickyLabel: "Countries Search",
+    };
+  }, [
+    searchInput,
+    sortBy,
+    filterBy,
+    handleReshuffle,
+    handleImFeelingLucky,
+    processedCountries.length,
+  ]);
+
+  useDIPlugin(countriesDIPlugin);
+
   // Tab key handler for command palette and clickaway for expanded cards
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -154,18 +212,26 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
       if (e.key === "Tab" && !e.ctrlKey && !inInput) {
         e.preventDefault();
-        setShowDynamicIsland((prev) => !prev);
+        window.dispatchEvent(
+          new CustomEvent("ix:switch-di-mode", {
+            detail: { mode: isDIPaletteOpen ? "compact" : "plugin:countries" },
+          })
+        );
       }
       if (e.key === "Tab" && e.ctrlKey) {
         e.preventDefault();
         handleImFeelingLucky();
       }
-      if (e.key === "r" && showDynamicIsland && !inInput) {
+      if (e.key === "r" && isDIPaletteOpen && !inInput) {
         e.preventDefault();
         handleReshuffle();
       }
       if (e.key === "Escape") {
-        setShowDynamicIsland(false);
+        if (isDIPaletteOpen) {
+          window.dispatchEvent(
+            new CustomEvent("ix:switch-di-mode", { detail: { mode: "compact" } })
+          );
+        }
         setExpanded(null);
       }
     };
@@ -185,7 +251,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
       document.removeEventListener("click", handleClickAway);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded, showDynamicIsland, processedCountries]);
+  }, [expanded, isDIPaletteOpen, processedCountries]);
 
   // Infinite scroll
   const loadMore = useCallback(() => {
@@ -223,34 +289,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   return (
     <div className="bg-background relative min-h-screen">
       <div className="relative z-50 container mx-auto px-4 py-8">
-        {/* Header */}
-        <CountriesHeader onOpenCommandPalette={() => setShowDynamicIsland(true)} />
-
-        {/* Inline search bar */}
-        <div className="relative mx-auto mb-8 w-full max-w-xl">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search countries by name, tier, continent, region..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring h-10 w-full rounded-lg border pr-10 pl-10 text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
-          />
-          {searchInput && (
-            <button
-              onClick={() => setSearchInput("")}
-              className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-3"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          <div className="text-muted-foreground mt-1.5 text-center text-xs">
-            {searchInput
-              ? `${processedCountries.length} country${processedCountries.length !== 1 ? "ies" : "y"} match${processedCountries.length !== 1 ? "es" : ""}`
-              : `${countries.length} total countries`}
-          </div>
-        </div>
-
         {/* Stats */}
         <CountriesStats
           countries={processedCountries}
@@ -280,21 +318,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
           viewerCountryId={viewerCountryId}
         />
       </div>
-
-      {/* Command Palette */}
-      <CountriesCommandPalette
-        isOpen={showDynamicIsland}
-        onClose={() => setShowDynamicIsland(false)}
-        searchInput={searchInput}
-        onSearchChange={setSearchInput}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        filterBy={filterBy}
-        onFilterChange={setFilterBy}
-        onReshuffle={handleReshuffle}
-        onImFeelingLucky={handleImFeelingLucky}
-        resultsCount={processedCountries.length}
-      />
     </div>
   );
 };
