@@ -13,6 +13,9 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { upsertCity } from "~/lib/country-geo-service";
+import { invalidateCache } from "~/lib/trpc-cache";
+import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { clearLayerCache } from "~/server/shared/layer-cache";
 
 // ── Shared schema ─────────────────────────────────────────────────────────────
 
@@ -197,6 +200,16 @@ export const geoAdminCitiesRouter = createTRPCRouter({
           );
         }
       }
+
+      clearLayerCache("political");
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
+      broadcastMapUpdate("bulk", input.countryId);
 
       return { created };
     }),

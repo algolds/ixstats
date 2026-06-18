@@ -153,7 +153,13 @@ export const countryGeoRouter = createTRPCRouter({
       });
 
       // Invalidate caches
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
       if (input.isNationalCapital || city.isNationalCapital) {
         await invalidateCache(["geoCore.getCapitalCities"]);
       }
@@ -197,7 +203,13 @@ export const countryGeoRouter = createTRPCRouter({
         submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
       });
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
       broadcastMapUpdate("subdivision", input.countryId);
 
       return subdivision;
@@ -221,8 +233,14 @@ export const countryGeoRouter = createTRPCRouter({
 
       await setCapital(ctx.db, input.countryId, input.cityId);
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
-      await invalidateCache(["geoCore.getCapitalCities"]);
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+        "geoCore.getCapitalCities",
+      ]);
       broadcastMapUpdate("city", input.countryId);
 
       return { success: true };
@@ -255,7 +273,13 @@ export const countryGeoRouter = createTRPCRouter({
         submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
       });
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
       broadcastMapUpdate("poi", input.countryId);
 
       return poi;
@@ -287,7 +311,12 @@ export const countryGeoRouter = createTRPCRouter({
         submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
       });
 
-      await invalidateCache(["geoFeatures.getAllStoryPins"]);
+      await invalidateCache([
+        "geoFeatures.getAllStoryPins",
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getCountryGeoBundle",
+      ]);
       broadcastMapUpdate("storyPin", input.countryId);
 
       return storyPin;
@@ -322,7 +351,12 @@ export const countryGeoRouter = createTRPCRouter({
         submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
       });
 
-      await invalidateCache(["geoFeatures.getAllMapLabels"]);
+      await invalidateCache([
+        "geoFeatures.getAllMapLabels",
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getCountryGeoBundle",
+      ]);
       broadcastMapUpdate("mapLabel", input.countryId);
 
       return mapLabel;
@@ -347,8 +381,14 @@ export const countryGeoRouter = createTRPCRouter({
       const updated = await updateGeoRollupMode(ctx.db, input.countryId, input.mode);
 
       // Invalidate caches
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
-      await invalidateCache(["countries.getByIdWithEconomicData"]);
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+        "countries.getByIdWithEconomicData",
+      ]);
       broadcastMapUpdate("rollup-mode", input.countryId);
 
       return updated;
@@ -372,8 +412,14 @@ export const countryGeoRouter = createTRPCRouter({
       const updated = await rebaseNationalFromGeography(ctx.db, input.countryId);
 
       // Invalidate caches
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
-      await invalidateCache(["countries.getByIdWithEconomicData"]);
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+        "countries.getByIdWithEconomicData",
+      ]);
       broadcastMapUpdate("national-rebase", input.countryId);
 
       return updated;
@@ -502,7 +548,13 @@ export const countryGeoRouter = createTRPCRouter({
         broadcastMapUpdate("poi", countryId);
       }
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
 
       return result;
     }),

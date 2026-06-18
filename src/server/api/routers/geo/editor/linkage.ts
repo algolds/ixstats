@@ -88,6 +88,9 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getWorldMap",
         "geoEditor.validateLinkage",
         "geoCore.getCountryLinkage",
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getCountryGeoBundle",
       ]);
       broadcastMapUpdate("linkage", input.countryId);
 
@@ -133,6 +136,9 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getWorldMap",
         "geoEditor.validateLinkage",
         "geoCore.getCountryLinkage",
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getCountryGeoBundle",
       ]);
       broadcastMapUpdate("linkage", previousCountryId ?? undefined);
 
@@ -241,6 +247,9 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getWorldMap",
         "geoEditor.validateLinkage",
         "geoCore.getCountryLinkage",
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getCountryGeoBundle",
       ]);
 
       if (input.countryId !== undefined) {
@@ -370,6 +379,9 @@ export const geoEditorLinkageRouter = createTRPCRouter({
       "geoCore.listCountries",
       "geoCore.getWorldMap",
       "geoEditor.validateLinkage",
+      "geoCore.getCountryFeatures",
+      "geoCore.getMapBundle",
+      "geoCore.getCountryGeoBundle",
     ]);
 
     return { linked, created, failed, total: unlinked.length };
@@ -449,6 +461,9 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getWorldMap",
         "geoEditor.validateLinkage",
         "geoCore.getCountryLinkage",
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getCountryGeoBundle",
       ]);
       broadcastMapUpdate("linkage", newCountry.id);
       return { countryId: newCountry.id, name: newCountry.name };
@@ -701,6 +716,9 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getWorldMap",
         "geoEditor.validateLinkage",
         "geoCore.getCountryGeometry",
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getCountryGeoBundle",
       ]);
 
       return { repaired };

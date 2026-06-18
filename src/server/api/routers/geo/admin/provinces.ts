@@ -19,6 +19,9 @@ import {
 import { TRPCError } from "@trpc/server";
 import { buildProvinceMergePlan } from "~/lib/province-importer/merge-plan";
 import { geometryAreaSqKm } from "~/lib/geo-math";
+import { invalidateCache } from "~/lib/trpc-cache";
+import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { clearLayerCache } from "~/server/shared/layer-cache";
 
 // ──────────────────────────────────────────────
 // Router
@@ -349,7 +352,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
 
       const plan = buildProvinceMergePlan(input.provinces, existing, input.replaceExisting);
 
-      return await ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
         // Optionally delete existing subdivisions
         if (input.replaceExisting) {
           await tx.subdivision.deleteMany({
@@ -469,6 +472,18 @@ export const geoAdminProvincesRouter = createTRPCRouter({
           citiesCreated,
         };
       });
+
+      clearLayerCache("political");
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
+      broadcastMapUpdate("bulk", input.countryId);
+
+      return result;
     }),
 
   /**

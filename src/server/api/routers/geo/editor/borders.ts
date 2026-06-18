@@ -25,9 +25,7 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { invalidateCache } from "~/lib/trpc-cache";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { clearLayerCache } from "../core";
 // eslint-disable-next-line unused-imports/no-unused-imports
@@ -283,6 +281,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
 
         // Clear cache
         clearLayerCache("political");
+        await invalidateCache([
+          "geoCore.getCountryFeatures",
+          "geoCore.getMapBundle",
+          "geoCore.getWorldMap",
+          "geoCore.getAllMapFeatures",
+          "geoCore.getCountryGeoBundle",
+        ]);
+        broadcastMapUpdate("borders", feature.countryId ?? undefined);
 
         // Clean up session
         await ctx.db.mapEditorSession.deleteMany({
@@ -388,6 +394,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
       });
 
       clearLayerCache("political");
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
+      broadcastMapUpdate("borders");
 
       return {
         originalFeatureId: input.featureId,
@@ -456,6 +470,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
       });
 
       clearLayerCache("political");
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "geoCore.getCountryGeoBundle",
+      ]);
+      broadcastMapUpdate("borders");
 
       return {
         mergedFeatures: input.featureIds,
