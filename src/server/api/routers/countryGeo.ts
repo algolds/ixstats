@@ -176,7 +176,9 @@ export const countryGeoRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         id: z.string().optional(),
-        name: z.string().min(1).max(100),
+        // Optional so partial updates (e.g. geometry-only vertex edits) are valid.
+        // Required on create — enforced in the mutation handler below.
+        name: z.string().min(1).max(100).optional(),
         type: z.string().default("province"),
         level: z.number().int().min(1).max(5).default(1),
         geometry: z.record(z.string(), z.unknown()).optional(),
@@ -196,6 +198,11 @@ export const countryGeoRouter = createTRPCRouter({
       const country = ctx.country as any;
       if (country && country.id !== input.countryId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      // Name is optional on the schema to allow partial (geometry-only) updates,
+      // but it is mandatory when creating a new subdivision.
+      if (!input.id && !input.name?.trim()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Name is required when creating a subdivision" });
       }
 
       const subdivision = await upsertSubdivision(ctx.db, input.countryId, {

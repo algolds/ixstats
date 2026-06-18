@@ -1407,7 +1407,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       if (!countryId) return;
       await updateSubdivision.mutateAsync({
         countryId,
-        subdivisionId: featureId,
+        id: featureId,
         geometry,
       });
     },
