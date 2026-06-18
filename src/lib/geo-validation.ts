@@ -100,7 +100,7 @@ export async function validatePointContainment(
 
   try {
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
-      `SELECT ST_Contains(
+      `SELECT ST_Covers(
          (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
          ST_SetSRID(ST_MakePoint($2, $3), 4326)
        ) as is_inside`,
@@ -150,7 +150,7 @@ export async function validatePolygonContainment(
   try {
     const geoJson = JSON.stringify(geometry);
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
-      `SELECT ST_Contains(
+      `SELECT ST_Covers(
          (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
          ST_SetSRID(ST_GeomFromGeoJSON($2), 4326)
        ) as is_inside`,
@@ -582,7 +582,7 @@ export async function snapPointToCountryBorder(
       Array<{ is_inside: boolean; distance_meters: number }>
     >(
       `SELECT
-         ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326)) as is_inside,
+         ST_Covers(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326)) as is_inside,
          ST_Distance(geom_postgis::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography) as distance_meters
        FROM map_layers
        WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
@@ -683,7 +683,7 @@ export async function snapPointToCountryBorder(
           const ny = closestLat + (vy / len) * nudgeAmount;
 
           const insideCheck = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
-            `SELECT ST_Contains(
+            `SELECT ST_Covers(
                (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
                ST_SetSRID(ST_MakePoint($2, $3), 4326)
              ) as is_inside`,

@@ -248,7 +248,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
 
           // Check containment within country
           const containResult = await ctx.db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
-            `SELECT ST_Contains(
+            `SELECT ST_Covers(
                (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
                ST_SetSRID(ST_GeomFromGeoJSON($2), 4326)
              ) as is_inside`,

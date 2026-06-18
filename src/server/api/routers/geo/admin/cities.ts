@@ -45,7 +45,7 @@ async function validateCityRow(
   // Inside-country check via PostGIS
   try {
     const containResult = (await db.$queryRawUnsafe(
-      `SELECT ST_Contains(
+      `SELECT ST_Covers(
          (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
          ST_SetSRID(ST_MakePoint($2, $3), 4326)
        ) as is_inside`,
@@ -154,7 +154,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
         let isInside: boolean | null = null;
         try {
           const containResult = (await ctx.db.$queryRawUnsafe(
-            `SELECT ST_Contains(
+            `SELECT ST_Covers(
                (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
                ST_SetSRID(ST_MakePoint($2, $3), 4326)
              ) as is_inside`,

@@ -416,6 +416,21 @@ export async function syncGeographicDemographics(
  */
 export async function upsertCity(db: any, countryId: string, data: any): Promise<any> {
   const input = data;
+  if (!data.id && data.name) {
+    const matchedCity = await db.city.findFirst({
+      where: {
+        countryId,
+        name: {
+          equals: data.name.trim(),
+          mode: "insensitive",
+        },
+      },
+      select: { id: true },
+    });
+    if (matchedCity) {
+      data.id = matchedCity.id;
+    }
+  }
   const isNew = !data.id;
   const { validatePointContainment } = await import("~/lib/geo-validation");
 
@@ -1062,7 +1077,7 @@ export async function findSubdivisionAtPoint(
       SELECT id, name FROM subdivisions
       WHERE "countryId" = $1 AND status = 'approved'
         AND geom_postgis IS NOT NULL
-        AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326))
+        AND ST_Covers(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326))
       LIMIT 1
     `,
       countryId,
@@ -1256,7 +1271,7 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
       FROM cities c
       JOIN map_layers ml ON ml."layerType" = 'climate' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE c.id = $1
-        AND ST_Contains(ml.geom_postgis, c.geom_postgis)
+        AND ST_Covers(ml.geom_postgis, c.geom_postgis)
       LIMIT 1
     `,
       cityId
