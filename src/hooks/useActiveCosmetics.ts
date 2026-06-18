@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { getCosmeticEffects } from "~/lib/cosmetics";
 
 export interface AvatarGlowConfig {
   enabled: boolean;
@@ -41,11 +42,18 @@ export function useActiveCosmetics(): ActiveCosmetics {
       staleTime: 30000,
     }
   );
-  // Query store items definition (to get their effects metadata)
+  // Query store items definition (to get list of storefront items)
   const { data: storeItems, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery(
     undefined,
     {
       staleTime: 60000,
+    }
+  );
+  // Query server-equipped state
+  const { data: equippedData, isLoading: equippedLoading } = api.vault.getEquippedCosmetics.useQuery(
+    undefined,
+    {
+      staleTime: 15000,
     }
   );
 
@@ -87,13 +95,14 @@ export function useActiveCosmetics(): ActiveCosmetics {
 
   // Compute final states whenever inputs change
   useEffect(() => {
-    if (ownedLoading || itemsLoading) {
+    if (ownedLoading || itemsLoading || equippedLoading) {
       setCosmeticsState((prev) => ({ ...prev, isLoading: true }));
       return;
     }
 
     const ownedItemIds = ownedData?.purchasedItemIds || [];
     const items = storeItems || [];
+    const serverEquipped = equippedData?.equipped || [];
 
     const computed: ActiveCosmetics = {
       avatarGlow: { enabled: false, color: "rgba(245,158,11,0.65)", intensity: "15px" },
@@ -105,18 +114,20 @@ export function useActiveCosmetics(): ActiveCosmetics {
     for (const item of items) {
       if (!ownedItemIds.includes(item.id)) continue;
 
-      // Check if item is enabled
+      // Check if item is enabled (server equipped takes priority, fallback to local storage)
       const isEnabled =
         item.category === "cosmetics"
-          ? (localActive.cosmetics[item.id] ?? false)
+          ? (serverEquipped.includes(item.id) || (localActive.cosmetics[item.id] ?? false))
           : (localActive.upgrades[item.id] ?? false);
 
       if (!isEnabled) continue;
 
-      // Extract effects from database
-      const effects = item.effects as Record<string, any> | null;
-      if (effects?.customizations) {
-        const custom = effects.customizations;
+      // Resolve customization effects from canonical catalog first, fallback to DB effects
+      const catalogEffects = getCosmeticEffects(item.id);
+      const dbEffects = item.effects as Record<string, any> | null;
+      const custom = catalogEffects || dbEffects?.customizations;
+
+      if (custom) {
         if (custom.avatarGlow?.enabled) {
           computed.avatarGlow = {
             enabled: true,
@@ -142,7 +153,7 @@ export function useActiveCosmetics(): ActiveCosmetics {
     }
 
     setCosmeticsState(computed);
-  }, [ownedData, storeItems, ownedLoading, itemsLoading, localActive]);
+  }, [ownedData, storeItems, equippedData, ownedLoading, itemsLoading, equippedLoading, localActive]);
 
   return cosmeticsState;
 }

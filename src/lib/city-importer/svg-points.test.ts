@@ -317,4 +317,37 @@ describe("parseCitySvg", () => {
     const p2 = result.points.find((p) => p.svgX === 350);
     expect(p2!.name).toBe("Paris");
   });
+
+  it("joins kerning-split <tspan> glyphs without inserting spaces", () => {
+    // Illustrator (and others) split a single word into one <tspan> per kerning
+    // pair — all on the same baseline with increasing x. These must be joined
+    // with NO separator. Genuine word-spaces survive inside a tspan's text, and
+    // a real line break (new y baseline) must still produce a single space.
+    // Also exercises layer-name normalization: "City_Names" → "city names".
+    const svg = `
+      <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+        <g id="Cities">
+          <circle cx="100" cy="100" r="5" />
+          <circle cx="300" cy="100" r="5" />
+          <circle cx="500" cy="100" r="5" />
+        </g>
+        <g id="City_Names">
+          <text><tspan x="100" y="105">CH</tspan><tspan x="113" y="105">R</tspan><tspan x="119" y="105">Y</tspan><tspan x="124" y="105">SONUM</tspan></text>
+          <text><tspan x="300" y="105">L</tspan><tspan x="305" y="105">U</tspan><tspan x="311" y="105">X NORBA</tspan></text>
+          <text><tspan x="500" y="95">SAO</tspan><tspan x="500" y="109">PAULO</tspan></text>
+        </g>
+      </svg>
+    `;
+
+    const result = parseCitySvg(svg);
+    // Underscore layer name is normalized and detected as the city-name layer.
+    expect(result.detectedCityNameLayerId).toBe("City_Names");
+
+    const c1 = result.points.find((p) => p.svgX === 100);
+    expect(c1!.name).toBe("CHRYSONUM"); // kerning fragments joined directly
+    const c2 = result.points.find((p) => p.svgX === 300);
+    expect(c2!.name).toBe("LUX NORBA"); // real word-space preserved
+    const c3 = result.points.find((p) => p.svgX === 500);
+    expect(c3!.name).toBe("SAO PAULO"); // line break → single space
+  });
 });

@@ -6,6 +6,94 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notification-hooks";
+import { mapTaxComponentTypeToId } from "~/lib/enums";
+
+// ============================================================================
+// COMPONENT PREREQUISITE HELPERS
+// ============================================================================
+
+/**
+ * Build the set of component identifiers that are currently *active* for a country.
+ * A component counts as active when isActive is set OR its implementationDate has
+ * elapsed (i.e. it has finished rolling out — still-implementing components do NOT
+ * count). Tax components are indexed under both their enum name and frontend id so
+ * required-component lists in either form resolve correctly.
+ */
+async function getActiveComponentIdentifiers(db: any, countryId: string): Promise<Set<string>> {
+  // implementationDate is stored in IxTime (game time), so compare against IxTime now.
+  const now = new Date(IxTime.getCurrentIxTime());
+  const isActive = (c: any) =>
+    c.isActive === true || (c.implementationDate && new Date(c.implementationDate) <= now);
+
+  const [gov, econ, tax] = await Promise.all([
+    db.governmentComponent.findMany({
+      where: { countryId },
+      select: { componentType: true, isActive: true, implementationDate: true },
+    }),
+    db.economicComponent.findMany({
+      where: { countryId },
+      select: { componentType: true, isActive: true, implementationDate: true },
+    }),
+    db.taxComponent.findMany({
+      where: { countryId },
+      select: { componentType: true, isActive: true, implementationDate: true },
+    }),
+  ]).catch(() => [[], [], []]);
+
+  const active = new Set<string>();
+  for (const c of gov) if (isActive(c)) active.add(String(c.componentType));
+  for (const c of econ) if (isActive(c)) active.add(String(c.componentType));
+  for (const c of tax) {
+    if (isActive(c)) {
+      active.add(String(c.componentType));
+      active.add(mapTaxComponentTypeToId(String(c.componentType)));
+    }
+  }
+  return active;
+}
+
+/** Parse a policy.requiredComponents value (JSON string or array) into a string array. */
+function parseRequiredComponents(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/** Return the subset of required components that are NOT currently active for the country. */
+async function findMissingRequiredComponents(
+  db: any,
+  countryId: string,
+  required: string[]
+): Promise<string[]> {
+  if (required.length === 0) return [];
+  const active = await getActiveComponentIdentifiers(db, countryId);
+  return required.filter((id) => !active.has(String(id)));
+}
+
+/** Throw PRECONDITION_FAILED if any required component is not fully active for the country. */
+async function assertRequiredComponentsActive(
+  db: any,
+  countryId: string,
+  required: string[]
+): Promise<void> {
+  const missing = await findMissingRequiredComponents(db, countryId, required);
+  if (missing.length > 0) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: `This policy requires components that are not yet active: ${missing.join(
+        ", "
+      )}. Required components must be fully active (not still implementing) before the policy can take effect.`,
+    });
+  }
+}
 
 /**
  * QUICK ACTIONS ROUTER
@@ -102,6 +190,9 @@ const policyBaseSchema = z.object({
   customEffects: z.record(z.string(), z.number()).optional(),
   approvalRequired: z.boolean().default(false),
   isActive: z.boolean().default(true),
+  // Atomic component identifiers this policy depends on (gov/econ enum names or tax
+  // frontend ids). They must be fully active before the policy can be activated.
+  requiredComponents: z.array(z.string()).optional(),
 });
 
 // Create schema - all required fields with defaults
@@ -244,6 +335,17 @@ export const quickActionsPoliciesRouter = createTRPCRouter({
         timestamp: currentIxTime,
       };
 
+      // Cross-reference required components. Creation is always allowed (drafts can be
+      // staged before their prerequisites exist), but report whether requirements are
+      // met so the UI can warn that the policy cannot be activated yet.
+      const requiredComponents = input.policy.requiredComponents ?? [];
+      const missingComponents = await findMissingRequiredComponents(
+        ctx.db,
+        input.countryId,
+        requiredComponents
+      );
+      const requirementsMet = missingComponents.length === 0;
+
       // Create the policy
       const policy = await ctx.db.policy.create({
         data: {
@@ -260,6 +362,8 @@ export const quickActionsPoliciesRouter = createTRPCRouter({
           targetMetrics: input.policy.targetMetrics
             ? JSON.stringify(input.policy.targetMetrics)
             : null,
+          requiredComponents:
+            requiredComponents.length > 0 ? JSON.stringify(requiredComponents) : null,
           implementationCost: input.policy.implementationCost,
           maintenanceCost: input.policy.maintenanceCost,
           estimatedBenefit: input.policy.estimatedBenefit ?? null,
@@ -305,7 +409,17 @@ export const quickActionsPoliciesRouter = createTRPCRouter({
         console.error("[QuickActions] Failed to send policy created notification:", error);
       }
 
-      return { policy, success: true, message: "Policy created successfully" };
+      return {
+        policy,
+        success: true,
+        requirementsMet,
+        missingComponents,
+        message: requirementsMet
+          ? "Policy created successfully"
+          : `Policy created as a draft, but it requires components that are not yet active: ${missingComponents.join(
+              ", "
+            )}.`,
+      };
     }),
 
   /**
@@ -335,6 +449,13 @@ export const quickActionsPoliciesRouter = createTRPCRouter({
           message: "Policy not found",
         });
       }
+
+      // Gate activation on required atomic components being fully active (not implementing).
+      await assertRequiredComponentsActive(
+        ctx.db,
+        policy.countryId,
+        parseRequiredComponents((policy as { requiredComponents?: unknown }).requiredComponents)
+      );
 
       const currentIxTime = IxTime.getCurrentIxTime();
 
@@ -474,7 +595,8 @@ export const quickActionsPoliciesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { objectives, targetMetrics, customEffects, ...safeUpdates } = input.updates;
+      const { objectives, targetMetrics, customEffects, requiredComponents, ...safeUpdates } =
+        input.updates;
 
       const policy = await ctx.db.policy.update({
         where: { id: input.policyId },
@@ -488,6 +610,10 @@ export const quickActionsPoliciesRouter = createTRPCRouter({
           }),
           ...(customEffects && {
             customEffects: JSON.stringify(customEffects),
+          }),
+          ...(requiredComponents && {
+            requiredComponents:
+              requiredComponents.length > 0 ? JSON.stringify(requiredComponents) : null,
           }),
         },
       });

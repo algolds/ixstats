@@ -203,6 +203,98 @@ export const vaultStoreRouter = createTRPCRouter({
   }),
 
   /**
-   * Admin: List all store items, including inactive ones. Seeds if empty.
+   * Get currently equipped cosmetics for the logged-in user
    */
+  getEquippedCosmetics: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.auth?.userId) {
+        throw new Error("Unauthorized");
+      }
+      const vault = await ctx.db.myVault.findUnique({
+        where: { userId: ctx.auth.userId },
+        select: { equippedCosmetics: true },
+      });
+      const equipped = vault?.equippedCosmetics
+        ? vault.equippedCosmetics.split(",").filter(Boolean)
+        : [];
+      return { success: true, equipped };
+    } catch (error) {
+      console.error("[Vault Router] getEquippedCosmetics error:", error);
+      throw new Error("Failed to retrieve equipped cosmetics");
+    }
+  }),
+
+  /**
+   * Toggle equipped status of a cosmetic item for the logged-in user
+   */
+  toggleEquipCosmetic: protectedProcedure
+    .input(z.object({ itemId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (!ctx.auth?.userId) {
+          throw new Error("Unauthorized");
+        }
+
+        // 1. Verify user owns the item
+        const transactions = await ctx.db.vaultTransaction.findMany({
+          where: {
+            vault: { userId: ctx.auth.userId },
+            type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
+          },
+          select: { metadata: true },
+        });
+
+        const ownsItem = transactions.some((tx) => {
+          let meta = tx.metadata;
+          if (typeof meta === "string") {
+            try {
+              meta = JSON.parse(meta);
+            } catch {}
+          }
+          return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
+        });
+
+        if (!ownsItem) {
+          throw new Error("You do not own this cosmetic item");
+        }
+
+        // 2. Fetch current equipped list
+        const vault = await ctx.db.myVault.findUnique({
+          where: { userId: ctx.auth.userId },
+          select: { id: true, equippedCosmetics: true },
+        });
+
+        if (!vault) {
+          throw new Error("Vault not found");
+        }
+
+        let equipped = vault.equippedCosmetics
+          ? vault.equippedCosmetics.split(",").filter(Boolean)
+          : [];
+
+        const index = equipped.indexOf(input.itemId);
+        let isEquipped = false;
+        if (index > -1) {
+          equipped.splice(index, 1);
+        } else {
+          equipped.push(input.itemId);
+          isEquipped = true;
+        }
+
+        const nextEquipped = equipped.join(",");
+        await ctx.db.myVault.update({
+          where: { id: vault.id },
+          data: { equippedCosmetics: nextEquipped },
+        });
+
+        return {
+          success: true,
+          isEquipped,
+          equipped,
+        };
+      } catch (error) {
+        console.error("[Vault Router] toggleEquipCosmetic error:", error);
+        throw new Error(error instanceof Error ? error.message : "Failed to toggle equipped cosmetic");
+      }
+    }),
 });

@@ -45,37 +45,67 @@ export function extractAllTextLabels(svgRoot: Element, stopAt?: Element): TextLa
     const tspans = el.getElementsByTagNameNS(SVG_NS, "tspan");
 
     if (tspans.length > 0) {
-      // Concatenate all tspan children into a single label.
-      // Multi-line text labels (e.g. "São" + "Paulo") should produce "São Paulo".
-      const parts: string[] = [];
+      // Join <tspan> children into one label string.
+      //
+      // Vector editors (Illustrator especially) split a single word into many
+      // <tspan>s solely to encode per-glyph kerning — e.g. "CHRYSONUM" becomes
+      // <tspan>CH</tspan><tspan>R</tspan><tspan>Y</tspan><tspan>SONUM</tspan>,
+      // all sharing one baseline (y="0", increasing x). Those MUST be joined
+      // with no separator. Genuine spaces between words survive verbatim inside
+      // a tspan's text (e.g. "X NORBA"), so individual tspans must NOT be
+      // trimmed. A separator is inserted only at a real line break — when a
+      // tspan starts a new baseline (its y changes) or its x resets leftward
+      // (a carriage return) — which keeps multi-line labels like "São" / "Paulo"
+      // joined as "São Paulo".
+      let combined = "";
       let firstX = NaN,
         firstY = NaN;
+      let prevX = NaN,
+        prevBaseline = NaN;
 
       for (let j = 0; j < tspans.length; j++) {
         const tspan = tspans[j]!;
-        const text = (tspan.textContent || "").trim();
-        if (!text) continue;
+        const raw = tspan.textContent ?? "";
+        if (raw === "") continue;
 
+        // First coordinate of any (possibly list-valued) x/y attribute.
+        const xAttr = tspan.getAttribute("x");
+        const yAttr = tspan.getAttribute("y");
+        const tx = xAttr != null ? parseFloat(xAttr) : NaN;
+        const ty = yAttr != null ? parseFloat(yAttr) : NaN;
+
+        // Anchor the label at the first positioned tspan (fall back to <text>).
         if (isNaN(firstX)) {
-          // Use the first tspan's position (or parent's) as the label position
-          const tx = parseFloat(tspan.getAttribute("x") || el.getAttribute("x") || "0");
-          const ty = parseFloat(tspan.getAttribute("y") || el.getAttribute("y") || "0");
+          const ax = !isNaN(tx) ? tx : parseFloat(el.getAttribute("x") || "0");
+          const ay = !isNaN(ty) ? ty : parseFloat(el.getAttribute("y") || "0");
           const dx = parseFloat(tspan.getAttribute("dx") || "0");
           const dy = parseFloat(tspan.getAttribute("dy") || "0");
 
           // Accumulate the tspan's own transform if it has one
           const tspanMatrix = getAccumulatedTransform(tspan, transformRoot);
-          const [rx, ry] = applyMatrixToPoint(tx + dx, ty + dy, tspanMatrix);
+          const [rx, ry] = applyMatrixToPoint(ax + dx, ay + dy, tspanMatrix);
           firstX = rx;
           firstY = ry;
         }
 
-        parts.push(text);
+        // Insert a space only when this tspan starts a new line, never between
+        // kerning fragments of the same word.
+        if (combined !== "") {
+          const newLine =
+            (!isNaN(ty) && !isNaN(prevBaseline) && Math.abs(ty - prevBaseline) > 1e-6) ||
+            (!isNaN(tx) && !isNaN(prevX) && tx < prevX - 1e-6);
+          if (newLine && !/\s$/.test(combined)) combined += " ";
+        }
+
+        combined += raw;
+        if (!isNaN(tx)) prevX = tx;
+        if (!isNaN(ty)) prevBaseline = ty;
       }
 
-      const combined = parts.join(" ").trim();
-      if (combined.length >= 2 && !isNaN(firstX)) {
-        labels.push({ text: combined, x: firstX, y: firstY });
+      // Collapse whitespace runs (from line breaks or source formatting) and trim.
+      const cleaned = combined.replace(/\s+/g, " ").trim();
+      if (cleaned.length >= 2 && !isNaN(firstX)) {
+        labels.push({ text: cleaned, x: firstX, y: firstY });
       }
     } else {
       // No tspan — use <text> element directly

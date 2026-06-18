@@ -30,6 +30,7 @@ import { withBasePath } from "~/lib/base-path";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { StashButton } from "~/components/wiki-os/reader/StashButton";
 import { ActiveCountryUnifiedWidget } from "./ActiveCountryUnifiedWidget";
+import { WikiOSProfileWidget } from "./WikiOSProfileWidget";
 import type { TocEntry } from "~/lib/wiki-os/html-transformer";
 
 const NAV_GROUP_1 = [
@@ -195,6 +196,11 @@ export function WikiOSUnifiedSidebar({
   return (
     <div className="wikios-sidebar group/sidebar relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start border-r border-white/5 pr-1.5 pb-2 transition-colors duration-300 select-none hover:border-blue-500/15">
       <div className="flex w-full flex-col gap-1.5">
+        {/* Profile widget — signed-in user's linked wiki profile */}
+        <WikiOSProfileWidget expanded={isExpanded} />
+
+        <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
+
         {/* Search */}
         {renderRow({
           id: "search",

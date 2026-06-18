@@ -172,7 +172,10 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
         {/* Small Avatar/Flag with avatar glow */}
         <div
-          className="relative z-20 mb-1.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-indigo-950/60 shadow-md backdrop-blur-sm"
+          className={cn(
+            "relative z-20 mb-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-950/60 shadow-md backdrop-blur-sm",
+            !avatarGlow.enabled && "border border-white/20"
+          )}
           style={
             avatarGlow.enabled
               ? {
@@ -182,19 +185,21 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               : undefined
           }
         >
-          {user?.imageUrl ? (
-            <img src={user.imageUrl} alt="" className="h-full w-full rounded-full object-cover" />
-          ) : userProfile?.country?.name ? (
-            <UnifiedCountryFlag
-              countryName={userProfile.country.name}
-              flagUrl={normalizeFlagUrl(userProfile.country.flag)}
-              size="sm"
-              rounded={true}
-              fitContainer={true}
-              showTooltip={false}
-              className="h-full w-full object-cover"
-            />
-          ) : null}
+          <div className="overflow-hidden rounded-full h-full w-full flex items-center justify-center">
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt="" className="h-full w-full rounded-full object-cover" />
+            ) : userProfile?.country?.name ? (
+              <UnifiedCountryFlag
+                countryName={userProfile.country.name}
+                flagUrl={normalizeFlagUrl(userProfile.country.flag)}
+                size="sm"
+                rounded={true}
+                fitContainer={true}
+                showTooltip={false}
+                className="h-full w-full object-cover"
+              />
+            ) : null}
+          </div>
         </div>
 
         {/* Country Name Link */}

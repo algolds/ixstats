@@ -51,6 +51,7 @@ import {
   MoreHorizontal,
   Flame,
   History,
+  Gem,
 } from "lucide-react";
 
 export function VaultUserDirectory() {
@@ -75,6 +76,7 @@ export function VaultUserDirectory() {
   const [isPackOpen, setIsPackOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isStreakOpen, setIsStreakOpen] = useState(false);
+  const [isCosmeticsOpen, setIsCosmeticsOpen] = useState(false);
 
   // Credit adjustment state
   const [adjustAmount, setAdjustAmount] = useState("");
@@ -144,6 +146,49 @@ export function VaultUserDirectory() {
     { enabled: Boolean(isHistoryOpen && selectedUser?.id) }
   );
 
+  const { data: storeItems } = api.vault.listStoreItems.useQuery();
+
+  const { data: userPurchases, refetch: refetchUserPurchases } =
+    api.vault.adminGetPurchasedItems.useQuery(
+      { userId: selectedUser?.id ?? "" },
+      { enabled: Boolean(isCosmeticsOpen && selectedUser?.id) }
+    );
+
+  const { data: userEquipped, refetch: refetchUserEquipped } =
+    api.vault.adminGetEquippedCosmetics.useQuery(
+      { userId: selectedUser?.id ?? "" },
+      { enabled: Boolean(isCosmeticsOpen && selectedUser?.id) }
+    );
+
+  const adminToggleEquipMutation = api.vault.adminToggleEquipCosmetic.useMutation({
+    onSuccess: (data) => {
+      notify.success("Success", data.isEquipped ? "Cosmetic equipped for user" : "Cosmetic unequipped for user");
+      void refetchUserEquipped();
+      void refetchVaults();
+    },
+    onError: (err) => notify.error("Failed to toggle equipped state", err.message),
+  });
+
+  const grantItemMutation = api.vault.adminGrantStoreItem.useMutation({
+    onSuccess: (data) => {
+      notify.success("Granted", data.message || "Item granted successfully");
+      void refetchUserPurchases();
+      void refetchUserEquipped();
+      void refetchVaults();
+    },
+    onError: (err) => notify.error("Failed to grant", err.message),
+  });
+
+  const revokeItemMutation = api.vault.adminRevokeStoreItem.useMutation({
+    onSuccess: (data) => {
+      notify.success("Revoked", data.message || "Item revoked successfully");
+      void refetchUserPurchases();
+      void refetchUserEquipped();
+      void refetchVaults();
+    },
+    onError: (err) => notify.error("Failed to revoke", err.message),
+  });
+
   // Resets
   const resetAdjustForm = () => {
     setAdjustAmount("");
@@ -180,6 +225,17 @@ export function VaultUserDirectory() {
       credits: user.vault.credits,
     });
     setIsPackOpen(true);
+  };
+
+  const handleOpenCosmetics = (user: any) => {
+    setSelectedUser({
+      id: user.id,
+      clerkUserId: user.clerkUserId,
+      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
+      country: user.country,
+      credits: user.vault.credits,
+    });
+    setIsCosmeticsOpen(true);
   };
 
   const handleAdjustSubmit = (e: React.FormEvent) => {
@@ -367,6 +423,13 @@ export function VaultUserDirectory() {
                               >
                                 <Gift className="h-3.5 w-3.5 text-blue-500" />
                                 <span>Award Card Pack</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleOpenCosmetics(user)}
+                                className="cursor-pointer gap-2 py-2"
+                              >
+                                <Gem className="h-3.5 w-3.5 text-purple-500" />
+                                <span>Manage Cosmetics</span>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -795,6 +858,146 @@ export function VaultUserDirectory() {
                 </Button>
               </DialogFooter>
             </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Cosmetics Dialog */}
+      <Dialog open={isCosmeticsOpen} onOpenChange={setIsCosmeticsOpen}>
+        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-lg shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2 font-black">
+              <Gem className="h-5 w-5 text-purple-500" />
+              Manage Cosmetics & Upgrades
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedUser && (
+            <div className="space-y-4 py-2">
+              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
+                <div className="text-muted-foreground text-xs">Target User</div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  {selectedUser.country?.flag && (
+                    <img
+                      src={selectedUser.country.flag}
+                      alt=""
+                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                    />
+                  )}
+                  <div className="text-foreground truncate text-sm font-semibold">
+                    {selectedUser.displayName}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-border/40 bg-muted/20 max-h-80 overflow-y-auto rounded-lg border p-2 space-y-2">
+                {storeItems?.map((item: any) => {
+                  const ownedItemIds = userPurchases?.purchasedItemIds || [];
+                  const isOwned = ownedItemIds.includes(item.id);
+                  const equippedIds = userEquipped?.equipped || [];
+                  const isEquipped = equippedIds.includes(item.id);
+                  const isPending =
+                    (grantItemMutation.isPending && grantItemMutation.variables?.itemId === item.id) ||
+                    (revokeItemMutation.isPending && revokeItemMutation.variables?.itemId === item.id);
+                  const isTogglePending =
+                    adminToggleEquipMutation.isPending &&
+                    adminToggleEquipMutation.variables?.itemId === item.id;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-2 rounded-lg border border-border/30 bg-card/25"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded bg-purple-500/10 text-purple-500 dark:bg-purple-500/20 dark:text-purple-400">
+                          <Gem className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-foreground">{item.name}</div>
+                          <div className="text-[10px] text-muted-foreground max-w-[280px] line-clamp-1">
+                            {item.description}
+                          </div>
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">
+                              {item.category}
+                            </Badge>
+                            <span className="text-[9px] font-mono text-amber-600 dark:text-amber-400">
+                              {item.price} IxC
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {isOwned && item.category === "cosmetics" && (
+                          <Button
+                            size="sm"
+                            variant={isEquipped ? "default" : "outline"}
+                            disabled={isTogglePending || isPending}
+                            onClick={() =>
+                              adminToggleEquipMutation.mutate({
+                                userId: selectedUser.id,
+                                itemId: item.id,
+                              })
+                            }
+                            className={`h-7 px-2.5 text-xs font-bold ${
+                              isEquipped
+                                ? "bg-purple-600 text-white hover:bg-purple-700"
+                                : "border-purple-500/30 text-purple-500 hover:bg-purple-500/10 hover:text-purple-400 bg-purple-500/5"
+                            }`}
+                          >
+                            {isTogglePending ? "..." : isEquipped ? "Equipped" : "Equip"}
+                          </Button>
+                        )}
+                        {isOwned ? (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={isPending || isTogglePending}
+                            onClick={() =>
+                              revokeItemMutation.mutate({
+                                userId: selectedUser.id,
+                                itemId: item.id,
+                              })
+                            }
+                            className="h-7 px-2.5 text-xs font-bold text-white"
+                          >
+                            {isPending ? "Revoking..." : "Revoke"}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isPending}
+                            onClick={() =>
+                              grantItemMutation.mutate({
+                                userId: selectedUser.id,
+                                itemId: item.id,
+                              })
+                            }
+                            className="h-7 px-2.5 text-xs font-bold border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400 bg-emerald-500/5"
+                          >
+                            {isPending ? "Granting..." : "Grant"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {(!storeItems || storeItems.length === 0) && (
+                  <p className="text-center text-xs text-muted-foreground py-4">
+                    No store items configured.
+                  </p>
+                )}
+              </div>
+
+              <DialogFooter className="border-t border-border/40 pt-3">
+                <Button variant="outline" onClick={() => setIsCosmeticsOpen(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
           )}
         </DialogContent>
       </Dialog>

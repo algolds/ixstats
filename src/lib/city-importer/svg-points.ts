@@ -198,6 +198,20 @@ function hasCapitalAncestor(el: Element): boolean {
   return false;
 }
 
+// Normalize a layer's name for semantic matching: split camelCase, turn
+// separators (_ - . /) into spaces, collapse whitespace, lowercase. So
+// "City_names", "cityNames", "city-labels" and "City.Names" all reduce to a
+// comparable spaced phrase like "city names" — covering the many ways different
+// editors (Illustrator, Inkscape, hand-authored) name the same layer.
+function normalizeLayerName(name: string): string {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_\-./]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function detectProvinceName(el: Element, fallbackId: string): { name: string } {
   const label = el.getAttributeNS(INKSCAPE_NS, "label") || el.getAttribute("inkscape:label");
   if (label) return { name: label };
@@ -304,8 +318,19 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     //   certainly the right layer. Pick the one with the most markers.
     //   Tier B (weak): name IS exactly dots/pins/markers (word boundary match to
     //   avoid "decorative-dots" matching "dots"). Used only if tier A finds nothing.
-    const STRONG_PATTERNS = ["cities", "city", "towns", "town", "settlements"];
-    const WEAK_PATTERNS = /\b(dots|pins|markers)\b/i;
+    const STRONG_PATTERNS = [
+      "cities",
+      "city",
+      "towns",
+      "town",
+      "settlements",
+      "settlement",
+      "localities",
+      "locality",
+      "places",
+      "place",
+    ];
+    const WEAK_PATTERNS = /\b(dots|pins|markers|points|nodes)\b/i;
 
     let bestStrongId: string | null = null;
     let bestStrongMarkers = 0;
@@ -314,14 +339,14 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
 
     for (const layer of layers) {
       if (layer.markerCount === 0) continue;
-      const nameLower = layer.name.toLowerCase();
+      const nameLower = normalizeLayerName(layer.name);
 
       if (STRONG_PATTERNS.some((p) => nameLower === p || nameLower.includes(p))) {
         if (layer.markerCount > bestStrongMarkers) {
           bestStrongMarkers = layer.markerCount;
           bestStrongId = layer.id;
         }
-      } else if (WEAK_PATTERNS.test(layer.name)) {
+      } else if (WEAK_PATTERNS.test(nameLower)) {
         if (layer.markerCount > bestWeakMarkers) {
           bestWeakMarkers = layer.markerCount;
           bestWeakId = layer.id;
@@ -472,16 +497,21 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
       "city names",
       "city labels",
       "town names",
+      "town labels",
+      "place names",
+      "settlement names",
       "names",
       "labels",
       "text",
+      "captions",
+      "annotations",
     ];
     let bestNameId: string | null = null;
     let bestNameTextCount = 0;
 
     for (const layer of layers) {
       if (layer.textCount === 0) continue;
-      const nameLower = layer.name.toLowerCase();
+      const nameLower = normalizeLayerName(layer.name);
 
       if (NAME_STRONG_PATTERNS.some((p) => nameLower === p || nameLower.includes(p))) {
         if (layer.textCount > bestNameTextCount) {
@@ -504,11 +534,14 @@ export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): Pa
     // Try to find any layer whose name contains "city", "label", or "name" and has text
     for (const layer of layers) {
       if (layer.textCount > 0) {
-        const nameLower = layer.name.toLowerCase();
+        const nameLower = normalizeLayerName(layer.name);
         if (
           nameLower.includes("city") ||
+          nameLower.includes("town") ||
+          nameLower.includes("place") ||
           nameLower.includes("label") ||
-          nameLower.includes("name")
+          nameLower.includes("name") ||
+          nameLower.includes("text")
         ) {
           const fallbackContainer = findLayerByIdOrName(svgRoot, layer.id);
           if (fallbackContainer) {

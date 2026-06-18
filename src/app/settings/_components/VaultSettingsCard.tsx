@@ -1,8 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Sparkles,
+  Gem,
   Flame,
   CheckCircle,
   Database,
@@ -36,6 +36,7 @@ export function VaultSettingsCard() {
 
   const { data: ownedData, isLoading: ownedLoading } = api.vault.getPurchasedItems.useQuery();
   const { data: storeItems, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery();
+  const { data: equippedData, isLoading: equippedLoading } = api.vault.getEquippedCosmetics.useQuery();
 
   const ownedItemIds = ownedData?.purchasedItemIds || [];
 
@@ -70,7 +71,40 @@ export function VaultSettingsCard() {
     return saved ? JSON.parse(saved) : {};
   });
 
+  // Seed activeCosmetics from server state when equippedData loads
+  useEffect(() => {
+    if (equippedData?.equipped) {
+      const equippedMap: Record<string, boolean> = {};
+      for (const id of equippedData.equipped) {
+        equippedMap[id] = true;
+      }
+      setActiveCosmetics(equippedMap);
+      localStorage.setItem("settings:active-cosmetics", JSON.stringify(equippedMap));
+      // Dispatch custom event to notify useActiveCosmetics
+      window.dispatchEvent(new Event("cosmetics-updated"));
+    }
+  }, [equippedData]);
+
+  // Toggle Equip Cosmetic Mutation
+  const toggleCosmeticMutation = api.vault.toggleEquipCosmetic.useMutation({
+    onSuccess: (data) => {
+      const equippedMap: Record<string, boolean> = {};
+      for (const id of data.equipped) {
+        equippedMap[id] = true;
+      }
+      setActiveCosmetics(equippedMap);
+      localStorage.setItem("settings:active-cosmetics", JSON.stringify(equippedMap));
+      window.dispatchEvent(new Event("cosmetics-updated"));
+      void utils.vault.getEquippedCosmetics.invalidate();
+    },
+    onError: (err) => {
+      notify.error("Failed to toggle cosmetic", err.message);
+      void utils.vault.getEquippedCosmetics.invalidate();
+    },
+  });
+
   const toggleCosmetic = (itemId: string) => {
+    // Optimistic UI toggle
     setActiveCosmetics((prev) => {
       const next = { ...prev, [itemId]: !prev[itemId] };
       localStorage.setItem("settings:active-cosmetics", JSON.stringify(next));
@@ -78,10 +112,11 @@ export function VaultSettingsCard() {
         next[itemId] ? "Cosmetic Enabled!" : "Cosmetic Disabled!",
         `Customization preference updated.`
       );
-      // Optional: dispatch custom event to alert profile components to re-render
       window.dispatchEvent(new Event("cosmetics-updated"));
       return next;
     });
+
+    toggleCosmeticMutation.mutate({ itemId });
   };
 
   // Local state for upgrades toggled on/off (stored in localStorage)
@@ -112,7 +147,8 @@ export function VaultSettingsCard() {
   const upgradesList = (storeItems || []).filter((item) => item.category === "upgrades");
 
   const ICON_MAP: Record<string, any> = {
-    Sparkles,
+    Sparkles: Gem,
+    Gem,
     Cpu,
     Crown,
     BookOpen,
@@ -301,14 +337,14 @@ export function VaultSettingsCard() {
         </div>
 
         {/* Cosmetics & Profile Customization */}
-        <div className="relative z-10 border-t border-slate-100 pt-6 dark:border-slate-800">
+        <div id="cosmetics-section" className="relative z-10 border-t border-slate-100 pt-6 dark:border-slate-800">
           <div className="mb-4 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-500" />
+            <Gem className="h-4 w-4 text-purple-500" />
             <h3 className="text-sm font-bold tracking-widest text-slate-900 uppercase dark:text-white">
               Cosmetics Preferences
             </h3>
           </div>
-          {ownedLoading || itemsLoading ? (
+          {ownedLoading || itemsLoading || equippedLoading ? (
             <div className="py-4 text-center text-xs text-slate-400">Loading cosmetics...</div>
           ) : cosmeticsList.length === 0 ? (
             <div className="py-4 text-center text-xs text-slate-400">
@@ -318,7 +354,7 @@ export function VaultSettingsCard() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {cosmeticsList.map((item) => {
                 const isOwned = ownedItemIds.includes(item.id);
-                const ItemIcon = ICON_MAP[item.icon] || Sparkles;
+                const ItemIcon = ICON_MAP[item.icon] || Gem;
                 const isEnabled = activeCosmetics[item.id] ?? false;
 
                 return (

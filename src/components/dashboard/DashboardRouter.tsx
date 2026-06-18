@@ -821,7 +821,10 @@ function DashboardHero({
             <div className="mb-2 flex items-start justify-between gap-2.5">
               <div className="flex min-w-0 items-center gap-2.5">
                 <div
-                  className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/20 shadow-sm"
+                  className={cn(
+                    "relative flex shrink-0 items-center justify-center rounded-sm shadow-sm",
+                    !avatarGlow.enabled && "border border-white/20"
+                  )}
                   style={
                     avatarGlow.enabled
                       ? {
@@ -831,12 +834,14 @@ function DashboardHero({
                       : undefined
                   }
                 >
-                  <UnifiedCountryFlag
-                    showTooltip={false}
-                    countryName={stats.countryName}
-                    size="lg"
-                    className="shrink-0"
-                  />
+                  <div className="overflow-hidden rounded-sm flex items-center justify-center">
+                    <UnifiedCountryFlag
+                      showTooltip={false}
+                      countryName={stats.countryName}
+                      size="lg"
+                      className="shrink-0"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Link

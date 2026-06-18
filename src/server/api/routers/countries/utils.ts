@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { globalCache } from "~/lib/advanced-cache-system";
 import { getArticleIntro } from "~/lib/wiki-bridge";
+import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData } from "~/types/ixstats";
 
 // Cache helpers
@@ -65,8 +66,9 @@ export const prepareBaseCountryData = (country: any, componentsData?: any): Base
 });
 
 export async function getCountryComponentsStatsData(db: any, countryId: string) {
-  const now = new Date();
-  
+  // implementationDate is stored in IxTime (game time), so compare against IxTime now.
+  const now = new Date(IxTime.getCurrentIxTime());
+
   // Self-heal component states in DB: if implementation time passed, activate
   try {
     await Promise.all([

@@ -17,6 +17,7 @@ import {
   Link2,
   Scale,
   Bell,
+  Gem,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -326,6 +327,36 @@ function ProfileContent() {
                             ? "scale-110 animate-pulse bg-amber-500"
                             : "bg-slate-300 dark:bg-slate-700"
                         )}
+                      />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const wasOpen = showVault;
+                        setShowVault(true);
+                        setTimeout(
+                          () =>
+                            document
+                              .getElementById("cosmetics-section")
+                              ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                          wasOpen ? 50 : 200
+                        );
+                      }}
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showVault
+                          ? "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <Gem
+                          className="mr-3 h-4 w-4 shrink-0 text-purple-500"
+                        />
+                        Cosmetics Preferences
+                      </div>
+                      <div
+                        className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700"
                       />
                     </button>
 

@@ -24,6 +24,11 @@
 import { IxTime } from "./ixtime";
 import { formatCurrency, formatPopulation } from "./chart-utils";
 import { GAMEPLAY_FLAGS } from "./gameplay-flags";
+import {
+  calculateCivilServiceCapacity,
+  calculateTotalConsumedStaff,
+} from "./atomic-government-utils";
+import { mapTaxComponentTypeToId } from "./enums";
 import type { PrismaClient } from "@prisma/client";
 
 // ==================== TYPES ====================
@@ -87,6 +92,14 @@ export interface CountrySnapshot {
   pendingIssueCount: number;
   recentCrisisCount: number;
   activeTreatyCount: number;
+
+  // Atomic components (gov/econ use enum names; tax uses frontend ids, e.g. "blockchain_ledger").
+  // activeComponents = fully rolled out; implementingComponents = still in rollout phase.
+  activeComponents: string[];
+  implementingComponents: string[];
+  // Civil service staffing — consumedStaff counts both active and implementing components.
+  civilServiceCapacity: number;
+  consumedStaff: number;
 
   // IxTime
   currentIxTime: number;
@@ -330,32 +343,89 @@ export class NationalIssuesEngine {
     if (!country) return null;
 
     // Run aggregate counts in parallel
-    const [embassyCount, policyCount, pendingIssueCount, crisisCount] = await Promise.all([
-      (db as any).embassy.count({
-        where: {
-          hostCountryId: countryId,
-          status: "active",
-        },
-      }),
-      (db as any).policy.count({
-        where: { countryId, status: "active" },
-      }),
-      (db as any).nationalIssue.count({
-        where: {
-          countryId,
-          status: { in: ["pending", "viewed"] },
-        },
-      }),
-      (db as any).crisisEvent.count({
-        where: {
-          affectedCountries: { contains: countryId },
-          responseStatus: { not: "resolved" },
-        },
-      }),
-    ]);
+    const [embassyCount, policyCount, pendingIssueCount, crisisCount, govComps, econComps, taxComps] =
+      await Promise.all([
+        (db as any).embassy.count({
+          where: {
+            hostCountryId: countryId,
+            status: "active",
+          },
+        }),
+        (db as any).policy.count({
+          where: { countryId, status: "active" },
+        }),
+        (db as any).nationalIssue.count({
+          where: {
+            countryId,
+            status: { in: ["pending", "viewed"] },
+          },
+        }),
+        (db as any).crisisEvent.count({
+          where: {
+            affectedCountries: { contains: countryId },
+            responseStatus: { not: "resolved" },
+          },
+        }),
+        (db as any).governmentComponent.findMany({
+          where: { countryId },
+          select: { componentType: true, isActive: true, implementationDate: true },
+        }),
+        (db as any).economicComponent.findMany({
+          where: { countryId },
+          select: { componentType: true, isActive: true, implementationDate: true },
+        }),
+        (db as any).taxComponent.findMany({
+          where: { countryId },
+          select: { componentType: true, isActive: true, implementationDate: true },
+        }),
+      ]);
 
     const currentIxTime = IxTime.getCurrentIxTime();
     const ixDate = new Date(currentIxTime);
+    // implementationDate is stored in IxTime (game time), so compare against IxTime now.
+    const now = ixDate;
+
+    // Classify components into active vs. still-implementing. A component counts as
+    // active once isActive is set OR its implementationDate has elapsed.
+    const isComponentActive = (c: any) =>
+      c.isActive === true || (c.implementationDate && new Date(c.implementationDate) <= now);
+
+    const activeGovTypes: string[] = [];
+    const implementingGovTypes: string[] = [];
+    for (const c of govComps) {
+      (isComponentActive(c) ? activeGovTypes : implementingGovTypes).push(String(c.componentType));
+    }
+
+    const activeEconTypes: string[] = [];
+    const implementingEconTypes: string[] = [];
+    for (const c of econComps) {
+      (isComponentActive(c) ? activeEconTypes : implementingEconTypes).push(String(c.componentType));
+    }
+
+    const activeTaxIds: string[] = [];
+    const implementingTaxIds: string[] = [];
+    for (const c of taxComps) {
+      const id = mapTaxComponentTypeToId(String(c.componentType));
+      (isComponentActive(c) ? activeTaxIds : implementingTaxIds).push(id);
+    }
+
+    const activeComponents = [...activeGovTypes, ...activeEconTypes, ...activeTaxIds];
+    const implementingComponents = [
+      ...implementingGovTypes,
+      ...implementingEconTypes,
+      ...implementingTaxIds,
+    ];
+
+    // Staff is consumed by both active and implementing components (rollout still ties up staff).
+    const consumedStaff = calculateTotalConsumedStaff(
+      [...activeGovTypes, ...implementingGovTypes] as any[],
+      [...activeEconTypes, ...implementingEconTypes] as any[],
+      [...activeTaxIds, ...implementingTaxIds]
+    );
+    const civilServiceCapacity = calculateCivilServiceCapacity(
+      country.currentPopulation ?? 0,
+      country.governmentStructure?.governmentEffectiveness ?? 50
+    );
 
     return {
       id: country.id,
@@ -403,6 +473,10 @@ export class NationalIssuesEngine {
       pendingIssueCount: pendingIssueCount,
       recentCrisisCount: crisisCount,
       activeTreatyCount: country.activeTreaties ?? 0,
+      activeComponents,
+      implementingComponents,
+      civilServiceCapacity,
+      consumedStaff,
       currentIxTime,
       currentIxYear: ixDate.getFullYear(),
       currentIxMonth: ixDate.getMonth() + 1,
@@ -430,6 +504,22 @@ export class NationalIssuesEngine {
     // Field comparison
     const fieldValue = this.getSnapshotField(snapshot, condition.field);
     if (fieldValue === null || fieldValue === undefined) return false;
+
+    // Array-valued snapshot fields (e.g. activeComponents / implementingComponents)
+    // support membership checks: `op: "in"` / `"=="` means "value is present",
+    // `"!="` means "value is absent".
+    if (Array.isArray(fieldValue)) {
+      const contains = (fieldValue as unknown[]).includes(condition.value);
+      switch (condition.op) {
+        case "in":
+        case "==":
+          return contains;
+        case "!=":
+          return !contains;
+        default:
+          return false;
+      }
+    }
 
     switch (condition.op) {
       case ">":
@@ -464,9 +554,14 @@ export class NationalIssuesEngine {
   private static getSnapshotField(
     snapshot: CountrySnapshot,
     field: string
-  ): number | string | boolean | null {
+  ): number | string | boolean | string[] | null {
     if (field in snapshot) {
-      return (snapshot as Record<string, any>)[field] as number | string | boolean | null;
+      return (snapshot as Record<string, any>)[field] as
+        | number
+        | string
+        | boolean
+        | string[]
+        | null;
     }
     return null;
   }
@@ -485,6 +580,124 @@ export class NationalIssuesEngine {
       if (resolver) return resolver(snapshot);
       return `{{${varName}}}`;
     });
+  }
+
+  /**
+   * Auto-trigger a "Government Staffing Shortage" issue when active + implementing
+   * component staff requirements exceed the country's civil service capacity.
+   * Self-contained: finds-or-creates a backing template by slug (templateId is a
+   * required FK) and de-duplicates against any already-open shortage issue.
+   */
+  private static async maybeTriggerStaffingShortage(
+    countryId: string,
+    db: PrismaClient,
+    snapshot: CountrySnapshot,
+    result: EvaluationResult
+  ): Promise<void> {
+    if (snapshot.consumedStaff <= snapshot.civilServiceCapacity) return;
+
+    try {
+      const overstaff = Math.round(snapshot.consumedStaff - snapshot.civilServiceCapacity);
+      const slug = "government_staffing_shortage";
+
+      const responseOptions = JSON.stringify([
+        {
+          id: "expand_civil_service",
+          label: "Expand the civil service",
+          description:
+            "Fund additional administrative staff to meet the demands of active programs.",
+          consequences: [],
+          previewEffects: {
+            economicImpact: "Higher payroll costs",
+            stabilityImpact: "Stability recovers",
+          },
+          outcomeText: "New civil servants are recruited and the administrative backlog eases.",
+          isAutoResolveDefault: true,
+        },
+        {
+          id: "scale_back_programs",
+          label: "Scale back programs",
+          description:
+            "Pause or decommission the least essential components to relieve the staffing burden.",
+          consequences: [],
+          previewEffects: {
+            economicImpact: "Reduced program coverage",
+            stabilityImpact: "Stability recovers",
+          },
+          outcomeText: "Lower-priority programs are wound down until capacity is restored.",
+        },
+      ]);
+
+      // templateId is a required FK, so ensure a backing template exists.
+      const template = await (db as any).nationalIssueTemplate.upsert({
+        where: { slug },
+        update: {},
+        create: {
+          slug,
+          title: "Government Staffing Shortage",
+          description:
+            "The civil service is overstretched: active and rolling-out programs require more staff than {{countryName}} can currently supply.",
+          longDescription:
+            "Government programs in {{countryName}} demand more administrative capacity than the civil service can provide. Until the shortfall is resolved, government effectiveness and political stability will continue to suffer.",
+          domain: "political",
+          category: "governance",
+          baseSeverity: "high",
+          baseUrgency: 70,
+          deadlineDaysBase: null,
+          triggerConditions: JSON.stringify({ field: "consumedStaff", op: ">", value: 0 }),
+          cooldownDays: 30,
+          maxActivePerCountry: 1,
+          responseOptions,
+          isActive: true,
+          isGlobal: true,
+        },
+      });
+
+      // Avoid duplicates: skip if there is already an open staffing-shortage issue.
+      const existing = await (db as any).nationalIssue.count({
+        where: { countryId, templateId: template.id, status: { in: ["pending", "viewed"] } },
+      });
+      if (existing > 0) return;
+
+      await (db as any).nationalIssue.create({
+        data: {
+          templateId: template.id,
+          countryId,
+          title: this.substituteVariables(template.title, snapshot),
+          description: this.substituteVariables(template.description, snapshot),
+          longDescription: template.longDescription
+            ? this.substituteVariables(template.longDescription, snapshot)
+            : null,
+          domain: template.domain,
+          category: template.category,
+          severity: template.baseSeverity,
+          urgency: template.baseUrgency,
+          deadlineIxTime: null,
+          status: "pending",
+          autoResolveOptionId: "expand_civil_service",
+          autoResolveLabel: "Expand the civil service",
+          responseOptions: template.responseOptions,
+          contextSnapshot: JSON.stringify({
+            consumedStaff: Math.round(snapshot.consumedStaff),
+            civilServiceCapacity: Math.round(snapshot.civilServiceCapacity),
+            overstaff,
+            activeComponents: snapshot.activeComponents.length,
+            implementingComponents: snapshot.implementingComponents.length,
+          }),
+          triggerReason: `Civil service capacity exceeded (${Math.round(
+            snapshot.consumedStaff
+          )} staff required vs. ${Math.round(
+            snapshot.civilServiceCapacity
+          )} capacity, shortfall ${overstaff}).`,
+          aiConfidence: 100,
+          createdIxTime: snapshot.currentIxTime,
+        },
+      });
+
+      result.issuesGenerated++;
+    } catch (err) {
+      result.errors.push(`Failed to trigger staffing shortage: ${(err as Error).message}`);
+    }
   }
 
   /**
@@ -514,6 +727,9 @@ export class NationalIssuesEngine {
         result.errors.push(`Country ${countryId} not found`);
         return result;
       }
+
+      // Structural staffing-shortage check runs regardless of the normal pipeline cap.
+      await this.maybeTriggerStaffingShortage(countryId, db, snapshot, result);
 
       // Suppress generation if too many pending issues
       if (snapshot.pendingIssueCount >= 10) {

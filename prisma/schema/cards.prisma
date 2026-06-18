@@ -4,21 +4,22 @@
 ///  * MyVault - Personal vault system for IxCredits currency and card collectibles
 ///  * Replaces legacy IxBank system with enhanced features
 model MyVault {
-  id             String             @id(map: "MyVault_pkey") @default(cuid())
-  userId         String             @unique(map: "MyVault_userId_key")
-  credits        Float              @default(0)
-  lifetimeEarned Float              @default(0)
-  lifetimeSpent  Float              @default(0)
-  vaultLevel     Int                @default(1)
-  vaultXp        Int                @default(0)
-  loginStreak    Int                @default(0)
-  lastLoginDate  DateTime?
-  todayEarned    Float              @default(0)
-  lastDailyReset DateTime           @default(now())
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @default(now()) @updatedAt
-  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade, map: "MyVault_userId_fkey")
-  transactions   VaultTransaction[]
+  id                String             @id(map: "MyVault_pkey") @default(cuid())
+  userId            String             @unique(map: "MyVault_userId_key")
+  credits           Float              @default(0)
+  lifetimeEarned    Float              @default(0)
+  lifetimeSpent     Float              @default(0)
+  vaultLevel        Int                @default(1)
+  vaultXp           Int                @default(0)
+  loginStreak       Int                @default(0)
+  lastLoginDate     DateTime?
+  todayEarned       Float              @default(0)
+  lastDailyReset    DateTime           @default(now())
+  equippedCosmetics String?            @default("") // Comma-separated active cosmetic IDs
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @default(now()) @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade, map: "MyVault_userId_fkey")
+  transactions      VaultTransaction[]
 
   @@index([userId], map: "MyVault_userId_idx")
   @@map("my_vault")

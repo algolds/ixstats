@@ -21,6 +21,8 @@ import {
   Landmark,
   Mail,
   Layers,
+  Briefcase,
+  Clock,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -59,6 +61,115 @@ function normalizeGrowth(value: number | null | undefined): number {
   let v = value;
   while (Math.abs(v) > 50) v /= 100;
   return Math.min(20, Math.max(-20, v));
+}
+
+// ── Format an IxTime-domain rollout duration (ms) as a short countdown label ──
+function formatRolloutRemaining(remainingMs: number): string {
+  if (remainingMs <= 0) return "Finalizing";
+  const days = remainingMs / 86_400_000;
+  if (days >= 365) return `${(days / 365).toFixed(1)}y left`;
+  if (days >= 60) return `${Math.round(days / 30.44)}mo left`;
+  if (days >= 1) return `${Math.round(days)}d left`;
+  return "<1d left";
+}
+
+// ── Civil Service Capacity + Rollout Queue widget ──
+// Surfaces consumed-vs-available administrative staff and any atomic components
+// still rolling out. Renders nothing when the country has no components configured.
+function CivilServiceWidget({
+  countryId,
+  enabled,
+  onNavigate,
+}: {
+  countryId: string;
+  enabled: boolean;
+  onNavigate?: (section: MyCountrySection) => void;
+}) {
+  const { data } = api.government.getCivilServiceStatus.useQuery(
+    { countryId },
+    { enabled, staleTime: 60_000 }
+  );
+
+  if (!data) return null;
+  if (data.activeCount === 0 && data.implementingCount === 0 && data.consumedStaff === 0) {
+    return null;
+  }
+
+  const util = data.utilizationPercent;
+  const barColor = data.overCapacity ? "bg-red-500" : util >= 80 ? "bg-amber-500" : "bg-emerald-500";
+  const valueColor = data.overCapacity
+    ? "text-red-600 dark:text-red-400"
+    : util >= 80
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-emerald-600 dark:text-emerald-400";
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-2.5 backdrop-blur-md">
+      {/* Civil Service Capacity */}
+      <button
+        type="button"
+        onClick={() => onNavigate?.("executive")}
+        className="group flex w-full items-center justify-between gap-2 text-left"
+      >
+        <div className="flex items-center gap-1.5">
+          <Briefcase className="h-3.5 w-3.5 text-amber-500" />
+          <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
+            Civil Service Capacity
+          </span>
+        </div>
+        <span className={cn("shrink-0 text-[10px] font-bold tabular-nums", valueColor)}>
+          {Math.round(data.consumedStaff)} / {Math.round(data.capacity)}
+        </span>
+      </button>
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div
+          className={cn("h-full rounded-full transition-all duration-500", barColor)}
+          style={{ width: `${Math.min(100, util)}%` }}
+        />
+      </div>
+      {data.overCapacity && (
+        <div className="flex items-center gap-1 text-[9px] font-semibold text-red-600 dark:text-red-400">
+          <AlertTriangle className="h-2.5 w-2.5 shrink-0" />
+          <span>Staffing shortage — active programs exceed capacity</span>
+        </div>
+      )}
+
+      {/* Rollout Queue */}
+      {data.rolloutQueue.length > 0 && (
+        <div className="mt-0.5 flex flex-col gap-1.5 border-t border-white/5 pt-1.5">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3 w-3 text-cyan-500" />
+            <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
+              Rollout Queue ({data.rolloutQueue.length})
+            </span>
+          </div>
+          {data.rolloutQueue.slice(0, 3).map((item) => (
+            <div key={item.id} className="flex flex-col gap-0.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-foreground truncate text-[10px] font-medium">
+                  {item.name}
+                </span>
+                <span className="text-muted-foreground/60 shrink-0 text-[8px] tabular-nums">
+                  {formatRolloutRemaining(item.remainingMs)}
+                </span>
+              </div>
+              <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-cyan-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }}
+                />
+              </div>
+            </div>
+          ))}
+          {data.rolloutQueue.length > 3 && (
+            <span className="text-muted-foreground/50 text-[8px]">
+              +{data.rolloutQueue.length - 3} more in progress
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function OverviewHero({
@@ -557,7 +668,7 @@ export function OverviewHero({
 
         <div className="relative z-10 flex items-center gap-3">
           <div
-            className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm"
+            className="relative flex shrink-0 items-center justify-center rounded-sm"
             style={
               avatarGlow.enabled
                 ? {
@@ -567,12 +678,14 @@ export function OverviewHero({
                 : undefined
             }
           >
-            <UnifiedCountryFlag
-              showTooltip={false}
-              countryName={stats.countryName}
-              size="md"
-              className="shrink-0"
-            />
+            <div className="overflow-hidden rounded-sm flex items-center justify-center">
+              <UnifiedCountryFlag
+                showTooltip={false}
+                countryName={stats.countryName}
+                size="md"
+                className="shrink-0"
+              />
+            </div>
           </div>
           <div>
             <span className="text-foreground text-sm font-bold">
@@ -722,7 +835,7 @@ export function OverviewHero({
 
               <div className="mb-2.5 flex items-center gap-2.5">
                 <div
-                  className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm"
+                  className="relative flex shrink-0 items-center justify-center rounded-sm"
                   style={
                     avatarGlow.enabled
                       ? {
@@ -732,12 +845,14 @@ export function OverviewHero({
                       : undefined
                   }
                 >
-                  <UnifiedCountryFlag
-                    showTooltip={false}
-                    countryName={stats.countryName}
-                    size="lg"
-                    className="shrink-0"
-                  />
+                  <div className="overflow-hidden rounded-sm flex items-center justify-center">
+                    <UnifiedCountryFlag
+                      showTooltip={false}
+                      countryName={stats.countryName}
+                      size="lg"
+                      className="shrink-0"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Link
@@ -967,6 +1082,9 @@ export function OverviewHero({
                   </div>
                 )}
               </div>
+
+              {/* Civil Service Capacity + Rollout Queue */}
+              <CivilServiceWidget countryId={countryId} enabled={hasCountry} onNavigate={onNavigate} />
             </div>
 
             {/* Badges */}

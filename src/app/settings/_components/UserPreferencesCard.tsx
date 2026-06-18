@@ -6,7 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
-  Sparkles,
+  Gem,
   Layers,
   Minimize2,
   Download,
@@ -240,7 +240,7 @@ export function UserPreferencesCard({
               className="flex w-full items-center justify-between py-2 text-left text-sm font-bold text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
             >
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-indigo-500" />
+                <Gem className="h-4 w-4 text-indigo-500" />
                 <span>More Visual Settings</span>
               </div>
               {showAdvanced ? (

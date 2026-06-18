@@ -5,6 +5,7 @@ export { WikiOSLayout } from "./WikiOSLayout";
 export { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 export { SearchModal } from "./SearchModal";
 export { ActiveCountryUnifiedWidget } from "./ActiveCountryUnifiedWidget";
+export { WikiOSProfileWidget } from "./WikiOSProfileWidget";
 export { WikiOSArticleToolbarWidget } from "./WikiOSArticleToolbarWidget";
 export { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 export { useWikiOSShortcuts } from "./useWikiOSShortcuts";
