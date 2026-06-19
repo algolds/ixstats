@@ -1,4 +1,4 @@
-import { greatCircle } from "@turf/turf";
+import { greatCircle } from "@turf/great-circle";
 import type { LineString } from "geojson";
 
 /** Route types whose geometry should follow a great-circle arc. */

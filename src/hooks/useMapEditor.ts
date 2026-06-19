@@ -9,21 +9,18 @@
  */
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import {
-  union,
-  difference,
-  featureCollection,
-  simplify,
-  bbox,
-  centroid,
-  point,
-  booleanPointInPolygon,
-  area,
-  buffer,
-  bezierSpline,
-  transformRotate,
-  transformScale,
-} from "@turf/turf";
+import { union } from "@turf/union";
+import { difference } from "@turf/difference";
+import { featureCollection, point } from "@turf/helpers";
+import { simplify } from "@turf/simplify";
+import { bbox } from "@turf/bbox";
+import { centroid } from "@turf/centroid";
+import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
+import { area } from "@turf/area";
+import { buffer } from "@turf/buffer";
+import { bezierSpline } from "@turf/bezier-spline";
+import { transformRotate } from "@turf/transform-rotate";
+import { transformScale } from "@turf/transform-scale";
 import { api } from "~/trpc/react";
 import { clampToGeometry, pointInGeometry } from "~/lib/border-editor";
 import { buildRouteGeometry } from "~/lib/route-geometry";

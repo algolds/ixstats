@@ -435,7 +435,7 @@ export function useCountryMapEmbedLayers({
                 hoveredCityId = id;
                 map.getCanvas().style.cursor = "pointer";
                 map.setFilter("city-labels", [
-                  "or",
+                  "any",
                   ["==", ["get", "isCapital"], true],
                   ["==", ["get", "_cityId"], id],
                 ] as any);
