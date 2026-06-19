@@ -4,7 +4,6 @@ import React from "react";
 import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
-import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
 import { MapPin, Mountain, Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";
 
@@ -24,6 +23,8 @@ interface CityPropertyFormProps {
   pendingCoordinates?: [number, number] | null;
   allFeatures?: EditorFeature[];
   countryId?: string;
+  isPickingLocation?: boolean;
+  setIsPickingLocation?: (active: boolean) => void;
 }
 
 export const CityPropertyForm = React.memo(function CityPropertyForm({
@@ -32,8 +33,9 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
   pendingCoordinates,
   allFeatures,
   countryId,
+  isPickingLocation = false,
+  setIsPickingLocation,
 }: CityPropertyFormProps) {
-  const [isMapPickerOpen, setIsMapPickerOpen] = React.useState(false);
   const activeCoords = form.coordinates ?? pendingCoordinates;
   const subdivisions = (allFeatures ?? []).filter((f) => f.type === "subdivision");
 
@@ -80,26 +82,17 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
           </div>
           <button
             type="button"
-            onClick={() => setIsMapPickerOpen(true)}
-            className="flex shrink-0 items-center gap-1 font-semibold text-emerald-600 hover:text-emerald-700 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300"
+            onClick={() => setIsPickingLocation?.(!isPickingLocation)}
+            className={`flex shrink-0 items-center gap-1 font-semibold focus:outline-none transition-colors ${
+              isPickingLocation
+                ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 animate-pulse font-bold"
+                : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+            }`}
           >
             <MapPin className="h-3.5 w-3.5" />
-            <span>Pick on Map</span>
+            <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
           </button>
         </div>
-      )}
-
-      {isMapPickerOpen && countryId && (
-        <MapPickerModal
-          isOpen={isMapPickerOpen}
-          onClose={() => setIsMapPickerOpen(false)}
-          onConfirm={(coords) => {
-            onChange({ ...form, coordinates: coords });
-            setIsMapPickerOpen(false);
-          }}
-          countryId={countryId}
-          title="Pick City Location"
-        />
       )}
 
       <input

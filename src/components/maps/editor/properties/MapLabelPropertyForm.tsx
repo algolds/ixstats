@@ -24,7 +24,6 @@ const inputClasses =
 const selectClasses =
   "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
-import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
 import { MapPin } from "lucide-react";
 
 interface MapLabelPropertyFormProps {
@@ -32,6 +31,8 @@ interface MapLabelPropertyFormProps {
   onChange: (form: MapLabelFormData) => void;
   pendingCoordinates?: [number, number] | null;
   countryId?: string;
+  isPickingLocation?: boolean;
+  setIsPickingLocation?: (active: boolean) => void;
 }
 
 export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
@@ -39,8 +40,9 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
   onChange,
   pendingCoordinates,
   countryId,
+  isPickingLocation = false,
+  setIsPickingLocation,
 }: MapLabelPropertyFormProps) {
-  const [isMapPickerOpen, setIsMapPickerOpen] = React.useState(false);
   const activeCoords = form.coordinates ?? pendingCoordinates;
 
   return (
@@ -69,26 +71,17 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
           </div>
           <button
             type="button"
-            onClick={() => setIsMapPickerOpen(true)}
-            className="flex shrink-0 items-center gap-1 font-semibold text-emerald-600 hover:text-emerald-700 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300"
+            onClick={() => setIsPickingLocation?.(!isPickingLocation)}
+            className={`flex shrink-0 items-center gap-1 font-semibold focus:outline-none transition-colors ${
+              isPickingLocation
+                ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 animate-pulse font-bold"
+                : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+            }`}
           >
             <MapPin className="h-3.5 w-3.5" />
-            <span>Pick on Map</span>
+            <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
           </button>
         </div>
-      )}
-
-      {isMapPickerOpen && countryId && (
-        <MapPickerModal
-          isOpen={isMapPickerOpen}
-          onClose={() => setIsMapPickerOpen(false)}
-          onConfirm={(coords) => {
-            onChange({ ...form, coordinates: coords });
-            setIsMapPickerOpen(false);
-          }}
-          countryId={countryId}
-          title="Pick Map Label Location"
-        />
       )}
       <select
         value={form.labelType}

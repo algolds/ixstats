@@ -48,7 +48,6 @@ import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
-import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 
 import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapEditorOverlayState";
 import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
@@ -915,6 +914,7 @@ export default function MapEditorOverlay({
                   pendingGeometry={editor.pendingGeometry}
                   selectedFeature={editor.selectedFeature}
                   onMapClick={editor.handleMapClick}
+                  isPickingLocation={editor.isPickingLocation}
                   onDrawComplete={editor.handleDrawComplete}
                   onGeometryUpdate={editor.updateSubdivisionGeometry}
                   updatePointCoordinates={editor.updatePointCoordinates}

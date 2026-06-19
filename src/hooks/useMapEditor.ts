@@ -199,6 +199,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   }, []);
   const [selectedFeature, setSelectedFeature] = useState<EditorFeature | null>(null);
   const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
+  const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [pendingGeometry, setPendingGeometry] = useState<object | null>(null);
   const [cityForm, setCityForm] = useState<CityFormData>(DEFAULT_CITY);
   const [subdivisionForm, setSubdivisionForm] = useState<SubdivisionFormData>(DEFAULT_SUBDIVISION);
@@ -1001,6 +1002,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setMode("view");
     setSelectedFeature(null);
     setPendingCoordinates(null);
+    setIsPickingLocation(false);
     setPendingGeometry(null);
     setCityForm(DEFAULT_CITY);
     setSubdivisionForm(DEFAULT_SUBDIVISION);
@@ -1121,22 +1123,51 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const handleMapClick = useCallback(
     (lng: number, lat: number) => {
+      let point: [number, number] = [lng, lat];
+      if (countryGeo?.geometry) {
+        point = clampToGeometry(point, countryGeo.geometry) as [number, number];
+      }
+
+      if (isPickingLocation) {
+        if (mode === "add-city" || mode === "edit-city") {
+          setCityForm((prev) => ({ ...prev, coordinates: point }));
+          if (mode === "add-city") setPendingCoordinates(point);
+        } else if (mode === "add-poi" || mode === "edit-poi") {
+          setPOIForm((prev) => ({ ...prev, coordinates: point }));
+          if (mode === "add-poi") setPendingCoordinates(point);
+        } else if (mode === "add-story-pin" || mode === "edit-story-pin") {
+          setStoryPinForm((prev) => ({ ...prev, coordinates: point }));
+          if (mode === "add-story-pin") setPendingCoordinates(point);
+        } else if (mode === "add-label" || mode === "edit-label") {
+          setMapLabelForm((prev) => ({ ...prev, coordinates: point }));
+          if (mode === "add-label") setPendingCoordinates(point);
+        }
+        setIsPickingLocation(false);
+        return;
+      }
+
       if (
         mode === "add-city" ||
         mode === "add-poi" ||
         mode === "add-story-pin" ||
         mode === "add-label"
       ) {
-        let point: [number, number] = [lng, lat];
-        if (countryGeo?.geometry) {
-          point = clampToGeometry(point, countryGeo.geometry) as [number, number];
-        }
         setPendingCoordinates(point);
       } else if (mode === "add-route") {
         setRouteWaypoints((prev) => [...prev, [lng, lat]]);
       }
     },
-    [mode, countryGeo]
+    [
+      mode,
+      countryGeo,
+      isPickingLocation,
+      setCityForm,
+      setPOIForm,
+      setStoryPinForm,
+      setMapLabelForm,
+      setPendingCoordinates,
+      setRouteWaypoints,
+    ]
   );
 
   const handleDrawComplete = useCallback(
@@ -1275,6 +1306,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const startEditing = useCallback((feature: EditorFeature) => {
     setSelectedFeature(feature);
     setLastSavedAt(null);
+    setIsPickingLocation(false);
 
     switch (feature.type) {
       case "city":
@@ -1896,6 +1928,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setSelectedFeature,
     pendingCoordinates,
     pendingGeometry,
+    isPickingLocation,
+    setIsPickingLocation,
 
     // Forms
     cityForm,

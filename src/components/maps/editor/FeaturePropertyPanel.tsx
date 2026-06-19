@@ -67,6 +67,8 @@ interface FeaturePropertyPanelProps {
   selectedRouteId?: string | null;
   onSelectRouteId?: (id: string | null) => void;
   allFeatures?: any[];
+  isPickingLocation?: boolean;
+  setIsPickingLocation?: (active: boolean) => void;
 }
 
 export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
@@ -83,6 +85,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     selectedRouteId,
     onSelectRouteId,
     allFeatures,
+    isPickingLocation,
+    setIsPickingLocation,
   } = props;
 
   if (mode === "view") return null;
@@ -232,6 +236,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           pendingCoordinates={pendingCoordinates}
           countryId={countryId}
           allFeatures={allFeatures}
+          isPickingLocation={isPickingLocation}
+          setIsPickingLocation={setIsPickingLocation}
         />
       )}
       {(mode === "add-subdivision" || mode === "edit-subdivision") && (
@@ -247,6 +253,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           pendingCoordinates={pendingCoordinates}
           countryId={countryId}
           allFeatures={allFeatures}
+          isPickingLocation={isPickingLocation}
+          setIsPickingLocation={setIsPickingLocation}
         />
       )}
       {(mode === "add-story-pin" || mode === "edit-story-pin") &&
@@ -257,6 +265,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
             onChange={props.onStoryPinFormChange}
             countryId={countryId}
             pendingCoordinates={pendingCoordinates}
+            isPickingLocation={isPickingLocation}
+            setIsPickingLocation={setIsPickingLocation}
           />
         )}
       {(mode === "add-label" || mode === "edit-label") &&
@@ -267,6 +277,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
             onChange={props.onMapLabelFormChange}
             countryId={countryId}
             pendingCoordinates={pendingCoordinates}
+            isPickingLocation={isPickingLocation}
+            setIsPickingLocation={setIsPickingLocation}
           />
         )}
 

@@ -493,7 +493,6 @@ function WikiAutoPopulate({
   );
 }
 
-import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
 import { MapPin } from "lucide-react";
 
 // ─── Main Form ───────────────────────────────────────────────────────────────
@@ -503,6 +502,8 @@ interface StoryPinPropertyFormProps {
   onChange: (form: StoryPinFormData) => void;
   countryId?: string;
   pendingCoordinates?: [number, number] | null;
+  isPickingLocation?: boolean;
+  setIsPickingLocation?: (active: boolean) => void;
 }
 
 export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
@@ -510,8 +511,9 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
   onChange,
   countryId,
   pendingCoordinates,
+  isPickingLocation = false,
+  setIsPickingLocation,
 }: StoryPinPropertyFormProps) {
-  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const activeCoords = form.coordinates ?? pendingCoordinates;
   const [showPreview, setShowPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -568,26 +570,17 @@ export const StoryPinPropertyForm = React.memo(function StoryPinPropertyForm({
           </div>
           <button
             type="button"
-            onClick={() => setIsMapPickerOpen(true)}
-            className="flex shrink-0 items-center gap-1 font-semibold text-emerald-600 hover:text-emerald-700 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300"
+            onClick={() => setIsPickingLocation?.(!isPickingLocation)}
+            className={`flex shrink-0 items-center gap-1 font-semibold focus:outline-none transition-colors ${
+              isPickingLocation
+                ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 animate-pulse font-bold"
+                : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+            }`}
           >
             <MapPin className="h-3.5 w-3.5" />
-            <span>Pick on Map</span>
+            <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
           </button>
         </div>
-      )}
-
-      {isMapPickerOpen && countryId && (
-        <MapPickerModal
-          isOpen={isMapPickerOpen}
-          onClose={() => setIsMapPickerOpen(false)}
-          onConfirm={(coords) => {
-            onChange({ ...form, coordinates: coords });
-            setIsMapPickerOpen(false);
-          }}
-          countryId={countryId}
-          title="Pick Story Pin Location"
-        />
       )}
 
       {/* Category + Importance row */}

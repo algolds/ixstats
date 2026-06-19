@@ -13,6 +13,7 @@ interface UseWorldMapOverlayFeaturesProps {
   capitals?: CapitalsGeoJson;
   overlayFeatures?: MapOverlayFeatures;
   theme?: MapTheme;
+  selectedCountryId?: string | null;
 }
 
 export function useWorldMapOverlayFeatures({
@@ -21,6 +22,7 @@ export function useWorldMapOverlayFeatures({
   capitals,
   overlayFeatures,
   theme,
+  selectedCountryId,
 }: UseWorldMapOverlayFeaturesProps) {
   // 1. Render capitals
   useEffect(() => {
@@ -43,46 +45,81 @@ export function useWorldMapOverlayFeatures({
     }
   }, [map, isLoaded, capitals, theme]);
 
-  // 2. Render subdivisions, cities, and POIs
+  // 2. Render subdivisions, cities, and POIs with dynamic zoom/focus filtering
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures) return;
 
-    // --- Subdivisions ---
-    const subSource = "source-overlay-subdivisions";
-    try {
-      const existing = map.getSource(subSource);
-      if (existing) {
-        (existing as GeoJSONSource).setData(overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON);
-      }
-    } catch (err) {
-      console.warn("[useWorldMapOverlayFeatures] overlay subdivisions error:", err);
-    }
+    const updateOverlayFeatures = () => {
+      const currentZoom = map.getZoom();
+      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined;
 
-    // --- Cities (non-capital) ---
-    const citySource = "source-overlay-cities";
-    const nonCapitalCities: FeatureCollection = {
-      ...overlayFeatures.cities,
-      features: (overlayFeatures.cities?.features || []).filter((f) => !f.properties?.isCapital),
+      // --- Subdivisions ---
+      const subSource = "source-overlay-subdivisions";
+      try {
+        const existing = map.getSource(subSource);
+        if (existing) {
+          (existing as GeoJSONSource).setData(overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON);
+        }
+      } catch (err) {
+        console.warn("[useWorldMapOverlayFeatures] overlay subdivisions error:", err);
+      }
+
+      // --- Cities (non-capital) ---
+      const citySource = "source-overlay-cities";
+      const rawCities = overlayFeatures.cities?.features || [];
+      const filteredCitiesFeatures = rawCities.filter((f) => {
+        if (f.properties?.isCapital) return false;
+        const pop = f.properties?.population ?? 0;
+        if (currentZoom >= 6.0) return true;
+        if (currentZoom >= 4.5) return pop >= 100000;
+        if (currentZoom >= 3.0) return pop >= 250000;
+        return pop >= 500000;
+      });
+
+      const nonCapitalCities: FeatureCollection = {
+        ...overlayFeatures.cities,
+        features: filteredCitiesFeatures,
+      };
+
+      try {
+        const existing = map.getSource(citySource);
+        if (existing) {
+          (existing as GeoJSONSource).setData(nonCapitalCities as unknown as GeoJSON.GeoJSON);
+        }
+      } catch (err) {
+        console.warn("[useWorldMapOverlayFeatures] overlay cities error:", err);
+      }
+
+      // --- POIs ---
+      const poiSource = "source-overlay-pois";
+      const showPois = currentZoom >= 4.0 || hasFocus;
+      const poisGeoJson: FeatureCollection = {
+        ...overlayFeatures.pois,
+        features: showPois ? (overlayFeatures.pois?.features || []) : [],
+      };
+
+      try {
+        const existing = map.getSource(poiSource);
+        if (existing) {
+          (existing as GeoJSONSource).setData(poisGeoJson as unknown as GeoJSON.GeoJSON);
+        }
+      } catch (err) {
+        console.warn("[useWorldMapOverlayFeatures] overlay POIs error:", err);
+      }
     };
 
     try {
-      const existing = map.getSource(citySource);
-      if (existing) {
-        (existing as GeoJSONSource).setData(nonCapitalCities as unknown as GeoJSON.GeoJSON);
-      }
+      updateOverlayFeatures();
     } catch (err) {
-      console.warn("[useWorldMapOverlayFeatures] overlay cities error:", err);
+      console.warn("[useWorldMapOverlayFeatures] initial update overlay features error:", err);
     }
 
-    // --- POIs ---
-    const poiSource = "source-overlay-pois";
-    try {
-      const existing = map.getSource(poiSource);
-      if (existing) {
-        (existing as GeoJSONSource).setData(overlayFeatures.pois as unknown as GeoJSON.GeoJSON);
+    map.on("zoom", updateOverlayFeatures);
+
+    return () => {
+      if (map) {
+        map.off("zoom", updateOverlayFeatures);
       }
-    } catch (err) {
-      console.warn("[useWorldMapOverlayFeatures] overlay POIs error:", err);
-    }
-  }, [map, isLoaded, overlayFeatures, theme]);
+    };
+  }, [map, isLoaded, overlayFeatures, selectedCountryId, theme]);
 }

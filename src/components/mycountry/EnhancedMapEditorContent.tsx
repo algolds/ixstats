@@ -432,6 +432,7 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 mode={editor.mode}
                 pendingCoordinates={editor.pendingCoordinates}
                 onMapClick={editor.handleMapClick}
+                isPickingLocation={editor.isPickingLocation}
                 onDrawComplete={editor.handleDrawComplete}
                 selectedFeature={editor.selectedFeature}
                 onFeatureSelect={handleSelectFeature}
@@ -515,6 +516,8 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 pendingPointInfo={editor.pendingPointInfo}
                 isPendingPointInfoLoading={editor.isPendingPointInfoLoading}
                 allFeatures={editor.allFeatures}
+                isPickingLocation={editor.isPickingLocation}
+                setIsPickingLocation={editor.setIsPickingLocation}
               />
             }
           />

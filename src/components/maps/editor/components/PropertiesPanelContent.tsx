@@ -142,6 +142,8 @@ export function PropertiesPanelContent({
           selectedRouteId={selectedRouteId}
           onSelectRouteId={setSelectedRouteId}
           allFeatures={editor.allFeatures}
+          isPickingLocation={editor.isPickingLocation}
+          setIsPickingLocation={editor.setIsPickingLocation}
         />
       );
     } else if (mapSelectedCountry) {
@@ -467,6 +469,8 @@ export function PropertiesPanelContent({
       selectedRouteId={selectedRouteId}
       onSelectRouteId={setSelectedRouteId}
       allFeatures={editor.allFeatures}
+      isPickingLocation={editor.isPickingLocation}
+      setIsPickingLocation={editor.setIsPickingLocation}
     />
   );
 }

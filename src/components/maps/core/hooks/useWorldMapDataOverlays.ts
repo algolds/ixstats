@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { useEffect } from "react";
-import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import type { MapOverlayFeatures, OverlayVisibility } from "../IxWorldMap";
 import { registerStoryPinIcons } from "~/lib/story-pin-icons";
 import type { MapTheme } from "~/lib/map-styles/registry";
@@ -13,6 +13,7 @@ interface UseWorldMapDataOverlaysProps {
   overlayVisibility?: OverlayVisibility;
   labelsVisible?: boolean;
   theme?: MapTheme;
+  selectedCountryId?: string | null;
 }
 
 export function useWorldMapDataOverlays({
@@ -22,29 +23,46 @@ export function useWorldMapDataOverlays({
   overlayVisibility,
   labelsVisible,
   theme,
+  selectedCountryId,
 }: UseWorldMapDataOverlaysProps) {
-  // 1. Render story pins
+  // 1. Render story pins with dynamic zoom/focus filtering
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures?.storyPins) return;
 
     const spSource = "source-story-pins";
 
-    try {
+    const updateStoryPins = () => {
+      const source = map.getSource(spSource);
+      if (!source) return;
+
+      const currentZoom = map.getZoom();
+      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined;
+      const showStoryPins = currentZoom >= 4.0 || hasFocus;
+
       registerStoryPinIcons(map);
 
-      const existing = map.getSource(spSource);
-      if (existing) {
-        (existing as GeoJSONSource).setData(
-          overlayFeatures.storyPins as unknown as GeoJSON.GeoJSON
-        );
-      }
+      source.setData({
+        type: "FeatureCollection",
+        features: showStoryPins ? (overlayFeatures.storyPins.features || []) : [],
+      });
+    };
+
+    try {
+      updateStoryPins();
     } catch (err) {
       console.warn("[useWorldMapDataOverlays] story pins error:", err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, isLoaded, overlayFeatures?.storyPins, theme]);
 
-  // 1b. Render custom map labels with dynamic client-side zoom filtering
+    map.on("zoom", updateStoryPins);
+
+    return () => {
+      if (map) {
+        map.off("zoom", updateStoryPins);
+      }
+    };
+  }, [map, isLoaded, overlayFeatures?.storyPins, selectedCountryId, theme]);
+
+  // 1b. Render custom map labels with dynamic client-side zoom/focus filtering
   useEffect(() => {
     if (!map || !isLoaded || !overlayFeatures?.mapLabels) return;
 
@@ -55,13 +73,18 @@ export function useWorldMapDataOverlays({
       if (!source) return;
 
       const currentZoom = map.getZoom();
+      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined;
+      const showLabels = currentZoom >= 4.0 || hasFocus;
+
       const rawFeatures = (overlayFeatures.mapLabels as any)?.features || [];
 
-      const filteredFeatures = rawFeatures.filter((f: any) => {
-        const minZ = f.properties?.minZoom ?? 4;
-        const maxZ = f.properties?.maxZoom ?? 18;
-        return currentZoom >= minZ && currentZoom <= maxZ;
-      });
+      const filteredFeatures = showLabels
+        ? rawFeatures.filter((f: any) => {
+            const minZ = f.properties?.minZoom ?? 4;
+            const maxZ = f.properties?.maxZoom ?? 18;
+            return currentZoom >= minZ && currentZoom <= maxZ;
+          })
+        : [];
 
       (source as any).setData({
         type: "FeatureCollection",
@@ -82,7 +105,7 @@ export function useWorldMapDataOverlays({
         map.off("zoom", updateFilteredLabels);
       }
     };
-  }, [map, isLoaded, overlayFeatures?.mapLabels, theme]);
+  }, [map, isLoaded, overlayFeatures?.mapLabels, selectedCountryId, theme]);
 
   // 2. Toggle overlay groups visibility
   useEffect(() => {

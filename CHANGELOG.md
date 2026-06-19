@@ -12,6 +12,16 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Main Map Zoom-Dependent LOD & Country Focus Filters**:
+  - Implemented zoom-dependent Level of Detail (LOD) city filtering on the main interactive map (`/maps`) to render minor, medium, and major cities dynamically based on population and zoom levels.
+  - Added country focus-dependent visibility for Story Pins, Points of Interest (POIs), and Custom Map Labels, hiding them when zoomed out globally (zoom < 4.0) unless a specific country is active/selected.
+  - Propagated the `selectedCountryId` prop to the core overlay hooks ([IxWorldMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/IxWorldMap.tsx)) to dynamically reveal local overlays upon clicking/focusing a nation shape.
+
+- **MyCountry Overview Hero and Embed Map Optimization**:
+  - Implemented zoom-dependent city LOD filters on the small dashboard and MyCountry hero preview maps to keep them clean and highly readable.
+  - Eliminated the redundant inline coordinates picker map modals (`MapPickerModal`) from point property form panels, replacing them with a native, direct coordinate picker on the main map editor.
+  - Decluttered the MyCountry Overview Hero by removing the "All systems operational" health status box and hiding the continent/government badges.
+
 - **Map Editor Click-and-Drag Point Feature Markers**:
   - Implemented intuitive client-side click-and-drag interaction for all point features (cities, national capitals, POIs, story pins, map labels) and their labels in the map editor ([usePointDrag.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/usePointDrag.ts)).
   - Wired cursor hover states to turn the cursor into `grab` when hovering over point features/labels and `grabbing` during active drags.
@@ -148,6 +158,10 @@ capability integer. Each release entry below lists which components advanced and
   - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
 
 ### Fixed
+
+- **Zod Schema Validations on Drag Drop**:
+  - Resolved Zod schema validation errors when saving point feature coordinates on drag-and-drop release by converting top-level `null` fields (e.g. population, elevation, wikiPageTitle) to `undefined` before sending mutations.
+  - Integrated this Zod-safety wrapper into coordinate edits, undo/redo history, and reverse action callbacks in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
 
 - **Map Editor Real-Time Saving and Ghost Border Elimination**:
   - Hardened all database political borders and subdivision geometry calculations with PostGIS `ST_MakeValid` to auto-repair self-intersections or unclosed rings from imported/edited geometries.

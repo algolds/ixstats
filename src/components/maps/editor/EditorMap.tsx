@@ -103,6 +103,7 @@ interface EditorMapProps {
     featureType: "city" | "poi" | "storyPin" | "mapLabel",
     coordinates: [number, number]
   ) => Promise<void>;
+  isPickingLocation?: boolean;
 }
 
 const EditorMap = memo(
@@ -134,6 +135,7 @@ const EditorMap = memo(
       onRouteEditCancel,
       theme = "standard",
       updatePointCoordinates,
+      isPickingLocation = false,
     },
     ref
   ) {
@@ -149,6 +151,8 @@ const EditorMap = memo(
     onFeatureSelectRef.current = onFeatureSelect;
     const onMapClickRef = useRef(onMapClick);
     onMapClickRef.current = onMapClick;
+    const isPickingLocationRef = useRef(isPickingLocation);
+    isPickingLocationRef.current = isPickingLocation;
 
     useImperativeHandle(ref, () => ({
       flyTo: (lng: number, lat: number, zoom = 6) => {
@@ -363,7 +367,9 @@ const EditorMap = memo(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
-      if (
+      if (isPickingLocation) {
+        map.getCanvas().style.cursor = "crosshair";
+      } else if (
         mode === "view" ||
         mode === "import-provinces" ||
         mode === "edit-subdivision" ||
@@ -373,7 +379,7 @@ const EditorMap = memo(
       } else {
         map.getCanvas().style.cursor = "crosshair";
       }
-    }, [mode, isLoaded]);
+    }, [mode, isLoaded, isPickingLocation]);
 
     // Selection hover/clicks in view/paint modes
     useEffect(() => {
@@ -392,6 +398,10 @@ const EditorMap = memo(
       ];
 
       const onMouseMove = (e: any) => {
+        if (isPickingLocationRef.current) {
+          map.getCanvas().style.cursor = "crosshair";
+          return;
+        }
         if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
 
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
@@ -418,6 +428,10 @@ const EditorMap = memo(
       };
 
       const onMouseLeave = () => {
+        if (isPickingLocationRef.current) {
+          map.getCanvas().style.cursor = "crosshair";
+          return;
+        }
         if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
         map.getCanvas().style.cursor = "";
         if (map.getLayer("editor-subdivisions-hover")) {
@@ -426,6 +440,7 @@ const EditorMap = memo(
       };
 
       const onClickFeature = (e: any) => {
+        if (isPickingLocationRef.current) return;
         if (e.routeClicked || e.defaultPrevented) return;
         if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
@@ -464,6 +479,7 @@ const EditorMap = memo(
         const currentMode = modeRef.current;
 
         if (
+          isPickingLocationRef.current ||
           currentMode === "add-city" ||
           currentMode === "add-poi" ||
           currentMode === "add-story-pin" ||

@@ -218,6 +218,7 @@ const IxWorldMap = memo(
       capitals,
       overlayFeatures,
       theme,
+      selectedCountryId,
     });
 
     // ── 4. Hook: Manage Story Pins, Labels & Data Overlays ──
@@ -228,6 +229,7 @@ const IxWorldMap = memo(
       overlayVisibility,
       labelsVisible,
       theme,
+      selectedCountryId,
     });
 
     // Handle theme changes
