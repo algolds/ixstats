@@ -92,10 +92,19 @@ export function useWorldMapOverlayFeatures({
 
       // --- POIs ---
       const poiSource = "source-overlay-pois";
-      const showPois = currentZoom >= 4.0 || hasFocus;
+      const filteredPoisFeatures = (overlayFeatures.pois?.features || []).filter((f: any) => {
+        if (currentZoom >= 4.0) return true;
+        return (
+          hasFocus &&
+          (f.properties?.countryId === selectedCountryId ||
+            f.properties?.countrySlug === selectedCountryId ||
+            (f.properties?.countryName && f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
+        );
+      });
+
       const poisGeoJson: FeatureCollection = {
         ...overlayFeatures.pois,
-        features: showPois ? (overlayFeatures.pois?.features || []) : [],
+        features: filteredPoisFeatures,
       };
 
       try {

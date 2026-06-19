@@ -36,14 +36,24 @@ export function useWorldMapDataOverlays({
       if (!source) return;
 
       const currentZoom = map.getZoom();
-      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined;
-      const showStoryPins = currentZoom >= 4.0 || hasFocus;
+      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
+
+      const rawFeatures = overlayFeatures.storyPins.features || [];
+      const filteredFeatures = rawFeatures.filter((f: any) => {
+        if (currentZoom >= 4.0) return true;
+        return (
+          hasFocus &&
+          (f.properties?.countryId === selectedCountryId ||
+            f.properties?.countrySlug === selectedCountryId ||
+            (f.properties?.countryName && f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
+        );
+      });
 
       registerStoryPinIcons(map);
 
       source.setData({
         type: "FeatureCollection",
-        features: showStoryPins ? (overlayFeatures.storyPins.features || []) : [],
+        features: filteredFeatures,
       });
     };
 
@@ -73,18 +83,29 @@ export function useWorldMapDataOverlays({
       if (!source) return;
 
       const currentZoom = map.getZoom();
-      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined;
-      const showLabels = currentZoom >= 4.0 || hasFocus;
+      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
 
       const rawFeatures = (overlayFeatures.mapLabels as any)?.features || [];
 
-      const filteredFeatures = showLabels
-        ? rawFeatures.filter((f: any) => {
+      const filteredFeatures = rawFeatures.filter((f: any) => {
+        const isZoomVisible = (() => {
+          if (currentZoom >= 4.0) {
             const minZ = f.properties?.minZoom ?? 4;
             const maxZ = f.properties?.maxZoom ?? 18;
             return currentZoom >= minZ && currentZoom <= maxZ;
-          })
-        : [];
+          }
+          return false;
+        })();
+
+        if (isZoomVisible) return true;
+
+        return (
+          hasFocus &&
+          (f.properties?.countryId === selectedCountryId ||
+            f.properties?.countrySlug === selectedCountryId ||
+            (f.properties?.countryName && f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
+        );
+      });
 
       (source as any).setData({
         type: "FeatureCollection",

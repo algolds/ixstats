@@ -534,7 +534,9 @@ export function useWorldMapInteractions({
 
       if (selectedCountryId) {
         const idx = political.data.features.findIndex(
-          (f) => (f.properties?._id || f.properties?.id) === selectedCountryId
+          (f) =>
+            (f.properties?._id || f.properties?.id) === selectedCountryId ||
+            (f.properties?._countryId || f.properties?.countryId) === selectedCountryId
         );
         if (idx >= 0) {
           map.setFeatureState({ source: "source-political", id: idx }, { selected: true });

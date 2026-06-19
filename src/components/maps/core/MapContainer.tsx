@@ -290,7 +290,7 @@ export function MapContainer({
         onMapClick={handleMapClickWithLayers}
         onFeatureClick={handleFeatureClick}
         onReady={() => setMapEngineReady(true)}
-        selectedCountryId={selectedCountry?.featureId}
+        selectedCountryId={selectedCountry?.countryId || selectedCountry?.featureId}
         isMeasuring={isMeasuring}
         geographyFilter={geographyFilter}
         projectionMode={forceFlatProjection ? "mercator" : projectionMode}
