@@ -13,6 +13,129 @@ import { api } from "~/trpc/react";
 import { clampToGeometry, pointInGeometry } from "~/lib/border-editor";
 import { buildRouteGeometry } from "~/lib/route-geometry";
 
+// ── Pure duplicate transform (exported for unit testing) ──
+
+const DUPLICATE_OFFSET_DEG = 0.05;
+
+/**
+ * Builds the create-input for a duplicated feature.
+ * Pure function — no React, no tRPC.
+ *
+ * For point features: offsets coordinates by DUPLICATE_OFFSET_DEG.
+ * For polygon features: offsets every coordinate in the geometry.
+ * Appends " (copy)" to the name.
+ *
+ * Returns an object with the same shape as the relevant upsert input
+ * (minus countryId, which the caller supplies).
+ */
+export function buildDuplicateInput(feature: EditorFeature): Record<string, unknown> {
+  const name = `${feature.name} (copy)`;
+
+  const offsetCoords = (coords: [number, number]): [number, number] => [
+    coords[0] + DUPLICATE_OFFSET_DEG,
+    coords[1] + DUPLICATE_OFFSET_DEG,
+  ];
+
+  const offsetGeometry = (geometry: object): object => {
+    if (!geometry || typeof (geometry as any).type !== "string") return geometry;
+    const geom = geometry as any;
+    if (geom.type === "Polygon") {
+      return {
+        ...geom,
+        coordinates: geom.coordinates.map((ring: [number, number][]) =>
+          ring.map(offsetCoords)
+        ),
+      };
+    }
+    if (geom.type === "MultiPolygon") {
+      return {
+        ...geom,
+        coordinates: geom.coordinates.map((polygon: [number, number][][]) =>
+          polygon.map((ring) => ring.map(offsetCoords))
+        ),
+      };
+    }
+    return geom;
+  };
+
+  switch (feature.type) {
+    case "city": {
+      const p = feature.properties;
+      return {
+        name,
+        type: (p.cityType as string) ?? "city",
+        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
+        population: p.population ?? undefined,
+        elevation: p.elevation ?? undefined,
+        foundedYear: p.foundedYear ?? undefined,
+        isNationalCapital: false, // capital is unique; copy is not a capital
+        isSubdivisionCapital: false,
+        wikiPageTitle: undefined,
+      };
+    }
+    case "subdivision": {
+      const p = feature.properties;
+      return {
+        name,
+        type: (p.type as string) ?? "province",
+        level: (p.level as number) ?? 1,
+        color: (p.color as string) ?? undefined,
+        geometry: feature.geometry ? offsetGeometry(feature.geometry) : undefined,
+        population: p.population ?? undefined,
+        areaSqKm: p.areaSqKm ?? undefined,
+      };
+    }
+    case "poi": {
+      const p = feature.properties;
+      return {
+        name,
+        category: (p.category as string) ?? "landmark",
+        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
+        description: (p.description as string) ?? undefined,
+        icon: (p.icon as string) ?? undefined,
+        wikiPageTitle: undefined,
+      };
+    }
+    case "storyPin": {
+      const p = feature.properties;
+      return {
+        title: name,
+        content: (p.content as string) ?? "",
+        category: (p.category as string) ?? "cultural",
+        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
+        ixTimeYear: p.ixTimeYear ?? undefined,
+      };
+    }
+    case "mapLabel": {
+      const p = feature.properties;
+      return {
+        text: name,
+        labelType: (p.labelType as string) ?? "mountain_range",
+        coordinates: feature.coordinates ? offsetCoords(feature.coordinates) : undefined,
+        fontSize: (p.fontSize as number) ?? 14,
+        color: (p.color as string) ?? "#374151",
+        rotation: (p.rotation as number) ?? 0,
+        opacity: (p.opacity as number) ?? 1,
+        letterSpacing: (p.letterSpacing as number) ?? 0,
+        fontWeight: (p.fontWeight as string) ?? "normal",
+        minZoom: (p.minZoom as number) ?? undefined,
+        maxZoom: (p.maxZoom as number) ?? undefined,
+      };
+    }
+    case "route": {
+      const p = feature.properties;
+      return {
+        routeType: (p.routeType as string) ?? "road",
+        name,
+        geometry: feature.geometry ?? undefined,
+        properties: p,
+      };
+    }
+    default:
+      return { name };
+  }
+}
+
 // ── Undo/Redo Types ──
 
 interface EditorAction {
@@ -1809,6 +1932,123 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     ]
   );
 
+  // Duplicate a feature (clone + offset + rename)
+  const duplicateFeature = useCallback(
+    async (feature: EditorFeature | null) => {
+      if (!countryId || !feature) return;
+      const input = buildDuplicateInput(feature);
+      let newId: string | undefined;
+
+      switch (feature.type) {
+        case "city": {
+          const result = await createCity.mutateAsync({
+            countryId,
+            name: input.name as string,
+            type: (input.type as string) ?? "city",
+            coordinates: input.coordinates as [number, number] | undefined,
+            population: input.population as number | undefined,
+            elevation: input.elevation as number | undefined,
+            foundedYear: input.foundedYear as number | undefined,
+            isNationalCapital: false,
+            isSubdivisionCapital: false,
+          });
+          newId = result?.id;
+          break;
+        }
+        case "subdivision": {
+          const result = await createSubdivision.mutateAsync({
+            countryId,
+            name: input.name as string,
+            type: (input.type as string) ?? "province",
+            level: (input.level as number) ?? 1,
+            geometry: input.geometry as object | undefined,
+            color: input.color as string | undefined,
+            population: input.population as number | undefined,
+            areaSqKm: input.areaSqKm as number | undefined,
+          });
+          newId = result?.id;
+          break;
+        }
+        case "poi": {
+          const result = await createPOI.mutateAsync({
+            countryId,
+            name: input.name as string,
+            category: (input.category as string) ?? "landmark",
+            coordinates: input.coordinates as [number, number] | undefined,
+            description: input.description as string | undefined,
+            icon: input.icon as string | undefined,
+          });
+          newId = result?.id;
+          break;
+        }
+        case "storyPin": {
+          const result = await createStoryPin.mutateAsync({
+            countryId,
+            title: input.title as string,
+            content: (input.content as string) ?? "",
+            category: (input.category as string) ?? "cultural",
+            coordinates: input.coordinates as [number, number] | undefined,
+            ixTimeYear: input.ixTimeYear as number | undefined,
+          });
+          newId = result?.id;
+          break;
+        }
+        case "mapLabel": {
+          const result = await createMapLabel.mutateAsync({
+            countryId,
+            text: input.text as string,
+            labelType: (input.labelType as string) ?? "mountain_range",
+            coordinates: input.coordinates as [number, number] | undefined,
+            fontSize: (input.fontSize as number) ?? 14,
+            color: (input.color as string) ?? "#374151",
+            rotation: (input.rotation as number) ?? 0,
+            opacity: (input.opacity as number) ?? 1,
+            letterSpacing: (input.letterSpacing as number) ?? 0,
+            fontWeight: (input.fontWeight as string) ?? "normal",
+            minZoom: (input.minZoom as number) ?? undefined,
+            maxZoom: (input.maxZoom as number) ?? undefined,
+          });
+          newId = result?.id;
+          break;
+        }
+        case "route": {
+          const result = await createRoute.mutateAsync({
+            countryId,
+            routeType: (input.routeType as string) ?? "road",
+            name: input.name as string,
+            geometry: input.geometry as object | undefined,
+          });
+          newId = result?.id;
+          break;
+        }
+      }
+
+      if (newId) {
+        pushAction({
+          type: "create",
+          featureType: feature.type,
+          featureId: newId,
+          newData: input,
+        });
+      }
+
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [
+      countryId,
+      createCity,
+      createSubdivision,
+      createPOI,
+      createStoryPin,
+      createMapLabel,
+      createRoute,
+      pushAction,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
+  );
+
   // Bulk delete selected features
   const bulkDeleteSelected = useCallback(async () => {
     if (!countryId || selectedIds.size === 0) return;
@@ -2014,5 +2254,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     clearMultiSelect,
     bulkDeleteSelected,
     bulkEditSelected,
+    duplicateFeature,
   };
 }

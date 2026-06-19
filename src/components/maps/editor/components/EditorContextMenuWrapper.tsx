@@ -35,6 +35,10 @@ export function EditorContextMenuWrapper({
         setContextMenu(null);
       }}
       onDuplicate={() => {
+        const feat = editor.allFeatures.find((f: any) => f.id === contextMenu.feature.id);
+        if (feat && editor.duplicateFeature) {
+          void editor.duplicateFeature(feat);
+        }
         setContextMenu(null);
       }}
       onDelete={() => {

@@ -12,7 +12,7 @@
  * Height: 32px, matches Photoshop's slim context bar.
  */
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   Crown,
   Trash2,
@@ -23,6 +23,9 @@ import {
   Type,
   Route,
   BookMarked,
+  Check,
+  Undo2,
+  Navigation,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -64,10 +67,15 @@ interface ToolOptionsBarProps {
   // Route
   routeTypes?: string[];
   onRouteTypesChange?: (types: string[]) => void;
+  onFinishRoute?: () => void;
+  onUndoWaypoint?: () => void;
   // Selection
   selectedCount?: number;
   onDuplicate?: () => void;
   onDelete?: () => void;
+  // Point feature actions (city/POI — used in edit mode)
+  onCopyCoords?: () => void;
+  onMoveToCoords?: (lng: number, lat: number) => void;
   // Story
   storyCategory?: string;
   onStoryCategoryChange?: (cat: string) => void;
@@ -133,13 +141,51 @@ const btnClass =
   "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
 const activeBtnClass =
   "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-[11px] text-primary";
+const dangerBtnClass =
+  "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-red-500 transition-colors hover:bg-red-500/10";
 const labelClass = "text-[10px] font-medium uppercase tracking-wider text-muted-foreground";
+const dividerClass = "bg-border h-4 w-px";
 
 function ToolLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
     <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
       <Icon className="text-muted-foreground h-3.5 w-3.5" />
       <span className="text-foreground text-[11px] font-semibold">{label}</span>
+    </div>
+  );
+}
+
+/** Inline lng/lat input pair for "Move to coordinates" affordance */
+function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: number) => void }) {
+  const [lng, setLng] = useState("");
+  const [lat, setLat] = useState("");
+  const handle = () => {
+    const lngN = parseFloat(lng);
+    const latN = parseFloat(lat);
+    if (!isNaN(lngN) && !isNaN(latN)) onMove(lngN, latN);
+  };
+  return (
+    <div className="flex items-center gap-1">
+      <span className={labelClass}>Move to</span>
+      <input
+        type="number"
+        placeholder="Lng"
+        value={lng}
+        onChange={(e) => setLng(e.target.value)}
+        className={`${selectClass} w-16`}
+        step="any"
+      />
+      <input
+        type="number"
+        placeholder="Lat"
+        value={lat}
+        onChange={(e) => setLat(e.target.value)}
+        className={`${selectClass} w-16`}
+        step="any"
+      />
+      <button onClick={handle} className={btnClass} title="Go">
+        <Navigation className="h-3 w-3" />
+      </button>
     </div>
   );
 }
@@ -159,18 +205,14 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           <span className="text-foreground text-[11px] font-medium">
             {props.selectedCount} selected
           </span>
-          <div className="bg-border h-4 w-px" />
+          <div className={dividerClass} />
           {props.onDuplicate && (
             <button onClick={props.onDuplicate} className={btnClass} title="Duplicate">
               <Copy className="h-3 w-3" /> Duplicate
             </button>
           )}
           {props.onDelete && (
-            <button
-              onClick={props.onDelete}
-              className="flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-red-500 transition-colors hover:bg-red-500/10"
-              title="Delete"
-            >
+            <button onClick={props.onDelete} className={dangerBtnClass} title="Delete">
               <Trash2 className="h-3 w-3" /> Delete
             </button>
           )}
@@ -203,6 +245,24 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             <Crown className="h-3 w-3 text-amber-500" />
             <span className="text-muted-foreground text-[11px]">Capital</span>
           </label>
+          {mode === "edit-city" && (
+            <>
+              <div className={dividerClass} />
+              {props.onDuplicate && (
+                <button onClick={props.onDuplicate} className={btnClass} title="Duplicate city">
+                  <Copy className="h-3 w-3" /> Duplicate
+                </button>
+              )}
+              {props.onCopyCoords && (
+                <button onClick={props.onCopyCoords} className={btnClass} title="Copy coordinates">
+                  <MapPin className="h-3 w-3" /> Copy Coords
+                </button>
+              )}
+              {props.onMoveToCoords && (
+                <MoveToCoordsInput onMove={props.onMoveToCoords} />
+              )}
+            </>
+          )}
         </>
       )}
 
@@ -250,6 +310,24 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               </option>
             ))}
           </select>
+          {mode === "edit-poi" && (
+            <>
+              <div className={dividerClass} />
+              {props.onDuplicate && (
+                <button onClick={props.onDuplicate} className={btnClass} title="Duplicate POI">
+                  <Copy className="h-3 w-3" /> Duplicate
+                </button>
+              )}
+              {props.onCopyCoords && (
+                <button onClick={props.onCopyCoords} className={btnClass} title="Copy coordinates">
+                  <MapPin className="h-3 w-3" /> Copy Coords
+                </button>
+              )}
+              {props.onMoveToCoords && (
+                <MoveToCoordsInput onMove={props.onMoveToCoords} />
+              )}
+            </>
+          )}
         </>
       )}
 
@@ -378,6 +456,21 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               </button>
             );
           })}
+          {(props.onFinishRoute || props.onUndoWaypoint) && (
+            <>
+              <div className={dividerClass} />
+              {props.onFinishRoute && (
+                <button onClick={props.onFinishRoute} className={activeBtnClass} title="Finish route">
+                  <Check className="h-3 w-3" /> Finish
+                </button>
+              )}
+              {props.onUndoWaypoint && (
+                <button onClick={props.onUndoWaypoint} className={btnClass} title="Undo last waypoint">
+                  <Undo2 className="h-3 w-3" /> Undo Waypoint
+                </button>
+              )}
+            </>
+          )}
         </>
       )}
     </div>

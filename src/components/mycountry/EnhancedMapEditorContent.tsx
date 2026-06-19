@@ -19,6 +19,7 @@ import { useMapEditor } from "~/hooks/useMapEditor";
 import { useMapData } from "~/hooks/useMapData";
 import { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
+import { ToolOptionsBar } from "~/components/maps/editor/ToolOptionsBar";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
 import { FeatureList } from "~/components/maps/editor/FeatureList";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
@@ -76,6 +77,9 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
 
   const editor = useMapEditor(country?.id);
   const importer = useProvinceImporter(country?.id ?? "");
+
+  // Route type selection state for ToolOptionsBar
+  const [routeTypes, setRouteTypes] = useState<string[]>(["road"]);
 
   // Wiki scanner mutations
   const updateCityWiki = api.geoFeatures.updateCity.useMutation({
@@ -281,6 +285,58 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
           horizontal={true}
         />
       </div>
+
+      {/* ── Context Tool Bar (ToolOptionsBar) — sits under the title bar ── */}
+      <ToolOptionsBar
+        mode={editor.mode}
+        cityType={editor.cityForm.cityType}
+        onCityTypeChange={(t) => editor.setCityForm((p) => ({ ...p, cityType: t }))}
+        isNationalCapital={editor.cityForm.isNationalCapital}
+        onCapitalChange={(v) => editor.setCityForm((p) => ({ ...p, isNationalCapital: v }))}
+        subdivisionType={editor.subdivisionForm.type}
+        onSubdivisionTypeChange={(t) => editor.setSubdivisionForm((p) => ({ ...p, type: t }))}
+        subdivisionLevel={editor.subdivisionForm.level}
+        onSubdivisionLevelChange={(l) => editor.setSubdivisionForm((p) => ({ ...p, level: l }))}
+        poiCategory={editor.poiForm.category}
+        onPoiCategoryChange={(c) => editor.setPOIForm((p) => ({ ...p, category: c }))}
+        labelFontSize={editor.mapLabelForm.fontSize}
+        onLabelFontSizeChange={(s) => editor.setMapLabelForm((p) => ({ ...p, fontSize: s }))}
+        labelColor={editor.mapLabelForm.color}
+        onLabelColorChange={(c) => editor.setMapLabelForm((p) => ({ ...p, color: c }))}
+        labelBold={editor.mapLabelForm.fontWeight === "bold"}
+        onLabelBoldChange={(b) =>
+          editor.setMapLabelForm((p) => ({ ...p, fontWeight: b ? "bold" : "normal" }))
+        }
+        routeTypes={routeTypes}
+        onRouteTypesChange={setRouteTypes}
+        selectedCount={editor.selectedIds.size}
+        onDuplicate={
+          editor.selectedFeature
+            ? () => editor.duplicateFeature(editor.selectedFeature)
+            : undefined
+        }
+        onDelete={editor.selectedIds.size > 0 ? editor.bulkDeleteSelected : undefined}
+        onCopyCoords={
+          editor.selectedFeature?.coordinates
+            ? () => {
+                const [lng, lat] = editor.selectedFeature!.coordinates!;
+                void navigator.clipboard.writeText(`${lat}, ${lng}`);
+              }
+            : undefined
+        }
+        onMoveToCoords={
+          editor.selectedFeature
+            ? (lng, lat) =>
+                editor.updatePointCoordinates(
+                  editor.selectedFeature!.id,
+                  editor.selectedFeature!.type as "city" | "poi" | "storyPin" | "mapLabel",
+                  [lng, lat]
+                )
+            : undefined
+        }
+        onFinishRoute={editor.finishRoute}
+        onUndoWaypoint={editor.undoLastWaypoint}
+      />
 
       {/* ── Content: left panel + map + right panel ── */}
       <div className="relative flex min-h-0 flex-1">
