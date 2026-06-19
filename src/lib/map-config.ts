@@ -182,6 +182,42 @@ export function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
 /** Ocean background color for the globe */
 export const OCEAN_COLOR = "#b3cde0";
 
+// ─── Route Styles (single source of truth) ───────────────────────────────────
+
+/**
+ * Visual style for each transport route type.
+ * Consumed by TransportOverlay (IxWorldMap) and EditorMap route layers so that
+ * adding a new route type is a single-line change here.
+ */
+export interface RouteStyle {
+  /** Display label used in the UI */
+  label: string;
+  /** MapLibre line-color / UI color swatch */
+  color: string;
+  /** MapLibre line-width in pixels */
+  width: number;
+  /** Optional MapLibre line-dasharray (undefined = solid) */
+  dash?: number[];
+}
+
+export const ROUTE_STYLES: Record<string, RouteStyle> = {
+  rail:             { label: "Rail",         color: "#374151", width: 3 },
+  highway:          { label: "Highway",      color: "#f97316", width: 2.5 },
+  road:             { label: "Road",         color: "#92400e", width: 1.5 },
+  shipping_lane:    { label: "Shipping",     color: "#3b82f6", width: 2 },
+  canal:            { label: "Canal",        color: "#06b6d4", width: 1.5 },
+  air_corridor:     { label: "Air",          color: "#a855f7", width: 2, dash: [6, 4] },
+  ferry:            { label: "Ferry",        color: "#14b8a6", width: 1.5, dash: [4, 3] },
+  pipeline:         { label: "Pipeline",     color: "#eab308", width: 2 },
+  power_grid:       { label: "Power",        color: "#f59e0b", width: 1.5 },
+  fiber:            { label: "Fiber",        color: "#e5e7eb", width: 1 },
+  military_supply:  { label: "Mil. Supply",  color: "#dc2626", width: 2 },
+  military_naval:   { label: "Mil. Naval",   color: "#7f1d1d", width: 2 },
+};
+
+/** Ordered list of all route type keys for consistent UI rendering */
+export const ROUTE_TYPE_KEYS = Object.keys(ROUTE_STYLES) as (keyof typeof ROUTE_STYLES)[];
+
 /** Distinct saturated colors for country fills (Google Maps-style) */
 export const DEFAULT_COUNTRY_COLORS = [
   "#f8bbd0", // pink

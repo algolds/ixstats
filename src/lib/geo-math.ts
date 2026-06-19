@@ -307,3 +307,53 @@ export function ringBbox(ring: [number, number][]): [number, number, number, num
   }
   return [minX, minY, maxX, maxY];
 }
+
+// ─── Terrain Difficulty ──────────────────────────────────────────────────────
+
+/**
+ * Normalize a series of elevation samples (meters) to a 0-1 terrain-difficulty
+ * score suitable for the TransportRoute.terrainDifficulty field.
+ *
+ * Algorithm:
+ *   - Compute cumulative elevation gain (sum of positive changes only).
+ *   - Normalize: 0 m gain → 0.0, ≥ 5 000 m gain → 1.0.
+ *
+ * Pure function — no side effects. Exported for unit testing.
+ *
+ * @param elevations  Elevation values in meters sampled along the route.
+ *                    Must have at least 2 entries; returns 0 for empty/single arrays.
+ * @returns           Difficulty score in [0, 1].
+ */
+export function normalizeTerrainDifficulty(elevations: number[]): number {
+  if (elevations.length < 2) return 0;
+  let totalAscent = 0;
+  for (let i = 1; i < elevations.length; i++) {
+    const delta = (elevations[i] ?? 0) - (elevations[i - 1] ?? 0);
+    if (delta > 0) totalAscent += delta;
+  }
+  // 5 000 m cumulative gain ≡ 1.0 difficulty (matches transport-generator heuristic)
+  return Math.min(1, totalAscent / 5000);
+}
+
+/**
+ * Sample N evenly-spaced points along a polyline and return their [lng, lat]
+ * coordinates. The start and end points are always included.
+ *
+ * @param coords  Polyline vertices as [lng, lat] pairs.
+ * @param n       Number of sample points (clamped to coords.length if smaller).
+ * @returns       Array of [lng, lat] pairs.
+ */
+export function samplePolylinePoints(
+  coords: [number, number][],
+  n: number
+): [number, number][] {
+  if (coords.length === 0) return [];
+  if (n <= 0 || coords.length <= n) return [...coords];
+  const step = (coords.length - 1) / (n - 1);
+  const result: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.round(i * step);
+    result.push(coords[Math.min(idx, coords.length - 1)]!);
+  }
+  return result;
+}

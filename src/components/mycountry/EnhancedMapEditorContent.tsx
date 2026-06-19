@@ -336,6 +336,13 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
         }
         onFinishRoute={editor.finishRoute}
         onUndoWaypoint={editor.undoLastWaypoint}
+        onReverseRoute={
+          editor.routeWaypoints.length >= 2
+            ? () => editor.setRouteWaypoints([...editor.routeWaypoints].reverse())
+            : undefined
+        }
+        isSnapEnabled={editor.isSnapEnabled}
+        onSnapToggle={() => editor.setIsSnapEnabled((v) => !v)}
       />
 
       {/* ── Content: left panel + map + right panel ── */}

@@ -152,6 +152,7 @@ export const transportRouteQueriesRouter = createTRPCRouter({
             terrainDifficulty: r.terrainDifficulty,
             isInternational: r.isInternational,
             builtYear: r.builtYear,
+            stops: r.stops ?? [],
             ...((r.properties as Record<string, unknown>) ?? {}),
           },
         })),

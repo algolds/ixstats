@@ -331,25 +331,16 @@ export const transportRouteMutationsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const coords = (input.geometry as { coordinates?: number[][] })?.coordinates ?? [];
-      let lengthKm = 0;
-      for (let i = 1; i < coords.length; i++) {
-        const [lon1, lat1] = coords[i - 1]!;
-        const [lon2, lat2] = coords[i]!;
-        if (lon1 !== undefined && lat1 !== undefined && lon2 !== undefined && lat2 !== undefined) {
-          lengthKm += haversineKm(lat1, lon1, lat2, lon2);
-        }
-      }
-      const roundedLength = Math.round(lengthKm * 10) / 10;
 
-      const geoProfile = await ctx.db.countryGeoProfile.findUnique({
-        where: { countryId: input.countryId },
-        select: { terrainRoughness: true },
-      });
-      const terrainDifficulty = geoProfile?.terrainRoughness ?? 0.2;
+      const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
+        ctx.db,
+        coords,
+        input.countryId
+      );
 
       const { costBillion, maintenanceCost } = calculateRouteCosts({
         routeType: input.routeType,
-        lengthKm: roundedLength,
+        lengthKm,
         terrainDifficulty,
       });
 
@@ -366,7 +357,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           },
           isInternational: input.isInternational,
           status: "operational",
-          lengthKm: roundedLength,
+          lengthKm,
           terrainDifficulty,
         },
       });
@@ -401,6 +392,17 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         builtYear: z.number().optional(),
         capacity: z.number().optional(),
         properties: z.any().optional(),
+        /** Ordered stop list: [{cityId, name, coordinates, order}] */
+        stops: z
+          .array(
+            z.object({
+              cityId: z.string(),
+              name: z.string(),
+              coordinates: z.tuple([z.number(), z.number()]),
+              order: z.number(),
+            })
+          )
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -456,23 +458,14 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Recalculate length from new geometry
+      // Recalculate length and terrain difficulty from new geometry
       const coords = (input.geometry as { coordinates?: number[][] })?.coordinates ?? [];
-      let lengthKm = 0;
-      for (let i = 1; i < coords.length; i++) {
-        const [lon1, lat1] = coords[i - 1]!;
-        const [lon2, lat2] = coords[i]!;
-        if (lon1 !== undefined && lat1 !== undefined && lon2 !== undefined && lat2 !== undefined) {
-          lengthKm += haversineKm(lat1, lon1, lat2, lon2);
-        }
-      }
-      const roundedLength = Math.round(lengthKm * 10) / 10;
 
-      const geoProfile = await ctx.db.countryGeoProfile.findUnique({
-        where: { countryId: input.countryId },
-        select: { terrainRoughness: true },
-      });
-      const terrainDifficulty = geoProfile?.terrainRoughness ?? 0.2;
+      const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
+        ctx.db,
+        coords,
+        input.countryId
+      );
 
       // Fetch route to get its type and existing properties
       const route = await ctx.db.transportRoute.findUnique({
@@ -483,7 +476,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       const existingProps = (route?.properties as Record<string, any>) || {};
       const { costBillion, maintenanceCost } = calculateRouteCosts({
         routeType,
-        lengthKm: roundedLength,
+        lengthKm,
         terrainDifficulty,
       });
 
@@ -491,7 +484,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           geometry: input.geometry,
-          lengthKm: roundedLength,
+          lengthKm,
           terrainDifficulty,
           properties: {
             ...existingProps,
@@ -512,7 +505,66 @@ export const transportRouteMutationsRouter = createTRPCRouter({
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-import { distanceKmLatLng as haversineKm } from "~/lib/geo-math";
+import { polylineLengthKm, normalizeTerrainDifficulty, samplePolylinePoints } from "~/lib/geo-math";
+import { getTerrainAtPoint } from "~/lib/base-layer-query";
+
+/**
+ * Compute accurate route length and terrain difficulty from GeoJSON LineString coordinates.
+ * lengthKm uses the IxEarth-calibrated polylineLengthKm haversine.
+ * terrainDifficulty samples up to 20 evenly-spaced points via PostGIS altitude data,
+ * then normalizes cumulative elevation gain to 0-1.
+ * Falls back to countryGeoProfile.terrainRoughness if PostGIS data is unavailable.
+ */
+async function computeRouteLengthAndDifficulty(
+  db: any,
+  coords: number[][],
+  countryId?: string
+): Promise<{ lengthKm: number; terrainDifficulty: number }> {
+  const points = coords
+    .filter((c) => c.length >= 2 && c[0] !== undefined && c[1] !== undefined)
+    .map((c) => [c[0]!, c[1]!] as [number, number]);
+
+  const lengthKm = Math.round(polylineLengthKm(points) * 10) / 10;
+
+  // Sample terrain at up to 20 evenly-spaced points
+  const SAMPLE_COUNT = 20;
+  const samplePoints = samplePolylinePoints(points, SAMPLE_COUNT);
+
+  let terrainDifficulty: number;
+  if (samplePoints.length >= 2) {
+    try {
+      const results = await Promise.all(
+        samplePoints.map(([lng, lat]) => getTerrainAtPoint(db, lng, lat))
+      );
+      const elevations = results.map((r) => {
+        if (!r.elevationZone) return 0;
+        // Use midpoint of the elevation zone range as sample value
+        return (r.elevationZone.elevationMin + r.elevationZone.elevationMax) / 2;
+      });
+      terrainDifficulty = normalizeTerrainDifficulty(elevations);
+    } catch {
+      // Terrain data unavailable — fall back to country profile roughness
+      terrainDifficulty = await getFallbackDifficulty(db, countryId);
+    }
+  } else {
+    terrainDifficulty = await getFallbackDifficulty(db, countryId);
+  }
+
+  return { lengthKm, terrainDifficulty };
+}
+
+async function getFallbackDifficulty(db: any, countryId?: string): Promise<number> {
+  if (!countryId) return 0.2;
+  try {
+    const geoProfile = await db.countryGeoProfile.findUnique({
+      where: { countryId },
+      select: { terrainRoughness: true },
+    });
+    return geoProfile?.terrainRoughness ?? 0.2;
+  } catch {
+    return 0.2;
+  }
+}
 
 function extractBoundaryCoords(geometry: import("geojson").Geometry): [number, number][] {
   const coords: [number, number][] = [];

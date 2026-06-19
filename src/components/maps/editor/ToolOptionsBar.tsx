@@ -26,6 +26,8 @@ import {
   Check,
   Undo2,
   Navigation,
+  ArrowLeftRight,
+  Magnet,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -69,6 +71,9 @@ interface ToolOptionsBarProps {
   onRouteTypesChange?: (types: string[]) => void;
   onFinishRoute?: () => void;
   onUndoWaypoint?: () => void;
+  onReverseRoute?: () => void;
+  isSnapEnabled?: boolean;
+  onSnapToggle?: () => void;
   // Selection
   selectedCount?: number;
   onDuplicate?: () => void;
@@ -456,7 +461,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               </button>
             );
           })}
-          {(props.onFinishRoute || props.onUndoWaypoint) && (
+          {(props.onFinishRoute || props.onUndoWaypoint || props.onReverseRoute || props.onSnapToggle) && (
             <>
               <div className={dividerClass} />
               {props.onFinishRoute && (
@@ -466,7 +471,22 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               )}
               {props.onUndoWaypoint && (
                 <button onClick={props.onUndoWaypoint} className={btnClass} title="Undo last waypoint">
-                  <Undo2 className="h-3 w-3" /> Undo Waypoint
+                  <Undo2 className="h-3 w-3" /> Undo
+                </button>
+              )}
+              {props.onReverseRoute && (
+                <button onClick={props.onReverseRoute} className={btnClass} title="Reverse route direction">
+                  <ArrowLeftRight className="h-3 w-3" /> Reverse
+                </button>
+              )}
+              {props.onSnapToggle && (
+                <button
+                  onClick={props.onSnapToggle}
+                  className={props.isSnapEnabled ? activeBtnClass : btnClass}
+                  title={props.isSnapEnabled ? "Snap to cities ON — click to disable" : "Snap to cities OFF — click to enable"}
+                >
+                  <Magnet className="h-3 w-3" />
+                  {props.isSnapEnabled ? "Snap On" : "Snap Off"}
                 </button>
               )}
             </>

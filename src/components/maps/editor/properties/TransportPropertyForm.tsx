@@ -16,23 +16,19 @@ import {
   X,
   Gauge,
   Mountain,
+  Plus,
+  GripVertical,
 } from "lucide-react";
 import { api } from "~/trpc/react";
+import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/map-config";
 
-const ROUTE_TYPES = [
-  { value: "rail", label: "Rail", color: "#374151" },
-  { value: "highway", label: "Highway", color: "#f97316" },
-  { value: "road", label: "Road", color: "#92400e" },
-  { value: "shipping_lane", label: "Shipping", color: "#3b82f6" },
-  { value: "canal", label: "Canal", color: "#06b6d4" },
-  { value: "air_corridor", label: "Air", color: "#a855f7" },
-  { value: "ferry", label: "Ferry", color: "#14b8a6" },
-  { value: "pipeline", label: "Pipeline", color: "#eab308" },
-  { value: "power_grid", label: "Power", color: "#f59e0b" },
-  { value: "fiber", label: "Fiber", color: "#e5e7eb" },
-  { value: "military_supply", label: "Mil. Supply", color: "#dc2626" },
-  { value: "military_naval", label: "Mil. Naval", color: "#7f1d1d" },
-] as const;
+// Derive the UI type list from the single source of truth in map-config.
+// Each entry carries value, label, and color for the filter chips and type pickers.
+const ROUTE_TYPES = ROUTE_TYPE_KEYS.map((key) => ({
+  value: key,
+  label: ROUTE_STYLES[key]!.label,
+  color: ROUTE_STYLES[key]!.color,
+})) as ReadonlyArray<{ value: string; label: string; color: string }>;
 
 // Route types the server can generate procedurally (must match the generateRoutes
 // Zod enum in routeMutations.ts). All other ROUTE_TYPES are manual-draw only.
@@ -537,6 +533,22 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                             {status.replace("_", " ")}
                           </button>
                         </div>
+
+                        {/* ── Stops Editor ── */}
+                        <StopsEditor
+                          routeId={props.id as string}
+                          countryId={countryId}
+                          stops={(props.stops as Array<{
+                            cityId: string;
+                            name: string;
+                            coordinates: [number, number];
+                            order: number;
+                          }>) ?? []}
+                          onSave={(stops) =>
+                            updateRoute.mutate({ id: props.id as string, countryId, stops })
+                          }
+                          isSaving={updateRoute.isPending}
+                        />
                       </div>
                     )}
                   </div>
@@ -813,3 +825,158 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
     </div>
   );
 });
+
+// ── Stops Editor ──────────────────────────────────────────────────────────────
+
+interface Stop {
+  cityId: string;
+  name: string;
+  coordinates: [number, number];
+  order: number;
+}
+
+interface StopsEditorProps {
+  routeId: string;
+  countryId: string;
+  stops: Stop[];
+  onSave: (stops: Stop[]) => void;
+  isSaving: boolean;
+}
+
+/**
+ * Inline stop list editor: add free-text stop names, reorder via drag handles,
+ * and remove individual stops. Persists via updateRoute mutation.
+ */
+function StopsEditor({ stops: initialStops, onSave, isSaving }: StopsEditorProps) {
+  const [localStops, setLocalStops] = React.useState<Stop[]>(() => initialStops);
+  const [newName, setNewName] = React.useState("");
+  const [isDirty, setIsDirty] = React.useState(false);
+  const dragIdx = React.useRef<number | null>(null);
+
+  // Sync when external data updates (e.g. after save)
+  React.useEffect(() => {
+    setLocalStops(initialStops);
+    setIsDirty(false);
+  }, [initialStops]);
+
+  const addStop = () => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    const next: Stop[] = [
+      ...localStops,
+      {
+        cityId: `manual-${Date.now()}`,
+        name: trimmed,
+        coordinates: [0, 0],
+        order: localStops.length,
+      },
+    ];
+    setLocalStops(next);
+    setIsDirty(true);
+    setNewName("");
+  };
+
+  const removeStop = (idx: number) => {
+    const next = localStops
+      .filter((_, i) => i !== idx)
+      .map((s, i) => ({ ...s, order: i }));
+    setLocalStops(next);
+    setIsDirty(true);
+  };
+
+  const onDragStart = (idx: number) => {
+    dragIdx.current = idx;
+  };
+
+  const onDragOver = (e: React.DragEvent, overIdx: number) => {
+    e.preventDefault();
+    const from = dragIdx.current;
+    if (from === null || from === overIdx) return;
+    const next = [...localStops];
+    const [moved] = next.splice(from, 1);
+    next.splice(overIdx, 0, moved!);
+    dragIdx.current = overIdx;
+    setLocalStops(next.map((s, i) => ({ ...s, order: i })));
+    setIsDirty(true);
+  };
+
+  if (localStops.length === 0 && !isDirty) {
+    return (
+      <div className="mt-1 pt-1">
+        <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider">
+          Stops
+        </div>
+        <div className="flex gap-1">
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addStop()}
+            placeholder="Add stop name..."
+            className="border-border bg-background text-foreground min-w-0 flex-1 rounded border px-1.5 py-0.5 text-[11px] focus:outline-none"
+          />
+          <button
+            onClick={addStop}
+            className="border-border hover:bg-accent rounded border p-1"
+            title="Add stop"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-1 pt-1">
+      <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider">
+        Stops ({localStops.length})
+      </div>
+      <div className="space-y-0.5">
+        {localStops.map((stop, idx) => (
+          <div
+            key={`${stop.cityId}-${idx}`}
+            draggable
+            onDragStart={() => onDragStart(idx)}
+            onDragOver={(e) => onDragOver(e, idx)}
+            className="bg-muted flex cursor-grab items-center gap-1 rounded px-1.5 py-0.5 active:cursor-grabbing"
+          >
+            <GripVertical className="text-muted-foreground h-3 w-3 shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-[11px]">{stop.name}</span>
+            <button
+              onClick={() => removeStop(idx)}
+              className="text-muted-foreground hover:text-red-500 shrink-0"
+              title="Remove stop"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex gap-1">
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && addStop()}
+          placeholder="Add stop..."
+          className="border-border bg-background text-foreground min-w-0 flex-1 rounded border px-1.5 py-0.5 text-[11px] focus:outline-none"
+        />
+        <button
+          onClick={addStop}
+          className="border-border hover:bg-accent rounded border p-1"
+          title="Add stop"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+      </div>
+      {isDirty && (
+        <button
+          onClick={() => onSave(localStops)}
+          disabled={isSaving}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 mt-1.5 w-full rounded py-0.5 text-[11px] font-medium disabled:opacity-50"
+        >
+          {isSaving ? "Saving…" : "Save Stops"}
+        </button>
+      )}
+    </div>
+  );
+}

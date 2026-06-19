@@ -345,6 +345,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     coordinates: [number, number];
     name: string;
   } | null>(null);
+  /** When false, addRouteWaypointWithSnap ignores nearby features and places the
+   *  waypoint at the raw click coordinate. Defaults to true (snap on). */
+  const [isSnapEnabled, setIsSnapEnabled] = useState(true);
 
   // ── Multi-Select ──
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1084,7 +1087,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       let targetCoords = coords;
       let newSnap: typeof snapTarget = null;
 
-      if (nearbyFeatures && nearbyFeatures.length > 0) {
+      // Only snap when isSnapEnabled and nearby features are provided
+      if (isSnapEnabled && nearbyFeatures && nearbyFeatures.length > 0) {
         let minDistance = Infinity;
         let closestFeature: any = null;
 
@@ -1118,7 +1122,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snapTarget]
+    [snapTarget, isSnapEnabled]
   );
 
   const resetForm = useCallback(() => {
@@ -2240,6 +2244,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setDraggingVertexIndex,
     snapTarget,
     setSnapTarget,
+    isSnapEnabled,
+    setIsSnapEnabled,
     finishRoute,
     undoLastWaypoint,
     clearRouteWaypoints,

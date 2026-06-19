@@ -17,6 +17,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
+import { ROUTE_STYLES } from "~/lib/map-config";
 
 // ── Layer / Source IDs ──────────────────────────────────────────────
 
@@ -27,37 +28,19 @@ const ROUTES_ARROWS_LAYER = "transport-routes-arrows";
 const HUBS_SOURCE = "transport-hubs-source";
 const HUBS_LAYER = "transport-hubs-circle";
 
-// ── Color & Width Config ────────────────────────────────────────────
+// ── Color & Width Config — derived from ROUTE_STYLES (single source of truth) ──
 
-export const ROUTE_COLORS: Record<string, string> = {
-  rail: "#374151", // gray-700
-  highway: "#f97316", // orange-500
-  road: "#92400e", // amber-800
-  shipping_lane: "#3b82f6", // blue-500
-  canal: "#06b6d4", // cyan-500
-  air_corridor: "#a855f7", // purple-500
-  ferry: "#14b8a6", // teal-500
-  pipeline: "#eab308", // yellow-500
-  power_grid: "#f59e0b", // amber-500
-  fiber: "#e5e7eb", // gray-200
-  military_supply: "#dc2626", // red-600
-  military_naval: "#7f1d1d", // red-900
-};
+/**
+ * Route color map re-exported for backward compat (e.g. analytics that read it).
+ * New code should import ROUTE_STYLES from ~/lib/map-config directly.
+ */
+export const ROUTE_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(ROUTE_STYLES).map(([k, v]) => [k, v.color])
+);
 
-const ROUTE_WIDTHS: Record<string, number> = {
-  rail: 3,
-  highway: 2.5,
-  road: 1.5,
-  shipping_lane: 2,
-  canal: 1.5,
-  air_corridor: 2,
-  ferry: 1.5,
-  pipeline: 2,
-  power_grid: 1.5,
-  fiber: 1,
-  military_supply: 2,
-  military_naval: 2,
-};
+const ROUTE_WIDTHS: Record<string, number> = Object.fromEntries(
+  Object.entries(ROUTE_STYLES).map(([k, v]) => [k, v.width])
+);
 
 // ── Status opacity mapping ──────────────────────────────────────────
 

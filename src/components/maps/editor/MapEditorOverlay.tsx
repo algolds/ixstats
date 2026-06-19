@@ -487,6 +487,15 @@ export default function MapEditorOverlay({
                   }
                 : undefined
             }
+            onFinishRoute={editor.finishRoute}
+            onUndoWaypoint={editor.undoLastWaypoint}
+            onReverseRoute={
+              editor.routeWaypoints.length >= 2
+                ? () => editor.setRouteWaypoints([...editor.routeWaypoints].reverse())
+                : undefined
+            }
+            isSnapEnabled={editor.isSnapEnabled}
+            onSnapToggle={() => editor.setIsSnapEnabled((v) => !v)}
           />
         </EditorErrorBoundary>
       )}
