@@ -574,6 +574,9 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
 
       if (result.applied) {
         await utils.geoCore.getWorldMap.invalidate();
+        await utils.geoCore.getCountryGeometry.invalidate();
+        await utils.countryGeo.getCountryGeoBundle.invalidate();
+        await utils.geoCore.getNeighborGeometries.invalidate();
         setState((s) => ({
           ...s,
           originalGeometry: s.geometry,
@@ -602,6 +605,9 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       });
 
       await utils.geoCore.getWorldMap.invalidate();
+      await utils.geoCore.getCountryGeometry.invalidate();
+      await utils.countryGeo.getCountryGeoBundle.invalidate();
+      await utils.geoCore.getNeighborGeometries.invalidate();
       setState(INITIAL_STATE);
     },
     [state.featureId, state.splitLine, splitCountry, utils]
@@ -619,6 +625,9 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       });
 
       await utils.geoCore.getWorldMap.invalidate();
+      await utils.geoCore.getCountryGeometry.invalidate();
+      await utils.countryGeo.getCountryGeoBundle.invalidate();
+      await utils.geoCore.getNeighborGeometries.invalidate();
       setState(INITIAL_STATE);
     },
     [state.featureId, state.mergeTargets, mergeCountries, utils]

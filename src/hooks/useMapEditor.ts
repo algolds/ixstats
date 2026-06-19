@@ -189,6 +189,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     utils.transport.getCountryRoutes.invalidate();
     utils.transport.getAllRoutesGeoJSON.invalidate();
     utils.transport.getTransportStats.invalidate();
+    utils.countryGeo.getCountryGeoBundle.invalidate();
   }, [utils]);
 
   const [mode, setModeRaw] = useState<EditorMode>("view");
@@ -673,6 +674,18 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     onSuccess: (saved) => {
       if (saved?.id && countryId) {
         utils.geoCore.getCountryFeatures.setData({ countryId }, (old) =>
+          old
+            ? {
+                ...old,
+                subdivisions: old.subdivisions.map((s) =>
+                  s.id === saved.id
+                    ? { ...s, geometry: saved.geometry, areaSqKm: saved.areaSqKm }
+                    : s
+                ),
+              }
+            : old
+        );
+        utils.countryGeo.getCountryGeoBundle.setData({ countryId }, (old) =>
           old
             ? {
                 ...old,

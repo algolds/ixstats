@@ -90,7 +90,7 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getCountryLinkage",
         "geoCore.getCountryFeatures",
         "geoCore.getMapBundle",
-        "geoCore.getCountryGeoBundle",
+        "countryGeo.getCountryGeoBundle",
       ]);
       broadcastMapUpdate("linkage", input.countryId);
 
@@ -138,7 +138,7 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getCountryLinkage",
         "geoCore.getCountryFeatures",
         "geoCore.getMapBundle",
-        "geoCore.getCountryGeoBundle",
+        "countryGeo.getCountryGeoBundle",
       ]);
       broadcastMapUpdate("linkage", previousCountryId ?? undefined);
 
@@ -249,7 +249,7 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getCountryLinkage",
         "geoCore.getCountryFeatures",
         "geoCore.getMapBundle",
-        "geoCore.getCountryGeoBundle",
+        "countryGeo.getCountryGeoBundle",
       ]);
 
       if (input.countryId !== undefined) {
@@ -381,7 +381,7 @@ export const geoEditorLinkageRouter = createTRPCRouter({
       "geoEditor.validateLinkage",
       "geoCore.getCountryFeatures",
       "geoCore.getMapBundle",
-      "geoCore.getCountryGeoBundle",
+      "countryGeo.getCountryGeoBundle",
     ]);
 
     return { linked, created, failed, total: unlinked.length };
@@ -463,7 +463,7 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getCountryLinkage",
         "geoCore.getCountryFeatures",
         "geoCore.getMapBundle",
-        "geoCore.getCountryGeoBundle",
+        "countryGeo.getCountryGeoBundle",
       ]);
       broadcastMapUpdate("linkage", newCountry.id);
       return { countryId: newCountry.id, name: newCountry.name };
@@ -718,7 +718,7 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         "geoCore.getCountryGeometry",
         "geoCore.getCountryFeatures",
         "geoCore.getMapBundle",
-        "geoCore.getCountryGeoBundle",
+        "countryGeo.getCountryGeoBundle",
       ]);
 
       return { repaired };

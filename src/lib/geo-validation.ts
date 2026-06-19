@@ -101,7 +101,7 @@ export async function validatePointContainment(
   try {
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
       `SELECT ST_Covers(
-         (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
+         ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
          ST_SetSRID(ST_MakePoint($2, $3), 4326)
        ) as is_inside`,
       countryId,
@@ -151,8 +151,8 @@ export async function validatePolygonContainment(
     const geoJson = JSON.stringify(geometry);
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
       `SELECT ST_Covers(
-         (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
-         ST_SetSRID(ST_GeomFromGeoJSON($2), 4326)
+         ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+         ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
        ) as is_inside`,
       countryId,
       geoJson
@@ -229,8 +229,8 @@ export async function clipAndValidatePolygon(
     const result = await db.$queryRawUnsafe<Array<{ clipped: string }>>(
       `SELECT ST_AsGeoJSON(
          ST_Intersection(
-           (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
-           ST_SetSRID(ST_GeomFromGeoJSON($2), 4326)
+           ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+           ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
          )
        ) as clipped`,
       countryId,
@@ -582,8 +582,8 @@ export async function snapPointToCountryBorder(
       Array<{ is_inside: boolean; distance_meters: number }>
     >(
       `SELECT
-         ST_Covers(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326)) as is_inside,
-         ST_Distance(geom_postgis::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography) as distance_meters
+         ST_Covers(ST_MakeValid(geom_postgis), ST_SetSRID(ST_MakePoint($2, $3), 4326)) as is_inside,
+         ST_Distance(ST_MakeValid(geom_postgis)::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography) as distance_meters
        FROM map_layers
        WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
        LIMIT 1`,
@@ -612,7 +612,7 @@ export async function snapPointToCountryBorder(
     const closestResult = await db.$queryRawUnsafe<Array<{ closest_point: string }>>(
       `SELECT ST_AsGeoJSON(
          ST_ClosestPoint(
-           (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
+           ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
            ST_SetSRID(ST_MakePoint($2, $3), 4326)
          )
        ) as closest_point`,
@@ -684,7 +684,7 @@ export async function snapPointToCountryBorder(
 
           const insideCheck = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
             `SELECT ST_Covers(
-               (SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1),
+               ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
                ST_SetSRID(ST_MakePoint($2, $3), 4326)
              ) as is_inside`,
             countryId,

@@ -286,7 +286,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
           "geoCore.getMapBundle",
           "geoCore.getWorldMap",
           "geoCore.getAllMapFeatures",
-          "geoCore.getCountryGeoBundle",
+          "countryGeo.getCountryGeoBundle",
+          "geoCore.getCountryGeometry",
         ]);
         broadcastMapUpdate("borders", feature.countryId ?? undefined);
 
@@ -399,7 +400,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
         "geoCore.getMapBundle",
         "geoCore.getWorldMap",
         "geoCore.getAllMapFeatures",
-        "geoCore.getCountryGeoBundle",
+        "countryGeo.getCountryGeoBundle",
+        "geoCore.getCountryGeometry",
       ]);
       broadcastMapUpdate("borders");
 
@@ -475,7 +477,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
         "geoCore.getMapBundle",
         "geoCore.getWorldMap",
         "geoCore.getAllMapFeatures",
-        "geoCore.getCountryGeoBundle",
+        "countryGeo.getCountryGeoBundle",
+        "geoCore.getCountryGeometry",
       ]);
       broadcastMapUpdate("borders");
 

@@ -32,7 +32,7 @@ export async function findSubdivisionAtPoint(
       SELECT id, name FROM subdivisions
       WHERE "countryId" = $1 AND status = 'approved'
         AND geom_postgis IS NOT NULL
-        AND ST_Covers(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326))
+        AND ST_Covers(ST_MakeValid(geom_postgis), ST_SetSRID(ST_MakePoint($2, $3), 4326))
       LIMIT 1
     `,
       countryId,
@@ -74,11 +74,11 @@ export async function updateSubdivisionSpatialProfile(
       `
       SELECT 
         ml.properties->>'fill' as fill,
-        ST_Area(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000000.0 as "intersectAreaSqKm"
+        ST_Area(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000000.0 as "intersectAreaSqKm"
       FROM subdivisions s
       JOIN map_layers ml ON ml."layerType" = 'climate' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
-        AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
+        AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
       subdivisionId
     )) as Array<{ fill: string; intersectAreaSqKm: number }>;
@@ -110,11 +110,11 @@ export async function updateSubdivisionSpatialProfile(
       `
       SELECT 
         ml.properties->>'fill' as fill,
-        ST_Area(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000000.0 as "intersectAreaSqKm"
+        ST_Area(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000000.0 as "intersectAreaSqKm"
       FROM subdivisions s
       JOIN map_layers ml ON ml."layerType" = 'altitudes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
-        AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
+        AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
       subdivisionId
     )) as Array<{ fill: string; intersectAreaSqKm: number }>;
@@ -157,11 +157,11 @@ export async function updateSubdivisionSpatialProfile(
     const riverResult = (await db.$queryRawUnsafe(
       `
       SELECT 
-        COALESCE(SUM(ST_Length(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000.0), 0.0) as "riverLengthKm"
+        COALESCE(SUM(ST_Length(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000.0), 0.0) as "riverLengthKm"
       FROM subdivisions s
       JOIN map_layers ml ON ml."layerType" = 'rivers' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
-        AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
+        AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
       subdivisionId
     )) as Array<{ riverLengthKm: number }>;
@@ -169,11 +169,11 @@ export async function updateSubdivisionSpatialProfile(
     const lakeResult = (await db.$queryRawUnsafe(
       `
       SELECT 
-        COALESCE(SUM(ST_Area(ST_Intersection(s.geom_postgis, ml.geom_postgis)::geography) / 1000000.0), 0.0) as "lakeAreaSqKm"
+        COALESCE(SUM(ST_Area(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000000.0), 0.0) as "lakeAreaSqKm"
       FROM subdivisions s
       JOIN map_layers ml ON ml."layerType" = 'lakes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
       WHERE s.id = $1
-        AND ST_Intersects(s.geom_postgis, ml.geom_postgis)
+        AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
       subdivisionId
     )) as Array<{ lakeAreaSqKm: number }>;

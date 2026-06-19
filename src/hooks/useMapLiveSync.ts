@@ -28,6 +28,8 @@ function invalidateMapCaches(utils: ReturnType<typeof api.useUtils>) {
   utils.geoFeatures.getAllStoryPins.invalidate();
   utils.geoFeatures.getAllMapLabels.invalidate();
   utils.geoCore.getCapitalCities.invalidate();
+  utils.countryGeo.getCountryGeoBundle.invalidate();
+  utils.geoCore.getCountryGeometry.invalidate();
 }
 
 export function useMapLiveSync() {
