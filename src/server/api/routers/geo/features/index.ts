@@ -20,6 +20,7 @@ import { geoFeaturesPoisRouter } from "./pois";
 import { geoFeaturesStoryPinsRouter } from "./storyPins";
 import { geoFeaturesStorylinesRouter } from "./storylines";
 import { geoFeaturesLabelsRouter } from "./labels";
+import { geoFeaturesNamedFeaturesRouter } from "./namedFeatures";
 
 export const geoFeaturesRouter = mergeRouters(
   geoFeaturesCitiesRouter,
@@ -27,7 +28,8 @@ export const geoFeaturesRouter = mergeRouters(
   geoFeaturesPoisRouter,
   geoFeaturesStoryPinsRouter,
   geoFeaturesStorylinesRouter,
-  geoFeaturesLabelsRouter
+  geoFeaturesLabelsRouter,
+  geoFeaturesNamedFeaturesRouter
 );
 
 // Preserve the original public API surface of `geo/features` (now resolves to this

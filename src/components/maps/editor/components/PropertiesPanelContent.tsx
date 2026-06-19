@@ -125,6 +125,13 @@ export function PropertiesPanelContent({
           onStoryPinFormChange={editor.setStoryPinForm}
           mapLabelForm={editor.mapLabelForm}
           onMapLabelFormChange={editor.setMapLabelForm}
+          peakForm={editor.peakForm}
+          onPeakFormChange={editor.setPeakForm}
+          riverForm={editor.riverForm}
+          onRiverFormChange={editor.setRiverForm}
+          lakeForm={editor.lakeForm}
+          onLakeFormChange={editor.setLakeForm}
+          selectedFeature={editor.selectedFeature}
           pendingCoordinates={editor.pendingCoordinates}
           pendingGeometry={editor.pendingGeometry}
           isMutating={editor.isMutating}
@@ -452,6 +459,13 @@ export function PropertiesPanelContent({
       onStoryPinFormChange={editor.setStoryPinForm}
       mapLabelForm={editor.mapLabelForm}
       onMapLabelFormChange={editor.setMapLabelForm}
+      peakForm={editor.peakForm}
+      onPeakFormChange={editor.setPeakForm}
+      riverForm={editor.riverForm}
+      onRiverFormChange={editor.setRiverForm}
+      lakeForm={editor.lakeForm}
+      onLakeFormChange={editor.setLakeForm}
+      selectedFeature={editor.selectedFeature}
       pendingCoordinates={editor.pendingCoordinates}
       pendingGeometry={editor.pendingGeometry}
       isMutating={editor.isMutating}

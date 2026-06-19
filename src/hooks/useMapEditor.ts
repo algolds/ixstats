@@ -169,9 +169,15 @@ export type EditorMode =
   | "import-cities"
   | "add-route"
   | "edit-route"
-  | "paint";
+  | "paint"
+  | "add-peak"
+  | "edit-peak"
+  | "add-river"
+  | "edit-river"
+  | "add-lake"
+  | "edit-lake";
 
-export type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route";
+export type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route" | "peak" | "river" | "lake";
 
 export interface EditorFeature {
   id: string;
@@ -248,6 +254,28 @@ export interface MapLabelFormData {
   coordinates?: [number, number];
 }
 
+export interface PeakFormData {
+  name: string;
+  elevation: number;
+  prominence?: number;
+  subdivisionId?: string;
+  wikiPageTitle?: string;
+  coordinates?: [number, number];
+}
+
+export interface NamedRiverFormData {
+  name: string;
+  wikiPageTitle?: string;
+  geometry?: object;
+}
+
+export interface NamedLakeFormData {
+  name: string;
+  maxDepthM?: number;
+  wikiPageTitle?: string;
+  geometry?: object;
+}
+
 const DEFAULT_STORY_PIN: StoryPinFormData = {
   title: "",
   content: "",
@@ -287,6 +315,21 @@ const DEFAULT_POI: POIFormData = {
   name: "",
   category: "landmark",
   description: "",
+};
+
+const DEFAULT_PEAK: PeakFormData = {
+  name: "",
+  elevation: 0,
+  prominence: undefined,
+};
+
+const DEFAULT_RIVER: NamedRiverFormData = {
+  name: "",
+};
+
+const DEFAULT_LAKE: NamedLakeFormData = {
+  name: "",
+  maxDepthM: undefined,
 };
 
 interface UseMapEditorOptions {
@@ -329,6 +372,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [poiForm, setPOIForm] = useState<POIFormData>(DEFAULT_POI);
   const [storyPinForm, setStoryPinForm] = useState<StoryPinFormData>(DEFAULT_STORY_PIN);
   const [mapLabelForm, setMapLabelForm] = useState<MapLabelFormData>(DEFAULT_MAP_LABEL);
+  const [peakForm, setPeakForm] = useState<PeakFormData>(DEFAULT_PEAK);
+  const [riverForm, setRiverForm] = useState<NamedRiverFormData>(DEFAULT_RIVER);
+  const [lakeForm, setLakeForm] = useState<NamedLakeFormData>(DEFAULT_LAKE);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const lastSavedTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -410,6 +456,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             case "route":
               await m.deleteRoute?.mutateAsync({ countryId, id: action.featureId });
               break;
+            case "peak":
+              await m.deletePeak?.mutateAsync({ countryId, peakId: action.featureId });
+              break;
+            case "river":
+              await m.deleteRiver?.mutateAsync({ countryId, riverId: action.featureId });
+              break;
+            case "lake":
+              await m.deleteLake?.mutateAsync({ countryId, lakeId: action.featureId });
+              break;
           }
           break;
         case "delete":
@@ -474,6 +529,34 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   properties: d.properties,
                 });
                 break;
+              case "peak":
+                await m.createPeak?.mutateAsync({
+                  countryId,
+                  name: d.name,
+                  coordinates: d.coordinates,
+                  elevation: p?.elevation,
+                  prominence: p?.prominence,
+                  subdivisionId: p?.subdivisionId,
+                  wikiPageTitle: p?.wikiPageTitle,
+                });
+                break;
+              case "river":
+                await m.createRiver?.mutateAsync({
+                  countryId,
+                  name: d.name,
+                  geometry: d.geometry,
+                  wikiPageTitle: p?.wikiPageTitle,
+                });
+                break;
+              case "lake":
+                await m.createLake?.mutateAsync({
+                  countryId,
+                  name: d.name,
+                  geometry: d.geometry,
+                  maxDepthM: p?.maxDepthM,
+                  wikiPageTitle: p?.wikiPageTitle,
+                });
+                break;
             }
           }
           break;
@@ -541,6 +624,37 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   geometry: d.geometry,
                 });
                 break;
+              case "peak":
+                await m.updatePeak?.mutateAsync(cleanNulls({
+                  countryId,
+                  peakId: action.featureId,
+                  name: d.name,
+                  coordinates: d.coordinates,
+                  elevation: p?.elevation,
+                  prominence: p?.prominence,
+                  subdivisionId: p?.subdivisionId,
+                  wikiPageTitle: p?.wikiPageTitle,
+                }));
+                break;
+              case "river":
+                await m.updateRiver?.mutateAsync(cleanNulls({
+                  countryId,
+                  riverId: action.featureId,
+                  name: d.name,
+                  geometry: d.geometry,
+                  wikiPageTitle: p?.wikiPageTitle,
+                }));
+                break;
+              case "lake":
+                await m.updateLake?.mutateAsync(cleanNulls({
+                  countryId,
+                  lakeId: action.featureId,
+                  name: d.name,
+                  geometry: d.geometry,
+                  maxDepthM: p?.maxDepthM,
+                  wikiPageTitle: p?.wikiPageTitle,
+                }));
+                break;
             }
           }
           break;
@@ -588,6 +702,24 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   properties: d.properties,
                 } as any);
                 break;
+              case "peak":
+                await m.createPeak?.mutateAsync({
+                  countryId,
+                  ...d,
+                } as any);
+                break;
+              case "river":
+                await m.createRiver?.mutateAsync({
+                  countryId,
+                  ...d,
+                } as any);
+                break;
+              case "lake":
+                await m.createLake?.mutateAsync({
+                  countryId,
+                  ...d,
+                } as any);
+                break;
             }
           }
           break;
@@ -613,6 +745,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               break;
             case "route":
               await m.deleteRoute?.mutateAsync({ countryId, id: action.featureId });
+              break;
+            case "peak":
+              await m.deletePeak?.mutateAsync({ countryId, peakId: action.featureId });
+              break;
+            case "river":
+              await m.deleteRiver?.mutateAsync({ countryId, riverId: action.featureId });
+              break;
+            case "lake":
+              await m.deleteLake?.mutateAsync({ countryId, lakeId: action.featureId });
               break;
           }
           break;
@@ -679,6 +820,37 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   id: action.featureId,
                   geometry: d.geometry,
                 });
+                break;
+              case "peak":
+                await m.updatePeak?.mutateAsync(cleanNulls({
+                  countryId,
+                  peakId: action.featureId,
+                  name: d.name,
+                  coordinates: d.coordinates,
+                  elevation: p?.elevation,
+                  prominence: p?.prominence,
+                  subdivisionId: p?.subdivisionId,
+                  wikiPageTitle: p?.wikiPageTitle,
+                }));
+                break;
+              case "river":
+                await m.updateRiver?.mutateAsync(cleanNulls({
+                  countryId,
+                  riverId: action.featureId,
+                  name: d.name,
+                  geometry: d.geometry,
+                  wikiPageTitle: p?.wikiPageTitle,
+                }));
+                break;
+              case "lake":
+                await m.updateLake?.mutateAsync(cleanNulls({
+                  countryId,
+                  lakeId: action.featureId,
+                  name: d.name,
+                  geometry: d.geometry,
+                  maxDepthM: p?.maxDepthM,
+                  wikiPageTitle: p?.wikiPageTitle,
+                }));
                 break;
             }
           }
@@ -923,6 +1095,78 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     },
   });
 
+  const createPeak = api.geoFeatures.createPeak.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      continuePlacing("add-peak");
+    },
+  });
+
+  const updatePeak = api.geoFeatures.updatePeak.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      resetForm();
+    },
+  });
+
+  const deletePeak = api.geoFeatures.deletePeak.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      setSelectedFeature(null);
+    },
+  });
+
+  const createRiver = api.geoFeatures.createNamedRiver.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      continuePlacing("add-river");
+    },
+  });
+
+  const updateRiver = api.geoFeatures.updateNamedRiver.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      resetForm();
+    },
+  });
+
+  const deleteRiver = api.geoFeatures.deleteNamedRiver.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      setSelectedFeature(null);
+    },
+  });
+
+  const createLake = api.geoFeatures.createNamedLake.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      continuePlacing("add-lake");
+    },
+  });
+
+  const updateLake = api.geoFeatures.updateNamedLake.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      resetForm();
+    },
+  });
+
+  const deleteLake = api.geoFeatures.deleteNamedLake.useMutation({
+    onSuccess: () => {
+      invalidateAllMapData();
+      debouncedRefetch();
+      setSelectedFeature(null);
+    },
+  });
+
   // Route mutations
   const createRoute = api.transport.createRoute.useMutation({
     onSuccess: (data) => {
@@ -984,6 +1228,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     createRoute,
     deleteRoute,
     updateRouteGeometry,
+    createPeak,
+    updatePeak,
+    deletePeak,
+    createRiver,
+    updateRiver,
+    deleteRiver,
+    createLake,
+    updateLake,
+    deleteLake,
     refetchFeatures: debouncedRefetch,
   };
 
@@ -1136,6 +1389,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setPOIForm(DEFAULT_POI);
     setStoryPinForm(DEFAULT_STORY_PIN);
     setMapLabelForm(DEFAULT_MAP_LABEL);
+    setPeakForm(DEFAULT_PEAK);
+    setRiverForm(DEFAULT_RIVER);
+    setLakeForm(DEFAULT_LAKE);
     setRouteWaypoints([]);
     setRouteDrawingHistory([]);
     setEditingRouteId(null);
@@ -1193,6 +1449,30 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           }
           break;
         }
+        case "peak": {
+          if (!peakForm.name.trim()) errors.name = "Name is required";
+          if (peakForm.elevation === undefined || isNaN(peakForm.elevation)) {
+            errors.elevation = "Elevation is required";
+          }
+          if (!isEdit && !pendingCoordinates) {
+            errors.coordinates = "Click on the map to set location";
+          }
+          break;
+        }
+        case "river": {
+          if (!riverForm.name.trim()) errors.name = "Name is required";
+          if (!isEdit && !pendingGeometry) {
+            errors.geometry = "Draw a river line on the map";
+          }
+          break;
+        }
+        case "lake": {
+          if (!lakeForm.name.trim()) errors.name = "Name is required";
+          if (!isEdit && !pendingGeometry) {
+            errors.geometry = "Draw a lake polygon on the map";
+          }
+          break;
+        }
       }
 
       return errors;
@@ -1203,6 +1483,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       poiForm,
       storyPinForm,
       mapLabelForm,
+      peakForm,
+      riverForm,
+      lakeForm,
       pendingCoordinates,
       pendingGeometry,
     ]
@@ -1241,6 +1524,29 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       }));
     } else if (currentMode === "add-label") {
       setMapLabelForm((prev) => ({ ...prev, text: "", wikiPageTitle: undefined }));
+    } else if (currentMode === "add-peak") {
+      setPeakForm((prev) => ({
+        ...prev,
+        name: "",
+        elevation: 0,
+        prominence: undefined,
+        wikiPageTitle: undefined,
+      }));
+    } else if (currentMode === "add-river") {
+      setRiverForm((prev) => ({
+        ...prev,
+        name: "",
+        wikiPageTitle: undefined,
+        geometry: undefined,
+      }));
+    } else if (currentMode === "add-lake") {
+      setLakeForm((prev) => ({
+        ...prev,
+        name: "",
+        maxDepthM: undefined,
+        wikiPageTitle: undefined,
+        geometry: undefined,
+      }));
     }
     // Flash "saved" indicator
     setLastSavedAt(Date.now());
@@ -1268,6 +1574,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         } else if (mode === "add-label" || mode === "edit-label") {
           setMapLabelForm((prev) => ({ ...prev, coordinates: point }));
           if (mode === "add-label") setPendingCoordinates(point);
+        } else if (mode === "add-peak" || mode === "edit-peak") {
+          setPeakForm((prev) => ({ ...prev, coordinates: point }));
+          if (mode === "add-peak") setPendingCoordinates(point);
         }
         setIsPickingLocation(false);
         return;
@@ -1277,7 +1586,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         mode === "add-city" ||
         mode === "add-poi" ||
         mode === "add-story-pin" ||
-        mode === "add-label"
+        mode === "add-label" ||
+        mode === "add-peak"
       ) {
         setPendingCoordinates(point);
       } else if (mode === "add-route") {
@@ -1292,6 +1602,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       setPOIForm,
       setStoryPinForm,
       setMapLabelForm,
+      setPeakForm,
       setPendingCoordinates,
       setRouteWaypoints,
     ]
@@ -1314,9 +1625,27 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         }
         setPendingGeometry(geometry);
         setSubdivisionForm((prev) => ({ ...prev, geometry }));
+      } else if (mode === "add-river") {
+        setPendingGeometry(geometry);
+        setRiverForm((prev) => ({ ...prev, geometry }));
+      } else if (mode === "add-lake") {
+        if (countryGeo?.geometry && (geometry as any).type === "Polygon") {
+          const outerRing = (geometry as any).coordinates?.[0] as [number, number][] | undefined;
+          if (outerRing && outerRing.length > 0) {
+            const anyInside = outerRing.some((pt: [number, number]) =>
+              pointInGeometry(pt, countryGeo.geometry)
+            );
+            if (!anyInside) {
+              alert("Lake must be inside the country boundary.");
+              return;
+            }
+          }
+        }
+        setPendingGeometry(geometry);
+        setLakeForm((prev) => ({ ...prev, geometry }));
       }
     },
-    [mode, countryGeo, setSubdivisionForm]
+    [mode, countryGeo, setSubdivisionForm, setRiverForm, setLakeForm]
   );
 
   // Submit handlers
@@ -1429,6 +1758,116 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     });
   }, [countryId, pendingCoordinates, mapLabelForm, createMapLabel, validateFeature]);
 
+  const submitPeak = useCallback(async () => {
+    const errors = validateFeature("peak", false);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors({});
+    const coords = pendingCoordinates || peakForm.coordinates;
+    if (!countryId || !coords) return;
+    await createPeak.mutateAsync({
+      countryId,
+      name: peakForm.name.trim(),
+      coordinates: coords,
+      elevation: peakForm.elevation,
+      prominence: peakForm.prominence,
+      subdivisionId: peakForm.subdivisionId,
+      wikiPageTitle: peakForm.wikiPageTitle,
+    });
+  }, [countryId, pendingCoordinates, peakForm, createPeak, validateFeature]);
+
+  const submitEditPeak = useCallback(async () => {
+    const errors = validateFeature("peak", true);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors({});
+    if (!countryId || !selectedFeature) return;
+    await updatePeak.mutateAsync({
+      countryId,
+      peakId: selectedFeature.id,
+      name: peakForm.name.trim(),
+      coordinates: peakForm.coordinates,
+      elevation: peakForm.elevation,
+      prominence: peakForm.prominence,
+      subdivisionId: peakForm.subdivisionId,
+      wikiPageTitle: peakForm.wikiPageTitle,
+    });
+  }, [countryId, selectedFeature, peakForm, updatePeak, validateFeature]);
+
+  const submitRiver = useCallback(async () => {
+    const errors = validateFeature("river", false);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors({});
+    const geometry = pendingGeometry || riverForm.geometry;
+    if (!countryId || !geometry) return;
+    await createRiver.mutateAsync({
+      countryId,
+      name: riverForm.name.trim(),
+      geometry: geometry as Record<string, unknown>,
+      wikiPageTitle: riverForm.wikiPageTitle,
+    });
+  }, [countryId, pendingGeometry, riverForm, createRiver, validateFeature]);
+
+  const submitEditRiver = useCallback(async () => {
+    const errors = validateFeature("river", true);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors({});
+    if (!countryId || !selectedFeature) return;
+    await updateRiver.mutateAsync({
+      countryId,
+      riverId: selectedFeature.id,
+      name: riverForm.name.trim(),
+      geometry: riverForm.geometry as Record<string, unknown>,
+      wikiPageTitle: riverForm.wikiPageTitle,
+    });
+  }, [countryId, selectedFeature, riverForm, updateRiver, validateFeature]);
+
+  const submitLake = useCallback(async () => {
+    const errors = validateFeature("lake", false);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors({});
+    const geometry = pendingGeometry || lakeForm.geometry;
+    if (!countryId || !geometry) return;
+    await createLake.mutateAsync({
+      countryId,
+      name: lakeForm.name.trim(),
+      geometry: geometry as Record<string, unknown>,
+      maxDepthM: lakeForm.maxDepthM,
+      wikiPageTitle: lakeForm.wikiPageTitle,
+    });
+  }, [countryId, pendingGeometry, lakeForm, createLake, validateFeature]);
+
+  const submitEditLake = useCallback(async () => {
+    const errors = validateFeature("lake", true);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    setValidationErrors({});
+    if (!countryId || !selectedFeature) return;
+    await updateLake.mutateAsync({
+      countryId,
+      lakeId: selectedFeature.id,
+      name: lakeForm.name.trim(),
+      geometry: lakeForm.geometry as Record<string, unknown>,
+      maxDepthM: lakeForm.maxDepthM,
+      wikiPageTitle: lakeForm.wikiPageTitle,
+    });
+  }, [countryId, selectedFeature, lakeForm, updateLake, validateFeature]);
+
   /** Enter edit mode for an existing feature, populating the appropriate form. */
   const startEditing = useCallback((feature: EditorFeature) => {
     setSelectedFeature(feature);
@@ -1510,6 +1949,34 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           maxZoom: (feature.properties.maxZoom as number) ?? 18,
           wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
           coordinates: feature.coordinates,
+        });
+        break;
+      case "peak":
+        setMode("edit-peak");
+        setPeakForm({
+          name: feature.name,
+          elevation: (feature.properties.elevation as number) ?? 0,
+          prominence: (feature.properties.prominence as number | undefined) ?? undefined,
+          subdivisionId: (feature.properties.subdivisionId as string | undefined) ?? undefined,
+          wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
+          coordinates: feature.coordinates,
+        });
+        break;
+      case "river":
+        setMode("edit-river");
+        setRiverForm({
+          name: feature.name,
+          wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
+          geometry: feature.geometry,
+        });
+        break;
+      case "lake":
+        setMode("edit-lake");
+        setLakeForm({
+          name: feature.name,
+          maxDepthM: (feature.properties.maxDepthM as number | undefined) ?? undefined,
+          wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
+          geometry: feature.geometry,
         });
         break;
     }
@@ -1690,6 +2157,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           });
           await deleteRoute.mutateAsync({ countryId, id: feature.id });
           break;
+        case "peak":
+          await deletePeak.mutateAsync({ countryId, peakId: feature.id });
+          break;
+        case "river":
+          await deleteRiver.mutateAsync({ countryId, riverId: feature.id });
+          break;
+        case "lake":
+          await deleteLake.mutateAsync({ countryId, lakeId: feature.id });
+          break;
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1700,6 +2176,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       deletePOI,
       deleteStoryPin,
       deleteMapLabel,
+      deletePeak,
+      deleteRiver,
+      deleteLake,
       pushAction,
     ]
   );
@@ -1817,13 +2296,55 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       });
     }
 
+    for (const peak of features.peaks ?? []) {
+      list.push({
+        id: peak.id,
+        type: "peak",
+        name: peak.name,
+        coordinates: peak.coordinates as [number, number] | undefined,
+        properties: {
+          elevation: peak.elevation,
+          prominence: peak.prominence,
+          subdivisionId: peak.subdivisionId,
+          wikiPageTitle: peak.wikiPageTitle,
+        },
+      });
+    }
+
+    for (const river of features.namedRivers ?? []) {
+      list.push({
+        id: river.id,
+        type: "river",
+        name: river.name,
+        geometry: river.geometry as object | undefined,
+        properties: {
+          lengthKm: river.lengthKm,
+          wikiPageTitle: river.wikiPageTitle,
+        },
+      });
+    }
+
+    for (const lake of features.namedLakes ?? []) {
+      list.push({
+        id: lake.id,
+        type: "lake",
+        name: lake.name,
+        geometry: lake.geometry as object | undefined,
+        properties: {
+          areaSqKm: lake.areaSqKm,
+          maxDepthM: lake.maxDepthM,
+          wikiPageTitle: lake.wikiPageTitle,
+        },
+      });
+    }
+
     return list;
   }, [features, countryRoutes]);
 
   const updatePointCoordinates = useCallback(
     async (
       featureId: string,
-      featureType: "city" | "poi" | "storyPin" | "mapLabel",
+      featureType: "city" | "poi" | "storyPin" | "mapLabel" | "peak",
       coordinates: [number, number]
     ) => {
       if (!countryId) return;
@@ -1919,6 +2440,22 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               setMapLabelForm((prev) => ({ ...prev, coordinates }));
             }
             break;
+
+          case "peak":
+            await updatePeak.mutateAsync({
+              countryId,
+              peakId: featureId,
+              name: feature.name,
+              coordinates,
+              elevation: feature.properties.elevation ?? 0,
+              prominence: feature.properties.prominence ?? null,
+              subdivisionId: feature.properties.subdivisionId ?? null,
+              wikiPageTitle: feature.properties.wikiPageTitle ?? null,
+            });
+            if (selectedFeature?.id === featureId) {
+              setPeakForm((prev) => ({ ...prev, coordinates }));
+            }
+            break;
         }
       } catch (err) {
         console.error(`[useMapEditor] updatePointCoordinates failed for ${featureType}:`, err);
@@ -1932,6 +2469,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       updatePOI,
       updateStoryPin,
       updateMapLabel,
+      updatePeak,
       selectedFeature,
     ]
   );
@@ -2015,6 +2553,37 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           newId = result?.id;
           break;
         }
+        case "peak": {
+          const result = await createPeak.mutateAsync({
+            countryId,
+            name: input.name as string,
+            coordinates: input.coordinates as [number, number],
+            elevation: input.elevation as number,
+            prominence: input.prominence as number | undefined,
+            subdivisionId: input.subdivisionId as string | undefined,
+          });
+          newId = result?.id;
+          break;
+        }
+        case "river": {
+          const result = await createRiver.mutateAsync({
+            countryId,
+            name: input.name as string,
+            geometry: input.geometry as Record<string, unknown>,
+          });
+          newId = result?.id;
+          break;
+        }
+        case "lake": {
+          const result = await createLake.mutateAsync({
+            countryId,
+            name: input.name as string,
+            geometry: input.geometry as Record<string, unknown>,
+            maxDepthM: input.maxDepthM as number | undefined,
+          });
+          newId = result?.id;
+          break;
+        }
         case "route": {
           const result = await createRoute.mutateAsync({
             countryId,
@@ -2046,6 +2615,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       createPOI,
       createStoryPin,
       createMapLabel,
+      createPeak,
+      createRiver,
+      createLake,
       createRoute,
       pushAction,
       invalidateAllMapData,
@@ -2143,6 +2715,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     createMapLabel.isPending ||
     updateMapLabel.isPending ||
     deleteMapLabel.isPending ||
+    createPeak.isPending ||
+    updatePeak.isPending ||
+    deletePeak.isPending ||
+    createRiver.isPending ||
+    updateRiver.isPending ||
+    deleteRiver.isPending ||
+    createLake.isPending ||
+    updateLake.isPending ||
+    deleteLake.isPending ||
     createRoute.isPending;
 
   const mutationError =
@@ -2162,6 +2743,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     createMapLabel.error ||
     updateMapLabel.error ||
     deleteMapLabel.error ||
+    createPeak.error ||
+    updatePeak.error ||
+    deletePeak.error ||
+    createRiver.error ||
+    updateRiver.error ||
+    deleteRiver.error ||
+    createLake.error ||
+    updateLake.error ||
+    deleteLake.error ||
     createRoute.error;
 
   return {
@@ -2186,6 +2776,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setStoryPinForm,
     mapLabelForm,
     setMapLabelForm,
+    peakForm,
+    setPeakForm,
+    riverForm,
+    setRiverForm,
+    lakeForm,
+    setLakeForm,
 
     // Data
     features,
@@ -2204,12 +2800,18 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     submitCity,
     submitSubdivision,
     submitPOI,
+    submitPeak,
+    submitRiver,
+    submitLake,
     handleDeleteFeature,
     resetForm,
     startEditing,
     submitEditCity,
     submitEditSubdivision,
     submitEditPOI,
+    submitEditPeak,
+    submitEditRiver,
+    submitEditLake,
     submitStoryPin,
     submitMapLabel,
     submitEditStoryPin,

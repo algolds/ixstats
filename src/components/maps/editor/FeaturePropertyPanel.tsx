@@ -15,6 +15,10 @@ import type {
   POIFormData,
   StoryPinFormData,
   MapLabelFormData,
+  PeakFormData,
+  NamedRiverFormData,
+  NamedLakeFormData,
+  EditorFeature,
 } from "~/hooks/useMapEditor";
 import {
   CityPropertyForm,
@@ -23,6 +27,9 @@ import {
   StoryPinPropertyForm,
   MapLabelPropertyForm,
   TransportPropertyForm,
+  PeakPropertyForm,
+  RiverPropertyForm,
+  LakePropertyForm,
 } from "./properties";
 import { SmartPlacement } from "./SmartPlacement";
 
@@ -52,6 +59,13 @@ interface FeaturePropertyPanelProps {
   onStoryPinFormChange?: (form: StoryPinFormData) => void;
   mapLabelForm?: MapLabelFormData;
   onMapLabelFormChange?: (form: MapLabelFormData) => void;
+  peakForm?: PeakFormData;
+  onPeakFormChange?: (form: PeakFormData) => void;
+  riverForm?: NamedRiverFormData;
+  onRiverFormChange?: (form: NamedRiverFormData) => void;
+  lakeForm?: NamedLakeFormData;
+  onLakeFormChange?: (form: NamedLakeFormData) => void;
+  selectedFeature?: EditorFeature | null;
   onSubmit: () => void;
   onCancel: () => void;
   isMutating: boolean;
@@ -87,6 +101,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     allFeatures,
     isPickingLocation,
     setIsPickingLocation,
+    selectedFeature,
   } = props;
 
   if (mode === "view") return null;
@@ -125,7 +140,10 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     (mode === "add-subdivision" && pendingGeometry) ||
     (mode === "add-poi" && pendingCoordinates) ||
     (mode === "add-story-pin" && pendingCoordinates) ||
-    (mode === "add-label" && pendingCoordinates);
+    (mode === "add-label" && pendingCoordinates) ||
+    (mode === "add-peak" && pendingCoordinates) ||
+    (mode === "add-river" && pendingGeometry) ||
+    (mode === "add-lake" && pendingGeometry);
 
   const hasName =
     ((mode === "add-city" || mode === "edit-city") && props.cityForm.name.trim()) ||
@@ -133,7 +151,10 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
       props.subdivisionForm.name.trim()) ||
     ((mode === "add-poi" || mode === "edit-poi") && props.poiForm.name.trim()) ||
     ((mode === "add-story-pin" || mode === "edit-story-pin") && props.storyPinForm?.title.trim()) ||
-    ((mode === "add-label" || mode === "edit-label") && props.mapLabelForm?.text.trim());
+    ((mode === "add-label" || mode === "edit-label") && props.mapLabelForm?.text.trim()) ||
+    ((mode === "add-peak" || mode === "edit-peak") && props.peakForm?.name.trim()) ||
+    ((mode === "add-river" || mode === "edit-river") && props.riverForm?.name.trim()) ||
+    ((mode === "add-lake" || mode === "edit-lake") && props.lakeForm?.name.trim());
 
   const canSubmit = hasLocation && hasName && !isMutating;
 
@@ -149,10 +170,16 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
     "edit-story-pin": "Edit Story Pin",
     "add-label": "New Map Label",
     "edit-label": "Edit Map Label",
+    "add-peak": "New Peak",
+    "edit-peak": "Edit Peak",
+    "add-river": "New River",
+    "edit-river": "Edit River",
+    "add-lake": "New Lake",
+    "edit-lake": "Edit Lake",
   };
 
   const isPointMode =
-    mode === "add-city" || mode === "add-poi" || mode === "add-story-pin" || mode === "add-label";
+    mode === "add-city" || mode === "add-poi" || mode === "add-story-pin" || mode === "add-label" || mode === "add-peak";
 
   return (
     <div className="space-y-3">
@@ -165,9 +192,11 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
       {/* Location indicator */}
       {!isEdit && !hasLocation && (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
-          {mode === "add-subdivision"
-            ? "Draw a polygon on the map to define the region boundary"
-            : "Click on the map to set the location"}
+          {mode === "add-subdivision" || mode === "add-lake"
+            ? "Draw a polygon on the map to define the boundary"
+            : mode === "add-river"
+              ? "Draw a line on the map to define the path"
+              : "Click on the map to set the location"}
         </div>
       )}
       {pendingCoordinates && isPointMode && (
@@ -175,9 +204,14 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           Location: {pendingCoordinates[1].toFixed(3)}&deg;, {pendingCoordinates[0].toFixed(3)}&deg;
         </div>
       )}
-      {pendingGeometry && mode === "add-subdivision" && (
+      {pendingGeometry && (mode === "add-subdivision" || mode === "add-lake") && (
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-          Region polygon drawn
+          Polygon boundary drawn
+        </div>
+      )}
+      {pendingGeometry && mode === "add-river" && (
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          Line path drawn
         </div>
       )}
 
@@ -279,6 +313,39 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
             pendingCoordinates={pendingCoordinates}
             isPickingLocation={isPickingLocation}
             setIsPickingLocation={setIsPickingLocation}
+          />
+        )}
+      {(mode === "add-peak" || mode === "edit-peak") &&
+        props.peakForm &&
+        props.onPeakFormChange && (
+          <PeakPropertyForm
+            form={props.peakForm}
+            onChange={props.onPeakFormChange}
+            pendingCoordinates={pendingCoordinates}
+            countryId={countryId}
+            allFeatures={allFeatures}
+            isPickingLocation={isPickingLocation}
+            setIsPickingLocation={setIsPickingLocation}
+          />
+        )}
+      {(mode === "add-river" || mode === "edit-river") &&
+        props.riverForm &&
+        props.onRiverFormChange && (
+          <RiverPropertyForm
+            form={props.riverForm}
+            onChange={props.onRiverFormChange}
+            pendingGeometry={pendingGeometry}
+            selectedFeature={selectedFeature}
+          />
+        )}
+      {(mode === "add-lake" || mode === "edit-lake") &&
+        props.lakeForm &&
+        props.onLakeFormChange && (
+          <LakePropertyForm
+            form={props.lakeForm}
+            onChange={props.onLakeFormChange}
+            pendingGeometry={pendingGeometry}
+            selectedFeature={selectedFeature}
           />
         )}
 

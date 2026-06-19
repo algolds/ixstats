@@ -71,6 +71,7 @@ model Subdivision {
   cities          City[]                   @relation("SubdivisionCities")
   pois            PointOfInterest[]        @relation("SubdivisionPOIs")
   storyPins       StoryPin[]               @relation("SubdivisionStoryPins")
+  peaks           Peak[]                   @relation("SubdivisionPeaks")
   country         Country                  @relation("CountrySubdivisions", fields: [countryId], references: [id], onDelete: Cascade)
   capitalCityRef  City?                    @relation("SubdivisionCapital", fields: [capitalCityId], references: [id])
 
@@ -618,3 +619,81 @@ model MapStyleOverride {
 
   @@map("map_style_overrides")
 }
+
+model Peak {
+  id              String                   @id @default(cuid())
+  countryId       String
+  subdivisionId   String?
+  name            String
+  coordinates     Json                     // [lng, lat]
+  elevation       Float
+  prominence      Float?
+  wikiPageTitle   String?
+  editableByOwner Boolean                  @default(true)
+  status          String                   @default("pending")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  geom_postgis    Unsupported("geometry")?
+  country         Country                  @relation("CountryPeaks", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision     Subdivision?             @relation("SubdivisionPeaks", fields: [subdivisionId], references: [id])
+
+  @@index([countryId, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_peak_geom", type: Gist)
+  @@index([subdivisionId])
+  @@map("peaks")
+}
+
+model NamedRiver {
+  id              String                   @id @default(cuid())
+  countryId       String
+  name            String
+  geometry        Json                     // GeoJSON LineString
+  lengthKm        Float?
+  wikiPageTitle   String?
+  editableByOwner Boolean                  @default(true)
+  status          String                   @default("pending")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  geom_postgis    Unsupported("geometry")?
+  country         Country                  @relation("CountryNamedRivers", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_named_river_geom", type: Gist)
+  @@map("named_rivers")
+}
+
+model NamedLake {
+  id              String                   @id @default(cuid())
+  countryId       String
+  name            String
+  geometry        Json                     // GeoJSON Polygon
+  areaSqKm        Float?
+  maxDepthM       Float?
+  wikiPageTitle   String?
+  editableByOwner Boolean                  @default(true)
+  status          String                   @default("pending")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  geom_postgis    Unsupported("geometry")?
+  country         Country                  @relation("CountryNamedLakes", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_named_lake_geom", type: Gist)
+  @@map("named_lakes")
+}
+

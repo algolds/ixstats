@@ -12,6 +12,15 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Geography Report / Analyzer & Named Features (Plan C-2)**:
+  - Added new models (`Peak`, `NamedRiver`, `NamedLake`) to [maps.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/maps.prisma) with back-relations in [core.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/core.prisma) to support named geographical features.
+  - Implemented service-layer CRUD handlers in [named-features.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/named-features.ts) with polyline length/polygon area math and automatic PostGIS database triggers.
+  - Added the `namedFeaturesRouter` in [namedFeatures.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/namedFeatures.ts) to handle feature queries, updates, and cache invalidation.
+  - Implemented PostGIS clipping queries in [geo-profile.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/geo-profile.ts) to accurately clip rivers/lakes to country bounds (resolving the global hydro count bug) and to compute local superlatives.
+  - Created a comprehensive Geographic Profile UI card in [GeographyContent.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/GeographyContent.tsx) and detailed tabbed modals in [GeographyReportModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/GeographyReportModal.tsx) showcasing border lengths, climate/elevation zones, and local superlatives.
+  - Integrated Peak, River, and Lake tools into the vertical map editor toolbar rail inside [MapEditorToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx) with custom properties forms.
+  - Added robust unit test coverage in [named-features.test.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/__tests__/named-features.test.ts) to validate geometry conversions, validations, and database mutations.
+
 - **Main Map Zoom-Dependent LOD & Country Focus Filters**:
   - Implemented zoom-dependent Level of Detail (LOD) city filtering on the main interactive map (`/maps`) to render minor, medium, and major cities dynamically based on population and zoom levels.
   - Added country focus-dependent visibility for Story Pins, Points of Interest (POIs), and Custom Map Labels, hiding them when zoomed out globally (zoom < 4.0) unless a specific country is active/selected.
@@ -158,6 +167,8 @@ capability integer. Each release entry below lists which components advanced and
   - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
 
 ### Fixed
+
+- **Global Hydrography Counting Discrepancy**: Fixed a bug in [geo-profile.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/geo-profile.ts) that caused global river/lake counts and lengths/areas to be reported on the country profile instead of clipping them to the country bounds via PostGIS intersections.
 
 - **MyCountry Demographics & Economic Data Mismatch (Caphiria)**:
   - Fixed a major discrepancy where the `/mycountry` dashboard displayed inflated demographics and economic statistics for Caphiria (e.g. 5.1B population and $328.7T GDP) compared to the correct progressed values rendered on `/dashboard` (619M population and $39.8T GDP).

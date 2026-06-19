@@ -39,6 +39,16 @@ const MODE_LABELS: Record<EditorMode, { label: string; hint: string }> = {
   "import-provinces": { label: "Import", hint: "Follow the import wizard" },
   "add-route": { label: "Route", hint: "Generate or draw transport routes" },
   paint: { label: "Paint", hint: "Click regions to view stats, use panel to switch map modes" },
+  "add-story-pin": { label: "Add Story Pin", hint: "Click map to place story pin" },
+  "edit-story-pin": { label: "Edit Story Pin", hint: "Modify story pin properties in the panel" },
+  "add-label": { label: "Add Label", hint: "Click map to place text label" },
+  "edit-label": { label: "Edit Label", hint: "Modify text label properties in the panel" },
+  "add-peak": { label: "Add Peak", hint: "Click map to place mountain peak" },
+  "edit-peak": { label: "Edit Peak", hint: "Modify peak properties in the panel" },
+  "add-river": { label: "Draw River", hint: "Click to add river path, double-click to close" },
+  "edit-river": { label: "Edit River", hint: "Modify river properties in the panel" },
+  "add-lake": { label: "Draw Lake", hint: "Click to draw lake polygon, double-click to close" },
+  "edit-lake": { label: "Edit Lake", hint: "Modify lake properties in the panel" },
 };
 
 function formatCoord(value: number, posLabel: string, negLabel: string): string {

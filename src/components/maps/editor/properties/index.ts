@@ -4,3 +4,6 @@ export { POIPropertyForm } from "./POIPropertyForm";
 export { StoryPinPropertyForm } from "./StoryPinPropertyForm";
 export { MapLabelPropertyForm } from "./MapLabelPropertyForm";
 export { TransportPropertyForm } from "./TransportPropertyForm";
+export { PeakPropertyForm } from "./PeakPropertyForm";
+export { RiverPropertyForm } from "./RiverPropertyForm";
+export { LakePropertyForm } from "./LakePropertyForm";

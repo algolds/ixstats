@@ -8,6 +8,7 @@ import { SearchableList } from "./primitives";
 import { RollupSettingsModal } from "./RollupSettingsModal";
 import { PopulateFromWikiButton } from "./PopulateFromWikiButton";
 import { GeoCompliancePanel } from "./GeoCompliancePanel";
+import { GeographyReportModal } from "./GeographyReportModal";
 
 /**
  * Geography attribute editor — MyCountry P-C.
@@ -29,6 +30,13 @@ export function GeographyContent() {
     isLoading,
     refetch,
   } = api.countryGeo.getCountryGeoBundle.useQuery(
+    { countryId: countryId! },
+    { enabled: !!countryId, staleTime: 30_000 }
+  );
+
+  const {
+    data: geoProfile,
+  } = api.geoCore.getCountryGeoProfile.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId, staleTime: 30_000 }
   );
@@ -90,6 +98,42 @@ export function GeographyContent() {
           <div className="text-foreground text-lg font-semibold">{pois.length}</div>
         </div>
       </div>
+
+      {/* Geographic Profile summary card */}
+      {geoProfile && (
+        <div className="border-border bg-card/40 rounded-lg border p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-foreground text-xs font-semibold">Geographic Profile</div>
+            <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
+          </div>
+          <div className="text-muted-foreground grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+            <div>
+              <span className="text-[9px] uppercase">Land Area</span>
+              <div className="text-foreground/80 text-xs font-semibold font-mono">
+                {geoProfile.area.areaKm2.toLocaleString()} km²
+              </div>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase">Climate Model</span>
+              <div className="text-foreground/80 text-xs font-semibold truncate" title={geoProfile.climate.dominant}>
+                {geoProfile.climate.dominant}
+              </div>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase">Mean Elevation</span>
+              <div className="text-foreground/80 text-xs font-semibold font-mono">
+                {Math.round(geoProfile.elevation.meanElev).toLocaleString()} m
+              </div>
+            </div>
+            <div>
+              <span className="text-[9px] uppercase">Hydrology</span>
+              <div className="text-foreground/80 text-xs font-semibold font-mono">
+                {geoProfile.hydro.riverCount} Rivers / {geoProfile.hydro.lakeCount} Lakes
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Compliance guard — surfaces population/GDP rollup inconsistencies,
           capital integrity, founded-year sanity, and coordinate-bounds issues. */}

@@ -549,3 +549,344 @@ Future
 deck.gl
 Nebula.gl
 H3
+
+I think you're actually onto a much bigger product than "flight paths."
+
+What FlightCN accidentally demonstrates is that routes themselves can be first-class entities.
+
+For IxMaps, I'd create an entire subsystem:
+
+Routes
+
+A network visualization and infrastructure editor for:
+
+Airlines
+Railways
+Highways
+Shipping lanes
+Ferries
+Pipelines
+Power grids
+Fiber networks
+Military logistics
+Trade corridors
+Existing Libraries Worth Looking At
+flightcn
+
+The obvious inspiration.
+
+Provides:
+
+airport markers
+route arcs
+multi-stop journeys
+route networks
+animations
+globe support
+
+Perfect starting point for aviation.
+
+React Flow
+
+This is probably the most important non-map library.
+
+Why?
+
+Because a transportation network is just:
+
+Node
+  ↕
+Edge
+  ↕
+Node
+
+Airports.
+
+Cities.
+
+Ports.
+
+Rail stations.
+
+Highway interchanges.
+
+React Flow already solves:
+
+connections
+node editing
+edge editing
+grouping
+selection
+contextual menus
+
+I'd use React Flow concepts heavily even if you never render it directly on the map.
+
+deck.gl ArcLayer
+
+This is what many airline maps use.
+
+Creates:
+
+great-circle arcs
+curved connections
+animated paths
+
+Perfect for:
+
+Buffalo → Toronto
+Paris → Rome
+Venceia → Novetra
+deck.gl TripsLayer
+
+One of the coolest layers available.
+
+Animates movement.
+
+Examples:
+
+aircraft
+trains
+ships
+military units
+
+You literally watch things move across the map.
+
+deck.gl PathLayer
+
+For highways and rail.
+
+Supports:
+
+custom widths
+styling
+dashed lines
+GPU rendering
+
+Can handle huge route networks.
+
+Graphology
+
+Treat the world as a graph.
+
+Airport
+RailStation
+Port
+City
+
+connected by:
+
+FlightRoute
+RailRoute
+Highway
+ShippingLane
+
+Enables:
+
+shortest path
+logistics
+trade
+route planning
+Cosmograph
+
+Extremely interesting.
+
+Designed for huge relationship networks.
+
+Imagine:
+
+World Trade Network
+
+visualized as a graph.
+
+Could power:
+
+trade routes
+airline alliances
+diplomatic networks
+shipping networks
+
+Reagraph
+
+Another graph visualization engine.
+
+Useful for:
+
+transportation networks
+logistics systems
+trade visualization
+
+Supports thousands of nodes smoothly.
+
+Features Apple Would Build
+
+The biggest opportunity is not copying GIS tools.
+
+It's copying Apple Maps.
+
+Route Cards
+
+When clicking a route:
+
+Northern Imperial Railway
+────────────────────
+
+Length
+1,842 km
+
+Stations
+42
+
+Passengers
+4.3M/year
+
+Owner
+Imperial Rail Authority
+
+Beautiful sheet UI.
+
+Dynamic Route Styling
+
+Air:
+
+Blue Arc
+
+Rail:
+
+Solid Purple
+
+Highway:
+
+Orange
+
+Shipping:
+
+Teal Dotted
+
+Power:
+
+Yellow Glow
+
+Fiber:
+
+White Dashed
+Route Builder
+
+Instead of drawing lines.
+
+Create:
+
+New Route
+
+Then:
+
+Select Origin
+Select Destination
+
+System computes geometry.
+
+Much cleaner UX.
+
+Route Templates
+
+One of the coolest concepts.
+
+Create:
+
+High-Speed Rail
+
+Template:
+
+{
+  "speed": 350,
+  "capacity": 1200,
+  "electrified": true
+}
+
+Then apply anywhere.
+
+Route Inspector
+
+Click route.
+
+See:
+
+Properties
+Capacity
+Ownership
+Traffic
+Revenue
+Travel Time
+Maintenance
+
+Like Apple Maps + Figma inspector.
+
+Route Network View
+
+Instead of showing individual routes:
+
+Show network.
+
+Example:
+
+Imperial Airways
+
+Visualize:
+
+hubs
+spokes
+destinations
+
+Like airline route maps.
+
+Route Timeline
+
+This feels very IxStates.
+
+2033
+2040
+2050
+2060
+
+Watch:
+
+railways appear
+highways expand
+airlines launch routes
+
+in real time.
+
+My Dream IxMaps "Routes" Architecture
+Routes
+├── Aviation
+│   ├── Airports
+│   ├── Airlines
+│   ├── Flight Paths
+│
+├── Rail
+│   ├── Stations
+│   ├── Rail Lines
+│   ├── High-Speed Rail
+│
+├── Road
+│   ├── Cities
+│   ├── Highways
+│   ├── Logistics Corridors
+│
+├── Maritime
+│   ├── Ports
+│   ├── Shipping Routes
+│   ├── Ferries
+│
+├── Utilities
+│   ├── Power Grid
+│   ├── Pipelines
+│   ├── Fiber
+│
+└── Military
+    ├── Supply Routes
+    ├── Air Corridors
+    ├── Naval Routes
+
+The combination I'd pursue is:
+
+FlightCN (visual inspiration) + Deck.gl Arc/Path/Trips Layers + Graphology + React Flow concepts + Apple Maps interaction patterns

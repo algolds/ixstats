@@ -103,7 +103,7 @@ export const countryProcedures = {
   getCountryFeatures: cachedPublicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const [subdivisions, cities, pois, storyPins, mapLabels] = await Promise.all([
+      const [subdivisions, cities, pois, storyPins, mapLabels, peaks, namedRivers, namedLakes] = await Promise.all([
         ctx.db.subdivision.findMany({
           where: { countryId: input.countryId, status: "approved" },
           orderBy: { name: "asc" },
@@ -124,9 +124,21 @@ export const countryProcedures = {
           where: { countryId: input.countryId, status: "approved" },
           orderBy: { text: "asc" },
         }),
+        ctx.db.peak.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { name: "asc" },
+        }).catch(() => []),
+        ctx.db.namedRiver.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { name: "asc" },
+        }).catch(() => []),
+        ctx.db.namedLake.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { name: "asc" },
+        }).catch(() => []),
       ]);
 
-      return { subdivisions, cities, pois, storyPins, mapLabels };
+      return { subdivisions, cities, pois, storyPins, mapLabels, peaks, namedRivers, namedLakes };
     }),
 
   /**

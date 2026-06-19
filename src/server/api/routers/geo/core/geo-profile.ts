@@ -53,7 +53,7 @@ export const geoProfileProcedures = {
       }
 
       // 2. Get intersecting map layers for climate and altitude analysis
-      const [climateLayers, altitudeLayers, riverLayers, lakeLayers] = await Promise.all([
+      const [climateLayers, altitudeLayers] = await Promise.all([
         ctx.db.mapLayer.findMany({
           where: { layerType: "climate", isActive: true },
           select: {
@@ -72,21 +72,6 @@ export const geoProfileProcedures = {
             properties: true,
             areaSqKm: true,
             displayName: true,
-          },
-        }),
-        ctx.db.mapLayer.findMany({
-          where: { layerType: "rivers", isActive: true },
-          select: {
-            featureId: true,
-            properties: true,
-            areaSqKm: true,
-          },
-        }),
-        ctx.db.mapLayer.findMany({
-          where: { layerType: "lakes", isActive: true },
-          select: {
-            featureId: true,
-            areaSqKm: true,
           },
         }),
       ]);
@@ -214,14 +199,119 @@ export const geoProfileProcedures = {
       }
       elevationProfile.sort((a, b) => a.minElev - b.minElev);
 
-      // 6. Estimate hydrography (rough: count features in bbox)
-      const riverCount = riverLayers.length;
-      const totalRiverLengthKm = riverLayers.reduce((s, r) => {
-        const p = r.properties as Record<string, unknown> | null;
-        return s + ((p?.["lengthKm"] as number) ?? r.areaSqKm ?? 0);
-      }, 0);
-      const lakeCount = lakeLayers.length;
-      const totalLakeAreaSqKm = lakeLayers.reduce((s, l) => s + (l.areaSqKm ?? 0), 0);
+      // 6. Hydrography: clip rivers/lakes to country using PostGIS with bbox fallback
+      let riverCount = 0;
+      let totalRiverLengthKm = 0;
+      let lakeCount = 0;
+      let totalLakeAreaSqKm = 0;
+
+      try {
+        const riverStats = await ctx.db.$queryRawUnsafe<Array<{ count: number; length_km: number }>>(
+          `
+          WITH country AS (
+            SELECT id,
+              ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
+            FROM "Country"
+            WHERE id = $1
+            LIMIT 1
+          )
+          SELECT
+            COUNT(ml.id)::int as count,
+            COALESCE(SUM(
+              ST_Length(
+                ST_Intersection(
+                  ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
+                  c.geom
+                )::geography
+              )
+            ), 0) / 1000 as length_km
+          FROM country c
+          JOIN map_layers ml ON ml."layerType" = 'rivers' AND ml."isActive" = true
+          WHERE ST_Intersects(
+            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
+            c.geom
+          )
+          `,
+          input.countryId
+        );
+
+        riverCount = Number(riverStats[0]?.count ?? 0);
+        totalRiverLengthKm = Number(riverStats[0]?.length_km ?? 0);
+
+        const lakeStats = await ctx.db.$queryRawUnsafe<Array<{ count: number; area_sqkm: number }>>(
+          `
+          WITH country AS (
+            SELECT id,
+              ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
+            FROM "Country"
+            WHERE id = $1
+            LIMIT 1
+          )
+          SELECT
+            COUNT(ml.id)::int as count,
+            COALESCE(SUM(
+              ST_Area(
+                ST_Intersection(
+                  ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
+                  c.geom
+                )::geography
+              )
+            ), 0) / 1e6 as area_sqkm
+          FROM country c
+          JOIN map_layers ml ON ml."layerType" = 'lakes' AND ml."isActive" = true
+          WHERE ST_Intersects(
+            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
+            c.geom
+          )
+          `,
+          input.countryId
+        );
+
+        lakeCount = Number(lakeStats[0]?.count ?? 0);
+        totalLakeAreaSqKm = Number(lakeStats[0]?.area_sqkm ?? 0);
+      } catch (err) {
+        console.warn("PostGIS hydro query failed, falling back to bbox estimation:", err);
+        const [fallbackRivers, fallbackLakes] = await Promise.all([
+          ctx.db.mapLayer.findMany({
+            where: { layerType: "rivers", isActive: true },
+            select: {
+              featureId: true,
+              geometry: true,
+              properties: true,
+              areaSqKm: true,
+            },
+          }),
+          ctx.db.mapLayer.findMany({
+            where: { layerType: "lakes", isActive: true },
+            select: {
+              featureId: true,
+              geometry: true,
+              areaSqKm: true,
+            },
+          }),
+        ]);
+
+        const filteredRivers = fallbackRivers.filter((r) => {
+          const rGeo = r.geometry as import("geojson").Geometry | null;
+          if (!rGeo) return false;
+          return estimateBboxOverlap(rGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) > 0;
+        });
+
+        const filteredLakes = fallbackLakes.filter((l) => {
+          const lGeo = l.geometry as import("geojson").Geometry | null;
+          if (!lGeo) return false;
+          return estimateBboxOverlap(lGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) > 0;
+        });
+
+        riverCount = filteredRivers.length;
+        totalRiverLengthKm = filteredRivers.reduce((s, r) => {
+          const p = r.properties as Record<string, unknown> | null;
+          return s + ((p?.["lengthKm"] as number) ?? r.areaSqKm ?? 0);
+        }, 0);
+
+        lakeCount = filteredLakes.length;
+        totalLakeAreaSqKm = filteredLakes.reduce((s, l) => s + (l.areaSqKm ?? 0), 0);
+      }
 
       // 7. Find neighbors + coastline via PostGIS spatial queries
       // Uses ST_Intersects on JSONB geometry cast to PostGIS geometry for pixel-perfect
@@ -326,6 +416,65 @@ export const geoProfileProcedures = {
         areaKm2,
       });
 
+      // 8. Query superlatives
+      const [peaks, namedRivers, namedLakes] = await Promise.all([
+        ctx.db.peak.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { elevation: "desc" },
+          take: 1,
+        }),
+        ctx.db.namedRiver.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { lengthKm: "desc" },
+          take: 1,
+        }),
+        ctx.db.namedLake.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { areaSqKm: "desc" },
+          take: 1,
+        }),
+      ]);
+
+      let tallestPeak = null;
+      if (peaks[0]) {
+        tallestPeak = {
+          name: peaks[0].name,
+          elevation: peaks[0].elevation,
+          prominence: peaks[0].prominence,
+          type: "peak" as const,
+        };
+      } else {
+        // Fallback: highest city elevation
+        const highestCity = await ctx.db.city.findFirst({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { elevation: "desc" },
+          select: { name: true, elevation: true },
+        });
+        if (highestCity && highestCity.elevation !== null) {
+          tallestPeak = {
+            name: highestCity.name,
+            elevation: highestCity.elevation,
+            prominence: null,
+            type: "city" as const,
+          };
+        }
+      }
+
+      const longestRiver = namedRivers[0]
+        ? {
+            name: namedRivers[0].name,
+            lengthKm: namedRivers[0].lengthKm,
+          }
+        : null;
+
+      const largestLake = namedLakes[0]
+        ? {
+            name: namedLakes[0].name,
+            areaSqKm: namedLakes[0].areaSqKm,
+            maxDepthM: namedLakes[0].maxDepthM,
+          }
+        : null;
+
       // 9. Compute gameplay modifiers
       const economicModifiers = computeEconomicGeoModifiers(profile);
       const npcModifiers = computeNPCGeoModifiers(profile);
@@ -387,6 +536,11 @@ export const geoProfileProcedures = {
           slug: n.slug,
           sharedBorderKm: n.sharedBorderKm,
         })),
+        superlatives: {
+          tallestPeak,
+          longestRiver,
+          largestLake,
+        },
         economic: economicModifiers,
         npcModifiers,
         crisisRisk,
