@@ -24,6 +24,8 @@ interface UseMapLayersProps {
   gridZoomBucket: number;
   routeWaypoints?: [number, number][];
   theme?: MapTheme;
+  gapFeatures?: any | null;
+  showGaps?: boolean;
 }
 
 export function useMapLayers({
@@ -41,6 +43,8 @@ export function useMapLayers({
   gridZoomBucket,
   routeWaypoints,
   theme,
+  gapFeatures,
+  showGaps,
 }: UseMapLayersProps) {
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
   useEffect(() => {
@@ -943,4 +947,42 @@ export function useMapLayers({
     map.setPaintProperty("editor-subdivisions-fill", "fill-color", ["coalesce", ["get", "color"], "#7c3aed"]);
     map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0.05 * (layerOpacity?.regions ?? 0.6));
   }, [map, isLoaded, theme, layerOpacity]);
+
+  // 9. Gap overlay (negative space highlights)
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const sourceId = "editor-gaps";
+    const fillId = "editor-gaps-fill";
+    const strokeId = "editor-gaps-stroke";
+
+    const geojson = gapFeatures && showGaps
+      ? gapFeatures
+      : EMPTY_FC;
+
+    if (map.getSource(sourceId)) {
+      getGeoJSONSource(map, sourceId)?.setData(geojson);
+    } else {
+      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addLayer({
+        id: fillId,
+        type: "fill",
+        source: sourceId,
+        paint: {
+          "fill-color": "#f59e0b",
+          "fill-opacity": 0.15,
+        },
+      });
+      map.addLayer({
+        id: strokeId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#d97706",
+          "line-width": 1.5,
+          "line-dasharray": [2, 2],
+        },
+      });
+    }
+  }, [map, isLoaded, gapFeatures, showGaps]);
 }

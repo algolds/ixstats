@@ -4,7 +4,7 @@
 
 import React, { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Pencil, Copy, Trash2, MapPin, ExternalLink, BookOpen } from "lucide-react";
+import { Pencil, Copy, Trash2, MapPin, ExternalLink, BookOpen, Plus } from "lucide-react";
 
 interface FeatureContextMenuProps {
   x: number;
@@ -14,6 +14,7 @@ interface FeatureContextMenuProps {
     name: string;
     type: string;
     wikiPageTitle?: string | null;
+    geometry?: any;
   };
   onEdit: () => void;
   onDuplicate: () => void;
@@ -21,6 +22,9 @@ interface FeatureContextMenuProps {
   onCopyCoords?: () => void;
   onOpenWiki?: () => void;
   onClose: () => void;
+  onCreateFromGap?: () => void;
+  onSnapToBorder?: () => void;
+  onSnapToCoast?: () => void;
 }
 
 interface MenuItem {
@@ -40,6 +44,9 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   onCopyCoords,
   onOpenWiki,
   onClose,
+  onCreateFromGap,
+  onSnapToBorder,
+  onSnapToCoast,
 }: FeatureContextMenuProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -67,36 +74,64 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
     };
   }, [handleKeyDown, handleClickOutside]);
 
-  const primaryItems: MenuItem[] = [
-    { label: "Edit Properties", icon: Pencil, onClick: onEdit },
-    { label: "Duplicate", icon: Copy, onClick: onDuplicate },
-    { label: "Delete", icon: Trash2, onClick: onDelete, danger: true },
-  ];
-
+  const primaryItems: MenuItem[] = [];
   const secondaryItems: MenuItem[] = [];
 
-  if (onCopyCoords) {
-    secondaryItems.push({
-      label: "Copy Coordinates",
-      icon: MapPin,
-      onClick: onCopyCoords,
-    });
-  }
+  if (feature.type === "gap") {
+    if (onCreateFromGap) {
+      primaryItems.push({
+        label: "Create Region from Gap",
+        icon: Plus,
+        onClick: onCreateFromGap,
+      });
+    }
+  } else {
+    primaryItems.push(
+      { label: "Edit Properties", icon: Pencil, onClick: onEdit },
+      { label: "Duplicate", icon: Copy, onClick: onDuplicate },
+      { label: "Delete", icon: Trash2, onClick: onDelete, danger: true }
+    );
 
-  if (feature.wikiPageTitle && onOpenWiki) {
-    secondaryItems.push({
-      label: "Open Wiki Page",
-      icon: ExternalLink,
-      onClick: onOpenWiki,
-    });
-  }
+    if (onCopyCoords) {
+      secondaryItems.push({
+        label: "Copy Coordinates",
+        icon: MapPin,
+        onClick: onCopyCoords,
+      });
+    }
 
-  if (!feature.wikiPageTitle) {
-    secondaryItems.push({
-      label: "Link to Wiki",
-      icon: BookOpen,
-      onClick: onEdit,
-    });
+    if (feature.type === "city") {
+      if (onSnapToBorder) {
+        secondaryItems.push({
+          label: "Snap to Nearest Border",
+          icon: MapPin,
+          onClick: onSnapToBorder,
+        });
+      }
+      if (onSnapToCoast) {
+        secondaryItems.push({
+          label: "Snap to Coastline",
+          icon: MapPin,
+          onClick: onSnapToCoast,
+        });
+      }
+    }
+
+    if (feature.wikiPageTitle && onOpenWiki) {
+      secondaryItems.push({
+        label: "Open Wiki Page",
+        icon: ExternalLink,
+        onClick: onOpenWiki,
+      });
+    }
+
+    if (!feature.wikiPageTitle) {
+      secondaryItems.push({
+        label: "Link to Wiki",
+        icon: BookOpen,
+        onClick: onEdit,
+      });
+    }
   }
 
   // Clamp position to viewport

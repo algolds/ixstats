@@ -28,6 +28,12 @@ import {
   Navigation,
   ArrowLeftRight,
   Magnet,
+  Eye,
+  Crosshair,
+  Scissors,
+  GitMerge,
+  Sliders,
+  Sparkles,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -41,6 +47,259 @@ import {
   ColorPickerOutput,
   ColorPickerFormat,
 } from "~/components/kibo-ui/color-picker";
+
+function CityScatterPopover({
+  onScatter,
+  defaultPrefix = "City",
+}: {
+  onScatter: (count: number, type: string, prefix: string) => void;
+  defaultPrefix?: string;
+}) {
+  const [count, setCount] = useState(5);
+  const [type, setType] = useState("city");
+  const [prefix, setPrefix] = useState(defaultPrefix);
+
+  return (
+    <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-3 p-3">
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          Scatter Count
+        </Label>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={1}
+            max={50}
+            value={count}
+            onChange={(e) => setCount(Number(e.target.value))}
+            className="accent-primary h-4 flex-1"
+          />
+          <span className="w-8 text-right text-[11px] font-semibold">{count}</span>
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          City Type
+        </Label>
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-[11px] outline-none focus:ring-1"
+        >
+          {CITY_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          Name Prefix
+        </Label>
+        <input
+          type="text"
+          value={prefix}
+          onChange={(e) => setPrefix(e.target.value)}
+          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-[11px] outline-none focus:ring-1"
+        />
+      </div>
+      <button
+        onClick={() => onScatter(count, type, prefix)}
+        className="bg-primary hover:bg-primary/90 flex h-7 w-full items-center justify-center gap-1 rounded text-[11px] font-medium text-white transition-colors"
+      >
+        <Sparkles className="h-3 w-3" /> Scatter Cities
+      </button>
+    </PopoverContent>
+  );
+}
+
+function TransformGeometryPopover({
+  onApply,
+}: {
+  onApply: (type: "simplify" | "smooth" | "rotate" | "scale", value: number) => void;
+}) {
+  const [simplifyVal, setSimplifyVal] = useState(0.001);
+  const [rotateVal, setRotateVal] = useState(0);
+  const [scaleVal, setScaleVal] = useState(1);
+
+  return (
+    <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-4 p-3">
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          Simplify Tolerance
+        </Label>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={0.0001}
+            max={0.01}
+            step={0.0001}
+            value={simplifyVal}
+            onChange={(e) => setSimplifyVal(Number(e.target.value))}
+            className="accent-primary h-4 flex-1"
+          />
+          <button
+            onClick={() => onApply("simplify", simplifyVal)}
+            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
+          >
+            Apply
+          </button>
+        </div>
+        <div className="text-muted-foreground text-[9px]">Tolerance: {simplifyVal.toFixed(4)}</div>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          Bezier Smoothing
+        </Label>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground text-[9px]">Apply Bezier Spline</span>
+          <button
+            onClick={() => onApply("smooth", 1)}
+            className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
+          >
+            Smooth Region
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          Rotate (Degrees)
+        </Label>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={-180}
+            max={180}
+            value={rotateVal}
+            onChange={(e) => setRotateVal(Number(e.target.value))}
+            className="accent-primary h-4 flex-1"
+          />
+          <button
+            onClick={() => onApply("rotate", rotateVal)}
+            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
+          >
+            Apply
+          </button>
+        </div>
+        <div className="text-muted-foreground text-[9px]">Angle: {rotateVal}°</div>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          Scale Factor
+        </Label>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={0.5}
+            max={2.0}
+            step={0.1}
+            value={scaleVal}
+            onChange={(e) => setScaleVal(Number(e.target.value))}
+            className="accent-primary h-4 flex-1"
+          />
+          <button
+            onClick={() => onApply("scale", scaleVal)}
+            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
+          >
+            Apply
+          </button>
+        </div>
+        <div className="text-muted-foreground text-[9px]">Factor: {scaleVal.toFixed(1)}x</div>
+      </div>
+    </PopoverContent>
+  );
+}
+
+function CoordinateSnappingControls({
+  coords,
+  onCoordsChange,
+  onSnapBorder,
+  onSnapCoast,
+  isPickingLocation,
+  onTogglePickingLocation,
+}: {
+  coords?: [number, number];
+  onCoordsChange?: (coords: [number, number]) => void;
+  onSnapBorder?: () => void;
+  onSnapCoast?: () => void;
+  isPickingLocation?: boolean;
+  onTogglePickingLocation?: () => void;
+}) {
+  const [lng, setLng] = useState(coords ? coords[0].toString() : "");
+  const [lat, setLat] = useState(coords ? coords[1].toString() : "");
+
+  React.useEffect(() => {
+    if (coords) {
+      setLng(coords[0].toString());
+      setLat(coords[1].toString());
+    }
+  }, [coords]);
+
+  const handleApply = () => {
+    const lngN = parseFloat(lng);
+    const latN = parseFloat(lat);
+    if (!isNaN(lngN) && !isNaN(latN) && onCoordsChange) {
+      onCoordsChange([lngN, latN]);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={labelClass}>Coord</span>
+      <input
+        type="text"
+        placeholder="Lng"
+        value={lng}
+        onChange={(e) => setLng(e.target.value)}
+        onBlur={handleApply}
+        className={`${selectClass} w-16 text-[10px]`}
+      />
+      <input
+        type="text"
+        placeholder="Lat"
+        value={lat}
+        onChange={(e) => setLat(e.target.value)}
+        onBlur={handleApply}
+        className={`${selectClass} w-16 text-[10px]`}
+      />
+
+      {onTogglePickingLocation && (
+        <button
+          onClick={onTogglePickingLocation}
+          className={isPickingLocation ? activeBtnClass : btnClass}
+          title="Reposition with crosshair teleport tool"
+        >
+          <Crosshair className="h-3 w-3" />
+          Teleport
+        </button>
+      )}
+
+      {onSnapBorder && (
+        <button
+          onClick={onSnapBorder}
+          className={btnClass}
+          title="Snap to CONTAINING region border"
+        >
+          Snap to Border
+        </button>
+      )}
+
+      {onSnapCoast && (
+        <button
+          onClick={onSnapCoast}
+          className={btnClass}
+          title="Snap to nearest coastline/lake water boundary"
+        >
+          Snap to Coast
+        </button>
+      )}
+    </div>
+  );
+}
 
 interface ToolOptionsBarProps {
   mode: EditorMode;
@@ -84,6 +343,27 @@ interface ToolOptionsBarProps {
   // Story
   storyCategory?: string;
   onStoryCategoryChange?: (cat: string) => void;
+  // Gap / Negative Space
+  showGaps?: boolean;
+  onToggleGaps?: () => void;
+  // City scatter/snapping
+  onScatterCities?: (count: number, type: string, prefix: string) => void;
+  onSnapCityToSubdivisionBorder?: () => void;
+  onSnapCityToCoastline?: () => void;
+  cityCoordinates?: [number, number];
+  onCityCoordinatesChange?: (coords: [number, number]) => void;
+  isPickingLocation?: boolean;
+  onTogglePickingLocation?: () => void;
+  // Subdivision split/merge/transforms
+  onStartSplitSubdivision?: () => void;
+  onExecuteSplitSubdivision?: () => void;
+  onMergeSelectedSubdivisions?: () => void;
+  onApplyGeometryTransformation?: (
+    type: "simplify" | "smooth" | "rotate" | "scale",
+    value: number
+  ) => void;
+  onCancelSplit?: () => void;
+  selectedFeature?: any;
 }
 
 const CITY_TYPES = [
@@ -198,12 +478,55 @@ function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: number) => v
 export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBarProps) {
   const { mode } = props;
 
-  // Don't render for view mode with no selection
-  if (mode === "view" && !props.selectedCount) return null;
+  // Don't render for view mode with no selection unless gap highlight is present
+  if (mode === "view" && !props.selectedCount && !props.onToggleGaps) return null;
   if (mode === "import-provinces") return null;
+
+  if (mode === "split-subdivision") {
+    return (
+      <div className="border-border bg-card/80 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-sm">
+        <ToolLabel icon={Scissors} label="Split Subdivision" />
+        <span className="text-muted-foreground text-[11px]">
+          Click on the map to draw a split-line slicing through the subdivision.
+        </span>
+        <div className={dividerClass} />
+        <button
+          onClick={props.onExecuteSplitSubdivision}
+          className={activeBtnClass}
+          title="Execute Split"
+        >
+          <Check className="h-3 w-3" /> Execute Split
+        </button>
+        {props.onUndoWaypoint && (
+          <button onClick={props.onUndoWaypoint} className={btnClass} title="Undo last split point">
+            <Undo2 className="h-3 w-3" /> Undo Point
+          </button>
+        )}
+        <button onClick={props.onCancelSplit} className={dangerBtnClass} title="Cancel Split">
+          Cancel
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="border-border bg-card/80 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-sm">
+      {/* ── Gap Highlight Toggle ── */}
+      {props.onToggleGaps &&
+        (mode === "view" || mode === "add-subdivision" || mode === "edit-subdivision") && (
+          <>
+            <button
+              onClick={props.onToggleGaps}
+              className={props.showGaps ? activeBtnClass : btnClass}
+              title={props.showGaps ? "Hide negative space gaps" : "Show negative space gaps"}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              {props.showGaps ? "Highlight Gaps: ON" : "Highlight Gaps"}
+            </button>
+            <div className={dividerClass} />
+          </>
+        )}
+
       {/* ── Select mode ── */}
       {mode === "view" && props.selectedCount! > 0 && (
         <>
@@ -219,6 +542,15 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           {props.onDelete && (
             <button onClick={props.onDelete} className={dangerBtnClass} title="Delete">
               <Trash2 className="h-3 w-3" /> Delete
+            </button>
+          )}
+          {props.selectedCount! > 1 && props.onMergeSelectedSubdivisions && (
+            <button
+              onClick={props.onMergeSelectedSubdivisions}
+              className={btnClass}
+              title="Merge selected subdivisions"
+            >
+              <GitMerge className="h-3 w-3" /> Merge Regions
             </button>
           )}
         </>
@@ -263,8 +595,22 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   <MapPin className="h-3 w-3" /> Copy Coords
                 </button>
               )}
-              {props.onMoveToCoords && (
-                <MoveToCoordsInput onMove={props.onMoveToCoords} />
+              {props.onMoveToCoords && <MoveToCoordsInput onMove={props.onMoveToCoords} />}
+              {(props.cityCoordinates ||
+                props.onCityCoordinatesChange ||
+                props.onSnapCityToSubdivisionBorder ||
+                props.onSnapCityToCoastline) && (
+                <>
+                  <div className={dividerClass} />
+                  <CoordinateSnappingControls
+                    coords={props.cityCoordinates}
+                    onCoordsChange={props.onCityCoordinatesChange}
+                    onSnapBorder={props.onSnapCityToSubdivisionBorder}
+                    onSnapCoast={props.onSnapCityToCoastline}
+                    isPickingLocation={props.isPickingLocation}
+                    onTogglePickingLocation={props.onTogglePickingLocation}
+                  />
+                </>
               )}
             </>
           )}
@@ -296,6 +642,61 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
             onChange={(e) => props.onSubdivisionLevelChange?.(parseInt(e.target.value) || 1)}
             className={`${selectClass} w-12 text-center`}
           />
+
+          {mode === "edit-subdivision" && (
+            <>
+              {props.onScatterCities && (
+                <>
+                  <div className={dividerClass} />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className={btnClass} title="Scatter cities inside this region">
+                        <Sparkles className="h-3 w-3" /> Scatter Cities...
+                      </button>
+                    </PopoverTrigger>
+                    <CityScatterPopover
+                      onScatter={(count, type, prefix) => {
+                        if (props.selectedFeature?.id) {
+                          props.onScatterCities!(props.selectedFeature.id, count, type, prefix);
+                        }
+                      }}
+                      defaultPrefix={`${props.selectedFeature?.name || "City"}`}
+                    />
+                  </Popover>
+                </>
+              )}
+
+              {props.onStartSplitSubdivision && (
+                <>
+                  <div className={dividerClass} />
+                  <button
+                    onClick={props.onStartSplitSubdivision}
+                    className={btnClass}
+                    title="Split region with a drawn line"
+                  >
+                    <Scissors className="h-3 w-3" /> Split Region
+                  </button>
+                </>
+              )}
+
+              {props.onApplyGeometryTransformation && (
+                <>
+                  <div className={dividerClass} />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        className={btnClass}
+                        title="Simplify, Smooth, Rotate, or Scale geometry"
+                      >
+                        <Sliders className="h-3 w-3" /> Transform Geometry...
+                      </button>
+                    </PopoverTrigger>
+                    <TransformGeometryPopover onApply={props.onApplyGeometryTransformation} />
+                  </Popover>
+                </>
+              )}
+            </>
+          )}
         </>
       )}
 
@@ -328,8 +729,22 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   <MapPin className="h-3 w-3" /> Copy Coords
                 </button>
               )}
-              {props.onMoveToCoords && (
-                <MoveToCoordsInput onMove={props.onMoveToCoords} />
+              {props.onMoveToCoords && <MoveToCoordsInput onMove={props.onMoveToCoords} />}
+              {(props.cityCoordinates ||
+                props.onCityCoordinatesChange ||
+                props.onSnapCityToSubdivisionBorder ||
+                props.onSnapCityToCoastline) && (
+                <>
+                  <div className={dividerClass} />
+                  <CoordinateSnappingControls
+                    coords={props.cityCoordinates}
+                    onCoordsChange={props.onCityCoordinatesChange}
+                    onSnapBorder={props.onSnapCityToSubdivisionBorder}
+                    onSnapCoast={props.onSnapCityToCoastline}
+                    isPickingLocation={props.isPickingLocation}
+                    onTogglePickingLocation={props.onTogglePickingLocation}
+                  />
+                </>
               )}
             </>
           )}
@@ -461,21 +876,36 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               </button>
             );
           })}
-          {(props.onFinishRoute || props.onUndoWaypoint || props.onReverseRoute || props.onSnapToggle) && (
+          {(props.onFinishRoute ||
+            props.onUndoWaypoint ||
+            props.onReverseRoute ||
+            props.onSnapToggle) && (
             <>
               <div className={dividerClass} />
               {props.onFinishRoute && (
-                <button onClick={props.onFinishRoute} className={activeBtnClass} title="Finish route">
+                <button
+                  onClick={props.onFinishRoute}
+                  className={activeBtnClass}
+                  title="Finish route"
+                >
                   <Check className="h-3 w-3" /> Finish
                 </button>
               )}
               {props.onUndoWaypoint && (
-                <button onClick={props.onUndoWaypoint} className={btnClass} title="Undo last waypoint">
+                <button
+                  onClick={props.onUndoWaypoint}
+                  className={btnClass}
+                  title="Undo last waypoint"
+                >
                   <Undo2 className="h-3 w-3" /> Undo
                 </button>
               )}
               {props.onReverseRoute && (
-                <button onClick={props.onReverseRoute} className={btnClass} title="Reverse route direction">
+                <button
+                  onClick={props.onReverseRoute}
+                  className={btnClass}
+                  title="Reverse route direction"
+                >
                   <ArrowLeftRight className="h-3 w-3" /> Reverse
                 </button>
               )}
@@ -483,7 +913,11 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                 <button
                   onClick={props.onSnapToggle}
                   className={props.isSnapEnabled ? activeBtnClass : btnClass}
-                  title={props.isSnapEnabled ? "Snap to cities ON — click to disable" : "Snap to cities OFF — click to enable"}
+                  title={
+                    props.isSnapEnabled
+                      ? "Snap to cities ON — click to disable"
+                      : "Snap to cities OFF — click to enable"
+                  }
                 >
                   <Magnet className="h-3 w-3" />
                   {props.isSnapEnabled ? "Snap On" : "Snap Off"}

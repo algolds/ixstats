@@ -104,10 +104,9 @@ interface EditorMapProps {
     coordinates: [number, number]
   ) => Promise<void>;
   isPickingLocation?: boolean;
-  onFeatureContextMenu?: (
-    feature: EditorFeature,
-    screenPos: { x: number; y: number }
-  ) => void;
+  onFeatureContextMenu?: (feature: EditorFeature, screenPos: { x: number; y: number }) => void;
+  gapFeatures?: any | null;
+  showGaps?: boolean;
 }
 
 const EditorMap = memo(
@@ -141,6 +140,8 @@ const EditorMap = memo(
       updatePointCoordinates,
       isPickingLocation = false,
       onFeatureContextMenu,
+      gapFeatures,
+      showGaps,
     },
     ref
   ) {
@@ -187,6 +188,8 @@ const EditorMap = memo(
       gridZoomBucket,
       routeWaypoints,
       theme,
+      gapFeatures,
+      showGaps,
     });
 
     // ── 2. Hook: Manage Subdivision Drawing ──
@@ -248,16 +251,16 @@ const EditorMap = memo(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
       const newStyle = buildBaseStyle(theme);
-      
+
       setIsLoaded(false);
       map.setStyle(newStyle as any, { diff: true });
-      
+
       const onStyleLoad = () => {
         setIsLoaded(true);
       };
-      
+
       map.once("style.load", onStyleLoad);
-      
+
       return () => {
         map.off("style.load", onStyleLoad);
       };
@@ -402,6 +405,7 @@ const EditorMap = memo(
         "editor-points-map-label",
         "editor-points-labels",
         "editor-map-labels",
+        "editor-gaps-fill",
       ];
 
       const onMouseMove = (e: any) => {
@@ -416,9 +420,11 @@ const EditorMap = memo(
         if (hits.length > 0) {
           const firstHit = hits[0]!;
           const hitLayer = firstHit.layer.id;
-          
+
           if (hitLayer.startsWith("editor-points") || hitLayer === "editor-map-labels") {
             map.getCanvas().style.cursor = "grab";
+          } else if (hitLayer === "editor-gaps-fill") {
+            map.getCanvas().style.cursor = "help";
           } else {
             map.getCanvas().style.cursor = "pointer";
           }
@@ -480,7 +486,34 @@ const EditorMap = memo(
 
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
-          const hitId = hits[0]!.properties?.id as string | undefined;
+          const firstHit = hits[0]!;
+          const hitLayer = firstHit.layer.id;
+
+          if (hitLayer === "editor-gaps-fill") {
+            if (onFeatureContextMenuRef.current) {
+              e.preventDefault?.();
+              if (e.originalEvent) {
+                e.originalEvent.preventDefault();
+                e.originalEvent.stopPropagation();
+              }
+              const canvasRect = map.getCanvas().getBoundingClientRect();
+              const virtualFeature: EditorFeature = {
+                id: "gap",
+                type: "gap",
+                name: "Negative Space",
+                coordinates: [e.lngLat.lng, e.lngLat.lat],
+                geometry: firstHit.geometry,
+                properties: {},
+              };
+              onFeatureContextMenuRef.current(virtualFeature, {
+                x: canvasRect.left + e.point.x,
+                y: canvasRect.top + e.point.y,
+              });
+            }
+            return;
+          }
+
+          const hitId = firstHit.properties?.id as string | undefined;
           if (hitId && onFeatureContextMenuRef.current) {
             const match = featuresRef.current.find((f) => f.id === hitId);
             if (match) {

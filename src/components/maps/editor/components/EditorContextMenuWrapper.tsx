@@ -60,6 +60,24 @@ export function EditorContextMenuWrapper({
             }
           : undefined
       }
+      onCreateFromGap={() => {
+        if (editor.createSubdivisionFromGap) {
+          editor.createSubdivisionFromGap(contextMenu.feature.geometry);
+        }
+        setContextMenu(null);
+      }}
+      onSnapToBorder={() => {
+        if (editor.snapCityToSubdivisionBorder) {
+          void editor.snapCityToSubdivisionBorder(contextMenu.feature.id);
+        }
+        setContextMenu(null);
+      }}
+      onSnapToCoast={() => {
+        if (editor.snapCityToCoastline) {
+          void editor.snapCityToCoastline(contextMenu.feature.id);
+        }
+        setContextMenu(null);
+      }}
       onClose={() => setContextMenu(null)}
     />
   );

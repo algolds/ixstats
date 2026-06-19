@@ -322,16 +322,10 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
         routeTypes={routeTypes}
         onRouteTypesChange={setRouteTypes}
         selectedCount={
-          editor.selectedIds.size > 0
-            ? editor.selectedIds.size
-            : editor.selectedFeature
-              ? 1
-              : 0
+          editor.selectedIds.size > 0 ? editor.selectedIds.size : editor.selectedFeature ? 1 : 0
         }
         onDuplicate={
-          editor.selectedFeature
-            ? () => editor.duplicateFeature(editor.selectedFeature)
-            : undefined
+          editor.selectedFeature ? () => editor.duplicateFeature(editor.selectedFeature) : undefined
         }
         onDelete={
           editor.selectedIds.size > 0
@@ -367,6 +361,41 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
         }
         isSnapEnabled={editor.isSnapEnabled}
         onSnapToggle={() => editor.setIsSnapEnabled((v) => !v)}
+        // Gap highlight
+        showGaps={editor.showGaps}
+        onToggleGaps={() => editor.setShowGaps((g) => !g)}
+        // City actions
+        onScatterCities={editor.scatterCities}
+        onSnapCityToSubdivisionBorder={
+          editor.selectedFeature
+            ? () => editor.snapCityToSubdivisionBorder(editor.selectedFeature.id)
+            : undefined
+        }
+        onSnapCityToCoastline={
+          editor.selectedFeature
+            ? () => editor.snapCityToCoastline(editor.selectedFeature.id)
+            : undefined
+        }
+        cityCoordinates={editor.selectedFeature?.coordinates}
+        onCityCoordinatesChange={
+          editor.selectedFeature
+            ? (coords) =>
+                editor.updatePointCoordinates(
+                  editor.selectedFeature.id,
+                  editor.selectedFeature.type,
+                  coords
+                )
+            : undefined
+        }
+        isPickingLocation={editor.isPickingLocation}
+        onTogglePickingLocation={() => editor.setIsPickingLocation((p) => !p)}
+        // Subdivision Actions
+        onStartSplitSubdivision={() => editor.setMode("split-subdivision")}
+        onExecuteSplitSubdivision={editor.executeSplitSubdivision}
+        onMergeSelectedSubdivisions={editor.mergeSelectedSubdivisions}
+        onApplyGeometryTransformation={editor.applyGeometryTransformation}
+        onCancelSplit={() => editor.setMode("edit-subdivision")}
+        selectedFeature={editor.selectedFeature}
       />
 
       {/* ── Content: left panel + map + right panel ── */}
@@ -547,6 +576,8 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                     feature,
                   });
                 }}
+                gapFeatures={editor.gapFeatures}
+                showGaps={editor.showGaps}
               />
 
               <EditorContextMenuWrapper

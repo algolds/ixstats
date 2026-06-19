@@ -8,7 +8,21 @@
  * Handles editing mode, feature CRUD, and drawing state.
  */
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import {
+  union,
+  difference,
+  featureCollection,
+  simplify,
+  bbox,
+  point,
+  booleanPointInPolygon,
+  area,
+  buffer,
+  bezierSpline,
+  transformRotate,
+  transformScale,
+} from "@turf/turf";
 import { api } from "~/trpc/react";
 import { clampToGeometry, pointInGeometry } from "~/lib/border-editor";
 import { buildRouteGeometry } from "~/lib/route-geometry";
@@ -42,9 +56,7 @@ export function buildDuplicateInput(feature: EditorFeature): Record<string, unkn
     if (geom.type === "Polygon") {
       return {
         ...geom,
-        coordinates: geom.coordinates.map((ring: [number, number][]) =>
-          ring.map(offsetCoords)
-        ),
+        coordinates: geom.coordinates.map((ring: [number, number][]) => ring.map(offsetCoords)),
       };
     }
     if (geom.type === "MultiPolygon") {
@@ -177,7 +189,16 @@ export type EditorMode =
   | "add-lake"
   | "edit-lake";
 
-export type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route" | "peak" | "river" | "lake";
+export type FeatureType =
+  | "city"
+  | "subdivision"
+  | "poi"
+  | "storyPin"
+  | "mapLabel"
+  | "route"
+  | "peak"
+  | "river"
+  | "lake";
 
 export interface EditorFeature {
   id: string;
@@ -335,9 +356,11 @@ const DEFAULT_LAKE: NamedLakeFormData = {
 interface UseMapEditorOptions {
   /** Skip the linkage gate for geometry — used in admin Forge mode */
   skipLinkageGate?: boolean;
+  worldMapLayers?: import("~/components/maps/core/IxWorldMap").MapLayerData[];
 }
 
 export function useMapEditor(countryId: string | undefined, options?: UseMapEditorOptions) {
+  const worldMapLayers = options?.worldMapLayers;
   const utils = api.useUtils();
 
   /** Invalidate ALL client-side map data caches after a mutation.
@@ -566,56 +589,66 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             const p = d.properties as Record<string, unknown> | undefined;
             switch (action.featureType) {
               case "city":
-                await m.updateCity?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  name: d.name,
-                  type: p?.cityType ?? (p?.type as string) ?? "city",
-                  coordinates: d.coordinates,
-                  population: p?.population,
-                  isNationalCapital: !!p?.isNationalCapital,
-                  isSubdivisionCapital: !!p?.isSubdivisionCapital,
-                }));
+                await m.updateCity?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    name: d.name,
+                    type: p?.cityType ?? (p?.type as string) ?? "city",
+                    coordinates: d.coordinates,
+                    population: p?.population,
+                    isNationalCapital: !!p?.isNationalCapital,
+                    isSubdivisionCapital: !!p?.isSubdivisionCapital,
+                  })
+                );
                 break;
               case "subdivision":
-                await m.updateSubdivision?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  name: d.name,
-                  type: p?.type,
-                  level: p?.level,
-                }));
+                await m.updateSubdivision?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    name: d.name,
+                    type: p?.type,
+                    level: p?.level,
+                  })
+                );
                 break;
               case "poi":
-                await m.updatePOI?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  name: d.name,
-                  category: p?.category ?? "landmark",
-                  coordinates: d.coordinates,
-                  description: p?.description,
-                }));
+                await m.updatePOI?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    name: d.name,
+                    category: p?.category ?? "landmark",
+                    coordinates: d.coordinates,
+                    description: p?.description,
+                  })
+                );
                 break;
               case "storyPin":
-                await m.updateStoryPin?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  title: d.name,
-                  content: p?.content,
-                  category: p?.category,
-                  coordinates: d.coordinates,
-                }));
+                await m.updateStoryPin?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    title: d.name,
+                    content: p?.content,
+                    category: p?.category,
+                    coordinates: d.coordinates,
+                  })
+                );
                 break;
               case "mapLabel":
-                await m.updateMapLabel?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  text: d.name,
-                  labelType: p?.labelType,
-                  fontSize: p?.fontSize,
-                  color: p?.color,
-                  coordinates: d.coordinates,
-                }));
+                await m.updateMapLabel?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    text: d.name,
+                    labelType: p?.labelType,
+                    fontSize: p?.fontSize,
+                    color: p?.color,
+                    coordinates: d.coordinates,
+                  })
+                );
                 break;
               case "route":
                 await m.updateRouteGeometry?.mutateAsync({
@@ -625,35 +658,41 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                 });
                 break;
               case "peak":
-                await m.updatePeak?.mutateAsync(cleanNulls({
-                  countryId,
-                  peakId: action.featureId,
-                  name: d.name,
-                  coordinates: d.coordinates,
-                  elevation: p?.elevation,
-                  prominence: p?.prominence,
-                  subdivisionId: p?.subdivisionId,
-                  wikiPageTitle: p?.wikiPageTitle,
-                }));
+                await m.updatePeak?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    peakId: action.featureId,
+                    name: d.name,
+                    coordinates: d.coordinates,
+                    elevation: p?.elevation,
+                    prominence: p?.prominence,
+                    subdivisionId: p?.subdivisionId,
+                    wikiPageTitle: p?.wikiPageTitle,
+                  })
+                );
                 break;
               case "river":
-                await m.updateRiver?.mutateAsync(cleanNulls({
-                  countryId,
-                  riverId: action.featureId,
-                  name: d.name,
-                  geometry: d.geometry,
-                  wikiPageTitle: p?.wikiPageTitle,
-                }));
+                await m.updateRiver?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    riverId: action.featureId,
+                    name: d.name,
+                    geometry: d.geometry,
+                    wikiPageTitle: p?.wikiPageTitle,
+                  })
+                );
                 break;
               case "lake":
-                await m.updateLake?.mutateAsync(cleanNulls({
-                  countryId,
-                  lakeId: action.featureId,
-                  name: d.name,
-                  geometry: d.geometry,
-                  maxDepthM: p?.maxDepthM,
-                  wikiPageTitle: p?.wikiPageTitle,
-                }));
+                await m.updateLake?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    lakeId: action.featureId,
+                    name: d.name,
+                    geometry: d.geometry,
+                    maxDepthM: p?.maxDepthM,
+                    wikiPageTitle: p?.wikiPageTitle,
+                  })
+                );
                 break;
             }
           }
@@ -763,56 +802,66 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             const p = d.properties as Record<string, unknown> | undefined;
             switch (action.featureType) {
               case "city":
-                await m.updateCity?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  name: d.name,
-                  type: p?.cityType ?? (p?.type as string) ?? "city",
-                  coordinates: d.coordinates,
-                  population: p?.population,
-                  isNationalCapital: !!p?.isNationalCapital,
-                  isSubdivisionCapital: !!p?.isSubdivisionCapital,
-                }));
+                await m.updateCity?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    name: d.name,
+                    type: p?.cityType ?? (p?.type as string) ?? "city",
+                    coordinates: d.coordinates,
+                    population: p?.population,
+                    isNationalCapital: !!p?.isNationalCapital,
+                    isSubdivisionCapital: !!p?.isSubdivisionCapital,
+                  })
+                );
                 break;
               case "subdivision":
-                await m.updateSubdivision?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  name: d.name,
-                  type: p?.type,
-                  level: p?.level,
-                }));
+                await m.updateSubdivision?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    name: d.name,
+                    type: p?.type,
+                    level: p?.level,
+                  })
+                );
                 break;
               case "poi":
-                await m.updatePOI?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  name: d.name,
-                  category: p?.category ?? "landmark",
-                  coordinates: d.coordinates,
-                  description: p?.description,
-                }));
+                await m.updatePOI?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    name: d.name,
+                    category: p?.category ?? "landmark",
+                    coordinates: d.coordinates,
+                    description: p?.description,
+                  })
+                );
                 break;
               case "storyPin":
-                await m.updateStoryPin?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  title: d.name,
-                  content: p?.content,
-                  category: p?.category,
-                  coordinates: d.coordinates,
-                }));
+                await m.updateStoryPin?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    title: d.name,
+                    content: p?.content,
+                    category: p?.category,
+                    coordinates: d.coordinates,
+                  })
+                );
                 break;
               case "mapLabel":
-                await m.updateMapLabel?.mutateAsync(cleanNulls({
-                  countryId,
-                  id: action.featureId,
-                  text: d.name,
-                  labelType: p?.labelType,
-                  fontSize: p?.fontSize,
-                  color: p?.color,
-                  coordinates: d.coordinates,
-                }));
+                await m.updateMapLabel?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    id: action.featureId,
+                    text: d.name,
+                    labelType: p?.labelType,
+                    fontSize: p?.fontSize,
+                    color: p?.color,
+                    coordinates: d.coordinates,
+                  })
+                );
                 break;
               case "route":
                 await m.updateRouteGeometry?.mutateAsync({
@@ -822,35 +871,41 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                 });
                 break;
               case "peak":
-                await m.updatePeak?.mutateAsync(cleanNulls({
-                  countryId,
-                  peakId: action.featureId,
-                  name: d.name,
-                  coordinates: d.coordinates,
-                  elevation: p?.elevation,
-                  prominence: p?.prominence,
-                  subdivisionId: p?.subdivisionId,
-                  wikiPageTitle: p?.wikiPageTitle,
-                }));
+                await m.updatePeak?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    peakId: action.featureId,
+                    name: d.name,
+                    coordinates: d.coordinates,
+                    elevation: p?.elevation,
+                    prominence: p?.prominence,
+                    subdivisionId: p?.subdivisionId,
+                    wikiPageTitle: p?.wikiPageTitle,
+                  })
+                );
                 break;
               case "river":
-                await m.updateRiver?.mutateAsync(cleanNulls({
-                  countryId,
-                  riverId: action.featureId,
-                  name: d.name,
-                  geometry: d.geometry,
-                  wikiPageTitle: p?.wikiPageTitle,
-                }));
+                await m.updateRiver?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    riverId: action.featureId,
+                    name: d.name,
+                    geometry: d.geometry,
+                    wikiPageTitle: p?.wikiPageTitle,
+                  })
+                );
                 break;
               case "lake":
-                await m.updateLake?.mutateAsync(cleanNulls({
-                  countryId,
-                  lakeId: action.featureId,
-                  name: d.name,
-                  geometry: d.geometry,
-                  maxDepthM: p?.maxDepthM,
-                  wikiPageTitle: p?.wikiPageTitle,
-                }));
+                await m.updateLake?.mutateAsync(
+                  cleanNulls({
+                    countryId,
+                    lakeId: action.featureId,
+                    name: d.name,
+                    geometry: d.geometry,
+                    maxDepthM: p?.maxDepthM,
+                    wikiPageTitle: p?.wikiPageTitle,
+                  })
+                );
                 break;
             }
           }
@@ -1590,7 +1645,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         mode === "add-peak"
       ) {
         setPendingCoordinates(point);
-      } else if (mode === "add-route") {
+      } else if (mode === "add-route" || mode === "split-subdivision") {
         setRouteWaypoints((prev) => [...prev, [lng, lat]]);
       }
     },
@@ -2698,6 +2753,354 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     ]
   );
 
+  // ── Gaps / Negative Space State & Recalculation ──
+  const [showGaps, setShowGaps] = useState(false);
+  const [gapFeatures, setGapFeatures] = useState<any>(null);
+
+  const recalculateGaps = useCallback(() => {
+    if (!countryGeo?.geometry) return;
+    try {
+      const gaps = computeGaps(countryGeo.geometry, features?.subdivisions ?? []);
+      setGapFeatures(gaps);
+    } catch (err) {
+      console.error("Failed to recalculate gaps:", err);
+    }
+  }, [countryGeo, features]);
+
+  useEffect(() => {
+    if (!showGaps || !countryGeo?.geometry) {
+      setGapFeatures(null);
+      return;
+    }
+    recalculateGaps();
+  }, [showGaps, countryGeo, features, recalculateGaps]);
+
+  const createSubdivisionFromGap = useCallback(
+    (gapPolygon: any) => {
+      const colors = ["#7c3aed", "#3b82f6", "#10b981", "#ef4444", "#f59e0b", "#a855f7", "#ec4899"];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)] ?? "#7c3aed";
+
+      setSubdivisionForm({
+        name: "New Region",
+        type: "province",
+        level: 1,
+        color: randomColor,
+      });
+      setPendingGeometry(gapPolygon);
+      setMode("add-subdivision");
+      setSelectedFeature(null);
+    },
+    [setMode]
+  );
+
+  // ── City Scatter ──
+  const scatterCities = useCallback(
+    async (subdivisionId: string, count: number, cityType: string, namePrefix: string) => {
+      if (!countryId) return;
+      const sub = allFeatures.find((f) => f.id === subdivisionId && f.type === "subdivision");
+      if (!sub || !sub.geometry) return;
+
+      const subGeom = sub.geometry;
+      const bounds = bbox(subGeom);
+      const minLng = bounds[0]!;
+      const minLat = bounds[1]!;
+      const maxLng = bounds[2]!;
+      const maxLat = bounds[3]!;
+
+      const points: [number, number][] = [];
+      let attempts = 0;
+      while (points.length < count && attempts < count * 200) {
+        attempts++;
+        const lng = minLng + Math.random() * (maxLng - minLng);
+        const lat = minLat + Math.random() * (maxLat - minLat);
+        const pt = point([lng, lat]);
+        if (booleanPointInPolygon(pt, subGeom as any)) {
+          points.push([lng, lat]);
+        }
+      }
+
+      for (let i = 0; i < points.length; i++) {
+        const coords = points[i]!;
+        const cityName = `${namePrefix} ${i + 1}`;
+        await createCity.mutateAsync({
+          countryId,
+          name: cityName,
+          type: cityType,
+          coordinates: coords,
+          subdivisionId,
+        });
+      }
+
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [countryId, allFeatures, createCity, invalidateAllMapData, debouncedRefetch]
+  );
+
+  // ── City Snapping ──
+  const snapCityToSubdivisionBorder = useCallback(
+    async (cityId: string) => {
+      if (!countryId) return;
+      const city = allFeatures.find((f) => f.id === cityId && f.type === "city");
+      if (!city || !city.coordinates) return;
+
+      const subId = city.properties.subdivisionId as string | undefined;
+      if (!subId) return;
+
+      const sub = allFeatures.find((f) => f.id === subId && f.type === "subdivision");
+      if (!sub || !sub.geometry) return;
+
+      const nearestCoords = getNearestPointOnGeometryBoundary(city.coordinates, sub.geometry);
+
+      await updateCity.mutateAsync({
+        countryId,
+        id: cityId,
+        name: city.name,
+        type: city.properties.cityType as string,
+        coordinates: nearestCoords,
+        subdivisionId: subId,
+      });
+
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [countryId, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
+  );
+
+  const snapCityToCoastline = useCallback(
+    async (cityId: string) => {
+      if (!countryId) return;
+      const city = allFeatures.find((f) => f.id === cityId && f.type === "city");
+      if (!city || !city.coordinates) return;
+
+      let nearestCoords = city.coordinates;
+      let minDistance = Infinity;
+
+      if (countryGeo?.geometry) {
+        const pt = getNearestPointOnGeometryBoundary(city.coordinates, countryGeo.geometry);
+        const dist = Math.hypot(pt[0] - city.coordinates[0], pt[1] - city.coordinates[1]);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearestCoords = pt;
+        }
+      }
+
+      if (worldMapLayers) {
+        for (const layer of worldMapLayers) {
+          if (layer.type === "water" || layer.type === "lakes" || layer.type === "rivers") {
+            const data = layer.data as any;
+            if (data?.features) {
+              for (const feat of data.features) {
+                if (feat.geometry) {
+                  const pt = getNearestPointOnGeometryBoundary(city.coordinates, feat.geometry);
+                  const dist = Math.hypot(pt[0] - city.coordinates[0], pt[1] - city.coordinates[1]);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    nearestCoords = pt;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      await updateCity.mutateAsync({
+        countryId,
+        id: cityId,
+        name: city.name,
+        type: city.properties.cityType as string,
+        coordinates: nearestCoords,
+        subdivisionId: city.properties.subdivisionId as string | undefined,
+      });
+
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [
+      countryId,
+      allFeatures,
+      countryGeo,
+      worldMapLayers,
+      updateCity,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
+  );
+
+  // ── Split/Merge Subdivisions ──
+  const executeSplitSubdivision = useCallback(async () => {
+    if (!countryId || !selectedFeature || selectedFeature.type !== "subdivision") return;
+    if (routeWaypoints.length < 2) return;
+
+    const subGeom = selectedFeature.geometry;
+    if (!subGeom) return;
+
+    const pieces = splitPolygonByLine(subGeom, routeWaypoints);
+    if (!pieces || pieces.length < 2) {
+      console.warn("Polygon split resulted in fewer than 2 pieces.");
+      return;
+    }
+
+    await deleteSubdivision.mutateAsync({
+      countryId,
+      subdivisionId: selectedFeature.id,
+    });
+
+    const name = selectedFeature.name;
+    const props = selectedFeature.properties;
+
+    for (let i = 0; i < pieces.length; i++) {
+      const suffix = String.fromCharCode(65 + i);
+      await createSubdivision.mutateAsync({
+        countryId,
+        name: `${name} ${suffix}`,
+        type: (props.type as string) ?? "province",
+        level: (props.level as number) ?? 1,
+        geometry: pieces[i],
+        population: props.population
+          ? Math.round(Number(props.population) / pieces.length)
+          : undefined,
+        areaSqKm: props.areaSqKm ? Number(props.areaSqKm) / pieces.length : undefined,
+        color: (props.color as string) ?? undefined,
+      });
+    }
+
+    setRouteWaypoints([]);
+    setMode("view");
+    setSelectedFeature(null);
+    invalidateAllMapData();
+    debouncedRefetch();
+  }, [
+    countryId,
+    selectedFeature,
+    routeWaypoints,
+    deleteSubdivision,
+    createSubdivision,
+    invalidateAllMapData,
+    debouncedRefetch,
+    setMode,
+  ]);
+
+  const mergeSelectedSubdivisions = useCallback(async () => {
+    if (!countryId || selectedIds.size < 2) return;
+
+    const subdivisionsToMerge = allFeatures.filter(
+      (f) => selectedIds.has(f.id) && f.type === "subdivision" && f.geometry
+    );
+
+    if (subdivisionsToMerge.length < 2) return;
+
+    const baseSub = subdivisionsToMerge[0]!;
+    let unionFeature = {
+      type: "Feature" as const,
+      geometry: baseSub.geometry!,
+      properties: {},
+    };
+
+    for (let i = 1; i < subdivisionsToMerge.length; i++) {
+      const nextSub = subdivisionsToMerge[i]!;
+      const subFeature = {
+        type: "Feature" as const,
+        geometry: nextSub.geometry!,
+        properties: {},
+      };
+      try {
+        const merged = union(featureCollection([unionFeature, subFeature]));
+        if (merged) {
+          unionFeature = merged;
+        }
+      } catch (err) {
+        console.error("Error merging geometries:", err);
+      }
+    }
+
+    await updateSubdivisionGeom.mutateAsync({
+      countryId,
+      id: baseSub.id,
+      name: baseSub.name,
+      geometry: unionFeature.geometry,
+    });
+
+    for (let i = 1; i < subdivisionsToMerge.length; i++) {
+      const nextSub = subdivisionsToMerge[i]!;
+      await deleteSubdivision.mutateAsync({
+        countryId,
+        subdivisionId: nextSub.id,
+      });
+    }
+
+    clearMultiSelect();
+    invalidateAllMapData();
+    debouncedRefetch();
+  }, [
+    countryId,
+    selectedIds,
+    allFeatures,
+    updateSubdivisionGeom,
+    deleteSubdivision,
+    clearMultiSelect,
+    invalidateAllMapData,
+    debouncedRefetch,
+  ]);
+
+  // ── Geometry Transformations (Simplify, Smooth, Rotate, Scale) ──
+  const applyGeometryTransformation = useCallback(
+    async (type: "simplify" | "smooth" | "rotate" | "scale", value: number) => {
+      if (!countryId || !selectedFeature || selectedFeature.type !== "subdivision") return;
+      const subGeom = selectedFeature.geometry;
+      if (!subGeom) return;
+
+      const feat = {
+        type: "Feature" as const,
+        geometry: subGeom,
+        properties: {},
+      };
+
+      let newGeom: any = null;
+
+      try {
+        if (type === "simplify") {
+          const result = simplify(feat, { tolerance: value, highQuality: false });
+          newGeom = result?.geometry;
+        } else if (type === "smooth") {
+          const result = bezierSpline(feat, { resolution: 10000, sharpAngle: 120 });
+          newGeom = result?.geometry;
+        } else if (type === "rotate") {
+          const result = transformRotate(feat, value);
+          newGeom = result?.geometry;
+        } else if (type === "scale") {
+          const result = transformScale(feat, value);
+          newGeom = result?.geometry;
+        }
+      } catch (err) {
+        console.error(`Failed to apply geometry transformation ${type}:`, err);
+        return;
+      }
+
+      if (newGeom) {
+        await updateSubdivisionGeom.mutateAsync({
+          countryId,
+          id: selectedFeature.id,
+          name: selectedFeature.name,
+          geometry: newGeom,
+        });
+
+        setSelectedFeature((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            geometry: newGeom,
+          };
+        });
+
+        invalidateAllMapData();
+        debouncedRefetch();
+      }
+    },
+    [countryId, selectedFeature, updateSubdivisionGeom, invalidateAllMapData, debouncedRefetch]
+  );
+
   const isMutating =
     createCity.isPending ||
     updateCity.isPending ||
@@ -2863,5 +3266,169 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     bulkDeleteSelected,
     bulkEditSelected,
     duplicateFeature,
+
+    // Gaps / Negative Space
+    showGaps,
+    setShowGaps,
+    gapFeatures,
+    recalculateGaps,
+    createSubdivisionFromGap,
+
+    // City operations
+    scatterCities,
+    snapCityToSubdivisionBorder,
+    snapCityToCoastline,
+
+    // Subdivision geometry split/merge/transforms
+    executeSplitSubdivision,
+    mergeSelectedSubdivisions,
+    applyGeometryTransformation,
   };
+}
+
+function computeGaps(countryGeometry: any, subdivisions: any[]) {
+  if (!countryGeometry) return null;
+  const countryFeature = {
+    type: "Feature" as const,
+    geometry: countryGeometry,
+    properties: {},
+  };
+
+  const validSubdivisions = subdivisions.filter((sub) => sub.geometry);
+  if (validSubdivisions.length === 0) {
+    return featureCollection([countryFeature]);
+  }
+
+  // Union all subdivisions sequentially
+  let unionFeature: any = null;
+
+  for (const sub of validSubdivisions) {
+    const subFeature = {
+      type: "Feature" as const,
+      geometry: sub.geometry,
+      properties: {},
+    };
+    if (!unionFeature) {
+      unionFeature = subFeature;
+    } else {
+      try {
+        const merged = union(featureCollection([unionFeature, subFeature]));
+        if (merged) {
+          unionFeature = merged;
+        }
+      } catch (err) {
+        console.warn("Error unioning subdivision geometry:", err);
+      }
+    }
+  }
+
+  if (!unionFeature) {
+    return featureCollection([countryFeature]);
+  }
+
+  // Simplify unionFeature and countryFeature slightly to avoid heavy calculations
+  const simplifiedCountry = simplify(countryFeature, { tolerance: 0.0001, highQuality: false });
+  const simplifiedUnion = simplify(unionFeature, { tolerance: 0.0001, highQuality: false });
+
+  // Now subtract unionFeature from countryFeature
+  try {
+    const gap = difference(featureCollection([simplifiedCountry, simplifiedUnion]));
+    if (gap) {
+      // If gap is a MultiPolygon, split it into individual polygon features so right-click is easier to hit-test
+      if (gap.geometry.type === "MultiPolygon") {
+        const polys = gap.geometry.coordinates.map((coords: any) => ({
+          type: "Feature" as const,
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: coords,
+          },
+          properties: {},
+        }));
+        return featureCollection(polys);
+      }
+      return featureCollection([gap]);
+    }
+  } catch (err) {
+    console.warn("Error calculating difference gaps:", err);
+  }
+
+  return null;
+}
+
+function getNearestPointOnGeometryBoundary(pt: [number, number], geometry: any): [number, number] {
+  if (!geometry) return pt;
+  let minDistance = Infinity;
+  let nearestPoint: [number, number] = pt;
+
+  const checkRing = (ring: [number, number][]) => {
+    for (let i = 0; i < ring.length; i++) {
+      const coord = ring[i]!;
+      // Simple Euclidean distance is fine for small distances
+      const dist = Math.hypot(coord[0] - pt[0], coord[1] - pt[1]);
+      if (dist < minDistance) {
+        minDistance = dist;
+        nearestPoint = coord;
+      }
+    }
+  };
+
+  if (geometry.type === "Polygon") {
+    for (const ring of geometry.coordinates) {
+      checkRing(ring);
+    }
+  } else if (geometry.type === "MultiPolygon") {
+    for (const poly of geometry.coordinates) {
+      for (const ring of poly) {
+        checkRing(ring);
+      }
+    }
+  }
+
+  return nearestPoint;
+}
+
+function splitPolygonByLine(polygon: any, lineCoords: [number, number][]) {
+  if (lineCoords.length < 2) return null;
+  const lineFeature = {
+    type: "Feature" as const,
+    geometry: {
+      type: "LineString" as const,
+      coordinates: lineCoords,
+    },
+    properties: {},
+  };
+
+  // Buffer the line by 5 meters (0.005 kilometers)
+  const lineBuffered = buffer(lineFeature, 0.005, { units: "kilometers" });
+  if (!lineBuffered) return null;
+
+  const polyFeature = {
+    type: "Feature" as const,
+    geometry: polygon,
+    properties: {},
+  };
+
+  try {
+    const diff = difference(featureCollection([polyFeature, lineBuffered]));
+    if (!diff) return null;
+
+    // Extract polygons
+    const pieces: any[] = [];
+    if (diff.geometry.type === "Polygon") {
+      pieces.push(diff.geometry);
+    } else if (diff.geometry.type === "MultiPolygon") {
+      for (const coords of diff.geometry.coordinates) {
+        const pieceGeom = { type: "Polygon" as const, coordinates: coords };
+        const a = area(pieceGeom);
+        if (a > 100) {
+          // more than 100 square meters
+          pieces.push(pieceGeom);
+        }
+      }
+    }
+    return pieces;
+  } catch (err) {
+    console.error("Error splitting polygon:", err);
+    return null;
+  }
 }
