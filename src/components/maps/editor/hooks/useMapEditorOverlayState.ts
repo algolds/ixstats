@@ -977,6 +977,10 @@ export function useMapEditorOverlayState({
     (feature: any) => {
       setSelectedRouteId(null);
       editor.setSelectedFeature(feature);
+      if (!feature) {
+        editor.resetForm();
+        return;
+      }
       editor.startEditing(feature);
       expandPropertiesPanel();
       if (mapRef.current) {

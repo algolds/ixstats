@@ -448,7 +448,7 @@ export default function MapEditorOverlay({
       />
 
       {/* Photoshop-style context bar — shown when a feature tool is active */}
-      {(!isWorldMode || editor.mode !== "view") && activeEditorMode !== "border_edit" && (
+      {activeEditorMode !== "border_edit" && (
         <EditorErrorBoundary name="ToolOptions">
           <ToolOptionsBar
             mode={editor.mode}
@@ -478,14 +478,30 @@ export default function MapEditorOverlay({
             onLabelBoldChange={(bold) =>
               editor.setMapLabelForm((f) => ({ ...f, fontWeight: bold ? "bold" : "normal" }))
             }
-            selectedCount={editor.selectedIds.size}
+            selectedCount={
+              editor.selectedIds.size > 0
+                ? editor.selectedIds.size
+                : editor.selectedFeature
+                  ? 1
+                  : 0
+            }
+            onDuplicate={
+              editor.selectedFeature
+                ? () => editor.duplicateFeature(editor.selectedFeature)
+                : undefined
+            }
             onDelete={
               editor.selectedIds.size > 0
                 ? async () => {
                     if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
                     await editor.bulkDeleteSelected();
                   }
-                : undefined
+                : editor.selectedFeature
+                  ? async () => {
+                      if (!confirm(`Delete "${editor.selectedFeature.name}"?`)) return;
+                      await editor.handleDeleteFeature(editor.selectedFeature);
+                    }
+                  : undefined
             }
             onFinishRoute={editor.finishRoute}
             onUndoWaypoint={editor.undoLastWaypoint}
@@ -947,6 +963,13 @@ export default function MapEditorOverlay({
                     stories: layerStates.stories?.opacity ?? 1,
                     labels: layerStates.labels?.opacity ?? 1,
                     routes: layerStates.routes?.opacity ?? 1,
+                  }}
+                  onFeatureContextMenu={(feature, screenPos) => {
+                    setContextMenu({
+                      x: screenPos.x,
+                      y: screenPos.y,
+                      feature,
+                    });
                   }}
                 />
               )}

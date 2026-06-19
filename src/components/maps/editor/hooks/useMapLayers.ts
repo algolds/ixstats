@@ -549,6 +549,9 @@ export function useMapLayers({
       if (map.getLayer("editor-subdivisions-stroke")) {
         map.setPaintProperty("editor-subdivisions-stroke", "line-opacity", regionsOpacity);
       }
+      if (map.getLayer("editor-subdivisions-fill")) {
+        map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0.05 * regionsOpacity);
+      }
       if (map.getLayer("editor-subdivisions-labels")) {
         map.setPaintProperty("editor-subdivisions-labels", "text-opacity", regionsOpacity);
       }
@@ -559,8 +562,8 @@ export function useMapLayers({
         type: "fill",
         source: "editor-subdivisions",
         paint: {
-          "fill-color": "transparent",
-          "fill-opacity": 0,
+          "fill-color": ["coalesce", ["get", "color"], "#7c3aed"],
+          "fill-opacity": 0.05 * (layerOpacity?.regions ?? 0.6),
         },
       });
       map.addLayer({
@@ -934,10 +937,10 @@ export function useMapLayers({
     }
   }, [map, isLoaded, theme]);
 
-  // 8. Subdivisions fill — kept transparent (paint mode was removed in Plan 024).
+  // 8. Subdivisions fill — kept queryable (paint mode was removed in Plan 024).
   useEffect(() => {
     if (!map || !isLoaded || !map.getLayer("editor-subdivisions-fill")) return;
-    map.setPaintProperty("editor-subdivisions-fill", "fill-color", "transparent");
-    map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0);
-  }, [map, isLoaded, theme]);
+    map.setPaintProperty("editor-subdivisions-fill", "fill-color", ["coalesce", ["get", "color"], "#7c3aed"]);
+    map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0.05 * (layerOpacity?.regions ?? 0.6));
+  }, [map, isLoaded, theme, layerOpacity]);
 }

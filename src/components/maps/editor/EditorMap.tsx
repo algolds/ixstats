@@ -104,6 +104,10 @@ interface EditorMapProps {
     coordinates: [number, number]
   ) => Promise<void>;
   isPickingLocation?: boolean;
+  onFeatureContextMenu?: (
+    feature: EditorFeature,
+    screenPos: { x: number; y: number }
+  ) => void;
 }
 
 const EditorMap = memo(
@@ -136,6 +140,7 @@ const EditorMap = memo(
       theme = "standard",
       updatePointCoordinates,
       isPickingLocation = false,
+      onFeatureContextMenu,
     },
     ref
   ) {
@@ -149,6 +154,8 @@ const EditorMap = memo(
     featuresRef.current = features;
     const onFeatureSelectRef = useRef(onFeatureSelect);
     onFeatureSelectRef.current = onFeatureSelect;
+    const onFeatureContextMenuRef = useRef(onFeatureContextMenu);
+    onFeatureContextMenuRef.current = onFeatureContextMenu;
     const onMapClickRef = useRef(onMapClick);
     onMapClickRef.current = onMapClick;
     const isPickingLocationRef = useRef(isPickingLocation);
@@ -402,7 +409,8 @@ const EditorMap = memo(
           map.getCanvas().style.cursor = "crosshair";
           return;
         }
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
+        const isSelectMode = modeRef.current === "view" || modeRef.current.startsWith("edit-");
+        if (!isSelectMode || isVertexEditing) return;
 
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
@@ -432,7 +440,8 @@ const EditorMap = memo(
           map.getCanvas().style.cursor = "crosshair";
           return;
         }
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
+        const isSelectMode = modeRef.current === "view" || modeRef.current.startsWith("edit-");
+        if (!isSelectMode || isVertexEditing) return;
         map.getCanvas().style.cursor = "";
         if (map.getLayer("editor-subdivisions-hover")) {
           map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], ""]);
@@ -442,7 +451,9 @@ const EditorMap = memo(
       const onClickFeature = (e: any) => {
         if (isPickingLocationRef.current) return;
         if (e.routeClicked || e.defaultPrevented) return;
-        if ((modeRef.current !== "view" && modeRef.current !== "paint") || isVertexEditing) return;
+        const isSelectMode = modeRef.current === "view" || modeRef.current.startsWith("edit-");
+        if (!isSelectMode || isVertexEditing) return;
+
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
           const hitId = hits[0]!.properties?.id as string | undefined;
@@ -453,17 +464,51 @@ const EditorMap = memo(
               e.preventDefault?.();
             }
           }
+        } else {
+          // Clicked empty space on canvas, deselect current selection
+          if (onFeatureSelectRef.current) {
+            onFeatureSelectRef.current(null);
+          }
+        }
+      };
+
+      const onContextMenuFeature = (e: any) => {
+        if (isPickingLocationRef.current) return;
+        if (e.routeClicked || e.defaultPrevented) return;
+        const isSelectMode = modeRef.current === "view" || modeRef.current.startsWith("edit-");
+        if (!isSelectMode || isVertexEditing) return;
+
+        const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
+        if (hits.length > 0) {
+          const hitId = hits[0]!.properties?.id as string | undefined;
+          if (hitId && onFeatureContextMenuRef.current) {
+            const match = featuresRef.current.find((f) => f.id === hitId);
+            if (match) {
+              e.preventDefault?.();
+              if (e.originalEvent) {
+                e.originalEvent.preventDefault();
+                e.originalEvent.stopPropagation();
+              }
+              const canvasRect = map.getCanvas().getBoundingClientRect();
+              onFeatureContextMenuRef.current(match, {
+                x: canvasRect.left + e.point.x,
+                y: canvasRect.top + e.point.y,
+              });
+            }
+          }
         }
       };
 
       map.on("mousemove", onMouseMove);
       map.on("mouseleave", "editor-subdivisions-fill", onMouseLeave);
       map.on("click", onClickFeature);
+      map.on("contextmenu", onContextMenuFeature);
 
       return () => {
         map.off("mousemove", onMouseMove);
         map.off("mouseleave", "editor-subdivisions-fill", onMouseLeave);
         map.off("click", onClickFeature);
+        map.off("contextmenu", onContextMenuFeature);
       };
     }, [isLoaded, isVertexEditing, theme]);
 

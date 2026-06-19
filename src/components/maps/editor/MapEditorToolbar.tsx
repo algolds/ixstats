@@ -25,9 +25,6 @@ import {
   Route,
   BookMarked,
   Type,
-  Mountain,
-  Waves,
-  Droplets,
 } from "lucide-react";
 import { MousePointerIcon, MapPinIcon, LandmarkIcon } from "~/components/ui/icons";
 import type { EditorMode } from "~/hooks/useMapEditor";
@@ -57,9 +54,6 @@ const TOOLS: ToolDef[] = [
   { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
   { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 1 },
   { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 1 },
-  { mode: "add-peak", icon: Mountain, label: "Peak", shortcut: "M", group: 1 },
-  { mode: "add-river", icon: Waves, label: "River", shortcut: "W", group: 1 },
-  { mode: "add-lake", icon: Droplets, label: "Lake", shortcut: "K", group: 1 },
 ];
 
 /** Animated icon overrides for toolbar tools (only where a good visual match exists) */

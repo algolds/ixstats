@@ -35,6 +35,7 @@ import {
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 
 // Dynamic import for the map (requires browser APIs)
+import { EditorContextMenuWrapper } from "~/components/maps/editor/components/EditorContextMenuWrapper";
 const EditorMap = dynamic(() => import("~/components/maps/editor/EditorMap"), {
   ssr: false,
   loading: () => (
@@ -80,6 +81,13 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
 
   // Route type selection state for ToolOptionsBar
   const [routeTypes, setRouteTypes] = useState<string[]>(["road"]);
+
+  // Context Menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    feature: any;
+  } | null>(null);
 
   // Wiki scanner mutations
   const updateCityWiki = api.geoFeatures.updateCity.useMutation({
@@ -138,8 +146,12 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
   ]);
 
   const handleSelectFeature = useCallback(
-    (feature: (typeof editor.allFeatures)[number]) => {
+    (feature: (typeof editor.allFeatures)[number] | null) => {
       editor.setSelectedFeature(feature);
+      if (!feature) {
+        editor.resetForm();
+        return;
+      }
       if (feature.coordinates && mapRef.current) {
         mapRef.current.flyTo(feature.coordinates[0], feature.coordinates[1], 8);
       }
@@ -309,13 +321,25 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
         }
         routeTypes={routeTypes}
         onRouteTypesChange={setRouteTypes}
-        selectedCount={editor.selectedIds.size}
+        selectedCount={
+          editor.selectedIds.size > 0
+            ? editor.selectedIds.size
+            : editor.selectedFeature
+              ? 1
+              : 0
+        }
         onDuplicate={
           editor.selectedFeature
             ? () => editor.duplicateFeature(editor.selectedFeature)
             : undefined
         }
-        onDelete={editor.selectedIds.size > 0 ? editor.bulkDeleteSelected : undefined}
+        onDelete={
+          editor.selectedIds.size > 0
+            ? editor.bulkDeleteSelected
+            : editor.selectedFeature
+              ? () => handleDeleteFeature(editor.selectedFeature)
+              : undefined
+        }
         onCopyCoords={
           editor.selectedFeature?.coordinates
             ? () => {
@@ -516,6 +540,19 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 onRouteVerticesUpdate={editor.setEditingRouteVertices}
                 onRouteEditCommit={editor.commitRouteEdit}
                 onRouteEditCancel={editor.cancelRouteEdit}
+                onFeatureContextMenu={(feature, screenPos) => {
+                  setContextMenu({
+                    x: screenPos.x,
+                    y: screenPos.y,
+                    feature,
+                  });
+                }}
+              />
+
+              <EditorContextMenuWrapper
+                contextMenu={contextMenu}
+                setContextMenu={setContextMenu}
+                editor={editor}
               />
 
               {/* Province preview layer */}
