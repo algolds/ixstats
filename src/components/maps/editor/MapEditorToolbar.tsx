@@ -25,6 +25,10 @@ import {
   Route,
   BookMarked,
   Type,
+  Hand,
+  LassoSelect,
+  Ruler,
+  PaintBucket,
 } from "lucide-react";
 import { MousePointerIcon, MapPinIcon, LandmarkIcon } from "~/components/ui/icons";
 import type { EditorMode } from "~/hooks/useMapEditor";
@@ -48,12 +52,16 @@ interface ToolDef {
 
 const TOOLS: ToolDef[] = [
   { mode: "view", icon: MousePointer2, label: "Select", shortcut: "V", group: 0 },
+  { mode: "pan", icon: Hand, label: "Hand (Pan)", shortcut: "H", group: 0 },
+  { mode: "lasso-select", icon: LassoSelect, label: "Lasso Select", shortcut: "M", group: 0 },
   { mode: "add-city", icon: MapPin, label: "City", shortcut: "C", group: 1 },
   { mode: "add-subdivision", icon: Hexagon, label: "Region", shortcut: "R", group: 1 },
   { mode: "add-poi", icon: Landmark, label: "POI", shortcut: "P", group: 1 },
   { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
   { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 1 },
   { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 1 },
+  { mode: "ruler", icon: Ruler, label: "Ruler (Measure)", shortcut: "U", group: 1 },
+  { mode: "paint-fill", icon: PaintBucket, label: "Paint Fill", shortcut: "G", group: 1 },
 ];
 
 /** Animated icon overrides for toolbar tools (only where a good visual match exists) */

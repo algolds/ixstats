@@ -28,6 +28,8 @@ interface UseMapLayersProps {
   showGaps?: boolean;
   emptyRegionsFeatures?: any | null;
   showEmptyRegions?: boolean;
+  lassoGeometry?: any | null;
+  rulerPoints?: [number, number][];
 }
 
 export function useMapLayers({
@@ -49,6 +51,8 @@ export function useMapLayers({
   showGaps,
   emptyRegionsFeatures,
   showEmptyRegions,
+  lassoGeometry,
+  rulerPoints,
 }: UseMapLayersProps) {
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
   useEffect(() => {
@@ -1027,4 +1031,150 @@ export function useMapLayers({
       });
     }
   }, [map, isLoaded, emptyRegionsFeatures, showEmptyRegions]);
+
+  // 11. Lasso selection layers
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const sourceId = "editor-lasso";
+    const fillId = "editor-lasso-fill";
+    const strokeId = "editor-lasso-stroke";
+
+    const geojson = lassoGeometry
+      ? {
+          type: "Feature" as const,
+          geometry: lassoGeometry,
+          properties: {},
+        }
+      : EMPTY_FC;
+
+    if (map.getSource(sourceId)) {
+      getGeoJSONSource(map, sourceId)?.setData(geojson);
+    } else {
+      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addLayer({
+        id: fillId,
+        type: "fill",
+        source: sourceId,
+        paint: {
+          "fill-color": "#3b82f6",
+          "fill-opacity": 0.1,
+        },
+      });
+      map.addLayer({
+        id: strokeId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#2563eb",
+          "line-width": 1.5,
+          "line-dasharray": [2, 2],
+        },
+      });
+    }
+  }, [map, isLoaded, lassoGeometry]);
+
+  // 12. Ruler / measuring path layers
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const sourceId = "editor-ruler";
+    const lineId = "editor-ruler-line";
+    const pointsId = "editor-ruler-points";
+    const labelsId = "editor-ruler-labels";
+
+    const features: any[] = [];
+    if (rulerPoints && rulerPoints.length > 0) {
+      // Add point features
+      rulerPoints.forEach((pt, index) => {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: pt },
+          properties: { index: index.toString(), type: "point" },
+        });
+      });
+
+      // Add line segment feature connecting them
+      if (rulerPoints.length > 1) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: rulerPoints },
+          properties: { type: "line" },
+        });
+
+        // Add midpoint labels with distance calculation
+        for (let i = 0; i < rulerPoints.length - 1; i++) {
+          const ptA = rulerPoints[i]!;
+          const ptB = rulerPoints[i + 1]!;
+
+          // Geodesic distance in km using project's haversine helper
+          const segmentDistance = haversineDistance(ptA, ptB);
+
+          // Midpoint
+          const midLng = (ptA[0] + ptB[0]) / 2;
+          const midLat = (ptA[1] + ptB[1]) / 2;
+
+          features.push({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [midLng, midLat] },
+            properties: {
+              type: "label",
+              distance: `${segmentDistance.toFixed(1)} km`,
+            },
+          });
+        }
+      }
+    }
+
+    const geojson = {
+      type: "FeatureCollection" as const,
+      features: features,
+    };
+
+    if (map.getSource(sourceId)) {
+      getGeoJSONSource(map, sourceId)?.setData(geojson);
+    } else {
+      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addLayer({
+        id: lineId,
+        type: "line",
+        source: sourceId,
+        filter: ["==", ["get", "type"], "line"],
+        paint: {
+          "line-color": "#f59e0b",
+          "line-width": 2,
+        },
+      });
+      map.addLayer({
+        id: pointsId,
+        type: "circle",
+        source: sourceId,
+        filter: ["==", ["get", "type"], "point"],
+        paint: {
+          "circle-color": "#d97706",
+          "circle-radius": 4.5,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+      });
+      map.addLayer({
+        id: labelsId,
+        type: "symbol",
+        source: sourceId,
+        filter: ["==", ["get", "type"], "label"],
+        layout: {
+          "text-field": ["get", "distance"],
+          "text-size": 10,
+          "text-anchor": "center",
+          "text-offset": [0, -1],
+          "text-font": ["Noto Sans Bold", "Arial Unicode MS Bold"],
+        },
+        paint: {
+          "text-color": "#d97706",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+        },
+      });
+    }
+  }, [map, isLoaded, rulerPoints]);
 }

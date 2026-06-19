@@ -56,57 +56,70 @@ export function usePointDrag({
     ];
 
     const onMouseDown = (e: any) => {
-      // Only drag in view or paint modes
-      if (modeRef.current !== "view" && modeRef.current !== "paint") return;
+       const activeMode = modeRef.current;
+       const isAddMode =
+         activeMode.startsWith("add-") ||
+         activeMode.startsWith("import-") ||
+         activeMode.includes("route") ||
+         activeMode === "split-subdivision" ||
+         activeMode === "pan" ||
+         activeMode === "lasso-select" ||
+         activeMode === "ruler" ||
+         activeMode === "paint-fill";
+       if (isAddMode) return;
 
-      const hits = map.queryRenderedFeatures(e.point, { layers: draggableLayers });
-      if (hits.length === 0) return;
+       const dragBbox = [
+         [e.point.x - 8, e.point.y - 8],
+         [e.point.x + 8, e.point.y + 8],
+       ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
+       const hits = map.queryRenderedFeatures(dragBbox, { layers: draggableLayers });
+       if (hits.length === 0) return;
 
-      const hit = hits[0]!;
-      const id = hit.properties?.id;
-      
-      // Look up feature to make sure we drag by ID and get its canonical properties
-      if (!id) return;
-      const feature = featuresRef.current.find((f) => f.id === id);
-      if (!feature || !feature.coordinates) return;
+       const hit = hits[0]!;
+       const id = hit.properties?.id;
+       
+       // Look up feature to make sure we drag by ID and get its canonical properties
+       if (!id) return;
+       const feature = featuresRef.current.find((f) => f.id === id);
+       if (!feature || !feature.coordinates) return;
 
-      // Prevent default map behaviors (like panning / box zoom / selection rings)
-      e.preventDefault();
+       // Prevent default map behaviors (like panning / box zoom / selection rings)
+       e.preventDefault();
 
-      map.dragPan.disable();
+       map.dragPan.disable();
 
-      dragRef.current = {
-        featureId: id,
-        featureType: feature.type, // e.g. "city", "poi", "storyPin", "mapLabel"
-        originalCoords: [...feature.coordinates] as [number, number],
-        currentCoords: [...feature.coordinates] as [number, number],
-      };
+       dragRef.current = {
+         featureId: id,
+         featureType: feature.type, // e.g. "city", "poi", "storyPin", "mapLabel"
+         originalCoords: [...feature.coordinates] as [number, number],
+         currentCoords: [...feature.coordinates] as [number, number],
+       };
 
-      map.getCanvas().style.cursor = "grabbing";
+       map.getCanvas().style.cursor = "grabbing";
 
-      // Select feature in editor
-      if (onFeatureSelectRef.current) {
-        onFeatureSelectRef.current(feature);
-      }
+       // Select feature in editor
+       if (onFeatureSelectRef.current) {
+         onFeatureSelectRef.current(feature);
+       }
 
-      // Populate ghost source at starting coordinates
-      const ghostSource = map.getSource("editor-points-ghost") as GeoJSONSource;
-      if (ghostSource) {
-        ghostSource.setData({
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              geometry: {
-                type: "Point",
-                coordinates: feature.coordinates,
-              },
-              properties: {},
-            },
-          ],
-        });
-      }
-    };
+       // Populate ghost source at starting coordinates
+       const ghostSource = map.getSource("editor-points-ghost") as GeoJSONSource;
+       if (ghostSource) {
+         ghostSource.setData({
+           type: "FeatureCollection",
+           features: [
+             {
+               type: "Feature",
+               geometry: {
+                 type: "Point",
+                 coordinates: feature.coordinates,
+               },
+               properties: {},
+             },
+           ],
+         });
+       }
+     };
 
     const onMouseMove = (e: any) => {
       if (!dragRef.current) return;

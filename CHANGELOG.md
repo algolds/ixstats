@@ -12,6 +12,20 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Map Editor Advanced Toolbar, Measuring, Lasso, & Subdivision Operations (Plans 042-044)**:
+  - Added new editor modes (`"lasso-select"`, `"ruler"`, `"paint-fill"`, `"pan"`) to `EditorMode` in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
+  - Added new tool buttons for Hand, Lasso Select, Ruler, and Paint Fill in [MapEditorToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx) with custom keyboard shortcuts (`H`, `M`, `U`, `G`).
+  - Blocked point feature dragging in non-editable states (hand, lasso-select, ruler, paint-fill) inside [usePointDrag.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/usePointDrag.ts) while enabling intuitive dragging during standard editing modes.
+  - Implemented dynamic MapLibre sources and style layers for Lasso Select (dashed outline + semi-transparent fill) and Ruler (segment lines + segment midpoint geodesic distance text tags) in [useMapLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useMapLayers.ts).
+  - Implemented client-side mouse-dragging lasso selection tracking, point-by-point ruler measurement, and paint bucket subdivision coloring within [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx).
+  - Created customizable Options Bar controls for the new tools (including custom color picker, geodesic total distance calculation, and clear triggers) inside [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
+  - Integrated `haversineDistance` and wired lasso, ruler, and paint fill state properties down to the map and options bar in [EnhancedMapEditorContent.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/EnhancedMapEditorContent.tsx).
+  - Implemented selection click prioritization (point markers prioritized over region polygons in small bounding box queries) in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx).
+  - Prevented coordinate jumps with optimistic client-side updates upon marker drag releases inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
+  - Added visual highlighting for gaps/negative space and empty subdivisions, complete with an auto-centroid city creation helper inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
+  - Added support for subdivision splitting/merging, city splitting/merging, slider-based population scaling, and group orbit rotations inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
+
+
 - **Geography Report / Analyzer & Named Features (Plan C-2)**:
   - Added new models (`Peak`, `NamedRiver`, `NamedLake`) to [maps.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/maps.prisma) with back-relations in [core.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/core.prisma) to support named geographical features.
   - Implemented service-layer CRUD handlers in [named-features.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/named-features.ts) with polyline length/polygon area math and automatic PostGIS database triggers.

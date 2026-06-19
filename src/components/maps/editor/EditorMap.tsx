@@ -109,6 +109,11 @@ interface EditorMapProps {
   showGaps?: boolean;
   emptyRegionsFeatures?: any | null;
   showEmptyRegions?: boolean;
+  rulerPoints?: [number, number][];
+  lassoGeometry?: any;
+  onAddRulerPoint?: (coords: [number, number]) => void;
+  onApplyLassoSelection?: (coords: [number, number][]) => void;
+  onApplyPaintFill?: (subdivisionId: string) => void;
 }
 
 const EditorMap = memo(
@@ -146,6 +151,11 @@ const EditorMap = memo(
       showGaps,
       emptyRegionsFeatures,
       showEmptyRegions,
+      rulerPoints,
+      lassoGeometry,
+      onAddRulerPoint,
+      onApplyLassoSelection,
+      onApplyPaintFill,
     },
     ref
   ) {
@@ -196,6 +206,8 @@ const EditorMap = memo(
       showGaps,
       emptyRegionsFeatures,
       showEmptyRegions,
+      lassoGeometry,
+      rulerPoints,
     });
 
     // ── 2. Hook: Manage Subdivision Drawing ──
@@ -415,6 +427,10 @@ const EditorMap = memo(
       ];
 
       const onMouseMove = (e: any) => {
+        if (modeRef.current === "pan") {
+          map.getCanvas().style.cursor = "grab";
+          return;
+        }
         if (isPickingLocationRef.current) {
           map.getCanvas().style.cursor = "crosshair";
           return;
@@ -422,9 +438,24 @@ const EditorMap = memo(
         const isSelectMode = modeRef.current === "view" || modeRef.current.startsWith("edit-");
         if (!isSelectMode || isVertexEditing) return;
 
-        const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
-        if (hits.length > 0) {
-          const firstHit = hits[0]!;
+        const hoverBbox = [
+          [e.point.x - 6, e.point.y - 6],
+          [e.point.x + 6, e.point.y + 6],
+        ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
+        const hits = map.queryRenderedFeatures(hoverBbox, { layers: interactiveLayers });
+
+        const sortedHits = [...hits].sort((a, b) => {
+          const aId = a.layer.id;
+          const bId = b.layer.id;
+          const isPointA = aId.startsWith("editor-points-") || aId === "editor-map-labels";
+          const isPointB = bId.startsWith("editor-points-") || bId === "editor-map-labels";
+          if (isPointA && !isPointB) return -1;
+          if (!isPointA && isPointB) return 1;
+          return 0;
+        });
+
+        if (sortedHits.length > 0) {
+          const firstHit = sortedHits[0]!;
           const hitLayer = firstHit.layer.id;
 
           if (hitLayer.startsWith("editor-points") || hitLayer === "editor-map-labels") {
@@ -466,9 +497,24 @@ const EditorMap = memo(
         const isSelectMode = modeRef.current === "view" || modeRef.current.startsWith("edit-");
         if (!isSelectMode || isVertexEditing) return;
 
-        const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
-        if (hits.length > 0) {
-          const hitId = hits[0]!.properties?.id as string | undefined;
+        const clickBbox = [
+          [e.point.x - 6, e.point.y - 6],
+          [e.point.x + 6, e.point.y + 6],
+        ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
+        const hits = map.queryRenderedFeatures(clickBbox, { layers: interactiveLayers });
+
+        const sortedHits = [...hits].sort((a, b) => {
+          const aId = a.layer.id;
+          const bId = b.layer.id;
+          const isPointA = aId.startsWith("editor-points-") || aId === "editor-map-labels";
+          const isPointB = bId.startsWith("editor-points-") || bId === "editor-map-labels";
+          if (isPointA && !isPointB) return -1;
+          if (!isPointA && isPointB) return 1;
+          return 0;
+        });
+
+        if (sortedHits.length > 0) {
+          const hitId = sortedHits[0]!.properties?.id as string | undefined;
           if (hitId && onFeatureSelectRef.current) {
             const match = featuresRef.current.find((f) => f.id === hitId);
             if (match) {
@@ -490,9 +536,24 @@ const EditorMap = memo(
         const isSelectMode = modeRef.current === "view" || modeRef.current.startsWith("edit-");
         if (!isSelectMode || isVertexEditing) return;
 
-        const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
-        if (hits.length > 0) {
-          const firstHit = hits[0]!;
+        const contextBbox = [
+          [e.point.x - 6, e.point.y - 6],
+          [e.point.x + 6, e.point.y + 6],
+        ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
+        const hits = map.queryRenderedFeatures(contextBbox, { layers: interactiveLayers });
+
+        const sortedHits = [...hits].sort((a, b) => {
+          const aId = a.layer.id;
+          const bId = b.layer.id;
+          const isPointA = aId.startsWith("editor-points-") || aId === "editor-map-labels";
+          const isPointB = bId.startsWith("editor-points-") || bId === "editor-map-labels";
+          if (isPointA && !isPointB) return -1;
+          if (!isPointA && isPointB) return 1;
+          return 0;
+        });
+
+        if (sortedHits.length > 0) {
+          const firstHit = sortedHits[0]!;
           const hitLayer = firstHit.layer.id;
 
           if (hitLayer === "editor-gaps-fill") {
@@ -570,6 +631,20 @@ const EditorMap = memo(
           currentMode === "add-label"
         ) {
           onMapClickRef.current(e.lngLat.lng, e.lngLat.lat);
+        } else if (currentMode === "ruler") {
+          if (onAddRulerPoint) {
+            onAddRulerPoint([e.lngLat.lng, e.lngLat.lat]);
+          }
+        } else if (currentMode === "paint-fill") {
+          const hits = map.queryRenderedFeatures(e.point, {
+            layers: ["editor-subdivisions-fill"],
+          });
+          if (hits.length > 0) {
+            const hitId = hits[0]!.properties?.id as string | undefined;
+            if (hitId && onApplyPaintFill) {
+              onApplyPaintFill(hitId);
+            }
+          }
         } else if (currentMode === "add-route") {
           let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
@@ -594,7 +669,64 @@ const EditorMap = memo(
       return () => {
         map.off("click", onClick);
       };
-    }, [isLoaded, isVertexEditing]);
+    }, [isLoaded, isVertexEditing, onAddRulerPoint, onApplyPaintFill]);
+
+    // Handle Lasso click-and-drag selection
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded) return;
+
+      let isDrawing = false;
+      let pts: [number, number][] = [];
+
+      const onMouseDown = (e: any) => {
+        if (modeRef.current !== "lasso-select") return;
+
+        // Prevent map panning
+        e.preventDefault();
+        map.dragPan.disable();
+
+        isDrawing = true;
+        pts = [[e.lngLat.lng, e.lngLat.lat]];
+
+        setLassoGeometry({
+          type: "Polygon" as const,
+          coordinates: [[...pts, pts[0]]],
+        });
+      };
+
+      const onMouseMove = (e: any) => {
+        if (!isDrawing) return;
+
+        pts.push([e.lngLat.lng, e.lngLat.lat]);
+
+        setLassoGeometry({
+          type: "Polygon" as const,
+          coordinates: [[...pts, pts[0]]],
+        });
+      };
+
+      const onMouseUp = () => {
+        if (!isDrawing) return;
+        isDrawing = false;
+        map.dragPan.enable();
+
+        if (pts.length >= 3 && onApplyLassoSelection) {
+          onApplyLassoSelection(pts);
+        }
+        setLassoGeometry(null);
+      };
+
+      map.on("mousedown", onMouseDown);
+      map.on("mousemove", onMouseMove);
+      map.on("mouseup", onMouseUp);
+
+      return () => {
+        map.off("mousedown", onMouseDown);
+        map.off("mousemove", onMouseMove);
+        map.off("mouseup", onMouseUp);
+      };
+    }, [isLoaded, onApplyLassoSelection, setLassoGeometry]);
 
     // Highlight selected feature
     useEffect(() => {

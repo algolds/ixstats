@@ -188,7 +188,12 @@ export type EditorMode =
   | "add-river"
   | "edit-river"
   | "add-lake"
-  | "edit-lake";
+  | "edit-lake"
+  | "split-subdivision"
+  | "lasso-select"
+  | "ruler"
+  | "paint-fill"
+  | "pan";
 
 export type FeatureType =
   | "city"
@@ -418,6 +423,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   /** When false, addRouteWaypointWithSnap ignores nearby features and places the
    *  waypoint at the raw click coordinate. Defaults to true (snap on). */
   const [isSnapEnabled, setIsSnapEnabled] = useState(true);
+
+  // ── Ruler & Lasso State ──
+  const [rulerPoints, setRulerPoints] = useState<[number, number][]>([]);
+  const [lassoGeometry, setLassoGeometry] = useState<object | null>(null);
 
   // ── Multi-Select ──
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -2408,6 +2417,34 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       const feature = allFeatures.find((f) => f.id === featureId);
       if (!feature) return;
 
+      // Optimistically update tRPC react-query cache to prevent coordinate jumping
+      const prevData = utils.geoCore.getCountryFeatures.getData({ countryId });
+      if (prevData) {
+        const newData = { ...prevData };
+        if (featureType === "city" && newData.cities) {
+          newData.cities = newData.cities.map((item) =>
+            item.id === featureId ? { ...item, coordinates } : item
+          );
+        } else if (featureType === "poi" && newData.pois) {
+          newData.pois = newData.pois.map((item) =>
+            item.id === featureId ? { ...item, coordinates } : item
+          );
+        } else if (featureType === "storyPin" && newData.storyPins) {
+          newData.storyPins = newData.storyPins.map((item) =>
+            item.id === featureId ? { ...item, coordinates } : item
+          );
+        } else if (featureType === "mapLabel" && newData.mapLabels) {
+          newData.mapLabels = newData.mapLabels.map((item) =>
+            item.id === featureId ? { ...item, coordinates } : item
+          );
+        } else if (featureType === "peak" && newData.peaks) {
+          newData.peaks = newData.peaks.map((item) =>
+            item.id === featureId ? { ...item, coordinates } : item
+          );
+        }
+        utils.geoCore.getCountryFeatures.setData({ countryId }, newData);
+      }
+
       pushAction({
         type: "update",
         featureType,
@@ -2527,6 +2564,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       updateMapLabel,
       updatePeak,
       selectedFeature,
+      utils,
     ]
   );
 
@@ -3365,6 +3403,88 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     [countryId, selectedIds, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
   );
 
+  const addRulerPoint = useCallback((coords: [number, number]) => {
+    setRulerPoints((prev) => [...prev, coords]);
+  }, []);
+
+  const clearRuler = useCallback(() => {
+    setRulerPoints([]);
+  }, []);
+
+  const applyLassoSelection = useCallback(
+    (polygonCoords: [number, number][]) => {
+      if (polygonCoords.length < 3) return;
+      const closedCoords = [...polygonCoords];
+      if (
+        closedCoords[0][0] !== closedCoords[closedCoords.length - 1][0] ||
+        closedCoords[0][1] !== closedCoords[closedCoords.length - 1][1]
+      ) {
+        closedCoords.push(closedCoords[0]);
+      }
+
+      const lassoPoly = {
+        type: "Feature" as const,
+        geometry: {
+          type: "Polygon" as const,
+          coordinates: [closedCoords],
+        },
+        properties: {},
+      };
+
+      const newSelectedIds = new Set<string>();
+      for (const feature of allFeatures) {
+        if (feature.coordinates) {
+          const pt = point(feature.coordinates);
+          if (booleanPointInPolygon(pt, lassoPoly)) {
+            newSelectedIds.add(feature.id);
+          }
+        }
+      }
+      setSelectedIds(newSelectedIds);
+    },
+    [allFeatures]
+  );
+
+  const applyPaintFill = useCallback(
+    async (subdivisionId: string) => {
+      if (!countryId) return;
+      const sub = allFeatures.find((f) => f.id === subdivisionId && f.type === "subdivision");
+      if (!sub) return;
+
+      // Optimistically update local cache
+      const prevData = utils.geoCore.getCountryFeatures.getData({ countryId });
+      if (prevData && prevData.subdivisions) {
+        const newData = { ...prevData };
+        newData.subdivisions = newData.subdivisions.map((item) =>
+          item.id === subdivisionId
+            ? {
+                ...item,
+                color: subdivisionForm.color || item.color,
+                type: subdivisionForm.type || item.type,
+                level: subdivisionForm.level || item.level,
+              }
+            : item
+        );
+        utils.geoCore.getCountryFeatures.setData({ countryId }, newData);
+      }
+
+      await updateSubdivision.mutateAsync({
+        countryId,
+        id: subdivisionId,
+        name: sub.name,
+        type: subdivisionForm.type,
+        level: subdivisionForm.level,
+        color: subdivisionForm.color,
+        population: Number(sub.properties.population) || undefined,
+        areaSqKm: Number(sub.properties.areaSqKm) || undefined,
+      });
+
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [countryId, allFeatures, subdivisionForm, updateSubdivision, utils, invalidateAllMapData, debouncedRefetch]
+  );
+
   const isMutating =
     createCity.isPending ||
     updateCity.isPending ||
@@ -3557,6 +3677,16 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     executeSplitSubdivision,
     mergeSelectedSubdivisions,
     applyGeometryTransformation,
+
+    // Ruler & Lasso Selection
+    rulerPoints,
+    setRulerPoints,
+    lassoGeometry,
+    setLassoGeometry,
+    addRulerPoint,
+    clearRuler,
+    applyLassoSelection,
+    applyPaintFill,
   };
 }
 

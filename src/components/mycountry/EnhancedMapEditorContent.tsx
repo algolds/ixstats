@@ -9,7 +9,6 @@
  * Glassmorphic styling.
  */
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { ArrowLeft, AlertCircle, Map, ChevronRight, Loader2, Globe } from "lucide-react";
@@ -33,6 +32,7 @@ import {
   FloatingImportPanel,
 } from "~/components/maps/editor/province-importer";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
+import { haversineDistance } from "~/components/maps/editor/utils/map-helpers";
 
 // Dynamic import for the map (requires browser APIs)
 import { EditorContextMenuWrapper } from "~/components/maps/editor/components/EditorContextMenuWrapper";
@@ -78,6 +78,17 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
 
   const editor = useMapEditor(country?.id);
   const importer = useProvinceImporter(country?.id ?? "");
+
+  const rulerDistance = useMemo(() => {
+    let total = 0;
+    const pts = editor.rulerPoints;
+    if (pts && pts.length > 1) {
+      for (let i = 0; i < pts.length - 1; i++) {
+        total += haversineDistance(pts[i]!, pts[i + 1]!);
+      }
+    }
+    return total;
+  }, [editor.rulerPoints]);
 
   // Route type selection state for ToolOptionsBar
   const [routeTypes, setRouteTypes] = useState<string[]>(["road"]);
@@ -415,6 +426,11 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
         onToggleEmptyRegions={() => editor.setShowEmptyRegions((v) => !v)}
         emptyRegionsCount={emptyRegionsCount}
         onCreateCentroidCities={editor.createCentroidCities}
+        subdivisionColor={editor.subdivisionForm.color}
+        onSubdivisionColorChange={(c) => editor.setSubdivisionForm((p) => ({ ...p, color: c }))}
+        rulerPoints={editor.rulerPoints}
+        rulerDistance={rulerDistance}
+        onClearRuler={editor.clearRuler}
       />
 
       {/* ── Content: left panel + map + right panel ── */}
@@ -599,6 +615,11 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 showGaps={editor.showGaps}
                 emptyRegionsFeatures={editor.emptyRegionsFeatures}
                 showEmptyRegions={editor.showEmptyRegions}
+                rulerPoints={editor.rulerPoints}
+                lassoGeometry={editor.lassoGeometry}
+                onAddRulerPoint={editor.addRulerPoint}
+                onApplyLassoSelection={editor.applyLassoSelection}
+                onApplyPaintFill={editor.applyPaintFill}
               />
 
               <EditorContextMenuWrapper

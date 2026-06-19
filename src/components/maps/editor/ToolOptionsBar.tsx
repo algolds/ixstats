@@ -34,6 +34,10 @@ import {
   GitMerge,
   Sliders,
   Sparkles,
+  Hand,
+  LassoSelect,
+  Ruler,
+  PaintBucket,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -441,6 +445,12 @@ interface ToolOptionsBarProps {
   onToggleEmptyRegions?: () => void;
   emptyRegionsCount?: number;
   onCreateCentroidCities?: () => void;
+  // Ruler measuring
+  rulerPoints?: [number, number][];
+  rulerDistance?: number;
+  onClearRuler?: () => void;
+  subdivisionColor?: string;
+  onSubdivisionColorChange?: (color: string) => void;
 }
 
 const CITY_TYPES = [
@@ -1083,6 +1093,152 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   {props.isSnapEnabled ? "Snap On" : "Snap Off"}
                 </button>
               )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── Hand / Pan mode ── */}
+      {mode === "pan" && (
+        <>
+          <ToolLabel icon={Hand} label="Pan Map" />
+          <span className="text-muted-foreground text-[11px]">
+            Safe Pan Mode. Click and drag the map freely without selecting or moving features.
+          </span>
+        </>
+      )}
+
+      {/* ── Lasso Select mode ── */}
+      {mode === "lasso-select" && (
+        <>
+          <ToolLabel icon={LassoSelect} label="Lasso Select" />
+          <span className="text-muted-foreground text-[11px]">
+            Click and drag to draw a freehand loop around points to group-select them.
+          </span>
+        </>
+      )}
+
+      {/* ── Ruler mode ── */}
+      {mode === "ruler" && (
+        <>
+          <ToolLabel icon={Ruler} label="Ruler" />
+          <span className="text-muted-foreground text-[11px] mr-2">
+            Click multiple spots on the map to measure distance.
+          </span>
+          {props.rulerPoints && props.rulerPoints.length > 0 && (
+            <>
+              <div className={dividerClass} />
+              <span className="text-foreground text-[11px] font-semibold">
+                Total: {props.rulerDistance ? props.rulerDistance.toFixed(1) : "0.0"} km
+              </span>
+              <span className="text-muted-foreground text-[10px]">
+                ({props.rulerPoints.length} points)
+              </span>
+              {props.onClearRuler && (
+                <button
+                  onClick={props.onClearRuler}
+                  className="bg-red-500/10 text-red-500 hover:bg-red-500/20 flex h-6 items-center gap-1 rounded px-1.5 text-[11px]"
+                  title="Clear ruler path"
+                >
+                  Clear Ruler
+                </button>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── Paint Fill mode ── */}
+      {mode === "paint-fill" && (
+        <>
+          <ToolLabel icon={PaintBucket} label="Paint Fill" />
+          <span className="text-muted-foreground text-[11px] mr-2">
+            Click any subdivision region to apply properties:
+          </span>
+          <span className={labelClass}>Type</span>
+          <select
+            value={props.subdivisionType ?? "province"}
+            onChange={(e) => props.onSubdivisionTypeChange?.(e.target.value)}
+            className={selectClass}
+          >
+            {SUBDIVISION_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <span className={labelClass}>Level</span>
+          <input
+            type="number"
+            min={1}
+            max={5}
+            value={props.subdivisionLevel ?? 1}
+            onChange={(e) => props.onSubdivisionLevelChange?.(parseInt(e.target.value) || 1)}
+            className={`${selectClass} w-12 text-center`}
+          />
+          {props.subdivisionColor !== undefined && props.onSubdivisionColorChange && (
+            <>
+              <span className={labelClass}>Color</span>
+              <Popover>
+                <PopoverTrigger
+                  className="border-border/40 relative h-5 w-10 shrink-0 cursor-pointer overflow-hidden rounded border"
+                  title="Pick Fill Color"
+                  asChild
+                >
+                  <button className="flex items-center justify-center p-0">
+                    <div
+                      className="h-full w-full rounded"
+                      style={{ backgroundColor: props.subdivisionColor || "#3b82f6" }}
+                    />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="bg-popover border-border/50 text-foreground w-64 p-3">
+                  <ColorPicker
+                    value={props.subdivisionColor || "#3b82f6"}
+                    onChange={(rgbaArray) => {
+                      let colorStr = "#000000";
+                      if (rgbaArray[3] < 1) {
+                        colorStr = `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${rgbaArray[3]})`;
+                      } else {
+                        const r = rgbaArray[0].toString(16).padStart(2, "0");
+                        const g = rgbaArray[1].toString(16).padStart(2, "0");
+                        const b = rgbaArray[2].toString(16).padStart(2, "0");
+                        colorStr = `#${r}${g}${b}`;
+                      }
+                      props.onSubdivisionColorChange?.(colorStr);
+                    }}
+                  >
+                    <ColorPickerSelection className="mb-2 h-32" />
+                    <div className="mb-2 space-y-1">
+                      <Label className="text-muted-foreground text-[10px]">Hue</Label>
+                      <ColorPickerHue />
+                    </div>
+                    <div className="mb-2 space-y-1">
+                      <Label className="text-muted-foreground text-[10px]">Alpha</Label>
+                      <ColorPickerAlpha />
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <ColorPickerOutput />
+                      <ColorPickerFormat />
+                      <ColorPickerEyeDropper />
+                    </div>
+                  </ColorPicker>
+                  <div className="border-border/40 mt-3 space-y-1 border-t pt-2">
+                    <Label className="text-muted-foreground text-[10px]">Suggested Colors</Label>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {SUGGESTED_LABEL_COLORS.map((col) => (
+                        <button
+                          key={col.hex}
+                          onClick={() => props.onSubdivisionColorChange?.(col.hex)}
+                          className="border-border/40 h-5 w-5 cursor-pointer rounded border transition-all hover:scale-110 active:scale-95"
+                          style={{ backgroundColor: col.hex }}
+                          title={col.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </>
           )}
         </>
