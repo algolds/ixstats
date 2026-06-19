@@ -356,7 +356,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             const p = d.properties as Record<string, unknown> | undefined;
             switch (action.featureType) {
               case "city":
-                await m.updateCity?.mutateAsync({
+                await m.updateCity?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   name: d.name,
@@ -365,39 +365,39 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   population: p?.population,
                   isNationalCapital: !!p?.isNationalCapital,
                   isSubdivisionCapital: !!p?.isSubdivisionCapital,
-                });
+                }));
                 break;
               case "subdivision":
-                await m.updateSubdivision?.mutateAsync({
+                await m.updateSubdivision?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   name: d.name,
                   type: p?.type,
                   level: p?.level,
-                });
+                }));
                 break;
               case "poi":
-                await m.updatePOI?.mutateAsync({
+                await m.updatePOI?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   name: d.name,
                   category: p?.category ?? "landmark",
                   coordinates: d.coordinates,
                   description: p?.description,
-                });
+                }));
                 break;
               case "storyPin":
-                await m.updateStoryPin?.mutateAsync({
+                await m.updateStoryPin?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   title: d.name,
                   content: p?.content,
                   category: p?.category,
                   coordinates: d.coordinates,
-                });
+                }));
                 break;
               case "mapLabel":
-                await m.updateMapLabel?.mutateAsync({
+                await m.updateMapLabel?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   text: d.name,
@@ -405,7 +405,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   fontSize: p?.fontSize,
                   color: p?.color,
                   coordinates: d.coordinates,
-                });
+                }));
                 break;
               case "route":
                 await m.updateRouteGeometry?.mutateAsync({
@@ -495,7 +495,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             const p = d.properties as Record<string, unknown> | undefined;
             switch (action.featureType) {
               case "city":
-                await m.updateCity?.mutateAsync({
+                await m.updateCity?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   name: d.name,
@@ -504,39 +504,39 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   population: p?.population,
                   isNationalCapital: !!p?.isNationalCapital,
                   isSubdivisionCapital: !!p?.isSubdivisionCapital,
-                });
+                }));
                 break;
               case "subdivision":
-                await m.updateSubdivision?.mutateAsync({
+                await m.updateSubdivision?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   name: d.name,
                   type: p?.type,
                   level: p?.level,
-                });
+                }));
                 break;
               case "poi":
-                await m.updatePOI?.mutateAsync({
+                await m.updatePOI?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   name: d.name,
                   category: p?.category ?? "landmark",
                   coordinates: d.coordinates,
                   description: p?.description,
-                });
+                }));
                 break;
               case "storyPin":
-                await m.updateStoryPin?.mutateAsync({
+                await m.updateStoryPin?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   title: d.name,
                   content: p?.content,
                   category: p?.category,
                   coordinates: d.coordinates,
-                });
+                }));
                 break;
               case "mapLabel":
-                await m.updateMapLabel?.mutateAsync({
+                await m.updateMapLabel?.mutateAsync(cleanNulls({
                   countryId,
                   id: action.featureId,
                   text: d.name,
@@ -544,7 +544,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   fontSize: p?.fontSize,
                   color: p?.color,
                   coordinates: d.coordinates,
-                });
+                }));
                 break;
               case "route":
                 await m.updateRouteGeometry?.mutateAsync({

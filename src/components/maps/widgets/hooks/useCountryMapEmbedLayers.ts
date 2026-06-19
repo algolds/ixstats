@@ -392,6 +392,39 @@ export function useCountryMapEmbedLayers({
             },
           });
 
+          // Apply Zoom-dependent Level of Detail (LOD) filter to non-capital cities
+          const updateCityFilter = () => {
+            const z = map.getZoom();
+            let filterExpr: any;
+            if (z >= 6.0) {
+              filterExpr = ["!=", ["get", "isCapital"], true];
+            } else if (z >= 4.5) {
+              filterExpr = [
+                "all",
+                ["!=", ["get", "isCapital"], true],
+                [">=", ["coalesce", ["get", "population"], 0], 100000],
+              ];
+            } else if (z >= 3.0) {
+              filterExpr = [
+                "all",
+                ["!=", ["get", "isCapital"], true],
+                [">=", ["coalesce", ["get", "population"], 0], 250000],
+              ];
+            } else {
+              filterExpr = [
+                "all",
+                ["!=", ["get", "isCapital"], true],
+                [">=", ["coalesce", ["get", "population"], 0], 500000],
+              ];
+            }
+            if (map.getLayer("city-circles")) {
+              map.setFilter("city-circles", filterExpr);
+            }
+          };
+
+          map.on("zoom", updateCityFilter);
+          updateCityFilter();
+
           // Show non-capital labels on hover of city markers
           let hoveredCityId: string | null = null;
           map.on("mousemove", "city-circles", (e) => {

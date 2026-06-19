@@ -30,9 +30,8 @@ import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
 import { IxTime } from "~/lib/ixtime";
-import { cn, toTitleCase } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { LocationBadge } from "~/components/ui/tier-badge";
 import { Badge } from "~/components/ui/badge";
 import { usePremium } from "~/hooks/usePremium";
 import { useCountryData } from "./primitives";
@@ -1075,24 +1074,11 @@ export function OverviewHero({
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className="flex w-full items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    <Check className="h-3.5 w-3.5 shrink-0" />
-                    <span>All systems operational</span>
-                  </div>
-                )}
+                ) : null}
               </div>
 
               {/* Civil Service Capacity + Rollout Queue */}
               <CivilServiceWidget countryId={countryId} enabled={hasCountry} onNavigate={onNavigate} />
-            </div>
-
-            {/* Badges */}
-            <div className="border-border/10 mt-3 flex gap-1.5 border-t pt-2">
-              {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
-              {stats.governmentType && (
-                <LocationBadge type="government" value={toTitleCase(stats.governmentType)} />
-              )}
             </div>
           </div>
         </div>
