@@ -3028,34 +3028,49 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (subdivisionsToMerge.length < 2) return;
 
     const baseSub = subdivisionsToMerge[0]!;
+    const baseGeom = cleanPolygonGeometry(baseSub.geometry);
+    if (!baseGeom) return;
+
     let unionFeature = {
       type: "Feature" as const,
-      geometry: baseSub.geometry!,
+      geometry: baseGeom,
       properties: {},
     };
 
     for (let i = 1; i < subdivisionsToMerge.length; i++) {
       const nextSub = subdivisionsToMerge[i]!;
+      const subGeom = cleanPolygonGeometry(nextSub.geometry);
+      if (!subGeom) continue;
+
       const subFeature = {
         type: "Feature" as const,
-        geometry: nextSub.geometry!,
+        geometry: subGeom,
         properties: {},
       };
       try {
         const merged = union(featureCollection([unionFeature, subFeature]));
         if (merged) {
-          unionFeature = merged;
+          const cleanedMerged = cleanPolygonGeometry(merged.geometry);
+          if (cleanedMerged) {
+            unionFeature = {
+              ...merged,
+              geometry: cleanedMerged,
+            };
+          }
         }
       } catch (err) {
         console.error("Error merging geometries:", err);
       }
     }
 
+    const finalGeom = cleanPolygonGeometry(unionFeature.geometry);
+    if (!finalGeom) return;
+
     await updateSubdivisionGeom.mutateAsync({
       countryId,
       id: baseSub.id,
       name: baseSub.name,
-      geometry: unionFeature.geometry,
+      geometry: finalGeom,
     });
 
     for (let i = 1; i < subdivisionsToMerge.length; i++) {
@@ -3115,18 +3130,24 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       }
 
       if (newGeom) {
+        const cleanedGeom = cleanPolygonGeometry(newGeom);
+        if (!cleanedGeom) {
+          console.error(`Transformation ${type} resulted in an invalid or empty geometry.`);
+          return;
+        }
+
         await updateSubdivisionGeom.mutateAsync({
           countryId,
           id: selectedFeature.id,
           name: selectedFeature.name,
-          geometry: newGeom,
+          geometry: cleanedGeom,
         });
 
         setSelectedFeature((prev) => {
           if (!prev) return null;
           return {
             ...prev,
-            geometry: newGeom,
+            geometry: cleanedGeom,
           };
         });
 
@@ -3687,15 +3708,57 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   };
 }
 
+function cleanPolygonGeometry(geometry: any): any {
+  if (!geometry || typeof geometry !== "object") return null;
+  const type = geometry.type;
+  if (type === "Polygon") {
+    const rings = geometry.coordinates;
+    if (!Array.isArray(rings)) return null;
+    const validRings = rings.filter((ring: any) => Array.isArray(ring) && ring.length >= 4);
+    if (validRings.length === 0) return null;
+    return {
+      type: "Polygon" as const,
+      coordinates: validRings,
+    };
+  }
+  if (type === "MultiPolygon") {
+    const polygons = geometry.coordinates;
+    if (!Array.isArray(polygons)) return null;
+    const validPolygons = polygons
+      .map((rings: any) => {
+        if (!Array.isArray(rings)) return [];
+        return rings.filter((ring: any) => Array.isArray(ring) && ring.length >= 4);
+      })
+      .filter((rings: any) => rings.length > 0);
+    if (validPolygons.length === 0) return null;
+    return {
+      type: "MultiPolygon" as const,
+      coordinates: validPolygons,
+    };
+  }
+  return geometry;
+}
+
 function computeGaps(countryGeometry: any, subdivisions: any[]) {
   if (!countryGeometry) return null;
+
+  const cleanedCountryGeom = cleanPolygonGeometry(countryGeometry);
+  if (!cleanedCountryGeom) return null;
+
   const countryFeature = {
     type: "Feature" as const,
-    geometry: countryGeometry,
+    geometry: cleanedCountryGeom,
     properties: {},
   };
 
-  const validSubdivisions = subdivisions.filter((sub) => sub.geometry);
+  const validSubdivisions = subdivisions
+    .filter((sub) => sub.geometry)
+    .map((sub) => ({
+      ...sub,
+      geometry: cleanPolygonGeometry(sub.geometry),
+    }))
+    .filter((sub) => sub.geometry !== null);
+
   if (validSubdivisions.length === 0) {
     return featureCollection([countryFeature]);
   }
@@ -3706,7 +3769,7 @@ function computeGaps(countryGeometry: any, subdivisions: any[]) {
   for (const sub of validSubdivisions) {
     const subFeature = {
       type: "Feature" as const,
-      geometry: sub.geometry,
+      geometry: sub.geometry!,
       properties: {},
     };
     if (!unionFeature) {
@@ -3715,7 +3778,13 @@ function computeGaps(countryGeometry: any, subdivisions: any[]) {
       try {
         const merged = union(featureCollection([unionFeature, subFeature]));
         if (merged) {
-          unionFeature = merged;
+          const cleanedMerged = cleanPolygonGeometry(merged.geometry);
+          if (cleanedMerged) {
+            unionFeature = {
+              ...merged,
+              geometry: cleanedMerged,
+            };
+          }
         }
       } catch (err) {
         console.warn("Error unioning subdivision geometry:", err);
@@ -3728,16 +3797,44 @@ function computeGaps(countryGeometry: any, subdivisions: any[]) {
   }
 
   // Simplify unionFeature and countryFeature slightly to avoid heavy calculations
-  const simplifiedCountry = simplify(countryFeature, { tolerance: 0.0001, highQuality: false });
-  const simplifiedUnion = simplify(unionFeature, { tolerance: 0.0001, highQuality: false });
+  let simplifiedCountry = countryFeature;
+  let simplifiedUnion = unionFeature;
+
+  try {
+    const simplified = simplify(countryFeature, { tolerance: 0.0001, highQuality: false });
+    const cleaned = cleanPolygonGeometry(simplified?.geometry);
+    if (cleaned) {
+      simplifiedCountry = { ...simplified, geometry: cleaned };
+    }
+  } catch (err) {
+    console.warn("Failed to simplify country geometry:", err);
+  }
+
+  try {
+    const simplified = simplify(unionFeature, { tolerance: 0.0001, highQuality: false });
+    const cleaned = cleanPolygonGeometry(simplified?.geometry);
+    if (cleaned) {
+      simplifiedUnion = { ...simplified, geometry: cleaned };
+    }
+  } catch (err) {
+    console.warn("Failed to simplify union geometry:", err);
+  }
 
   // Now subtract unionFeature from countryFeature
   try {
     const gap = difference(featureCollection([simplifiedCountry, simplifiedUnion]));
     if (gap) {
+      const cleanedGapGeom = cleanPolygonGeometry(gap.geometry);
+      if (!cleanedGapGeom) return null;
+
+      const cleanedGap = {
+        ...gap,
+        geometry: cleanedGapGeom,
+      };
+
       // If gap is a MultiPolygon, split it into individual polygon features so right-click is easier to hit-test
-      if (gap.geometry.type === "MultiPolygon") {
-        const polys = gap.geometry.coordinates.map((coords: any) => ({
+      if (cleanedGap.geometry.type === "MultiPolygon") {
+        const polys = cleanedGap.geometry.coordinates.map((coords: any) => ({
           type: "Feature" as const,
           geometry: {
             type: "Polygon" as const,
@@ -3747,7 +3844,7 @@ function computeGaps(countryGeometry: any, subdivisions: any[]) {
         }));
         return featureCollection(polys);
       }
-      return featureCollection([gap]);
+      return featureCollection([cleanedGap]);
     }
   } catch (err) {
     console.warn("Error calculating difference gaps:", err);
