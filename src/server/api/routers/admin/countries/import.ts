@@ -312,16 +312,36 @@ export const adminCountriesImportRouter = createTRPCRouter({
             } else {
               // Only update changed fields (basic check)
               const updateData: any = {};
-              if (existing.baselinePopulation !== country.population)
+              let hasDemographicChange = false;
+
+              if (existing.baselinePopulation !== country.population) {
                 updateData.baselinePopulation = country.population;
-              if (existing.baselineGdpPerCapita !== country.gdpPerCapita)
+                updateData.currentPopulation = country.population;
+                updateData.populationTier = getPopulationTierFromPopulation(country.population);
+                hasDemographicChange = true;
+              }
+              if (existing.baselineGdpPerCapita !== country.gdpPerCapita) {
                 updateData.baselineGdpPerCapita = country.gdpPerCapita;
+                updateData.currentGdpPerCapita = country.gdpPerCapita;
+                updateData.economicTier = getEconomicTierFromGdpPerCapita(country.gdpPerCapita);
+                hasDemographicChange = true;
+              }
+
+              if (hasDemographicChange) {
+                const targetPop = updateData.currentPopulation ?? existing.currentPopulation;
+                const targetGdpPC = updateData.currentGdpPerCapita ?? existing.currentGdpPerCapita;
+                const totalGdp = targetPop * targetGdpPC;
+                updateData.currentTotalGdp = totalGdp;
+                updateData.nominalGDP = totalGdp;
+              }
+
               if (existing.maxGdpGrowthRate !== country.maxGdpGrowthRate)
                 updateData.maxGdpGrowthRate = country.maxGdpGrowthRate;
               if (existing.adjustedGdpGrowth !== country.adjustedGdpGrowth)
                 updateData.adjustedGdpGrowth = country.adjustedGdpGrowth;
               if (existing.populationGrowthRate !== country.populationGrowthRate)
                 updateData.populationGrowthRate = country.populationGrowthRate;
+
               // Also update calculated fields if needed
               if (Object.keys(updateData).length > 0) {
                 await ctx.db.country.update({

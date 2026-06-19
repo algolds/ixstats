@@ -41,37 +41,8 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
   return R * c;
 }
 
-export async function syncGeographicDemographics(
-  db: any,
-  countryId: string,
-  subdivisionId?: string | null
-) {
-  // 1. If subdivisionId is provided, sync subdivision population from its cities
-  if (subdivisionId) {
-    const citiesSum = await db.city.aggregate({
-      where: { subdivisionId, status: "approved" },
-      _sum: { population: true },
-    });
-    const subPop = citiesSum._sum.population ?? 0;
-    await db.subdivision.update({
-      where: { id: subdivisionId },
-      data: { population: subPop },
-    });
-  }
-
-  // 2. Sync country population from all subdivisions
-  const subdivisionsSum = await db.subdivision.aggregate({
-    where: { countryId, status: "approved" },
-    _sum: { population: true },
-  });
-  const totalSubPop = subdivisionsSum._sum.population ?? 0;
-  if (totalSubPop > 0) {
-    await db.country.update({
-      where: { id: countryId },
-      data: { currentPopulation: totalSubPop },
-    });
-  }
-}
+import { syncGeographicDemographics } from "~/lib/country-geo/sync";
+export { syncGeographicDemographics };
 
 export async function syncResourcePoolModifiers(db: any, countryId: string) {
   // 1. Get all points of interest for this country with category "resource"

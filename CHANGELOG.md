@@ -159,6 +159,11 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Fixed
 
+- **MyCountry Demographics & Economic Data Mismatch (Caphiria)**:
+  - Fixed a major discrepancy where the `/mycountry` dashboard displayed inflated demographics and economic statistics for Caphiria (e.g. 5.1B population and $328.7T GDP) compared to the correct progressed values rendered on `/dashboard` (619M population and $39.8T GDP).
+  - Corrected the `getByIdWithEconomicData` query in [economy.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countries/economy.ts) to return time-progressed values (`result.newStats`) rather than raw database column values.
+  - Fixed the partial roster import logic in [import.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/admin/countries/import.ts) to recalculate and synchronize current stats (`currentPopulation`, `currentGdpPerCapita`, `currentTotalGdp`, `nominalGDP`, `economicTier`, and `populationTier`) when baseline stats are updated.
+
 - **Zod Schema Validations on Drag Drop**:
   - Resolved Zod schema validation errors when saving point feature coordinates on drag-and-drop release by converting top-level `null` fields (e.g. population, elevation, wikiPageTitle) to `undefined` before sending mutations.
   - Integrated this Zod-safety wrapper into coordinate edits, undo/redo history, and reverse action callbacks in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
@@ -177,6 +182,10 @@ capability integer. Each release entry below lists which components advanced and
   - Hardened the point lookups in [point-queries.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/point-queries.ts) with a per-statement timeout so a slow spatial query can never again hold a connection long enough to break auth, and gave geometry edits a dedicated mutation that surfaces errors (`onError`) and reconciles the editor cache with the server's authoritative saved geometry for live refresh.
 
 ### Changed
+
+- **Geographic Demographics Sync Consolidation**:
+  - Eliminated multiple duplicate local definitions of `syncGeographicDemographics` across geographic feature routers including [subdivisions.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/subdivisions.ts), [cities.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/cities.ts), and [pois.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/pois.ts).
+  - Consolidated them to import the canonical implementation from [sync.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/sync.ts) which correctly respects the `geoRollupMode === "bottom-up"` guard at the country level.
 
 - **Integrated Background Simulations with Database Overrides**: Configured automated match day simulations (`matches.ts`) and end-of-season recaps (`transition.ts`) to query global configurations from the `SystemConfig` database table and apply the custom LLM parameters during simulation runs.
 - **Live-Wired AI Narrator Library & tRPC Routers**: Refactored the core `queryLLM` and all commentary-related generators (`generateMatchReport`, `generateMatchPreview`, `generateSeasonSummary`, and `narrateBulletin`) to accept and execute with client-specified provider, URL, API key, model, and temperature settings overrides. Updated the schemas of `generateMatchReport`, `generateMatchPreview`, and `generateMatchCommentary` in the sports leagues tRPC router to accept the optional config payload.
