@@ -989,247 +989,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [wandMatchLevel, setWandMatchLevel] = useState(false);
   const [wandMatchParent, setWandMatchParent] = useState(false);
 
-  const applyEyedropper = useCallback(
-    (feature: EditorFeature) => {
-      if (!feature) return;
-
-      setPresetStyle({
-        type: feature.type,
-        properties: { ...feature.properties },
-      });
-
-      if (feature.type === "subdivision") {
-        setSubdivisionForm({
-          name: "",
-          type: (feature.properties.type as string) ?? "province",
-          level: (feature.properties.level as number) ?? 1,
-          color: (feature.properties.color as string | undefined) ?? undefined,
-        });
-      } else if (feature.type === "city") {
-        setCityForm({
-          name: "",
-          cityType: (feature.properties.cityType as string) ?? "city",
-          population: (feature.properties.population as number | undefined) ?? undefined,
-          isNationalCapital: false,
-          isSubdivisionCapital: false,
-          subdivisionId: (feature.properties.subdivisionId as string | undefined) ?? undefined,
-        });
-      } else if (feature.type === "poi") {
-        setPOIForm({
-          name: "",
-          category: (feature.properties.category as string) ?? "landmark",
-          description: (feature.properties.description as string | undefined) ?? undefined,
-        });
-      } else if (feature.type === "storyPin") {
-        setStoryPinForm({
-          title: "",
-          content: "",
-          contentFormat: "plain",
-          category: (feature.properties.category as string) ?? "cultural",
-          importance: (feature.properties.importance as number) ?? 0,
-        });
-      } else if (feature.type === "mapLabel") {
-        setMapLabelForm({
-          text: "",
-          labelType: (feature.properties.labelType as string) ?? "mountain_range",
-          fontSize: (feature.properties.fontSize as number) ?? 14,
-          color: (feature.properties.color as string) ?? "#374151",
-          rotation: (feature.properties.rotation as number) ?? 0,
-          letterSpacing: (feature.properties.letterSpacing as number) ?? 0,
-          fontWeight: (feature.properties.fontWeight as string) ?? "normal",
-          opacity: (feature.properties.opacity as number) ?? 1,
-        });
-      }
-
-      setModeRaw(previousMode);
-    },
-    [previousMode]
-  );
-
-  const applyMagicWand = useCallback(
-    (feature: EditorFeature, isShift: boolean, isAlt: boolean) => {
-      if (!feature) return;
-
-      const matches = allFeatures.filter((f) => {
-        if (f.type !== feature.type) return false;
-
-        if (wandMatchColor) {
-          const colA = feature.properties.color || feature.properties.fill;
-          const colB = f.properties.color || f.properties.fill;
-          if (colA !== colB) return false;
-        }
-
-        if (wandMatchLevel) {
-          const levelA =
-            feature.properties.level ||
-            feature.properties.cityType ||
-            feature.properties.category ||
-            feature.properties.labelType;
-          const levelB =
-            f.properties.level ||
-            f.properties.cityType ||
-            f.properties.category ||
-            f.properties.labelType;
-          if (levelA !== levelB) return false;
-        }
-
-        if (wandMatchParent) {
-          const parentA = feature.properties.countryId || feature.properties.subdivisionId;
-          const parentB = f.properties.countryId || f.properties.subdivisionId;
-          if (parentA !== parentB) return false;
-        }
-
-        return true;
-      });
-
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (isAlt) {
-          matches.forEach((f) => next.delete(f.id));
-        } else if (isShift) {
-          matches.forEach((f) => next.add(f.id));
-        } else {
-          next.clear();
-          matches.forEach((f) => next.add(f.id));
-        }
-        return next;
-      });
-    },
-    [allFeatures, wandMatchColor, wandMatchLevel, wandMatchParent]
-  );
-
-  const pathfinderOperation = useCallback(
-    async (opType: "union" | "subtract" | "intersect") => {
-      if (!countryId) return;
-
-      const selectedSubdivisions = allFeatures.filter(
-        (f) => f.type === "subdivision" && selectedIds.has(f.id)
-      );
-      if (selectedSubdivisions.length < 2) {
-        alert("Please select at least 2 subdivisions to perform Pathfinder operations.");
-        return;
-      }
-
-      const primary = selectedSubdivisions[0]!;
-      if (!primary.geometry) return;
-
-      let currentGeom = primary.geometry;
-      const deletedFeatures: typeof selectedSubdivisions = [];
-
-      for (let i = 1; i < selectedSubdivisions.length; i++) {
-        const other = selectedSubdivisions[i]!;
-        if (!currentGeom || !other.geometry) continue;
-
-        let result: any = null;
-
-        if (opType === "union") {
-          result = union(
-            featureCollection([
-              { type: "Feature", geometry: currentGeom as any, properties: {} },
-              { type: "Feature", geometry: other.geometry as any, properties: {} },
-            ])
-          );
-        } else if (opType === "subtract") {
-          result = difference(
-            featureCollection([
-              { type: "Feature", geometry: currentGeom as any, properties: {} },
-              { type: "Feature", geometry: other.geometry as any, properties: {} },
-            ])
-          );
-        } else if (opType === "intersect") {
-          result = intersect(
-            featureCollection([
-              { type: "Feature", geometry: currentGeom as any, properties: {} },
-              { type: "Feature", geometry: other.geometry as any, properties: {} },
-            ])
-          );
-        }
-
-        if (result && result.geometry) {
-          currentGeom = cleanPolygonGeometry(result.geometry);
-        } else if (opType === "subtract") {
-          currentGeom = null;
-        } else {
-          currentGeom = null;
-        }
-
-        if (opType === "union" || opType === "intersect" || (opType === "subtract" && result)) {
-          deletedFeatures.push(other);
-        }
-      }
-
-      if (!currentGeom && opType !== "subtract") {
-        alert(`Pathfinder ${opType} operation resulted in empty or invalid geometry.`);
-        return;
-      }
-
-      // 1. Push history actions
-      pushAction({
-        type: "update",
-        featureType: "subdivision",
-        featureId: primary.id,
-        previousData: {
-          name: primary.name,
-          geometry: primary.geometry,
-          properties: primary.properties,
-        },
-        newData: {
-          name: primary.name,
-          geometry: currentGeom || undefined,
-          properties: primary.properties,
-        },
-      });
-
-      for (const other of deletedFeatures) {
-        pushAction({
-          type: "delete",
-          featureType: "subdivision",
-          featureId: other.id,
-          previousData: {
-            name: other.name,
-            geometry: other.geometry,
-            properties: other.properties,
-          },
-        });
-      }
-
-      // 2. Database mutations
-      if (currentGeom) {
-        await updateSubdivisionGeom.mutateAsync({
-          countryId,
-          id: primary.id,
-          geometry: currentGeom,
-        });
-      } else {
-        await deleteSubdivision.mutateAsync({
-          countryId,
-          subdivisionId: primary.id,
-        });
-      }
-
-      for (const other of deletedFeatures) {
-        await deleteSubdivision.mutateAsync({
-          countryId,
-          subdivisionId: other.id,
-        });
-      }
-
-      clearMultiSelect();
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [
-      countryId,
-      allFeatures,
-      selectedIds,
-      updateSubdivisionGeom,
-      deleteSubdivision,
-      pushAction,
-      clearMultiSelect,
-      invalidateAllMapData,
-      debouncedRefetch,
-    ]
-  );
 
   // Fetch country features
   const {
@@ -2698,6 +2457,248 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     return list;
   }, [features, countryRoutes]);
 
+  const applyEyedropper = useCallback(
+    (feature: EditorFeature) => {
+      if (!feature) return;
+
+      setPresetStyle({
+        type: feature.type,
+        properties: { ...feature.properties },
+      });
+
+      if (feature.type === "subdivision") {
+        setSubdivisionForm({
+          name: "",
+          type: (feature.properties.type as string) ?? "province",
+          level: (feature.properties.level as number) ?? 1,
+          color: (feature.properties.color as string | undefined) ?? undefined,
+        });
+      } else if (feature.type === "city") {
+        setCityForm({
+          name: "",
+          cityType: (feature.properties.cityType as string) ?? "city",
+          population: (feature.properties.population as number | undefined) ?? undefined,
+          isNationalCapital: false,
+          isSubdivisionCapital: false,
+          subdivisionId: (feature.properties.subdivisionId as string | undefined) ?? undefined,
+        });
+      } else if (feature.type === "poi") {
+        setPOIForm({
+          name: "",
+          category: (feature.properties.category as string) ?? "landmark",
+          description: (feature.properties.description as string | undefined) ?? undefined,
+        });
+      } else if (feature.type === "storyPin") {
+        setStoryPinForm({
+          title: "",
+          content: "",
+          contentFormat: "plain",
+          category: (feature.properties.category as string) ?? "cultural",
+          importance: (feature.properties.importance as number) ?? 0,
+        });
+      } else if (feature.type === "mapLabel") {
+        setMapLabelForm({
+          text: "",
+          labelType: (feature.properties.labelType as string) ?? "mountain_range",
+          fontSize: (feature.properties.fontSize as number) ?? 14,
+          color: (feature.properties.color as string) ?? "#374151",
+          rotation: (feature.properties.rotation as number) ?? 0,
+          letterSpacing: (feature.properties.letterSpacing as number) ?? 0,
+          fontWeight: (feature.properties.fontWeight as string) ?? "normal",
+          opacity: (feature.properties.opacity as number) ?? 1,
+        });
+      }
+
+      setModeRaw(previousMode);
+    },
+    [previousMode]
+  );
+
+  const applyMagicWand = useCallback(
+    (feature: EditorFeature, isShift: boolean, isAlt: boolean) => {
+      if (!feature) return;
+
+      const matches = allFeatures.filter((f) => {
+        if (f.type !== feature.type) return false;
+
+        if (wandMatchColor) {
+          const colA = feature.properties.color || feature.properties.fill;
+          const colB = f.properties.color || f.properties.fill;
+          if (colA !== colB) return false;
+        }
+
+        if (wandMatchLevel) {
+          const levelA =
+            feature.properties.level ||
+            feature.properties.cityType ||
+            feature.properties.category ||
+            feature.properties.labelType;
+          const levelB =
+            f.properties.level ||
+            f.properties.cityType ||
+            f.properties.category ||
+            f.properties.labelType;
+          if (levelA !== levelB) return false;
+        }
+
+        if (wandMatchParent) {
+          const parentA = feature.properties.countryId || feature.properties.subdivisionId;
+          const parentB = f.properties.countryId || f.properties.subdivisionId;
+          if (parentA !== parentB) return false;
+        }
+
+        return true;
+      });
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (isAlt) {
+          matches.forEach((f) => next.delete(f.id));
+        } else if (isShift) {
+          matches.forEach((f) => next.add(f.id));
+        } else {
+          next.clear();
+          matches.forEach((f) => next.add(f.id));
+        }
+        return next;
+      });
+    },
+    [allFeatures, wandMatchColor, wandMatchLevel, wandMatchParent]
+  );
+
+  const pathfinderOperation = useCallback(
+    async (opType: "union" | "subtract" | "intersect") => {
+      if (!countryId) return;
+
+      const selectedSubdivisions = allFeatures.filter(
+        (f) => f.type === "subdivision" && selectedIds.has(f.id)
+      );
+      if (selectedSubdivisions.length < 2) {
+        alert("Please select at least 2 subdivisions to perform Pathfinder operations.");
+        return;
+      }
+
+      const primary = selectedSubdivisions[0]!;
+      if (!primary.geometry) return;
+
+      let currentGeom = primary.geometry;
+      const deletedFeatures: typeof selectedSubdivisions = [];
+
+      for (let i = 1; i < selectedSubdivisions.length; i++) {
+        const other = selectedSubdivisions[i]!;
+        if (!currentGeom || !other.geometry) continue;
+
+        let result: any = null;
+
+        if (opType === "union") {
+          result = union(
+            featureCollection([
+              { type: "Feature", geometry: currentGeom as any, properties: {} },
+              { type: "Feature", geometry: other.geometry as any, properties: {} },
+            ])
+          );
+        } else if (opType === "subtract") {
+          result = difference(
+            featureCollection([
+              { type: "Feature", geometry: currentGeom as any, properties: {} },
+              { type: "Feature", geometry: other.geometry as any, properties: {} },
+            ])
+          );
+        } else if (opType === "intersect") {
+          result = intersect(
+            featureCollection([
+              { type: "Feature", geometry: currentGeom as any, properties: {} },
+              { type: "Feature", geometry: other.geometry as any, properties: {} },
+            ])
+          );
+        }
+
+        if (result && result.geometry) {
+          currentGeom = cleanPolygonGeometry(result.geometry);
+        } else if (opType === "subtract") {
+          currentGeom = null;
+        } else {
+          currentGeom = null;
+        }
+
+        if (opType === "union" || opType === "intersect" || (opType === "subtract" && result)) {
+          deletedFeatures.push(other);
+        }
+      }
+
+      if (!currentGeom && opType !== "subtract") {
+        alert(`Pathfinder ${opType} operation resulted in empty or invalid geometry.`);
+        return;
+      }
+
+      // 1. Push history actions
+      pushAction({
+        type: "update",
+        featureType: "subdivision",
+        featureId: primary.id,
+        previousData: {
+          name: primary.name,
+          geometry: primary.geometry,
+          properties: primary.properties,
+        },
+        newData: {
+          name: primary.name,
+          geometry: currentGeom || undefined,
+          properties: primary.properties,
+        },
+      });
+
+      for (const other of deletedFeatures) {
+        pushAction({
+          type: "delete",
+          featureType: "subdivision",
+          featureId: other.id,
+          previousData: {
+            name: other.name,
+            geometry: other.geometry,
+            properties: other.properties,
+          },
+        });
+      }
+
+      // 2. Database mutations
+      if (currentGeom) {
+        await updateSubdivisionGeom.mutateAsync({
+          countryId,
+          id: primary.id,
+          geometry: currentGeom,
+        });
+      } else {
+        await deleteSubdivision.mutateAsync({
+          countryId,
+          subdivisionId: primary.id,
+        });
+      }
+
+      for (const other of deletedFeatures) {
+        await deleteSubdivision.mutateAsync({
+          countryId,
+          subdivisionId: other.id,
+        });
+      }
+
+      clearMultiSelect();
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [
+      countryId,
+      allFeatures,
+      selectedIds,
+      updateSubdivisionGeom,
+      deleteSubdivision,
+      pushAction,
+      clearMultiSelect,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
+  );
+
   const updatePointCoordinates = useCallback(
     async (
       featureId: string,
@@ -3454,11 +3455,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   );
 
   // ── Empty subdivisions / Auto-centroid state & detection ──
-  const [showEmptyRegions, setShowEmptyRegions] = useState(false);
   const [emptyRegionsFeatures, setEmptyRegionsFeatures] = useState<any>(null);
 
   useEffect(() => {
-    if (!showEmptyRegions || !features?.subdivisions) {
+    if (!showGaps || !features?.subdivisions) {
       setEmptyRegionsFeatures(null);
       return;
     }
@@ -3490,7 +3490,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     );
 
     setEmptyRegionsFeatures(fc);
-  }, [showEmptyRegions, features]);
+  }, [showGaps, features]);
 
   const createCentroidCities = useCallback(async () => {
     if (!countryId || !features?.subdivisions) return;
@@ -3993,8 +3993,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     rotateSelectedCities,
 
     // Empty regions
-    showEmptyRegions,
-    setShowEmptyRegions,
     emptyRegionsFeatures,
     createCentroidCities,
 

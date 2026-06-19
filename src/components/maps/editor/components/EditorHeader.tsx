@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Network,
   Magnet,
+  Eye,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -176,6 +177,18 @@ export function EditorHeader({
             title="Center on Country"
           >
             <Crosshair className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => editor.setShowGaps?.(!editor.showGaps)}
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
+              editor.showGaps
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
+            title={`Highlight Gaps & Empty Regions: ${editor.showGaps ? "On" : "Off"}`}
+          >
+            <Eye className="h-3.5 w-3.5" />
           </button>
 
           {/* Route network view (opens a Dialog with the React Flow graph) */}

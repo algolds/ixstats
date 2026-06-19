@@ -132,6 +132,8 @@ export default function MapEditorOverlay({
     cursorZoom,
     showGrid,
     setShowGrid,
+    showGuides,
+    setShowGuides,
     snapEnabled,
     setSnapEnabled,
     snapTolerance,
@@ -309,12 +311,7 @@ export default function MapEditorOverlay({
               }
               isSnapEnabled={editor.isSnapEnabled}
               onSnapToggle={() => editor.setIsSnapEnabled((v) => !v)}
-              // Gap highlight
               showGaps={editor.showGaps}
-              onToggleGaps={() => editor.setShowGaps((g) => !g)}
-              // Empty regions highlight
-              showEmptyRegions={editor.showEmptyRegions}
-              onToggleEmptyRegions={() => editor.setShowEmptyRegions((v) => !v)}
               emptyRegionsCount={emptyRegionsCount}
               onCreateCentroidCities={editor.createCentroidCities}
               // City actions / scatter / snapping
@@ -743,7 +740,7 @@ export default function MapEditorOverlay({
                   gapFeatures={editor.gapFeatures}
                   showGaps={editor.showGaps}
                   emptyRegionsFeatures={editor.emptyRegionsFeatures}
-                  showEmptyRegions={editor.showEmptyRegions}
+                  showEmptyRegions={editor.showGaps}
                   rulerPoints={editor.rulerPoints}
                   lassoGeometry={editor.lassoGeometry}
                   setLassoGeometry={editor.setLassoGeometry}

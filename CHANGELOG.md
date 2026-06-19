@@ -18,6 +18,8 @@ capability integer. Each release entry below lists which components advanced and
   - Implemented centralized event delegation in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx), routing map interaction events (`click`, `mousemove`, `mousedown`, `mouseup`, `contextmenu`, `dblclick`) dynamically to the active plugin's `mapEvents` hooks.
   - Unified the snapping pipeline by defining a shared `snapPoint` resolver context callback in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx), eliminating duplicated, copy-pasted guide-snapping math inside [useSubdivisionDraw.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionDraw.ts) and [useSubdivisionVertexEdit.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts).
   - Cleaned up event logic and options bar references across components to support dynamic toolbar items registration.
+  - Grouped Select/Pan (Select/Hand) and Lasso/Magic Wand (Lasso/Wand) into nested toolbar group items in [MapEditorToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx). Added right-click, click-and-hold (long-press) flyouts, caret indicators, and active sub-tool memory.
+  - Merged Highlight Gaps and Highlight Empty Regions into a single toggle state, and moved the toggle button from the options bar to the Map Controls Header in [EditorHeader.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/EditorHeader.tsx) (next to Toggle Grid and Center on Country).
 
 - **Map Editor Advanced Toolbar, Measuring, Lasso, & Subdivision Operations (Plans 042-044)**:
   - Added new editor modes (`"lasso-select"`, `"ruler"`, `"paint-fill"`, `"pan"`) to `EditorMode` in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
@@ -186,6 +188,10 @@ capability integer. Each release entry below lists which components advanced and
   - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
 
 ### Fixed
+
+- **Map Editor Initialization & Rendering ReferenceErrors**:
+  - Resolved `ReferenceError: Cannot access 'allFeatures' before initialization` inside `useMapEditor.ts` by re-ordering callbacks so that `applyEyedropper`, `applyMagicWand`, and `pathfinderOperation` are declared after the `allFeatures` memoized state.
+  - Resolved `ReferenceError: showGuides is not defined` inside `MapEditorOverlay.tsx` by destructuring `showGuides` and `setShowGuides` from the core overlay `state` delegate object.
 
 - **Global Hydrography Counting Discrepancy**: Fixed a bug in [geo-profile.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/geo-profile.ts) that caused global river/lake counts and lengths/areas to be reported on the country profile instead of clipping them to the country bounds via PostGIS intersections.
 

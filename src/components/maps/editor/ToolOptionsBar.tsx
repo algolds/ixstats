@@ -608,52 +608,22 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
   return (
     <div className="border-border bg-card/80 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-sm">
-      {/* ── Gap Highlight Toggle ── */}
-      {props.onToggleGaps &&
-        (mode === "view" || mode === "add-subdivision" || mode === "edit-subdivision") && (
-          <>
-            <button
-              onClick={props.onToggleGaps}
-              className={props.showGaps ? activeBtnClass : btnClass}
-              title={props.showGaps ? "Hide negative space gaps" : "Show negative space gaps"}
-            >
-              <Eye className="h-3.5 w-3.5" />
-              {props.showGaps ? "Highlight Gaps: ON" : "Highlight Gaps"}
-            </button>
-            <div className={dividerClass} />
-          </>
-        )}
-
-      {/* ── Empty Regions Highlight Toggle ── */}
-      {props.onToggleEmptyRegions &&
+      {/* ── Auto-Create Cities button when gaps/empty highlighting is active ── */}
+      {props.showGaps &&
+        props.emptyRegionsCount! > 0 &&
+        props.onCreateCentroidCities &&
         (mode === "view" ||
           mode === "add-city" ||
           mode === "edit-city" ||
           mode === "add-subdivision") && (
           <>
             <button
-              onClick={props.onToggleEmptyRegions}
-              className={props.showEmptyRegions ? activeBtnClass : btnClass}
-              title={
-                props.showEmptyRegions
-                  ? "Hide empty subdivisions"
-                  : "Highlight subdivisions without cities"
-              }
+              onClick={props.onCreateCentroidCities}
+              className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-[11px] text-emerald-500 hover:bg-emerald-500/20"
+              title="Create centroid-based cities in all empty regions"
             >
-              <Eye className="h-3.5 w-3.5" />
-              {props.showEmptyRegions ? "Highlight Empty: ON" : "Highlight Empty"}
+              <Sparkles className="h-3 w-3" /> Auto-Create Cities ({props.emptyRegionsCount})
             </button>
-            {props.showEmptyRegions &&
-              props.emptyRegionsCount! > 0 &&
-              props.onCreateCentroidCities && (
-                <button
-                  onClick={props.onCreateCentroidCities}
-                  className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-[11px] text-emerald-500 hover:bg-emerald-500/20"
-                  title="Create centroid-based cities in all empty regions"
-                >
-                  <Sparkles className="h-3 w-3" /> Auto-Create Cities ({props.emptyRegionsCount})
-                </button>
-              )}
             <div className={dividerClass} />
           </>
         )}
