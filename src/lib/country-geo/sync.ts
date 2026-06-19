@@ -246,3 +246,126 @@ export async function rebaseNationalFromGeography(db: any, countryId: string) {
 
   return country;
 }
+
+/**
+ * Distributes subdivision populations and GDP contributions down to the subdivision's approved cities.
+ * Uses either scaling proportional to existing populations or predefined category/status weights.
+ */
+export async function distributeSubdivisionDemographicsToCities(
+  db: any,
+  countryId: string,
+  scaleExisting: boolean
+) {
+  // 1. Fetch subdivisions for the country
+  const subdivisions = await db.subdivision.findMany({
+    where: { countryId, status: "approved" },
+  });
+
+  let totalCitiesUpdated = 0;
+
+  // 2. Iterate subdivisions
+  for (const sub of subdivisions) {
+    const subPop = sub.population ?? 0;
+    const subGdp = sub.gdpContribution ?? 0;
+
+    if (subPop <= 0) continue;
+
+    // Fetch approved cities in this subdivision
+    const cities = await db.city.findMany({
+      where: { subdivisionId: sub.id, countryId, status: "approved" },
+    });
+
+    if (cities.length === 0) continue;
+
+    let useScaling = scaleExisting;
+    let citiesSumPop = 0;
+    if (useScaling) {
+      citiesSumPop = cities.reduce((sum: number, c: any) => sum + (c.population ?? 0), 0);
+      if (citiesSumPop <= 0) {
+        useScaling = false; // Fallback to weights if sum of existing population is 0
+      }
+    }
+
+    const cityUpdates: Array<{ id: string; population: number; gdpContribution: number }> = [];
+
+    if (useScaling) {
+      // Scale existing population proportionally
+      const popScale = subPop / citiesSumPop;
+      const gdpPerCapita = subPop > 0 ? subGdp / subPop : 0;
+
+      let allocatedPop = 0;
+      let allocatedGdp = 0;
+
+      for (let i = 0; i < cities.length; i++) {
+        const city = cities[i];
+        let pop = Math.round((city.population ?? 0) * popScale);
+        let gdp = pop * gdpPerCapita;
+
+        // Rounding adjustment for last city
+        if (i === cities.length - 1) {
+          pop = subPop - allocatedPop;
+          gdp = subGdp - allocatedGdp;
+        }
+
+        allocatedPop += pop;
+        allocatedGdp += gdp;
+
+        cityUpdates.push({ id: city.id, population: pop, gdpContribution: gdp });
+      }
+    } else {
+      // Predefined weights
+      // National Capital = 5.0
+      // Subdivision Capital = 3.0
+      // standard City/major = 2.0
+      // Town = 0.5
+      // other/Village = 0.1
+      const getWeight = (c: any) => {
+        if (c.isNationalCapital) return 5.0;
+        if (c.isSubdivisionCapital || c.name === sub.capital) return 3.0;
+        if (c.type === "city" || c.type === "major") return 2.0;
+        if (c.type === "town") return 0.5;
+        return 0.1;
+      };
+
+      const weights = cities.map((c: any) => ({ city: c, w: getWeight(c) }));
+      const sumWeights = weights.reduce((sum: number, item: { w: number }) => sum + item.w, 0);
+
+      const gdpPerCapita = subPop > 0 ? subGdp / subPop : 0;
+
+      let allocatedPop = 0;
+      let allocatedGdp = 0;
+
+      for (let i = 0; i < weights.length; i++) {
+        const { city, w } = weights[i];
+        let pop = Math.round(subPop * (w / sumWeights));
+        let gdp = pop * gdpPerCapita;
+
+        // Rounding adjustment for last city
+        if (i === weights.length - 1) {
+          pop = subPop - allocatedPop;
+          gdp = subGdp - allocatedGdp;
+        }
+
+        allocatedPop += pop;
+        allocatedGdp += gdp;
+
+        cityUpdates.push({ id: city.id, population: pop, gdpContribution: gdp });
+      }
+    }
+
+    // Write updates to database
+    for (const update of cityUpdates) {
+      await db.city.update({
+        where: { id: update.id },
+        data: {
+          population: update.population,
+          gdpContribution: update.gdpContribution,
+        },
+      });
+      totalCitiesUpdated++;
+    }
+  }
+
+  return { success: true, totalCitiesUpdated };
+}
+

@@ -3,6 +3,7 @@ import {
   rebaseNationalFromGeography,
   getCountryGeoBundle,
   syncGeographicDemographics,
+  distributeSubdivisionDemographicsToCities,
 } from "../country-geo-service";
 
 describe("country-geo-service - Rollups & Reconciliation", () => {
@@ -227,4 +228,53 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
       expect(bundle.rollups.gdpCoverage).toBe(1.0);
     });
   });
+
+  describe("distributeSubdivisionDemographicsToCities", () => {
+    it("should distribute proportionally using existing populations when scaleExisting is true", async () => {
+      mockDb.subdivision.findMany.mockResolvedValue([
+        { id: "sub-1", name: "Province 1", population: 100000, gdpContribution: 500000 },
+      ]);
+      mockDb.city.findMany.mockResolvedValue([
+        { id: "city-1", name: "City 1", population: 3000, gdpContribution: 10000, subdivisionId: "sub-1" },
+        { id: "city-2", name: "City 2", population: 7000, gdpContribution: 20000, subdivisionId: "sub-1" },
+      ]);
+
+      const result = await distributeSubdivisionDemographicsToCities(mockDb, countryId, true);
+
+      expect(result.success).toBe(true);
+      expect(result.totalCitiesUpdated).toBe(2);
+
+      expect(mockDb.city.update).toHaveBeenNthCalledWith(1, {
+        where: { id: "city-1" },
+        data: { population: 30000, gdpContribution: 150000 },
+      });
+      expect(mockDb.city.update).toHaveBeenNthCalledWith(2, {
+        where: { id: "city-2" },
+        data: { population: 70000, gdpContribution: 350000 },
+      });
+    });
+
+    it("should distribute by category weights when scaleExisting is false", async () => {
+      mockDb.subdivision.findMany.mockResolvedValue([
+        { id: "sub-1", name: "Province 1", population: 100000, gdpContribution: 500000, capital: "City 1" },
+      ]);
+      mockDb.city.findMany.mockResolvedValue([
+        { id: "city-1", name: "City 1", population: 0, gdpContribution: 0, subdivisionId: "sub-1", isSubdivisionCapital: true },
+        { id: "city-2", name: "City 2", population: 0, gdpContribution: 0, subdivisionId: "sub-1", type: "town" },
+      ]);
+
+      const result = await distributeSubdivisionDemographicsToCities(mockDb, countryId, false);
+
+      expect(result.success).toBe(true);
+      expect(mockDb.city.update).toHaveBeenNthCalledWith(1, {
+        where: { id: "city-1" },
+        data: { population: 85714, gdpContribution: 428570 },
+      });
+      expect(mockDb.city.update).toHaveBeenNthCalledWith(2, {
+        where: { id: "city-2" },
+        data: { population: 14286, gdpContribution: 71430 },
+      });
+    });
+  });
 });
+

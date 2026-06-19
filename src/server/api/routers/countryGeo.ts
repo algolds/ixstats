@@ -21,6 +21,7 @@ import {
   upsertMapLabel,
   updateGeoRollupMode,
   rebaseNationalFromGeography,
+  distributeSubdivisionDemographicsToCities,
 } from "~/lib/country-geo-service";
 
 export const countryGeoRouter = createTRPCRouter({
@@ -438,6 +439,42 @@ export const countryGeoRouter = createTRPCRouter({
       broadcastMapUpdate("national-rebase", input.countryId);
 
       return updated;
+    }),
+
+  /**
+   * Distribute subdivision population and GDP down to cities.
+   */
+  distributeSubdivisionDemographics: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        scaleExisting: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country as any;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+
+      const result = await distributeSubdivisionDemographicsToCities(
+        ctx.db,
+        input.countryId,
+        input.scaleExisting
+      );
+
+      // Invalidate caches
+      await invalidateCache([
+        "geoCore.getCountryFeatures",
+        "geoCore.getMapBundle",
+        "geoCore.getWorldMap",
+        "geoCore.getAllMapFeatures",
+        "countryGeo.getCountryGeoBundle",
+        "countries.getByIdWithEconomicData",
+      ]);
+      broadcastMapUpdate("cities-distribution", input.countryId);
+
+      return result;
     }),
 
   /**

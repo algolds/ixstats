@@ -132,8 +132,10 @@ function RollupBody({
   onUpdated: () => void;
 }) {
   const [mode, setMode] = useState(geoRollupMode);
+  const [scaleExisting, setScaleExisting] = useState(true);
   const updateMode = api.countryGeo.updateGeoRollupMode.useMutation({ onSuccess: onUpdated });
   const rebase = api.countryGeo.rebaseNationalFromGeography.useMutation({ onSuccess: onUpdated });
+  const distribute = api.countryGeo.distributeSubdivisionDemographics.useMutation({ onSuccess: onUpdated });
 
   const popPct = Math.round(rollups.populationCoverage * 100);
   const gdpPct = Math.round(rollups.gdpCoverage * 100);
@@ -151,6 +153,16 @@ function RollupBody({
     )
       return;
     rebase.mutate({ countryId });
+  };
+
+  const handleDistribute = () => {
+    if (
+      !window.confirm(
+        "Auto-assign populations and GDP to cities based on their subdivision totals? This will overwrite populations and GDP contributions for all cities linked to subdivisions."
+      )
+    )
+      return;
+    distribute.mutate({ countryId, scaleExisting });
   };
 
   return (
@@ -221,6 +233,44 @@ function RollupBody({
         )}
         {rebase.isPending ? "Rebasing…" : "Rebase National from Geography"}
       </button>
+
+      {/* Demographic Redistribution */}
+      <div className="border-t border-border/60 my-2 pt-3 space-y-3">
+        <div className="text-foreground text-[11px] font-semibold flex items-center gap-1">
+          <Settings className="h-3.5 w-3.5" />
+          Demographic Redistribution
+        </div>
+        <p className="text-muted-foreground/60 text-[10px]">
+          Auto-assign populations and GDP to cities within each subdivision based on their province's totals and weights.
+        </p>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="scaleExisting"
+            checked={scaleExisting}
+            onChange={(e) => setScaleExisting(e.target.checked)}
+            className="rounded border-border bg-background/50 h-3.5 w-3.5 text-primary focus:ring-0 cursor-pointer"
+          />
+          <label htmlFor="scaleExisting" className="text-muted-foreground text-[10px] select-none font-medium cursor-pointer">
+            Scale existing populations proportionally (if non-zero)
+          </label>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleDistribute}
+          disabled={distribute.isPending}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600/20 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50 transition-colors"
+        >
+          {distribute.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
+          {distribute.isPending ? "Distributing…" : "Distribute Populations to Cities"}
+        </button>
+      </div>
     </div>
   );
 }
