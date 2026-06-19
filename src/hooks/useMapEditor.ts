@@ -1729,12 +1729,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               name: feature.name,
               type: feature.properties.cityType || "city",
               coordinates,
-              population: feature.properties.population,
-              elevation: feature.properties.elevation,
-              foundedYear: feature.properties.foundedYear,
-              isNationalCapital: feature.properties.isNationalCapital,
-              isSubdivisionCapital: feature.properties.isSubdivisionCapital,
-              wikiPageTitle: feature.properties.wikiPageTitle,
+              population: feature.properties.population ?? undefined,
+              elevation: feature.properties.elevation ?? undefined,
+              foundedYear: feature.properties.foundedYear ?? undefined,
+              isNationalCapital: feature.properties.isNationalCapital ?? undefined,
+              isSubdivisionCapital: feature.properties.isSubdivisionCapital ?? undefined,
+              wikiPageTitle: feature.properties.wikiPageTitle ?? undefined,
             });
             if (selectedFeature?.id === featureId) {
               setCityForm((prev) => ({ ...prev, coordinates }));
@@ -1748,9 +1748,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               name: feature.name,
               category: feature.properties.category || "landmark",
               coordinates,
-              description: feature.properties.description,
-              icon: feature.properties.icon,
-              wikiPageTitle: feature.properties.wikiPageTitle,
+              description: feature.properties.description ?? undefined,
+              icon: feature.properties.icon ?? undefined,
+              wikiPageTitle: feature.properties.wikiPageTitle ?? undefined,
             });
             if (selectedFeature?.id === featureId) {
               setPOIForm((prev) => ({ ...prev, coordinates }));
@@ -1765,7 +1765,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               content: feature.properties.content || "",
               category: feature.properties.category || "cultural",
               coordinates,
-              ixTimeYear: feature.properties.ixTimeYear,
+              ixTimeYear: feature.properties.ixTimeYear ?? undefined,
             });
             if (selectedFeature?.id === featureId) {
               setStoryPinForm((prev) => ({ ...prev, coordinates }));
@@ -1785,8 +1785,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
               opacity: feature.properties.opacity !== undefined ? feature.properties.opacity : 1,
               letterSpacing: feature.properties.letterSpacing || 0,
               fontWeight: feature.properties.fontWeight || "normal",
-              minZoom: feature.properties.minZoom,
-              maxZoom: feature.properties.maxZoom,
+              minZoom: feature.properties.minZoom ?? undefined,
+              maxZoom: feature.properties.maxZoom ?? undefined,
             });
             if (selectedFeature?.id === featureId) {
               setMapLabelForm((prev) => ({ ...prev, coordinates }));

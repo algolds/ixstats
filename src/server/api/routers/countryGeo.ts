@@ -127,19 +127,19 @@ export const countryGeoRouter = createTRPCRouter({
         name: z.string().min(1).max(100),
         type: z.string().default("city"),
         coordinates: z.tuple([z.number(), z.number()]).optional(),
-        population: z.number().int().min(0).optional(),
-        isNationalCapital: z.boolean().optional(),
-        isSubdivisionCapital: z.boolean().optional(),
-        subdivisionId: z.string().optional(),
-        wikiPageTitle: z.string().max(200).optional(),
-        elevation: z.number().int().min(-500).max(9000).optional(),
-        foundedYear: z.number().int().optional(),
-        gdpContribution: z.number().min(0).optional(),
-        economyOutput: z.number().min(0).optional(),
-        specialization: z.string().max(100).optional(),
-        infrastructureLevel: z.number().int().min(0).max(10).optional(),
-        mayorName: z.string().max(100).optional(),
-        isPort: z.boolean().optional(),
+        population: z.number().int().min(0).nullish(),
+        isNationalCapital: z.boolean().nullish(),
+        isSubdivisionCapital: z.boolean().nullish(),
+        subdivisionId: z.string().nullish(),
+        wikiPageTitle: z.string().max(200).nullish(),
+        elevation: z.number().int().min(-500).max(9000).nullish(),
+        foundedYear: z.number().int().nullish(),
+        gdpContribution: z.number().min(0).nullish(),
+        economyOutput: z.number().min(0).nullish(),
+        specialization: z.string().max(100).nullish(),
+        infrastructureLevel: z.number().int().min(0).max(10).nullish(),
+        mayorName: z.string().max(100).nullish(),
+        isPort: z.boolean().nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -184,16 +184,16 @@ export const countryGeoRouter = createTRPCRouter({
         type: z.string().default("province"),
         level: z.number().int().min(1).max(5).default(1),
         geometry: z.record(z.string(), z.unknown()).optional(),
-        governorName: z.string().max(100).optional(),
-        budgetShare: z.number().min(0).max(100).optional(),
-        governmentType: z.string().optional(),
+        governorName: z.string().max(100).nullish(),
+        budgetShare: z.number().min(0).max(100).nullish(),
+        governmentType: z.string().nullish(),
         color: z
           .string()
           .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
-          .optional(),
-        population: z.number().min(0).optional(),
-        areaSqKm: z.number().min(0).optional(),
-        gdpContribution: z.number().min(0).optional(),
+          .nullish(),
+        population: z.number().min(0).nullish(),
+        areaSqKm: z.number().min(0).nullish(),
+        gdpContribution: z.number().min(0).nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -266,9 +266,9 @@ export const countryGeoRouter = createTRPCRouter({
         name: z.string().min(1).max(100),
         category: z.string(),
         coordinates: z.tuple([z.number(), z.number()]).optional(),
-        description: z.string().max(1000).optional(),
-        icon: z.string().optional(),
-        wikiPageTitle: z.string().max(200).optional(),
+        description: z.string().max(1000).nullish(),
+        icon: z.string().nullish(),
+        wikiPageTitle: z.string().max(200).nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -306,7 +306,7 @@ export const countryGeoRouter = createTRPCRouter({
         content: z.string().min(1).max(15000),
         category: z.string(),
         coordinates: z.tuple([z.number(), z.number()]).optional(),
-        ixTimeYear: z.number().int().optional(),
+        ixTimeYear: z.number().int().nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -342,17 +342,17 @@ export const countryGeoRouter = createTRPCRouter({
         text: z.string().min(1).max(100),
         labelType: z.string(),
         coordinates: z.tuple([z.number(), z.number()]).optional(),
-        fontSize: z.number().min(8).max(48).optional(),
+        fontSize: z.number().min(8).max(48).nullish(),
         color: z
           .string()
           .regex(/^#[0-9a-fA-F]{6}$/)
-          .optional(),
-        rotation: z.number().min(-180).max(180).optional(),
-        opacity: z.number().min(0.1).max(1).optional(),
-        letterSpacing: z.number().min(0).max(0.5).optional(),
-        fontWeight: z.string().optional(),
-        minZoom: z.number().min(0).max(24).optional(),
-        maxZoom: z.number().min(0).max(24).optional(),
+          .nullish(),
+        rotation: z.number().min(-180).max(180).nullish(),
+        opacity: z.number().min(0.1).max(1).nullish(),
+        letterSpacing: z.number().min(0).max(0.5).nullish(),
+        fontWeight: z.string().nullish(),
+        minZoom: z.number().min(0).max(24).nullish(),
+        maxZoom: z.number().min(0).max(24).nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
