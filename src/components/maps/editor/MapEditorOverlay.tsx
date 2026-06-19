@@ -5,18 +5,10 @@
 import React, { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Globe,
-  Hexagon,
-  MapPin,
-  Landmark,
-  BookMarked,
-  Type as TypeIcon,
-  Route,
   MousePointer2,
   Pencil,
   Scissors,
   Merge,
-  CloudSun,
   Undo2,
   Redo2,
   Wrench,
@@ -32,32 +24,19 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
-import { FeatureList } from "~/components/maps/editor/FeatureList";
-import { EditorPanel } from "~/components/maps/editor/EditorPanel";
 import { EditorStatusBar } from "~/components/maps/editor/EditorStatusBar";
 import { ToolOptionsBar } from "~/components/maps/editor/ToolOptionsBar";
-import { BatchActionsBar } from "~/components/maps/editor/BatchActionsBar";
-import { LayerPanel } from "~/components/maps/editor/LayerPanel";
-import { MobileEditorSheet } from "~/components/maps/editor/MobileEditorSheet";
-import {
-  ProvinceImportWizard,
-  ProvincePreviewLayer,
-  FloatingImportPanel,
-} from "~/components/maps/editor/province-importer";
+import { ProvincePreviewLayer } from "~/components/maps/editor/province-importer";
 import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
-import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
+import { haversineDistance } from "~/components/maps/editor/utils/map-helpers";
+import { EditorWorkspaceLayout } from "./components/EditorWorkspaceLayout";
+import { MapEditorSidebarPanels } from "./components/MapEditorSidebarPanels";
+import { MapEditorAuxiliaryOverlays } from "./components/MapEditorAuxiliaryOverlays";
 
 import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapEditorOverlayState";
 import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
-import { LinkageValidationPanel } from "~/components/maps/editor/components/LinkageValidationPanel";
-import { SovereigntyPanel } from "~/components/maps/editor/components/SovereigntyPanel";
-import { PropertiesPanelContent } from "~/components/maps/editor/components/PropertiesPanelContent";
 import { RegionHoverTooltip } from "~/components/maps/editor/components/RegionHoverTooltip";
-import { EditorDialogs } from "~/components/maps/editor/components/EditorDialogs";
-import { MapEditorWelcomeModal } from "~/components/maps/editor/components/MapEditorWelcomeModal";
-import { EditorContextMenuWrapper } from "~/components/maps/editor/components/EditorContextMenuWrapper";
 import {
   EditorLoadingScreen,
   EditorErrorBoundary,
@@ -117,65 +96,11 @@ export default function MapEditorOverlay({
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
 
-  const [leftSplitRatio, setLeftSplitRatio] = useState(0.5);
-  const [rightSplitRatio, setRightSplitRatio] = useState(0.5);
-  const [bottomSplitRatio, setBottomSplitRatio] = useState(0.5);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [brushRadius, setBrushRadius] = useState(20);
   const [brushTargetId, setBrushTargetId] = useState<string | null>(null);
 
-  const leftSidebarRef = useRef<HTMLDivElement>(null);
-  const rightSidebarRef = useRef<HTMLDivElement>(null);
-  const bottomDockRef = useRef<HTMLDivElement>(null);
 
-  const handleVerticalSplitResize = (side: "left" | "right") => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startY = e.clientY;
-    const startRatio = side === "left" ? leftSplitRatio : rightSplitRatio;
-    const ref = side === "left" ? leftSidebarRef : rightSidebarRef;
-    const containerHeight = ref.current?.getBoundingClientRect().height || 500;
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaY = moveEvent.clientY - startY;
-      const deltaRatio = deltaY / containerHeight;
-      const newRatio = Math.min(0.85, Math.max(0.15, startRatio + deltaRatio));
-      if (side === "left") {
-        setLeftSplitRatio(newRatio);
-      } else {
-        setRightSplitRatio(newRatio);
-      }
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  };
-
-  const handleHorizontalSplitResize = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startRatio = bottomSplitRatio;
-    const containerWidth = bottomDockRef.current?.getBoundingClientRect().width || 800;
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaRatio = deltaX / containerWidth;
-      const newRatio = Math.min(0.85, Math.max(0.15, startRatio + deltaRatio));
-      setBottomSplitRatio(newRatio);
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  };
 
   const state = useMapEditorOverlayState({
     countryId,
@@ -232,8 +157,6 @@ export default function MapEditorOverlay({
     selectedRouteId,
     handleRouteClick,
     handleSelectFeature,
-    handleEditFeature,
-    handleDeleteFeature,
     toolsDisabled,
     cursorTerrainInfo,
     featureCounts,
@@ -241,177 +164,47 @@ export default function MapEditorOverlay({
     setPanelsLocked,
   } = state;
 
-  const renderLayersElement = () => (
-    <LayerPanel
-      layers={[
-        {
-          id: "border",
-          name: "Country Border",
-          icon: Globe,
-          visible: layerStates.border?.visible ?? true,
-          locked: false,
-        },
-        {
-          id: "climate",
-          name: "Climate Zones",
-          icon: CloudSun,
-          visible: editorVisibleLayers.has("climate"),
-          locked: true,
-        },
-        {
-          id: "regions",
-          name: "Regions",
-          icon: Hexagon,
-          visible: layerStates.regions?.visible ?? true,
-          locked: layerStates.regions?.locked ?? false,
-          opacity: layerStates.regions?.opacity ?? 0.6,
-        },
-        {
-          id: "cities",
-          name: "Cities",
-          icon: MapPin,
-          visible: layerStates.cities?.visible ?? true,
-          locked: layerStates.cities?.locked ?? false,
-          opacity: layerStates.cities?.opacity ?? 1,
-        },
-        {
-          id: "pois",
-          name: "POIs",
-          icon: Landmark,
-          visible: layerStates.pois?.visible ?? true,
-          locked: layerStates.pois?.locked ?? false,
-          opacity: layerStates.pois?.opacity ?? 1,
-        },
-        {
-          id: "stories",
-          name: "Story Pins",
-          icon: BookMarked,
-          visible: layerStates.stories?.visible ?? true,
-          locked: layerStates.stories?.locked ?? false,
-          opacity: layerStates.stories?.opacity ?? 1,
-        },
-        {
-          id: "labels",
-          name: "Labels",
-          icon: TypeIcon,
-          visible: layerStates.labels?.visible ?? true,
-          locked: layerStates.labels?.locked ?? false,
-          opacity: layerStates.labels?.opacity ?? 1,
-        },
-        {
-          id: "routes",
-          name: "Routes",
-          icon: Route,
-          visible: layerStates.routes?.visible ?? true,
-          locked: layerStates.routes?.locked ?? false,
-          opacity: layerStates.routes?.opacity ?? 1,
-        },
-      ]}
-      onToggleVisibility={(id) => {
-        if (id === "climate") {
-          toggleEditorLayer("climate");
-          return;
-        }
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id],
-            visible: !(prev[id]?.visible ?? true),
-          },
-        }));
-      }}
-      onToggleLock={(id) => {
-        if (id === "climate") return;
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id],
-            locked: !(prev[id]?.locked ?? false),
-          },
-        }));
-      }}
-      onOpacityChange={(id, val) => {
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id],
-            opacity: val,
-          },
-        }));
-      }}
-      featureCounts={featureCounts}
-      features={editor.allFeatures}
-      selectedFeature={editor.selectedFeature}
-      onSelectFeature={handleSelectFeature}
-      onEditFeature={handleEditFeature}
-      onDeleteFeature={handleDeleteFeature}
-      selectedIds={editor.selectedIds}
-      onToggleSelect={editor.toggleSelectId}
-    />
-  );
+  const selectedCitiesCount = React.useMemo(() => {
+    return editor.allFeatures.filter((f) => editor.selectedIds.has(f.id) && f.type === "city")
+      .length;
+  }, [editor.allFeatures, editor.selectedIds]);
 
-  const renderRightPanelContent = () => (
-    <PropertiesPanelContent
-      {...state}
+  const emptyRegionsCount = React.useMemo(() => {
+    return editor.emptyRegionsFeatures?.features?.length ?? 0;
+  }, [editor.emptyRegionsFeatures]);
+
+  const rulerDistance = React.useMemo(() => {
+    let total = 0;
+    const pts = editor.rulerPoints;
+    if (pts && pts.length > 1) {
+      for (let i = 0; i < pts.length - 1; i++) {
+        total += haversineDistance(pts[i]!, pts[i + 1]!);
+      }
+    }
+    return total;
+  }, [editor.rulerPoints]);
+
+  const [routeTypes, setRouteTypes] = React.useState<string[]>(["road"]);
+
+  const renderPanel = (panelId: "panelA" | "panelB") => (
+    <MapEditorSidebarPanels
+      panelId={panelId}
+      state={state}
+      panelConfigs={panelConfigs}
+      setPanelConfigs={setPanelConfigs}
+      activeSidebarTab={activeSidebarTab}
+      setActiveSidebarTab={setActiveSidebarTab}
+      handleMoveTab={handleMoveTab}
+      handleChangePanelPlacement={handleChangePanelPlacement}
+      layerStates={layerStates}
+      setLayerStates={setLayerStates}
+      editorVisibleLayers={editorVisibleLayers}
+      toggleEditorLayer={toggleEditorLayer}
+      featureCounts={featureCounts}
       brushTargetId={brushTargetId}
       setBrushTargetId={setBrushTargetId}
     />
   );
-
-  const renderPanel = (panelId: "panelA" | "panelB") => {
-    const config = panelConfigs[panelId];
-    const isStacked = panelConfigs.panelA.placement === panelConfigs.panelB.placement;
-    // World editor: panelB must always have the properties tab — it is the primary
-    // interaction surface for the properties panel content. localStorage may have
-    // a stale config from a prior session where all tabs were dragged out.
-    const tabs =
-      panelId === "panelB" && isWorldMode && !config.tabs.includes("properties")
-        ? [...config.tabs, "properties"]
-        : config.tabs;
-    return (
-      <EditorPanel
-        mode={editor.mode}
-        collapsed={config.collapsed}
-        onToggleCollapse={() =>
-          setPanelConfigs((prev) => ({
-            ...prev,
-            [panelId]: { ...prev[panelId], collapsed: !prev[panelId].collapsed },
-          }))
-        }
-        tabs={tabs}
-        onTabDrop={(tabId) => handleMoveTab(tabId, panelId)}
-        placement={config.placement}
-        onChangePlacement={(placement) => handleChangePanelPlacement(panelId, placement)}
-        isWorldMode={isWorldMode}
-        activeTabOverride={panelId === "panelA" ? activeSidebarTab : undefined}
-        onTabChange={(tab) => {
-          // panelB is independent — only sync the page-level tab when panelA changes
-          if (panelId === "panelA") setActiveSidebarTab(tab as any);
-        }}
-        linkagesContent={<LinkageValidationPanel {...state} />}
-        sovereigntyContent={<SovereigntyPanel {...state} />}
-        featureCount={editor.allFeatures.length}
-        featuresLoading={editor.featuresLoading}
-        featureListContent={
-          <FeatureList
-            features={editor.allFeatures}
-            selectedFeature={editor.selectedFeature}
-            onSelectFeature={handleSelectFeature}
-            onEditFeature={handleEditFeature}
-            onDeleteFeature={handleDeleteFeature}
-            isLoading={editor.featuresLoading}
-            selectedIds={editor.selectedIds}
-            onToggleSelect={editor.toggleSelectId}
-            collapseAll={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")}
-          />
-        }
-        layersContent={renderLayersElement()}
-        propertiesContent={renderRightPanelContent()}
-        isStacked={isStacked}
-        panelsLocked={panelsLocked}
-      />
-    );
-  };
 
   const showLoadingScreen = !countryInfo && !isWorldMode;
 
@@ -478,6 +271,8 @@ export default function MapEditorOverlay({
             onLabelBoldChange={(bold) =>
               editor.setMapLabelForm((f) => ({ ...f, fontWeight: bold ? "bold" : "normal" }))
             }
+            routeTypes={routeTypes}
+            onRouteTypesChange={setRouteTypes}
             selectedCount={
               editor.selectedIds.size > 0
                 ? editor.selectedIds.size
@@ -512,6 +307,57 @@ export default function MapEditorOverlay({
             }
             isSnapEnabled={editor.isSnapEnabled}
             onSnapToggle={() => editor.setIsSnapEnabled((v) => !v)}
+            // Gap highlight
+            showGaps={editor.showGaps}
+            onToggleGaps={() => editor.setShowGaps((g) => !g)}
+            // Empty regions highlight
+            showEmptyRegions={editor.showEmptyRegions}
+            onToggleEmptyRegions={() => editor.setShowEmptyRegions((v) => !v)}
+            emptyRegionsCount={emptyRegionsCount}
+            onCreateCentroidCities={editor.createCentroidCities}
+            // City actions / scatter / snapping
+            onScatterCities={editor.scatterCities}
+            onSnapCityToSubdivisionBorder={
+              editor.selectedFeature
+                ? () => editor.snapCityToSubdivisionBorder(editor.selectedFeature.id)
+                : undefined
+            }
+            onSnapCityToCoastline={
+              editor.selectedFeature
+                ? () => editor.snapCityToCoastline(editor.selectedFeature.id)
+                : undefined
+            }
+            cityCoordinates={editor.selectedFeature?.coordinates}
+            onCityCoordinatesChange={
+              editor.selectedFeature
+                ? (coords) =>
+                    editor.updatePointCoordinates(
+                      editor.selectedFeature.id,
+                      editor.selectedFeature.type,
+                      coords
+                    )
+                : undefined
+            }
+            isPickingLocation={editor.isPickingLocation}
+            onTogglePickingLocation={() => editor.setIsPickingLocation((p) => !p)}
+            // Subdivision Actions
+            onStartSplitSubdivision={() => editor.setMode("split-subdivision")}
+            onExecuteSplitSubdivision={editor.executeSplitSubdivision}
+            onMergeSelectedSubdivisions={editor.mergeSelectedSubdivisions}
+            onApplyGeometryTransformation={editor.applyGeometryTransformation}
+            onCancelSplit={() => editor.setMode("edit-subdivision")}
+            selectedFeature={editor.selectedFeature}
+            // Advanced City Operations
+            selectedCitiesCount={selectedCitiesCount}
+            onMergeSelectedCities={editor.mergeSelectedCities}
+            onScalePopulation={editor.scaleSelectedCitiesPopulation}
+            onRotateCities={editor.rotateSelectedCities}
+            onSplitCity={editor.splitCity}
+            subdivisionColor={editor.subdivisionForm.color}
+            onSubdivisionColorChange={(c) => editor.setSubdivisionForm((p) => ({ ...p, color: c }))}
+            rulerPoints={editor.rulerPoints}
+            rulerDistance={rulerDistance}
+            onClearRuler={editor.clearRuler}
           />
         </EditorErrorBoundary>
       )}
@@ -773,444 +619,157 @@ export default function MapEditorOverlay({
           )}
         </div>
 
-        {/* Left panel slot */}
-        {(!toolsDisabled || isWorldMode) && (
-          <div
-            ref={leftSidebarRef}
-            data-testid="editor-panel-A"
-            className="hidden h-full shrink-0 sm:flex"
-          >
-            {panelConfigs.panelA.placement === "left" &&
-              panelConfigs.panelB.placement !== "left" && (
-                <EditorErrorBoundary name="LeftPanel-A">
-                  {renderPanel("panelA")}
-                </EditorErrorBoundary>
-              )}
-            {panelConfigs.panelB.placement === "left" &&
-              panelConfigs.panelA.placement !== "left" && (
-                <EditorErrorBoundary name="RightPanel-B">
-                  {renderPanel("panelB")}
-                </EditorErrorBoundary>
-              )}
-            {panelConfigs.panelA.placement === "left" &&
-              panelConfigs.panelB.placement === "left" &&
-              (() => {
-                const collapsedA = panelConfigs.panelA.collapsed;
-                const collapsedB = panelConfigs.panelB.collapsed;
-
-                if (collapsedA && collapsedB) {
-                  return (
-                    <div className="bg-card/75 border-border flex h-full shrink-0 flex-col border-r backdrop-blur-md">
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                      <EditorErrorBoundary name="RightPanel-B">
-                        {renderPanel("panelB")}
-                      </EditorErrorBoundary>
-                    </div>
-                  );
-                }
-
-                if (collapsedA) {
-                  return (
-                    <div className="flex h-full shrink-0 flex-col">
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                      <div className="min-h-0 w-full flex-1">
-                        <EditorErrorBoundary name="RightPanel-B">
-                          {renderPanel("panelB")}
-                        </EditorErrorBoundary>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (collapsedB) {
-                  return (
-                    <div className="flex h-full shrink-0 flex-col">
-                      <div className="min-h-0 w-full flex-1">
-                        <EditorErrorBoundary name="LeftPanel-A">
-                          {renderPanel("panelA")}
-                        </EditorErrorBoundary>
-                      </div>
-                      <EditorErrorBoundary name="RightPanel-B">
-                        {renderPanel("panelB")}
-                      </EditorErrorBoundary>
-                    </div>
-                  );
-                }
-
-                // Both are expanded: vertical resizable split
-                return (
-                  <div className="flex h-full shrink-0 flex-col">
-                    <div
-                      style={{ height: `calc(${leftSplitRatio * 100}% - 2px)` }}
-                      className="min-h-0 w-full shrink-0"
-                    >
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                    </div>
-                    {!panelsLocked ? (
-                      <div
-                        className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
-                        onMouseDown={handleVerticalSplitResize("left")}
-                      />
-                    ) : (
-                      <div className="bg-border h-px w-full shrink-0" />
-                    )}
-                    <div className="min-h-0 w-full flex-1">
-                      <EditorErrorBoundary name="RightPanel-B">
-                        {renderPanel("panelB")}
-                      </EditorErrorBoundary>
-                    </div>
-                  </div>
-                );
-              })()}
-          </div>
-        )}
-
-        {/* Center slot (Canvas + Bottom panels) */}
-        <div className="relative flex h-full min-w-0 flex-1 flex-col">
-          {/* Map canvas */}
-          <div className="relative min-h-0 min-w-0 flex-1" data-map-container>
-            {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#0a1628]/80 backdrop-blur-sm">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
-                <div className="relative z-10 flex flex-col items-center gap-4 text-center">
-                  <div className="relative h-16 w-16">
-                    <div className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full border border-dashed border-emerald-500/30" />
-                    <div className="absolute inset-2 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="border-muted-foreground/20 h-6 w-6 animate-spin rounded-full border-2 border-t-emerald-500" />
-                    </div>
-                  </div>
-                  <div>
-                    <h2 className="text-foreground text-xs font-semibold">
-                      Loading Border Editor...
-                    </h2>
-                    {countryInfo?.name && (
-                      <p className="text-muted-foreground mt-1 text-[10px]">{countryInfo.name}</p>
-                    )}
+        <EditorWorkspaceLayout
+          panelConfigs={panelConfigs}
+          panelsLocked={panelsLocked}
+          toolsDisabled={toolsDisabled}
+          isWorldMode={isWorldMode}
+          panelA={renderPanel("panelA")}
+          panelB={renderPanel("panelB")}
+        >
+          {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#0a1628]/80 backdrop-blur-sm">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
+              <div className="relative z-10 flex flex-col items-center gap-4 text-center">
+                <div className="relative h-16 w-16">
+                  <div className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full border border-dashed border-emerald-500/30" />
+                  <div className="absolute inset-2 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="border-muted-foreground/20 h-6 w-6 animate-spin rounded-full border-2 border-t-emerald-500" />
                   </div>
                 </div>
+                <div>
+                  <h2 className="text-foreground text-xs font-semibold">
+                    Loading Border Editor...
+                  </h2>
+                  {countryInfo?.name && (
+                    <p className="text-muted-foreground mt-1 text-[10px]">{countryInfo.name}</p>
+                  )}
+                </div>
               </div>
-            )}
-            <EditorErrorBoundary name="Map">
-              {isWorldMode && activeEditorMode === "view" ? (
-                <MapContainer
-                  showControls={true}
-                  showTools={false}
-                  showPopup={false}
-                  selectedCountryId={activeCountryId}
-                  onCountrySelect={handleMapSelect}
-                  forceFlatProjection={true}
-                  controlledVisibleLayers={editorVisibleLayers}
-                  onToggleLayer={toggleEditorLayer}
-                  hideEditButtons={true}
-                />
-              ) : isWorldMode && activeEditorMode === "border_edit" ? (
-                <BorderEditorMap
-                  geometry={borderState.geometry}
-                  neighborGeometries={neighborGeoms}
-                  mode={borderState.mode}
-                  splitLine={borderState.splitLine}
-                  mergeTargets={borderState.mergeTargets}
-                  selectedVertex={borderState.selectedVertex}
-                  onMapClick={borderActions.handleMapClick}
-                  onVertexDrag={borderActions.handleVertexDrag}
-                  onDragEnd={borderActions.commitDrag}
-                  worldMapLayers={worldMapLayers}
-                  brushRadius={brushRadius}
-                  brushTargetId={brushTargetId}
-                  onBrushStroke={borderActions.applyBrushTransfer}
-                  traceStart={borderState.traceStart}
-                />
-              ) : (
-                <EditorMap
-                  ref={mapRef}
-                  countryGeometry={editor.countryGeo?.geometry ?? null}
-                  countryCentroid={editor.countryGeo?.centroid ?? null}
-                  countryBbox={editor.countryGeo?.bbox ?? null}
-                  features={editor.allFeatures ?? []}
-                  mode={editor.mode}
-                  pendingCoordinates={editor.pendingCoordinates}
-                  pendingGeometry={editor.pendingGeometry}
-                  selectedFeature={editor.selectedFeature}
-                  onMapClick={editor.handleMapClick}
-                  isPickingLocation={editor.isPickingLocation}
-                  onDrawComplete={editor.handleDrawComplete}
-                  onGeometryUpdate={editor.updateSubdivisionGeometry}
-                  updatePointCoordinates={editor.updatePointCoordinates}
-                  onFeatureSelect={handleSelectFeature}
-                  worldMapLayers={worldMapLayers}
-                  editorVisibleLayers={editorVisibleLayers}
-                  showGrid={showGrid}
-                  routeWaypoints={editor.routeWaypoints}
-                  layerVisibility={{
-                    regions: layerStates.regions?.visible ?? true,
-                    cities: layerStates.cities?.visible ?? true,
-                    pois: layerStates.pois?.visible ?? true,
-                    stories: layerStates.stories?.visible ?? true,
-                    labels: layerStates.labels?.visible ?? true,
-                    routes: layerStates.routes?.visible ?? true,
-                  }}
-                  layerOpacity={{
-                    regions: layerStates.regions?.opacity ?? 0.6,
-                    cities: layerStates.cities?.opacity ?? 1,
-                    pois: layerStates.pois?.opacity ?? 1,
-                    stories: layerStates.stories?.opacity ?? 1,
-                    labels: layerStates.labels?.opacity ?? 1,
-                    routes: layerStates.routes?.opacity ?? 1,
-                  }}
-                  onFeatureContextMenu={(feature, screenPos) => {
-                    setContextMenu({
-                      x: screenPos.x,
-                      y: screenPos.y,
-                      feature,
-                    });
-                  }}
-                  rulerPoints={editor.rulerPoints}
-                  lassoGeometry={editor.lassoGeometry}
-                  setLassoGeometry={editor.setLassoGeometry}
-                  onAddRulerPoint={editor.addRulerPoint}
-                  onApplyLassoSelection={editor.applyLassoSelection}
-                  onApplyPaintFill={editor.applyPaintFill}
-                />
-              )}
-
-              {/* Border Editor Toolbar Overlay removed - integrated in horizontal options bar */}
-
-              {/* Region stats tooltip */}
-              <RegionHoverTooltip hoveredFeature={hoveredFeature} editorMode={editor.mode} />
-
-              {/* Province import preview overlay */}
-              {editor.mode === "import-provinces" &&
-                importer.currentProvinces.length > 0 &&
-                mapInstance && (
-                  <ProvincePreviewLayer
-                    map={mapInstance}
-                    provinces={importer.currentProvinces}
-                    countryBorder={importer.countryBorder}
-                    visible
-                    cities={importer.alignedCities}
-                  />
-                )}
-
-              {/* Transport routes overlay */}
-              {transportRouteData && mapInstance && (
-                <TransportOverlay
-                  map={mapInstance}
-                  routeData={transportRouteData}
-                  visible={layerStates.routes?.visible ?? true}
-                  selectedRouteId={selectedRouteId}
-                  onRouteClick={handleRouteClick}
-                  maxBuiltYear={historicalYear}
-                />
-              )}
-            </EditorErrorBoundary>
-          </div>
-
-          {/* Bottom panel slot */}
-          {(!toolsDisabled || isWorldMode) && (
-            <div
-              ref={bottomDockRef}
-              className="bg-card/40 hidden w-full shrink-0 flex-row backdrop-blur-md sm:flex"
-            >
-              {panelConfigs.panelA.placement === "bottom" &&
-                panelConfigs.panelB.placement !== "bottom" && (
-                  <EditorErrorBoundary name="BottomPanel-A">
-                    {renderPanel("panelA")}
-                  </EditorErrorBoundary>
-                )}
-              {panelConfigs.panelB.placement === "bottom" &&
-                panelConfigs.panelA.placement !== "bottom" && (
-                  <EditorErrorBoundary name="BottomPanel-B">
-                    {renderPanel("panelB")}
-                  </EditorErrorBoundary>
-                )}
-              {panelConfigs.panelA.placement === "bottom" &&
-                panelConfigs.panelB.placement === "bottom" &&
-                (() => {
-                  const collapsedA = panelConfigs.panelA.collapsed;
-                  const collapsedB = panelConfigs.panelB.collapsed;
-
-                  if (collapsedA && collapsedB) {
-                    return (
-                      <div className="bg-card/75 border-border flex w-full shrink-0 flex-row gap-2 border-t px-2 py-1 backdrop-blur-md">
-                        <EditorErrorBoundary name="BottomPanel-A">
-                          {renderPanel("panelA")}
-                        </EditorErrorBoundary>
-                        <EditorErrorBoundary name="BottomPanel-B">
-                          {renderPanel("panelB")}
-                        </EditorErrorBoundary>
-                      </div>
-                    );
-                  }
-
-                  if (collapsedA) {
-                    return (
-                      <div className="flex w-full shrink-0 flex-row items-center">
-                        <div className="mr-2 shrink-0">
-                          <EditorErrorBoundary name="BottomPanel-A">
-                            {renderPanel("panelA")}
-                          </EditorErrorBoundary>
-                        </div>
-                        <div className="h-full min-w-0 flex-1">
-                          <EditorErrorBoundary name="BottomPanel-B">
-                            {renderPanel("panelB")}
-                          </EditorErrorBoundary>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  if (collapsedB) {
-                    return (
-                      <div className="flex w-full shrink-0 flex-row items-center">
-                        <div className="h-full min-w-0 flex-1">
-                          <EditorErrorBoundary name="BottomPanel-A">
-                            {renderPanel("panelA")}
-                          </EditorErrorBoundary>
-                        </div>
-                        <div className="ml-2 shrink-0">
-                          <EditorErrorBoundary name="BottomPanel-B">
-                            {renderPanel("panelB")}
-                          </EditorErrorBoundary>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // Both are expanded: horizontal resizable split
-                  return (
-                    <div className="flex w-full shrink-0 flex-row">
-                      <div
-                        style={{ width: `calc(${bottomSplitRatio * 100}% - 2px)` }}
-                        className="h-full min-w-0 shrink-0"
-                      >
-                        <EditorErrorBoundary name="BottomPanel-A">
-                          {renderPanel("panelA")}
-                        </EditorErrorBoundary>
-                      </div>
-                      {!panelsLocked ? (
-                        <div
-                          className="h-full w-1 shrink-0 cursor-col-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
-                          onMouseDown={handleHorizontalSplitResize}
-                        />
-                      ) : (
-                        <div className="bg-border h-full w-px shrink-0" />
-                      )}
-                      <div className="h-full min-w-0 flex-1">
-                        <EditorErrorBoundary name="BottomPanel-B">
-                          {renderPanel("panelB")}
-                        </EditorErrorBoundary>
-                      </div>
-                    </div>
-                  );
-                })()}
             </div>
           )}
-        </div>
+          <EditorErrorBoundary name="Map">
+            {isWorldMode && activeEditorMode === "view" ? (
+              <MapContainer
+                showControls={true}
+                showTools={false}
+                showPopup={false}
+                selectedCountryId={activeCountryId}
+                onCountrySelect={handleMapSelect}
+                forceFlatProjection={true}
+                controlledVisibleLayers={editorVisibleLayers}
+                onToggleLayer={toggleEditorLayer}
+                hideEditButtons={true}
+              />
+            ) : isWorldMode && activeEditorMode === "border_edit" ? (
+              <BorderEditorMap
+                geometry={borderState.geometry}
+                neighborGeometries={neighborGeoms}
+                mode={borderState.mode}
+                splitLine={borderState.splitLine}
+                mergeTargets={borderState.mergeTargets}
+                selectedVertex={borderState.selectedVertex}
+                onMapClick={borderActions.handleMapClick}
+                onVertexDrag={borderActions.handleVertexDrag}
+                onDragEnd={borderActions.commitDrag}
+                worldMapLayers={worldMapLayers}
+                brushRadius={brushRadius}
+                brushTargetId={brushTargetId}
+                onBrushStroke={borderActions.applyBrushTransfer}
+                traceStart={borderState.traceStart}
+              />
+            ) : (
+              <EditorMap
+                ref={mapRef}
+                countryGeometry={editor.countryGeo?.geometry ?? null}
+                countryCentroid={editor.countryGeo?.centroid ?? null}
+                countryBbox={editor.countryGeo?.bbox ?? null}
+                features={editor.allFeatures ?? []}
+                mode={editor.mode}
+                pendingCoordinates={editor.pendingCoordinates}
+                pendingGeometry={editor.pendingGeometry}
+                selectedFeature={editor.selectedFeature}
+                onMapClick={editor.handleMapClick}
+                isPickingLocation={editor.isPickingLocation}
+                onDrawComplete={editor.handleDrawComplete}
+                onGeometryUpdate={editor.updateSubdivisionGeometry}
+                updatePointCoordinates={editor.updatePointCoordinates}
+                onFeatureSelect={handleSelectFeature}
+                worldMapLayers={worldMapLayers}
+                editorVisibleLayers={editorVisibleLayers}
+                showGrid={showGrid}
+                routeWaypoints={editor.routeWaypoints}
+                editingRouteId={editor.editingRouteId}
+                editingRouteVertices={editor.editingRouteVertices}
+                onRouteVerticesUpdate={editor.setEditingRouteVertices}
+                onRouteEditCommit={editor.commitRouteEdit}
+                onRouteEditCancel={editor.cancelRouteEdit}
+                layerVisibility={{
+                  regions: layerStates.regions?.visible ?? true,
+                  cities: layerStates.cities?.visible ?? true,
+                  pois: layerStates.pois?.visible ?? true,
+                  stories: layerStates.stories?.visible ?? true,
+                  labels: layerStates.labels?.visible ?? true,
+                  routes: layerStates.routes?.visible ?? true,
+                }}
+                layerOpacity={{
+                  regions: layerStates.regions?.opacity ?? 0.6,
+                  cities: layerStates.cities?.opacity ?? 1,
+                  pois: layerStates.pois?.opacity ?? 1,
+                  stories: layerStates.stories?.opacity ?? 1,
+                  labels: layerStates.labels?.opacity ?? 1,
+                  routes: layerStates.routes?.opacity ?? 1,
+                }}
+                onFeatureContextMenu={(feature, screenPos) => {
+                  setContextMenu({
+                    x: screenPos.x,
+                    y: screenPos.y,
+                    feature,
+                  });
+                }}
+                gapFeatures={editor.gapFeatures}
+                showGaps={editor.showGaps}
+                emptyRegionsFeatures={editor.emptyRegionsFeatures}
+                showEmptyRegions={editor.showEmptyRegions}
+                rulerPoints={editor.rulerPoints}
+                lassoGeometry={editor.lassoGeometry}
+                setLassoGeometry={editor.setLassoGeometry}
+                onAddRulerPoint={editor.addRulerPoint}
+                onApplyLassoSelection={editor.applyLassoSelection}
+                onApplyPaintFill={editor.applyPaintFill}
+              />
+            )}
 
-        {/* Right panel slot */}
-        {(!toolsDisabled || isWorldMode) && (
-          <div
-            ref={rightSidebarRef}
-            data-testid="editor-panel-B"
-            className="hidden h-full shrink-0 sm:flex"
-          >
-            {panelConfigs.panelA.placement === "right" &&
-              panelConfigs.panelB.placement !== "right" && (
-                <EditorErrorBoundary name="LeftPanel-A">
-                  {renderPanel("panelA")}
-                </EditorErrorBoundary>
+            {/* Region stats tooltip */}
+            <RegionHoverTooltip hoveredFeature={hoveredFeature} editorMode={editor.mode} />
+
+            {/* Province import preview overlay */}
+            {editor.mode === "import-provinces" &&
+              importer.currentProvinces.length > 0 &&
+              mapInstance && (
+                <ProvincePreviewLayer
+                  map={mapInstance}
+                  provinces={importer.currentProvinces}
+                  countryBorder={importer.countryBorder}
+                  visible
+                  cities={importer.alignedCities}
+                />
               )}
-            {panelConfigs.panelB.placement === "right" &&
-              panelConfigs.panelA.placement !== "right" && (
-                <EditorErrorBoundary name="RightPanel-B">
-                  {renderPanel("panelB")}
-                </EditorErrorBoundary>
-              )}
-            {panelConfigs.panelA.placement === "right" &&
-              panelConfigs.panelB.placement === "right" &&
-              (() => {
-                const collapsedA = panelConfigs.panelA.collapsed;
-                const collapsedB = panelConfigs.panelB.collapsed;
 
-                if (collapsedA && collapsedB) {
-                  return (
-                    <div className="bg-card/75 border-border flex h-full shrink-0 flex-col border-l backdrop-blur-md">
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                      <EditorErrorBoundary name="RightPanel-B">
-                        {renderPanel("panelB")}
-                      </EditorErrorBoundary>
-                    </div>
-                  );
-                }
-
-                if (collapsedA) {
-                  return (
-                    <div className="flex h-full shrink-0 flex-col">
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                      <div className="min-h-0 w-full flex-1">
-                        <EditorErrorBoundary name="RightPanel-B">
-                          {renderPanel("panelB")}
-                        </EditorErrorBoundary>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (collapsedB) {
-                  return (
-                    <div className="flex h-full shrink-0 flex-col">
-                      <div className="min-h-0 w-full flex-1">
-                        <EditorErrorBoundary name="LeftPanel-A">
-                          {renderPanel("panelA")}
-                        </EditorErrorBoundary>
-                      </div>
-                      <EditorErrorBoundary name="RightPanel-B">
-                        {renderPanel("panelB")}
-                      </EditorErrorBoundary>
-                    </div>
-                  );
-                }
-
-                // Both are expanded: vertical resizable split
-                return (
-                  <div className="flex h-full shrink-0 flex-col">
-                    <div
-                      style={{ height: `calc(${rightSplitRatio * 100}% - 2px)` }}
-                      className="min-h-0 w-full shrink-0"
-                    >
-                      <EditorErrorBoundary name="LeftPanel-A">
-                        {renderPanel("panelA")}
-                      </EditorErrorBoundary>
-                    </div>
-                    {!panelsLocked ? (
-                      <div
-                        className="h-1 w-full shrink-0 cursor-row-resize bg-neutral-200 transition-colors hover:bg-blue-500/50 dark:bg-neutral-800 dark:hover:bg-blue-500/50"
-                        onMouseDown={handleVerticalSplitResize("right")}
-                      />
-                    ) : (
-                      <div className="bg-border h-px w-full shrink-0" />
-                    )}
-                    <div className="min-h-0 w-full flex-1">
-                      <EditorErrorBoundary name="RightPanel-B">
-                        {renderPanel("panelB")}
-                      </EditorErrorBoundary>
-                    </div>
-                  </div>
-                );
-              })()}
-          </div>
-        )}
+            {/* Transport routes overlay */}
+            {transportRouteData && mapInstance && (
+              <TransportOverlay
+                map={mapInstance}
+                routeData={transportRouteData}
+                visible={layerStates.routes?.visible ?? true}
+                selectedRouteId={selectedRouteId}
+                onRouteClick={handleRouteClick}
+                maxBuiltYear={historicalYear}
+              />
+            )}
+          </EditorErrorBoundary>
+        </EditorWorkspaceLayout>
       </div>
 
       {/* Mobile tool rail */}
@@ -1245,94 +804,19 @@ export default function MapEditorOverlay({
         featureCount={editor.allFeatures.length}
       />
 
-      {/* Mobile sheets */}
-      {editor.mode !== "view" && editor.mode !== "import-provinces" && (
-        <div className="sm:hidden">
-          <MobileEditorSheet
-            onClose={() => editor.resetForm()}
-            title="Properties"
-            isEditMode={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")}
-            featureListContent={
-              <FeatureList
-                features={editor.allFeatures}
-                selectedFeature={editor.selectedFeature}
-                onSelectFeature={handleSelectFeature}
-                onEditFeature={handleEditFeature}
-                onDeleteFeature={handleDeleteFeature}
-                isLoading={editor.featuresLoading}
-              />
-            }
-          >
-            {renderRightPanelContent()}
-          </MobileEditorSheet>
-        </div>
-      )}
-
-      {/* Batch Actions Bar */}
-      {editor.selectedIds.size > 1 && (
-        <BatchActionsBar
-          selectedCount={editor.selectedIds.size}
-          subdivisionCount={
-            editor.allFeatures.filter(
-              (f) => editor.selectedIds.has(f.id) && f.type === "subdivision"
-            ).length
-          }
-          onBatchDelete={async () => {
-            if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
-            await editor.bulkDeleteSelected();
-          }}
-          onDeselectAll={editor.clearMultiSelect}
-          onBulkEdit={async (field, value) => {
-            const result = await editor.bulkEditSelected(field, value);
-            if (result.failCount > 0) {
-              alert(
-                `Bulk edit: ${result.successCount} updated, ${result.failCount} failed. Check console for details.`
-              );
-            }
-            return result;
-          }}
-          isMutating={editor.isMutating}
-        />
-      )}
-
-      {/* Context Menu */}
-      <EditorContextMenuWrapper
+      {/* Auxiliary Overlays (mobile sheets, welcome modal, import wizards, shortcuts help) */}
+      <MapEditorAuxiliaryOverlays
+        state={state}
+        onExit={onExit}
+        showWelcomeModal={showWelcomeModal}
+        setShowWelcomeModal={setShowWelcomeModal}
+        showShortcuts={showShortcuts}
+        setShowShortcuts={setShowShortcuts}
         contextMenu={contextMenu}
         setContextMenu={setContextMenu}
-        editor={editor}
+        brushTargetId={brushTargetId}
+        setBrushTargetId={setBrushTargetId}
       />
-
-      {/* Keyboard Shortcut Sheet */}
-      {showShortcuts && <KeyboardShortcutSheet onClose={() => setShowShortcuts(false)} />}
-
-      {/* Province Import Wizard Floating Panel */}
-      {editor.mode === "import-provinces" && (
-        <FloatingImportPanel
-          onClose={() => {
-            importer.reset();
-            editor.setMode("view");
-          }}
-        >
-          <ProvinceImportWizard
-            importer={importer}
-            onComplete={() => {
-              editor.setMode("view");
-              editor.refetchFeatures();
-              importer.reset();
-            }}
-            onCancel={() => {
-              importer.reset();
-              editor.setMode("view");
-            }}
-          />
-        </FloatingImportPanel>
-      )}
-
-      {/* Editor Dialogs */}
-      <EditorDialogs {...state} onExit={onExit} />
-
-      {/* Onboarding Welcome Modal */}
-      <MapEditorWelcomeModal isOpen={showWelcomeModal} onClose={() => setShowWelcomeModal(false)} />
     </div>
   );
 }
