@@ -214,6 +214,72 @@ function TransformGeometryPopover({
   );
 }
 
+function CityTransformationsPopover({
+  selectedCitiesCount,
+  onScalePopulation,
+  onRotateCities,
+}: {
+  selectedCitiesCount: number;
+  onScalePopulation: (factor: number) => void;
+  onRotateCities: (angle: number) => void;
+}) {
+  const [scaleVal, setScaleVal] = useState(1);
+  const [rotateVal, setRotateVal] = useState(0);
+
+  return (
+    <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-4 p-3">
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          Scale Population
+        </Label>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={0.5}
+            max={2.0}
+            step={0.1}
+            value={scaleVal}
+            onChange={(e) => setScaleVal(Number(e.target.value))}
+            className="accent-primary h-4 flex-1"
+          />
+          <button
+            onClick={() => onScalePopulation(scaleVal)}
+            className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
+          >
+            Apply
+          </button>
+        </div>
+        <div className="text-muted-foreground text-[9px]">Factor: {scaleVal.toFixed(1)}x</div>
+      </div>
+
+      {selectedCitiesCount > 1 && (
+        <div className="space-y-1">
+          <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+            Rotate Group (Degrees)
+          </Label>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={-180}
+              max={180}
+              value={rotateVal}
+              onChange={(e) => setRotateVal(Number(e.target.value))}
+              className="accent-primary h-4 flex-1"
+            />
+            <button
+              onClick={() => onRotateCities(rotateVal)}
+              className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
+            >
+              Apply
+            </button>
+          </div>
+          <div className="text-muted-foreground text-[9px]">Angle: {rotateVal}°</div>
+        </div>
+      )}
+    </PopoverContent>
+  );
+}
+
 function CoordinateSnappingControls({
   coords,
   onCoordsChange,
@@ -364,6 +430,17 @@ interface ToolOptionsBarProps {
   ) => void;
   onCancelSplit?: () => void;
   selectedFeature?: any;
+  // City operations
+  selectedCitiesCount?: number;
+  onMergeSelectedCities?: () => void;
+  onScalePopulation?: (factor: number) => void;
+  onRotateCities?: (angle: number) => void;
+  onSplitCity?: (cityId: string) => void;
+  // Empty subdivisions
+  showEmptyRegions?: boolean;
+  onToggleEmptyRegions?: () => void;
+  emptyRegionsCount?: number;
+  onCreateCentroidCities?: () => void;
 }
 
 const CITY_TYPES = [
@@ -527,6 +604,40 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           </>
         )}
 
+      {/* ── Empty Regions Highlight Toggle ── */}
+      {props.onToggleEmptyRegions &&
+        (mode === "view" ||
+          mode === "add-city" ||
+          mode === "edit-city" ||
+          mode === "add-subdivision") && (
+          <>
+            <button
+              onClick={props.onToggleEmptyRegions}
+              className={props.showEmptyRegions ? activeBtnClass : btnClass}
+              title={
+                props.showEmptyRegions
+                  ? "Hide empty subdivisions"
+                  : "Highlight subdivisions without cities"
+              }
+            >
+              <Eye className="h-3.5 w-3.5" />
+              {props.showEmptyRegions ? "Highlight Empty: ON" : "Highlight Empty"}
+            </button>
+            {props.showEmptyRegions &&
+              props.emptyRegionsCount! > 0 &&
+              props.onCreateCentroidCities && (
+                <button
+                  onClick={props.onCreateCentroidCities}
+                  className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-[11px] text-emerald-500 hover:bg-emerald-500/20"
+                  title="Create centroid-based cities in all empty regions"
+                >
+                  <Sparkles className="h-3 w-3" /> Auto-Create Cities ({props.emptyRegionsCount})
+                </button>
+              )}
+            <div className={dividerClass} />
+          </>
+        )}
+
       {/* ── Select mode ── */}
       {mode === "view" && props.selectedCount! > 0 && (
         <>
@@ -553,6 +664,46 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               <GitMerge className="h-3 w-3" /> Merge Regions
             </button>
           )}
+          {props.selectedCitiesCount! > 1 && props.onMergeSelectedCities && (
+            <button
+              onClick={props.onMergeSelectedCities}
+              className={btnClass}
+              title="Merge selected cities"
+            >
+              <GitMerge className="h-3 w-3" /> Merge Cities
+            </button>
+          )}
+          {props.selectedCitiesCount! > 0 && props.onScalePopulation && props.onRotateCities && (
+            <>
+              <div className={dividerClass} />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={btnClass} title="Scale population or rotate selected cities">
+                    <Sliders className="h-3 w-3" /> City Transformations...
+                  </button>
+                </PopoverTrigger>
+                <CityTransformationsPopover
+                  selectedCitiesCount={props.selectedCitiesCount!}
+                  onScalePopulation={props.onScalePopulation}
+                  onRotateCities={props.onRotateCities}
+                />
+              </Popover>
+            </>
+          )}
+          {props.selectedCount === 1 &&
+            props.selectedFeature?.type === "city" &&
+            props.onSplitCity && (
+              <>
+                <div className={dividerClass} />
+                <button
+                  onClick={() => props.onSplitCity!(props.selectedFeature.id)}
+                  className={btnClass}
+                  title="Split city"
+                >
+                  <Scissors className="h-3 w-3" /> Split City
+                </button>
+              </>
+            )}
         </>
       )}
 
@@ -588,6 +739,15 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               {props.onDuplicate && (
                 <button onClick={props.onDuplicate} className={btnClass} title="Duplicate city">
                   <Copy className="h-3 w-3" /> Duplicate
+                </button>
+              )}
+              {props.onSplitCity && props.selectedFeature?.id && (
+                <button
+                  onClick={() => props.onSplitCity!(props.selectedFeature.id)}
+                  className={btnClass}
+                  title="Split city"
+                >
+                  <Scissors className="h-3 w-3" /> Split City
                 </button>
               )}
               {props.onCopyCoords && (

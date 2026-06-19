@@ -26,6 +26,8 @@ interface UseMapLayersProps {
   theme?: MapTheme;
   gapFeatures?: any | null;
   showGaps?: boolean;
+  emptyRegionsFeatures?: any | null;
+  showEmptyRegions?: boolean;
 }
 
 export function useMapLayers({
@@ -45,6 +47,8 @@ export function useMapLayers({
   theme,
   gapFeatures,
   showGaps,
+  emptyRegionsFeatures,
+  showEmptyRegions,
 }: UseMapLayersProps) {
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
   useEffect(() => {
@@ -985,4 +989,42 @@ export function useMapLayers({
       });
     }
   }, [map, isLoaded, gapFeatures, showGaps]);
+
+  // 10. Empty subdivisions highlight overlay
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const sourceId = "editor-empty-subdivisions";
+    const fillId = "editor-empty-subdivisions-fill";
+    const strokeId = "editor-empty-subdivisions-stroke";
+
+    const geojson = emptyRegionsFeatures && showEmptyRegions
+      ? emptyRegionsFeatures
+      : EMPTY_FC;
+
+    if (map.getSource(sourceId)) {
+      getGeoJSONSource(map, sourceId)?.setData(geojson);
+    } else {
+      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addLayer({
+        id: fillId,
+        type: "fill",
+        source: sourceId,
+        paint: {
+          "fill-color": "#06b6d4",
+          "fill-opacity": 0.15,
+        },
+      });
+      map.addLayer({
+        id: strokeId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#0891b2",
+          "line-width": 1.5,
+          "line-dasharray": [3, 3],
+        },
+      });
+    }
+  }, [map, isLoaded, emptyRegionsFeatures, showEmptyRegions]);
 }

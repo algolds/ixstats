@@ -107,6 +107,8 @@ interface EditorMapProps {
   onFeatureContextMenu?: (feature: EditorFeature, screenPos: { x: number; y: number }) => void;
   gapFeatures?: any | null;
   showGaps?: boolean;
+  emptyRegionsFeatures?: any | null;
+  showEmptyRegions?: boolean;
 }
 
 const EditorMap = memo(
@@ -142,6 +144,8 @@ const EditorMap = memo(
       onFeatureContextMenu,
       gapFeatures,
       showGaps,
+      emptyRegionsFeatures,
+      showEmptyRegions,
     },
     ref
   ) {
@@ -190,6 +194,8 @@ const EditorMap = memo(
       theme,
       gapFeatures,
       showGaps,
+      emptyRegionsFeatures,
+      showEmptyRegions,
     });
 
     // ── 2. Hook: Manage Subdivision Drawing ──

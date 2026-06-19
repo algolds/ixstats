@@ -4,7 +4,7 @@
 
 import React, { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Pencil, Copy, Trash2, MapPin, ExternalLink, BookOpen, Plus } from "lucide-react";
+import { Pencil, Copy, Trash2, MapPin, ExternalLink, BookOpen, Plus, Scissors } from "lucide-react";
 
 interface FeatureContextMenuProps {
   x: number;
@@ -25,6 +25,7 @@ interface FeatureContextMenuProps {
   onCreateFromGap?: () => void;
   onSnapToBorder?: () => void;
   onSnapToCoast?: () => void;
+  onSplitCity?: () => void;
 }
 
 interface MenuItem {
@@ -47,6 +48,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   onCreateFromGap,
   onSnapToBorder,
   onSnapToCoast,
+  onSplitCity,
 }: FeatureContextMenuProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -88,7 +90,18 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   } else {
     primaryItems.push(
       { label: "Edit Properties", icon: Pencil, onClick: onEdit },
-      { label: "Duplicate", icon: Copy, onClick: onDuplicate },
+      { label: "Duplicate", icon: Copy, onClick: onDuplicate }
+    );
+
+    if (feature.type === "city" && onSplitCity) {
+      primaryItems.push({
+        label: "Split City",
+        icon: Scissors,
+        onClick: onSplitCity,
+      });
+    }
+
+    primaryItems.push(
       { label: "Delete", icon: Trash2, onClick: onDelete, danger: true }
     );
 

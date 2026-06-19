@@ -262,6 +262,15 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
     return () => window.removeEventListener("keydown", handler);
   }, [editor, importer, onNavigate, toolsDisabled, handleDeleteFeature]);
 
+  const selectedCitiesCount = useMemo(() => {
+    return editor.allFeatures.filter((f) => editor.selectedIds.has(f.id) && f.type === "city")
+      .length;
+  }, [editor.allFeatures, editor.selectedIds]);
+
+  const emptyRegionsCount = useMemo(() => {
+    return editor.emptyRegionsFeatures?.features?.length ?? 0;
+  }, [editor.emptyRegionsFeatures]);
+
   if (countryLoading || !country) {
     return null;
   }
@@ -396,6 +405,16 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
         onApplyGeometryTransformation={editor.applyGeometryTransformation}
         onCancelSplit={() => editor.setMode("edit-subdivision")}
         selectedFeature={editor.selectedFeature}
+        // Advanced City Operations
+        selectedCitiesCount={selectedCitiesCount}
+        onMergeSelectedCities={editor.mergeSelectedCities}
+        onScalePopulation={editor.scaleSelectedCitiesPopulation}
+        onRotateCities={editor.rotateSelectedCities}
+        onSplitCity={editor.splitCity}
+        showEmptyRegions={editor.showEmptyRegions}
+        onToggleEmptyRegions={() => editor.setShowEmptyRegions((v) => !v)}
+        emptyRegionsCount={emptyRegionsCount}
+        onCreateCentroidCities={editor.createCentroidCities}
       />
 
       {/* ── Content: left panel + map + right panel ── */}
@@ -578,6 +597,8 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 }}
                 gapFeatures={editor.gapFeatures}
                 showGaps={editor.showGaps}
+                emptyRegionsFeatures={editor.emptyRegionsFeatures}
+                showEmptyRegions={editor.showEmptyRegions}
               />
 
               <EditorContextMenuWrapper

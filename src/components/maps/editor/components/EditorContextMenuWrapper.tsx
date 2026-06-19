@@ -78,6 +78,12 @@ export function EditorContextMenuWrapper({
         }
         setContextMenu(null);
       }}
+      onSplitCity={() => {
+        if (editor.splitCity) {
+          void editor.splitCity(contextMenu.feature.id);
+        }
+        setContextMenu(null);
+      }}
       onClose={() => setContextMenu(null)}
     />
   );

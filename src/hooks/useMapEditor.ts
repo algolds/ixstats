@@ -15,6 +15,7 @@ import {
   featureCollection,
   simplify,
   bbox,
+  centroid,
   point,
   booleanPointInPolygon,
   area,
@@ -3101,6 +3102,269 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     [countryId, selectedFeature, updateSubdivisionGeom, invalidateAllMapData, debouncedRefetch]
   );
 
+  // ── Empty subdivisions / Auto-centroid state & detection ──
+  const [showEmptyRegions, setShowEmptyRegions] = useState(false);
+  const [emptyRegionsFeatures, setEmptyRegionsFeatures] = useState<any>(null);
+
+  useEffect(() => {
+    if (!showEmptyRegions || !features?.subdivisions) {
+      setEmptyRegionsFeatures(null);
+      return;
+    }
+
+    const subdivisions = features.subdivisions;
+    const cities = features.cities ?? [];
+
+    const emptySubs = subdivisions.filter((sub) => {
+      if (!sub.geometry) return false;
+      
+      const hasCity = cities.some((city) => {
+        if (!city.coordinates) return false;
+        const pt = point(city.coordinates);
+        try {
+          return booleanPointInPolygon(pt, sub.geometry as any);
+        } catch {
+          return false;
+        }
+      });
+      return !hasCity;
+    });
+
+    const fc = featureCollection(
+      emptySubs.map((sub) => ({
+        type: "Feature" as const,
+        geometry: sub.geometry as any,
+        properties: { id: sub.id, name: sub.name },
+      }))
+    );
+
+    setEmptyRegionsFeatures(fc);
+  }, [showEmptyRegions, features]);
+
+  const createCentroidCities = useCallback(async () => {
+    if (!countryId || !features?.subdivisions) return;
+    const subdivisions = features.subdivisions;
+    const cities = features.cities ?? [];
+
+    const emptySubs = subdivisions.filter((sub) => {
+      if (!sub.geometry) return false;
+      const hasCity = cities.some((city) => {
+        if (!city.coordinates) return false;
+        const pt = point(city.coordinates);
+        try {
+          return booleanPointInPolygon(pt, sub.geometry as any);
+        } catch {
+          return false;
+        }
+      });
+      return !hasCity;
+    });
+
+    for (const sub of emptySubs) {
+      try {
+        const feat = { type: "Feature" as const, geometry: sub.geometry as any, properties: {} };
+        const center = centroid(feat);
+        if (center?.geometry?.coordinates) {
+          const coords = center.geometry.coordinates as [number, number];
+          await createCity.mutateAsync({
+            countryId,
+            name: `City of ${sub.name}`,
+            type: "city",
+            coordinates: coords,
+            subdivisionId: sub.id,
+            population: 1000,
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to create centroid city for ${sub.name}:`, err);
+      }
+    }
+
+    setShowEmptyRegions(false);
+    invalidateAllMapData();
+    debouncedRefetch();
+  }, [countryId, features, createCity, invalidateAllMapData, debouncedRefetch]);
+
+  // ── City Merging & Splitting ──
+  const mergeSelectedCities = useCallback(async () => {
+    if (!countryId || selectedIds.size < 2) return;
+
+    const citiesToMerge = allFeatures.filter(
+      (f) => selectedIds.has(f.id) && f.type === "city" && f.coordinates
+    );
+
+    if (citiesToMerge.length < 2) return;
+
+    const baseCity = citiesToMerge[0]!;
+    
+    let totalPopulation = Number(baseCity.properties.population) || 0;
+    for (let i = 1; i < citiesToMerge.length; i++) {
+      totalPopulation += Number(citiesToMerge[i]!.properties.population) || 0;
+    }
+
+    await updateCity.mutateAsync({
+      countryId,
+      id: baseCity.id,
+      name: baseCity.name,
+      type: baseCity.properties.cityType as string,
+      coordinates: baseCity.coordinates!,
+      population: totalPopulation,
+      isNationalCapital: !!baseCity.properties.isNationalCapital,
+      isSubdivisionCapital: !!baseCity.properties.isSubdivisionCapital,
+      subdivisionId: baseCity.properties.subdivisionId as string | undefined,
+    });
+
+    for (let i = 1; i < citiesToMerge.length; i++) {
+      await deleteCity.mutateAsync({
+        countryId,
+        cityId: citiesToMerge[i]!.id,
+      });
+    }
+
+    clearMultiSelect();
+    invalidateAllMapData();
+    debouncedRefetch();
+  }, [
+    countryId,
+    selectedIds,
+    allFeatures,
+    updateCity,
+    deleteCity,
+    clearMultiSelect,
+    invalidateAllMapData,
+    debouncedRefetch,
+  ]);
+
+  const splitCity = useCallback(
+    async (cityId: string) => {
+      if (!countryId) return;
+      const city = allFeatures.find((f) => f.id === cityId && f.type === "city");
+      if (!city || !city.coordinates) return;
+
+      const name = city.name;
+      const [lng, lat] = city.coordinates;
+      const totalPop = Number(city.properties.population) || 0;
+      const halvedPop = Math.round(totalPop / 2);
+
+      await updateCity.mutateAsync({
+        countryId,
+        id: city.id,
+        name: `${name} A`,
+        type: city.properties.cityType as string,
+        coordinates: [lng, lat],
+        population: halvedPop,
+        isNationalCapital: !!city.properties.isNationalCapital,
+        isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
+        subdivisionId: city.properties.subdivisionId as string | undefined,
+      });
+
+      const newCityResult = await createCity.mutateAsync({
+        countryId,
+        name: `${name} B`,
+        type: city.properties.cityType as string,
+        coordinates: [lng + 0.02, lat + 0.02],
+        population: halvedPop,
+        subdivisionId: city.properties.subdivisionId as string | undefined,
+      });
+
+      invalidateAllMapData();
+      await refetchFeatures();
+
+      if (newCityResult?.id) {
+        const newCityFeature: EditorFeature = {
+          id: newCityResult.id,
+          type: "city",
+          name: `${name} B`,
+          coordinates: [lng + 0.02, lat + 0.02],
+          properties: {
+            cityType: city.properties.cityType,
+            population: halvedPop,
+            subdivisionId: city.properties.subdivisionId,
+          },
+        };
+        startEditing(newCityFeature);
+      }
+    },
+    [countryId, allFeatures, updateCity, createCity, refetchFeatures, startEditing, invalidateAllMapData]
+  );
+
+  // ── Population Scaling & Orbit Rotation ──
+  const scaleSelectedCitiesPopulation = useCallback(
+    async (factor: number) => {
+      if (!countryId || selectedIds.size === 0) return;
+
+      const citiesToScale = allFeatures.filter(
+        (f) => selectedIds.has(f.id) && f.type === "city"
+      );
+
+      for (const city of citiesToScale) {
+        const currentPop = Number(city.properties.population) || 0;
+        const newPop = Math.round(currentPop * factor);
+
+        await updateCity.mutateAsync({
+          countryId,
+          id: city.id,
+          name: city.name,
+          type: city.properties.cityType as string,
+          coordinates: city.coordinates!,
+          population: newPop,
+          isNationalCapital: !!city.properties.isNationalCapital,
+          isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
+          subdivisionId: city.properties.subdivisionId as string | undefined,
+        });
+      }
+
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [countryId, selectedIds, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
+  );
+
+  const rotateSelectedCities = useCallback(
+    async (angle: number) => {
+      if (!countryId || selectedIds.size < 2) return;
+
+      const citiesToRotate = allFeatures.filter(
+        (f) => selectedIds.has(f.id) && f.type === "city" && f.coordinates
+      );
+
+      if (citiesToRotate.length < 2) return;
+
+      const pts = featureCollection(
+        citiesToRotate.map((c) => point(c.coordinates!))
+      );
+      const collectiveCentroid = centroid(pts);
+      if (!collectiveCentroid?.geometry?.coordinates) return;
+
+      for (const city of citiesToRotate) {
+        const pt = point(city.coordinates!);
+        try {
+          const rotated = transformRotate(pt, angle, { pivot: collectiveCentroid });
+          if (rotated?.geometry?.coordinates) {
+            const newCoords = rotated.geometry.coordinates as [number, number];
+            await updateCity.mutateAsync({
+              countryId,
+              id: city.id,
+              name: city.name,
+              type: city.properties.cityType as string,
+              coordinates: newCoords,
+              population: Number(city.properties.population) || undefined,
+              isNationalCapital: !!city.properties.isNationalCapital,
+              isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
+              subdivisionId: city.properties.subdivisionId as string | undefined,
+            });
+          }
+        } catch (err) {
+          console.error(`Failed to rotate city ${city.name}:`, err);
+        }
+      }
+
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [countryId, selectedIds, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
+  );
+
   const isMutating =
     createCity.isPending ||
     updateCity.isPending ||
@@ -3278,6 +3542,16 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     scatterCities,
     snapCityToSubdivisionBorder,
     snapCityToCoastline,
+    mergeSelectedCities,
+    splitCity,
+    scaleSelectedCitiesPopulation,
+    rotateSelectedCities,
+
+    // Empty regions
+    showEmptyRegions,
+    setShowEmptyRegions,
+    emptyRegionsFeatures,
+    createCentroidCities,
 
     // Subdivision geometry split/merge/transforms
     executeSplitSubdivision,
