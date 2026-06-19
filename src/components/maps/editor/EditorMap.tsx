@@ -111,6 +111,7 @@ interface EditorMapProps {
   showEmptyRegions?: boolean;
   rulerPoints?: [number, number][];
   lassoGeometry?: any;
+  setLassoGeometry?: (geom: any) => void;
   onAddRulerPoint?: (coords: [number, number]) => void;
   onApplyLassoSelection?: (coords: [number, number][]) => void;
   onApplyPaintFill?: (subdivisionId: string) => void;
@@ -153,6 +154,7 @@ const EditorMap = memo(
       showEmptyRegions,
       rulerPoints,
       lassoGeometry,
+      setLassoGeometry,
       onAddRulerPoint,
       onApplyLassoSelection,
       onApplyPaintFill,

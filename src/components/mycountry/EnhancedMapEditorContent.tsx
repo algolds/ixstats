@@ -617,6 +617,7 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 showEmptyRegions={editor.showEmptyRegions}
                 rulerPoints={editor.rulerPoints}
                 lassoGeometry={editor.lassoGeometry}
+                setLassoGeometry={editor.setLassoGeometry}
                 onAddRulerPoint={editor.addRulerPoint}
                 onApplyLassoSelection={editor.applyLassoSelection}
                 onApplyPaintFill={editor.applyPaintFill}

@@ -971,6 +971,12 @@ export default function MapEditorOverlay({
                       feature,
                     });
                   }}
+                  rulerPoints={editor.rulerPoints}
+                  lassoGeometry={editor.lassoGeometry}
+                  setLassoGeometry={editor.setLassoGeometry}
+                  onAddRulerPoint={editor.addRulerPoint}
+                  onApplyLassoSelection={editor.applyLassoSelection}
+                  onApplyPaintFill={editor.applyPaintFill}
                 />
               )}
 
