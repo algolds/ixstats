@@ -235,8 +235,20 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
         { id: "sub-1", name: "Province 1", population: 100000, gdpContribution: 500000 },
       ]);
       mockDb.city.findMany.mockResolvedValue([
-        { id: "city-1", name: "City 1", population: 3000, gdpContribution: 10000, subdivisionId: "sub-1" },
-        { id: "city-2", name: "City 2", population: 7000, gdpContribution: 20000, subdivisionId: "sub-1" },
+        {
+          id: "city-1",
+          name: "City 1",
+          population: 3000,
+          gdpContribution: 10000,
+          subdivisionId: "sub-1",
+        },
+        {
+          id: "city-2",
+          name: "City 2",
+          population: 7000,
+          gdpContribution: 20000,
+          subdivisionId: "sub-1",
+        },
       ]);
 
       const result = await distributeSubdivisionDemographicsToCities(mockDb, countryId, true);
@@ -256,11 +268,31 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
 
     it("should distribute by category weights when scaleExisting is false", async () => {
       mockDb.subdivision.findMany.mockResolvedValue([
-        { id: "sub-1", name: "Province 1", population: 100000, gdpContribution: 500000, capital: "City 1" },
+        {
+          id: "sub-1",
+          name: "Province 1",
+          population: 100000,
+          gdpContribution: 500000,
+          capital: "City 1",
+        },
       ]);
       mockDb.city.findMany.mockResolvedValue([
-        { id: "city-1", name: "City 1", population: 0, gdpContribution: 0, subdivisionId: "sub-1", isSubdivisionCapital: true },
-        { id: "city-2", name: "City 2", population: 0, gdpContribution: 0, subdivisionId: "sub-1", type: "town" },
+        {
+          id: "city-1",
+          name: "City 1",
+          population: 0,
+          gdpContribution: 0,
+          subdivisionId: "sub-1",
+          isSubdivisionCapital: true,
+        },
+        {
+          id: "city-2",
+          name: "City 2",
+          population: 0,
+          gdpContribution: 0,
+          subdivisionId: "sub-1",
+          type: "town",
+        },
       ]);
 
       const result = await distributeSubdivisionDemographicsToCities(mockDb, countryId, false);
@@ -277,4 +309,3 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
     });
   });
 });
-

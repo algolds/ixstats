@@ -830,7 +830,12 @@ export function snapToBorderEdge(
 }
 
 /** Get visual bounding box of Polygon/MultiPolygon and cache it on the object */
-export function getGeometryBBox(geom: Polygon | MultiPolygon): { minLng: number; minLat: number; maxLng: number; maxLat: number } {
+export function getGeometryBBox(geom: Polygon | MultiPolygon): {
+  minLng: number;
+  minLat: number;
+  maxLng: number;
+  maxLat: number;
+} {
   const g = geom as any;
   if (g._bbox) return g._bbox;
 
@@ -1248,7 +1253,7 @@ export function insertVertexIfOnSegment(
           const edgeLen = distanceDeg(a, b);
           const distAProj = distanceDeg(a, proj);
           const distBProj = distanceDeg(b, proj);
-          
+
           if (edgeLen > tolerance && distAProj > tolerance && distBProj > tolerance) {
             newRing.push([...point]);
             modified = true;

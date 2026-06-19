@@ -36,7 +36,8 @@ export function VaultSettingsCard() {
 
   const { data: ownedData, isLoading: ownedLoading } = api.vault.getPurchasedItems.useQuery();
   const { data: storeItems, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery();
-  const { data: equippedData, isLoading: equippedLoading } = api.vault.getEquippedCosmetics.useQuery();
+  const { data: equippedData, isLoading: equippedLoading } =
+    api.vault.getEquippedCosmetics.useQuery();
 
   const ownedItemIds = ownedData?.purchasedItemIds || [];
 
@@ -337,7 +338,10 @@ export function VaultSettingsCard() {
         </div>
 
         {/* Cosmetics & Profile Customization */}
-        <div id="cosmetics-section" className="relative z-10 border-t border-slate-100 pt-6 dark:border-slate-800">
+        <div
+          id="cosmetics-section"
+          className="relative z-10 border-t border-slate-100 pt-6 dark:border-slate-800"
+        >
           <div className="mb-4 flex items-center gap-2">
             <Gem className="h-4 w-4 text-purple-500" />
             <h3 className="text-sm font-bold tracking-widest text-slate-900 uppercase dark:text-white">

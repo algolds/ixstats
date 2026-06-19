@@ -290,7 +290,7 @@ const economicsBuilderRouter = createTRPCRouter({
         const existingComps = await tx.economicComponent.findMany({
           where: { countryId },
         });
-        const existingMap = new Map(existingComps.map(c => [c.componentType as string, c]));
+        const existingMap = new Map(existingComps.map((c) => [c.componentType as string, c]));
 
         const selectedTypes = economyBuilder.selectedAtomicComponents || [];
         const keptIds: string[] = [];
@@ -326,7 +326,9 @@ const economicsBuilderRouter = createTRPCRouter({
               }
 
               // Calculate implementation date
-              const implementationDate = calculateImplementationDate(compData.metadata.timeToImplement);
+              const implementationDate = calculateImplementationDate(
+                compData.metadata.timeToImplement
+              );
 
               const created = await tx.economicComponent.create({
                 data: {
@@ -336,7 +338,8 @@ const economicsBuilderRouter = createTRPCRouter({
                   isActive: false, // starts implementing
                   implementationCost: cost,
                   maintenanceCost: compData.maintenanceCost || 0,
-                  requiredCapacity: compData.metadata.staffRequired || compData.requiredCapacity || 50,
+                  requiredCapacity:
+                    compData.metadata.staffRequired || compData.requiredCapacity || 50,
                   implementationDate,
                 },
               });

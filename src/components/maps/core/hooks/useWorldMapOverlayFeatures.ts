@@ -58,7 +58,9 @@ export function useWorldMapOverlayFeatures({
       try {
         const existing = map.getSource(subSource);
         if (existing) {
-          (existing as GeoJSONSource).setData(overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON);
+          (existing as GeoJSONSource).setData(
+            overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON
+          );
         }
       } catch (err) {
         console.warn("[useWorldMapOverlayFeatures] overlay subdivisions error:", err);
@@ -98,7 +100,8 @@ export function useWorldMapOverlayFeatures({
           hasFocus &&
           (f.properties?.countryId === selectedCountryId ||
             f.properties?.countrySlug === selectedCountryId ||
-            (f.properties?.countryName && f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
+            (f.properties?.countryName &&
+              f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
         );
       });
 

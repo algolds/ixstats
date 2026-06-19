@@ -179,7 +179,11 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
   };
 
   const isPointMode =
-    mode === "add-city" || mode === "add-poi" || mode === "add-story-pin" || mode === "add-label" || mode === "add-peak";
+    mode === "add-city" ||
+    mode === "add-poi" ||
+    mode === "add-story-pin" ||
+    mode === "add-label" ||
+    mode === "add-peak";
 
   return (
     <div className="space-y-3">

@@ -17,6 +17,7 @@ import { FeatureList } from "~/components/maps/editor/FeatureList";
 import { LinkageValidationPanel } from "./LinkageValidationPanel";
 import { SovereigntyPanel } from "./SovereigntyPanel";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
+import { HistoryPanel } from "./HistoryPanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 
 interface MapEditorSidebarPanelsProps {
@@ -175,6 +176,13 @@ export function MapEditorSidebarPanels({
       onDeleteFeature={handleDeleteFeature}
       selectedIds={editor.selectedIds}
       onToggleSelect={editor.toggleSelectId}
+      guides={editor.guides}
+      onClearGuides={() => editor.setGuides([])}
+      showGuides={state.showGuides}
+      onToggleGuidesVisibility={state.setShowGuides}
+      onDeleteGuide={(id: string) =>
+        editor.setGuides((prev: any) => prev.filter((g: any) => g.id !== id))
+      }
     />
   );
 
@@ -183,6 +191,14 @@ export function MapEditorSidebarPanels({
       {...state}
       brushTargetId={brushTargetId}
       setBrushTargetId={setBrushTargetId}
+    />
+  );
+
+  const renderHistoryElement = () => (
+    <HistoryPanel
+      history={editor.history}
+      jumpToHistoryPosition={editor.jumpToHistoryPosition}
+      isMutating={editor.isMutating}
     />
   );
 
@@ -218,6 +234,7 @@ export function MapEditorSidebarPanels({
       }}
       linkagesContent={<LinkageValidationPanel {...state} />}
       sovereigntyContent={<SovereigntyPanel {...state} />}
+      historyContent={renderHistoryElement()}
       featureCount={editor.allFeatures.length}
       featuresLoading={editor.featuresLoading}
       featureListContent={

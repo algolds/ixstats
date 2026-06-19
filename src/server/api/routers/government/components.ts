@@ -405,7 +405,10 @@ export const governmentComponentsRouter = createTRPCRouter({
         country?.governmentStructure?.governmentEffectiveness ??
         country?.governmentalEfficiency ??
         50;
-      const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
+      const capacity = calculateCivilServiceCapacity(
+        country?.currentPopulation ?? 0,
+        effectiveness
+      );
 
       rolloutQueue.sort((a, b) => a.completionDate - b.completionDate);
 
@@ -463,7 +466,8 @@ export const governmentComponentsRouter = createTRPCRouter({
       if (!structure) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Government structure not found for this country. Please configure your government first.",
+          message:
+            "Government structure not found for this country. Please configure your government first.",
         });
       }
 

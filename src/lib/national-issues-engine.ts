@@ -343,42 +343,49 @@ export class NationalIssuesEngine {
     if (!country) return null;
 
     // Run aggregate counts in parallel
-    const [embassyCount, policyCount, pendingIssueCount, crisisCount, govComps, econComps, taxComps] =
-      await Promise.all([
-        (db as any).embassy.count({
-          where: {
-            hostCountryId: countryId,
-            status: "active",
-          },
-        }),
-        (db as any).policy.count({
-          where: { countryId, status: "active" },
-        }),
-        (db as any).nationalIssue.count({
-          where: {
-            countryId,
-            status: { in: ["pending", "viewed"] },
-          },
-        }),
-        (db as any).crisisEvent.count({
-          where: {
-            affectedCountries: { contains: countryId },
-            responseStatus: { not: "resolved" },
-          },
-        }),
-        (db as any).governmentComponent.findMany({
-          where: { countryId },
-          select: { componentType: true, isActive: true, implementationDate: true },
-        }),
-        (db as any).economicComponent.findMany({
-          where: { countryId },
-          select: { componentType: true, isActive: true, implementationDate: true },
-        }),
-        (db as any).taxComponent.findMany({
-          where: { countryId },
-          select: { componentType: true, isActive: true, implementationDate: true },
-        }),
-      ]);
+    const [
+      embassyCount,
+      policyCount,
+      pendingIssueCount,
+      crisisCount,
+      govComps,
+      econComps,
+      taxComps,
+    ] = await Promise.all([
+      (db as any).embassy.count({
+        where: {
+          hostCountryId: countryId,
+          status: "active",
+        },
+      }),
+      (db as any).policy.count({
+        where: { countryId, status: "active" },
+      }),
+      (db as any).nationalIssue.count({
+        where: {
+          countryId,
+          status: { in: ["pending", "viewed"] },
+        },
+      }),
+      (db as any).crisisEvent.count({
+        where: {
+          affectedCountries: { contains: countryId },
+          responseStatus: { not: "resolved" },
+        },
+      }),
+      (db as any).governmentComponent.findMany({
+        where: { countryId },
+        select: { componentType: true, isActive: true, implementationDate: true },
+      }),
+      (db as any).economicComponent.findMany({
+        where: { countryId },
+        select: { componentType: true, isActive: true, implementationDate: true },
+      }),
+      (db as any).taxComponent.findMany({
+        where: { countryId },
+        select: { componentType: true, isActive: true, implementationDate: true },
+      }),
+    ]);
 
     const currentIxTime = IxTime.getCurrentIxTime();
     const ixDate = new Date(currentIxTime);
@@ -399,7 +406,9 @@ export class NationalIssuesEngine {
     const activeEconTypes: string[] = [];
     const implementingEconTypes: string[] = [];
     for (const c of econComps) {
-      (isComponentActive(c) ? activeEconTypes : implementingEconTypes).push(String(c.componentType));
+      (isComponentActive(c) ? activeEconTypes : implementingEconTypes).push(
+        String(c.componentType)
+      );
     }
 
     const activeTaxIds: string[] = [];

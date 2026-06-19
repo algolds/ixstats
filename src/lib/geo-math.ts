@@ -343,10 +343,7 @@ export function normalizeTerrainDifficulty(elevations: number[]): number {
  * @param n       Number of sample points (clamped to coords.length if smaller).
  * @returns       Array of [lng, lat] pairs.
  */
-export function samplePolylinePoints(
-  coords: [number, number][],
-  n: number
-): [number, number][] {
+export function samplePolylinePoints(coords: [number, number][], n: number): [number, number][] {
   if (coords.length === 0) return [];
   if (n <= 0 || coords.length <= n) return [...coords];
   const step = (coords.length - 1) / (n - 1);

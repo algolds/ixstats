@@ -35,7 +35,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
       />
 
       <div>
-        <label className="mb-1 block text-left text-xs font-medium text-muted-foreground">
+        <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
           Max Depth (meters, optional)
         </label>
         <input
@@ -45,7 +45,8 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
           onChange={(e) =>
             onChange({
               ...form,
-              maxDepthM: e.target.value === "" ? undefined : parseFloat(e.target.value) || undefined,
+              maxDepthM:
+                e.target.value === "" ? undefined : parseFloat(e.target.value) || undefined,
             })
           }
           className={inputClasses}
@@ -60,11 +61,11 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
               Drawn {areaSqKm !== undefined && `(${areaSqKm.toFixed(2)} km²)`}
             </span>
           ) : (
-            <span className="italic text-amber-500">Not drawn yet (use Polygon tool)</span>
+            <span className="text-amber-500 italic">Not drawn yet (use Polygon tool)</span>
           )}
         </div>
         {!hasGeom && (
-          <div className="mt-1 text-left text-[10px] text-muted-foreground">
+          <div className="text-muted-foreground mt-1 text-left text-[10px]">
             Use the polygon drawing tool in the map controls to trace the contours of the lake.
           </div>
         )}

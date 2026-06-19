@@ -24,6 +24,10 @@ interface UseSubdivisionDrawProps {
   onDrawComplete: (geometry: object) => void;
   worldMapLayers?: MapLayerData[];
   editorVisibleLayers?: Set<string>;
+  guides?: { id: string; type: "h" | "v"; value: number }[];
+  snapEnabled?: boolean;
+  snapTolerance?: number;
+  snapPoint?: (coords: [number, number]) => [number, number];
 }
 
 export function useSubdivisionDraw({
@@ -35,6 +39,10 @@ export function useSubdivisionDraw({
   onDrawComplete,
   worldMapLayers,
   editorVisibleLayers,
+  guides,
+  snapEnabled,
+  snapTolerance,
+  snapPoint,
 }: UseSubdivisionDrawProps) {
   const drawVerticesRef = useRef<[number, number][]>([]);
   const [drawVertices, setDrawVertices] = useState<[number, number][]>([]);
@@ -140,8 +148,8 @@ export function useSubdivisionDraw({
       let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
       // Snap to visible background layers first
-      const snapOn = getSnapEnabled();
-      const snapTol = getSnapTolerance();
+      const snapOn = snapEnabled ?? getSnapEnabled();
+      const snapTol = snapTolerance ?? getSnapTolerance();
       if (snapOn && worldMapLayers && editorVisibleLayers) {
         clickPoint = snapToLayerFeatures(clickPoint, worldMapLayers, editorVisibleLayers, snapTol);
       }
@@ -163,6 +171,12 @@ export function useSubdivisionDraw({
         }
         clickPoint = snapPointToGeometries(clickPoint, snapGeoms, snapTol) as [number, number];
       }
+
+      // Snap to guides if enabled and guides are present
+      if (snapOn && snapPoint) {
+        clickPoint = snapPoint(clickPoint);
+      }
+
       drawVerticesRef.current.push(clickPoint);
       updateDrawVisualization();
       setDrawVertices([...drawVerticesRef.current]);
@@ -194,6 +208,9 @@ export function useSubdivisionDraw({
     updateDrawVisualization,
     worldMapLayers,
     editorVisibleLayers,
+    snapEnabled,
+    snapTolerance,
+    snapPoint,
   ]);
 
   // Keyboard undo listener (Backspace/Delete/Ctrl+Z)

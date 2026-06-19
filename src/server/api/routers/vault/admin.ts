@@ -779,7 +779,9 @@ export const vaultAdminRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Admin Router] adminToggleEquipCosmetic error:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to toggle user equipped cosmetic");
+        throw new Error(
+          error instanceof Error ? error.message : "Failed to toggle user equipped cosmetic"
+        );
       }
     }),
 });

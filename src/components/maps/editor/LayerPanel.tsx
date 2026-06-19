@@ -19,6 +19,7 @@ import {
   BookMarked,
   Type,
   Route,
+  Ruler,
 } from "lucide-react";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
 
@@ -45,6 +46,11 @@ interface LayerPanelProps {
   onToggleLock: (layerId: string) => void;
   onOpacityChange?: (layerId: string, opacity: number) => void;
   featureCounts?: Record<string, number>;
+  guides?: { id: string; type: "h" | "v"; value: number }[];
+  onClearGuides?: () => void;
+  showGuides?: boolean;
+  onToggleGuidesVisibility?: (visible: boolean) => void;
+  onDeleteGuide?: (id: string) => void;
 }
 
 const TYPE_ICONS = {
@@ -78,11 +84,17 @@ export const LayerPanel = React.memo(function LayerPanel({
   onToggleLock,
   onOpacityChange,
   featureCounts = {},
+  guides,
+  onClearGuides,
+  showGuides = true,
+  onToggleGuidesVisibility,
+  onDeleteGuide,
 }: LayerPanelProps) {
   // Pre-expand regions and cities by default
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(
     () => new Set(["regions", "cities"])
   );
+  const [guidesExpanded, setGuidesExpanded] = useState(true);
 
   const toggleLayerExpanded = useCallback((layerId: string) => {
     setExpandedLayers((prev) => {
@@ -312,6 +324,108 @@ export const LayerPanel = React.memo(function LayerPanel({
             </div>
           );
         })}
+
+        {/* Guides Section */}
+        {guides !== undefined && (
+          <div className="border-b border-neutral-100 dark:border-neutral-800/40">
+            <div
+              className={`group flex h-8 items-center gap-1 px-1 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 ${!showGuides ? "opacity-50" : ""}`}
+            >
+              {/* Expand Chevron */}
+              <button
+                onClick={() => setGuidesExpanded((prev) => !prev)}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+              >
+                {guidesExpanded ? (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
+              </button>
+
+              {/* Visibility Toggle */}
+              <button
+                onClick={() => onToggleGuidesVisibility?.(!showGuides)}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                title={showGuides ? "Hide guides" : "Show guides"}
+              >
+                {showGuides ? (
+                  <Eye className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
+                ) : (
+                  <EyeOff className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500" />
+                )}
+              </button>
+
+              {/* Clear All Guides */}
+              {guides.length > 0 && (
+                <button
+                  onClick={() => onClearGuides?.()}
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 hover:text-red-500 dark:hover:bg-neutral-700"
+                  title="Clear all guides"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-neutral-400 hover:text-red-500 dark:text-neutral-500" />
+                </button>
+              )}
+              {guides.length === 0 && <span className="h-5 w-5 shrink-0" />}
+
+              {/* Icon */}
+              <Ruler className="ml-0.5 h-4 w-4 shrink-0 text-neutral-500 dark:text-neutral-400" />
+
+              {/* Title */}
+              <span
+                onClick={() => setGuidesExpanded((prev) => !prev)}
+                className="ml-1 flex-1 cursor-pointer truncate text-[11px] leading-none font-medium"
+              >
+                Ruler Guides
+              </span>
+
+              {/* Count */}
+              {guides.length > 0 && (
+                <span className="dark:bg-neutral-750 mr-1.5 rounded bg-neutral-200 px-1 py-0.5 text-[9px] leading-none font-semibold text-neutral-500 dark:text-neutral-400">
+                  {guides.length}
+                </span>
+              )}
+            </div>
+
+            {/* Guides Children */}
+            {guidesExpanded && (
+              <div className="space-y-0.5 bg-neutral-50/20 pb-1.5 dark:bg-neutral-900/10">
+                {guides.length > 0 ? (
+                  guides.map((guide) => (
+                    <div
+                      key={guide.id}
+                      className="group flex items-center gap-1.5 rounded px-2 py-1 pl-8 hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                        <span className="shrink-0 text-[9px] font-bold text-neutral-400 uppercase dark:text-neutral-500">
+                          {guide.type === "h" ? "Lat" : "Lng"}
+                        </span>
+                        <span className="text-foreground truncate text-[11px]">
+                          {guide.type === "h" ? "Horizontal" : "Vertical"}: {guide.value.toFixed(5)}
+                          °
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteGuide?.(guide.id);
+                        }}
+                        className="hover:text-red-650 rounded p-0.5 text-neutral-500 opacity-0 transition-colors group-hover:opacity-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-red-400"
+                        title="Delete Guide"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-1 pl-8 text-[10px] text-neutral-400 italic dark:text-neutral-500">
+                    No guides (drag from rulers to add)
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

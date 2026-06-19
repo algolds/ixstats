@@ -50,12 +50,10 @@ export function useActiveCosmetics(): ActiveCosmetics {
     }
   );
   // Query server-equipped state
-  const { data: equippedData, isLoading: equippedLoading } = api.vault.getEquippedCosmetics.useQuery(
-    undefined,
-    {
+  const { data: equippedData, isLoading: equippedLoading } =
+    api.vault.getEquippedCosmetics.useQuery(undefined, {
       staleTime: 15000,
-    }
-  );
+    });
 
   const [localActive, setLocalActive] = useState<{
     cosmetics: Record<string, boolean>;
@@ -117,7 +115,7 @@ export function useActiveCosmetics(): ActiveCosmetics {
       // Check if item is enabled (server equipped takes priority, fallback to local storage)
       const isEnabled =
         item.category === "cosmetics"
-          ? (serverEquipped.includes(item.id) || (localActive.cosmetics[item.id] ?? false))
+          ? serverEquipped.includes(item.id) || (localActive.cosmetics[item.id] ?? false)
           : (localActive.upgrades[item.id] ?? false);
 
       if (!isEnabled) continue;
@@ -153,7 +151,15 @@ export function useActiveCosmetics(): ActiveCosmetics {
     }
 
     setCosmeticsState(computed);
-  }, [ownedData, storeItems, equippedData, ownedLoading, itemsLoading, equippedLoading, localActive]);
+  }, [
+    ownedData,
+    storeItems,
+    equippedData,
+    ownedLoading,
+    itemsLoading,
+    equippedLoading,
+    localActive,
+  ]);
 
   return cosmeticsState;
 }

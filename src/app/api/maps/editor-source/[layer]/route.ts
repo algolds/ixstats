@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { layer } = await params;
-    
+
     let dbLayerType = layer;
     if (layer.startsWith("source-")) {
       dbLayerType = layer.replace("source-", "");
@@ -240,10 +240,7 @@ export async function GET(
     // 2. Default fallback to base layers in MapLayer table
     const fc = await loadLayerFromDB(db, dbLayerType, 2);
     if (!fc) {
-      return NextResponse.json(
-        { type: "FeatureCollection", features: [] },
-        { status: 200 }
-      );
+      return NextResponse.json({ type: "FeatureCollection", features: [] }, { status: 200 });
     }
 
     return NextResponse.json(fc, { status: 200 });

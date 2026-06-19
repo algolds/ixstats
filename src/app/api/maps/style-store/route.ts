@@ -90,7 +90,11 @@ export async function PUT(request: NextRequest) {
     // Clean data URLs of geojson sources before saving to DB
     if (body.sources) {
       for (const source of Object.values(body.sources as Record<string, any>)) {
-        if (source.type === "geojson" && typeof source.data === "string" && source.data.startsWith("/api/maps/editor-source/")) {
+        if (
+          source.type === "geojson" &&
+          typeof source.data === "string" &&
+          source.data.startsWith("/api/maps/editor-source/")
+        ) {
           source.data = { type: "FeatureCollection", features: [] };
         }
       }

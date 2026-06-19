@@ -8,7 +8,13 @@ import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
-import { safelyIncludeRelations, prepareBaseCountryData, getGrowthRates, stddev, getCountryComponentsStatsData } from "./utils";
+import {
+  safelyIncludeRelations,
+  prepareBaseCountryData,
+  getGrowthRates,
+  stddev,
+  getCountryComponentsStatsData,
+} from "./utils";
 
 export const economyProcedures = {
   getByIdWithEconomicData: rateLimitedPublicProcedure

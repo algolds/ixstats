@@ -538,12 +538,14 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                         <StopsEditor
                           routeId={props.id as string}
                           countryId={countryId}
-                          stops={(props.stops as Array<{
-                            cityId: string;
-                            name: string;
-                            coordinates: [number, number];
-                            order: number;
-                          }>) ?? []}
+                          stops={
+                            (props.stops as Array<{
+                              cityId: string;
+                              name: string;
+                              coordinates: [number, number];
+                              order: number;
+                            }>) ?? []
+                          }
                           onSave={(stops) =>
                             updateRoute.mutate({ id: props.id as string, countryId, stops })
                           }
@@ -877,9 +879,7 @@ function StopsEditor({ stops: initialStops, onSave, isSaving }: StopsEditorProps
   };
 
   const removeStop = (idx: number) => {
-    const next = localStops
-      .filter((_, i) => i !== idx)
-      .map((s, i) => ({ ...s, order: i }));
+    const next = localStops.filter((_, i) => i !== idx).map((s, i) => ({ ...s, order: i }));
     setLocalStops(next);
     setIsDirty(true);
   };
@@ -903,7 +903,7 @@ function StopsEditor({ stops: initialStops, onSave, isSaving }: StopsEditorProps
   if (localStops.length === 0 && !isDirty) {
     return (
       <div className="mt-1 pt-1">
-        <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider">
+        <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
           Stops
         </div>
         <div className="flex gap-1">
@@ -928,7 +928,7 @@ function StopsEditor({ stops: initialStops, onSave, isSaving }: StopsEditorProps
 
   return (
     <div className="mt-1 pt-1">
-      <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider">
+      <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
         Stops ({localStops.length})
       </div>
       <div className="space-y-0.5">
@@ -944,7 +944,7 @@ function StopsEditor({ stops: initialStops, onSave, isSaving }: StopsEditorProps
             <span className="min-w-0 flex-1 truncate text-[11px]">{stop.name}</span>
             <button
               onClick={() => removeStop(idx)}
-              className="text-muted-foreground hover:text-red-500 shrink-0"
+              className="text-muted-foreground shrink-0 hover:text-red-500"
               title="Remove stop"
             >
               <X className="h-3 w-3" />

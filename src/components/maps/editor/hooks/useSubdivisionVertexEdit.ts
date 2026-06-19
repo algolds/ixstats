@@ -42,6 +42,10 @@ interface UseSubdivisionVertexEditProps {
   onGeometryUpdate?: (featureId: string, geometry: object) => void;
   worldMapLayers?: MapLayerData[];
   editorVisibleLayers?: Set<string>;
+  guides?: { id: string; type: "h" | "v"; value: number }[];
+  snapEnabled?: boolean;
+  snapTolerance?: number;
+  snapPoint?: (coords: [number, number]) => [number, number];
 }
 
 export function useSubdivisionVertexEdit({
@@ -54,6 +58,10 @@ export function useSubdivisionVertexEdit({
   onGeometryUpdate,
   worldMapLayers,
   editorVisibleLayers,
+  guides,
+  snapEnabled,
+  snapTolerance,
+  snapPoint,
 }: UseSubdivisionVertexEditProps) {
   const [isVertexEditing, setIsVertexEditing] = useState(false);
   const vertexEditRef = useRef<{
@@ -76,69 +84,72 @@ export function useSubdivisionVertexEdit({
   const onGeometryUpdateRef = useRef(onGeometryUpdate);
   onGeometryUpdateRef.current = onGeometryUpdate;
 
-  const updateVertexEditVis = useCallback((fastOnly = false) => {
-    const state = vertexEditRef.current;
-    if (!map || !state) return;
+  const updateVertexEditVis = useCallback(
+    (fastOnly = false) => {
+      const state = vertexEditRef.current;
+      if (!map || !state) return;
 
-    const geo = state.currentGeometry;
+      const geo = state.currentGeometry;
 
-    // Polygon fill + stroke
-    const polyFc = {
-      type: "FeatureCollection" as const,
-      features: [
-        {
-          type: "Feature" as const,
-          geometry: geo,
-          properties: {},
-        },
-      ],
-    };
-    getGeoJSONSource(map, "editor-vedit-polygon")?.setData(polyFc);
-
-    // Vertices
-    const verts = getVertices(geo);
-    const vertFc = {
-      type: "FeatureCollection" as const,
-      features: verts.map((v) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: v.coord },
-        properties: { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex },
-      })),
-    };
-    getGeoJSONSource(map, "editor-vedit-vertices")?.setData(vertFc);
-
-    if (fastOnly) {
-      return;
-    }
-
-    // Midpoints (for adding new vertices)
-    const rings = getAllRings(geo);
-    const midFeatures: any[] = [];
-    for (let ri = 0; ri < rings.length; ri++) {
-      const ring = rings[ri]!;
-      const len = ring.length;
-      for (let i = 0; i < len - 1; i++) {
-        const a = ring[i]!;
-        const b = ring[i + 1]!;
-        midFeatures.push({
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
+      // Polygon fill + stroke
+      const polyFc = {
+        type: "FeatureCollection" as const,
+        features: [
+          {
+            type: "Feature" as const,
+            geometry: geo,
+            properties: {},
           },
-          properties: { ringIndex: ri, startIndex: i },
-        });
-      }
-    }
-    getGeoJSONSource(map, "editor-vedit-midpoints")?.setData({
-      type: "FeatureCollection",
-      features: midFeatures,
-    });
+        ],
+      };
+      getGeoJSONSource(map, "editor-vedit-polygon")?.setData(polyFc);
 
-    // Update overlap highlights
-    const overlapGeoJson = calculateOverlapGeoJson(geo, featuresRef.current, state.featureId);
-    getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
-  }, [map]);
+      // Vertices
+      const verts = getVertices(geo);
+      const vertFc = {
+        type: "FeatureCollection" as const,
+        features: verts.map((v) => ({
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: v.coord },
+          properties: { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex },
+        })),
+      };
+      getGeoJSONSource(map, "editor-vedit-vertices")?.setData(vertFc);
+
+      if (fastOnly) {
+        return;
+      }
+
+      // Midpoints (for adding new vertices)
+      const rings = getAllRings(geo);
+      const midFeatures: any[] = [];
+      for (let ri = 0; ri < rings.length; ri++) {
+        const ring = rings[ri]!;
+        const len = ring.length;
+        for (let i = 0; i < len - 1; i++) {
+          const a = ring[i]!;
+          const b = ring[i + 1]!;
+          midFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
+            },
+            properties: { ringIndex: ri, startIndex: i },
+          });
+        }
+      }
+      getGeoJSONSource(map, "editor-vedit-midpoints")?.setData({
+        type: "FeatureCollection",
+        features: midFeatures,
+      });
+
+      // Update overlap highlights
+      const overlapGeoJson = calculateOverlapGeoJson(geo, featuresRef.current, state.featureId);
+      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
+    },
+    [map]
+  );
 
   const scheduleThrottledUpdate = useCallback(() => {
     if (throttledUpdateRef.current) {
@@ -388,8 +399,8 @@ export function useSubdivisionVertexEdit({
       let target: Position = [lngLat.lng, lngLat.lat];
 
       // Snap to visible background layers first
-      const snapOn = getSnapEnabled();
-      const snapTol = getSnapTolerance();
+      const snapOn = snapEnabled ?? getSnapEnabled();
+      const snapTol = snapTolerance ?? getSnapTolerance();
       if (snapOn && worldMapLayers && editorVisibleLayers) {
         target = snapToLayerFeatures(
           target as [number, number],
@@ -415,6 +426,11 @@ export function useSubdivisionVertexEdit({
           }
         }
         target = snapPointToGeometries(target, snapGeoms, snapTol);
+      }
+
+      // Snap to guides if enabled and guides are present
+      if (snapOn && snapPoint) {
+        target = snapPoint(target as [number, number]);
       }
 
       const origTarget: Position = [lngLat.lng, lngLat.lat];
@@ -572,8 +588,8 @@ export function useSubdivisionVertexEdit({
       let target: Position = [lngLat.lng, lngLat.lat];
 
       // Snap to visible background layers first
-      const snapOn = getSnapEnabled();
-      const snapTol = getSnapTolerance();
+      const snapOn = snapEnabled ?? getSnapEnabled();
+      const snapTol = snapTolerance ?? getSnapTolerance();
       if (snapOn && worldMapLayers && editorVisibleLayers) {
         target = snapToLayerFeatures(
           target as [number, number],
@@ -599,6 +615,11 @@ export function useSubdivisionVertexEdit({
           }
         }
         target = snapPointToGeometries(target, snapGeoms, snapTol);
+      }
+
+      // Snap to guides if enabled and guides are present
+      if (snapOn && snapPoint) {
+        target = snapPoint(target as [number, number]);
       }
 
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
@@ -654,7 +675,16 @@ export function useSubdivisionVertexEdit({
       canvas.removeEventListener("touchmove", onTouchMove);
       canvas.removeEventListener("touchend", onTouchEnd);
     };
-  }, [map, isLoaded, updateVertexEditVis, worldMapLayers, editorVisibleLayers]);
+  }, [
+    map,
+    isLoaded,
+    updateVertexEditVis,
+    worldMapLayers,
+    editorVisibleLayers,
+    snapEnabled,
+    snapTolerance,
+    snapPoint,
+  ]);
 
   // 3. Keyboard delete listener
   useEffect(() => {

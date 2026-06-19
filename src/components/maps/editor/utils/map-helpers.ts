@@ -41,7 +41,12 @@ export function getFeatureCoords(geometry: Geometry): Position | undefined {
 /**
  * Helper to calculate and cache bounding box recursively for any geometry type
  */
-export function getGenericBBox(geom: any): { minLng: number; minLat: number; maxLng: number; maxLat: number } {
+export function getGenericBBox(geom: any): {
+  minLng: number;
+  minLat: number;
+  maxLng: number;
+  maxLat: number;
+} {
   if (!geom) return { minLng: 0, minLat: 0, maxLng: 0, maxLat: 0 };
   if (geom._bbox) return geom._bbox;
 

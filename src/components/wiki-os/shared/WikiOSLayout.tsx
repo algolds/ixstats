@@ -146,11 +146,7 @@ export function WikiOSLayout({
     cleanPath.startsWith("/stashes/");
   // Not under /wiki/<slug> at all → not an article either.
   const isSpecialPage =
-    isMainPage ||
-    isReservedWikiPage ||
-    isSpecialNamespace ||
-    isLibraryRoute ||
-    !wikiSlug;
+    isMainPage || isReservedWikiPage || isSpecialNamespace || isLibraryRoute || !wikiSlug;
 
   const sidebarContent = (
     <WikiOSUnifiedSidebar

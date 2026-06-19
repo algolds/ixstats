@@ -101,9 +101,7 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
       });
     }
 
-    primaryItems.push(
-      { label: "Delete", icon: Trash2, onClick: onDelete, danger: true }
-    );
+    primaryItems.push({ label: "Delete", icon: Trash2, onClick: onDelete, danger: true });
 
     if (onCopyCoords) {
       secondaryItems.push({

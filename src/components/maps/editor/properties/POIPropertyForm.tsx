@@ -120,9 +120,9 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
           <button
             type="button"
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold focus:outline-none transition-colors ${
+            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none ${
               isPickingLocation
-                ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 animate-pulse font-bold"
+                ? "animate-pulse font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
                 : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
             }`}
           >

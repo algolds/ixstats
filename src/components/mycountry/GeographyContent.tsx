@@ -34,9 +34,7 @@ export function GeographyContent() {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const {
-    data: geoProfile,
-  } = api.geoCore.getCountryGeoProfile.useQuery(
+  const { data: geoProfile } = api.geoCore.getCountryGeoProfile.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId, staleTime: 30_000 }
   );
@@ -101,33 +99,36 @@ export function GeographyContent() {
 
       {/* Geographic Profile summary card */}
       {geoProfile && (
-        <div className="border-border bg-card/40 rounded-lg border p-3 space-y-2">
+        <div className="border-border bg-card/40 space-y-2 rounded-lg border p-3">
           <div className="flex items-center justify-between">
             <div className="text-foreground text-xs font-semibold">Geographic Profile</div>
             <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
           </div>
-          <div className="text-muted-foreground grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+          <div className="text-muted-foreground grid grid-cols-2 gap-2 text-[10px] sm:grid-cols-4">
             <div>
               <span className="text-[9px] uppercase">Land Area</span>
-              <div className="text-foreground/80 text-xs font-semibold font-mono">
+              <div className="text-foreground/80 font-mono text-xs font-semibold">
                 {geoProfile.area.areaKm2.toLocaleString()} km²
               </div>
             </div>
             <div>
               <span className="text-[9px] uppercase">Climate Model</span>
-              <div className="text-foreground/80 text-xs font-semibold truncate" title={geoProfile.climate.dominant}>
+              <div
+                className="text-foreground/80 truncate text-xs font-semibold"
+                title={geoProfile.climate.dominant}
+              >
                 {geoProfile.climate.dominant}
               </div>
             </div>
             <div>
               <span className="text-[9px] uppercase">Mean Elevation</span>
-              <div className="text-foreground/80 text-xs font-semibold font-mono">
+              <div className="text-foreground/80 font-mono text-xs font-semibold">
                 {Math.round(geoProfile.elevation.meanElev).toLocaleString()} m
               </div>
             </div>
             <div>
               <span className="text-[9px] uppercase">Hydrology</span>
-              <div className="text-foreground/80 text-xs font-semibold font-mono">
+              <div className="text-foreground/80 font-mono text-xs font-semibold">
                 {geoProfile.hydro.riverCount} Rivers / {geoProfile.hydro.lakeCount} Lakes
               </div>
             </div>

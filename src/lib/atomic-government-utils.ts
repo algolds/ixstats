@@ -353,7 +353,7 @@ export function calculateTotalConsumedStaff(
   taxComponents: string[]
 ): number {
   let totalStaff = 0;
-  
+
   govComponents.forEach((type) => {
     const component = ATOMIC_COMPONENTS[type];
     if (component) {
@@ -474,4 +474,3 @@ export function calculateImplementationDate(timeToImplementStr: string): Date {
   }
   return new Date(futureTime);
 }
-

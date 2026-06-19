@@ -12,6 +12,13 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Map Editor Plugin Architecture & Event Delegation Refactoring**:
+  - Implemented a modular **Plugin/Extension Architecture** for the Country Map Editor, migrating domain-specific interactions into separate plugins under [plugins/](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/).
+  - Created [types.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/types.ts) for `MapEditorPlugin` and context definitions, [context.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/context.tsx) for state management and hotkey delegation, and [registry.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/registry.ts) for static plugin registration.
+  - Implemented centralized event delegation in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx), routing map interaction events (`click`, `mousemove`, `mousedown`, `mouseup`, `contextmenu`, `dblclick`) dynamically to the active plugin's `mapEvents` hooks.
+  - Unified the snapping pipeline by defining a shared `snapPoint` resolver context callback in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx), eliminating duplicated, copy-pasted guide-snapping math inside [useSubdivisionDraw.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionDraw.ts) and [useSubdivisionVertexEdit.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts).
+  - Cleaned up event logic and options bar references across components to support dynamic toolbar items registration.
+
 - **Map Editor Advanced Toolbar, Measuring, Lasso, & Subdivision Operations (Plans 042-044)**:
   - Added new editor modes (`"lasso-select"`, `"ruler"`, `"paint-fill"`, `"pan"`) to `EditorMode` in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
   - Added new tool buttons for Hand, Lasso Select, Ruler, and Paint Fill in [MapEditorToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx) with custom keyboard shortcuts (`H`, `M`, `U`, `G`).
@@ -24,7 +31,6 @@ capability integer. Each release entry below lists which components advanced and
   - Prevented coordinate jumps with optimistic client-side updates upon marker drag releases inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
   - Added visual highlighting for gaps/negative space and empty subdivisions, complete with an auto-centroid city creation helper inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
   - Added support for subdivision splitting/merging, city splitting/merging, slider-based population scaling, and group orbit rotations inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
-
 
 - **Geography Report / Analyzer & Named Features (Plan C-2)**:
   - Added new models (`Peak`, `NamedRiver`, `NamedLake`) to [maps.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/maps.prisma) with back-relations in [core.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/core.prisma) to support named geographical features.
@@ -117,7 +123,6 @@ capability integer. Each release entry below lists which components advanced and
 - **Economy Builder & Tax System Persistence**: Added database persistence for selected economic components and atomic tax components (using dynamic enum-to-ID mapping helpers), ensuring selections are saved and loaded correctly across sessions.
 - **Labor & Demographics Tab Separation**: Promoted Demographics and Labor into separate, first-class wizard tabs under the Economy Builder, replacing the previous nested third-level sub-tab layout.
 - **Active Synergies and Conflicts display**: Added real-time tracking and list display of all active selected synergies and conflicts directly within the System Analysis alert inside both Economy and Tax Component selectors.
-
 
 - **ThinkPages → Discord feed mirror**: New admin-configurable integration that mirrors public ThinkPages feed posts to a dedicated `#thinkpages` Discord channel as an RSS-style feed.
   - New `/admin/thinkpages-feed` admin page (`ThinkpagesDiscordFeedContent`): master enable toggle, editable channel ID, account-type (government / media / citizen / sports) + verified-only + exclude-replies + exclude-auto-generated + minimum-engagement filters, account and hashtag allow/block lists, a "send test message" button, and a live preview showing which recent posts the current filter would mirror.
@@ -232,7 +237,6 @@ capability integer. Each release entry below lists which components advanced and
 - **World Baseline Fallback**: Fixed the issue where labor/demographics metrics (such as workforce size and average wage baselines) initialized to global/world averages (e.g. 10M population, 25k GDPPC) during edit mode initialization and wiki data imports, instead scaling them relative to the country's actual stats.
 - **ESLint Comment Leaks**: Cleaned up stray ESLint suppression comments and unused icons leaking text representation to the UI in `AtomicTaxComponents.tsx`.
 - **Sports Tactics Test Assertion**: Updated the test assertion in `src/tests/sports/tactics.test.ts` to reflect changes to the defensive parameters of the `park_the_bus` tactic.
-
 
 - **MyLeague re-seeding crashed on `wikiSlug`**: the Prisma schema declared `wikiSlug` on `SportLeague` and `SportTeam`, but the columns had never been pushed to the database, so re-seeding from the MyLeague admin failed with `The column sport_leagues.wikiSlug does not exist`. Applied the missing additive columns to `sport_leagues` and `sport_teams`.
 - **Geography wireframe never appeared**: switching to the MyCountry Geography tab was meant to swap the hero into the SVG country wireframe, but `useMyCountryNavigation` updated the URL via `history.replaceState`, which does not emit a `hashchange` event — so `EnhancedMyCountryContent`'s separate hook instance never learned the tab changed and never swapped the hero. The hook now dispatches a `hashchange` after the `replaceState`, keeping all consumers in sync.

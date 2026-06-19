@@ -222,9 +222,18 @@ export class IxStatsCalculator {
       gdpDensity: newGdpDensity,
       lastCalculated: new Date(targetTimeMs),
       totalGovernmentSpending: (baselineStats.totalGovernmentSpending ?? 0) + mods.maintenanceCost,
-      taxRevenueGDPPercent: Math.max(0, Math.min(100, (baselineStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)),
-      unemploymentRate: Math.max(0, Math.min(100, (baselineStats.unemploymentRate ?? 5) + mods.unemploymentModifier)),
-      inflationRate: Math.max(-0.5, Math.min(2, (baselineStats.inflationRate ?? 0.02) + mods.inflationModifier)),
+      taxRevenueGDPPercent: Math.max(
+        0,
+        Math.min(100, (baselineStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)
+      ),
+      unemploymentRate: Math.max(
+        0,
+        Math.min(100, (baselineStats.unemploymentRate ?? 5) + mods.unemploymentModifier)
+      ),
+      inflationRate: Math.max(
+        -0.5,
+        Math.min(2, (baselineStats.inflationRate ?? 0.02) + mods.inflationModifier)
+      ),
     };
 
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
@@ -439,9 +448,18 @@ export class IxStatsCalculator {
       gdpDensity: newGdpDensity,
       lastCalculated: new Date(nowIxTimeMs),
       totalGovernmentSpending: (currentStats.totalGovernmentSpending ?? 0) + mods.maintenanceCost,
-      taxRevenueGDPPercent: Math.max(0, Math.min(100, (currentStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)),
-      unemploymentRate: Math.max(0, Math.min(100, (currentStats.unemploymentRate ?? 5) + mods.unemploymentModifier)),
-      inflationRate: Math.max(-0.5, Math.min(2, (currentStats.inflationRate ?? 0.02) + mods.inflationModifier)),
+      taxRevenueGDPPercent: Math.max(
+        0,
+        Math.min(100, (currentStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)
+      ),
+      unemploymentRate: Math.max(
+        0,
+        Math.min(100, (currentStats.unemploymentRate ?? 5) + mods.unemploymentModifier)
+      ),
+      inflationRate: Math.max(
+        -0.5,
+        Math.min(2, (currentStats.inflationRate ?? 0.02) + mods.inflationModifier)
+      ),
     };
 
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);

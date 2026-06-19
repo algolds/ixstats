@@ -46,7 +46,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="mb-1 block text-left text-xs font-medium text-muted-foreground">
+          <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
             Elevation (m)
           </label>
           <input
@@ -63,7 +63,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-left text-xs font-medium text-muted-foreground">
+          <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
             Prominence (m, optional)
           </label>
           <input
@@ -73,7 +73,8 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
             onChange={(e) =>
               onChange({
                 ...form,
-                prominence: e.target.value === "" ? undefined : parseFloat(e.target.value) || undefined,
+                prominence:
+                  e.target.value === "" ? undefined : parseFloat(e.target.value) || undefined,
               })
             }
             className={inputClasses}
@@ -97,9 +98,9 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
           <button
             type="button"
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold focus:outline-none transition-colors ${
+            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none ${
               isPickingLocation
-                ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 animate-pulse font-bold"
+                ? "animate-pulse font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
                 : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
             }`}
           >
@@ -120,7 +121,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
       />
 
       <div>
-        <label className="mb-1 block text-left text-xs font-medium text-muted-foreground">
+        <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
           Subdivision / Region
         </label>
         <select

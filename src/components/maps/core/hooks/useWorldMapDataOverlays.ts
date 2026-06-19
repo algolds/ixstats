@@ -36,7 +36,8 @@ export function useWorldMapDataOverlays({
       if (!source) return;
 
       const currentZoom = map.getZoom();
-      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
+      const hasFocus =
+        selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
 
       const rawFeatures = overlayFeatures.storyPins.features || [];
       const filteredFeatures = rawFeatures.filter((f: any) => {
@@ -45,7 +46,8 @@ export function useWorldMapDataOverlays({
           hasFocus &&
           (f.properties?.countryId === selectedCountryId ||
             f.properties?.countrySlug === selectedCountryId ||
-            (f.properties?.countryName && f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
+            (f.properties?.countryName &&
+              f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
         );
       });
 
@@ -83,7 +85,8 @@ export function useWorldMapDataOverlays({
       if (!source) return;
 
       const currentZoom = map.getZoom();
-      const hasFocus = selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
+      const hasFocus =
+        selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
 
       const rawFeatures = (overlayFeatures.mapLabels as any)?.features || [];
 
@@ -103,7 +106,8 @@ export function useWorldMapDataOverlays({
           hasFocus &&
           (f.properties?.countryId === selectedCountryId ||
             f.properties?.countrySlug === selectedCountryId ||
-            (f.properties?.countryName && f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
+            (f.properties?.countryName &&
+              f.properties.countryName.toLowerCase() === selectedCountryId.toLowerCase()))
         );
       });
 

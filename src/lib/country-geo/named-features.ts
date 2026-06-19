@@ -2,7 +2,8 @@ import { findSubdivisionAtPoint } from "./spatial";
 import { polylineLengthKm, geometryAreaSqKm } from "~/lib/geo-math";
 
 export async function upsertPeak(db: any, countryId: string, data: any): Promise<any> {
-  const { validatePointContainment, snapPointToCountryBorder } = await import("~/lib/geo-validation");
+  const { validatePointContainment, snapPointToCountryBorder } =
+    await import("~/lib/geo-validation");
 
   let coordinates = data.coordinates;
   if (coordinates) {

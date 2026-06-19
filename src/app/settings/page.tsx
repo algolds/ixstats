@@ -350,14 +350,10 @@ function ProfileContent() {
                       )}
                     >
                       <div className="flex items-center">
-                        <Gem
-                          className="mr-3 h-4 w-4 shrink-0 text-purple-500"
-                        />
+                        <Gem className="mr-3 h-4 w-4 shrink-0 text-purple-500" />
                         Cosmetics Preferences
                       </div>
-                      <div
-                        className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700"
-                      />
+                      <div className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
                     </button>
 
                     <button

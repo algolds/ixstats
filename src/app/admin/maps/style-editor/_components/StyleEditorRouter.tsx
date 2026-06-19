@@ -38,14 +38,14 @@ export function StyleEditorRouter() {
 
           <div className="flex items-center gap-2">
             <Layers className="h-4.5 w-4 text-blue-400" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
               Style Editor
             </span>
           </div>
         </div>
 
         {/* Middle Section: Theme Selector Buttons */}
-        <div className="flex items-center gap-1 rounded-lg bg-slate-900 p-1 border border-slate-800">
+        <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
           {(["standard", "dark", "paper"] as ThemeType[]).map((theme) => (
             <button
               key={theme}
@@ -70,15 +70,15 @@ export function StyleEditorRouter() {
           >
             <RefreshCw className="h-4 w-4" />
           </button>
-          
-          <div className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400 border border-slate-700">
+
+          <div className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
             Maputnik v1.7.0
           </div>
         </div>
       </header>
 
       {/* Embedded Maputnik Iframe */}
-      <div className="flex-1 w-full bg-slate-900 relative">
+      <div className="relative w-full flex-1 bg-slate-900">
         <iframe
           key={key}
           src={iframeUrl}

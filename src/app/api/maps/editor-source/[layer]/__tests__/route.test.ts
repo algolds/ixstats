@@ -75,7 +75,17 @@ describe("Map Editor Source Layer API", () => {
         type: "province",
         level: 1,
         areaSqKm: 1500,
-        geometry: { type: "Polygon", coordinates: [[[0, 0], [0, 1], [1, 1], [0, 0]]] },
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [0, 0],
+              [0, 1],
+              [1, 1],
+              [0, 0],
+            ],
+          ],
+        },
         countryId: "ctry-1",
         country: { name: "Country 1", slug: "country-1" },
       },
@@ -217,7 +227,17 @@ describe("Map Editor Source Layer API", () => {
       features: [
         {
           type: "Feature",
-          geometry: { type: "Polygon", coordinates: [[[0, 0], [0, 5], [5, 5], [0, 0]]] },
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [0, 0],
+                [0, 5],
+                [5, 5],
+                [0, 0],
+              ],
+            ],
+          },
           properties: { id: "p-1", name: "Base Area" },
         },
       ],

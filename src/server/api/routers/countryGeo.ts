@@ -205,7 +205,10 @@ export const countryGeoRouter = createTRPCRouter({
       // Name is optional on the schema to allow partial (geometry-only) updates,
       // but it is mandatory when creating a new subdivision.
       if (!input.id && !input.name?.trim()) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Name is required when creating a subdivision" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Name is required when creating a subdivision",
+        });
       }
 
       const subdivision = await upsertSubdivision(ctx.db, input.countryId, {

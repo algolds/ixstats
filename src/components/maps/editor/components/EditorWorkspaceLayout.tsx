@@ -111,7 +111,9 @@ export function EditorWorkspaceLayout({
 
     if (collapsedA && collapsedB) {
       return (
-        <div className={`bg-card/75 border-border flex h-full shrink-0 flex-col backdrop-blur-md ${side === "left" ? "border-r" : "border-l"}`}>
+        <div
+          className={`bg-card/75 border-border flex h-full shrink-0 flex-col backdrop-blur-md ${side === "left" ? "border-r" : "border-l"}`}
+        >
           <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-A`}>
             {panelA}
           </EditorErrorBoundary>
@@ -187,19 +189,11 @@ export function EditorWorkspaceLayout({
     if (!isBottomA && !isBottomB) return null;
 
     if (isBottomA && !isBottomB) {
-      return (
-        <EditorErrorBoundary name="BottomPanel-A">
-          {panelA}
-        </EditorErrorBoundary>
-      );
+      return <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>;
     }
 
     if (isBottomB && !isBottomA) {
-      return (
-        <EditorErrorBoundary name="BottomPanel-B">
-          {panelB}
-        </EditorErrorBoundary>
-      );
+      return <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>;
     }
 
     // Both stacked at bottom
@@ -209,12 +203,8 @@ export function EditorWorkspaceLayout({
     if (collapsedA && collapsedB) {
       return (
         <div className="bg-card/75 border-border flex w-full shrink-0 flex-row gap-2 border-t px-2 py-1 backdrop-blur-md">
-          <EditorErrorBoundary name="BottomPanel-A">
-            {panelA}
-          </EditorErrorBoundary>
-          <EditorErrorBoundary name="BottomPanel-B">
-            {panelB}
-          </EditorErrorBoundary>
+          <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
+          <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
         </div>
       );
     }
@@ -223,14 +213,10 @@ export function EditorWorkspaceLayout({
       return (
         <div className="flex w-full shrink-0 flex-row items-center">
           <div className="mr-2 shrink-0">
-            <EditorErrorBoundary name="BottomPanel-A">
-              {panelA}
-            </EditorErrorBoundary>
+            <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
           </div>
           <div className="h-full min-w-0 flex-1">
-            <EditorErrorBoundary name="BottomPanel-B">
-              {panelB}
-            </EditorErrorBoundary>
+            <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
           </div>
         </div>
       );
@@ -240,14 +226,10 @@ export function EditorWorkspaceLayout({
       return (
         <div className="flex w-full shrink-0 flex-row items-center">
           <div className="h-full min-w-0 flex-1">
-            <EditorErrorBoundary name="BottomPanel-A">
-              {panelA}
-            </EditorErrorBoundary>
+            <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
           </div>
           <div className="ml-2 shrink-0">
-            <EditorErrorBoundary name="BottomPanel-B">
-              {panelB}
-            </EditorErrorBoundary>
+            <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
           </div>
         </div>
       );
@@ -260,9 +242,7 @@ export function EditorWorkspaceLayout({
           style={{ width: `calc(${bottomSplitRatio * 100}% - 2px)` }}
           className="h-full min-w-0 shrink-0"
         >
-          <EditorErrorBoundary name="BottomPanel-A">
-            {panelA}
-          </EditorErrorBoundary>
+          <EditorErrorBoundary name="BottomPanel-A">{panelA}</EditorErrorBoundary>
         </div>
         {!panelsLocked ? (
           <div
@@ -273,9 +253,7 @@ export function EditorWorkspaceLayout({
           <div className="bg-border h-full w-px shrink-0" />
         )}
         <div className="h-full min-w-0 flex-1">
-          <EditorErrorBoundary name="BottomPanel-B">
-            {panelB}
-          </EditorErrorBoundary>
+          <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>
         </div>
       </div>
     );

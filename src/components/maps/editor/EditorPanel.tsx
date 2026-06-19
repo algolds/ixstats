@@ -18,6 +18,7 @@ import {
   Globe,
   Link as LinkIcon,
   Layout,
+  History,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
@@ -27,7 +28,14 @@ const PANEL_MAX_W = 480;
 const PANEL_DEFAULT_W = 320;
 const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 
-export type TabId = "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty";
+export type TabId =
+  | "properties"
+  | "layers"
+  | "features"
+  | "wiki"
+  | "linkages"
+  | "sovereignty"
+  | "history";
 
 const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }> = {
   layers: { label: "Layers", Icon: Layers },
@@ -36,6 +44,7 @@ const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }>
   linkages: { label: "Links", Icon: LinkIcon },
   sovereignty: { label: "Sovereign", Icon: Globe },
   wiki: { label: "Wiki", Icon: BookOpen },
+  history: { label: "History", Icon: History },
 };
 
 interface EditorPanelProps {
@@ -59,6 +68,7 @@ interface EditorPanelProps {
   wikiContent?: React.ReactNode;
   linkagesContent?: React.ReactNode;
   sovereigntyContent?: React.ReactNode;
+  historyContent?: React.ReactNode;
   /** Feature count for badge */
   featureCount?: number;
   /** Whether import wizard should take over the panel */
@@ -87,6 +97,7 @@ export function EditorPanel({
   wikiContent,
   linkagesContent,
   sovereigntyContent,
+  historyContent,
   featureCount,
   importWizardContent,
   featuresLoading,
@@ -444,6 +455,9 @@ export function EditorPanel({
               )}
               {activeTab === "sovereignty" && sovereigntyContent && (
                 <div className="h-full overflow-y-auto">{sovereigntyContent}</div>
+              )}
+              {activeTab === "history" && historyContent && (
+                <div className="h-full overflow-y-auto">{historyContent}</div>
               )}
               {activeTab === "layers" && (
                 <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">

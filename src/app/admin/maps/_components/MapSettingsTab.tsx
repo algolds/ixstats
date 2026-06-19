@@ -60,26 +60,30 @@ function MapStyleSettingsPanel() {
     <div className="space-y-6">
       <div className="border-border bg-card rounded-xl border p-6">
         <div className="flex items-start gap-4">
-          <div className="bg-blue-500/10 text-blue-500 rounded-lg p-3">
+          <div className="rounded-lg bg-blue-500/10 p-3 text-blue-500">
             <Palette className="h-6 w-6" />
           </div>
           <div className="flex-1 space-y-1">
             <h3 className="text-foreground text-lg font-semibold">Visual Style & Theme Editor</h3>
-            <p className="text-muted-foreground text-sm max-w-2xl">
-              IxStats uses the MapLibre GL style specification to define visual layers, fonts, colors, and layout configurations. 
-              The embedded Maputnik style editor allows you to edit standard, dark, and paper styles visually and preview them with live PostGIS geographic boundaries.
+            <p className="text-muted-foreground max-w-2xl text-sm">
+              IxStats uses the MapLibre GL style specification to define visual layers, fonts,
+              colors, and layout configurations. The embedded Maputnik style editor allows you to
+              edit standard, dark, and paper styles visually and preview them with live PostGIS
+              geographic boundaries.
             </p>
           </div>
         </div>
 
-        <div className="border-border/60 mt-6 border-t pt-6 flex items-center justify-between">
+        <div className="border-border/60 mt-6 flex items-center justify-between border-t pt-6">
           <div className="space-y-1">
-            <div className="text-sm font-medium text-foreground">Launch Style Editor</div>
-            <div className="text-muted-foreground text-xs">Visual editing is done in a full-screen environment.</div>
+            <div className="text-foreground text-sm font-medium">Launch Style Editor</div>
+            <div className="text-muted-foreground text-xs">
+              Visual editing is done in a full-screen environment.
+            </div>
           </div>
           <Link
             href="/admin/maps/style-editor"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
           >
             <span>Open Style Editor</span>
             <ExternalLink className="h-4 w-4" />

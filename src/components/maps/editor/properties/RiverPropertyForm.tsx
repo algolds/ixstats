@@ -42,11 +42,11 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
               Drawn {lengthKm !== undefined && `(${lengthKm.toFixed(2)} km)`}
             </span>
           ) : (
-            <span className="italic text-amber-500">Not drawn yet (use Line tool)</span>
+            <span className="text-amber-500 italic">Not drawn yet (use Line tool)</span>
           )}
         </div>
         {!hasGeom && (
-          <div className="mt-1 text-left text-[10px] text-muted-foreground">
+          <div className="text-muted-foreground mt-1 text-left text-[10px]">
             Use the line drawing tool in the map controls to draw the path of the river.
           </div>
         )}

@@ -185,7 +185,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               : undefined
           }
         >
-          <div className="overflow-hidden rounded-full h-full w-full flex items-center justify-center">
+          <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
             {user?.imageUrl ? (
               <img src={user.imageUrl} alt="" className="h-full w-full rounded-full object-cover" />
             ) : userProfile?.country?.name ? (

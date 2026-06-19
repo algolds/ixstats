@@ -3,11 +3,7 @@ import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/serve
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
-import {
-  upsertPeak,
-  upsertNamedRiver,
-  upsertNamedLake,
-} from "~/lib/country-geo/named-features";
+import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "~/lib/country-geo/named-features";
 
 const coordinatesSchema = z
   .tuple([z.number(), z.number()])
@@ -40,10 +36,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
       });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("peak", input.countryId);
 
       return peak;
@@ -81,14 +74,13 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         coordinates: input.coordinates ?? existing.coordinates,
         elevation: input.elevation ?? existing.elevation,
         prominence: input.prominence !== undefined ? input.prominence : existing.prominence,
-        subdivisionId: input.subdivisionId !== undefined ? input.subdivisionId : existing.subdivisionId,
-        wikiPageTitle: input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
+        subdivisionId:
+          input.subdivisionId !== undefined ? input.subdivisionId : existing.subdivisionId,
+        wikiPageTitle:
+          input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
       });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("peak", input.countryId);
 
       return peak;
@@ -116,10 +108,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
 
       await ctx.db.peak.delete({ where: { id: input.peakId } });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("peak", input.countryId);
 
       return { id: input.peakId, deleted: true };
@@ -146,10 +135,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
       });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("river", input.countryId);
 
       return river;
@@ -182,13 +168,11 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         id: input.riverId,
         name: input.name ?? existing.name,
         geometry: input.geometry ?? existing.geometry,
-        wikiPageTitle: input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
+        wikiPageTitle:
+          input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
       });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("river", input.countryId);
 
       return river;
@@ -216,10 +200,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
 
       await ctx.db.namedRiver.delete({ where: { id: input.riverId } });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("river", input.countryId);
 
       return { id: input.riverId, deleted: true };
@@ -247,10 +228,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
       });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("lake", input.countryId);
 
       return lake;
@@ -285,13 +263,11 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         name: input.name ?? existing.name,
         geometry: input.geometry ?? existing.geometry,
         maxDepthM: input.maxDepthM !== undefined ? input.maxDepthM : existing.maxDepthM,
-        wikiPageTitle: input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
+        wikiPageTitle:
+          input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
       });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("lake", input.countryId);
 
       return lake;
@@ -319,10 +295,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
 
       await ctx.db.namedLake.delete({ where: { id: input.lakeId } });
 
-      await invalidateCache([
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
       broadcastMapUpdate("lake", input.countryId);
 
       return { id: input.lakeId, deleted: true };

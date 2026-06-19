@@ -294,7 +294,9 @@ export const vaultStoreRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] toggleEquipCosmetic error:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to toggle equipped cosmetic");
+        throw new Error(
+          error instanceof Error ? error.message : "Failed to toggle equipped cosmetic"
+        );
       }
     }),
 });

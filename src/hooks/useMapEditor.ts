@@ -12,6 +12,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { union } from "@turf/union";
 import { difference } from "@turf/difference";
 import { featureCollection, point } from "@turf/helpers";
+import { intersect } from "@turf/intersect";
 import { simplify } from "@turf/simplify";
 import { bbox } from "@turf/bbox";
 import { centroid } from "@turf/centroid";
@@ -189,6 +190,8 @@ export type EditorMode =
   | "split-subdivision"
   | "lasso-select"
   | "ruler"
+  | "eyedropper"
+  | "magic-wand"
   | "paint-fill"
   | "pan";
 
@@ -385,8 +388,14 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   }, [utils]);
 
   const [mode, setModeRaw] = useState<EditorMode>("view");
+  const [previousMode, setPreviousMode] = useState<EditorMode>("view");
   const setMode = useCallback((newMode: EditorMode) => {
-    setModeRaw(newMode);
+    setModeRaw((prev) => {
+      if (prev !== "eyedropper" && prev !== "magic-wand") {
+        setPreviousMode(prev);
+      }
+      return newMode;
+    });
     setValidationErrors({});
   }, []);
   const [selectedFeature, setSelectedFeature] = useState<EditorFeature | null>(null);
@@ -407,6 +416,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   // ── Route Drawing State ──
   const [routeWaypoints, setRouteWaypoints] = useState<[number, number][]>([]);
+
+  useEffect(() => {
+    if (mode !== "add-route" && mode !== "split-subdivision") {
+      setRouteWaypoints([]);
+    }
+  }, [mode]);
   const [routeDrawingHistory, setRouteDrawingHistory] = useState<[number, number][][]>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [editingRouteVertices, setEditingRouteVertices] = useState<[number, number][]>([]);
@@ -938,6 +953,283 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     await applyAction(action);
     setHistory((prev) => ({ ...prev, position: prev.position + 1 }));
   }, [history, historyCanRedo, applyAction]);
+
+  const [presetStyle, setPresetStyle] = useState<any | null>(null);
+  const [guides, setGuides] = useState<{ id: string; type: "h" | "v"; value: number }[]>([]);
+
+  const jumpToHistoryPosition = useCallback(
+    async (targetPosition: number) => {
+      if (targetPosition < -1 || targetPosition >= history.actions.length) return;
+      const currentPos = history.position;
+      if (targetPosition === currentPos) return;
+
+      if (targetPosition < currentPos) {
+        // Undo steps in reverse chronological order
+        for (let i = currentPos; i > targetPosition; i--) {
+          const action = history.actions[i];
+          if (action) {
+            await reverseAction(action);
+          }
+        }
+      } else {
+        // Redo steps in chronological order
+        for (let i = currentPos + 1; i <= targetPosition; i++) {
+          const action = history.actions[i];
+          if (action) {
+            await applyAction(action);
+          }
+        }
+      }
+      setHistory((prev) => ({ ...prev, position: targetPosition }));
+    },
+    [history, reverseAction, applyAction]
+  );
+
+  const [wandMatchColor, setWandMatchColor] = useState(true);
+  const [wandMatchLevel, setWandMatchLevel] = useState(false);
+  const [wandMatchParent, setWandMatchParent] = useState(false);
+
+  const applyEyedropper = useCallback(
+    (feature: EditorFeature) => {
+      if (!feature) return;
+
+      setPresetStyle({
+        type: feature.type,
+        properties: { ...feature.properties },
+      });
+
+      if (feature.type === "subdivision") {
+        setSubdivisionForm({
+          name: "",
+          type: (feature.properties.type as string) ?? "province",
+          level: (feature.properties.level as number) ?? 1,
+          color: (feature.properties.color as string | undefined) ?? undefined,
+        });
+      } else if (feature.type === "city") {
+        setCityForm({
+          name: "",
+          cityType: (feature.properties.cityType as string) ?? "city",
+          population: (feature.properties.population as number | undefined) ?? undefined,
+          isNationalCapital: false,
+          isSubdivisionCapital: false,
+          subdivisionId: (feature.properties.subdivisionId as string | undefined) ?? undefined,
+        });
+      } else if (feature.type === "poi") {
+        setPOIForm({
+          name: "",
+          category: (feature.properties.category as string) ?? "landmark",
+          description: (feature.properties.description as string | undefined) ?? undefined,
+        });
+      } else if (feature.type === "storyPin") {
+        setStoryPinForm({
+          title: "",
+          content: "",
+          contentFormat: "plain",
+          category: (feature.properties.category as string) ?? "cultural",
+          importance: (feature.properties.importance as number) ?? 0,
+        });
+      } else if (feature.type === "mapLabel") {
+        setMapLabelForm({
+          text: "",
+          labelType: (feature.properties.labelType as string) ?? "mountain_range",
+          fontSize: (feature.properties.fontSize as number) ?? 14,
+          color: (feature.properties.color as string) ?? "#374151",
+          rotation: (feature.properties.rotation as number) ?? 0,
+          letterSpacing: (feature.properties.letterSpacing as number) ?? 0,
+          fontWeight: (feature.properties.fontWeight as string) ?? "normal",
+          opacity: (feature.properties.opacity as number) ?? 1,
+        });
+      }
+
+      setModeRaw(previousMode);
+    },
+    [previousMode]
+  );
+
+  const applyMagicWand = useCallback(
+    (feature: EditorFeature, isShift: boolean, isAlt: boolean) => {
+      if (!feature) return;
+
+      const matches = allFeatures.filter((f) => {
+        if (f.type !== feature.type) return false;
+
+        if (wandMatchColor) {
+          const colA = feature.properties.color || feature.properties.fill;
+          const colB = f.properties.color || f.properties.fill;
+          if (colA !== colB) return false;
+        }
+
+        if (wandMatchLevel) {
+          const levelA =
+            feature.properties.level ||
+            feature.properties.cityType ||
+            feature.properties.category ||
+            feature.properties.labelType;
+          const levelB =
+            f.properties.level ||
+            f.properties.cityType ||
+            f.properties.category ||
+            f.properties.labelType;
+          if (levelA !== levelB) return false;
+        }
+
+        if (wandMatchParent) {
+          const parentA = feature.properties.countryId || feature.properties.subdivisionId;
+          const parentB = f.properties.countryId || f.properties.subdivisionId;
+          if (parentA !== parentB) return false;
+        }
+
+        return true;
+      });
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (isAlt) {
+          matches.forEach((f) => next.delete(f.id));
+        } else if (isShift) {
+          matches.forEach((f) => next.add(f.id));
+        } else {
+          next.clear();
+          matches.forEach((f) => next.add(f.id));
+        }
+        return next;
+      });
+    },
+    [allFeatures, wandMatchColor, wandMatchLevel, wandMatchParent]
+  );
+
+  const pathfinderOperation = useCallback(
+    async (opType: "union" | "subtract" | "intersect") => {
+      if (!countryId) return;
+
+      const selectedSubdivisions = allFeatures.filter(
+        (f) => f.type === "subdivision" && selectedIds.has(f.id)
+      );
+      if (selectedSubdivisions.length < 2) {
+        alert("Please select at least 2 subdivisions to perform Pathfinder operations.");
+        return;
+      }
+
+      const primary = selectedSubdivisions[0]!;
+      if (!primary.geometry) return;
+
+      let currentGeom = primary.geometry;
+      const deletedFeatures: typeof selectedSubdivisions = [];
+
+      for (let i = 1; i < selectedSubdivisions.length; i++) {
+        const other = selectedSubdivisions[i]!;
+        if (!currentGeom || !other.geometry) continue;
+
+        let result: any = null;
+
+        if (opType === "union") {
+          result = union(
+            featureCollection([
+              { type: "Feature", geometry: currentGeom as any, properties: {} },
+              { type: "Feature", geometry: other.geometry as any, properties: {} },
+            ])
+          );
+        } else if (opType === "subtract") {
+          result = difference(
+            featureCollection([
+              { type: "Feature", geometry: currentGeom as any, properties: {} },
+              { type: "Feature", geometry: other.geometry as any, properties: {} },
+            ])
+          );
+        } else if (opType === "intersect") {
+          result = intersect(
+            featureCollection([
+              { type: "Feature", geometry: currentGeom as any, properties: {} },
+              { type: "Feature", geometry: other.geometry as any, properties: {} },
+            ])
+          );
+        }
+
+        if (result && result.geometry) {
+          currentGeom = cleanPolygonGeometry(result.geometry);
+        } else if (opType === "subtract") {
+          currentGeom = null;
+        } else {
+          currentGeom = null;
+        }
+
+        if (opType === "union" || opType === "intersect" || (opType === "subtract" && result)) {
+          deletedFeatures.push(other);
+        }
+      }
+
+      if (!currentGeom && opType !== "subtract") {
+        alert(`Pathfinder ${opType} operation resulted in empty or invalid geometry.`);
+        return;
+      }
+
+      // 1. Push history actions
+      pushAction({
+        type: "update",
+        featureType: "subdivision",
+        featureId: primary.id,
+        previousData: {
+          name: primary.name,
+          geometry: primary.geometry,
+          properties: primary.properties,
+        },
+        newData: {
+          name: primary.name,
+          geometry: currentGeom || undefined,
+          properties: primary.properties,
+        },
+      });
+
+      for (const other of deletedFeatures) {
+        pushAction({
+          type: "delete",
+          featureType: "subdivision",
+          featureId: other.id,
+          previousData: {
+            name: other.name,
+            geometry: other.geometry,
+            properties: other.properties,
+          },
+        });
+      }
+
+      // 2. Database mutations
+      if (currentGeom) {
+        await updateSubdivisionGeom.mutateAsync({
+          countryId,
+          id: primary.id,
+          geometry: currentGeom,
+        });
+      } else {
+        await deleteSubdivision.mutateAsync({
+          countryId,
+          subdivisionId: primary.id,
+        });
+      }
+
+      for (const other of deletedFeatures) {
+        await deleteSubdivision.mutateAsync({
+          countryId,
+          subdivisionId: other.id,
+        });
+      }
+
+      clearMultiSelect();
+      invalidateAllMapData();
+      debouncedRefetch();
+    },
+    [
+      countryId,
+      allFeatures,
+      selectedIds,
+      updateSubdivisionGeom,
+      deleteSubdivision,
+      pushAction,
+      clearMultiSelect,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
+  );
 
   // Fetch country features
   const {
@@ -1935,6 +2227,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setSelectedFeature(feature);
     setLastSavedAt(null);
     setIsPickingLocation(false);
+    setRouteWaypoints([]);
+    setPendingGeometry(null);
+    setPendingCoordinates(null);
 
     switch (feature.type) {
       case "city":
@@ -3173,7 +3468,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
     const emptySubs = subdivisions.filter((sub) => {
       if (!sub.geometry) return false;
-      
+
       const hasCity = cities.some((city) => {
         if (!city.coordinates) return false;
         const pt = point(city.coordinates);
@@ -3252,7 +3547,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     if (citiesToMerge.length < 2) return;
 
     const baseCity = citiesToMerge[0]!;
-    
+
     let totalPopulation = Number(baseCity.properties.population) || 0;
     for (let i = 1; i < citiesToMerge.length; i++) {
       totalPopulation += Number(citiesToMerge[i]!.properties.population) || 0;
@@ -3341,7 +3636,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         startEditing(newCityFeature);
       }
     },
-    [countryId, allFeatures, updateCity, createCity, refetchFeatures, startEditing, invalidateAllMapData]
+    [
+      countryId,
+      allFeatures,
+      updateCity,
+      createCity,
+      refetchFeatures,
+      startEditing,
+      invalidateAllMapData,
+    ]
   );
 
   // ── Population Scaling & Orbit Rotation ──
@@ -3349,9 +3652,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     async (factor: number) => {
       if (!countryId || selectedIds.size === 0) return;
 
-      const citiesToScale = allFeatures.filter(
-        (f) => selectedIds.has(f.id) && f.type === "city"
-      );
+      const citiesToScale = allFeatures.filter((f) => selectedIds.has(f.id) && f.type === "city");
 
       for (const city of citiesToScale) {
         const currentPop = Number(city.properties.population) || 0;
@@ -3386,9 +3687,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
       if (citiesToRotate.length < 2) return;
 
-      const pts = featureCollection(
-        citiesToRotate.map((c) => point(c.coordinates!))
-      );
+      const pts = featureCollection(citiesToRotate.map((c) => point(c.coordinates!)));
       const collectiveCentroid = centroid(pts);
       if (!collectiveCentroid?.geometry?.coordinates) return;
 
@@ -3500,7 +3799,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       invalidateAllMapData();
       debouncedRefetch();
     },
-    [countryId, allFeatures, subdivisionForm, updateSubdivision, utils, invalidateAllMapData, debouncedRefetch]
+    [
+      countryId,
+      allFeatures,
+      subdivisionForm,
+      updateSubdivision,
+      utils,
+      invalidateAllMapData,
+      debouncedRefetch,
+    ]
   );
 
   const isMutating =
@@ -3705,6 +4012,24 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     clearRuler,
     applyLassoSelection,
     applyPaintFill,
+
+    // Eyedropper, Magic Wand & History Jump
+    presetStyle,
+    setPresetStyle,
+    guides,
+    setGuides,
+    jumpToHistoryPosition,
+
+    // Magic Wand / Eyedropper configs & callbacks
+    wandMatchColor,
+    setWandMatchColor,
+    wandMatchLevel,
+    setWandMatchLevel,
+    wandMatchParent,
+    setWandMatchParent,
+    applyEyedropper,
+    applyMagicWand,
+    pathfinderOperation,
   };
 }
 

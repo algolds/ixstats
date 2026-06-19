@@ -68,9 +68,7 @@ describe("MapLibre Style Specification Validation", () => {
 
       test("should resolve font stacks to font strings", () => {
         // Find a symbol layer and verify its font stack is resolved
-        const symbolLayers = resolvedStyle.layers.filter(
-          (l: any) => l.type === "symbol"
-        );
+        const symbolLayers = resolvedStyle.layers.filter((l: any) => l.type === "symbol");
 
         expect(symbolLayers.length).toBeGreaterThan(0);
 
@@ -78,12 +76,14 @@ describe("MapLibre Style Specification Validation", () => {
           if (layer.layout && layer.layout["text-font"]) {
             const fonts = layer.layout["text-font"];
             // If it's a simple array (not an expression like "case"), it should match mock fonts
-            const isExpression = Array.isArray(fonts) && ["case", "match", "coalesce", "step", "interpolate"].includes(fonts[0]);
+            const isExpression =
+              Array.isArray(fonts) &&
+              ["case", "match", "coalesce", "step", "interpolate"].includes(fonts[0]);
             if (Array.isArray(fonts) && typeof fonts[0] === "string" && !isExpression) {
               fonts.forEach((font: string) => {
-                expect(
-                  mockFonts.regular.concat(mockFonts.bold).concat(mockFonts.sans)
-                ).toContain(font);
+                expect(mockFonts.regular.concat(mockFonts.bold).concat(mockFonts.sans)).toContain(
+                  font
+                );
               });
             }
           }

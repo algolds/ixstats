@@ -1,20 +1,18 @@
 import type { Polygon } from "geojson";
-import {
-  insertVertexIfOnSegment,
-  alignSharedVertices,
-  getAllRings
-} from "../border-editor";
+import { insertVertexIfOnSegment, alignSharedVertices, getAllRings } from "../border-editor";
 
 function square(minLng: number, minLat: number, maxLng: number, maxLat: number): Polygon {
   return {
     type: "Polygon",
-    coordinates: [[
-      [minLng, minLat],
-      [maxLng, minLat],
-      [maxLng, maxLat],
-      [minLng, maxLat],
-      [minLng, minLat]
-    ]]
+    coordinates: [
+      [
+        [minLng, minLat],
+        [maxLng, minLat],
+        [maxLng, maxLat],
+        [minLng, maxLat],
+        [minLng, minLat],
+      ],
+    ],
   };
 }
 
@@ -51,13 +49,15 @@ describe("alignSharedVertices", () => {
     const geomA = square(0, 0, 2, 2);
     const geomB = {
       type: "Polygon" as const,
-      coordinates: [[
-        [2, 0],
-        [4, 0],
-        [4, 2],
-        [2, 1], // vertex on A's right boundary (x=2, y=0 to y=2)
-        [2, 0]
-      ]]
+      coordinates: [
+        [
+          [2, 0],
+          [4, 0],
+          [4, 2],
+          [2, 1], // vertex on A's right boundary (x=2, y=0 to y=2)
+          [2, 0],
+        ],
+      ],
     };
 
     const res = alignSharedVertices(geomA, geomB, 1e-7);

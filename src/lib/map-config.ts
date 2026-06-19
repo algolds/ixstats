@@ -201,18 +201,18 @@ export interface RouteStyle {
 }
 
 export const ROUTE_STYLES: Record<string, RouteStyle> = {
-  rail:             { label: "Rail",         color: "#374151", width: 3 },
-  highway:          { label: "Highway",      color: "#f97316", width: 2.5 },
-  road:             { label: "Road",         color: "#92400e", width: 1.5 },
-  shipping_lane:    { label: "Shipping",     color: "#3b82f6", width: 2 },
-  canal:            { label: "Canal",        color: "#06b6d4", width: 1.5 },
-  air_corridor:     { label: "Air",          color: "#a855f7", width: 2, dash: [6, 4] },
-  ferry:            { label: "Ferry",        color: "#14b8a6", width: 1.5, dash: [4, 3] },
-  pipeline:         { label: "Pipeline",     color: "#eab308", width: 2 },
-  power_grid:       { label: "Power",        color: "#f59e0b", width: 1.5 },
-  fiber:            { label: "Fiber",        color: "#e5e7eb", width: 1 },
-  military_supply:  { label: "Mil. Supply",  color: "#dc2626", width: 2 },
-  military_naval:   { label: "Mil. Naval",   color: "#7f1d1d", width: 2 },
+  rail: { label: "Rail", color: "#374151", width: 3 },
+  highway: { label: "Highway", color: "#f97316", width: 2.5 },
+  road: { label: "Road", color: "#92400e", width: 1.5 },
+  shipping_lane: { label: "Shipping", color: "#3b82f6", width: 2 },
+  canal: { label: "Canal", color: "#06b6d4", width: 1.5 },
+  air_corridor: { label: "Air", color: "#a855f7", width: 2, dash: [6, 4] },
+  ferry: { label: "Ferry", color: "#14b8a6", width: 1.5, dash: [4, 3] },
+  pipeline: { label: "Pipeline", color: "#eab308", width: 2 },
+  power_grid: { label: "Power", color: "#f59e0b", width: 1.5 },
+  fiber: { label: "Fiber", color: "#e5e7eb", width: 1 },
+  military_supply: { label: "Mil. Supply", color: "#dc2626", width: 2 },
+  military_naval: { label: "Mil. Naval", color: "#7f1d1d", width: 2 },
 };
 
 /** Ordered list of all route type keys for consistent UI rendering */

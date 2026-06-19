@@ -162,7 +162,10 @@ export function VaultUserDirectory() {
 
   const adminToggleEquipMutation = api.vault.adminToggleEquipCosmetic.useMutation({
     onSuccess: (data) => {
-      notify.success("Success", data.isEquipped ? "Cosmetic equipped for user" : "Cosmetic unequipped for user");
+      notify.success(
+        "Success",
+        data.isEquipped ? "Cosmetic equipped for user" : "Cosmetic unequipped for user"
+      );
       void refetchUserEquipped();
       void refetchVaults();
     },
@@ -890,15 +893,17 @@ export function VaultUserDirectory() {
                 </div>
               </div>
 
-              <div className="border-border/40 bg-muted/20 max-h-80 overflow-y-auto rounded-lg border p-2 space-y-2">
+              <div className="border-border/40 bg-muted/20 max-h-80 space-y-2 overflow-y-auto rounded-lg border p-2">
                 {storeItems?.map((item: any) => {
                   const ownedItemIds = userPurchases?.purchasedItemIds || [];
                   const isOwned = ownedItemIds.includes(item.id);
                   const equippedIds = userEquipped?.equipped || [];
                   const isEquipped = equippedIds.includes(item.id);
                   const isPending =
-                    (grantItemMutation.isPending && grantItemMutation.variables?.itemId === item.id) ||
-                    (revokeItemMutation.isPending && revokeItemMutation.variables?.itemId === item.id);
+                    (grantItemMutation.isPending &&
+                      grantItemMutation.variables?.itemId === item.id) ||
+                    (revokeItemMutation.isPending &&
+                      revokeItemMutation.variables?.itemId === item.id);
                   const isTogglePending =
                     adminToggleEquipMutation.isPending &&
                     adminToggleEquipMutation.variables?.itemId === item.id;
@@ -906,22 +911,22 @@ export function VaultUserDirectory() {
                   return (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-2 rounded-lg border border-border/30 bg-card/25"
+                      className="border-border/30 bg-card/25 flex items-center justify-between rounded-lg border p-2"
                     >
                       <div className="flex items-start gap-2.5">
                         <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded bg-purple-500/10 text-purple-500 dark:bg-purple-500/20 dark:text-purple-400">
                           <Gem className="h-4 w-4" />
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-foreground">{item.name}</div>
-                          <div className="text-[10px] text-muted-foreground max-w-[280px] line-clamp-1">
+                          <div className="text-foreground text-xs font-semibold">{item.name}</div>
+                          <div className="text-muted-foreground line-clamp-1 max-w-[280px] text-[10px]">
                             {item.description}
                           </div>
                           <div className="mt-1 flex items-center gap-1.5">
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">
+                            <Badge variant="outline" className="px-1 py-0 text-[9px] capitalize">
                               {item.category}
                             </Badge>
-                            <span className="text-[9px] font-mono text-amber-600 dark:text-amber-400">
+                            <span className="font-mono text-[9px] text-amber-600 dark:text-amber-400">
                               {item.price} IxC
                             </span>
                           </div>
@@ -943,7 +948,7 @@ export function VaultUserDirectory() {
                             className={`h-7 px-2.5 text-xs font-bold ${
                               isEquipped
                                 ? "bg-purple-600 text-white hover:bg-purple-700"
-                                : "border-purple-500/30 text-purple-500 hover:bg-purple-500/10 hover:text-purple-400 bg-purple-500/5"
+                                : "border-purple-500/30 bg-purple-500/5 text-purple-500 hover:bg-purple-500/10 hover:text-purple-400"
                             }`}
                           >
                             {isTogglePending ? "..." : isEquipped ? "Equipped" : "Equip"}
@@ -975,7 +980,7 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className="h-7 px-2.5 text-xs font-bold border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400 bg-emerald-500/5"
+                            className="h-7 border-emerald-500/30 bg-emerald-500/5 px-2.5 text-xs font-bold text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400"
                           >
                             {isPending ? "Granting..." : "Grant"}
                           </Button>
@@ -986,13 +991,13 @@ export function VaultUserDirectory() {
                 })}
 
                 {(!storeItems || storeItems.length === 0) && (
-                  <p className="text-center text-xs text-muted-foreground py-4">
+                  <p className="text-muted-foreground py-4 text-center text-xs">
                     No store items configured.
                   </p>
                 )}
               </div>
 
-              <DialogFooter className="border-t border-border/40 pt-3">
+              <DialogFooter className="border-border/40 border-t pt-3">
                 <Button variant="outline" onClick={() => setIsCosmeticsOpen(false)}>
                   Close
                 </Button>

@@ -834,7 +834,7 @@ function DashboardHero({
                       : undefined
                   }
                 >
-                  <div className="overflow-hidden rounded-sm flex items-center justify-center">
+                  <div className="flex items-center justify-center overflow-hidden rounded-sm">
                     <UnifiedCountryFlag
                       showTooltip={false}
                       countryName={stats.countryName}

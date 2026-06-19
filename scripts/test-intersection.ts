@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const caphiriaLayer = await prisma.mapLayer.findFirst({
-    where: { layerType: "political", featureId: "Caphiria", isActive: true }
+    where: { layerType: "political", featureId: "Caphiria", isActive: true },
   });
 
   if (!caphiriaLayer) {
@@ -13,19 +13,25 @@ async function main() {
   }
 
   const subdivisions = await prisma.subdivision.findMany({
-    where: { countryId: "cmgn9d82v00484kyx3mjv9b8q" }
+    where: { countryId: "cmgn9d82v00484kyx3mjv9b8q" },
   });
 
   console.log("=== Checking Containment/Intersection with PostGIS (ST_MakeValid) ===");
 
   for (const sub of subdivisions) {
-    if (!sub.geometry || !(sub.geometry as any).coordinates || (sub.geometry as any).coordinates.length === 0) {
+    if (
+      !sub.geometry ||
+      !(sub.geometry as any).coordinates ||
+      (sub.geometry as any).coordinates.length === 0
+    ) {
       console.log(`Subdivision ${sub.name} has no geometry`);
       continue;
     }
 
     try {
-      const result = await prisma.$queryRawUnsafe<Array<{ contains: boolean; intersects: boolean; intersection_area: number }>>(
+      const result = await prisma.$queryRawUnsafe<
+        Array<{ contains: boolean; intersects: boolean; intersection_area: number }>
+      >(
         `SELECT
            ST_Contains(
              ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)),
@@ -48,7 +54,9 @@ async function main() {
       const r = result[0];
       if (r) {
         console.log(`- Sub: ${sub.name}`);
-        console.log(`  Contains: ${r.contains}, Intersects: ${r.intersects}, Intersection Area: ${r.intersection_area}`);
+        console.log(
+          `  Contains: ${r.contains}, Intersects: ${r.intersects}, Intersection Area: ${r.intersection_area}`
+        );
       }
     } catch (err: any) {
       console.error(`Error checking ${sub.name}:`, err.message);

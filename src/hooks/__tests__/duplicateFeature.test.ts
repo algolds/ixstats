@@ -233,8 +233,24 @@ describe("buildDuplicateInput — edge cases", () => {
       geometry: {
         type: "MultiPolygon",
         coordinates: [
-          [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
-          [[[5, 5], [6, 5], [6, 6], [5, 6], [5, 5]]],
+          [
+            [
+              [0, 0],
+              [1, 0],
+              [1, 1],
+              [0, 1],
+              [0, 0],
+            ],
+          ],
+          [
+            [
+              [5, 5],
+              [6, 5],
+              [6, 6],
+              [5, 6],
+              [5, 5],
+            ],
+          ],
         ],
       },
       properties: { type: "province", level: 1 },

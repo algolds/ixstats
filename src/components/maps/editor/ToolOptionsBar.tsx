@@ -38,6 +38,8 @@ import {
   LassoSelect,
   Ruler,
   PaintBucket,
+  Pipette,
+  Wand2,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -451,6 +453,14 @@ interface ToolOptionsBarProps {
   onClearRuler?: () => void;
   subdivisionColor?: string;
   onSubdivisionColorChange?: (color: string) => void;
+
+  // Magic Wand options
+  wandMatchColor?: boolean;
+  onWandMatchColorChange?: (val: boolean) => void;
+  wandMatchLevel?: boolean;
+  onWandMatchLevelChange?: (val: boolean) => void;
+  wandMatchParent?: boolean;
+  onWandMatchParentChange?: (val: boolean) => void;
 }
 
 const CITY_TYPES = [
@@ -1118,11 +1128,60 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         </>
       )}
 
+      {/* ── Eyedropper mode ── */}
+      {mode === "eyedropper" && (
+        <>
+          <ToolLabel icon={Pipette} label="Eyedropper" />
+          <span className="text-muted-foreground text-[11px]">
+            Click any feature on the map to sample its style and metadata properties.
+          </span>
+        </>
+      )}
+
+      {/* ── Magic Wand mode ── */}
+      {mode === "magic-wand" && (
+        <>
+          <ToolLabel icon={Wand2} label="Magic Wand" />
+          <span className="text-muted-foreground mr-2 text-[11px]">Match:</span>
+          <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={props.wandMatchColor ?? true}
+              onChange={(e) => props.onWandMatchColorChange?.(e.target.checked)}
+              className="border-border h-3 w-3 rounded bg-transparent"
+            />
+            <span className="text-[11px]">Same Color</span>
+          </label>
+          <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={props.wandMatchLevel ?? false}
+              onChange={(e) => props.onWandMatchLevelChange?.(e.target.checked)}
+              className="border-border h-3 w-3 rounded bg-transparent"
+            />
+            <span className="text-[11px]">Same Level/Category</span>
+          </label>
+          <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={props.wandMatchParent ?? false}
+              onChange={(e) => props.onWandMatchParentChange?.(e.target.checked)}
+              className="border-border h-3 w-3 rounded bg-transparent"
+            />
+            <span className="text-[11px]">Same Parent Entity</span>
+          </label>
+          <div className={dividerClass} />
+          <span className="text-muted-foreground text-[10px]">
+            Shift-click: Add to selection | Alt-click: Subtract from selection
+          </span>
+        </>
+      )}
+
       {/* ── Ruler mode ── */}
       {mode === "ruler" && (
         <>
           <ToolLabel icon={Ruler} label="Ruler" />
-          <span className="text-muted-foreground text-[11px] mr-2">
+          <span className="text-muted-foreground mr-2 text-[11px]">
             Click multiple spots on the map to measure distance.
           </span>
           {props.rulerPoints && props.rulerPoints.length > 0 && (
@@ -1137,7 +1196,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               {props.onClearRuler && (
                 <button
                   onClick={props.onClearRuler}
-                  className="bg-red-500/10 text-red-500 hover:bg-red-500/20 flex h-6 items-center gap-1 rounded px-1.5 text-[11px]"
+                  className="flex h-6 items-center gap-1 rounded bg-red-500/10 px-1.5 text-[11px] text-red-500 hover:bg-red-500/20"
                   title="Clear ruler path"
                 >
                   Clear Ruler
@@ -1152,7 +1211,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {mode === "paint-fill" && (
         <>
           <ToolLabel icon={PaintBucket} label="Paint Fill" />
-          <span className="text-muted-foreground text-[11px] mr-2">
+          <span className="text-muted-foreground mr-2 text-[11px]">
             Click any subdivision region to apply properties:
           </span>
           <span className={labelClass}>Type</span>

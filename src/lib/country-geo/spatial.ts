@@ -327,7 +327,10 @@ export async function alignSubdivisionBorders(
           neighbor.id
         );
       } catch (err) {
-        console.warn(`[alignSubdivisionBorders] Failed to sync PostGIS for neighbor ${neighbor.name}:`, err);
+        console.warn(
+          `[alignSubdivisionBorders] Failed to sync PostGIS for neighbor ${neighbor.name}:`,
+          err
+        );
       }
     }
     if (res.modifiedA) {

@@ -88,6 +88,81 @@ export function PropertiesPanelContent({
   const router = useRouter();
   const [showGenerator, setShowGenerator] = useState(false);
 
+  if (editor.selectedIds.size > 1) {
+    const selectedSubdivisions = editor.allFeatures.filter(
+      (f: any) => f.type === "subdivision" && editor.selectedIds.has(f.id)
+    );
+
+    return (
+      <div className="space-y-4 px-3 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Batch Selection
+          </span>
+          <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[10px] font-medium">
+            {editor.selectedIds.size} features selected
+          </span>
+        </div>
+
+        {selectedSubdivisions.length > 1 && (
+          <div className="border-border/30 bg-muted/10 space-y-3 rounded-lg border p-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-foreground text-xs font-semibold">Pathfinder Operations</span>
+              <span className="text-muted-foreground text-[10px]">
+                Perform boolean geometry operations on the selected regions. The resulting shape
+                inherits the attributes of the first selected region.
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => editor.pathfinderOperation("union")}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer rounded-md py-1.5 text-center text-xs font-medium shadow-sm transition-colors"
+                title="Merge selected regions into one"
+              >
+                Union
+              </button>
+              <button
+                onClick={() => editor.pathfinderOperation("subtract")}
+                className="bg-muted text-foreground hover:bg-accent cursor-pointer rounded-md py-1.5 text-center text-xs font-medium shadow-sm transition-colors"
+                title="Subtract subsequent regions from the first"
+              >
+                Subtract
+              </button>
+              <button
+                onClick={() => editor.pathfinderOperation("intersect")}
+                className="bg-muted text-foreground hover:bg-accent cursor-pointer rounded-md py-1.5 text-center text-xs font-medium shadow-sm transition-colors"
+                title="Keep only the overlapping parts"
+              >
+                Intersect
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* List of selected features */}
+        <div className="border-border/30 bg-muted/10 space-y-2 rounded-lg border p-3">
+          <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+            Selected Features
+          </label>
+          <div className="max-h-48 space-y-1 overflow-y-auto">
+            {editor.allFeatures
+              .filter((f: any) => editor.selectedIds.has(f.id))
+              .map((f: any) => (
+                <div key={f.id} className="flex items-center justify-between text-xs">
+                  <span className="text-foreground/80 max-w-[180px] truncate">
+                    {f.name || f.id}
+                  </span>
+                  <span className="text-muted-foreground font-mono text-[10px] uppercase">
+                    {f.type}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isWorldMode) {
     let mainContent: React.ReactNode = null;
     const inputClasses =

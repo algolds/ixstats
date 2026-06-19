@@ -206,7 +206,9 @@ export const geoProfileProcedures = {
       let totalLakeAreaSqKm = 0;
 
       try {
-        const riverStats = await ctx.db.$queryRawUnsafe<Array<{ count: number; length_km: number }>>(
+        const riverStats = await ctx.db.$queryRawUnsafe<
+          Array<{ count: number; length_km: number }>
+        >(
           `
           WITH country AS (
             SELECT id,
@@ -294,13 +296,19 @@ export const geoProfileProcedures = {
         const filteredRivers = fallbackRivers.filter((r) => {
           const rGeo = r.geometry as import("geojson").Geometry | null;
           if (!rGeo) return false;
-          return estimateBboxOverlap(rGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) > 0;
+          return (
+            estimateBboxOverlap(rGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) >
+            0
+          );
         });
 
         const filteredLakes = fallbackLakes.filter((l) => {
           const lGeo = l.geometry as import("geojson").Geometry | null;
           if (!lGeo) return false;
-          return estimateBboxOverlap(lGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) > 0;
+          return (
+            estimateBboxOverlap(lGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) >
+            0
+          );
         });
 
         riverCount = filteredRivers.length;

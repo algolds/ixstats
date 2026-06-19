@@ -399,7 +399,7 @@ export function useMapEditorOverlayState({
     panelB: { placement: "left" | "right" | "bottom"; tabs: TabId[]; collapsed: boolean };
   }>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("ixworld-editor-panels-config-v3");
+      const stored = localStorage.getItem("ixworld-editor-panels-config-v4");
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -417,7 +417,7 @@ export function useMapEditorOverlayState({
       },
       panelB: {
         placement: "right",
-        tabs: ["properties"],
+        tabs: ["properties", "history"],
         collapsed: false,
       },
     };
@@ -425,7 +425,7 @@ export function useMapEditorOverlayState({
 
   // Save config to local storage on change
   useEffect(() => {
-    localStorage.setItem("ixworld-editor-panels-config-v3", JSON.stringify(panelConfigs));
+    localStorage.setItem("ixworld-editor-panels-config-v4", JSON.stringify(panelConfigs));
   }, [panelConfigs]);
 
   // Sync tab requirements on mode shift
@@ -562,6 +562,7 @@ export function useMapEditorOverlayState({
   const [cursorCoords, setCursorCoords] = useState<[number, number] | null>(null);
   const [cursorZoom, setCursorZoom] = useState<number | undefined>(undefined);
   const [showGrid, setShowGrid] = useState(false);
+  const [showGuides, setShowGuides] = useState(true);
   const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled());
   const [snapTolerance, setSnapToleranceState] = useState(getSnapTolerance());
 
@@ -1064,7 +1065,49 @@ export function useMapEditorOverlayState({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      const inInput =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        (e.target as HTMLElement)?.getAttribute("contenteditable") === "true";
+
+      if (!inInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const key = e.key.toLowerCase();
+        if (key === "v") {
+          e.preventDefault();
+          editor.setMode("view");
+        } else if (key === "c" || key === "1") {
+          e.preventDefault();
+          editor.setMode("add-city");
+        } else if (key === "r" || key === "2") {
+          e.preventDefault();
+          editor.setMode("add-subdivision");
+        } else if (key === "p" || key === "3") {
+          e.preventDefault();
+          editor.setMode("add-poi");
+        } else if (key === "t" || key === "4") {
+          e.preventDefault();
+          editor.setMode("add-route");
+        } else if (key === "s") {
+          e.preventDefault();
+          editor.setMode("add-story-pin");
+        } else if (key === "l") {
+          e.preventDefault();
+          editor.setMode("add-label");
+        } else if (key === "i") {
+          e.preventDefault();
+          editor.setMode("eyedropper");
+        } else if (key === "w") {
+          e.preventDefault();
+          editor.setMode("magic-wand");
+        } else if (key === "b") {
+          e.preventDefault();
+          editor.setMode("paint");
+        } else if (key === "g") {
+          e.preventDefault();
+          editor.setMode("paint-fill");
+        }
+      }
 
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
@@ -1301,6 +1344,8 @@ export function useMapEditorOverlayState({
     setCursorZoom,
     showGrid,
     setShowGrid,
+    showGuides,
+    setShowGuides,
     snapEnabled,
     setSnapEnabled,
     snapTolerance,

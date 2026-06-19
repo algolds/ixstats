@@ -14,11 +14,7 @@ export interface FontConfig {
  * Recursively scans a style object to resolve placeholder fonts
  * with runtime-specific font arrays (DejaVu vs Noto Sans).
  */
-export function resolveStylePlaceholders(
-  obj: any,
-  glyphsUrl: string,
-  fonts: FontConfig
-): any {
+export function resolveStylePlaceholders(obj: any, glyphsUrl: string, fonts: FontConfig): any {
   if (Array.isArray(obj)) {
     if (obj.length === 1) {
       if (obj[0] === "__FONT_REGULAR__") return [...fonts.regular];
@@ -62,6 +58,6 @@ export function getStyleForTheme(
   // Deep clone and resolve placeholders
   const style = JSON.parse(JSON.stringify(template));
   style.glyphs = glyphsUrl;
-  
+
   return resolveStylePlaceholders(style, glyphsUrl, fonts);
 }

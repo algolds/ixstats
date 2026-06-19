@@ -95,7 +95,11 @@ function CivilServiceWidget({
   }
 
   const util = data.utilizationPercent;
-  const barColor = data.overCapacity ? "bg-red-500" : util >= 80 ? "bg-amber-500" : "bg-emerald-500";
+  const barColor = data.overCapacity
+    ? "bg-red-500"
+    : util >= 80
+      ? "bg-amber-500"
+      : "bg-emerald-500";
   const valueColor = data.overCapacity
     ? "text-red-600 dark:text-red-400"
     : util >= 80
@@ -677,7 +681,7 @@ export function OverviewHero({
                 : undefined
             }
           >
-            <div className="overflow-hidden rounded-sm flex items-center justify-center">
+            <div className="flex items-center justify-center overflow-hidden rounded-sm">
               <UnifiedCountryFlag
                 showTooltip={false}
                 countryName={stats.countryName}
@@ -844,7 +848,7 @@ export function OverviewHero({
                       : undefined
                   }
                 >
-                  <div className="overflow-hidden rounded-sm flex items-center justify-center">
+                  <div className="flex items-center justify-center overflow-hidden rounded-sm">
                     <UnifiedCountryFlag
                       showTooltip={false}
                       countryName={stats.countryName}
@@ -1078,7 +1082,11 @@ export function OverviewHero({
               </div>
 
               {/* Civil Service Capacity + Rollout Queue */}
-              <CivilServiceWidget countryId={countryId} enabled={hasCountry} onNavigate={onNavigate} />
+              <CivilServiceWidget
+                countryId={countryId}
+                enabled={hasCountry}
+                onNavigate={onNavigate}
+              />
             </div>
           </div>
         </div>

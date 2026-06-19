@@ -189,7 +189,9 @@ export function useMapLayers({
       } else if (config.type === "fill") {
         if (map.getLayer(fillLayerId)) {
           if (type === "altitudes") {
-            const politicalVisible = worldMapLayers.some((l) => l.type === "political" && l.visible);
+            const politicalVisible = worldMapLayers.some(
+              (l) => l.type === "political" && l.visible
+            );
             map.setPaintProperty(
               fillLayerId,
               "fill-opacity",
@@ -952,8 +954,16 @@ export function useMapLayers({
   // 8. Subdivisions fill — kept queryable (paint mode was removed in Plan 024).
   useEffect(() => {
     if (!map || !isLoaded || !map.getLayer("editor-subdivisions-fill")) return;
-    map.setPaintProperty("editor-subdivisions-fill", "fill-color", ["coalesce", ["get", "color"], "#7c3aed"]);
-    map.setPaintProperty("editor-subdivisions-fill", "fill-opacity", 0.05 * (layerOpacity?.regions ?? 0.6));
+    map.setPaintProperty("editor-subdivisions-fill", "fill-color", [
+      "coalesce",
+      ["get", "color"],
+      "#7c3aed",
+    ]);
+    map.setPaintProperty(
+      "editor-subdivisions-fill",
+      "fill-opacity",
+      0.05 * (layerOpacity?.regions ?? 0.6)
+    );
   }, [map, isLoaded, theme, layerOpacity]);
 
   // 9. Gap overlay (negative space highlights)
@@ -964,9 +974,7 @@ export function useMapLayers({
     const fillId = "editor-gaps-fill";
     const strokeId = "editor-gaps-stroke";
 
-    const geojson = gapFeatures && showGaps
-      ? gapFeatures
-      : EMPTY_FC;
+    const geojson = gapFeatures && showGaps ? gapFeatures : EMPTY_FC;
 
     if (map.getSource(sourceId)) {
       getGeoJSONSource(map, sourceId)?.setData(geojson);
@@ -1002,9 +1010,7 @@ export function useMapLayers({
     const fillId = "editor-empty-subdivisions-fill";
     const strokeId = "editor-empty-subdivisions-stroke";
 
-    const geojson = emptyRegionsFeatures && showEmptyRegions
-      ? emptyRegionsFeatures
-      : EMPTY_FC;
+    const geojson = emptyRegionsFeatures && showEmptyRegions ? emptyRegionsFeatures : EMPTY_FC;
 
     if (map.getSource(sourceId)) {
       getGeoJSONSource(map, sourceId)?.setData(geojson);

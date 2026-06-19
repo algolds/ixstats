@@ -135,7 +135,9 @@ function RollupBody({
   const [scaleExisting, setScaleExisting] = useState(true);
   const updateMode = api.countryGeo.updateGeoRollupMode.useMutation({ onSuccess: onUpdated });
   const rebase = api.countryGeo.rebaseNationalFromGeography.useMutation({ onSuccess: onUpdated });
-  const distribute = api.countryGeo.distributeSubdivisionDemographics.useMutation({ onSuccess: onUpdated });
+  const distribute = api.countryGeo.distributeSubdivisionDemographics.useMutation({
+    onSuccess: onUpdated,
+  });
 
   const popPct = Math.round(rollups.populationCoverage * 100);
   const gdpPct = Math.round(rollups.gdpCoverage * 100);
@@ -235,13 +237,14 @@ function RollupBody({
       </button>
 
       {/* Demographic Redistribution */}
-      <div className="border-t border-border/60 my-2 pt-3 space-y-3">
-        <div className="text-foreground text-[11px] font-semibold flex items-center gap-1">
+      <div className="border-border/60 my-2 space-y-3 border-t pt-3">
+        <div className="text-foreground flex items-center gap-1 text-[11px] font-semibold">
           <Settings className="h-3.5 w-3.5" />
           Demographic Redistribution
         </div>
         <p className="text-muted-foreground/60 text-[10px]">
-          Auto-assign populations and GDP to cities within each subdivision based on their province's totals and weights.
+          Auto-assign populations and GDP to cities within each subdivision based on their
+          province's totals and weights.
         </p>
 
         <div className="flex items-center gap-2">
@@ -250,9 +253,12 @@ function RollupBody({
             id="scaleExisting"
             checked={scaleExisting}
             onChange={(e) => setScaleExisting(e.target.checked)}
-            className="rounded border-border bg-background/50 h-3.5 w-3.5 text-primary focus:ring-0 cursor-pointer"
+            className="border-border bg-background/50 text-primary h-3.5 w-3.5 cursor-pointer rounded focus:ring-0"
           />
-          <label htmlFor="scaleExisting" className="text-muted-foreground text-[10px] select-none font-medium cursor-pointer">
+          <label
+            htmlFor="scaleExisting"
+            className="text-muted-foreground cursor-pointer text-[10px] font-medium select-none"
+          >
             Scale existing populations proportionally (if non-zero)
           </label>
         </div>
@@ -261,7 +267,7 @@ function RollupBody({
           type="button"
           onClick={handleDistribute}
           disabled={distribute.isPending}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600/20 px-3 py-2 text-xs font-medium text-emerald-500 hover:bg-emerald-600/30 disabled:opacity-50 transition-colors"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600/20 px-3 py-2 text-xs font-medium text-emerald-500 transition-colors hover:bg-emerald-600/30 disabled:opacity-50"
         >
           {distribute.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
