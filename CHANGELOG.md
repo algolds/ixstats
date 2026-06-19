@@ -128,6 +128,10 @@ capability integer. Each release entry below lists which components advanced and
 ### Fixed
 
 - **IIWiki Flag Image Resolution (Cloudflare Bypass)**: Implemented a deterministic MD5-based upload directory guessing mechanism inside the IIWiki file proxy route `/api/mediawiki/iiwiki/[...path]/route.ts`. This construct instantly resolves MediaWiki local image paths (`images/{first_char}/{first_two_chars}/{filename}`) and verifies the result via `wsrv.nl` before falling back to the standard `api.php` query, bypassing Cloudflare's production 403 API blocks and resolving the import builder 404 image errors.
+- **Province geometry edits silently not saving**: editing a subdivision's shape (vertex drag) in the map editor failed to persist, leaving the original "ghost" border. Root cause was a cascade rather than the geometry path itself:
+  - The geometry-save call in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) was malformed — it passed `subdivisionId` (stripped by the Zod schema → treated as a create) and omitted the required `name`, so the mutation rejected. Fixed the call to send `id`, made `name` optional on `countryGeo.upsertSubdivision` with a create-time guard ([countryGeo.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countryGeo.ts)).
+  - The deeper cause: `geoCore.getPointInfo` ran `ST_Contains` over `map_layers.geom_postgis` with **no GiST index** — the index was declared in the Prisma schema but never created (Prisma skips GiST on `Unsupported("geometry")` columns, and `map_layers` lacked the explicit raw-SQL migration every other spatial table has). Each call seq-scanned world-scale multipolygons (~40s), saturating the browser connection pool until the queued `upsertSubdivision` POST's short-lived Clerk JWT expired and the save was rejected `UNAUTHORIZED`. Added the missing index migration [add-map-layer-geom-index.sql](file:///ixwiki/public/projects/ixstats/prisma/migrations/add-map-layer-geom-index.sql) (`idx_map_layer_geom`).
+  - Hardened the point lookups in [point-queries.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/point-queries.ts) with a per-statement timeout so a slow spatial query can never again hold a connection long enough to break auth, and gave geometry edits a dedicated mutation that surfaces errors (`onError`) and reconciles the editor cache with the server's authoritative saved geometry for live refresh.
 
 ### Changed
 
@@ -138,6 +142,7 @@ capability integer. Each release entry below lists which components advanced and
 - **Dashboard hero — premium gating**: the Intelligence and Defense section tabs (and their tRPC queries) are now restricted to MyCountry-premium members; non-premium users see Overview / Executive / Diplomacy only, and the inactivity auto-cycle skips the gated sections.
 - **Dashboard growth precision**: GDP and population growth figures in the hero now display two decimal places.
 - **`FacetTabs` indicator override**: added an optional `indicatorClassName` prop to the shared Facet tab component so individual usages can restyle the moving active indicator (e.g. match a container's corner radius) without changing the global default.
+- **`country-geo-service.ts` modularization**: split the 1,457-line `src/lib/country-geo-service.ts` god-module into focused [country-geo/](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/) modules (`sync`, `bundle`, `spatial`, `policy`, `upsert`) behind an `index.ts` barrel; `country-geo-service.ts` now re-exports through it, so all ~14 importers and the `~/lib/country-geo-service` path are unchanged. Pure mechanical move — function bodies byte-identical, no behavior change.
 
 ### Fixed
 
