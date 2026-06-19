@@ -318,7 +318,7 @@
       "source": "source-overlay-subdivisions",
       "minzoom": 4,
       "paint": {
-        "fill-color": "#c8b195",
+        "fill-color": ["coalesce", ["get", "color"], "#c8b195"],
         "fill-opacity": [
           "interpolate",
           ["linear"],

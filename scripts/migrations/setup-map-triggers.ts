@@ -36,7 +36,7 @@ async function main() {
     BEGIN
       IF NEW.geometry IS NOT NULL THEN
         BEGIN
-          NEW.geom_postgis = ST_GeomFromGeoJSON(NEW.geometry::text);
+          NEW.geom_postgis = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(NEW.geometry::text), 4326));
         EXCEPTION WHEN OTHERS THEN
           -- If geometry is invalid, set to NULL rather than failing
           NEW.geom_postgis = NULL;

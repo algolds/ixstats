@@ -699,7 +699,7 @@ export async function cloneGeography(
     ) {
       try {
         await prisma.$executeRawUnsafe(
-          `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
+          `UPDATE subdivisions SET geom_postgis = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) WHERE id = $2`,
           JSON.stringify(newSub.geometry),
           newSub.id
         );

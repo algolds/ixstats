@@ -110,6 +110,7 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
         infrastructureLevel: data.infrastructureLevel,
         mayorName: data.mayorName,
         isPort: data.isPort,
+        foundedYear: data.foundedYear,
         ...(data.elevation !== undefined && { elevation: data.elevation }),
         status: "approved",
       },
@@ -156,6 +157,7 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
         infrastructureLevel: data.infrastructureLevel,
         mayorName: data.mayorName,
         isPort: !!data.isPort,
+        foundedYear: data.foundedYear,
         elevation: input.elevation ?? autoElevation,
         status: "approved",
         submittedBy: data.submittedBy || "owner",
@@ -258,6 +260,7 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
       governmentType: data.governmentType,
       color: data.color,
       population: data.population,
+      capital: data.capital,
       gdpContribution: data.gdpContribution,
       status: "approved",
     };
@@ -291,6 +294,7 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
         governmentType: data.governmentType,
         color: data.color,
         population: data.population || 0,
+        capital: data.capital,
         areaSqKm,
         gdpContribution: data.gdpContribution || 0,
         status: "approved",
@@ -308,7 +312,7 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
   ) {
     try {
       await db.$executeRawUnsafe(
-        `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
+        `UPDATE subdivisions SET geom_postgis = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) WHERE id = $2`,
         JSON.stringify(subdivision.geometry),
         subdivision.id
       );

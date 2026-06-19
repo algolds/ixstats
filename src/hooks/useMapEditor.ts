@@ -1170,6 +1170,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       coordinates: coords,
       population: cityForm.population,
       elevation: cityForm.elevation,
+      foundedYear: cityForm.foundedYear,
       isNationalCapital: cityForm.isNationalCapital,
       isSubdivisionCapital: cityForm.isSubdivisionCapital,
       subdivisionId: cityForm.subdivisionId,
@@ -1193,6 +1194,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       geometry: pendingGeometry,
       population: subdivisionForm.population,
       areaSqKm: subdivisionForm.areaSqKm,
+      color: subdivisionForm.color,
+      capital: subdivisionForm.capital,
     });
   }, [countryId, pendingGeometry, subdivisionForm, createSubdivision, validateFeature]);
 
@@ -1276,6 +1279,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           isSubdivisionCapital: !!feature.properties.isSubdivisionCapital,
           subdivisionId: (feature.properties.subdivisionId as string | undefined) ?? undefined,
           wikiPageTitle: (feature.properties.wikiPageTitle as string | undefined) ?? undefined,
+          elevation: (feature.properties.elevation as number | undefined) ?? undefined,
+          foundedYear: (feature.properties.foundedYear as number | undefined) ?? undefined,
           coordinates: feature.coordinates,
         });
         break;
@@ -1360,6 +1365,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       coordinates: cityForm.coordinates,
       population: cityForm.population,
       elevation: cityForm.elevation,
+      foundedYear: cityForm.foundedYear,
       isNationalCapital: cityForm.isNationalCapital,
       isSubdivisionCapital: cityForm.isSubdivisionCapital,
       wikiPageTitle: cityForm.wikiPageTitle,
@@ -1382,6 +1388,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       level: subdivisionForm.level,
       population: subdivisionForm.population,
       areaSqKm: subdivisionForm.areaSqKm,
+      color: subdivisionForm.color,
+      capital: subdivisionForm.capital,
     });
   }, [countryId, selectedFeature, subdivisionForm, updateSubdivision, validateFeature]);
 
@@ -1546,6 +1554,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           isNationalCapital: city.isNationalCapital,
           isSubdivisionCapital: city.isSubdivisionCapital,
           wikiPageTitle: city.wikiPageTitle,
+          subdivisionId: city.subdivisionId,
+          elevation: city.elevation,
+          foundedYear: city.foundedYear,
         },
       });
     }

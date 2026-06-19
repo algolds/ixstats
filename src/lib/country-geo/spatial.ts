@@ -322,7 +322,7 @@ export async function alignSubdivisionBorders(
       // Force PostGIS triggers to run
       try {
         await db.$executeRawUnsafe(
-          `UPDATE subdivisions SET geom_postgis = ST_GeomFromGeoJSON($1) WHERE id = $2`,
+          `UPDATE subdivisions SET geom_postgis = ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($1), 4326)) WHERE id = $2`,
           JSON.stringify(res.geomB),
           neighbor.id
         );

@@ -133,6 +133,7 @@ export const countryGeoRouter = createTRPCRouter({
         subdivisionId: z.string().optional(),
         wikiPageTitle: z.string().max(200).optional(),
         elevation: z.number().int().min(-500).max(9000).optional(),
+        foundedYear: z.number().int().optional(),
         gdpContribution: z.number().min(0).optional(),
         economyOutput: z.number().min(0).optional(),
         specialization: z.string().max(100).optional(),
@@ -179,6 +180,7 @@ export const countryGeoRouter = createTRPCRouter({
         // Optional so partial updates (e.g. geometry-only vertex edits) are valid.
         // Required on create — enforced in the mutation handler below.
         name: z.string().min(1).max(100).optional(),
+        capital: z.string().optional(),
         type: z.string().default("province"),
         level: z.number().int().min(1).max(5).default(1),
         geometry: z.record(z.string(), z.unknown()).optional(),
@@ -187,7 +189,7 @@ export const countryGeoRouter = createTRPCRouter({
         governmentType: z.string().optional(),
         color: z
           .string()
-          .regex(/^#[0-9A-Fa-f]{6}$/)
+          .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
           .optional(),
         population: z.number().min(0).optional(),
         areaSqKm: z.number().min(0).optional(),
