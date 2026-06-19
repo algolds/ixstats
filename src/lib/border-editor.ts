@@ -829,6 +829,31 @@ export function snapToBorderEdge(
   return bestDist <= tolerance ? bestProj : point;
 }
 
+/** Get visual bounding box of Polygon/MultiPolygon and cache it on the object */
+export function getGeometryBBox(geom: Polygon | MultiPolygon): { minLng: number; minLat: number; maxLng: number; maxLat: number } {
+  const g = geom as any;
+  if (g._bbox) return g._bbox;
+
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+
+  const rings = getAllRings(geom);
+  for (const ring of rings) {
+    for (const coord of ring) {
+      if (coord[0] < minLng) minLng = coord[0];
+      if (coord[0] > maxLng) maxLng = coord[0];
+      if (coord[1] < minLat) minLat = coord[1];
+      if (coord[1] > maxLat) maxLat = coord[1];
+    }
+  }
+
+  const bbox = { minLng, minLat, maxLng, maxLat };
+  g._bbox = bbox;
+  return bbox;
+}
+
 /**
  * Snap a point to the nearest vertex or edge across a collection of geometries.
  * Prioritizes vertex snapping globally over line projection snapping.
@@ -843,6 +868,15 @@ export function snapPointToGeometries(
 
   // 1. Search for nearest vertex across all geometries first
   for (const geom of geometries) {
+    const bbox = getGeometryBBox(geom);
+    if (
+      point[0] < bbox.minLng - tolerance ||
+      point[0] > bbox.maxLng + tolerance ||
+      point[1] < bbox.minLat - tolerance ||
+      point[1] > bbox.maxLat + tolerance
+    ) {
+      continue;
+    }
     const rings = getAllRings(geom);
     for (const ring of rings) {
       for (const vertex of ring) {
@@ -864,6 +898,15 @@ export function snapPointToGeometries(
   let bestEdgeProj: Position = point;
 
   for (const geom of geometries) {
+    const bbox = getGeometryBBox(geom);
+    if (
+      point[0] < bbox.minLng - tolerance ||
+      point[0] > bbox.maxLng + tolerance ||
+      point[1] < bbox.minLat - tolerance ||
+      point[1] > bbox.maxLat + tolerance
+    ) {
+      continue;
+    }
     const rings = getAllRings(geom);
     for (const ring of rings) {
       for (let i = 0; i < ring.length - 1; i++) {
@@ -1002,6 +1045,15 @@ function snapPointToNeighborOrBorder(
 
   // 1. Check neighbor vertices first (highest priority)
   for (const neighbor of neighbors) {
+    const bbox = getGeometryBBox(neighbor.geometry);
+    if (
+      point[0] < bbox.minLng - tolerance ||
+      point[0] > bbox.maxLng + tolerance ||
+      point[1] < bbox.minLat - tolerance ||
+      point[1] > bbox.maxLat + tolerance
+    ) {
+      continue;
+    }
     const neighborRings = getAllRings(neighbor.geometry);
     for (const ring of neighborRings) {
       for (const vertex of ring) {
@@ -1017,21 +1069,40 @@ function snapPointToNeighborOrBorder(
   }
 
   // 2. Check country border vertices (second priority)
-  const borderRings = getAllRings(countryBorder);
-  for (const ring of borderRings) {
-    for (const vertex of ring) {
-      const d = distanceDeg(point, vertex);
-      if (d < bestDist && d <= tolerance) {
-        bestDist = d;
-        bestPos = vertex;
-        bestNeighborId = null;
-        isBorderSnap = true;
+  const borderBbox = getGeometryBBox(countryBorder);
+  const isNearBorder = !(
+    point[0] < borderBbox.minLng - tolerance ||
+    point[0] > borderBbox.maxLng + tolerance ||
+    point[1] < borderBbox.minLat - tolerance ||
+    point[1] > borderBbox.maxLat + tolerance
+  );
+
+  if (isNearBorder) {
+    const borderRings = getAllRings(countryBorder);
+    for (const ring of borderRings) {
+      for (const vertex of ring) {
+        const d = distanceDeg(point, vertex);
+        if (d < bestDist && d <= tolerance) {
+          bestDist = d;
+          bestPos = vertex;
+          bestNeighborId = null;
+          isBorderSnap = true;
+        }
       }
     }
   }
 
   // 3. Fallback: check neighbor segments (third priority)
   for (const neighbor of neighbors) {
+    const bbox = getGeometryBBox(neighbor.geometry);
+    if (
+      point[0] < bbox.minLng - tolerance ||
+      point[0] > bbox.maxLng + tolerance ||
+      point[1] < bbox.minLat - tolerance ||
+      point[1] > bbox.maxLat + tolerance
+    ) {
+      continue;
+    }
     const neighborRings = getAllRings(neighbor.geometry);
     for (const ring of neighborRings) {
       for (let i = 0; i < ring.length - 1; i++) {
@@ -1048,15 +1119,18 @@ function snapPointToNeighborOrBorder(
   }
 
   // 4. Fallback: check country border segments (lowest priority)
-  for (const ring of borderRings) {
-    for (let i = 0; i < ring.length - 1; i++) {
-      const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
-      const d = distanceDeg(point, proj);
-      if (d < bestDist && d <= tolerance) {
-        bestDist = d;
-        bestPos = proj;
-        bestNeighborId = null;
-        isBorderSnap = true;
+  if (isNearBorder) {
+    const borderRings = getAllRings(countryBorder);
+    for (const ring of borderRings) {
+      for (let i = 0; i < ring.length - 1; i++) {
+        const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
+        const d = distanceDeg(point, proj);
+        if (d < bestDist && d <= tolerance) {
+          bestDist = d;
+          bestPos = proj;
+          bestNeighborId = null;
+          isBorderSnap = true;
+        }
       }
     }
   }

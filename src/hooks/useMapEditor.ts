@@ -360,7 +360,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   countryId,
                   id: action.featureId,
                   name: d.name,
-                  type: p?.cityType ?? (p?.type as string),
+                  type: p?.cityType ?? (p?.type as string) ?? "city",
+                  coordinates: d.coordinates,
                   population: p?.population,
                   isNationalCapital: !!p?.isNationalCapital,
                   isSubdivisionCapital: !!p?.isSubdivisionCapital,
@@ -380,7 +381,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   countryId,
                   id: action.featureId,
                   name: d.name,
-                  category: p?.category,
+                  category: p?.category ?? "landmark",
+                  coordinates: d.coordinates,
                   description: p?.description,
                 });
                 break;
@@ -391,6 +393,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   title: d.name,
                   content: p?.content,
                   category: p?.category,
+                  coordinates: d.coordinates,
                 });
                 break;
               case "mapLabel":
@@ -401,6 +404,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   labelType: p?.labelType,
                   fontSize: p?.fontSize,
                   color: p?.color,
+                  coordinates: d.coordinates,
                 });
                 break;
               case "route":
@@ -495,7 +499,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   countryId,
                   id: action.featureId,
                   name: d.name,
-                  type: p?.cityType ?? (p?.type as string),
+                  type: p?.cityType ?? (p?.type as string) ?? "city",
+                  coordinates: d.coordinates,
                   population: p?.population,
                   isNationalCapital: !!p?.isNationalCapital,
                   isSubdivisionCapital: !!p?.isSubdivisionCapital,
@@ -515,7 +520,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   countryId,
                   id: action.featureId,
                   name: d.name,
-                  category: p?.category,
+                  category: p?.category ?? "landmark",
+                  coordinates: d.coordinates,
                   description: p?.description,
                 });
                 break;
@@ -526,6 +532,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   title: d.name,
                   content: p?.content,
                   category: p?.category,
+                  coordinates: d.coordinates,
                 });
                 break;
               case "mapLabel":
@@ -536,6 +543,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
                   labelType: p?.labelType,
                   fontSize: p?.fontSize,
                   color: p?.color,
+                  coordinates: d.coordinates,
                 });
                 break;
               case "route":
@@ -1653,6 +1661,122 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     return list;
   }, [features, countryRoutes]);
 
+  const updatePointCoordinates = useCallback(
+    async (
+      featureId: string,
+      featureType: "city" | "poi" | "storyPin" | "mapLabel",
+      coordinates: [number, number]
+    ) => {
+      if (!countryId) return;
+
+      const feature = allFeatures.find((f) => f.id === featureId);
+      if (!feature) return;
+
+      pushAction({
+        type: "update",
+        featureType,
+        featureId,
+        previousData: {
+          name: feature.name,
+          coordinates: feature.coordinates,
+          properties: feature.properties,
+        },
+        newData: {
+          name: feature.name,
+          coordinates,
+          properties: feature.properties,
+        },
+      });
+
+      try {
+        switch (featureType) {
+          case "city":
+            await updateCity.mutateAsync({
+              countryId,
+              id: featureId,
+              name: feature.name,
+              type: feature.properties.cityType || "city",
+              coordinates,
+              population: feature.properties.population,
+              elevation: feature.properties.elevation,
+              foundedYear: feature.properties.foundedYear,
+              isNationalCapital: feature.properties.isNationalCapital,
+              isSubdivisionCapital: feature.properties.isSubdivisionCapital,
+              wikiPageTitle: feature.properties.wikiPageTitle,
+            });
+            if (selectedFeature?.id === featureId) {
+              setCityForm((prev) => ({ ...prev, coordinates }));
+            }
+            break;
+
+          case "poi":
+            await updatePOI.mutateAsync({
+              countryId,
+              id: featureId,
+              name: feature.name,
+              category: feature.properties.category || "landmark",
+              coordinates,
+              description: feature.properties.description,
+              icon: feature.properties.icon,
+              wikiPageTitle: feature.properties.wikiPageTitle,
+            });
+            if (selectedFeature?.id === featureId) {
+              setPOIForm((prev) => ({ ...prev, coordinates }));
+            }
+            break;
+
+          case "storyPin":
+            await updateStoryPin.mutateAsync({
+              countryId,
+              id: featureId,
+              title: feature.name,
+              content: feature.properties.content || "",
+              category: feature.properties.category || "cultural",
+              coordinates,
+              ixTimeYear: feature.properties.ixTimeYear,
+            });
+            if (selectedFeature?.id === featureId) {
+              setStoryPinForm((prev) => ({ ...prev, coordinates }));
+            }
+            break;
+
+          case "mapLabel":
+            await updateMapLabel.mutateAsync({
+              countryId,
+              id: featureId,
+              text: feature.name,
+              labelType: feature.properties.labelType || "mountain_range",
+              coordinates,
+              fontSize: feature.properties.fontSize || 14,
+              color: feature.properties.color || "#374151",
+              rotation: feature.properties.rotation || 0,
+              opacity: feature.properties.opacity !== undefined ? feature.properties.opacity : 1,
+              letterSpacing: feature.properties.letterSpacing || 0,
+              fontWeight: feature.properties.fontWeight || "normal",
+              minZoom: feature.properties.minZoom,
+              maxZoom: feature.properties.maxZoom,
+            });
+            if (selectedFeature?.id === featureId) {
+              setMapLabelForm((prev) => ({ ...prev, coordinates }));
+            }
+            break;
+        }
+      } catch (err) {
+        console.error(`[useMapEditor] updatePointCoordinates failed for ${featureType}:`, err);
+      }
+    },
+    [
+      countryId,
+      allFeatures,
+      pushAction,
+      updateCity,
+      updatePOI,
+      updateStoryPin,
+      updateMapLabel,
+      selectedFeature,
+    ]
+  );
+
   // Bulk delete selected features
   const bulkDeleteSelected = useCallback(async () => {
     if (!countryId || selectedIds.size === 0) return;
@@ -1813,6 +1937,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     submitEditStoryPin,
     submitEditMapLabel,
     updateSubdivisionGeometry,
+    updatePointCoordinates,
 
     // Mutation state
     isMutating,

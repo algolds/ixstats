@@ -411,6 +411,20 @@ export function useMapLayers({
       getGeoJSONSource(map, "editor-points")?.setData(pointsGeoJson);
     } else {
       map.addSource("editor-points", { type: "geojson", data: pointsGeoJson });
+      map.addSource("editor-points-ghost", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({
+        id: "editor-points-ghost-layer",
+        type: "circle",
+        source: "editor-points-ghost",
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#a1a1aa",
+          "circle-opacity": 0.4,
+          "circle-stroke-color": "#52525b",
+          "circle-stroke-width": 1.5,
+          "circle-stroke-opacity": 0.5,
+        },
+      });
       map.addLayer({
         id: "editor-points-capital",
         type: "circle",

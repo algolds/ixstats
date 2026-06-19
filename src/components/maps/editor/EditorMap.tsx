@@ -26,8 +26,7 @@ import {
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import { MAP_DEFAULTS, OCEAN_COLOR, buildBaseStyle } from "~/lib/map-config";
-import { getMapGlyphsUrl } from "~/lib/base-path";
+import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 // Hooks & Sub-components
@@ -35,6 +34,7 @@ import { useMapLayers } from "./hooks/useMapLayers";
 import { useSubdivisionDraw } from "./hooks/useSubdivisionDraw";
 import { useSubdivisionVertexEdit } from "./hooks/useSubdivisionVertexEdit";
 import { useRouteEdit } from "./hooks/useRouteEdit";
+import { usePointDrag } from "./hooks/usePointDrag";
 
 import { DrawingToolbar } from "./toolbars/DrawingToolbar";
 import { VertexEditingToolbar } from "./toolbars/VertexEditingToolbar";
@@ -98,6 +98,11 @@ interface EditorMapProps {
   onRouteEditCancel?: () => void;
   /** Theme for the map styling */
   theme?: MapTheme;
+  updatePointCoordinates?: (
+    featureId: string,
+    featureType: "city" | "poi" | "storyPin" | "mapLabel",
+    coordinates: [number, number]
+  ) => Promise<void>;
 }
 
 const EditorMap = memo(
@@ -128,6 +133,7 @@ const EditorMap = memo(
       onRouteEditCommit,
       onRouteEditCancel,
       theme = "standard",
+      updatePointCoordinates,
     },
     ref
   ) {
@@ -214,6 +220,16 @@ const EditorMap = memo(
       onRouteVerticesUpdate,
       onRouteEditCommit,
       onRouteEditCancel,
+    });
+
+    // ── 5. Hook: Manage Point Click-and-Drag ──
+    usePointDrag({
+      map: mapRef.current,
+      isLoaded,
+      mode,
+      features,
+      onFeatureSelect,
+      updatePointCoordinates,
     });
 
     // Handle theme changes
@@ -371,6 +387,8 @@ const EditorMap = memo(
         "editor-points-poi",
         "editor-points-story-pin",
         "editor-points-map-label",
+        "editor-points-labels",
+        "editor-map-labels",
       ];
 
       const onMouseMove = (e: any) => {
@@ -378,8 +396,16 @@ const EditorMap = memo(
 
         const hits = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
         if (hits.length > 0) {
-          map.getCanvas().style.cursor = "pointer";
-          const hitId = hits[0]!.properties?.id as string | undefined;
+          const firstHit = hits[0]!;
+          const hitLayer = firstHit.layer.id;
+          
+          if (hitLayer.startsWith("editor-points") || hitLayer === "editor-map-labels") {
+            map.getCanvas().style.cursor = "grab";
+          } else {
+            map.getCanvas().style.cursor = "pointer";
+          }
+
+          const hitId = firstHit.properties?.id as string | undefined;
           if (map.getLayer("editor-subdivisions-hover") && hitId) {
             map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], hitId]);
           }

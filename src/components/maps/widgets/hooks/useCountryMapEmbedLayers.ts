@@ -375,6 +375,7 @@ export function useCountryMapEmbedLayers({
             id: "city-labels",
             type: "symbol",
             source: "source-cities",
+            filter: ["==", ["get", "isCapital"], true],
             layout: {
               "text-field": ["get", "name"] as unknown as string,
               "text-size": 11,
@@ -389,6 +390,30 @@ export function useCountryMapEmbedLayers({
               "text-halo-color": "#fff",
               "text-halo-width": 1.5,
             },
+          });
+
+          // Show non-capital labels on hover of city markers
+          let hoveredCityId: string | null = null;
+          map.on("mousemove", "city-circles", (e) => {
+            const features = e.features;
+            if (features && features.length > 0) {
+              const id = features[0].properties._cityId;
+              if (id !== hoveredCityId) {
+                hoveredCityId = id;
+                map.getCanvas().style.cursor = "pointer";
+                map.setFilter("city-labels", [
+                  "or",
+                  ["==", ["get", "isCapital"], true],
+                  ["==", ["get", "_cityId"], id],
+                ] as any);
+              }
+            }
+          });
+
+          map.on("mouseleave", "city-circles", () => {
+            hoveredCityId = null;
+            map.getCanvas().style.cursor = "";
+            map.setFilter("city-labels", ["==", ["get", "isCapital"], true] as any);
           });
         }
       }

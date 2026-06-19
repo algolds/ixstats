@@ -436,6 +436,7 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
                 selectedFeature={editor.selectedFeature}
                 onFeatureSelect={handleSelectFeature}
                 onGeometryUpdate={editor.updateSubdivisionGeometry}
+                updatePointCoordinates={editor.updatePointCoordinates}
                 worldMapLayers={worldMapLayers}
                 layerVisibility={{
                   regions: layerStates.regions?.visible ?? true,

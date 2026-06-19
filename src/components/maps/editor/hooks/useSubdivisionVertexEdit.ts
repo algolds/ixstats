@@ -65,6 +65,9 @@ export function useSubdivisionVertexEdit({
   const hoveredVertexRef = useRef<VertexRef | null>(null);
   const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
 
+  const throttledUpdateRef = useRef<any>(null);
+  const lastUpdateRef = useRef(0);
+
   // Keep latest refs of parameters to avoid stale closure in event callbacks
   const featuresRef = useRef(features);
   featuresRef.current = features;
@@ -73,7 +76,7 @@ export function useSubdivisionVertexEdit({
   const onGeometryUpdateRef = useRef(onGeometryUpdate);
   onGeometryUpdateRef.current = onGeometryUpdate;
 
-  const updateVertexEditVis = useCallback(() => {
+  const updateVertexEditVis = useCallback((fastOnly = false) => {
     const state = vertexEditRef.current;
     if (!map || !state) return;
 
@@ -104,6 +107,10 @@ export function useSubdivisionVertexEdit({
     };
     getGeoJSONSource(map, "editor-vedit-vertices")?.setData(vertFc);
 
+    if (fastOnly) {
+      return;
+    }
+
     // Midpoints (for adding new vertices)
     const rings = getAllRings(geo);
     const midFeatures: any[] = [];
@@ -132,6 +139,31 @@ export function useSubdivisionVertexEdit({
     const overlapGeoJson = calculateOverlapGeoJson(geo, featuresRef.current, state.featureId);
     getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
   }, [map]);
+
+  const scheduleThrottledUpdate = useCallback(() => {
+    if (throttledUpdateRef.current) {
+      clearTimeout(throttledUpdateRef.current);
+    }
+    const now = Date.now();
+    const timeSinceLast = now - lastUpdateRef.current;
+    if (timeSinceLast >= 100) {
+      updateVertexEditVis(false);
+      lastUpdateRef.current = now;
+    } else {
+      throttledUpdateRef.current = setTimeout(() => {
+        updateVertexEditVis(false);
+        lastUpdateRef.current = Date.now();
+      }, 100 - timeSinceLast);
+    }
+  }, [updateVertexEditVis]);
+
+  useEffect(() => {
+    return () => {
+      if (throttledUpdateRef.current) {
+        clearTimeout(throttledUpdateRef.current);
+      }
+    };
+  }, []);
 
   const clearVertexEditVis = useCallback(() => {
     if (!map) return;
@@ -391,7 +423,8 @@ export function useSubdivisionVertexEdit({
 
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
       vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-      updateVertexEditVis();
+      updateVertexEditVis(true);
+      scheduleThrottledUpdate();
     };
 
     const onMouseUp = () => {
@@ -400,6 +433,10 @@ export function useSubdivisionVertexEdit({
       map.dragPan.enable();
       map.getCanvas().style.cursor = "";
       updateSnapGuide(map, null, null);
+      if (throttledUpdateRef.current) {
+        clearTimeout(throttledUpdateRef.current);
+      }
+      updateVertexEditVis(false);
     };
 
     const onVertexEnter = (e: any) => {
@@ -566,7 +603,8 @@ export function useSubdivisionVertexEdit({
 
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
       vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-      updateVertexEditVis();
+      updateVertexEditVis(true);
+      scheduleThrottledUpdate();
       e.preventDefault();
     };
 
@@ -579,6 +617,10 @@ export function useSubdivisionVertexEdit({
       if (draggingRef.current) {
         draggingRef.current = null;
         map.dragPan.enable();
+        if (throttledUpdateRef.current) {
+          clearTimeout(throttledUpdateRef.current);
+        }
+        updateVertexEditVis(false);
       }
     };
 

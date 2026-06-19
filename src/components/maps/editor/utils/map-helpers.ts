@@ -39,6 +39,40 @@ export function getFeatureCoords(geometry: Geometry): Position | undefined {
 }
 
 /**
+ * Helper to calculate and cache bounding box recursively for any geometry type
+ */
+export function getGenericBBox(geom: any): { minLng: number; minLat: number; maxLng: number; maxLat: number } {
+  if (!geom) return { minLng: 0, minLat: 0, maxLng: 0, maxLat: 0 };
+  if (geom._bbox) return geom._bbox;
+
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+
+  const processCoords = (coords: any) => {
+    if (!coords) return;
+    if (typeof coords[0] === "number") {
+      const lng = coords[0];
+      const lat = coords[1];
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    } else if (Array.isArray(coords)) {
+      for (let i = 0; i < coords.length; i++) {
+        processCoords(coords[i]);
+      }
+    }
+  };
+
+  processCoords(geom.coordinates);
+  const bbox = { minLng, minLat, maxLng, maxLat };
+  geom._bbox = bbox;
+  return bbox;
+}
+
+/**
  * Calculate overlap GeoJSON between a drawn geometry and other subdivisions
  */
 export function calculateOverlapGeoJson(
@@ -70,8 +104,22 @@ export function calculateOverlapGeoJson(
         (f.geometry as any).coordinates.length > 0
     );
 
+    const drawnBBox = getGenericBBox(drawnGeom);
+
     for (const sub of otherSubdivisions) {
       const subGeom = sub.geometry;
+      const subBBox = getGenericBBox(subGeom);
+
+      // Skip heavy turf intersection if bounding boxes do not overlap at all
+      if (
+        drawnBBox.minLng > subBBox.maxLng ||
+        drawnBBox.maxLng < subBBox.minLng ||
+        drawnBBox.minLat > subBBox.maxLat ||
+        drawnBBox.maxLat < subBBox.minLat
+      ) {
+        continue;
+      }
+
       const turfSub = {
         type: "Feature",
         geometry: subGeom,
@@ -190,6 +238,23 @@ export function snapToLayerFeatures(
     for (const feature of layer.data.features) {
       const geom = feature.geometry;
       if (!geom) continue;
+
+      // Retrieve cached bbox or compute and store it on feature properties
+      let bbox = feature._bbox;
+      if (!bbox) {
+        bbox = getGenericBBox(geom);
+        feature._bbox = bbox;
+      }
+
+      // Skip distance checks if point is not within tolerance of feature's bounding box
+      if (
+        point[0] < bbox.minLng - tolerance ||
+        point[0] > bbox.maxLng + tolerance ||
+        point[1] < bbox.minLat - tolerance ||
+        point[1] > bbox.maxLat + tolerance
+      ) {
+        continue;
+      }
 
       if (geom.type === "LineString") {
         const coords = geom.coordinates;

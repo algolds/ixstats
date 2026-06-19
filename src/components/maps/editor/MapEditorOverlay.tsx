@@ -917,6 +917,7 @@ export default function MapEditorOverlay({
                   onMapClick={editor.handleMapClick}
                   onDrawComplete={editor.handleDrawComplete}
                   onGeometryUpdate={editor.updateSubdivisionGeometry}
+                  updatePointCoordinates={editor.updatePointCoordinates}
                   onFeatureSelect={handleSelectFeature}
                   worldMapLayers={worldMapLayers}
                   editorVisibleLayers={editorVisibleLayers}

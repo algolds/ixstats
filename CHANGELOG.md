@@ -12,6 +12,28 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Map Editor Click-and-Drag Point Feature Markers**:
+  - Implemented intuitive client-side click-and-drag interaction for all point features (cities, national capitals, POIs, story pins, map labels) and their labels in the map editor ([usePointDrag.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/usePointDrag.ts)).
+  - Wired cursor hover states to turn the cursor into `grab` when hovering over point features/labels and `grabbing` during active drags.
+  - Registered a faint ghost marker layer (`editor-points-ghost-layer`) in [useMapLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useMapLayers.ts) to display the original point location during dragging.
+  - Added the `updatePointCoordinates` callback in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) to trigger database update mutations (`updateCity`, `updatePOI`, `updateStoryPin`, `updateMapLabel`) on drag release, and sync form states in real-time.
+  - Fully integrated coordinate updates into the undo/redo history (`pushAction`, `reverseAction`, `applyAction`) to restore point positions accurately.
+
+- **Dynamic Embed Map City Hover Labels**:
+  - Hid all non-capital city name labels by default in embedded country maps ([CountryMapEmbed.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/CountryMapEmbed.tsx)) to eliminate text clutter on the dashboard and MyCountry hero sections.
+  - Wired interactive mouse hover triggers to dynamically reveal city name labels and update the cursor to pointer when hovering over city marker points ([useCountryMapEmbedLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/hooks/useCountryMapEmbedLayers.ts)).
+
+- **Map Editor Latency & Snapping Optimizations**:
+  - Implemented cached bounding boxes (`_bbox` and recursive `getGenericBBox` helper) for background layer features and subdivision polygons, reducing vertex snapping search complexity in [border-editor.ts](file:///ixwiki/public/projects/ixstats/src/lib/border-editor.ts) and [map-helpers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/utils/map-helpers.ts).
+  - Pre-filtered snapping targets (`snapPointToGeometries`, `snapPointToNeighborOrBorder`, and `snapToLayerFeatures`) to skip expensive coordinate projection loops on features outside the cursor's tolerance neighborhood.
+  - Added bounding box pre-checks in `calculateOverlapGeoJson` to bypass Turf.js polygon intersection checks for non-overlapping subdivisions.
+  - Throttled Turf.js overlap and edge midpoint computations in the vertex editor ([useSubdivisionVertexEdit.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts)) to run at most once every 100ms during dragging, while drawing vertex moves at 60fps.
+
+- **Subdivision Custom Colors Support**:
+  - Serialized the `color` property for subdivisions in the public batched map endpoints (`getMapBundle` and `getAllMapFeatures` procedures in [world-map.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/world-map.ts)).
+  - Updated map style templates [standard.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/standard.json), [dark.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/dark.json), and [paper.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/paper.json) to dynamically render subdivisions using their custom colors via MapLibre GL coalescing expressions instead of fallback default styles.
+  - Relaxed the color validation schema in the subdivision upsert schema ([countryGeo.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countryGeo.ts)) to support 3-digit shorthand SVG hex colors (e.g. `#fff`, `#f00`).
+
 - **Flat Projection Locking for Map Editors**:
   - Locked [BorderEditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/BorderEditorMap.tsx) and [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx) to mercator projection.
   - Added a `useEffect` hook in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx) to explicitly enforce flat mercator projection whenever stylesheets or themes are loaded.
@@ -126,6 +148,13 @@ capability integer. Each release entry below lists which components advanced and
   - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
 
 ### Fixed
+
+- **Map Editor Real-Time Saving and Ghost Border Elimination**:
+  - Hardened all database political borders and subdivision geometry calculations with PostGIS `ST_MakeValid` to auto-repair self-intersections or unclosed rings from imported/edited geometries.
+  - Integrated `ST_MakeValid` directly into geometry triggers ([setup-map-triggers.ts](file:///ixwiki/public/projects/ixstats/scripts/migrations/setup-map-triggers.ts)) and manual update helpers ([upsert.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/upsert.ts), [clone-subsystems.ts](file:///ixwiki/public/projects/ixstats/src/lib/demo-seed/clone-subsystems.ts), [spatial.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/spatial.ts), [provinces.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/admin/provinces.ts)).
+  - Reconciled query cache invalidation typo key mismatch: replaced `"geoCore.getCountryGeoBundle"` with the correct `"countryGeo.getCountryGeoBundle"` across all backend routers ([countryGeo.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countryGeo.ts), [borders.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/editor/borders.ts), [linkage.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/editor/linkage.ts), [cities.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/admin/cities.ts), [provinces.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/admin/provinces.ts)).
+  - Added missing cache invalidation for `"geoCore.getCountryGeometry"` to border mutations in [borders.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/editor/borders.ts).
+  - Wired client-side query cache updates and local state invalidations upon saving, splitting, and merging borders/subdivisions ([useBorderEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useBorderEditor.ts), [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts), [useMapLiveSync.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapLiveSync.ts)) to ensure the editor UI redraws instantly with the latest authoritative shape and eliminates stale ghost borders.
 
 - **IIWiki Flag Image Resolution (Cloudflare Bypass)**: Implemented a deterministic MD5-based upload directory guessing mechanism inside the IIWiki file proxy route `/api/mediawiki/iiwiki/[...path]/route.ts`. This construct instantly resolves MediaWiki local image paths (`images/{first_char}/{first_two_chars}/{filename}`) and verifies the result via `wsrv.nl` before falling back to the standard `api.php` query, bypassing Cloudflare's production 403 API blocks and resolving the import builder 404 image errors.
 - **Province geometry edits silently not saving**: editing a subdivision's shape (vertex drag) in the map editor failed to persist, leaving the original "ghost" border. Root cause was a cascade rather than the geometry path itself:
