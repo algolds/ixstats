@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { LucideIcon } from "lucide-react";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, HelpCircle } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -69,6 +69,8 @@ interface CommandPanelProps {
   emptyDescription?: string;
   children: React.ReactNode;
   className?: string;
+  /** Help icon click handler */
+  onHelp?: () => void;
 }
 
 /**
@@ -91,6 +93,7 @@ export const CommandPanel = React.memo(function CommandPanel({
   emptyDescription,
   children,
   className,
+  onHelp,
 }: CommandPanelProps) {
   const theme = GRADIENT_CLASSES[accentColor] ?? GRADIENT_CLASSES.amber;
   const hasChildren = React.Children.count(children) > 0;
@@ -105,13 +108,25 @@ export const CommandPanel = React.memo(function CommandPanel({
     >
       {/* Gradient header */}
       <div className={cn("px-3.5 py-3", theme.headerBg)}>
-        <div className="flex items-center gap-2.5">
-          <div className={cn("shrink-0 rounded-lg p-1.5", theme.iconBg)}>
-            <Icon size={14} className="text-white" />
-          </div>
-          <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={cn("shrink-0 rounded-lg p-1.5", theme.iconBg)}>
+              <Icon size={14} className="text-white" />
+            </div>
             <h3 className="truncate text-sm font-semibold">{title}</h3>
           </div>
+          {onHelp && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onHelp();
+              }}
+              className="text-muted-foreground hover:text-foreground shrink-0 transition-colors p-0.5 rounded hover:bg-white/10"
+              title="Help"
+            >
+              <HelpCircle size={14} />
+            </button>
+          )}
         </div>
 
         {/* Stat chips */}

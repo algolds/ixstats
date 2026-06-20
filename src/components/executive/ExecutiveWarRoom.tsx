@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Bell, Calendar, FileText } from "lucide-react";
+import { Bell, Calendar, FileText, HelpCircle } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useIssueCount, useNationalIssues } from "~/hooks/useNationalIssues";
 import {
@@ -11,9 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "~/components/ui/dialog";
 import { IxTime } from "~/lib/ixtime";
 import { CommandPanel, type PanelStat } from "./CommandPanel";
+import { Button } from "~/components/ui/button";
 import { CommandPanelItem, type PanelItemBadge } from "./CommandPanelItem";
 
 // Lazy-load the full panels for drill-down sheets
@@ -39,6 +41,21 @@ const MeetingScheduler = dynamic(
 );
 const PolicyCreatorSheet = dynamic(
   () => import("./PolicyCreatorSheet").then((m) => ({ default: m.PolicyCreatorSheet })),
+  { ssr: false }
+);
+const IssueDetailModal = dynamic(
+  () =>
+    import("~/components/national-issues/IssueDetailModal").then((m) => ({
+      default: m.IssueDetailModal,
+    })),
+  { ssr: false }
+);
+const MeetingDetailModal = dynamic(
+  () => import("./MeetingDetailModal").then((m) => ({ default: m.MeetingDetailModal })),
+  { ssr: false }
+);
+const PolicyDetailSheet = dynamic(
+  () => import("./PolicyDetailSheet").then((m) => ({ default: m.PolicyDetailSheet })),
   { ssr: false }
 );
 
@@ -90,9 +107,20 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   const [activeSheet, setActiveSheet] = useState<SheetView>(null);
   const [meetingSchedulerOpen, setMeetingSchedulerOpen] = useState(false);
   const [policyCreatorOpen, setPolicyCreatorOpen] = useState(false);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  const [helpTopic, setHelpTopic] = useState<"issues" | "decisions" | "policies" | null>(null);
 
   // ── Issues data ──
-  const { activeIssues, urgentCount } = useNationalIssues(countryId);
+  const {
+    activeIssues,
+    urgentCount,
+    selectedIssue,
+    isResponding,
+    respond,
+    openIssue,
+    closeIssue,
+  } = useNationalIssues(countryId);
   const { total: issueCount } = useIssueCount(countryId);
 
   // ── Meetings data ──
@@ -198,6 +226,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           emptyIcon={Bell}
           emptyTitle="All clear"
           emptyDescription="No pending national issues right now. A good moment to enact a new policy or schedule a cabinet meeting."
+          onHelp={() => setHelpTopic("issues")}
         >
           {activeIssues.slice(0, 4).map((issue) => {
             const deadline = formatDeadline(issue.deadlineIxTime);
@@ -212,6 +241,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
                 trailingText={deadline?.text}
                 trailingColor={deadline?.color}
                 pulse={isCritical}
+                onClick={() => openIssue(issue.id)}
               />
             );
           })}
@@ -231,6 +261,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           emptyIcon={Calendar}
           emptyTitle="Your schedule is clear"
           emptyDescription="Schedule your first cabinet meeting to align your cabinet and start a record of decisions."
+          onHelp={() => setHelpTopic("decisions")}
         >
           {/* Show upcoming meetings first, then action items */}
           {upcomingMeetings.slice(0, 2).map((meeting: any) => (
@@ -245,6 +276,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
                   ? "text-blue-600 font-semibold"
                   : undefined
               }
+              onClick={() => setSelectedMeetingId(meeting.id)}
             />
           ))}
           {actionItems.slice(0, 3 - Math.min(upcomingMeetings.length, 2)).map((action: any) => (
@@ -269,6 +301,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
                       },
                     ]
               }
+              onClick={() => setSelectedMeetingId(action.meetingId)}
             />
           ))}
         </CommandPanel>
@@ -287,6 +320,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           emptyIcon={FileText}
           emptyTitle="No policies yet"
           emptyDescription="Create your nation's first policy to shape the economy, society, and governance."
+          onHelp={() => setHelpTopic("policies")}
         >
           {/* Show active policies first, then drafts */}
           {activePolicies.slice(0, 3).map((policy: any) => (
@@ -302,6 +336,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
                     "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400",
                 },
               ]}
+              onClick={!policy._isLocal ? () => setSelectedPolicyId(policy.id) : undefined}
             />
           ))}
           {draftPolicies.slice(0, Math.max(0, 4 - activePolicies.length)).map((policy: any) => (
@@ -317,6 +352,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
                     "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400",
                 },
               ]}
+              onClick={!policy._isLocal ? () => setSelectedPolicyId(policy.id) : undefined}
             />
           ))}
         </CommandPanel>
@@ -386,6 +422,114 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           if (!open) void refetchPolicies();
         }}
       />
+
+      {/* ── Detail Sheets ── */}
+      <IssueDetailModal
+        issue={selectedIssue ?? null}
+        isOpen={!!selectedIssue}
+        onClose={closeIssue}
+        onRespond={respond}
+        isResponding={isResponding}
+      />
+
+      <MeetingDetailModal
+        meetingId={selectedMeetingId}
+        onClose={() => setSelectedMeetingId(null)}
+      />
+
+      <PolicyDetailSheet
+        policyId={selectedPolicyId}
+        onClose={() => setSelectedPolicyId(null)}
+        countryId={countryId}
+        onPolicyChanged={() => {
+          void refetchPolicies();
+        }}
+      />
+
+      {/* ── Help Dialog ── */}
+      <Dialog open={helpTopic !== null} onOpenChange={(open) => !open && setHelpTopic(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-amber-500" />
+              {helpTopic === "issues" && "Issues Command Help"}
+              {helpTopic === "decisions" && "Decision Center Help"}
+              {helpTopic === "policies" && "Policy Strategy Help"}
+            </DialogTitle>
+            <DialogDescription>
+              Learn about the executive systems of your country.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 text-sm mt-3 leading-relaxed">
+            {helpTopic === "issues" && (
+              <>
+                <p>
+                  As the ruler, you must respond to various <strong>National Issues</strong> and crises that arise dynamically based on your country's attributes and previous actions.
+                </p>
+                <div className="border-l-2 border-amber-500 bg-amber-500/5 p-3 rounded-r-md">
+                  <h4 className="font-semibold text-xs text-amber-500 mb-1">CRITICAL CRISES & DEADLINES</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Urgent issues have deadlines. If they expire before you choose a response, they will auto-resolve—often with unfavorable outcomes.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-xs mb-1">Making Decisions</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Review the previews of how each option will impact Approval, Economic health, stability, and diplomatic relations. Committing to a choice resolves the issue and records the outcome.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {helpTopic === "decisions" && (
+              <>
+                <p>
+                  The <strong>Decision Center</strong> coordinates collaboration and action across government departments.
+                </p>
+                <div className="border-l-2 border-blue-500 bg-blue-500/5 p-3 rounded-r-md">
+                  <h4 className="font-semibold text-xs text-blue-400 mb-1">CABINET MEETINGS</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Schedule meetings with ministers, set agendas, record decisions, and invite officials to represent departments.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-xs mb-1">Action Items</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Action items are tasks assigned to cabinet officials or departments during meetings. Resolve pending and overdue tasks to maintain government effectiveness.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {helpTopic === "policies" && (
+              <>
+                <p>
+                  <strong>Policy Strategy</strong> governs the long-term laws, systems, and economic reforms of your nation.
+                </p>
+                <div className="border-l-2 border-indigo-500 bg-indigo-500/5 p-3 rounded-r-md">
+                  <h4 className="font-semibold text-xs text-indigo-400 mb-1">ACTIVE VS DRAFT STATUS</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Draft policies can be reviewed. Activating a policy incurs an upfront implementation cost and ongoing maintenance fees, but starts applying policy effects to the nation.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-xs mb-1">Economic Adjustments</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Active policies exert continuous multipliers on economic components (GDP, employment, inflation, tax revenue), steering the long-term national simulation.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button size="sm" onClick={() => setHelpTopic(null)}>
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
