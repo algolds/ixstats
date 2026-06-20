@@ -306,6 +306,12 @@ export function useCountryMapEmbedLayers({
         },
       });
 
+      // Baseline = the zoom the map settles at after fitBounds. City reveal is
+      // measured RELATIVE to it so the default view shows only the national
+      // capital regardless of country size; cities appear as the user zooms in.
+      let cityBaselineZoom: number | null = null;
+      let updateCityFilter: () => void = () => {};
+
       // ── City markers ──
       if (showCities && state.cities && state.cities.length > 0) {
         const cityFeatures: GeoJSON.Feature[] = [];
@@ -399,20 +405,35 @@ export function useCountryMapEmbedLayers({
             },
           });
 
-          // Apply Zoom-dependent Level of Detail (LOD) filter to non-capital cities
-          const updateCityFilter = () => {
+          // Zoom-dependent Level of Detail: only the national capital shows at the
+          // default (fitted) view; region capitals then cities reveal as the user
+          // zooms IN past that baseline, and hide again when zooming back out —
+          // like a normal map. `delta` is zoom relative to the fitted baseline.
+          const NEVER = 1e15; // sentinel "never" population threshold (Infinity isn't valid in expressions)
+          updateCityFilter = () => {
             const z = map.getZoom();
-            const threshold = z >= 6.0 ? 0 : z >= 4.5 ? 100000 : z >= 3.0 ? 250000 : 500000;
-            // Region capitals always show; plain cities declutter by population as you zoom out.
-            const filterExpr: any = [
-              "all",
-              ["!=", ["get", "isCapital"], true],
-              [
-                "any",
-                ["==", ["get", "isRegionCapital"], true],
-                [">=", ["coalesce", ["get", "population"], 0], threshold],
-              ],
-            ];
+            const base = cityBaselineZoom ?? z; // before fit settles, treat current as baseline → capitals only
+            const delta = z - base;
+
+            let popThreshold: number;
+            let showRegionCapitals: boolean;
+            if (delta >= 3.0) {
+              popThreshold = 0; // everything we loaded
+              showRegionCapitals = true;
+            } else if (delta >= 2.0) {
+              popThreshold = 100000;
+              showRegionCapitals = true;
+            } else if (delta >= 1.0) {
+              popThreshold = 500000;
+              showRegionCapitals = true;
+            } else {
+              popThreshold = NEVER; // default view: capitals only
+              showRegionCapitals = false;
+            }
+
+            const anyBranch: any[] = [[">=", ["coalesce", ["get", "population"], 0], popThreshold]];
+            if (showRegionCapitals) anyBranch.push(["==", ["get", "isRegionCapital"], true]);
+            const filterExpr: any = ["all", ["!=", ["get", "isCapital"], true], ["any", ...anyBranch]];
             if (map.getLayer("city-circles")) {
               map.setFilter("city-circles", filterExpr);
             }
@@ -507,6 +528,11 @@ export function useCountryMapEmbedLayers({
           ],
           { padding: boundsPadding, maxZoom: 10, duration: 0 }
         );
+        // Record the fitted zoom as the city-reveal baseline once the map settles.
+        map.once("idle", () => {
+          cityBaselineZoom = map.getZoom();
+          updateCityFilter();
+        });
       }
 
       // ── Click handlers ──

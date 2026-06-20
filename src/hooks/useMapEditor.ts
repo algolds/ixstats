@@ -4123,6 +4123,12 @@ function computeGaps(countryGeometry: any, subdivisions: any[]) {
   let simplifiedCountry = countryFeature;
   let simplifiedUnion = unionFeature;
 
+  // simplify() can collapse a ring below 4 points and throw "invalid polygon" —
+  // that's expected for tiny/degenerate shapes; we just keep the unsimplified
+  // geometry. Only surface genuinely unexpected failures.
+  const isDegeneratePolygonError = (err: unknown) =>
+    err instanceof Error && /fewer than 4 points|invalid polygon/i.test(err.message);
+
   try {
     const simplified = simplify(countryFeature, { tolerance: 0.0001, highQuality: false });
     const cleaned = cleanPolygonGeometry(simplified?.geometry);
@@ -4130,7 +4136,7 @@ function computeGaps(countryGeometry: any, subdivisions: any[]) {
       simplifiedCountry = { ...simplified, geometry: cleaned };
     }
   } catch (err) {
-    console.warn("Failed to simplify country geometry:", err);
+    if (!isDegeneratePolygonError(err)) console.warn("Failed to simplify country geometry:", err);
   }
 
   try {
@@ -4140,7 +4146,7 @@ function computeGaps(countryGeometry: any, subdivisions: any[]) {
       simplifiedUnion = { ...simplified, geometry: cleaned };
     }
   } catch (err) {
-    console.warn("Failed to simplify union geometry:", err);
+    if (!isDegeneratePolygonError(err)) console.warn("Failed to simplify union geometry:", err);
   }
 
   // Now subtract unionFeature from countryFeature

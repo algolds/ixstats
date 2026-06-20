@@ -54,6 +54,30 @@ import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from
 
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
+
+const DASHBOARD_HELP_STEPS: HeroHelpStep[] = [
+  {
+    title: "Welcome to IxStats",
+    body: "This is your global dashboard — a live snapshot of your nation and the wider world. Use it to keep tabs on your standing and jump into the systems that matter.",
+  },
+  {
+    title: "Your nation at a glance",
+    body: "The hero shows your flag, leader, GDP per capita, population, land area, and momentum (growth + global rank). The map highlights your territory and capital.",
+  },
+  {
+    title: "Switch perspectives",
+    body: "Use the Overview, Executive, Diplomacy, Intelligence, and Defense tabs to see different slices of your nation right from the dashboard.",
+  },
+  {
+    title: "Explore the world",
+    body: "From the nav you can browse global rankings and stats, the interactive world map, ThinkPages social feeds, and the IxVault marketplace.",
+  },
+  {
+    title: "Run your country",
+    body: "Click “Go to MyCountry” to enter your command suite — hold cabinet meetings, enact policies, resolve national issues, and edit your nation.",
+  },
+];
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -814,7 +838,7 @@ function DashboardHero({
           />
         </div>
 
-        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-3 md:col-span-2">
+        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] p-3 shadow-sm backdrop-blur-md md:col-span-2 dark:border-white/10 dark:bg-black/25">
           <TextureOverlay texture="paperGrain" opacity={0.09} />
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-2 flex items-start justify-between gap-2.5">
@@ -860,6 +884,11 @@ function DashboardHero({
               </div>
 
               <div className="flex shrink-0 items-center gap-1.5">
+                <HeroHelpModal
+                  title="Dashboard guide"
+                  steps={DASHBOARD_HELP_STEPS}
+                  accentClass="text-blue-400"
+                />
                 {econTier && <EconomicTierBadge tier={econTier} />}
                 {popTier && <PopulationTierBadge tier={popTier} />}
                 {gdpRank && (

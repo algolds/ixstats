@@ -38,6 +38,34 @@ import { useCountryData } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
+import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
+
+const MYCOUNTRY_HELP_STEPS: HeroHelpStep[] = [
+  {
+    title: "Welcome to MyCountry",
+    body: "This is your nation's command suite. Everything you need to run your country lives here — your daily agenda, government, diplomacy, intelligence, and defense.",
+  },
+  {
+    title: "Executive",
+    body: "Hold cabinet meetings, enact and review policies, and work through your daily agenda. This is where you make the decisions that move your nation.",
+  },
+  {
+    title: "Resolve national issues",
+    body: "Issues surface problems facing your nation. Address them from the Executive/Intelligence views — resolving them improves stability and your vitality scores.",
+  },
+  {
+    title: "Diplomacy & Intelligence",
+    body: "Manage embassies and relations under Diplomacy. Check the Intelligence tab for your vitality index, briefings, and alerts about what needs attention.",
+  },
+  {
+    title: "Defense",
+    body: "Review and build your military and internal security posture from the Defense section.",
+  },
+  {
+    title: "Edit your nation",
+    body: "Use the editor to update your country's identity, government, economy, and tax system. Changes autosave as you go — no save button hunting required.",
+  },
+];
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -788,7 +816,7 @@ export function OverviewHero({
           />
         </div>
 
-        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/10 bg-amber-500/[0.01] p-3 shadow-[0_0_15px_rgba(245,158,11,0.03)] md:col-span-2 dark:border-amber-500/25 dark:bg-amber-950/[0.05] dark:shadow-[0_0_20px_rgba(245,158,11,0.05)]">
+        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
           <TextureOverlay texture="paperGrain" opacity={0.09} />
 
           <div className="flex h-full flex-col justify-between">
@@ -816,6 +844,12 @@ export function OverviewHero({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <HeroHelpModal
+                    title="MyCountry guide"
+                    steps={MYCOUNTRY_HELP_STEPS}
+                    accentClass="text-amber-500"
+                    className="h-6 w-6"
+                  />
                   <button
                     onClick={() =>
                       setAgendaViewMode((v) => (v === "widgets" ? "stack" : "widgets"))

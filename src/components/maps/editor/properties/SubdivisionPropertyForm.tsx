@@ -3,10 +3,10 @@
 import React from "react";
 import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
-import { Ruler, Loader2 } from "lucide-react";
+import { Ruler } from "lucide-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
-import { api } from "~/trpc/react";
+import { geometryAreaSqKm } from "~/lib/geo-math";
 
 const SUBDIVISION_TYPES = [
   "province",
@@ -33,16 +33,22 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
   form,
   onChange,
 }: SubdivisionPropertyFormProps) {
-  const sampleArea = api.geoAdmin.sampleAreaSqKm.useQuery(
-    {
-      geometry: (form.geometry as { type: string; coordinates: unknown }) ?? {
-        type: "Polygon",
-        coordinates: [[]],
-      },
-    },
-    { enabled: !!form.geometry && (form.geometry as { type?: string }).type !== "Point" }
-  );
-  const derivedFromGeometry = form.areaSqKm === sampleArea.data;
+  // Area is a pure geometry calculation — compute it client-side. (Previously a
+  // tRPC query that shipped the entire polygon in the GET URL, which blew past
+  // URL/header limits for large countries → ERR_HTTP2_PROTOCOL_ERROR / 520.)
+  const sampleAreaValue = React.useMemo<number | undefined>(() => {
+    const geom = form.geometry as { type?: string; coordinates?: unknown } | undefined;
+    if (!geom || !geom.coordinates || geom.type === "Point" || geom.type === "LineString") {
+      return undefined;
+    }
+    try {
+      const v = geometryAreaSqKm(geom as Parameters<typeof geometryAreaSqKm>[0]);
+      return Number.isFinite(v) && v > 0 ? v : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [form.geometry]);
+  const derivedFromGeometry = form.areaSqKm === sampleAreaValue;
 
   return (
     <div className="space-y-2">
@@ -88,7 +94,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <label className="text-muted-foreground text-xs font-medium">Area (km²)</label>
-            {derivedFromGeometry && sampleArea.data !== undefined && (
+            {derivedFromGeometry && sampleAreaValue !== undefined && (
               <span className="text-muted-foreground text-[10px]">from geometry</span>
             )}
           </div>
@@ -107,26 +113,22 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
             />
             <button
               type="button"
-              disabled={sampleArea.data === undefined || sampleArea.isFetching}
+              disabled={sampleAreaValue === undefined}
               onClick={() =>
                 onChange({
                   ...form,
-                  areaSqKm: sampleArea.data ?? form.areaSqKm,
+                  areaSqKm: sampleAreaValue ?? form.areaSqKm,
                 })
               }
               className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-colors disabled:opacity-50"
             >
-              {sampleArea.isFetching ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Ruler className="h-3.5 w-3.5" />
-              )}
+              <Ruler className="h-3.5 w-3.5" />
               <span>Auto</span>
             </button>
           </div>
-          {sampleArea.data !== undefined && !derivedFromGeometry && (
+          {sampleAreaValue !== undefined && !derivedFromGeometry && (
             <div className="text-muted-foreground text-[10px]">
-              ≈ {sampleArea.data.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from
+              ≈ {sampleAreaValue.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from
               geometry
             </div>
           )}
