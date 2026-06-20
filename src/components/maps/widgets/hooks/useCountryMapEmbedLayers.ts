@@ -314,12 +314,19 @@ export function useCountryMapEmbedLayers({
           const coords = city.coordinates as [number, number] | null;
           if (!coords || !Array.isArray(coords) || coords.length < 2) continue;
 
+          // Only national capitals, region capitals, and cities over 200k population
+          const isRegionCapital = !!city.isSubdivisionCapital;
+          if (!city.isNationalCapital && !isRegionCapital && (city.population ?? 0) < 200000) {
+            continue;
+          }
+
           cityFeatures.push({
             type: "Feature",
             properties: {
               _cityId: city.id,
               name: city.name,
               isCapital: city.isNationalCapital,
+              isRegionCapital,
               population: city.population,
             },
             geometry: {
@@ -395,28 +402,17 @@ export function useCountryMapEmbedLayers({
           // Apply Zoom-dependent Level of Detail (LOD) filter to non-capital cities
           const updateCityFilter = () => {
             const z = map.getZoom();
-            let filterExpr: any;
-            if (z >= 6.0) {
-              filterExpr = ["!=", ["get", "isCapital"], true];
-            } else if (z >= 4.5) {
-              filterExpr = [
-                "all",
-                ["!=", ["get", "isCapital"], true],
-                [">=", ["coalesce", ["get", "population"], 0], 100000],
-              ];
-            } else if (z >= 3.0) {
-              filterExpr = [
-                "all",
-                ["!=", ["get", "isCapital"], true],
-                [">=", ["coalesce", ["get", "population"], 0], 250000],
-              ];
-            } else {
-              filterExpr = [
-                "all",
-                ["!=", ["get", "isCapital"], true],
-                [">=", ["coalesce", ["get", "population"], 0], 500000],
-              ];
-            }
+            const threshold = z >= 6.0 ? 0 : z >= 4.5 ? 100000 : z >= 3.0 ? 250000 : 500000;
+            // Region capitals always show; plain cities declutter by population as you zoom out.
+            const filterExpr: any = [
+              "all",
+              ["!=", ["get", "isCapital"], true],
+              [
+                "any",
+                ["==", ["get", "isRegionCapital"], true],
+                [">=", ["coalesce", ["get", "population"], 0], threshold],
+              ],
+            ];
             if (map.getLayer("city-circles")) {
               map.setFilter("city-circles", filterExpr);
             }

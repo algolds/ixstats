@@ -277,7 +277,9 @@ const EligibleCountryCard = React.memo(function EligibleCountryCard({
   onClick?: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
-  const showFlag = country.flagUrl && !imgError;
+
+  // Only countries with a valid, loadable flag belong in the grid — drop the rest.
+  if (!country.flagUrl || imgError) return null;
 
   return (
     <motion.div
@@ -286,19 +288,13 @@ const EligibleCountryCard = React.memo(function EligibleCountryCard({
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onClick={onClick}
     >
-      {showFlag ? (
-        <img
-          src={country.flagUrl}
-          alt={`Flag of ${country.displayName}`}
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          referrerPolicy="no-referrer"
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50">
-          <Globe className="h-12 w-12 text-gray-400" />
-        </div>
-      )}
+      <img
+        src={country.flagUrl}
+        alt={`Flag of ${country.displayName}`}
+        className="absolute inset-0 h-full w-full object-cover object-center"
+        referrerPolicy="no-referrer"
+        onError={() => setImgError(true)}
+      />
 
       <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 hover:opacity-100" />
 

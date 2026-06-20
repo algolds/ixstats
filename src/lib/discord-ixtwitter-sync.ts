@@ -14,6 +14,9 @@ import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
+// IxTwitter is one-way (Discord → feed only). The dedicated ThinkPages channel handles feed → Discord.
+// ponytail: flag, not env — flip to re-enable feed → IxTwitter mirroring if ever wanted.
+const FEED_TO_IXTWITTER_ENABLED = false;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -894,6 +897,7 @@ export async function postThinkPagesToDiscord(
   },
   mediaUrls?: string[]
 ): Promise<boolean> {
+  if (!FEED_TO_IXTWITTER_ENABLED) return false;
   if (!DISCORD_BOT_TOKEN) {
     console.warn("[DiscordPoster] DISCORD_BOT_TOKEN not set, skipping autopost to Discord");
     return false;
@@ -951,6 +955,7 @@ export async function editDiscordMessage(
   },
   mediaUrls?: string[]
 ): Promise<boolean> {
+  if (!FEED_TO_IXTWITTER_ENABLED) return false;
   if (!DISCORD_BOT_TOKEN) return false;
   try {
     const embeds = formatThinkPagesEmbed(post, account, mediaUrls);
@@ -975,6 +980,7 @@ export async function editDiscordMessage(
 }
 
 export async function deleteDiscordMessage(messageId: string): Promise<boolean> {
+  if (!FEED_TO_IXTWITTER_ENABLED) return false;
   if (!DISCORD_BOT_TOKEN) return false;
   try {
     const res = await fetch(
@@ -999,6 +1005,7 @@ export async function addDiscordReaction(
   messageId: string,
   reactionType: string
 ): Promise<boolean> {
+  if (!FEED_TO_IXTWITTER_ENABLED) return false;
   if (!DISCORD_BOT_TOKEN) return false;
   try {
     const emoji = mapThinkpagesReactionToDiscord(reactionType);
@@ -1028,6 +1035,7 @@ export async function removeDiscordReaction(
   messageId: string,
   reactionType: string
 ): Promise<boolean> {
+  if (!FEED_TO_IXTWITTER_ENABLED) return false;
   if (!DISCORD_BOT_TOKEN) return false;
   try {
     const emoji = mapThinkpagesReactionToDiscord(reactionType);
