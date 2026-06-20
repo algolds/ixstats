@@ -54,7 +54,7 @@ Each tier carries an independent version where noted — see the **[Versioning &
 |------|---------|
 | **Apps** *(independent version)* | IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software — powers the IxWiki content; Canvas editor sub-system), IxVault (wallet + trading cards + IxCredits + crafting/trading/marketplace/packs/lore cards/NS import) |
 | **Engines** *(internal sim cores, independent version)* | MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld) |
-| **Core Systems** *(independent version)* | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS (28 interfaces) |
+| **Core Systems** *(independent version)* | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS (47 interfaces) |
 > **Patch 1.0.6:** 47 god-file routers eliminated via `mergeRouters`-based domain splitting; arch guard tool added. **Minor 1.1.0:** canon track, map overlays, Defense/Politics panels, adjacency rebuild. See CHANGELOG.md. |
 | **Design System** *(independent version)* | Facet (glass / refraction / depth) |
 | **Platform Utilities** | IxTime (game clock), IxnayID (cross-platform identity) |
@@ -171,7 +171,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 │   ├── src/app/maps/               # IxWorld map viewer (standalone: IxMaps at maps.ixwiki.com)
 │   ├── src/app/(forum)/forum/      # IxForum community (XenForo bridge)
 │   ├── src/app/vault/              # IxVault — cards, collections, marketplace, crafting, packs, NS import
-│   └── src/app/(wikios)/w/         # IxWiki — wiki reader, editor, special pages (powered by WikiOS)
+│   └── src/app/(wiki-os)/          # IxWiki — wiki reader, dual editor, special pages at /wiki/* (powered by WikiOS)
 │
 ├── Core Systems
 │   ├── src/app/mycountry/          # MyCountry ★ — executive command suite
@@ -179,8 +179,8 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 │   ├── src/app/thinkpages/         # ThinkPages — feed, ThinkShare messages, ThinkTanks
 │   ├── src/app/achievements/       # Achievements & Awards — quest paths, LoreWards
 │   ├── src/app/stashes/            # Stash — save-for-later with annotations
-│   ├── src/app/blurbs/             # Blurbs — community wiki reviews
-│   └── src/app/admin/              # Admin CMS — 28 management interfaces
+│   ├── src/app/blurbs/             # Blurbs — "Topic Tuesday" community lore prompts & responses
+│   └── src/app/admin/              # Admin CMS — 47 management interfaces
 │
 ├── Infrastructure
 │   ├── src/components/             # UI components (893+ across 44 directories)

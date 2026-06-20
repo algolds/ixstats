@@ -790,5 +790,5 @@ if (archetype === 'CULTURAL_DIPLOMAT') {
 
 For implementation examples, see:
 - [Diplomatic Systems Guide](./diplomacy.md)
-- [Diplomatic AI Guide](./diplomatic-ai.md)
+- [Diplomacy System](./diplomacy.md)
 - [API Reference](../reference/api-complete.md)

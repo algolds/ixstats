@@ -1,125 +1,145 @@
 # IxStates (IxStats) Documentation Hub
 
-> **🆕 NEW (November 2025):** The messaging system has been unified! All messaging—personal, diplomatic, and official—now uses **ThinkShare** as the single backbone. See [systems/UNIFIED_MESSAGING_SYSTEM.md](./systems/UNIFIED_MESSAGING_SYSTEM.md) for complete details.
+The single index for all IxStates documentation. Guides are grouped by purpose so
+engineers, storytellers, and operators land in the right place. Version info comes from
+the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-This repository refresh introduces a streamlined documentation set that mirrors the current codebase. The guides are grouped by purpose so engineers, storytellers, and operators can quickly land in the right place.
+> Last refreshed June 2026 — **IxStates 1.1.0 "Ogma"**. Treat this structure as the source of truth.
+> Working plans/PRDs/audits live in the gitignored root `plans/`; completed/historical docs live in [`archive/`](archive/).
 
-- **Overview** – product positioning, feature map, quick facts
-- **Architecture** – frontend, backend, and data internals
-- **Systems** – deep dives for each major gameplay or management module
-- **Operations** – environment management, deployments, monitoring
-- **Processes** – testing, contributing, incident workflows
-- **Reference** – API, database, and event schemas
+## Quick Links
 
-Legacy documents have been relocated to `docs/archive/v1`. Keep them for historical context, but use the refreshed material below for all future work.
+- **Product overview** — [overview/platform.md](overview/platform.md)
+- **Versioning & releases** — [reference/revision.md](reference/revision.md)
+- **API catalog** — [reference/api-complete.md](reference/api-complete.md)
+- **Database models** — [reference/database.md](reference/database.md)
+- **Local dev setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
+- **Deployment** — [operations/deployment.md](operations/deployment.md)
+- **Design system (Facet)** — [reference/facet-design-system.md](reference/facet-design-system.md)
+- **Maps system** — [systems/maps.md](systems/maps.md)
 
-## Navigation
+## Overview
 
-### Overview
-- [`overview/platform.md`](overview/platform.md) – project charter, personas, and release cadence
-- [`overview/feature-map.md`](overview/feature-map.md) – map of routes, components, hooks, and supporting services
+| Document | Summary |
+| --- | --- |
+| [overview/platform.md](overview/platform.md) | Product charter, personas, pillars, release positioning |
 
-### Architecture
-- [`architecture/frontend.md`](architecture/frontend.md) – App Router layout, component layers, design system guidelines
-- [`architecture/backend.md`](architecture/backend.md) – tRPC patterns, middleware, rate limiting, and user context
-- [`architecture/data.md`](architecture/data.md) – Prisma schema overview, migrations, seeders, and data lifecycle
+## Architecture
 
-### Systems
-- [`systems/mycountry.md`](systems/mycountry.md) – executive command suite, compliance tooling, and analytics
-- [`systems/social.md`](systems/social.md) – ThinkPages, ThinkShare, and collaborative research experiences
-- [`systems/achievements.md`](systems/achievements.md) – achievement unlock logic, leaderboards, and notifications
-- [`systems/builder.md`](systems/builder.md) – nation creation flows, atomic components, and data ingestion
-- [`systems/help.md`](systems/help.md) – in-app help center architecture and authoring workflow
-- [`systems/admin-cms.md`](systems/admin-cms.md) – 28+ admin interfaces, CMS architecture, and role-based access
-- [`systems/calculations.md`](systems/calculations.md) – economic formulas with step-by-step examples
-- [`systems/npc-ai.md`](systems/npc-ai.md) – NPC personality system documentation
-- [`systems/crisis-events.md`](systems/crisis-events.md) – crisis management system guide
-- #### IxVault (Integrated Product)
-- [`systems/cards.md`](systems/cards.md) – IxCards system, card types, ownership
-- [`systems/card-packs.md`](systems/card-packs.md) – card pack types, rarity, opening flow
-- [`systems/myvault.md`](systems/myvault.md) – MyVault economy, IxCredits
-- [`systems/ns-integration.md`](systems/ns-integration.md) – NationStates integration
-- [`systems/ixcredits.md`](systems/ixcredits.md) – IxCredits economy and premium features
-- #### MyCountry Subsystems (Core System)
-- [`systems/intelligence.md`](systems/intelligence.md) – live briefing feeds, diplomatic intelligence, and forecasting
-- [`systems/diplomacy.md`](systems/diplomacy.md) – embassies, missions, cultural exchanges, and relationship scoring
-- [`systems/economy.md`](systems/economy.md) – economic indicators, builder integration, and modeling utilities
-- [`systems/defense.md`](systems/defense.md) – defense posture, SDI modules, readiness tracking, and crisis playbooks
-- [`systems/elections.md`](systems/elections.md) – Elections, political parties, and legislature management
-- [`systems/national-issues.md`](systems/national-issues.md) – National issues engine and consequences
-- [`systems/forum.md`](systems/forum.md) – XenForo forum integration and widget embedding
-- [`systems/maps.md`](systems/maps.md) – IxWorld interactive map, MapLibre GL JS, procedural world generation, border editor
-- [`systems/dynamic-island.md`](systems/dynamic-island.md) – **Halo** (formerly Dynamic Island) plugin-driven system architecture, registry, and custom layouts (Core System)
+| Document | Summary |
+| --- | --- |
+| [architecture/frontend.md](architecture/frontend.md) | App Router layout, component layers, design-system guidelines |
+| [architecture/backend.md](architecture/backend.md) | tRPC patterns, middleware, rate limiting, auth context |
+| [architecture/data.md](architecture/data.md) | Prisma schema domains, migrations, seeders, data lifecycle |
+| [prevent_ts_graph_explosion.md](prevent_ts_graph_explosion.md) | TypeScript graph isolation (modular tsconfigs, cross-router import ban). Resolved in 1.0.6; enforced by `scripts/audit/audit-arch.ts` |
+| [AUTOSAVE_ARCHITECTURE.md](AUTOSAVE_ARCHITECTURE.md) | Autosave system architecture (map editor) |
+| [FRAMEWORK_SPEC.md](FRAMEWORK_SPEC.md) | IxWorld framework specification |
 
-### Operations
-- [`operations/local-dev-setup.md`](operations/local-dev-setup.md) – comprehensive WSL2 local development environment setup, database syncing, and automation workflow
-- [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
-- [`operations/deployment.md`](operations/deployment.md) – build pipeline, base paths, server scripts, and rollback tools
-- [`operations/monitoring.md`](operations/monitoring.md) – logging, webhook alerts, and runtime health checks
+> Root-level [`arch.md`](../arch.md) is the agent-facing condensed version of the TS-graph architecture rules (referenced by `CLAUDE.md`).
 
-### Processes
-- [`processes/testing.md`](processes/testing.md) – Jest strategy, wiring audits, browser automation, and fixtures
-- [`processes/contributing.md`](processes/contributing.md) – coding standards, review expectations, and release management
-- [`processes/refactoring.md`](processes/refactoring.md) – modular architecture patterns and refactoring guidelines
-- [`processes/schema-validation.md`](processes/schema-validation.md) – schema validation and alignment procedures
+## Systems
 
-- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (1,376 procedures across 87 routers)
-- [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
-- [`reference/api-examples.md`](reference/api-examples.md) – tRPC API usage examples
-- [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
-- [`reference/branding.md`](reference/branding.md) – complete brand catalog: all systems, icons, colors, and visual identity tokens
-- [`./reference/revision.md`](./reference/revision.md) – **Versioning & Release Architecture**: platform (`Major.Minor.Patch` + epoch release name + channel), Apps/Engines/Systems single-integer versions, the Version Registry (`src/lib/buildVersion.ts`), schema/API/build versioning
-- [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
-- [`reference/edge-cases.md`](reference/edge-cases.md) – edge case handling and error scenarios
-- [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) – government component synergy system and interaction patterns
-- [`RATE_LIMITING_IMPLEMENTATION_GUIDE.md`](RATE_LIMITING_IMPLEMENTATION_GUIDE.md) – rate limiting implementation and configuration guide
-- [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md) – comprehensive rate limiting configuration and Redis setup
-- [`ADMIN_ENDPOINT_SECURITY_MAP.md`](ADMIN_ENDPOINT_SECURITY_MAP.md) – admin endpoint security mappings and authentication requirements
-- [`USER_PROFILE_UTILS_USAGE.md`](USER_PROFILE_UTILS_USAGE.md) – user profile utilities and display name implementation
-- [`operations/local-dev-setup.md`](operations/local-dev-setup.md) – comprehensive WSL2 local dev environment setup guide
-- [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) – comprehensive API documentation and usage patterns
+| Document | Summary |
+| --- | --- |
+| [systems/mycountry.md](systems/mycountry.md) | Executive command suite, compliance tooling, analytics |
+| [systems/builder.md](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
+| [systems/economy.md](systems/economy.md) | Economic indicators, projections, builder integration |
+| [systems/calculations.md](systems/calculations.md) | Economic formulas with step-by-step examples |
+| [systems/intelligence.md](systems/intelligence.md) | Live briefing feeds, diplomatic intelligence, forecasting |
+| [systems/diplomacy.md](systems/diplomacy.md) | Embassies, missions, cultural exchanges, relationship scoring |
+| [systems/defense.md](systems/defense.md) | Defense posture, SDI modules, readiness, crisis playbooks |
+| [systems/elections.md](systems/elections.md) | Elections, political parties, legislature (D'Hondt/FPTP) |
+| [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits, archetypes, behavioral prediction |
+| [systems/crisis-events.md](systems/crisis-events.md) | Crisis event types, player responses, outcome mechanics |
+| [systems/social.md](systems/social.md) | ThinkPages, ThinkShare, activity feeds, collaborative research |
+| [systems/achievements.md](systems/achievements.md) | Achievement unlocks, leaderboards, notifications |
+| [systems/admin-cms.md](systems/admin-cms.md) | 28+ admin interfaces, CMS architecture, RBAC |
+| [systems/help.md](systems/help.md) | In-app help center architecture and authoring workflow |
+| [systems/forum.md](systems/forum.md) | XenForo forum integration, widget embedding |
+| [systems/maps.md](systems/maps.md) | IxWorld map: MapLibre GL, layers, geo API, border editor |
+| [systems/dynamic-island.md](systems/dynamic-island.md) | **Halo** (formerly Dynamic Island) plugin-driven system |
+| [systems/myleague.md](systems/myleague.md) | MyLeague & MyClub sports management |
 
-### Tax System Reference
-- [`archive/pre-consolidation/TAX_SYSTEM_PERSISTENCE.md`](archive/pre-consolidation/TAX_SYSTEM_PERSISTENCE.md) – tax system persistence architecture and implementation
-- [`archive/pre-consolidation/TAX_SYSTEM_DATA_STRUCTURE.md`](archive/pre-consolidation/TAX_SYSTEM_DATA_STRUCTURE.md) – tax system data structures and type definitions
-- [`archive/pre-consolidation/TAX_SYSTEM_FRONTEND_EXAMPLE.md`](archive/pre-consolidation/TAX_SYSTEM_FRONTEND_EXAMPLE.md) – tax system frontend integration examples
-- [`archive/pre-consolidation/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](archive/pre-consolidation/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) – complete tax system implementation summary
-- [`TAX_SYSTEM.md`](TAX_SYSTEM.md) – tax system overview
+### IxVault
 
-### Maps & World Visualization
-- [`systems/maps.md`](systems/maps.md) – IxWorld map system: MapLibre GL JS, 7 layers, geo API (102 endpoints across 6 router files), border editor
-- [`IXWORLD_OCEANOGRAPHY_REPORT.md`](IXWORLD_OCEANOGRAPHY_REPORT.md) – ocean basins, seas, currents, shipping routes, and marine ecology
+| Document | Summary |
+| --- | --- |
+| [systems/cards.md](systems/cards.md) | IxCards — card types, rarity, ownership tracking |
+| [systems/myvault.md](systems/myvault.md) | MyVault economy, vault progression |
+| [systems/ixcredits.md](systems/ixcredits.md) | IxCredits economy and premium features |
+| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import |
+| [PREMIUM_FEATURES.md](PREMIUM_FEATURES.md) | Premium features matrix |
 
-### Operations & Deployment Reference
-- [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md) – production deployment checklist
-- [`PRE_DEPLOYMENT_CHECKLIST.md`](PRE_DEPLOYMENT_CHECKLIST.md) – pre-deployment verification steps
-- [`TROUBLESHOOTING_v1.2.md`](TROUBLESHOOTING_v1.2.md) – troubleshooting guide for v1.2
-- [`CREDENTIALS.md`](CREDENTIALS.md) – credentials and secrets management
-- [`PERFORMANCE_BENCHMARKS.md`](PERFORMANCE_BENCHMARKS.md) – performance metrics and benchmarks
-- [`EXTERNAL_API_CACHE.md`](EXTERNAL_API_CACHE.md) – external API caching strategies
-- [`CACHE_INTEGRATION_EXAMPLE.md`](CACHE_INTEGRATION_EXAMPLE.md) – cache integration implementation examples
+## Operations
 
-### Development Reference
-- [`development/ixcards-phase1.md`](development/ixcards-phase1.md) – IxCards phase 1 implementation guide
-- [`guides/DIPLOMATIC_MESSAGING_MIGRATION.md`](guides/DIPLOMATIC_MESSAGING_MIGRATION.md) – diplomatic messaging migration guide
+| Document | Summary |
+| --- | --- |
+| [operations/local-dev-setup.md](operations/local-dev-setup.md) | WSL2 local dev setup, DB syncing, automation workflow |
+| [operations/deployment.md](operations/deployment.md) | Build pipeline, base paths, server scripts, rollback |
+| [operations/monitoring.md](operations/monitoring.md) | Logging, webhook alerts, runtime health checks |
+| [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) | Production deployment checklist |
+| [CREDENTIALS.md](CREDENTIALS.md) | Credential & secrets management |
+| [RATE_LIMITING_GUIDE.md](RATE_LIMITING_GUIDE.md) | Rate limiting config, Redis setup, endpoint protection |
+
+## Processes
+
+| Document | Summary |
+| --- | --- |
+| [processes/testing.md](processes/testing.md) | Jest strategy, wiring audits, fixtures, automation |
+| [processes/contributing.md](processes/contributing.md) | Coding standards, review protocol, release cadence |
+| [processes/refactoring.md](processes/refactoring.md) | Modular architecture patterns, router-split recipe |
+
+## Reference
+
+| Document | Summary |
+| --- | --- |
+| [reference/api-complete.md](reference/api-complete.md) | Complete tRPC API catalog (87 routers, 1,376 procedures) |
+| [reference/database.md](reference/database.md) | Prisma models, relations, derived views, data ownership |
+| [reference/revision.md](reference/revision.md) | **Versioning & Release Architecture** — platform/app/engine/system versions, Version Registry |
+| [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, colors, visual tokens |
+| [reference/facet-design-system.md](reference/facet-design-system.md) | Facet design system tokens, depth, materials, refraction |
+| [reference/events.md](reference/events.md) | WebSocket channels, notification payloads, scheduled jobs |
+| [reference/edge-cases.md](reference/edge-cases.md) | Edge case handling and error scenarios |
+| [SYNERGY_REFERENCE.md](SYNERGY_REFERENCE.md) | Government component synergy system and interactions |
+| [ADMIN_ENDPOINT_SECURITY_MAP.md](ADMIN_ENDPOINT_SECURITY_MAP.md) | Admin endpoint security mappings & auth requirements |
+| [USER_PROFILE_UTILS_USAGE.md](USER_PROFILE_UTILS_USAGE.md) | User profile utilities & display-name implementation |
+| [EXTERNAL_API_CACHE.md](EXTERNAL_API_CACHE.md) | External API caching strategy |
+| [CACHE_INTEGRATION_EXAMPLE.md](CACHE_INTEGRATION_EXAMPLE.md) | Cache integration code examples |
+
+## Maps & World
+
+| Document | Summary |
+| --- | --- |
+| [systems/maps.md](systems/maps.md) | IxWorld map system (primary maps guide) |
+| [IXWORLD_OCEANOGRAPHY_REPORT.md](IXWORLD_OCEANOGRAPHY_REPORT.md) | Ocean basins, seas, currents, shipping routes, marine ecology |
+| [maps-1.1.md](maps-1.1.md) | Maps 1.1 core editing engine spec |
+| [design/territory-brush.md](design/territory-brush.md) | Territory brush design doc |
+| [design/province-generator.md](design/province-generator.md) | Province generator design doc |
+| [superpowers/specs/2026-06-15-unified-world-editor-design.md](superpowers/specs/2026-06-15-unified-world-editor-design.md) | Unified world editor design spec |
+
+## Audits & Research
+
+| Document | Summary |
+| --- | --- |
+| [audits/AUDIT_2026-06.md](audits/AUDIT_2026-06.md) | V1 compliance audit (production-readiness review) |
+| [audits/AUDIT_2026-06-13.md](audits/AUDIT_2026-06-13.md) | Router refactor audit (patch 1.0.6) |
+| [audits/REFACTOR_PLAN_2026-06.md](audits/REFACTOR_PLAN_2026-06.md) | Plan behind the V1 compliance work |
+| [research/sports-llm-commentary.md](research/sports-llm-commentary.md) | Research spike: sports LLM commentary |
+| [MyLeague_v1_PRD.md](MyLeague_v1_PRD.md) | MyLeague v1 product requirements |
 
 ## Archive
 
-Completed implementation docs, audit reports, and historical documentation are preserved in:
-- [`archive/`](archive/) – v1.1.3 completed implementation and security audits (17 documents)
-  - Implementation completion reports (PHASE_1_2, TAX_SYSTEM, NATIONAL_IDENTITY, ATOMIC_COMPONENTS)
-  - Security audits (SECURITY_AUDIT_2025-10-22, SECURITY_AUDIT_TASK_1.4_1.7_COMPLETED)
-  - Status reports (ACHIEVEMENT_SUMMARY, IMPLEMENTATION_EXECUTIVE_SUMMARY, IMPLEMENTATION_STATUS_v1.2)
-  - Code audits (AUDIT_REPORT_2025-10-19, AUDIT_REPORT_V1.1, CODEBASE_AUDIT_OCTOBER_2025, CHANGELOG_V1.1)
-  - Border editing implementation (BORDER_EDITING_CHECKLIST, BORDER_EDITING_IMPLEMENTATION_SUMMARY)
-- [`archive/v1/`](archive/v1/) – v1.0 historical documentation and technical guides (80+ documents)
-- [`archive/pre-consolidation/`](archive/pre-consolidation/) – documentation state before October 2025 consolidation
+Completed implementation reports, historical audits, and retired guides live in
+[`archive/`](archive/) — kept for context, not maintained:
 
-## How to Maintain This Documentation
-1. Update Markdown alongside code changes—especially READMEs in feature directories and the relevant system guide.
-2. Run or extend automation in `scripts/audit` when adding routers, models, or calculations; capture outputs in the reference docs.
-3. Keep `/help` synchronized with the Markdown guides so users receive the same guidance in-app and in the repository.
-4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
-5. Keep root directory clean—only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS).
+- [`archive/v1/`](archive/v1/) — v1.0 historical docs and technical guides (80+ files)
+- [`archive/pre-consolidation/`](archive/pre-consolidation/) — pre-October-2025 state (incl. tax-system docs)
+- [`archive/`](archive/) — v1.1.x completion reports, security audits, performance benchmarks
 
-The documentation was last refreshed June 2026 (**IxStates 1.1.0 "Ogma"**). Treat the structure as the source of truth going forward. Version info comes from the [Version Registry](../src/lib/buildVersion.ts); see the [Versioning & Release Architecture](./reference/revision.md).
+## Maintenance
+
+1. Update the relevant table here when adding, renaming, or archiving a doc.
+2. Update Markdown alongside code — feature-directory READMEs and the relevant system guide.
+3. Keep `/help` in sync with the system guides so in-app and repo guidance match.
+4. Retire docs to `archive/` instead of deleting them when a feature is removed.
+5. Keep the project root clean — only README, CHANGELOG, CLAUDE, AGENTS, arch.md, maps.md.

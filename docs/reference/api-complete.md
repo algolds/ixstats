@@ -1407,7 +1407,6 @@ All autosave hooks use a 15-second debounce to batch changes and prevent excessi
 - [System Guides](../systems/) - Feature-specific documentation
 - [Database Reference](./database.md) - Prisma schema
 - [Edge Cases](./edge-cases.md) - Common errors and handling
-- [API Examples](./api-examples.md) - Real-world usage examples
 
 > **Note:** The legacy `api.md` snapshot (February 2026) has been superseded by this document (June 2026). This api-complete.md is the canonical API reference with more routers (83 vs 61) and endpoints (1,432 vs 927). The legacy file has been removed.
 

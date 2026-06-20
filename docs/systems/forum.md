@@ -176,5 +176,5 @@ XenForo HTML is post-processed to rewrite internal URLs:
 
 ## Related Documentation
 - [`docs/systems/social.md`](social.md) — ThinkPages and ThinkShare (messaging integration)
-- [`docs/systems/UNIFIED_MESSAGING_SYSTEM.md`](UNIFIED_MESSAGING_SYSTEM.md) — Unified messaging backbone
+- [`docs/systems/social.md`](social.md) — ThinkShare unified messaging backbone
 - [`docs/reference/api-complete.md`](../reference/api-complete.md) — Full API catalog

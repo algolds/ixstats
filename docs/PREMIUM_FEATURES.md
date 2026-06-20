@@ -440,7 +440,7 @@ IxStats follows a **generous freemium model**:
 ## Related Documentation
 
 - [Intelligence System Documentation](./systems/intelligence.md)
-- [API Documentation](./API_DOCUMENTATION.md)
+- [API Catalog](./reference/api-complete.md)
 - [Rate Limiting Guide](./RATE_LIMITING_GUIDE.md)
 - [User Profile Utils](./USER_PROFILE_UTILS_USAGE.md)
 

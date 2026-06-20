@@ -582,6 +582,6 @@ enum VaultTransactionType {
 ## See Also
 
 - [Cards System](./cards.md) - Card types, ownership, and stats
-- [Card Packs System](./card-packs.md) - Pack types and opening mechanics
+- [IxCards System](./cards.md) - Card and pack types, opening mechanics
 - [API Reference](../reference/api-complete.md#vault-router) - Complete endpoint documentation
 - [Database Reference](../reference/database.md) - Full schema documentation

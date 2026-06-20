@@ -796,6 +796,6 @@ model CardOwnership {
 ## See Also
 
 - [Cards System](./cards.md) - Card types and ownership
-- [Card Packs System](./card-packs.md) - Pack mechanics
+- [IxCards System](./cards.md) - Card and pack mechanics
 - [API Reference](../reference/api-complete.md#ns-integration-router) - Complete endpoints
 - [Database Reference](../reference/database.md) - Full schema

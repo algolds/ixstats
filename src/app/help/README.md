@@ -1,48 +1,49 @@
 # In-App Help Center
 
-**Last updated:** May 2026
+**Last updated:** June 2026
 
-The help center at `/help` delivers React-rendered articles that mirror the Markdown guides under `docs/`. Each article uses shared layouts for consistent typography, navigation, and metadata.
+The help center at `/help` delivers React-rendered articles that mirror the Markdown guides under `docs/`. Each article uses shared layout primitives (`ArticleLayout` and friends) for consistent typography, navigation, and metadata. All content is static React — there is **no tRPC/`api.*` data source and no `help` router**; the only `api.*` occurrences are literal strings inside article copy.
 
-**v1.4.0 Coverage:** 47 articles across 10 categories covering all platform features including crisis events, NPC AI, vector tile maps, admin CMS (17 interfaces), and rate limiting.
+**Coverage (June 2026):** 58 articles registered in the hub across 13 sections, grouped into 6 filter categories.
 
-## Structure
-```
-/src/app/help/
-├── page.tsx                # Hub with search + category filters (6 categories)
-├── _components/
-│   └── ArticleLayout.tsx   # Shared layout for articles
-├── getting-started/        # Onboarding content (4 articles)
-├── economy/                # Economic system guides (4 articles)
-├── government/             # Governance & atomic guides (4 articles)
-├── defense/                # Defense, crisis ops, equipment (6 articles)
-├── diplomacy/              # Foreign affairs, NPC AI, scenarios (5 articles)
-├── intelligence/           # Intelligence dashboards & alerts (7 articles)
-├── social/                 # ThinkPages / ThinkShare guidance (3 articles)
-├── maps/                   # Vector tiles & map editor (2 articles) [NEW v1.4]
-├── admin/                  # Admin CMS & reference data (2 articles) [NEW v1.4]
-└── technical/              # API, architecture, rate limiting (5 articles)
-```
+## Routes
 
-**Total:** 47 articles across 10 categories (up from 38 articles in October 2025).
+| Route | Purpose |
+|-------|---------|
+| `/help` | Hub: search box + category filter + section/article cards + quick-links footer |
+| `/help/<category>/<slug>` | Individual article (each is a `page.tsx` wrapping `ArticleLayout`) |
 
-Each leaf folder contains a `page.tsx` article that wraps content in `ArticleLayout`.
+Article folders: `getting-started/`, `gameplay/`, `mycountry/`, `economy/`, `government/`, `defense/`, `intelligence/`, `diplomacy/`, `vault/`, `social/`, `technical/`, `admin/`.
 
-## Hub Configuration
-- Section metadata defined in the `helpSections` array inside `page.tsx`
-- Update titles, descriptions, and tags when adding or removing articles
-- Keep article paths aligned with folder names (e.g., `/help/economy/modeling` → `economy/modeling/page.tsx`)
-- Category filter includes: getting-started, features, systems, technical, admin (6 total including "all")
+## Key Features
 
-## Authoring Workflow
-1. Update the corresponding Markdown guide in `docs/`
-2. Replicate or adapt the content inside the matching help article component
-3. Ensure metadata (title, description, tags) remains in sync between the hub and the article
-4. Add links back to systems documentation where deeper dives are available
+- **Article center** — section cards on the hub list every article with title, description, and tag chips, linking to its route.
+- **Search** — client-side filter (`useMemo`) over article `title`, `description`, and `tags`; shows an empty-state when nothing matches.
+- **Categories** — six filter buttons: All Topics, Getting Started, Gameplay, Features, Technical, Admin. Each hub section declares a `category` of `getting-started` | `gameplay` | `features` | `technical` | `admin`.
+- **Quick links footer** — four shortcut cards (New to IxStats, Gameplay, Cards & Vault, API Docs).
+- **In-article navigation** — `ArticleLayout` renders a "Back to Help Center" link plus optional prev/next links.
+
+## Architecture
+
+| Piece | Location | Role |
+|-------|----------|------|
+| Hub | `page.tsx` | Client component; holds the `helpSections` array (sections → articles), search + category state |
+| Layout | `_components/ArticleLayout.tsx` | Exports `ArticleLayout`, `InfoBox`, `WarningBox`, `Section`, `ContentCard` |
+| Articles | `<category>/<slug>/page.tsx` | Static content composed from the layout primitives |
+
+The hub is the single source of truth for which articles are discoverable: an article folder only appears in search/navigation if it has a matching entry in `helpSections`.
+
+## Content Authoring & Sync
+
+1. Update the corresponding Markdown guide under `docs/` (system reference: `docs/systems/help.md`).
+2. Create or edit the matching article `page.tsx`, composing content with the `ArticleLayout` primitives.
+3. Register/adjust the article in the `helpSections` array in `page.tsx` (id, title, description, `path`, tags) so it surfaces in search and filters. Keep `path` aligned with the folder (`/help/economy/tiers` → `economy/tiers/page.tsx`).
+4. Keep metadata (title, description, tags) consistent between the hub entry and the article.
 
 ## Maintenance
-- Run through `/help` after each deploy to confirm navigation and content render correctly
-- Add Playwright/Jest coverage for critical help flows when modifying navigation patterns
-- Archive unused articles by moving the React file to `src/app/help/_archive` (create if needed) and removing the entry from `helpSections`
+
+- After each deploy, walk `/help` to confirm search, filters, and article rendering.
+- To retire an article, remove its `helpSections` entry (delisting it from the hub) and delete or archive the route.
+- Stats inside articles (router/endpoint/model counts, tier names, catalog sizes) are hand-maintained copy — refresh them when the underlying systems change.
 
 Align this README with `docs/systems/help.md` whenever the help center structure changes.

@@ -23,7 +23,7 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 - Platform: **IxStates 1.1.0 "Ogma"** (channel: Alpha) — OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at `src/lib/buildVersion.ts`.
 - Next.js 16.2.9, React 19.2.7, Prisma 6.19.3, tRPC 11.17, Tailwind CSS 4.3
 - 87 tRPC routers, 1,376 API endpoints, 237 Prisma models, 893+ components
-- Documentation updates must accompany feature work; use this overview and `docs/DOCUMENTATION_INDEX.md` as canonical entry points
+- Documentation updates must accompany feature work; use this overview and [`docs/README.md`](../README.md) as canonical entry points
 - **After a major change, reference [`revision.md`](../reference/revision.md) and confirm with the team whether any version should bump.**
 
 ## Platform Hierarchy
