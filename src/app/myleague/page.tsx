@@ -40,7 +40,6 @@ const SPORT_LABELS: Record<string, string> = {
   boxing: "Boxing",
 };
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "⚽",
   football: "🏈",

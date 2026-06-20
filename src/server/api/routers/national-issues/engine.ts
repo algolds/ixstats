@@ -69,7 +69,6 @@ const ConsequenceDefinitionSchema = z.object({
   durationDays: z.number().optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const ResponseOptionSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -119,7 +118,6 @@ const TemplateCreateSchema = z.object({
   isGlobal: z.boolean().default(false),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const TemplateUpdateSchema = TemplateCreateSchema.partial().extend({
   id: z.string(),
 });

@@ -93,7 +93,6 @@ export function VaultStoreControl() {
   const utils = api.useUtils();
 
   // Queries
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: items, isLoading, refetch } = api.vault.adminListStoreItemsAll.useQuery();
 
   // Dialog States

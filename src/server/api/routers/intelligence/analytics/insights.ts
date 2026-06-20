@@ -493,7 +493,6 @@ function calculateTrends(data: Record<string, unknown>[]) {
 /**
  * Calculate correlation analysis (simplified)
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateCorrelations(data: Record<string, unknown>[]) {
   // Simplified correlation analysis
   return {
@@ -518,7 +517,6 @@ function calculateStandardDeviation(values: number[]) {
  */
 function generateAIRecommendations(
   country: Record<string, unknown>,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   recentData: Record<string, unknown>[]
 ) {
   const recommendations = [];

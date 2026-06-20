@@ -258,7 +258,6 @@ export function createCountrySpecificConfig(
   baseConfig: EconomicConfig,
   countryGdpPerCapita: number,
   countryPopulation: number,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   localGrowthFactor = 1.0
 ): EconomicConfig & {
   countryEconomicTier: string;

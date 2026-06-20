@@ -43,7 +43,6 @@ function isTrustedDomain(url: string): boolean {
   }
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function getFileNameFromUrl(url: string): string {
   try {
     const urlObj = new URL(url);
@@ -241,7 +240,6 @@ export async function GET() {
       maxFileSize: MAX_FILE_SIZE,
       allowedTypes: ALLOWED_TYPES,
     });
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (error) {
     return NextResponse.json(
       {

@@ -104,7 +104,6 @@ export function GdpPerCapitaDetailsModal({
     }
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: globalStats, isLoading: isGlobalLoading } = api.countries.getGlobalStats.useQuery(
     undefined,
     {
@@ -546,7 +545,6 @@ export function GdpPerCapitaDetailsModal({
                       <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
                       <YAxis dataKey="name" type="category" width={80} />
                       <Tooltip
-                        // eslint-disable-next-line unused-imports/no-unused-vars
                         formatter={(value: any, name, props) => [
                           formatCurrency(value),
                           "GDP per Capita",

@@ -103,9 +103,7 @@ export class TaxCalculatorEngine {
   private calculateCategoryTax(
     category: TaxCategory,
     taxableIncome: number,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     adjustedGrossIncome: number,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     grossIncome: number
   ): {
     breakdown: TaxCategoryBreakdown;

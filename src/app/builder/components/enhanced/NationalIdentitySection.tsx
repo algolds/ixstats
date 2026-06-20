@@ -106,7 +106,6 @@ export function NationalIdentitySection({
     setCustomOfficialName,
     isEditingCustomName,
     setIsEditingCustomName,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     shouldFetchCustomTypes,
     setShouldFetchCustomTypes,
     foundationCoatOfArmsUrl,

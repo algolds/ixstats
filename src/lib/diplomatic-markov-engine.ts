@@ -42,7 +42,6 @@ const STATE_RANK: Record<RelationshipState, number> = {
 /**
  * Reverse mapping for state lookup
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const RANK_TO_STATE: Record<number, RelationshipState> = {
   0: "hostile",
   1: "tense",

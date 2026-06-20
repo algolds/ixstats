@@ -36,7 +36,6 @@ import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
 import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
 import { registerCustomCurrency } from "~/lib/format-utils";
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const CURRENT_SCHEMA_VERSION = 1;
 
 /** Parse numeric values like "$1.2 trillion", "€45,000", "10 million", "1234567" */
@@ -280,6 +279,10 @@ export function useBuilderState(
   const [hasRestoredState, setHasRestoredState] = useState(false);
   const quickStartProcessed = useRef(false);
   const editModeInitialized = useRef(false);
+  // One-shot guard: the edit-mode localStorage restore must run only once.
+  // Without it the effect re-runs whenever isLoadingCountry flips and merges
+  // stale localStorage back over freshly-loaded DB data → edits "reset".
+  const editRestoreDone = useRef(false);
 
   // Edit mode: Load existing country data
   const { data: existingCountry, isLoading: countryLoading } = api.countries.getByIdAtTime.useQuery(
@@ -497,7 +500,6 @@ export function useBuilderState(
                       : typeof dept.functions === "string"
                         ? JSON.parse(dept.functions)
                         : [];
-                    // eslint-disable-next-line unused-imports/no-unused-vars
                   } catch (e) {
                     return [];
                   }
@@ -509,7 +511,6 @@ export function useBuilderState(
                       : typeof dept.kpis === "string"
                         ? JSON.parse(dept.kpis)
                         : [];
-                    // eslint-disable-next-line unused-imports/no-unused-vars
                   } catch (e) {
                     return [];
                   }
@@ -591,8 +592,10 @@ export function useBuilderState(
 
   // Load saved state on mount - runs AFTER initial database load
   useEffect(() => {
-    // Skip quick-start and wiki import in edit mode, but still load saved edits
-    if (mode === "edit" && editModeInitialized.current && !isLoadingCountry) {
+    // Skip quick-start and wiki import in edit mode, but still load saved edits.
+    // Guarded to run ONCE — re-running clobbers fresh DB data with stale localStorage.
+    if (mode === "edit" && editModeInitialized.current && !isLoadingCountry && !editRestoreDone.current) {
+      editRestoreDone.current = true;
       try {
         const stateKey = `builder_state_${countryId}`;
         const savedKey = `builder_last_saved_${countryId}`;
@@ -1112,7 +1115,6 @@ export function useBuilderState(
             setLastSaved(new Date(savedLastSaved));
           }
         }
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to load saved state, continue with default
       }
@@ -1199,7 +1201,6 @@ export function useBuilderState(
 
         safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
         safeSetItemSync(savedKey, new Date().toISOString());
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to save state on unload
       }
@@ -1335,7 +1336,6 @@ export function useBuilderState(
       try {
         lastSyncedStateRef.current = currentSyncPayload;
         await updateMutation.mutateAsync(currentSyncPayload);
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (err) {
         // Handled by mutation onError
       }
@@ -1399,7 +1399,7 @@ export function useBuilderState(
     if (serverDraftQuery.data?.updatedAt) {
       setLastSaved(new Date(serverDraftQuery.data.updatedAt));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [serverDraftQuery.isLoading, serverDraftQuery.data, mode]);
 
   // Debounced server save (create mode), gated on restore-decision + real progress
@@ -1748,7 +1748,6 @@ export function useBuilderState(
       }
       setLastSaved(null);
       setBuilderState(getInitialState(mode));
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Failed to clear draft
     }

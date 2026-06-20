@@ -61,7 +61,6 @@ async function xfFetch<T>(endpoint: string): Promise<T | null> {
 }
 
 /** Resolve the user's linked XenForo user ID, or throw */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function requireForumUser(userId: string): Promise<number> {
   const { db } = await import("~/server/db");
   const user = await db.user.findUnique({

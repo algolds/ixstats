@@ -21,7 +21,6 @@ const recipeTypeEnum = z.enum(["FUSION", "EVOLUTION"]);
 /**
  * Material requirement schema
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const materialRequirementSchema = z.object({
   cardId: z.string().optional(), // Specific card ID (for evolution)
   rarity: z.string().optional(), // Required rarity (for fusion)
@@ -32,7 +31,6 @@ const materialRequirementSchema = z.object({
 /**
  * Unlock requirement schema
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const unlockRequirementSchema = z.object({
   minLevel: z.number().int().optional(), // Minimum collector level
   achievements: z.array(z.string()).optional(), // Required achievements
@@ -90,7 +88,6 @@ function calculateXPReward(resultRarity: string): number {
 /**
  * Check if user meets unlock requirements
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function checkUnlockRequirements(
   userId: string,
   requirements: any,

@@ -10,7 +10,6 @@ import { nsApiClient } from "~/lib/ns-api-client";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const SYNC_TYPE = "NS_CARD_SYNC";
 const activeRunningJobs = new Set<string>();
 
@@ -144,7 +143,6 @@ async function processNationDeck(
  * @param startFromIndex - Index into the nations array to resume from (0 = start)
  * @param initialCounts  - Accumulated counts to resume from
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function processRegionNationsInBackground(
   db: PrismaClient,
   syncLogId: string,

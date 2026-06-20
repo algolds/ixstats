@@ -352,7 +352,6 @@ export const adminSystemRouter = createTRPCRouter({
         multiplier: z.number().optional(),
       })
     )
-    // eslint-disable-next-line unused-imports/no-unused-vars
     .mutation(async ({ ctx, input }) => {
       try {
         // Try to set via bot first
@@ -439,11 +438,9 @@ export const adminSystemRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         const currentEpoch = IxTime.getInGameEpoch();
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const currentIxTime = IxTime.getCurrentIxTime();
 
         // Calculate the time difference
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const timeDifference = input.targetEpoch - currentEpoch;
         const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
 

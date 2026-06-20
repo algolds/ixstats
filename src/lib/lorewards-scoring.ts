@@ -294,7 +294,6 @@ export async function scoreDailyWikiOS(
 async function analyzeProseRatio(
   db: mysql.Pool,
   revIds: number[],
-  // eslint-disable-next-line unused-imports/no-unused-vars
   pageId: number
 ): Promise<number> {
   if (revIds.length === 0) return 0;

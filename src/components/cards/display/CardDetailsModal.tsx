@@ -115,7 +115,6 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
     const [activeTab, setActiveTab] = useState("overview");
 
     // Memoized hooks — must be called before any conditional returns
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const valueHistoryQuery = api.cardMarket.getCardValueHistory.useQuery(
       { cardId: card?.id ?? "" },
       { enabled: !!card && activeTab === "market" }

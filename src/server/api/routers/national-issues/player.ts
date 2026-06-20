@@ -19,7 +19,6 @@ import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 
 /** Ensures ~18 nations each have one force-generated showcase issue for the guest splash (idempotent per country). */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function seedSplashShowcaseIssues(db: PrismaClient): Promise<void> {
   try {
     const seededCountries = await db.nationalIssue.groupBy({
@@ -73,7 +72,6 @@ const ConsequenceDefinitionSchema = z.object({
   durationDays: z.number().optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const ResponseOptionSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -123,7 +121,6 @@ const TemplateCreateSchema = z.object({
   isGlobal: z.boolean().default(false),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const TemplateUpdateSchema = TemplateCreateSchema.partial().extend({
   id: z.string(),
 });

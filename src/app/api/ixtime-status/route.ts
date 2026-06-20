@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 export async function GET(request: NextRequest) {
   try {
     const status = await IxTime.getStatus();

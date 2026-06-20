@@ -48,7 +48,6 @@ interface ParsedComponent {
 
 const componentTypeSchema = z.nativeEnum(ComponentType);
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const getAllComponentsSchema = z
   .object({
     category: z.string().optional(),
@@ -56,17 +55,14 @@ const getAllComponentsSchema = z
   })
   .optional();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const getComponentByTypeSchema = z.object({
   componentType: componentTypeSchema,
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const getSynergiesSchema = z.object({
   componentType: componentTypeSchema,
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const incrementUsageSchema = z.object({
   componentType: componentTypeSchema,
 });
@@ -226,7 +222,6 @@ function getFallbackComponentByType(componentType: ComponentType): ParsedCompone
 /**
  * Get components grouped by category
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function getComponentsByCategory(): Record<string, ParsedComponent[]> {
   const fallbackComponents = getFallbackComponents();
   const grouped: Record<string, ParsedComponent[]> = {};

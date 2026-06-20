@@ -342,7 +342,6 @@ export class EconomyIntegrationService extends BaseBuilderService<
   /**
    * Calculate demographic impacts from atomic components
    */
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateDemographicImpacts(components: EconomicComponentType[]): Record<string, number> {
     // For now, return neutral impacts
     // This could be expanded based on component effects on demographics
@@ -360,7 +359,6 @@ export class EconomyIntegrationService extends BaseBuilderService<
   private generateSectorsFromComponents(
     components: EconomicComponentType[],
     impacts: Record<string, number>,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     totalGDP: number
   ) {
     const sectors = [

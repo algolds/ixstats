@@ -258,7 +258,6 @@ export const diplomaticEmbassiesMissionsExecutionRouter = createTRPCRouter({
 });
 
 // Helper function to determine category from option value
-// eslint-disable-next-line unused-imports/no-unused-vars
 function determineCategoryFromValue(value: string): string {
   const lowerValue = value.toLowerCase();
 
@@ -361,7 +360,6 @@ function determineCategoryFromValue(value: string): string {
 }
 
 // Helper functions for embassy game mechanics
-// eslint-disable-next-line unused-imports/no-unused-vars
 function getUpgradeEffects(upgradeType: string, level: number) {
   const effects: Record<string, any> = {};
 
@@ -391,7 +389,6 @@ function getUpgradeEffects(upgradeType: string, level: number) {
   return effects;
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function generateAvailableMissions(embassy: any) {
   const missions = [
     {
@@ -553,7 +550,6 @@ function _calculateInfluenceGain(
   return Math.floor(baseInfluence * multiplier);
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateRelationshipImpact(influenceChange: number, currentRelationship: string): number {
   // Relationship impact based on influence gain
   const baseImpact = Math.floor(influenceChange / 10);
@@ -570,7 +566,6 @@ function calculateRelationshipImpact(influenceChange: number, currentRelationshi
   return Math.floor(baseImpact * relationshipMultiplier);
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function getInfluenceEffects(totalInfluence: number): Record<string, number> {
   const effects: Record<string, number> = {};
 

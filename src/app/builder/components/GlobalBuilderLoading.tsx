@@ -29,7 +29,6 @@ export function GlobalBuilderLoading({
   variant = "full",
   showSubsystems = true,
 }: GlobalBuilderLoadingProps) {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const sizeClass =
     variant === "minimal" ? "w-6 h-6" : variant === "compact" ? "w-12 h-12" : "w-16 h-16";
 

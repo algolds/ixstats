@@ -322,7 +322,6 @@ export const usersProfileRouter = createTRPCRouter({
         }),
       })
     )
-    // eslint-disable-next-line unused-imports/no-unused-vars
     .mutation(async ({ ctx, input }) => {
       try {
         // For now, we'll store user preferences in a simple way

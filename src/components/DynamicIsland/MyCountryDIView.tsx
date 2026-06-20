@@ -45,7 +45,6 @@ const getMetricLabelClass = (val: number) => {
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const getPremiumDaysRemaining = (createdAt: string | Date | undefined): number => {
   if (!createdAt) return 30;
   const createdDate = new Date(createdAt);

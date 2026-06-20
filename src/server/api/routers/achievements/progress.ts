@@ -99,7 +99,6 @@ export const achievementsProgressRouter = createTRPCRouter({
           if (m.rewardsJson) {
             try {
               rewards = JSON.parse(m.rewardsJson);
-              // eslint-disable-next-line unused-imports/no-unused-vars
             } catch (e) {
               // ignore
             }

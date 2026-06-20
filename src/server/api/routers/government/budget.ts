@@ -8,7 +8,6 @@ import { GovernmentBuilderStateSchema } from "~/types/validation/government";
 import { notificationAPI } from "~/lib/notification-api";
 
 // Input validation schemas
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentStructureInputSchema = z.object({
   governmentName: z.string().min(1, "Government name is required"),
   governmentType: z.enum([
@@ -80,14 +79,11 @@ const departmentBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-// eslint-disable-next-line unused-imports/no-unused-vars
 const departmentCreateSchema = departmentBaseSchema;
 
 // Update schema - all fields optional
-// eslint-disable-next-line unused-imports/no-unused-vars
 const departmentUpdateSchema = departmentBaseSchema.partial();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const budgetAllocationInputSchema = z.object({
   departmentId: z.string().min(1),
   budgetYear: z.number().int().min(2020).max(2030),
@@ -106,7 +102,6 @@ const subBudgetInputSchema = z.object({
   priority: z.enum(["Critical", "High", "Medium", "Low"]).default("Medium"),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const revenueSourceInputSchema = z.object({
   name: z.string().min(1),
   category: z.enum(["Direct Tax", "Indirect Tax", "Non-Tax Revenue", "Fees and Fines", "Other"]),
@@ -117,7 +112,6 @@ const revenueSourceInputSchema = z.object({
   administeredBy: z.string().optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentBuilderStateSchema = GovernmentBuilderStateSchema;
 
 export const governmentBudgetRouter = createTRPCRouter({

@@ -70,7 +70,6 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
         localStorage.removeItem("builder_state");
         localStorage.removeItem("builder_last_saved");
         localStorage.removeItem("builder_imported_data");
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (e) {
         // Failed to clear storage
       }

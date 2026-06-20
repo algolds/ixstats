@@ -641,7 +641,6 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
  * Clean up visual editor HTML before passing to Parsoid for wikitext transformation.
  * Strips formatting emoji and temporary visual decoration from custom chips.
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function cleanHtmlForParsoid(html: string): string {
   let cleaned = html;
 

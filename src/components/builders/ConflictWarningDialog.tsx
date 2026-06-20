@@ -55,7 +55,6 @@ export function ConflictWarningDialog({
     }
   };
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const getSeverityColor = (severity: ConflictWarning["severity"]) => {
     switch (severity) {
       case "critical":
@@ -296,7 +295,6 @@ interface FieldMappingIndicatorProps {
 }
 
 export function FieldMappingIndicator({
-  // eslint-disable-next-line unused-imports/no-unused-vars
   fieldName,
   mappedTables,
   requiresConfirmation,

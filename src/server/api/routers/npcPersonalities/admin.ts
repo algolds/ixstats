@@ -372,7 +372,6 @@ function parsePersonalityJSON(personality: any) {
 /**
  * Fallback to hardcoded personalities if database empty
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function getFallbackPersonalities() {
   // In production, this would return hardcoded data
   // For now, return empty array to encourage database population
@@ -382,7 +381,6 @@ function getFallbackPersonalities() {
 /**
  * Generate generic response based on personality traits
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function generateGenericResponse(personality: any, scenario: string, context: any) {
   // Use personality traits to generate a generic response
   const cooperationScore = (personality.cooperativeness + context.relationshipStrength) / 2;
@@ -423,7 +421,6 @@ async function logAdminAction(
         ipAddress: "",
       },
     });
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (error) {
     // Silently fail if AdminAuditLog doesn't exist
     console.warn("Admin audit logging skipped (model may not exist)");

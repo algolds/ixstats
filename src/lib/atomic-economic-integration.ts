@@ -47,7 +47,6 @@ export interface CountryWithAtomicComponents extends Country {
 export function calculateAtomicEconomicImpact(
   components: ComponentType[],
   baseGdpPerCapita: number,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   baseTaxRevenue: number = 0
 ): AtomicEconomicModifiers {
   const modifiers: AtomicEconomicModifiers = {
@@ -238,7 +237,6 @@ export function calculateAtomicEconomicEffectiveness(
 
 export function getAtomicEconomicRecommendations(
   components: ComponentType[],
-  // eslint-disable-next-line unused-imports/no-unused-vars
   baseEconomicData: {
     gdpPerCapita: number;
     gdpGrowthRate: number;

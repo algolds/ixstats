@@ -195,7 +195,6 @@ export function WikiVisualEditor({
           htmlEl.innerHTML = getChipInnerHTML(wtName);
           return;
         }
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (err) {
         // ignore
       }

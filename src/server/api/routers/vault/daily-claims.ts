@@ -19,7 +19,6 @@ import { globalCache } from "~/lib/advanced-cache-system";
 /**
  * Vault transaction type enum for validation
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const vaultTransactionTypeEnum = z.enum([
   "EARN_PASSIVE",
   "EARN_ACTIVE",

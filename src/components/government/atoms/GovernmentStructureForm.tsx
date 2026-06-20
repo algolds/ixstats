@@ -203,7 +203,6 @@ export function GovernmentStructureForm({
     [onChange]
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const formatCurrency = (amount: number) => {
     return safeFormatCurrency(amount, data.budgetCurrency || "USD", false, "USD");
   };

@@ -167,7 +167,6 @@ export default function MyClubTeamDetailPage() {
   const [listPrice, setListPrice] = useState<number>(100);
   const [searchQuery, setSearchQuery] = useState("");
   const [bidAmount, setBidAmount] = useState<number>(150);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [biddingTeamId, setBiddingTeamId] = useState("");
   const [comparePlayer, setComparePlayer] = useState<any | null>(null);
   const [attackFocus, setAttackFocus] = useState(50);

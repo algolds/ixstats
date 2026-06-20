@@ -262,7 +262,6 @@ function UnitDialog({
   open,
   onOpenChange,
   unit,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   branchId,
   branchType,
   onCreate,

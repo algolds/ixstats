@@ -945,7 +945,6 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [mapLoaded, setMapLoaded] = useState(false);
   const labelInputRef = useRef<HTMLInputElement>(null);
 

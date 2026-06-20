@@ -58,7 +58,6 @@ export const FiscalSystemSection = memo(function FiscalSystemSection({
   showAtomicIntegration = false,
   mode = "create",
 }: FiscalSystemSectionProps) {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const isEditMode = mode === "edit";
 
   const [selectedView, setSelectedView] = useState<

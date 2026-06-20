@@ -24,7 +24,6 @@ interface UseCountryFlagsReturn {
 }
 
 export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlagsReturn {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { countries, preload = true, batchSize = 5 } = options;
 
   const [flags, setFlags] = useState<Map<string, CountryFlag>>(new Map());
@@ -49,7 +48,6 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
 
       setFlags(flagResults);
 
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const stats = countryFlagService.getCacheStats();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flags";

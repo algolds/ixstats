@@ -184,7 +184,6 @@ function DetailList({ title, children }: { title: string; children: ReactNode })
 }
 
 function DashboardHero({
-  // eslint-disable-next-line unused-imports/no-unused-vars
   collapsed,
   onCollapsedChange,
 }: {

@@ -97,7 +97,6 @@ export function CurrencySymbolPicker({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId);
 
   // Filter symbols based on search term

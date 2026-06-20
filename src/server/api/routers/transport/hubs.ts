@@ -211,7 +211,6 @@ export const transportHubsRouter = createTRPCRouter({
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function extractBoundaryCoords(geometry: import("geojson").Geometry): [number, number][] {
   const coords: [number, number][] = [];
   function walk(obj: unknown): void {

@@ -452,7 +452,6 @@ function findContiguousGroups(graph: PackedGraph, cellSet: number[]): number[][]
  * Returns array of polygon coordinate rings (each ring = Position[]).
  */
 function mergeCellsToPolygons(graph: PackedGraph, cellSet: number[]): Position[][][] {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const inSet = new Set(cellSet);
 
   // For each cell, emit its polygon edges. Track which edges are shared.

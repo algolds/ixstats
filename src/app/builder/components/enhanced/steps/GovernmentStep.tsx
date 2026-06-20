@@ -62,7 +62,6 @@ export function GovernmentStep({
   activeGovernmentTab,
   onGovernmentComponentsChange,
   onGovernmentStructureChange,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onGovernmentStructureSave,
   onEconomicInputsChange,
   onTabChange,

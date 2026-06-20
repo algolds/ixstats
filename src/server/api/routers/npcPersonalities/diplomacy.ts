@@ -27,7 +27,6 @@ import { TRPCError } from "@trpc/server";
 
 // ==================== VALIDATION SCHEMAS ====================
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const traitSchema = z.object({
   assertiveness: z.number().min(0).max(100),
   cooperativeness: z.number().min(0).max(100),
@@ -39,7 +38,6 @@ const traitSchema = z.object({
   isolationism: z.number().min(0).max(100),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const archetypeEnum = z.enum([
   "aggressive_expansionist",
   "peaceful_merchant",
@@ -140,7 +138,6 @@ export const npcPersonalitiesDiplomacyRouter = createTRPCRouter({
 /**
  * Parse JSON fields from database personality record
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function parsePersonalityJSON(personality: any) {
   return {
     ...personality,
@@ -160,7 +157,6 @@ function parsePersonalityJSON(personality: any) {
 /**
  * Fallback to hardcoded personalities if database empty
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function getFallbackPersonalities() {
   // In production, this would return hardcoded data
   // For now, return empty array to encourage database population
@@ -184,7 +180,6 @@ function generateGenericResponse(personality: any, scenario: string, context: an
 /**
  * Log admin action to database audit log
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function logAdminAction(
   db: any,
   data: {
@@ -211,7 +206,6 @@ async function logAdminAction(
         ipAddress: "",
       },
     });
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (error) {
     // Silently fail if AdminAuditLog doesn't exist
     console.warn("Admin audit logging skipped (model may not exist)");

@@ -131,7 +131,6 @@ export function useCommandItems(userProfile?: UserProfile) {
 
 // Shared state management hook for Dynamic Island
 export function useDynamicIslandState() {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
   const activePlugin = useActiveDIPlugin();
@@ -152,7 +151,6 @@ export function useDynamicIslandState() {
   );
 
   // Get user profile for contextual search
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Wiki full-text search — only fires when query is active and relevant filter

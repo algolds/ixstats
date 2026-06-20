@@ -1341,7 +1341,6 @@ export class UnifiedValidationService {
     }
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private assessGovernmentComponentFeasibility(component: ComponentType): {
     isFeasible: boolean;
     reason: string;
@@ -1350,7 +1349,6 @@ export class UnifiedValidationService {
     return { isFeasible: true, reason: "Feasible" };
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private getGovernmentComponentCapacityRequirement(component: ComponentType): number {
     // Simplified capacity requirement calculation
     return 10; // Placeholder
@@ -1363,7 +1361,6 @@ export class UnifiedValidationService {
 
   private estimateRequiredGovernmentSpending(
     economyBuilder: EconomyBuilderState,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     governmentComponents: ComponentType[]
   ): number {
     // Simplified spending estimation

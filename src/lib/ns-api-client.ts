@@ -533,7 +533,6 @@ export class NSApiClient {
         name,
         numnations: numStr ? parseInt(numStr, 10) : 0,
       };
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       return null;
     }

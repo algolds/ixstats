@@ -142,7 +142,6 @@ export const policiesEffectsRouter = createTRPCRouter({
 });
 
 // Helper function to calculate real-time policy effects
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function calculateRealTimePolicyEffects(policy: any, countryId: string, db: any) {
   // Get current country data
   const country = await db.country.findUnique({

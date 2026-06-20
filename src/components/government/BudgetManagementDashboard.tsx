@@ -47,9 +47,7 @@ export function BudgetManagementDashboard({
   departments,
   budgetAllocations,
   revenueSources,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onUpdateBudget,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   isReadOnly = false,
 }: BudgetManagementDashboardProps) {
   const [selectedView, setSelectedView] = useState<

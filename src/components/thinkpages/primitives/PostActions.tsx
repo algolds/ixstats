@@ -31,7 +31,6 @@ const updateReactionsInCacheData = (
         typeof post.reactionCounts === "string"
           ? JSON.parse(post.reactionCounts)
           : { ...(post.reactionCounts ?? {}) };
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (e) {
       reactionCounts = {};
     }
@@ -280,7 +279,6 @@ export function PostActions({
     return;
   }, [showReactionPopup]);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const utils = api.useUtils();
   const queryClient = useQueryClient();
 
@@ -493,7 +491,6 @@ export function PostActions({
     },
   });
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleLike = useCallback(async () => {
     console.log("❤️ Heart button clicked!", {
       currentUserAccountId,

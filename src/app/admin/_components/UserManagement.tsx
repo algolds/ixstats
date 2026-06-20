@@ -80,7 +80,6 @@ export function UserManagement({ className, mode }: UserManagementProps) {
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(mode === "roles" ? "roles" : "users");
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [showCreateRole, setShowCreateRole] = useState(false);
@@ -117,11 +116,9 @@ export function UserManagement({ className, mode }: UserManagementProps) {
   // Role management queries
   const {
     data: roles,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     isLoading: rolesLoading,
     refetch: refetchRoles,
   } = api.roles.getRoles.useQuery();
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: permissions, isLoading: permissionsLoading } = api.roles.getPermissions.useQuery();
   const { data: usersData, refetch: refetchRoleUsers } = api.roles.getUsersWithRoles.useQuery({
     search: userSearchTerm,

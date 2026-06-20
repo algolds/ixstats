@@ -324,7 +324,6 @@ export class UnifiedEffectivenessCalculator {
     economyBuilder: EconomyBuilderState,
     governmentBuilder: GovernmentBuilderState | null,
     taxSystem: TaxSystem | null,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     governmentComponents: ComponentType[] = []
   ) {
     const factors = {

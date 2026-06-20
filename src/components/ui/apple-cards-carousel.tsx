@@ -161,7 +161,6 @@ export const Card = ({
 }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { onCardClose, currentIndex } = useContext(CarouselContext);
   const [mounted, setMounted] = useState(false);
 

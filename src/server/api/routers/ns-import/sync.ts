@@ -11,7 +11,6 @@ import { SyncHealthMonitor } from "~/lib/ns-sync-monitor";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const SYNC_TYPE = "NS_CARD_SYNC";
 const activeRunningJobs = new Set<string>();
 
@@ -643,7 +642,6 @@ export const nsImportSyncRouter = createTRPCRouter({
         tag: z.string().min(1).default("gargantuan"),
       })
     )
-    // eslint-disable-next-line unused-imports/no-unused-vars
     .mutation(async ({ ctx, input }) => {
       const { limit, tag } = input;
 

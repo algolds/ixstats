@@ -39,7 +39,6 @@ export function BuilderHeader({
   isSaving = false,
   countryId,
 }: BuilderHeaderProps) {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { builderState, setBuilderState, lastSaved, isAutoSaving } = useBuilderContext();
   const isEditMode = mode === "edit";
   const [showHistory, setShowHistory] = useState(false);

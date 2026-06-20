@@ -24,7 +24,6 @@ interface ChartSkeletonProps {
   type?: "bar" | "line" | "pie" | "area" | "scatter";
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function ChartSkeleton({ height = 300, type = "bar" }: ChartSkeletonProps) {
   const elements = useMemo((): React.ReactElement | React.ReactElement[] => {
     switch (type) {

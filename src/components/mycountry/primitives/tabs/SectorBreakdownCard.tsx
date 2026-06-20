@@ -51,7 +51,6 @@ export interface SectorBreakdownCardProps {
 // Format currency value with null safety
 function formatCurrency(
   value: number | undefined | null,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   notation: "compact" | "standard" = "compact",
   currency: string = "USD"
 ): string {

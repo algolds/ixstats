@@ -273,7 +273,6 @@ export const intelAlertsSecurityRouter = createTRPCRouter({
 /**
  * Calculate volatility metrics from historical data
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateVolatility(data: Record<string, unknown>[]) {
   if (data.length < 2) return { gdp: 0, population: 0, overall: 0 };
 
@@ -293,7 +292,6 @@ function calculateVolatility(data: Record<string, unknown>[]) {
 /**
  * Calculate trend analysis from historical data
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateTrends(data: Record<string, unknown>[]) {
   if (data.length < 3) return { gdp: "stable", population: "stable", overall: "stable" };
 
@@ -324,7 +322,6 @@ function calculateTrends(data: Record<string, unknown>[]) {
 /**
  * Calculate correlation analysis (simplified)
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateCorrelations(data: Record<string, unknown>[]) {
   // Simplified correlation analysis
   return {
@@ -347,10 +344,8 @@ function calculateStandardDeviation(values: number[]) {
 /**
  * Generate AI-powered recommendations based on country data
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function generateAIRecommendations(
   country: Record<string, unknown>,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   recentData: Record<string, unknown>[]
 ) {
   const recommendations = [];
@@ -392,7 +387,6 @@ function generateAIRecommendations(
 /**
  * Generate predictive economic models
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function generatePredictiveModels(
   country: Record<string, unknown>,
   historicalData: Record<string, unknown>[],

@@ -29,7 +29,6 @@ interface AutocompleteProps {
 }
 
 export const Autocomplete = React.memo(function Autocomplete({
-  // eslint-disable-next-line unused-imports/no-unused-vars
   fieldName,
   value,
   onChange,
@@ -41,7 +40,6 @@ export const Autocomplete = React.memo(function Autocomplete({
   isLoading = false,
   disabled = false,
   className,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   allowCustom = true,
 }: AutocompleteProps) {
   const [open, setOpen] = useState(false);

@@ -445,7 +445,6 @@ export function VaultStoreTab() {
   });
 
   const spendCreditsMutation = api.vault.spendCredits.useMutation({
-    // eslint-disable-next-line unused-imports/no-unused-vars
     onSuccess: (_, variables) => {
       const item = activeCheckoutItem;
       setPurchasingItemId(null);

@@ -27,7 +27,6 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Fetch from XenForo API (server-level, no user impersonation) */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function xfFetch<T>(endpoint: string): Promise<T | null> {
   const apiKey = getXfApiKey();
   if (!apiKey) {
@@ -281,7 +280,6 @@ function rewriteXFHtml(html: string): string {
   return result;
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function normalizeNode(n: XFForum): ForumNode {
   return {
     nodeId: n.node_id,

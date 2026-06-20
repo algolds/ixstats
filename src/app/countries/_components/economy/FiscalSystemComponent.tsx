@@ -58,7 +58,6 @@ interface FiscalSystemComponentProps {
   countryId?: string; // For fetching government data
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const COLORS = FISCAL_CHART_COLORS;
 
 function FiscalSystemComponentInner({
@@ -69,7 +68,6 @@ function FiscalSystemComponentInner({
   isReadOnly = true,
   showAnalytics = true,
   governmentStructure,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
 }: FiscalSystemComponentProps) {
   // Use custom hook for all fiscal data logic

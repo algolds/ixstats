@@ -14,7 +14,6 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 // Urgency to impact mapping
-// eslint-disable-next-line unused-imports/no-unused-vars
 const URGENCY_TO_IMPACT: Record<string, StandardPriority> = {
   critical: "critical",
   high: "high",

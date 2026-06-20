@@ -197,7 +197,6 @@ const WATER_COLORS = new Set([
 ]);
 
 /** Common province fill colors (neutral, pastel, or distinctive). */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const PROVINCE_FILL_PATTERNS = [
   /^#f[0-9a-f]{5}$/i, // Light pastels (f-prefix)
   /^#e[0-9a-f]{5}$/i, // Light greys/pastels
@@ -269,7 +268,6 @@ export function filterProvinceShapes(
   const waterFills = new Set<string>();
   const provinceFills = new Set<string>();
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   for (const [color, count] of sortedFills) {
     const isTopoColor = TOPO_COLORS.has(color) || isEarthTone(color);
     const isWaterColor = WATER_COLORS.has(color) || isBlueish(color);
@@ -292,7 +290,6 @@ export function filterProvinceShapes(
   // Heuristic: if we have many topo colors (5+) and few province colors,
   // this is likely a topo map. Use the province-colored shapes only.
   const hasManyTopoColors = topoFills.size >= 4;
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const hasFewProvinceColors = provinceFills.size <= 5;
 
   if (hasManyTopoColors && provinceFills.size > 0) {
@@ -303,7 +300,6 @@ export function filterProvinceShapes(
 
   // If no clear province colors but we have topo colors,
   // check for shapes with uniform stroke (black border) — those are province outlines on topo
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const dominantStroke =
     strokeCounts.size > 0 ? [...strokeCounts.entries()].sort((a, b) => b[1] - a[1])[0]![0] : null;
 
@@ -457,7 +453,6 @@ export function isDecorativeElement(el: Element): boolean {
   const style = el.getAttribute("style") || "";
   const fill = el.getAttribute("fill") || "";
   const stroke = el.getAttribute("stroke") || "";
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const strokeWidth = el.getAttribute("stroke-width") || "";
   const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
 
@@ -693,7 +688,6 @@ function getDepthFromRoot(el: Element, root: Element): number {
   return depth;
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function parseStrokeWidthFromStyle(style: string): number {
   const match = style.match(/stroke-width\s*:\s*([\d.]+)/);
   return match ? parseFloat(match[1]!) : 0;

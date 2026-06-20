@@ -114,7 +114,6 @@ export function Demographics({
     onDemographicDataChangeAction(next);
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   function handleNestedField(section: keyof DemographicsData, field: string, value: number) {
     const next = { ...demographicData };
     if (typeof next[section] === "object" && next[section] !== null) {
@@ -250,7 +249,6 @@ export function Demographics({
     };
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const urbanizationHealth = getUrbanizationHealth();
   const literacyHealth = getLiteracyHealth();
   const lifeExpectancyHealth = getLifeExpectancyHealth();
@@ -1046,7 +1044,6 @@ export function Demographics({
 
                 {/* Regional Details */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  // eslint-disable-next-line unused-imports/no-unused-vars
                   {regionData.map((region, _index) => (
                     <Card key={region.name}>
                       <CardHeader className="pb-3">

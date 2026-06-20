@@ -99,7 +99,6 @@ function NotificationRow({
   isRead,
   colors,
   Icon,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   handleMarkRead,
   handleDismiss,
   handleClick,

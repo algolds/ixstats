@@ -191,7 +191,6 @@ export function MapContainer({
   });
 
   // Bind aggregated layer properties needed by state handlers
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const layerDataMap = useMemo(() => {
     const map: Record<string, any> = {};
     for (const ml of mapLayers) {

@@ -34,7 +34,6 @@ export function BotIntegrationCenter() {
     }
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: configData, refetch: refetchConfig } = api.admin.getConfig.useQuery();
 
   // tRPC mutations

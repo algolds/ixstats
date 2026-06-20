@@ -27,7 +27,6 @@ interface ChartTooltipProps {
   colors: string[];
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function ChartTooltip({ active, payload, formatValue, colors }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
 

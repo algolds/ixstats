@@ -106,7 +106,6 @@ export default function SmallArmsEquipmentPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [eraFilter, setEraFilter] = useState("all");
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [manufacturerFilter, setManufacturerFilter] = useState("all");
   const [showInactive, setShowInactive] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<any | null>(null);

@@ -66,7 +66,6 @@ export function EnhancedDial({
   const currentAngle = startAngle + valuePercentage * angleRange;
 
   // Animated value for smooth transitions
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const animatedValue = useAnimatedPercentage(value, precision, {
     ...DEFAULT_ANIMATIONS.numberFlow,
     duration: animationDuration,
@@ -85,7 +84,6 @@ export function EnhancedDial({
   };
 
   const handlePan = useCallback(
-    // eslint-disable-next-line unused-imports/no-unused-vars
     (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       if (!dialRef.current || disabled) return;
 

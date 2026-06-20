@@ -6,7 +6,6 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { globalCache } from "~/lib/advanced-cache-system";
 
 // Input schemas
-// eslint-disable-next-line unused-imports/no-unused-vars
 const activityFilterSchema = z.object({
   limit: z.number().min(1).max(80).default(20),
   cursor: z.string().optional(),
@@ -35,7 +34,6 @@ const createActivitySchema = z.object({
   relatedCountries: z.array(z.string()).optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const engagementActionSchema = z.object({
   activityId: z.string(),
   action: z.string(),

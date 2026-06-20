@@ -561,7 +561,6 @@ export class UnifiedAtomicStateManager {
   }
 
   private generateIntelligenceFeeds() {
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const { selectedComponents, effectivenessScore, synergies, conflicts, economicModifiers } =
       this.state;
 

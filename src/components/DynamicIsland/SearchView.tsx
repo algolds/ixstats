@@ -28,7 +28,6 @@ export function SearchView({
   setSearchFilter,
   debouncedSearchQuery,
   searchResults,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   countriesData,
   closeDropdown,
 }: SearchViewProps) {

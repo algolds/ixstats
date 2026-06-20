@@ -102,7 +102,6 @@ interface FilterState {
   maxValue: number;
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface VaultCardsSectionProps {
   initialTab?: string | null;
 }
@@ -540,7 +539,6 @@ function GallerySidebarContent({
 // ─── Inventory Tab ───────────────────────────────────────────────
 
 function InventoryTab({
-  // eslint-disable-next-line unused-imports/no-unused-vars
   ownerships,
   isLoading,
   allCards,
@@ -1013,15 +1011,10 @@ function CardGalleryTab({
   season,
   rarity,
   sortBy,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onSourceChange,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onSearchChange,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onSeasonChange,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onRarityChange,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onSortByChange,
 }: {
   source: GallerySource;

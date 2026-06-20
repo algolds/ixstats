@@ -103,13 +103,10 @@ function AtomicBuilderPageInner({
   // Tutorial state
   const [showTutorial, setShowTutorial] = useState(false);
   const [showQuickStart, setShowQuickStart] = useState(false);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [tutorialMode, setTutorialMode] = useState<string | null>(null);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const quickStartProcessed = useRef(false);
 
   // Error state
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [error, setError] = useState<string | null>(null);
 
   // Submission lock to prevent double-submits
@@ -307,7 +304,6 @@ function AtomicBuilderPageInner({
         }
         // Clear the server draft so a completed build can't resurrect on /builder.
         clearBuilderDraftMutation.mutate();
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to clear saved state
       }
@@ -365,7 +361,6 @@ function AtomicBuilderPageInner({
           localStorage.removeItem(`builder_state_${countryId}`);
           localStorage.removeItem(`builder_last_saved_${countryId}`);
         }
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to clear saved state
       }
@@ -462,7 +457,6 @@ function AtomicBuilderPageInner({
         });
       }
       setIsConfirmModalOpen(false);
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Error handled by mutation's onError callback
       // Release lock on error
@@ -515,15 +509,16 @@ function AtomicBuilderPageInner({
   // Register the submit function and loading state with context
   useEffect(() => {
     const isMutating =
-      createCountryMutation?.isLoading || updateCountryMutation?.isLoading || isSubmitting;
+      createCountryMutation?.isPending || updateCountryMutation?.isPending || isSubmitting;
     registerSubmit(handleCreateCountry, !!isMutating);
     return () => {
-      unregisterSubmit();
+      // Pass our handler so a late-unmounting sibling can't clear a newer registration.
+      unregisterSubmit(handleCreateCountry);
     };
   }, [
     handleCreateCountry,
-    createCountryMutation?.isLoading,
-    updateCountryMutation?.isLoading,
+    createCountryMutation?.isPending,
+    updateCountryMutation?.isPending,
     isSubmitting,
     registerSubmit,
     unregisterSubmit,
@@ -548,7 +543,6 @@ function AtomicBuilderPageInner({
         localStorage.removeItem("builder_state");
         localStorage.removeItem("builder_last_saved");
       }
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Failed to clear saved state
     }

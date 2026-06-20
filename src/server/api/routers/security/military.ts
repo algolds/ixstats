@@ -75,7 +75,6 @@ const militaryAssetInputSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const securityThreatInputSchema = z.object({
   threatName: z.string().min(1),
   threatType: z.enum([
@@ -108,7 +107,6 @@ const securityThreatInputSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const neighborThreatInputSchema = z.object({
   neighborName: z.string().min(1),
   neighborCountryId: z.string().optional(),

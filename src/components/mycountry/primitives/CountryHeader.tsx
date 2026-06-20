@@ -18,11 +18,8 @@ export function CountryHeader({
   countryName,
   countryId,
   countrySlug,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   economicTier,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   populationTier,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   variant = "unified",
 }: CountryHeaderProps) {
   return (

@@ -82,7 +82,6 @@ export const CardGrid = React.memo<CardGridProps>(
     onLoadMore,
     hasMore = false,
     filters,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     sort,
     cardSize = "medium",
     onCardClick,

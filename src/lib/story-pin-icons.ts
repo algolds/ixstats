@@ -258,7 +258,6 @@ const drawExploration: ShapeDrawer = (ctx, cx, cy, r) => {
 };
 
 /** Flame */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const drawDisaster: ShapeDrawer = (ctx, cx, cy, r) => {
   const s = r * 0.65;
   ctx.beginPath();

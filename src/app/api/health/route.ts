@@ -12,7 +12,6 @@ export async function GET() {
   try {
     await db.$queryRawUnsafe("SELECT 1");
     checks.db = "ok";
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (err) {
     checks.db = "error";
     healthy = false;

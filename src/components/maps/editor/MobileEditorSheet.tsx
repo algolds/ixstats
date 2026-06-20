@@ -47,7 +47,6 @@ export function MobileEditorSheet({
   title,
   maxHeight = "70vh",
   featureListContent,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   wikiContent,
   isEditMode = true,
 }: MobileEditorSheetProps) {

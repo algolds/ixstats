@@ -73,7 +73,6 @@ function formatTimestamp(date: Date | string): string {
 }
 
 /** Strip HTML tags to get plain text for Pretext measurement */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function stripHtml(html: string): string {
   if (typeof document !== "undefined") {
     const tmp = document.createElement("div");

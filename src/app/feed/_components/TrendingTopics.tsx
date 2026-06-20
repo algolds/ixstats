@@ -32,7 +32,6 @@ export function TrendingTopics() {
           ))
         ) : topics && topics.length > 0 ? (
           // Trending topics
-          // eslint-disable-next-line unused-imports/no-unused-vars
           topics.map((topic, index) => (
             <div
               key={topic.id}

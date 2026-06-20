@@ -19,7 +19,6 @@ import { globalCache } from "~/lib/advanced-cache-system";
 
 // Temporary storage for user-country mappings until we fix the User model
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function hydrateProfileDates(profile: any) {
   if (!profile) return profile;
   if (profile.createdAt) {

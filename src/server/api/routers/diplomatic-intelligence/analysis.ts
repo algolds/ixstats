@@ -7,7 +7,6 @@ import { IxTime } from "~/lib/ixtime";
 const classificationSchema = z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL"]);
 
 // Diplomatic Intelligence Types
-// eslint-disable-next-line unused-imports/no-unused-vars
 const diplomaticRelationSchema = z.object({
   id: z.string(),
   countryId: z.string(),
@@ -19,7 +18,6 @@ const diplomaticRelationSchema = z.object({
   updatedAt: z.date(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const intelligenceBriefingSchema = z.object({
   id: z.string(),
   countryId: z.string(),
@@ -47,7 +45,6 @@ const intelligenceBriefingSchema = z.object({
   ixTimeContext: z.number(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const activityIntelligenceSchema = z.object({
   id: z.string(),
   countryId: z.string(),
@@ -474,7 +471,6 @@ export const diplomaticIntelligenceAnalysisRouter = createTRPCRouter({
             ? "moderate"
             : "high";
 
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const diplomaticStance =
         embassyCount > 5 ? "expansive" : embassyCount > 2 ? "stable" : "limited";
 

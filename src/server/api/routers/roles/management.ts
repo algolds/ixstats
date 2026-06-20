@@ -21,7 +21,6 @@ export const ROLE_LEVELS = {
 } as const;
 
 // Helper function to check if user has permission
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function checkPermission(ctx: any, permission: string): Promise<boolean> {
   if (!ctx.auth?.userId || !ctx.user?.role) {
     return false;

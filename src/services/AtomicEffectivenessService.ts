@@ -427,7 +427,6 @@ export class AtomicEffectivenessService {
       where: { countryId, isActive: true },
     });
 
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const existingSynergies = await this.db.componentSynergy.findMany({
       where: { countryId },
     });

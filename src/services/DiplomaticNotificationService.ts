@@ -162,7 +162,6 @@ class DiplomaticNotificationService extends EventEmitter {
     if (event.significance === "historic") {
       adjustedPriority = "critical";
     } else if (event.significance === "major") {
-      // eslint-disable-next-line unused-imports/no-unused-vars
       adjustedPriority = adjustedPriority === "low" ? "medium" : "high";
     }
 
@@ -204,7 +203,6 @@ class DiplomaticNotificationService extends EventEmitter {
       priority = "high";
       emoji = isImproving ? "🎉" : "⚠️";
     } else if (significance === "moderate") {
-      // eslint-disable-next-line unused-imports/no-unused-vars
       priority = "medium";
       emoji = isImproving ? "👍" : "👎";
     }

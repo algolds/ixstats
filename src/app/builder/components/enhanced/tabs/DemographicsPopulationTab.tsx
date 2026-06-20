@@ -345,7 +345,6 @@ export function DemographicsPopulationTab({
     [economyBuilder.demographics]
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const hasComponentImpact = Object.values(demographicImpacts).some((v) => v !== 1);
 
   return (

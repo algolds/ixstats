@@ -6,7 +6,6 @@ import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/
 
 // Temporary storage for user-country mappings until we fix the User model
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function hydrateProfileDates(profile: any) {
   if (!profile) return profile;
   if (profile.createdAt) {
@@ -140,7 +139,6 @@ export const usersAdminRouter = createTRPCRouter({
         },
       });
 
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const adminRole = await ctx.db.role.upsert({
         where: { name: "admin" },
         update: {},
@@ -154,7 +152,6 @@ export const usersAdminRouter = createTRPCRouter({
         },
       });
 
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const userRole = await ctx.db.role.upsert({
         where: { name: "user" },
         update: {},

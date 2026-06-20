@@ -58,10 +58,8 @@ export function GovernmentBuilder({
   initialData,
   onSave,
   onChange,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onPreview,
   isReadOnly = false,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   hideSaveButton = false,
   countryId,
   enableAutoSync = false,
@@ -99,9 +97,7 @@ export function GovernmentBuilder({
     goToNextStep,
     goToPreviousStep,
     applyTemplate: builderApplyTemplate,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     handleSave,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     triggerSync,
     clearConflicts,
     allCollapsed,

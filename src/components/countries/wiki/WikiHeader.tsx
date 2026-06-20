@@ -37,7 +37,6 @@ interface WikiHeaderProps {
 }
 
 export const WikiHeader: React.FC<WikiHeaderProps> = ({
-  // eslint-disable-next-line unused-imports/no-unused-vars
   countryName,
   hasInfobox,
   activeView,

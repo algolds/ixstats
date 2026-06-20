@@ -963,7 +963,6 @@ export function resolveMatch(args: {
             const isFouled = rng() < (isThree ? 0.06 : 0.12);
 
             if (isFouled) {
-              // eslint-disable-next-line unused-imports/no-unused-vars
               awayTeamFouls++;
               const isMade = rng() < shootProb;
               const shooterName = `${shooter.firstName} ${shooter.lastName}`;
@@ -1082,7 +1081,6 @@ export function resolveMatch(args: {
             const isFouled = rng() < (isThree ? 0.06 : 0.12);
 
             if (isFouled) {
-              // eslint-disable-next-line unused-imports/no-unused-vars
               homeTeamFouls++;
               const isMade = rng() < shootProb;
               const shooterName = `${shooter.firstName} ${shooter.lastName}`;
@@ -1177,9 +1175,7 @@ export function resolveMatch(args: {
       // Sim 10 possessions in OT
       for (let pos = 1; pos <= 10; pos++) {
         const team = pos % 2 === 0 ? "home" : "away";
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const offRatings = team === "home" ? homeTeamModified : awayTeamModified;
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const defRatings = team === "home" ? awayTeamModified : homeTeamModified;
         const offLine = team === "home" ? homeLine : awayLine;
         const offOffense = team === "home" ? homeOffense : awayOffense;
@@ -1976,7 +1972,7 @@ export function resolveMatch(args: {
       // Top Half
       {
         let outs = 0;
-        // eslint-disable-next-line unused-imports/no-unused-vars, prefer-const
+        // eslint-disable-next-line prefer-const
         let bases = [false, false, false];
         while (outs < 3) {
           const awayBatter = args.awayRoster?.[awayOrderIdx % (args.awayRoster.length || 9)] ?? {
@@ -2011,7 +2007,7 @@ export function resolveMatch(args: {
       // Bottom Half
       {
         let outs = 0;
-        // eslint-disable-next-line unused-imports/no-unused-vars, prefer-const
+        // eslint-disable-next-line prefer-const
         let bases = [false, false, false];
         while (outs < 3) {
           const homeBatter = args.homeRoster?.[homeOrderIdx % (args.homeRoster.length || 9)] ?? {

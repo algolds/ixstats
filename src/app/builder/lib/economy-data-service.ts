@@ -967,7 +967,6 @@ export function saveBaselineToStorage(inputs: EconomicInputs): void {
         })
       );
     }
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (error) {
     // Failed to save baseline to localStorage
   }
@@ -980,12 +979,10 @@ export function loadBaselineFromStorage(): EconomicInputs | null {
       if (!stored) return null;
 
       const parsed = JSON.parse(stored);
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const { timestamp, ...inputs } = parsed;
       return inputs;
     }
     return null;
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (error) {
     return null;
   }

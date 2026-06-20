@@ -94,7 +94,6 @@ export default function AchievementsPage() {
   const {
     data: ufcLeaderboard,
     isLoading: isUfcLoading,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     refetch: refetchUfc,
   } = api.lorewards.getUfcLeaderboard.useQuery(undefined, { enabled: activeTab === "wiki-lore" });
 
@@ -105,7 +104,6 @@ export default function AchievementsPage() {
   );
 
   const unlockedAchievements = achievements?.filter((a) => a.isUnlocked) || [];
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const totalPoints = unlockedAchievements.reduce((sum, a) => sum + (a.points || 10), 0);
   const totalUnlocked = unlockedAchievements.length;
 

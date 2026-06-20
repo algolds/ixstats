@@ -28,7 +28,6 @@ interface LiveGameBannerProps {
 
 export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBannerProps) {
   // Use centralized time context
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { ixTimeTimestamp, multiplier, ixTimeFormatted, refreshTime } = useIxTime();
 
   const [currentTime, setCurrentTime] = useState<{
@@ -144,7 +143,6 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       try {
         const status = await IxTime.checkBotHealth();
         setBotStatus(status);
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         setBotStatus({
           available: false,

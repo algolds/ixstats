@@ -16,13 +16,11 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 /**
  * Recipe type enum
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const recipeTypeEnum = z.enum(["FUSION", "EVOLUTION"]);
 
 /**
  * Material requirement schema
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const materialRequirementSchema = z.object({
   cardId: z.string().optional(), // Specific card ID (for evolution)
   rarity: z.string().optional(), // Required rarity (for fusion)
@@ -33,7 +31,6 @@ const materialRequirementSchema = z.object({
 /**
  * Unlock requirement schema
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const unlockRequirementSchema = z.object({
   minLevel: z.number().int().optional(), // Minimum collector level
   achievements: z.array(z.string()).optional(), // Required achievements
@@ -43,7 +40,6 @@ const unlockRequirementSchema = z.object({
 /**
  * Calculate success rate based on card rarity
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateSuccessRate(resultRarity: string): number {
   const rates: Record<string, number> = {
     COMMON: 100,
@@ -60,7 +56,6 @@ function calculateSuccessRate(resultRarity: string): number {
 /**
  * Calculate IxCredits cost based on rarity
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateCraftingCost(resultRarity: string): number {
   const costs: Record<string, number> = {
     COMMON: 100,
@@ -77,7 +72,6 @@ function calculateCraftingCost(resultRarity: string): number {
 /**
  * Calculate XP reward based on rarity
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateXPReward(resultRarity: string): number {
   const xp: Record<string, number> = {
     COMMON: 10,
@@ -94,7 +88,6 @@ function calculateXPReward(resultRarity: string): number {
 /**
  * Check if user meets unlock requirements
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function checkUnlockRequirements(
   userId: string,
   requirements: any,

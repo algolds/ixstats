@@ -82,7 +82,6 @@ export function GlobalNotificationSystem({
     if (!isInitialized) return;
 
     // Update notification context based on current route
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const context = {
       currentPage: pathname,
       isUserActive: true,

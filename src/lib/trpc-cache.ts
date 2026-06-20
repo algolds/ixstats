@@ -52,7 +52,6 @@ function getRedisClient(): Redis | null {
       });
 
       return redis;
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (err) {
       console.warn("[TRPC_CACHE] Failed to connect to Redis, using memory cache fallback");
       return null;

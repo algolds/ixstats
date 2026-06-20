@@ -41,11 +41,9 @@ const governmentOfficialBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentOfficialCreateSchema = governmentOfficialBaseSchema;
 
 // Update schema - all fields optional
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
 const meetingInputSchema = z.object({
@@ -104,14 +102,11 @@ const policyBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-// eslint-disable-next-line unused-imports/no-unused-vars
 const policyCreateSchema = policyBaseSchema;
 
 // Update schema - all fields optional
-// eslint-disable-next-line unused-imports/no-unused-vars
 const policyUpdateSchema = policyBaseSchema.partial();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const activityScheduleInputSchema = z.object({
   activityType: z.enum([
     "meeting",
@@ -221,7 +216,6 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Get current IxTime
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const currentIxTime = IxTime.getCurrentIxTime();
 
       // Use provided IxTime if available, otherwise convert from scheduledDate

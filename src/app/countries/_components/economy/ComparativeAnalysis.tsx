@@ -139,7 +139,6 @@ const metrics = [
 export function ComparativeAnalysis({
   userCountry,
   allCountries,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onCountrySelect,
 }: ComparativeAnalysisProps) {
   // Extract unique regions from actual country data
@@ -530,7 +529,6 @@ export function ComparativeAnalysis({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  // eslint-disable-next-line unused-imports/no-unused-vars
                   {userRankings.map((ranking, _index) => (
                     <div
                       key={ranking.metric}
@@ -644,7 +642,6 @@ export function ComparativeAnalysis({
                         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
                         {allCountries
                           .filter((c) => selectedCountries.includes(c.id))
-                          // eslint-disable-next-line unused-imports/no-unused-vars
                           .map((country, index) => (
                             <Radar
                               key={country.id}

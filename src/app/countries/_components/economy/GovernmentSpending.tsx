@@ -97,9 +97,7 @@ export function GovernmentSpending({
   totalPopulation,
   onSpendingDataChangeAction,
   isReadOnly = false,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   indicators,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onIndicatorsChangeAction,
 }: GovernmentSpendingProps) {
   // Reconstruct spendingData object for compatibility

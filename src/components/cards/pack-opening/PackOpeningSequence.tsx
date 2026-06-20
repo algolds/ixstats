@@ -48,7 +48,6 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
 
     // Junk cards mutation
     const junkCardsMutation = api.cards.junkCards.useMutation({
-      // eslint-disable-next-line unused-imports/no-unused-vars
       onSuccess: (data) => {
         utils.vault.getBalance.invalidate();
         utils.cards.getMyCards.invalidate();

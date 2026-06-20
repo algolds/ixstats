@@ -64,7 +64,6 @@ export interface CardStats {
 /**
  * Rarity calculation input for nation cards
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface NationCardInput {
   economicTier: number;
   leaderboardRank?: number;
@@ -76,7 +75,6 @@ interface NationCardInput {
 /**
  * Rarity calculation input for lore cards
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface LoreCardInput {
   articleLength: number;
   referenceCount: number;

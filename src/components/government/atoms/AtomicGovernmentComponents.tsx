@@ -87,7 +87,6 @@ export function AtomicGovernmentComponents({
 }: AtomicGovernmentComponentsProps) {
   // Fetch component data from database (with fallback)
   const {
-    // eslint-disable-next-line unused-imports/no-unused-vars
     components: componentData,
     isLoading: componentsLoading,
     isUsingFallback,

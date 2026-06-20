@@ -10,7 +10,6 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const wikiSourceSchema = z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki");
 
 export const wikiDataRouter = createTRPCRouter({

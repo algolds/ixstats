@@ -345,7 +345,6 @@ export const managementCreateProcedures = {
               if (Array.isArray(parsed)) {
                 parsedSectors = parsed;
               }
-              // eslint-disable-next-line unused-imports/no-unused-vars
             } catch (e) {}
           }
           economyBuilderState = {

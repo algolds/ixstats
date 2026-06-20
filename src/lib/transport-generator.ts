@@ -535,7 +535,6 @@ export function generateTransportNetwork(
 
     if (candidates.length >= 2) {
       // Connect each airport city to the capital and to other major airport cities
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const capital = candidates.find((c) => c.isCapital);
       const addedAirPairs = new Set<string>();
 

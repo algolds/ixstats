@@ -19,7 +19,6 @@ import { getLanguageFamilies } from "../procedural-archive/language-families";
 export function placeSettlements(graph: PackedGraph, params: WorldGenParams): void {
   const { cells } = graph;
   const n = cells.n;
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const rng = makeRng(params.seed + 400);
 
   // ── Score all land cells ───────────────────

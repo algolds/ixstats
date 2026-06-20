@@ -282,7 +282,6 @@ export const electionsElectionsRouter = createTRPCRouter({
 
       const country = election.country;
       const legislature = election.legislature;
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const totalSeats = legislature.totalSeats;
 
       // Step 1: Calculate economic performance modifier
@@ -328,7 +327,6 @@ export const electionsElectionsRouter = createTRPCRouter({
           candidateId: candidate.id,
           votes: Math.round(support * 1000), // Scale up for D'Hondt precision
         });
-        // eslint-disable-next-line unused-imports/no-unused-vars
         totalSupport += support;
       }
 

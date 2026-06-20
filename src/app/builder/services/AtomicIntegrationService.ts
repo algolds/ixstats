@@ -388,7 +388,6 @@ export class AtomicIntegrationService extends BaseBuilderService<
    * Detect synergies between components
    */
   private detectSynergies(
-    // eslint-disable-next-line unused-imports/no-unused-vars
     components: ComponentType[]
   ): Array<{ components: ComponentType[]; description: string }> {
     // Synergies are now handled by atomicGovernmentIntegration utility
@@ -401,7 +400,6 @@ export class AtomicIntegrationService extends BaseBuilderService<
    * Note: Conflicts are now handled by atomicGovernmentIntegration utility to avoid duplicates
    */
   private detectConflicts(
-    // eslint-disable-next-line unused-imports/no-unused-vars
     components: ComponentType[]
   ): Array<{ components: ComponentType[]; description: string }> {
     // Conflicts are now handled by atomicGovernmentIntegration utility
@@ -412,7 +410,6 @@ export class AtomicIntegrationService extends BaseBuilderService<
   /**
    * Get required departments for components
    */
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private getRequiredDepartments(components: ComponentType[]): string[] {
     const departments = new Set<string>();
 

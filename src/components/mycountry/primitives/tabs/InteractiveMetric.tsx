@@ -315,7 +315,6 @@ export function MetricTooltip({
  */
 export function AnimatedValue({
   value,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   format = "number",
   decimals = 1,
   prefix = "",

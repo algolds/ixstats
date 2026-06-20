@@ -72,11 +72,9 @@ export function useEconomyBuilderAutoSync(
   const {
     enabled = true,
     debounceMs = 15000, // 15 seconds
-    // eslint-disable-next-line unused-imports/no-unused-vars
     showConflictWarnings = true,
     onSyncSuccess,
     onSyncError,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     onConflictDetected,
   } = options;
 
@@ -95,7 +93,6 @@ export function useEconomyBuilderAutoSync(
   // API mutations
   const autosaveMutation = api.economics.autoSaveEconomyBuilder.useMutation({
     // Optimistic update - show "Saved" immediately before server confirmation
-    // eslint-disable-next-line unused-imports/no-unused-vars
     onMutate: async (newData) => {
       setSyncState((prev) => ({
         ...prev,

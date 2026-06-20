@@ -27,7 +27,6 @@ import { TRPCError } from "@trpc/server";
 
 // ==================== VALIDATION SCHEMAS ====================
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const traitSchema = z.object({
   assertiveness: z.number().min(0).max(100),
   cooperativeness: z.number().min(0).max(100),
@@ -175,7 +174,6 @@ function getFallbackPersonalities() {
 /**
  * Generate generic response based on personality traits
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function generateGenericResponse(personality: any, scenario: string, context: any) {
   // Use personality traits to generate a generic response
   const cooperationScore = (personality.cooperativeness + context.relationshipStrength) / 2;
@@ -190,7 +188,6 @@ function generateGenericResponse(personality: any, scenario: string, context: an
 /**
  * Log admin action to database audit log
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function logAdminAction(
   db: any,
   data: {
@@ -217,7 +214,6 @@ async function logAdminAction(
         ipAddress: "",
       },
     });
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (error) {
     // Silently fail if AdminAuditLog doesn't exist
     console.warn("Admin audit logging skipped (model may not exist)");

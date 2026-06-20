@@ -31,7 +31,7 @@ export interface BuilderContextValue extends UseBuilderStateReturn {
   submitFn: (() => Promise<void>) | null;
   isSubmittingGlobal: boolean;
   registerSubmit: (fn: () => Promise<void>, loading: boolean) => void;
-  unregisterSubmit: () => void;
+  unregisterSubmit: (fn?: () => Promise<void>) => void;
   /** Transient — country currently being hovered in the foundation step grid */
   foundationPreviewCountry: RealCountryData | null;
   /** Set hovered country for foundation step live preview in sidebar */
@@ -76,7 +76,13 @@ export function BuilderStateProvider({
     setIsSubmittingGlobal((prev) => (prev !== loading ? loading : prev));
   }, []);
 
-  const unregisterSubmit = useCallback(() => {
+  const unregisterSubmit = useCallback((fn?: () => Promise<void>) => {
+    // Guard against the AnimatePresence overlap race: when navigating between
+    // sections both the outgoing and incoming AtomicBuilderPage are briefly
+    // mounted. The incoming one registers its submit handler, then the outgoing
+    // one unmounts and its cleanup fires — without this guard that cleanup would
+    // null the *current* handler, leaving the Save button dead.
+    if (fn && submitRef.current !== fn) return;
     submitRef.current = null;
     setIsSubmittingGlobal((prev) => (prev !== false ? false : prev));
   }, []);

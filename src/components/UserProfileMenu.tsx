@@ -23,7 +23,6 @@ export function UserProfileMenu({
   userProfile,
   setupStatus,
   userCountryFlag,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   flagsLoading,
 }: UserProfileMenuProps) {
   const [showUserPopover, setShowUserPopover] = useState(false);

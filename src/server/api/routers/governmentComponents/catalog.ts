@@ -67,7 +67,6 @@ const incrementUsageSchema = z.object({
   componentType: componentTypeSchema,
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const createSynergySchema = z.object({
   component1: componentTypeSchema,
   component2: componentTypeSchema,

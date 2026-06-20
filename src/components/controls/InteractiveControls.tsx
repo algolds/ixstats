@@ -73,7 +73,6 @@ export function GlassNumberPicker({
   theme = "default",
 }: NumberPickerProps) {
   const [displayValue, setDisplayValue] = useState(value.toFixed(precision));
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isEditing, setIsEditing] = useState(false);
 
   const sizeClasses = {
@@ -206,7 +205,6 @@ export function GlassDial({
   showValue = true,
 }: DialProps) {
   const constraintsRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const angle = useMotionValue(0);
 
   const sizeClasses = {
@@ -238,7 +236,6 @@ export function GlassDial({
 
   const currentAngle = valueToAngle(value);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleDrag = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (!constraintsRef.current) return;
 
@@ -416,7 +413,6 @@ export function GlassSlider({
   showTicks = false,
   tickCount = 5,
 }: SliderProps) {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
 

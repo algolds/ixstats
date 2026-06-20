@@ -62,7 +62,6 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   }, []);
 
   // Update stats (alias for refreshStats)
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const updateStats = refreshStats;
 
   // Update all flags

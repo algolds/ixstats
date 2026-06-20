@@ -356,7 +356,6 @@ export function ComponentErrorBoundary({ children, context, onError }: Omit<Prop
 
 // Hook for functional components to trigger error boundaries
 export function useErrorHandler() {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   return React.useCallback((error: Error, errorInfo?: ErrorInfo) => {
     throw error;
   }, []);

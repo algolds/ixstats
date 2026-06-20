@@ -38,16 +38,11 @@ export default function ExplorePage() {
   // Comparison functionality
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const {
-    // eslint-disable-next-line unused-imports/no-unused-vars
     comparisonCountries,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     addCountryToComparison,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     removeCountryFromComparison,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     clearComparison,
     getAvailableCountries,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     isLoading: isLoadingComparison,
   } = useCountryComparison();
 

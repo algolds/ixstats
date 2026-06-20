@@ -29,13 +29,10 @@ export function useRouteEdit({
   isLoaded,
   mode,
   routeWaypoints,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   editingRouteId,
   editingRouteVertices,
   onRouteVerticesUpdate,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onRouteEditCommit,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onRouteEditCancel,
 }: UseRouteEditProps) {
   const routeDraggingRef = useRef<number | null>(null);

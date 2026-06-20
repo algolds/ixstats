@@ -285,7 +285,6 @@ async function searchFilesFulltext(
       .map((img) => ({ img, score: scoreImageRelevance(img.description || img.name, query) }))
       .sort((a, b) => b.score - a.score)
       .map((r) => r.img);
-    // eslint-disable-next-line unused-imports/no-unused-vars
   } catch (e) {
     return [];
   }

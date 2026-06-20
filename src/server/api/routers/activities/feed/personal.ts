@@ -16,7 +16,6 @@ const activityFilterSchema = z.object({
   userId: z.string().optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const createActivitySchema = z.object({
   type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
   category: z.enum(["game", "platform", "social"]).default("game"),
@@ -35,21 +34,18 @@ const createActivitySchema = z.object({
   relatedCountries: z.array(z.string()).optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const engagementActionSchema = z.object({
   activityId: z.string(),
   action: z.string(),
   userId: z.string(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const commentActionSchema = z.object({
   activityId: z.string(),
   userId: z.string(),
   content: z.string().min(1).max(2000),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const getUserEngagementSchema = z.object({
   activityIds: z.array(z.string()),
   userId: z.string(),

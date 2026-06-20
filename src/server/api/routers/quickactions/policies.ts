@@ -129,14 +129,11 @@ const governmentOfficialBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentOfficialCreateSchema = governmentOfficialBaseSchema;
 
 // Update schema - all fields optional
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional().nullable(),
@@ -201,7 +198,6 @@ const policyCreateSchema = policyBaseSchema;
 // Update schema - all fields optional
 const policyUpdateSchema = policyBaseSchema.partial();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const activityScheduleInputSchema = z.object({
   activityType: z.enum([
     "meeting",

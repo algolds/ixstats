@@ -179,7 +179,6 @@ function SectionCard({
 // ─── Main Panel ──────────────────────────────────────────────────────────────
 
 export const WikiArchivesPanel = memo(function WikiArchivesPanel({
-  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
   countryName,
 }: WikiArchivesPanelProps) {

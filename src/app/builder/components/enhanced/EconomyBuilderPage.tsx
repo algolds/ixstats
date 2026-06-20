@@ -237,7 +237,6 @@ export function EconomyBuilderPage({
   }, [selectedArchetypeId, archetypes]);
 
   const [welcomeOpen, setWelcomeOpen] = useState(false);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isVerified, setIsVerified] = useState(false);
   // Local sub-tab for merged Labor & Demographics view
   const [activeLaborSubTab, setActiveLaborSubTab] = useState<"demographics" | "labor">(
@@ -399,7 +398,6 @@ export function EconomyBuilderPage({
     return legacyMap[raw] || "components";
   }, [activeTab]);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
@@ -823,7 +821,6 @@ export function EconomyBuilderPage({
       }
 
       // Prepare configuration for save
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const configuration = {
         structure: economyBuilder.structure,
         sectors: economyBuilder.sectors,
@@ -934,13 +931,11 @@ export function EconomyBuilderPage({
     };
   }, [economyBuilder.isValid, economyBuilder.validation]);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const validation = useMemo(() => {
     return validateEconomyConfiguration();
   }, [validateEconomyConfiguration]);
 
   // Use prop economicHealthMetrics or create fallback
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const healthMetrics: EconomicHealthMetrics = useMemo(() => {
     if (economicHealthMetrics) return economicHealthMetrics;
 

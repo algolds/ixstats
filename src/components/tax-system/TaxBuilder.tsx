@@ -71,7 +71,6 @@ export function TaxBuilder({
   initialData,
   onSave,
   onChange,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onPreview,
   isReadOnly = false,
   countryId,
@@ -99,7 +98,6 @@ export function TaxBuilder({
     (typeof taxSystemTemplates)[number] | null
   >(null);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);

@@ -65,7 +65,6 @@ function SectionErrorFallback({ sectionName, retry }: { sectionName: string; ret
 }
 
 function createSectionFallback(sectionName: string) {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   return function SectionFallback({ error, retry }: { error: Error; retry: () => void }) {
     return <SectionErrorFallback sectionName={sectionName} retry={retry} />;
   };

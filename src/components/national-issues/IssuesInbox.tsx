@@ -28,7 +28,6 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full" }: IssuesInb
     urgentCount,
     isLoadingActive,
     isResponding,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     lastResponse,
     respond,
     openIssue,

@@ -387,7 +387,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
         safeFocus();
         try {
           Transforms.insertText(editor, text);
-          // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (err) {
           // Fallback: append text to last node if selection is lost
           const lastNodePath = [editor.children.length - 1];
@@ -529,7 +528,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
         try {
           const domNode = ReactEditor.toDOMNode(editor, editor);
           domNode?.focus();
-          // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (domErr) {
           // Safe no-op
         }
@@ -575,7 +573,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
         safeFocus();
         try {
           Transforms.insertText(editor, emoji);
-          // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (err) {
           // Fallback: append text to last node if selection is lost
           const lastNodePath = [editor.children.length - 1];
@@ -691,7 +688,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
         const root = doc.body.firstElementChild;
         if (!root) return [{ type: "p", children: [{ text: "" }] }];
 
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const nodes: any[] = [];
         const deserializeNode = (el: Node): any[] => {
           const result: any[] = [];
@@ -802,7 +798,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
 
     const isToolbarVisible = isFocused || isLinkOpen || isWikiOpen || isStashesOpen || isEmojiOpen;
 
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const isEditorEmpty = useMemo(() => {
       if (!editor || !editor.children) return true;
       if (editor.children.length > 1) return false;

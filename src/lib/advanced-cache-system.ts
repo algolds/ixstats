@@ -229,7 +229,6 @@ export class AdvancedCacheSystem {
     const startTime = performance.now();
 
     try {
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const { ttl = 300, tier = "standard", tags = [], skipRedis = false } = options;
 
       // Always set in memory cache

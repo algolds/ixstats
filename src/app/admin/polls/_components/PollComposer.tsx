@@ -163,7 +163,6 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
             {/* Stepper Progress bar */}
             <div className="mt-4 flex items-center justify-between gap-2">
-              // eslint-disable-next-line unused-imports/no-unused-vars
               {STEPS.map((s, _idx) => (
                 <div key={s.number} className="flex flex-1 flex-col gap-1.5">
                   <div className="bg-muted/40 h-1 overflow-hidden rounded-full">

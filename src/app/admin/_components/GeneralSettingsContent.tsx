@@ -42,7 +42,6 @@ export function GeneralSettingsContent() {
     enabled: false,
   });
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: botStatus, refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(
     undefined,
     { enabled: false }

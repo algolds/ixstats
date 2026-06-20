@@ -153,11 +153,9 @@ export function AccountCreationModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUnsplashSearch, setShowUnsplashSearch] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [imageSource, setImageSource] = useState<"unsplash" | "upload" | "wiki">("unsplash");
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState<boolean>(false);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const createAccountMutation = api.thinkpages.createAccount.useMutation({

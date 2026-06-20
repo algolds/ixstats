@@ -247,7 +247,6 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       </CardHeader>
       <CardContent>
         <div className="relative flex h-[420px] flex-col gap-3 md:h-[450px]">
-          // eslint-disable-next-line unused-imports/no-unused-vars
           {cards.map((card, _idx) => {
             const isExpanded = activeCard === card.id;
             const Icon = card.icon;

@@ -284,7 +284,6 @@ function SpecificationsTab({
     try {
       const parsed = JSON.parse(value);
       setFormData({ ...formData, specifications: parsed });
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (e) {
       // Invalid JSON, don't update formData
     }
@@ -326,7 +325,6 @@ function CapabilitiesTab({
     try {
       const parsed = JSON.parse(value);
       setFormData({ ...formData, capabilities: parsed });
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (e) {
       // Invalid JSON, don't update formData
     }

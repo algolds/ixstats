@@ -104,7 +104,6 @@ export function GlassCanvasComposer({
   account,
   accounts,
   onAccountSelect,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onAccountSettings,
   onCreateAccount,
   isOwner,
@@ -112,7 +111,6 @@ export function GlassCanvasComposer({
   placeholder = "What's happening?",
   countryId,
   repostData,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   isSignedIn = true,
   hasCountry = true,
 }: GlassCanvasComposerProps) {
@@ -529,7 +527,6 @@ export function GlassCanvasComposer({
     setSelectedImages((prev) => prev.filter((url) => url !== imageUrl));
   };
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleFileUpload = async (file: File) => {
     if (selectedImages.length >= 4) {
       notify.error("Maximum 4 images per post");

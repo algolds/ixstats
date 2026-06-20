@@ -30,7 +30,6 @@ interface CountrySelectorProps {
 export function CountrySelector({
   countries,
   onCountrySelect,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onBackToIntro,
   onCreateFromScratch,
 }: CountrySelectorProps) {

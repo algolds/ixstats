@@ -55,11 +55,9 @@ export function AtomicStateProvider({ children, countryId, userId }: AtomicState
     { enabled: !!countryId }
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: synergies, isLoading: isLoadingSynergies } =
     api.unifiedAtomic.detectSynergies.useQuery({ countryId }, { enabled: !!countryId });
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: combinedEffectiveness, isLoading: isLoadingEffectiveness } =
     api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
       { countryId },
@@ -85,9 +83,7 @@ export function AtomicStateProvider({ children, countryId, userId }: AtomicState
         // Extract components from unified atomic data
         const governmentComponents: ComponentType[] =
           allComponents.government?.map((comp) => comp.componentType) || [];
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const economicComponents = allComponents.economic?.map((comp) => comp.componentType) || [];
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const taxComponents = allComponents.tax?.map((comp) => comp.componentType) || [];
 
         // Set country context
@@ -179,7 +175,6 @@ export function AtomicStateProvider({ children, countryId, userId }: AtomicState
 
     // Save to database if user owns the country
     if (userId && countryId) {
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const componentData = components.map((componentType) => ({
         componentType,
         effectivenessScore: manager.getComponentContribution(componentType).effectiveness,

@@ -406,7 +406,6 @@ const ThinkpagesPostComponent = ({
 
   // Close more options when clicking outside
   useEffect(() => {
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const handleClickOutside = (event: MouseEvent) => {
       if (showMoreOptions) {
         setShowMoreOptions(false);
@@ -420,9 +419,7 @@ const ThinkpagesPostComponent = ({
     return;
   }, [showMoreOptions]);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const addReactionMutation = api.thinkpages.addReaction.useMutation();
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const removeReactionMutation = api.thinkpages.removeReaction.useMutation();
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
@@ -924,7 +921,6 @@ const ThinkpagesPostComponent = ({
                   return JSON.parse(post.reactionCounts);
                 }
                 return post.reactionCounts || {};
-                // eslint-disable-next-line unused-imports/no-unused-vars
               } catch (error) {
                 return {};
               }
@@ -1363,7 +1359,6 @@ const ThinkpagesPostComponent = ({
                       if ((count as number) <= 0) return null;
 
                       const discordUrl = getDiscordEmojiUrl(type, apiDiscordEmojis);
-                      // eslint-disable-next-line unused-imports/no-unused-vars
                       const isDiscordImported =
                         !!post.discordMsgId ||
                         !!post.content?.includes("[DiscordMsg:") ||

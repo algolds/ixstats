@@ -155,7 +155,6 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
             sessions = sessions.slice(0, 5);
             localStorage.setItem("wikios:pausedSessions", JSON.stringify(sessions));
           }
-          // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (e) {
           // ignore
         }

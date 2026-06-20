@@ -611,7 +611,6 @@ export function IntroDisclosure({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="skipNextTime"
-                  // eslint-disable-next-line unused-imports/no-unused-vars
                   onCheckedChange={(checked) => {
                     hideFeature();
                   }}

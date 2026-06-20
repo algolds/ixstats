@@ -79,7 +79,6 @@ export function UnifiedNotificationProvider({
   isExecutiveMode = false,
 }: UnifiedNotificationProviderProps) {
   const { user } = useUser();
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const router = useRouter();
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);

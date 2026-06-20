@@ -141,7 +141,6 @@ export function useUnifiedIntelligence({
   const [pagination, setPaginationState] = useState<PaginationState>(DEFAULT_PAGINATION);
 
   // WebSocket state
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [wsClient, setWsClient] = useState<IntelligenceWebSocketClient | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
 

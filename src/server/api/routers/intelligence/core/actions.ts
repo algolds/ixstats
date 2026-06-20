@@ -310,7 +310,6 @@ export const intelCoreActionsRouter = createTRPCRouter({
           const planTitle = (input.parameters?.title as string) || "Strategic Planning Initiative";
 
           // Create both a meeting and a policy outline
-          // eslint-disable-next-line unused-imports/no-unused-vars
           const strategicMeeting = await ctx.db.cabinetMeeting.create({
             data: {
               countryId: input.countryId,

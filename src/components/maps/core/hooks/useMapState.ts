@@ -24,11 +24,9 @@ interface UseMapStateProps {
 
 export function useMapState({
   userCountryId,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   isAdmin,
   onCountrySelect,
   mapRef,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   measureToolRef,
   mapLayers,
   layerDataMap,

@@ -242,7 +242,6 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
 /**
  * Resolve a page title through redirects via direct MySQL.
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function resolveRedirect(title: string): Promise<string> {
   return resolveRedirectMySQL(title);
 }
@@ -325,7 +324,6 @@ async function saveToMediaWiki(
 /**
  * Get the wikitext content of a specific revision by ID via direct MySQL.
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function getRevisionWikitext(revid: number) {
   return getRevisionWikitextMySQL(revid);
 }
@@ -333,7 +331,6 @@ async function getRevisionWikitext(revid: number) {
 /**
  * Get the current revision metadata (revid + timestamp) via direct MySQL.
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function getCurrentRevisionMeta(title: string) {
   return getCurrentRevMeta(title);
 }
@@ -458,7 +455,6 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
  * Clean up visual editor HTML before passing to Parsoid for wikitext transformation.
  * Strips formatting emoji and temporary visual decoration from custom chips.
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function cleanHtmlForParsoid(html: string): string {
   let cleaned = html;
 

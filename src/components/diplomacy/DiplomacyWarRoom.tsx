@@ -17,7 +17,6 @@ import {
 import { CommandPanel } from "~/components/executive/CommandPanel";
 import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const DiplomacyOverview = dynamic(
   () => import("./DiplomacyOverview").then((m) => ({ default: m.DiplomacyOverview })),
   { ssr: false }

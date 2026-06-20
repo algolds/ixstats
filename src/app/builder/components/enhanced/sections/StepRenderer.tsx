@@ -36,7 +36,6 @@ import { useBuilderContext } from "../context/BuilderStateContext";
 import { useBuilderActions } from "../../../hooks/useBuilderActions";
 
 // Help modal component
-// eslint-disable-next-line unused-imports/no-unused-vars
 function HelpModal({ text, title }: { text: string; title: string }) {
   // Core Foundation specific help content
   if (title === "Core Foundation Help") {
@@ -539,6 +538,37 @@ export const StepRenderer = memo(function StepRenderer({
   // Preview Step - render preview content
   if (builderState.step === "preview") {
     return <BuilderPreviewStep />;
+  }
+
+  // Safety net: never render a blank page. In create mode, fall back to the
+  // Foundation step (the safe starting point) so a step/section desync or an
+  // unexpected step value can't leave the user staring at nothing.
+  if (mode !== "edit") {
+    return (
+      <FoundationStep
+        countries={countries}
+        isLoadingCountries={isLoadingCountries}
+        countryLoadError={countryLoadError}
+        onCountrySelect={handleFoundationComplete}
+        onCreateFromScratch={handleCreateFromScratch}
+        onBackToIntro={onBackToIntro}
+      />
+    );
+  }
+
+  // Edit mode: fall back to the identity section when possible (foundation is
+  // not a valid edit step), otherwise render nothing.
+  if (builderState.economicInputs) {
+    return (
+      <div className="space-y-6">
+        <NationalIdentitySection
+          inputs={builderState.economicInputs}
+          onInputsChange={updateEconomicInputs}
+          referenceCountry={builderState.selectedCountry}
+          countryId={countryId}
+        />
+      </div>
+    );
   }
 
   return null;

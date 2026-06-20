@@ -47,7 +47,6 @@ interface CountryOverviewTabProps {
 }
 
 export function CountryOverviewTab({
-  // eslint-disable-next-line unused-imports/no-unused-vars
   country,
   summary,
   sovereignty,

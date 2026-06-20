@@ -645,7 +645,6 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
       utils.countries.getAll.invalidate();
       setScanResults([]);
       setScanComplete(false);
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (err) {
       notify.error("Error", "Failed to apply bulk links");
     } finally {
@@ -945,7 +944,6 @@ export function AwardsManagerSection() {
             customStyle = { color: colorVal };
           }
         }
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (e) {
         // ignore
       }

@@ -36,7 +36,6 @@ interface CardEconomyData {
 /**
  * Historical Value Point
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface ValueHistoryPoint {
   date: string;
   cardValue: number;
@@ -46,7 +45,6 @@ interface ValueHistoryPoint {
 /**
  * GDP Correlation Data Point
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface CorrelationDataPoint {
   gdpPerCapita: number;
   cardValue: number;
@@ -94,7 +92,6 @@ interface PortfolioPerformance {
 /**
  * Calculate GDP correlation coefficient (Pearson's r)
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function calculateCorrelation(dataPoints: Array<{ x: number; y: number }>): number {
   if (dataPoints.length < 2) return 0;
 
@@ -115,7 +112,6 @@ function calculateCorrelation(dataPoints: Array<{ x: number; y: number }>): numb
 /**
  * Get card economy overview for a country
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function getCardEconomyOverview(
   db: PrismaClient,
   countryId: string
@@ -142,7 +138,6 @@ async function getCardEconomyOverview(
   const changePercent = (change30Days / Math.max(nationCardValue - change30Days, 1)) * 100;
 
   // Get country GDP for correlation calculation
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const country = await db.country.findUnique({
     where: { id: countryId },
     select: { currentGdpPerCapita: true },

@@ -42,7 +42,6 @@ export function BranchDialog({
   open,
   onOpenChange,
   branch,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   countryId,
   onCreate,
   onUpdate,

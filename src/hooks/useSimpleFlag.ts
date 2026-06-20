@@ -118,7 +118,6 @@ export function useSimpleFlags(countryNames: string[]) {
       try {
         const url = await unifiedFlagService.getFlagUrl(countryName);
         urls[countryName] = url;
-        // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         urls[countryName] = null;
       }

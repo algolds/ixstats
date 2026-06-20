@@ -108,11 +108,8 @@ function CommandPaletteContent({
     timeDisplayMode,
     searchResults,
     countriesData,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     setMode,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     setIsExpanded,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     setExpandedMode,
     setSearchQuery,
     setSearchFilter,

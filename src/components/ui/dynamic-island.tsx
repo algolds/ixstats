@@ -21,7 +21,6 @@ const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 
 // Performance optimization constants
 const RESIZE_DEBOUNCE_MS = 100;
-// eslint-disable-next-line unused-imports/no-unused-vars
 const ANIMATION_DURATION_MS = 250; // ≤250ms feels instantaneous
 
 export type SizePresets =
@@ -475,7 +474,6 @@ const isCompactSize = (size: SizePresets | undefined): boolean => {
 const DynamicIslandContent = ({
   children,
   id,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   willChange,
   screenSize,
   ...props

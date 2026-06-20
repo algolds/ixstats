@@ -293,7 +293,6 @@ export const wikiosEditingRouter = createTRPCRouter({
 /**
  * Resolve a page title through redirects via direct MySQL.
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function resolveRedirect(title: string): Promise<string> {
   return resolveRedirectMySQL(title);
 }
@@ -383,7 +382,6 @@ async function getRevisionWikitext(revid: number) {
 /**
  * Get the current revision metadata (revid + timestamp) via direct MySQL.
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function getCurrentRevisionMeta(title: string) {
   return getCurrentRevMeta(title);
 }

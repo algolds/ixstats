@@ -65,7 +65,6 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
 
   // Calculate public-safe metrics
   const economicHealth = Math.min(100, (country.currentGdpPerCapita / 50000) * 100);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const populationGrowth = Math.min(
     100,
     Math.max(0, ((country.populationGrowthRate ?? 0) * 100 + 2) * 25)

@@ -39,7 +39,6 @@ export function EnhancedToggle({
   className,
   icon: Icon,
 }: EnhancedToggleProps) {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isPressed, setIsPressed] = useState(false);
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
 

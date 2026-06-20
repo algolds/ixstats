@@ -12,7 +12,6 @@ import type {
 export async function calculateAtomicEconomicImpactServer(
   components: ComponentType[],
   baseGdpPerCapita: number,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   baseTaxRevenue: number = 0
 ): Promise<AtomicEconomicModifiers> {
   const atomicService = getAtomicEffectivenessService(db as any);

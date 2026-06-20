@@ -30,9 +30,7 @@ export function useWorldMapInteractions({
   map,
   isLoaded,
   layers,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   overlayVisibility,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   labelsVisible,
   geographyFilter,
   topCountryNames,

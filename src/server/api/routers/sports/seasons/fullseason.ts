@@ -26,7 +26,6 @@ function simpleHash(seasonId: string, matchDay: number, matchIndex: number): num
   );
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number): number {
   return (
     leagueId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 17 +

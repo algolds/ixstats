@@ -336,7 +336,6 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     // Growth volatility (if historical data available)
     if (historicalData.length >= 10) {
       const growthRates = historicalData.slice(-10).map((d) => d.gdpGrowthRate);
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const avgGrowth = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
       const volatility = this.calculateStandardDeviation(growthRates);
 
@@ -569,11 +568,8 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
 
   // Placeholder methods for remaining functionality
   private identifyGrowthDrivers(
-    // eslint-disable-next-line unused-imports/no-unused-vars
     countryStats: CountryStats,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     economyData: EconomyData,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     historicalData: HistoricalDataPoint[]
   ) {
     return [
@@ -597,7 +593,6 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     return advantages;
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateLivingStandards(countryStats: CountryStats, economyData: EconomyData): number {
     return Math.min(100, countryStats.currentGdpPerCapita / 1000 + 30);
   }
@@ -646,7 +641,6 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     };
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private analyzeSocialTrends(economyData: EconomyData) {
     return {
       improving: ["Education access", "Healthcare coverage"],
@@ -655,13 +649,11 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     };
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateExportDiversity(countryStats: CountryStats, economyData: EconomyData): number {
     // Placeholder - would need trade data
     return Math.min(100, 40 + countryStats.currentGdpPerCapita / 2000);
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateValueChainIntegration(economyData: EconomyData): number {
     // Placeholder
     return 60;
@@ -672,13 +664,11 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     return Math.min(100, 30 + economyData.core.gdpPerCapita / 1500);
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private calculateRegulatoryQuality(economyData: EconomyData): number {
     // Placeholder - based on economic tier
     return 70;
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private analyzeTradeMetrics(countryStats: CountryStats, economyData: EconomyData) {
     return {
       exportComplexityIndex: 0.5,

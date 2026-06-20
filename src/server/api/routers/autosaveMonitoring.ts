@@ -31,7 +31,6 @@ function getTimeRangeDate(range: string): Date {
 /**
  * Get granularity interval in milliseconds
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 function getGranularityInterval(granularity: string): number {
   switch (granularity) {
     case "minute":

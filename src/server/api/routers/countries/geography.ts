@@ -4,7 +4,6 @@ import { protectedProcedure, cachedStaticProcedure } from "~/server/api/trpc";
 export const geographyProcedures = {
   // Get custom geography (continents and regions)
   // Using cachedStaticProcedure - geography data rarely changes (1hr TTL)
-  // eslint-disable-next-line unused-imports/no-unused-vars
   getCustomGeography: cachedStaticProcedure.query(async ({ ctx }) => {
     // For now, return empty custom geography
     // In the future, this could fetch from a CustomGeography table
@@ -17,7 +16,6 @@ export const geographyProcedures = {
   // Add custom continent
   addContinent: protectedProcedure
     .input(z.object({ name: z.string() }))
-    // eslint-disable-next-line unused-imports/no-unused-vars
     .mutation(async ({ ctx, input }) => {
       // For now, just return success
       // In the future, this could store in a CustomGeography table
@@ -32,7 +30,6 @@ export const geographyProcedures = {
         region: z.string(),
       })
     )
-    // eslint-disable-next-line unused-imports/no-unused-vars
     .mutation(async ({ ctx, input }) => {
       // For now, just return success
       // In the future, this could store in a CustomGeography table

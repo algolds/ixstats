@@ -33,7 +33,6 @@ export class ChunkLoadErrorBoundary extends Component<Props, State> {
     return null;
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Only log chunk errors, don't re-throw
     if (

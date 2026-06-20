@@ -153,7 +153,6 @@ export function TaxCategoryForm({
   administeredBy,
   isSyncedFromRevenue = false,
   onApplyStandardBrackets,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   availableDepartments = [],
 }: TaxCategoryFormProps) {
   const [isExpanded, setIsExpanded] = useState(false);

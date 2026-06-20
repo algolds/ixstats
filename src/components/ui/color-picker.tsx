@@ -10,7 +10,6 @@ import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
 // Helper functions for color conversion
-// eslint-disable-next-line unused-imports/no-unused-vars
 const hslToHex = (h: number, s: number, l: number) => {
   l /= 100;
   const a = (s * Math.min(l, 1 - l)) / 100;

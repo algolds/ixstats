@@ -41,14 +41,11 @@ const militaryBranchBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-// eslint-disable-next-line unused-imports/no-unused-vars
 const militaryBranchCreateSchema = militaryBranchBaseSchema;
 
 // Update schema - all fields optional
-// eslint-disable-next-line unused-imports/no-unused-vars
 const militaryBranchUpdateSchema = militaryBranchBaseSchema.partial();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const militaryUnitInputSchema = z.object({
   name: z.string().min(1),
   unitType: z.string(),
@@ -62,7 +59,6 @@ const militaryUnitInputSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const militaryAssetInputSchema = z.object({
   assetType: z.enum(["aircraft", "ship", "vehicle", "weapon_system", "installation"]),
   category: z.string(),
@@ -77,7 +73,6 @@ const militaryAssetInputSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const securityThreatInputSchema = z.object({
   threatName: z.string().min(1),
   threatType: z.enum([

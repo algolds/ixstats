@@ -92,10 +92,8 @@ export function InteractivePreview({
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [timelineData, setTimelineData] = useState<TimePoint[]>([]);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [nationalMetrics, setNationalMetrics] = useState<NationalMetric[]>([]);
   const [showComparison, setShowComparison] = useState(false);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -268,7 +266,6 @@ export function InteractivePreview({
     return () => clearInterval(intervalRef.current as unknown as number | undefined);
   }, [isPlaying, currentTime, timelineData.length, playbackSpeed]);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const formatValue = (value: number, metric: NationalMetric): string => {
     if (metric.id === "gdp-total") {
       if (value >= 1e12) return `${(value / 1e12).toFixed(1)}T`;
@@ -293,7 +290,6 @@ export function InteractivePreview({
     setIsPlaying(false);
   };
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const getTrendIcon = (trend: "up" | "down" | "stable") => {
     switch (trend) {
       case "up":
@@ -305,7 +301,6 @@ export function InteractivePreview({
     }
   };
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const getTrendColor = (trend: "up" | "down" | "stable", change: number) => {
     if (trend === "stable") return "text-gray-400";
     return change > 0 ? "text-emerald-400" : "text-red-400";

@@ -40,14 +40,11 @@ const governmentOfficialBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentOfficialCreateSchema = governmentOfficialBaseSchema;
 
 // Update schema - all fields optional
-// eslint-disable-next-line unused-imports/no-unused-vars
 const governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional().nullable(),
@@ -104,11 +101,9 @@ const policyBaseSchema = z.object({
 });
 
 // Create schema - all required fields with defaults
-// eslint-disable-next-line unused-imports/no-unused-vars
 const policyCreateSchema = policyBaseSchema;
 
 // Update schema - all fields optional
-// eslint-disable-next-line unused-imports/no-unused-vars
 const policyUpdateSchema = policyBaseSchema.partial();
 
 const activityScheduleInputSchema = z.object({
@@ -233,7 +228,6 @@ export const quickActionsActivitiesRouter = createTRPCRouter({
 
       // Notify about activity scheduled
       try {
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const isUrgent = input.activity.priority === "urgent";
         await notificationHooks.onQuickActionComplete({
           userId: input.userId,

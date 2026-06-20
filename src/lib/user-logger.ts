@@ -556,7 +556,6 @@ export class UserLogger {
       output.on("finish", () => {
         fs.unlinkSync(filePath); // Remove original file
       });
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Silent fail for compression
     }
@@ -622,7 +621,6 @@ export class UserLogger {
           userAgent: context.userAgent,
         },
       });
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Silent fail for session updates
     }

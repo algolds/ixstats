@@ -96,7 +96,6 @@ async function fetchFromWikiSource(pageName: string, source: WikiSource) {
 /**
  * Search for page across all wiki sources
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function searchAcrossWikis(pageName: string, preferredSource?: WikiSource) {
   const sources: WikiSource[] = preferredSource
     ? [

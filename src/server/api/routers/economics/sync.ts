@@ -54,13 +54,11 @@ const economicsSyncRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const { countryId, governmentComponents } = input;
 
       await assertCountryAccess(ctx, countryId);
 
       // Update country with government components
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const updated = await ctx.db.country.update({
         where: { id: countryId },
         data: {

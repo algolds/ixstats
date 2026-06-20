@@ -563,7 +563,6 @@ export class IxTimeSyncManager {
           message: `Synced (drift: ${syncStatus.drift}ms)`,
           drift: syncStatus.drift,
         });
-        // eslint-disable-next-line unused-imports/no-unused-vars
         successCount++;
       }
     }

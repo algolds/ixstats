@@ -119,7 +119,6 @@ export const unifiedAtomicRouter = createTRPCRouter({
   detectConflicts: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // eslint-disable-next-line unused-imports/no-unused-vars
       const [governmentComponents, economicComponents, taxComponents] = await Promise.all([
         ctx.db.governmentComponent.findMany({
           where: { countryId: input.countryId, isActive: true },
@@ -286,7 +285,6 @@ export const unifiedAtomicRouter = createTRPCRouter({
 function detectComponentSynergy(
   component1: string,
   component2: string,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   synergyType: string
 ): { bonus: number; description: string } | null {
   // Define synergy rules based on component types

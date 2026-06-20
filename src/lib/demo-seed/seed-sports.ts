@@ -99,7 +99,6 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 const CITY_NAMES = [
   "Olympus City",
   "Nova Albion",
@@ -1627,7 +1626,6 @@ async function seedOHLHockeyLeague(prisma: Prisma, userId: string, ixNow: number
 
 async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Promise<number> {
   let count = 0;
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const preset = getPreset("f1");
   const leagueSeed = hashString("IRF World Championship");
   const raceCount = 20;
@@ -1760,7 +1758,6 @@ async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Prom
       technicalFeedback: Math.round(50 + rng() * 40),
       starts: Math.round(rng() * 30),
     };
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const tp = await prisma.sportPlayer.create({
       data: {
         teamId: team.id,

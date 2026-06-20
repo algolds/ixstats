@@ -54,7 +54,6 @@ export function getCountryPath(country: {
  * Convenience function for direct name-to-URL conversion
  */
 export function getNationUrl(countryName: string): string {
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const isStandalone =
     typeof window !== "undefined"
       ? window.location.hostname === "maps.ixwiki.com"

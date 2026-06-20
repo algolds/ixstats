@@ -420,9 +420,7 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
     const namespace = options.namespace || "default";
 
     // Create custom rate limiter for this specific configuration
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const now = Date.now();
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const key = `ratelimit:${namespace}:${identifier}`;
 
     // Simple check using the rateLimiter's check method with custom namespace

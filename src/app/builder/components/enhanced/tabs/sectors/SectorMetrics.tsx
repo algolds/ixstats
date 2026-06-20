@@ -18,7 +18,6 @@ interface SectorMetricsProps {
 
 export function SectorMetrics({
   sectors,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onNormalize,
   hasZeroContribution = [],
 }: SectorMetricsProps) {

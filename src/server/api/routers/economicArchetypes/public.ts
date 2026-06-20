@@ -75,7 +75,6 @@ function getFallbackArchetypes(era: "modern" | "historical" | "all") {
  * Zod schema for archetype creation/update
  * Validates input data structure
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 const archetypeInputSchema = z.object({
   key: z.string().min(1),
   name: z.string().min(1),

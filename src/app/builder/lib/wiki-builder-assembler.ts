@@ -454,7 +454,6 @@ function createRevenueSourcesFromParsed(
 function calculateCompleteness(
   infobox: UnifiedInfoboxData,
   matchResult: MatchResult,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   departments: ParsedDepartment[]
 ): Record<string, number> {
   const identityFields = [

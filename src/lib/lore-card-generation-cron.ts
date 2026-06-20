@@ -219,7 +219,6 @@ async function generateCardsFromWiki(
           }
 
           // Create card in database
-          // eslint-disable-next-line unused-imports/no-unused-vars
           const cardId = await wikiLoreCardGenerator.createCard(candidate);
 
           result.generated++;

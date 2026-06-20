@@ -55,7 +55,6 @@ const getTimeDisplay = (ixTime: number): string => {
 function CompactViewComponent({
   mode,
   isSticky,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   isCollapsed,
   setIsCollapsed,
   setIsUserInteracting,
@@ -71,13 +70,11 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
   const router = useRouter();
   const diPathname = usePathname();
   const isOnMapsPage = diPathname?.startsWith("/maps") || false;
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
     { enabled: !!user?.id }

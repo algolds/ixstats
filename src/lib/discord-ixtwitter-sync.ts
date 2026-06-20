@@ -360,7 +360,6 @@ async function getOrCreateHandleAccount(
   }
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function getOrCreateBotAccount(db: PrismaClient) {
   let botAccount = await db.thinkpagesAccount.findUnique({
     where: { username: "ixtwitter_bot" },
@@ -721,7 +720,6 @@ export async function backfillIxTwitterToThinkPages(): Promise<{
     const postedIds = await getPostedMessageIds(db);
     console.log(`[DiscordPoster] Found ${postedIds.size} already-posted message IDs`);
 
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const validMessages = allMessages
       .filter((m) => !m.author.bot && m.content.trim().length > 0 && !postedIds.has(m.id))
       .reverse();

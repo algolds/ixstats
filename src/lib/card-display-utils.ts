@@ -344,7 +344,6 @@ export function formatCardStats(card: CardInstance): FormattedStats {
  * @param size - Card display size
  * @returns Tailwind aspect ratio class
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 export function getCardAspectRatio(size: CardDisplaySize): string {
   // All sizes maintain the standard trading card aspect ratio
   return "aspect-[2.5/3.5]";

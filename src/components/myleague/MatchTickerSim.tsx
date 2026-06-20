@@ -22,9 +22,7 @@ export function MatchTickerSim({
   homeTeam,
   awayTeam,
   trace,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   homeScoreFinal,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   awayScoreFinal,
   onFinished,
 }: MatchTickerSimProps) {

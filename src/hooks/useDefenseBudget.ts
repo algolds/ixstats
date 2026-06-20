@@ -88,7 +88,6 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
     { enabled: !!countryId }
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: defenseBudget, refetch: refetchBudget } = api.security.getDefenseBudget.useQuery(
     { countryId, fiscalYear: currentYear },
     { enabled: !!countryId }

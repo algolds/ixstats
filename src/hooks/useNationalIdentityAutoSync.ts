@@ -36,11 +36,9 @@ export function useNationalIdentityAutoSync(
   const {
     enabled = true,
     debounceMs = 15000, // 15 seconds
-    // eslint-disable-next-line unused-imports/no-unused-vars
     showConflictWarnings = true,
     onSyncSuccess,
     onSyncError,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     onConflictDetected,
   } = options;
 
@@ -59,7 +57,6 @@ export function useNationalIdentityAutoSync(
   // API mutations
   const autosaveMutation = api.nationalIdentity.autosave.useMutation({
     // Optimistic update - show "Saved" immediately before server confirmation
-    // eslint-disable-next-line unused-imports/no-unused-vars
     onMutate: async (newData) => {
       setSyncState((prev) => ({
         ...prev,

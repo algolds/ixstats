@@ -79,11 +79,9 @@ interface SectionBaseProps extends BaseSectionProps {
 export function SectionBase({
   config,
   inputs,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   onInputsChange,
   showAdvanced,
   onToggleAdvanced,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   referenceCountry,
   children,
   metrics = [],

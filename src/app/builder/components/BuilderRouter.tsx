@@ -149,11 +149,8 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   const {
     builderState,
     setBuilderState,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     clearDraft,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     lastSaved,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     isAutoSaving,
     foundationPreviewCountry,
     submitFn,
@@ -214,14 +211,11 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   }, [builderState.step, activeSection, mode]);
 
   // Advanced mode state
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
 
   // Manual save state
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [isManualSaving, setIsManualSaving] = useState(false);
   // Flash label: briefly shows section name in DI center on navigation, then clears
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [navFlashLabel, setNavFlashLabel] = useState<string | null>(null);
   const navFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -322,7 +316,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   }, []);
 
   // Step labels for Dynamic Island display
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const currentStepLabel = useMemo(() => {
     const shortLabels: Record<BuilderSection, string> = {
       foundation: "Foundation",
@@ -335,7 +328,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     return shortLabels[activeSection] || activeSection;
   }, [activeSection]);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const currentSubStepLabel = useMemo(() => {
     if (activeSection === "identity") {
       const tab = builderState.activeIdentitySubTab || "archetype";
@@ -375,7 +367,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     builderState.activeGovernmentTab,
     builderState.activeEconomicsTab,
   ]);
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const themeTextColor = useMemo(() => {
     const colors: Record<BuilderSection, string> = {
       foundation: "text-amber-400",
@@ -393,11 +384,20 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     const onPopState = () => {
       const newSection = getSectionFromUrl(mode);
       setActiveSection(newSection);
+      // Keep builderState.step in lockstep — otherwise the renderer sees a step
+      // that doesn't match the section and can fall through to a blank (this was
+      // the "Foundation is blank when going back" bug).
+      if (newSection !== "import") {
+        const legacyStep = sectionToLegacyStep(newSection);
+        setBuilderState((prev) =>
+          prev.step === legacyStep ? prev : { ...prev, step: legacyStep as BuilderStep }
+        );
+      }
       window.scrollTo({ top: 0, behavior: "instant" });
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [mode]);
+  }, [mode, setBuilderState]);
 
   // Set initial page title
   useEffect(() => {
@@ -405,9 +405,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   }, [activeSection, mode]);
 
   // Handle import completion
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleImportComplete = useCallback(
-    // eslint-disable-next-line unused-imports/no-unused-vars
     (data: any) => {
       // Import data is stored in localStorage by ImportSection
       // Navigate to identity to continue building
@@ -417,7 +415,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   );
 
   // Manual save handler
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleManualSave = useCallback(async () => {
     setIsManualSaving(true);
     try {
@@ -430,7 +427,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   }, []);
 
   // Toggle advanced mode
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleToggleAdvanced = useCallback(() => {
     setIsAdvancedMode((prev) => !prev);
     setBuilderState((prev) => ({ ...prev, showAdvancedMode: !prev.showAdvancedMode }));
@@ -489,7 +485,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   }
 
   // Country name from builder state
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const countryName = builderState.economicInputs?.countryName;
 
   // Render the active section
@@ -498,7 +493,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       return (
         <ImportSection
           onNavigate={handleNavigate}
-          // eslint-disable-next-line unused-imports/no-unused-vars
           onImportComplete={(data) => {
             handleNavigate("identity");
           }}

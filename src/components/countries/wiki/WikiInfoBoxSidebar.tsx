@@ -65,7 +65,6 @@ interface WikiInfoBoxSidebarProps {
  */
 export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
   infobox,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   handleWikiLinkClick,
   onRefresh,
   flagColors,

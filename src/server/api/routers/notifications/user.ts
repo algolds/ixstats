@@ -359,7 +359,6 @@ export const notificationsUserRouter = createTRPCRouter({
         adminUserId: z.string().optional(),
       })
     )
-    // eslint-disable-next-line unused-imports/no-unused-vars
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 

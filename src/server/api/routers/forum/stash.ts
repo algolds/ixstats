@@ -20,7 +20,6 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Fetch from XenForo API (server-level, no user impersonation) */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function xfFetch<T>(endpoint: string): Promise<T | null> {
   const apiKey = getXfApiKey();
   if (!apiKey) {
@@ -55,7 +54,6 @@ async function xfFetch<T>(endpoint: string): Promise<T | null> {
 }
 
 /** Resolve the user's linked XenForo user ID, or throw */
-// eslint-disable-next-line unused-imports/no-unused-vars
 async function requireForumUser(userId: string): Promise<number> {
   const { db } = await import("~/server/db");
   const user = await db.user.findUnique({
@@ -148,7 +146,6 @@ interface NormalizedPost {
   }>;
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function normalizeThread(t: XFThread): NormalizedThread {
   return {
     threadId: t.thread_id,
@@ -168,7 +165,6 @@ function normalizeThread(t: XFThread): NormalizedThread {
   };
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function normalizePost(p: XFPost): NormalizedPost {
   // Prefer XenForo's pre-rendered HTML (message_parsed) over our BBCode transformer.
   // XenForo handles attachments, mentions, media embeds, and custom BB codes natively.
@@ -277,7 +273,6 @@ function rewriteXFHtml(html: string): string {
   return result;
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function normalizeNode(n: XFForum): ForumNode {
   return {
     nodeId: n.node_id,

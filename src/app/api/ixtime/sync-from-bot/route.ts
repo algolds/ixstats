@@ -64,7 +64,6 @@ export async function POST(request: Request) {
       if (!response.ok) {
         throw new Error(`Discord bot health check failed: ${response.status}`);
       }
-      // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (healthError) {
       // Bot is not available, return graceful fallback
       console.warn("Discord bot is not available, using local time state");

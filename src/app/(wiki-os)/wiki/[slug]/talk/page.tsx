@@ -34,7 +34,6 @@ interface Section {
 // ---------------------------------------------------------------------------
 function CommentCard({
   comment,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   sectionTitle,
   onQuote,
   onReply,
@@ -272,7 +271,6 @@ export default function TalkPage() {
     { staleTime: 30_000 }
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: sectionsData } = api.wikios.getTalkSections.useQuery(
     { title },
     { staleTime: 30_000 }

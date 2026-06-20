@@ -279,7 +279,6 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     }));
   }, []);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const updateGeometry = useCallback(
     (newGeom: Polygon | MultiPolygon, action: Parameters<typeof pushUndo>[1]) => {
       setState((s) => {

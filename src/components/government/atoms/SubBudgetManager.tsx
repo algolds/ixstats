@@ -205,7 +205,6 @@ export function SubBudgetManager({
           {data.map((item, index) => {
             const Icon = budgetTypeIcons[item.budgetType];
             const typeColor = budgetTypeColors[item.budgetType];
-            // eslint-disable-next-line unused-imports/no-unused-vars
             const priorityColor = priorityColors[item.priority];
 
             return (

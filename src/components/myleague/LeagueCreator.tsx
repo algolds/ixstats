@@ -178,7 +178,6 @@ export function LeagueCreator({
   const archetypeLabel = archetype ? archetypeLabels[archetype] : null;
 
   const isDivisionConference = archetype === "division_conference";
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const isBracket = archetype === "bracket";
   const isCircuit = archetype === "circuit";
   // Boxing has bracket archetype

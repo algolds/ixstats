@@ -54,7 +54,6 @@ interface CorrelationDataPoint {
 /**
  * Market Activity Record
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface MarketActivity {
   id: string;
   cardId: string;
@@ -70,7 +69,6 @@ interface MarketActivity {
 /**
  * Portfolio Performance Metrics
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface PortfolioPerformance {
   totalCards: number;
   totalValue: number;
@@ -140,7 +138,6 @@ async function getCardEconomyOverview(
   const changePercent = (change30Days / Math.max(nationCardValue - change30Days, 1)) * 100;
 
   // Get country GDP for correlation calculation
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const country = await db.country.findUnique({
     where: { id: countryId },
     select: { currentGdpPerCapita: true },

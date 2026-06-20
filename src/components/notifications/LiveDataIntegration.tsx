@@ -25,7 +25,6 @@ interface LiveDataIntegrationProps {
 
 export function LiveDataIntegration({
   countryId = "",
-  // eslint-disable-next-line unused-imports/no-unused-vars
   isExecutiveMode = false,
   enableIntelligenceStream = true,
   enableEconomicStream = true,
@@ -34,7 +33,6 @@ export function LiveDataIntegration({
   const { user } = useUser();
 
   // Get notification bridge
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { bridge, wireIntelligence, wireEconomic, wireDiplomatic } = useGlobalNotificationBridge();
 
   // Track previous data to detect changes

@@ -143,7 +143,6 @@ function ImportDeckTab() {
     }[];
   } | null>(null);
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { data: importStats } = api.nsImport.getImportStats.useQuery();
 
   const requestVerification = api.nsImport.requestVerification.useMutation({

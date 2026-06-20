@@ -53,7 +53,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const { articleTitle, tocEntries, themeColors, activeSectionId, navigateToSection } =
     useWikiContext();
   const [searchQuery, setSearchQuery] = useState("");
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
   const [draftsOpen, setDraftsOpen] = useState(true);
@@ -132,7 +131,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     [router, onClose]
   );
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const handleSectionClick = useCallback(
     (id: string) => {
       navigateToSection(id);

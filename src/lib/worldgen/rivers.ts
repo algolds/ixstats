@@ -42,7 +42,6 @@ export function generateRivers(graph: PackedGraph, params: WorldGenParams): void
   if (!params.hasRivers) return;
 
   const { cells } = graph;
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const n = cells.n;
 
   // ── Step 1: Depression filling ──
@@ -269,7 +268,6 @@ function traceRivers(
   graph: PackedGraph,
   downstream: Int32Array,
   threshold: number,
-  // eslint-disable-next-line unused-imports/no-unused-vars
   rng: () => number
 ): River[] {
   const { cells } = graph;

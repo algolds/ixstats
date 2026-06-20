@@ -49,7 +49,6 @@ const wikiSuggestions: Record<string, string[]> = {
   althistory: ["United States", "Russian Empire", "German Reich", "British Empire", "Japan"],
 };
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function extractCount(parsed: ParsedCountryData): number {
   let count = 0;
   if (parsed.population || parsed.population_estimate || parsed.population_total) count++;

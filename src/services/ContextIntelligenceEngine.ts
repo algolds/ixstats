@@ -244,7 +244,6 @@ export class ContextIntelligenceEngine {
 
   private determineActivityPattern(context: NotificationContext): ActivityPattern {
     const actionCount = context.recentActions.length;
-    // eslint-disable-next-line unused-imports/no-unused-vars
     const timeWindow = 10 * 60 * 1000; // 10 minutes
 
     if (actionCount > 30) return "highly-active";
@@ -356,7 +355,6 @@ export class ContextIntelligenceEngine {
     return "light";
   }
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
   private assessNetworkCondition(context: NotificationContext): NetworkCondition {
     // Simplified - in real implementation would check network APIs
     return "good";
@@ -726,9 +724,7 @@ export class ContextIntelligenceEngine {
   }
 
   private getTotalEngagementsForCategory(
-    // eslint-disable-next-line unused-imports/no-unused-vars
     pattern: UserBehaviorPattern,
-    // eslint-disable-next-line unused-imports/no-unused-vars
     category: NotificationCategory
   ): number {
     // Simplified - would need more sophisticated tracking in practice

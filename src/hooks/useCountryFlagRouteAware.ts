@@ -63,7 +63,6 @@ export function useCountryFlagRouteAware(countryName: string) {
 /**
  * Hook for multiple country flags with route-aware service selection
  */
-// eslint-disable-next-line unused-imports/no-unused-vars
 export function useCountryFlagsRouteAware(countries: string[], preload = true, batchSize = 5) {
   const [flags, setFlags] = useState<Map<string, CountryFlag>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -94,7 +93,6 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
 
         setFlags(flagResults);
 
-        // eslint-disable-next-line unused-imports/no-unused-vars
         const stats = service.getCacheStats();
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flags";
