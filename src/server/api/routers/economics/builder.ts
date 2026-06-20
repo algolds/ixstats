@@ -4,6 +4,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { assertCountryAccess } from "./_ownership";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notification-api";
 import { notificationHooks } from "~/lib/notification-hooks";
@@ -124,13 +125,7 @@ const economicsBuilderRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, economyBuilder } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       // Get previous values for notifications
       const previousCountry = await ctx.db.country.findUnique({
@@ -614,13 +609,7 @@ const economicsBuilderRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, changes } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       try {
         // Update country with changes

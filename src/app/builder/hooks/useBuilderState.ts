@@ -1103,6 +1103,8 @@ export function useBuilderState(
               (Array.isArray(parsedState.completedSteps) && parsedState.completedSteps.length > 0);
             if (hasProgress) {
               setHasRestoredState(true);
+              // On-device draft wins over the server draft (it's the latest here).
+              localHadDataRef.current = true;
             }
           }
 
@@ -1122,6 +1124,21 @@ export function useBuilderState(
   const builderStateRef = useRef(builderState);
   builderStateRef.current = builderState;
   const prevBuilderStateRef = useRef(builderState);
+
+  // Server-draft (create-mode) coordination refs.
+  // localHadDataRef: the on-device localStorage restore found a draft (it wins).
+  // serverRestoreDoneRef: we've decided whether to apply the server draft, so the
+  // server-save effect may run without clobbering an unrestored draft with empty state.
+  const localHadDataRef = useRef(false);
+  const serverRestoreDoneRef = useRef(false);
+
+  // Does the current state represent real user progress worth persisting?
+  const hasBuilderProgress = (s: BuilderState): boolean =>
+    !!s.selectedCountry ||
+    !!s.selectedArchetypeId ||
+    !!s.economicInputs?.countryName ||
+    !!s.economicInputs?.nationalIdentity?.countryName ||
+    (Array.isArray(s.completedSteps) && s.completedSteps.length > 0);
 
   useEffect(() => {
     // Skip save if state hasn't actually changed (prevents unnecessary JSON.stringify)
@@ -1337,6 +1354,67 @@ export function useBuilderState(
     countryId,
     isLoadingCountry,
   ]);
+
+  // ── Server-side draft persistence (create mode) ──────────────────────────
+  // Edit mode already persists to the Country row; this gives create-mode builds
+  // cross-session / cross-device persistence for every authenticated user.
+  const serverDraftQuery = api.builderDraft.get.useQuery(undefined, {
+    enabled: mode !== "edit",
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+  const saveDraftMutation = api.builderDraft.save.useMutation();
+  const clearDraftMutation = api.builderDraft.clear.useMutation();
+
+  // Restore from the server draft only when this device has no local draft.
+  useEffect(() => {
+    if (mode === "edit") return;
+    if (serverRestoreDoneRef.current) return;
+    if (serverDraftQuery.isLoading) return; // wait for the query to settle
+
+    serverRestoreDoneRef.current = true;
+
+    // Local draft wins; never clobber it or an in-progress build.
+    if (localHadDataRef.current || hasBuilderProgress(builderStateRef.current)) return;
+
+    const remote = serverDraftQuery.data?.data as Partial<BuilderState> | undefined;
+    if (!remote) return;
+
+    // Restore data fields only — navigation always starts at foundation.
+    const {
+      step: _step,
+      completedSteps: _completedSteps,
+      selectedCountry: _selectedCountry,
+      selectedArchetypeId: _selectedArchetypeId,
+      ...dataFields
+    } = remote as any;
+    setBuilderState((prev) => ({
+      ...prev,
+      ...dataFields,
+      economyBuilderState: (remote as any).economyBuilderState ?? prev.economyBuilderState ?? null,
+    }));
+    if (hasBuilderProgress(remote as BuilderState)) {
+      setHasRestoredState(true);
+    }
+    if (serverDraftQuery.data?.updatedAt) {
+      setLastSaved(new Date(serverDraftQuery.data.updatedAt));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverDraftQuery.isLoading, serverDraftQuery.data, mode]);
+
+  // Debounced server save (create mode), gated on restore-decision + real progress
+  // so we never overwrite a good server draft with the empty initial state.
+  useEffect(() => {
+    if (mode === "edit") return;
+    if (!serverRestoreDoneRef.current) return;
+    if (!hasBuilderProgress(builderState)) return;
+
+    const timer = setTimeout(() => {
+      saveDraftMutation.mutate({ data: builderStateRef.current });
+    }, 2500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [builderState, mode]);
 
   const triggerManualSave = useCallback(async () => {
     try {
@@ -1664,12 +1742,17 @@ export function useBuilderState(
         localStorage.removeItem(stateKey);
         localStorage.removeItem(savedKey);
       }
+      // Also clear the server-side create-mode draft (best-effort).
+      if (mode !== "edit") {
+        clearDraftMutation.mutate();
+      }
       setLastSaved(null);
       setBuilderState(getInitialState(mode));
       // eslint-disable-next-line unused-imports/no-unused-vars
     } catch (error) {
       // Failed to clear draft
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, countryId]);
 
   const canAccessStep = useCallback(

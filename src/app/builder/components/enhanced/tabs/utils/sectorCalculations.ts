@@ -198,18 +198,20 @@ export function getSectorConstraints(
       });
     }
 
-    const locked = lockedBy.length > 0;
+    // ponytail: sectors are never locked — users have full control over industries.
+    // `recommendedBy`/`impact` are kept as non-restrictive hints; `lockedBy` is no
+    // longer surfaced as a hard constraint.
+    const locked = false;
     const recommended = recommendedBy.length > 0;
 
-    // Scale slider ranges based on impact
+    // Full slider ranges for every sector regardless of component impact.
     const baseMaxGDP = 95;
     const baseMinGDP = 0;
     const baseMaxGrowth = 15;
     const baseMinGrowth = -5;
 
-    // Strongly penalized sectors have tighter ranges
-    const gdpRangeFactor = locked ? 0.3 : impact < 0.8 ? 0.5 : 1.0;
-    const growthRangeFactor = locked ? 0.2 : impact < 0.8 ? 0.6 : 1.0;
+    const gdpRangeFactor = 1.0;
+    const growthRangeFactor = 1.0;
 
     constraints[sectorId] = {
       locked,

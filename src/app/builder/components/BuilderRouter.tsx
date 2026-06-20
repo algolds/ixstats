@@ -570,7 +570,11 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
             )
           }
         >
-          <AnimatePresence mode="wait">
+          {/* ponytail: no mode="wait" — it deadlocked the Foundation re-nav
+              (Foundation renders without StepContent's nested AnimatePresence,
+              so the parent never got exit-complete and left a blank page).
+              Sections fully remount on key change, so the wait bought nothing. */}
+          <AnimatePresence>
             <motion.div
               key={activeSection}
               initial={{ opacity: 0, y: 10 }}

@@ -3,7 +3,7 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+import { assertCountryAccess } from "./_ownership";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notification-hooks";
 
@@ -43,13 +43,7 @@ const economicsProfileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       // Get previous values for comparison
       const previous = await ctx.db.economicProfile.findUnique({
@@ -120,13 +114,7 @@ const economicsProfileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       return await ctx.db.laborMarket.upsert({
         where: { countryId },
@@ -187,13 +175,7 @@ const economicsProfileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       return await ctx.db.demographics.upsert({
         where: { countryId },

@@ -41,6 +41,7 @@ import { demoModeRouter } from "./routers/demo-mode";
 import { systemValidationRouter } from "./routers/system-validation";
 import { autosaveHistoryRouter } from "./routers/autosaveHistory";
 import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
+import { builderDraftRouter } from "./routers/builderDraft";
 
 // ─── Economy ─────────────────────────────────────────────────────────────────
 import { economicsRouter } from "./routers/economics";
@@ -166,6 +167,7 @@ export const appRouter = createTRPCRouter({
   systemValidation: safeRouter("systemValidation", () => systemValidationRouter),
   autosaveHistory: safeRouter("autosaveHistory", () => autosaveHistoryRouter),
   autosaveMonitoring: safeRouter("autosaveMonitoring", () => autosaveMonitoringRouter),
+  builderDraft: safeRouter("builderDraft", () => builderDraftRouter),
 
   // ─── Economy ───────────────────────────────────────────────────────────────
   economics: safeRouter("economics", () => economicsRouter),

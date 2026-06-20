@@ -3,7 +3,7 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+import { assertCountryAccess } from "./_ownership";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const economicsSyncRouter = createTRPCRouter({
@@ -57,13 +57,7 @@ const economicsSyncRouter = createTRPCRouter({
       // eslint-disable-next-line unused-imports/no-unused-vars
       const { countryId, governmentComponents } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       // Update country with government components
       // eslint-disable-next-line unused-imports/no-unused-vars
@@ -93,13 +87,7 @@ const economicsSyncRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, taxData } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       // Update fiscal system with tax data
       const fiscalSystem = await ctx.db.fiscalSystem.upsert({

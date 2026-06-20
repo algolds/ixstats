@@ -315,6 +315,11 @@ export const vaultAdminRouter = createTRPCRouter({
         quality: z.string().default("COMMON"),
         badgeText: z.string().optional(),
         category: z.string().default("cosmetics"),
+        // effects defines what the item actually DOES — without it the item is
+        // inert (no cosmetic renders, no yield boost applies). Shape:
+        //   cosmetics: { customizations: { avatarGlow|neonFrame|chatBadge } }
+        //   upgrades:  { perks: { yieldBoost, cardCapacity, loreTokens } }
+        effects: z.any().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -333,6 +338,7 @@ export const vaultAdminRouter = createTRPCRouter({
             quality: input.quality,
             badgeText: input.badgeText ?? "Custom Item",
             category: input.category,
+            effects: input.effects ?? undefined,
             isActive: true,
           },
         });
@@ -369,6 +375,7 @@ export const vaultAdminRouter = createTRPCRouter({
         badgeText: z.string().optional(),
         category: z.string().default("cosmetics"),
         isActive: z.boolean().default(true),
+        effects: z.any().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -397,6 +404,7 @@ export const vaultAdminRouter = createTRPCRouter({
             badgeText: input.badgeText ?? "Custom Item",
             category: input.category,
             isActive: input.isActive,
+            ...(input.effects !== undefined && { effects: input.effects }),
           },
         });
 

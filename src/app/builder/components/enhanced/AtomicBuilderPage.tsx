@@ -293,6 +293,9 @@ function AtomicBuilderPageInner({
     }
   }, []);
 
+  // Clears the server-side create-mode draft once a country is created.
+  const clearBuilderDraftMutation = api.builderDraft.clear.useMutation();
+
   // Create country mutation
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const createCountryMutation = (api.countries as any).createCountry?.useMutation({
@@ -302,6 +305,8 @@ function AtomicBuilderPageInner({
           localStorage.removeItem("builder_state");
           localStorage.removeItem("builder_last_saved");
         }
+        // Clear the server draft so a completed build can't resurrect on /builder.
+        clearBuilderDraftMutation.mutate();
         // eslint-disable-next-line unused-imports/no-unused-vars
       } catch (error) {
         // Failed to clear saved state

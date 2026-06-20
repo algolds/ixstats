@@ -401,6 +401,20 @@ model UserPreferences {
   @@index([userId])
 }
 
+/// Server-side autosave of an in-progress country build (create mode).
+/// Edit mode already persists to the Country row; this covers the create-mode
+/// draft so progress survives across sessions and devices for every user.
+/// One draft per user, keyed by Clerk user id.
+model BuilderDraft {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
 model Role {
   id              String           @id @default(cuid())
   name            String           @unique

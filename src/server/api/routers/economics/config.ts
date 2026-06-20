@@ -3,7 +3,7 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+import { assertCountryAccess } from "./_ownership";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
 const economicsConfigRouter = createTRPCRouter({
@@ -118,13 +118,7 @@ const economicsConfigRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, configuration } = input;
 
-      // SECURITY: Verify user owns this country
-      if (ctx.user?.countryId !== countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot access other countries' economic data",
-        });
-      }
+      await assertCountryAccess(ctx, countryId);
 
       // Start transaction to update multiple tables
       const result = await ctx.db.$transaction(async (tx) => {

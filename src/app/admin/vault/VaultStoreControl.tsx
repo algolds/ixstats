@@ -115,6 +115,13 @@ export function VaultStoreControl() {
     badgeText: "Upgrade",
     category: "cosmetics",
     isActive: true,
+    // Effects — what the item actually does once owned/equipped.
+    cosmeticKind: "avatarGlow" as "avatarGlow" | "neonFrame" | "chatBadge",
+    effectColor: "#f59e0b",
+    effectIcon: "Crown",
+    yieldBoostPct: 0, // % bonus to passive income
+    cardCapacity: 0, // extra card slots
+    loreTokens: 0, // extra lore tokens
   });
 
   // Price History Query
@@ -169,6 +176,12 @@ export function VaultStoreControl() {
       badgeText: "Upgrade",
       category: "cosmetics",
       isActive: true,
+      cosmeticKind: "avatarGlow",
+      effectColor: "#f59e0b",
+      effectIcon: "Crown",
+      yieldBoostPct: 0,
+      cardCapacity: 0,
+      loreTokens: 0,
     });
   };
 
@@ -179,6 +192,15 @@ export function VaultStoreControl() {
 
   const handleOpenEdit = (item: any) => {
     setEditingItem(item);
+    const effects = (item.effects ?? {}) as any;
+    const cust = effects.customizations ?? {};
+    const perks = effects.perks ?? {};
+    const cosmeticKind: "avatarGlow" | "neonFrame" | "chatBadge" = cust.chatBadge
+      ? "chatBadge"
+      : cust.neonFrame
+        ? "neonFrame"
+        : "avatarGlow";
+    const activeCust = cust[cosmeticKind] ?? {};
     setFormData({
       name: item.name,
       description: item.description || "",
@@ -189,8 +211,44 @@ export function VaultStoreControl() {
       badgeText: item.badgeText || "",
       category: item.category,
       isActive: item.isActive,
+      cosmeticKind,
+      effectColor: activeCust.color || "#f59e0b",
+      effectIcon: activeCust.icon || "Crown",
+      yieldBoostPct:
+        typeof perks.yieldBoost === "number" ? Math.round(perks.yieldBoost * 100) : 0,
+      cardCapacity: typeof perks.cardCapacity === "number" ? perks.cardCapacity : 0,
+      loreTokens: typeof perks.loreTokens === "number" ? perks.loreTokens : 0,
     });
     setIsOpen(true);
+  };
+
+  // Assemble the effects JSON the rest of the app reads (useActiveCosmetics for
+  // rendering, vault-service getPurchasedItemsEffects for perks/yield).
+  const buildEffects = (): Record<string, any> | undefined => {
+    if (formData.category === "upgrades") {
+      const perks: Record<string, number> = {};
+      if (formData.yieldBoostPct) perks.yieldBoost = formData.yieldBoostPct / 100;
+      if (formData.cardCapacity) perks.cardCapacity = formData.cardCapacity;
+      if (formData.loreTokens) perks.loreTokens = formData.loreTokens;
+      return Object.keys(perks).length ? { perks } : undefined;
+    }
+    const customizations: Record<string, any> = {};
+    if (formData.cosmeticKind === "avatarGlow") {
+      customizations.avatarGlow = {
+        enabled: true,
+        color: formData.effectColor,
+        intensity: "15px",
+      };
+    } else if (formData.cosmeticKind === "neonFrame") {
+      customizations.neonFrame = { enabled: true, color: formData.effectColor, style: "pulse" };
+    } else if (formData.cosmeticKind === "chatBadge") {
+      customizations.chatBadge = {
+        enabled: true,
+        icon: formData.effectIcon,
+        color: formData.effectColor,
+      };
+    }
+    return Object.keys(customizations).length ? { customizations } : undefined;
   };
 
   const handleOpenHistory = (itemId: string) => {
@@ -200,13 +258,21 @@ export function VaultStoreControl() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    const {
+      // strip UI-only effect fields; they are folded into `effects`
+      cosmeticKind: _ck,
+      effectColor: _ec,
+      effectIcon: _ei,
+      yieldBoostPct: _yb,
+      cardCapacity: _cc,
+      loreTokens: _lt,
+      ...base
+    } = formData;
+    const payload = { ...base, effects: buildEffects() ?? null };
     if (editingItem) {
-      updateMutation.mutate({
-        id: editingItem.id,
-        ...formData,
-      });
+      updateMutation.mutate({ id: editingItem.id, ...payload });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(payload);
     }
   };
 
@@ -535,6 +601,98 @@ export function VaultStoreControl() {
                   onChange={(val) => setFormData({ ...formData, glowColor: val })}
                 />
               </div>
+            </div>
+
+            {/* Effects editor — defines what the item actually does */}
+            <div className="border-border/40 space-y-3 rounded-lg border bg-muted/20 p-3">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {formData.category === "upgrades" ? "Upgrade Perks" : "Cosmetic Effect"}
+              </Label>
+
+              {formData.category === "upgrades" ? (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fx-yield">Yield Boost (%)</Label>
+                    <Input
+                      id="fx-yield"
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={formData.yieldBoostPct}
+                      onChange={(e) =>
+                        setFormData({ ...formData, yieldBoostPct: Number(e.target.value) })
+                      }
+                      className="bg-background border-border/40 text-foreground font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fx-cards">Card Capacity (+)</Label>
+                    <Input
+                      id="fx-cards"
+                      type="number"
+                      min={0}
+                      value={formData.cardCapacity}
+                      onChange={(e) =>
+                        setFormData({ ...formData, cardCapacity: Number(e.target.value) })
+                      }
+                      className="bg-background border-border/40 text-foreground font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fx-lore">Lore Tokens (+)</Label>
+                    <Input
+                      id="fx-lore"
+                      type="number"
+                      min={0}
+                      value={formData.loreTokens}
+                      onChange={(e) =>
+                        setFormData({ ...formData, loreTokens: Number(e.target.value) })
+                      }
+                      className="bg-background border-border/40 text-foreground font-mono"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fx-kind">Effect Type</Label>
+                    <Select
+                      value={formData.cosmeticKind}
+                      onValueChange={(val) =>
+                        setFormData({ ...formData, cosmeticKind: val as typeof formData.cosmeticKind })
+                      }
+                    >
+                      <SelectTrigger className="bg-background border-border/40 text-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border/50 text-foreground">
+                        <SelectItem value="avatarGlow">Avatar Glow</SelectItem>
+                        <SelectItem value="neonFrame">Neon Frame</SelectItem>
+                        <SelectItem value="chatBadge">Chat Badge</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fx-color">Effect Color</Label>
+                    <ColorPickerInput
+                      value={formData.effectColor}
+                      onChange={(val) => setFormData({ ...formData, effectColor: val })}
+                    />
+                  </div>
+                  {formData.cosmeticKind === "chatBadge" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="fx-badge-icon">Badge Icon</Label>
+                      <Input
+                        id="fx-badge-icon"
+                        value={formData.effectIcon}
+                        onChange={(e) => setFormData({ ...formData, effectIcon: e.target.value })}
+                        placeholder="e.g. Crown"
+                        className="bg-background border-border/40 text-foreground"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <DialogFooter className="border-border/40 mt-6 border-t pt-4">
