@@ -14,6 +14,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService, getVaultConfig } from "~/lib/vault-service";
 import { type VaultTransactionType } from "@prisma/client";
+import { resolveVaultUserId } from "./_resolveUserId";
 
 /**
  * Vault transaction type enum for validation
@@ -76,9 +77,10 @@ export const vaultStoreRouter = createTRPCRouter({
       if (!ctx.auth?.userId) {
         throw new Error("Unauthorized");
       }
+      const userId = await resolveVaultUserId(ctx);
       const transactions = await ctx.db.vaultTransaction.findMany({
         where: {
-          vault: { userId: ctx.auth.userId },
+          vault: { userId },
           type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
         },
         select: {
@@ -133,9 +135,10 @@ export const vaultStoreRouter = createTRPCRouter({
         }
 
         // 2. Fetch existing cosmetic/boost transactions to check if already owned
+        const purchaserUserId = await resolveVaultUserId(ctx);
         const existingPurchases = await ctx.db.vaultTransaction.findMany({
           where: {
-            vault: { userId: ctx.auth.userId },
+            vault: { userId: purchaserUserId },
             type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
           },
           select: { metadata: true },
@@ -210,8 +213,9 @@ export const vaultStoreRouter = createTRPCRouter({
       if (!ctx.auth?.userId) {
         throw new Error("Unauthorized");
       }
+      const userId = await resolveVaultUserId(ctx);
       const vault = await ctx.db.myVault.findUnique({
-        where: { userId: ctx.auth.userId },
+        where: { userId },
         select: { equippedCosmetics: true },
       });
       const equipped = vault?.equippedCosmetics
@@ -234,11 +238,12 @@ export const vaultStoreRouter = createTRPCRouter({
         if (!ctx.auth?.userId) {
           throw new Error("Unauthorized");
         }
+        const userId = await resolveVaultUserId(ctx);
 
         // 1. Verify user owns the item
         const transactions = await ctx.db.vaultTransaction.findMany({
           where: {
-            vault: { userId: ctx.auth.userId },
+            vault: { userId },
             type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] },
           },
           select: { metadata: true },
@@ -260,7 +265,7 @@ export const vaultStoreRouter = createTRPCRouter({
 
         // 2. Fetch current equipped list
         const vault = await ctx.db.myVault.findUnique({
-          where: { userId: ctx.auth.userId },
+          where: { userId },
           select: { id: true, equippedCosmetics: true },
         });
 
