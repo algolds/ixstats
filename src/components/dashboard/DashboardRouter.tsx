@@ -51,6 +51,8 @@ import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { EconomicTierBadge, PopulationTierBadge, LocationBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
+import { HealthRing } from "~/components/ui/health-ring";
+import { PreText } from "~/components/ui/pretext";
 
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
@@ -85,6 +87,27 @@ const CountryMapEmbed = dynamic(
       default: m.CountryMapEmbed,
     })),
   { ssr: false, loading: () => <div className="bg-muted h-52 animate-pulse rounded-xl" /> }
+);
+
+const GdpDetailsModal = dynamic(
+  () => import("~/components/modals/GdpDetailsModal").then((m) => ({ default: m.GdpDetailsModal })),
+  { ssr: false }
+);
+
+const PopulationDetailsModal = dynamic(
+  () =>
+    import("~/components/modals/PopulationDetailsModal").then((m) => ({
+      default: m.PopulationDetailsModal,
+    })),
+  { ssr: false }
+);
+
+const GovernmentSpendingModal = dynamic(
+  () =>
+    import("~/components/modals/metric-details/GovernmentSpendingModal").then((m) => ({
+      default: m.GovernmentSpendingModal,
+    })),
+  { ssr: false }
 );
 
 const HERO_NAV = [
@@ -231,6 +254,7 @@ function DashboardHero({
     population: "total" as "total" | "density",
     area: "km" as "km" | "mi",
   });
+  const [activeModal, setActiveModal] = useState<"gdp" | "population" | "government" | null>(null);
 
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
   const countryId = userProfile?.countryId || "";
@@ -247,6 +271,10 @@ function DashboardHero({
   const { data: vaultData } = api.vault.getBalance.useQuery(
     { userId: user?.id ?? "" },
     { enabled: !!user?.id }
+  );
+  const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
+    { countryId },
+    { enabled: hasCountry }
   );
 
   // ── Section-specific data ──
@@ -390,6 +418,20 @@ function DashboardHero({
     );
   };
 
+  const getMetricColor = (val: number) => {
+    if (val < 35) return "#ef4444";
+    if (val < 60) return "#f97316";
+    if (val < 80) return "#eab308";
+    return "#10b981";
+  };
+
+  const getMetricLabelClass = (val: number) => {
+    if (val < 35) return "text-red-600 dark:text-red-400";
+    if (val < 60) return "text-orange-600 dark:text-orange-400";
+    if (val < 80) return "text-yellow-600 dark:text-yellow-400";
+    return "text-green-600 dark:text-green-400";
+  };
+
   // ── Overview: At a Glance (toggleable) ──
   const renderOverviewSnapshot = () => (
     <div className="flex h-full flex-col">
@@ -508,32 +550,62 @@ function DashboardHero({
           </div>
         </TooltipContent>
       </Tooltip>
-      <DetailList title="Momentum & Standing">
-        <IndicatorRow
-          label="GDP Growth"
-          value={`${stats.gdpGrowth >= 0 ? "+" : ""}${stats.gdpGrowth.toFixed(2)}%`}
-          valueClass={stats.gdpGrowth >= 0 ? "text-emerald-400" : "text-red-400"}
-          barValue={Math.abs(stats.gdpGrowth)}
-          barMax={10}
-          barColor={stats.gdpGrowth >= 0 ? "bg-emerald-500" : "bg-red-500"}
-        />
-        <IndicatorRow
-          label="Population Growth"
-          value={`${stats.popGrowth >= 0 ? "+" : ""}${stats.popGrowth.toFixed(2)}%`}
-          valueClass={stats.popGrowth >= 0 ? "text-emerald-400" : "text-red-400"}
-          barValue={Math.abs(stats.popGrowth)}
-          barMax={5}
-          barColor={stats.popGrowth >= 0 ? "bg-blue-500" : "bg-red-500"}
-        />
-        {gdpRank && (
-          <IndicatorRow
-            label="Global Rank · GDP/cap"
-            value={`#${gdpRank.global.position} / ${gdpRank.global.total}`}
-            valueClass="text-amber-400"
-            barValue={gdpRank.global.total - gdpRank.global.position}
-            barMax={gdpRank.global.total}
-            barColor="bg-amber-500"
-          />
+      <DetailList title="National Health">
+        {activityRingsData ? (
+          <div className="grid grid-cols-4 gap-2 py-1">
+            {[
+              {
+                value: activityRingsData.economicVitality || 0,
+                label: "Economy",
+                onClick: () => setActiveModal("gdp"),
+                tooltip: "Economic health and performance index",
+              },
+              {
+                value: activityRingsData.populationWellbeing || 0,
+                label: "Pop.",
+                onClick: () => setActiveModal("population"),
+                tooltip: "Quality of life and population wellbeing index",
+              },
+              {
+                value: activityRingsData.diplomaticStanding || 0,
+                label: "Diplo.",
+                onClick: () => setActiveSection("Diplomacy"),
+                tooltip: "International relations and diplomatic standing index",
+              },
+              {
+                value: activityRingsData.governmentalEfficiency || 0,
+                label: "Gov.",
+                onClick: () => setActiveModal("government"),
+                tooltip: "Governance effectiveness and efficiency index",
+              },
+            ].map((ring) => (
+              <div key={ring.label} className="flex flex-col items-center gap-0.5">
+                <HealthRing
+                  value={ring.value}
+                  size={48}
+                  color={getMetricColor(ring.value)}
+                  label={ring.label}
+                  tooltip={ring.tooltip}
+                  hideValue={true}
+                  onClick={ring.onClick}
+                  isClickable={true}
+                />
+                <PreText
+                  className={cn(
+                    "hover:text-foreground/90 text-[9px] font-medium transition-colors",
+                    getMetricLabelClass(ring.value)
+                  )}
+                  whiteSpace="nowrap"
+                >
+                  {ring.label}: {ring.value}%
+                </PreText>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-muted-foreground flex h-16 animate-pulse items-center justify-center text-xs">
+            Loading health indicators...
+          </div>
         )}
       </DetailList>
     </div>
@@ -958,6 +1030,30 @@ function DashboardHero({
           </div>
         </div>
       </div>
+      {activeModal === "gdp" && (
+        <GdpDetailsModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          countryId={countryId}
+          countryName={stats.countryName}
+        />
+      )}
+      {activeModal === "population" && (
+        <PopulationDetailsModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          countryId={countryId}
+          countryName={stats.countryName}
+        />
+      )}
+      {activeModal === "government" && (
+        <GovernmentSpendingModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          countryId={countryId}
+          countryName={stats.countryName}
+        />
+      )}
     </div>
   );
 }

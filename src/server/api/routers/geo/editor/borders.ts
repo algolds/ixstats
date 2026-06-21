@@ -359,10 +359,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
       const featureIdB = input.nameB.replace(/\s+/g, "_");
 
       await ctx.db.$transaction(async (tx) => {
-        // Deactivate original
+        // Deactivate and rename original to prevent unique constraint violation
         await tx.mapLayer.update({
           where: { id: feature.id },
-          data: { isActive: false },
+          data: {
+            isActive: false,
+            featureId: `${feature.featureId}_deactivated_${Date.now()}`,
+            countryId: null,
+          },
         });
 
         // Create two new features
@@ -393,6 +397,10 @@ export const geoEditorBordersRouter = createTRPCRouter({
           ],
         });
       });
+
+      if (originalCountryId) {
+        await syncCountryGeometryFromMapLayer(ctx.db, originalCountryId);
+      }
 
       clearLayerCache("political");
       await invalidateCache([
@@ -447,13 +455,22 @@ export const geoEditorBordersRouter = createTRPCRouter({
       }
 
       const newFeatureId = input.newName.replace(/\s+/g, "_");
+      const countryIds = Array.from(
+        new Set(features.map((f) => f.countryId).filter(Boolean))
+      ) as string[];
 
       await ctx.db.$transaction(async (tx) => {
-        // Deactivate originals
-        await tx.mapLayer.updateMany({
-          where: { id: { in: features.map((f) => f.id) } },
-          data: { isActive: false },
-        });
+        // Deactivate and rename originals to prevent unique constraint violation
+        for (const f of features) {
+          await tx.mapLayer.update({
+            where: { id: f.id },
+            data: {
+              isActive: false,
+              featureId: `${f.featureId}_deactivated_${Date.now()}`,
+              countryId: null,
+            },
+          });
+        }
 
         // Create merged feature
         await tx.mapLayer.create({
@@ -470,6 +487,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
           },
         });
       });
+
+      // Sync geometries of any country that was linked to the merged features
+      for (const countryId of countryIds) {
+        await syncCountryGeometryFromMapLayer(ctx.db, countryId);
+      }
 
       clearLayerCache("political");
       await invalidateCache([

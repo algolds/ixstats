@@ -199,7 +199,14 @@ export function useEconomyBuilderSync({
         });
       }
     }
-  }, [countryId, enabled, governmentComponents, taxSystemData, syncGovernmentMutation, syncTaxMutation]);
+  }, [
+    countryId,
+    enabled,
+    governmentComponents,
+    taxSystemData,
+    syncGovernmentMutation,
+    syncTaxMutation,
+  ]);
 
   // ============================================================
   // SYNC STATUS TRACKING (based on mutation states)

@@ -53,11 +53,13 @@ export function ExpandedView({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
             </span>
-            <span>Playing as: <span className="font-mono">{targetUser}</span></span>
+            <span>
+              Playing as: <span className="font-mono">{targetUser}</span>
+            </span>
           </div>
           <button
             onClick={handleStopImpersonating}
-            className="rounded bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-red-700 transition-colors"
+            className="rounded bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-red-700"
           >
             Stop
           </button>

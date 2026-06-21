@@ -142,7 +142,9 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
               impersonatorId = auth.userId;
               auth = { ...auth, userId: activeUserId };
               if (VERBOSE) {
-                console.log(`[TRPC Context] Admin ${impersonatorId} playing as user ${activeUserId}`);
+                console.log(
+                  `[TRPC Context] Admin ${impersonatorId} playing as user ${activeUserId}`
+                );
               }
             } else {
               console.warn(

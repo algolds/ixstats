@@ -593,7 +593,7 @@ const DynamicIslandContent = ({
         layoutId="dynamic-island-main"
         className={`focus-within:bg-accent/80 force-gpu relative mx-auto items-center justify-center border text-center shadow-2xl shadow-black/40 transition-colors duration-200 ${
           isImpersonating
-            ? "border-red-500/80 dark:border-red-500/60 shadow-[0_0_15px_rgba(239,68,68,0.45)]"
+            ? "border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.45)] dark:border-red-500/60"
             : "border-white/20 dark:border-white/10"
         }`}
         initial={{

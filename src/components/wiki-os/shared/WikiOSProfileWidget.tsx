@@ -105,10 +105,10 @@ export function WikiOSProfileWidget({
       return (
         <Link
           href={settingsHref}
-          className="group flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out outline-none relative w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+          className="group relative z-50 flex w-[12rem] items-center rounded-xl border border-white/10 bg-neutral-950/90 px-2.5 py-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out outline-none"
         >
           {renderAvatar(false)}
-          <span className="flex-1 overflow-hidden text-left text-xs font-semibold whitespace-nowrap pl-3 text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] opacity-100 w-auto">
+          <span className="w-auto flex-1 overflow-hidden pl-3 text-left text-xs font-semibold whitespace-nowrap text-[var(--wikios-text-muted)] opacity-100 group-hover:text-[var(--wikios-text)]">
             Link wiki account
           </span>
         </Link>
@@ -117,7 +117,7 @@ export function WikiOSProfileWidget({
     return (
       <Link
         href={settingsHref}
-        className="group flex items-center gap-2.5 rounded-xl border border-dashed border-[var(--wikios-border)] bg-white/[0.03] px-2.5 py-2 transition-all hover:bg-white/[0.07] w-full"
+        className="group flex w-full items-center gap-2.5 rounded-xl border border-dashed border-[var(--wikios-border)] bg-white/[0.03] px-2.5 py-2 transition-all hover:bg-white/[0.07]"
       >
         {renderAvatar(false)}
         <div className="min-w-0">
@@ -152,10 +152,10 @@ export function WikiOSProfileWidget({
     return (
       <Link
         href={profileHref}
-        className="group flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out outline-none relative w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+        className="group relative z-50 flex w-[12rem] items-center rounded-xl border border-white/10 bg-neutral-950/90 px-2.5 py-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out outline-none"
       >
         {renderAvatar(true)}
-        <span className="flex-1 overflow-hidden text-left text-xs font-semibold whitespace-nowrap pl-3 text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] opacity-100 w-auto">
+        <span className="w-auto flex-1 overflow-hidden pl-3 text-left text-xs font-semibold whitespace-nowrap text-[var(--wikios-text-muted)] opacity-100 group-hover:text-[var(--wikios-text)]">
           {displayName}
         </span>
       </Link>
@@ -166,7 +166,7 @@ export function WikiOSProfileWidget({
   return (
     <Link
       href={profileHref}
-      className="group block rounded-xl border border-[var(--wikios-border)] bg-white/5 p-2 transition-all hover:border-blue-500/30 hover:bg-white/[0.08] w-full"
+      className="group block w-full rounded-xl border border-[var(--wikios-border)] bg-white/5 p-2 transition-all hover:border-blue-500/30 hover:bg-white/[0.08]"
     >
       <div className="flex items-center gap-2.5">
         {renderAvatar(true)}

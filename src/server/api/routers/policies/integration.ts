@@ -49,11 +49,7 @@ export const policiesIntegrationRouter = createTRPCRouter({
         include: { role: true },
       });
       const role = user?.role?.name;
-      if (
-        user?.countryId !== input.countryId &&
-        role !== "admin" &&
-        role !== "system-owner"
-      ) {
+      if (user?.countryId !== input.countryId && role !== "admin" && role !== "system-owner") {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You do not have permission to edit this country's policies.",

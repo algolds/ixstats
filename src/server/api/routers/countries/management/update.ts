@@ -526,7 +526,10 @@ export const managementUpdateProcedures = {
 
           // IncomeDistribution.economicClasses — accepted in the payload but
           // previously never written (only the scalar Country.* fields were).
-          if (Array.isArray(incomeWealth.economicClasses) && incomeWealth.economicClasses.length > 0) {
+          if (
+            Array.isArray(incomeWealth.economicClasses) &&
+            incomeWealth.economicClasses.length > 0
+          ) {
             const economicClassesJson = JSON.stringify(incomeWealth.economicClasses);
             await tx.incomeDistribution.upsert({
               where: { countryId: country.id },
@@ -640,7 +643,11 @@ export const managementUpdateProcedures = {
             });
 
             if (taxSystemData.categories && taxSystemData.categories.length > 0) {
-              for (let categoryIndex = 0; categoryIndex < taxSystemData.categories.length; categoryIndex++) {
+              for (
+                let categoryIndex = 0;
+                categoryIndex < taxSystemData.categories.length;
+                categoryIndex++
+              ) {
                 const categoryData = taxSystemData.categories[categoryIndex];
                 const taxCategory = await tx.taxCategory.create({
                   data: {
@@ -967,49 +974,81 @@ export const managementUpdateProcedures = {
             const sectors = Array.isArray(economyState.sectors) ? economyState.sectors : [];
 
             // Calculate EconomicProfile metrics
-            const gdpGrowthVolatility = sectors.length > 0
-              ? sectors.reduce((sum: number, s: any) => sum + Math.abs((s.growthRate ?? 2.5) - 2.5), 0) / sectors.length
-              : undefined;
+            const gdpGrowthVolatility =
+              sectors.length > 0
+                ? sectors.reduce(
+                    (sum: number, s: any) => sum + Math.abs((s.growthRate ?? 2.5) - 2.5),
+                    0
+                  ) / sectors.length
+                : undefined;
 
-            const economicComplexity = economyState.structure?.economicTier === "Advanced"
-              ? 85
-              : economyState.structure?.economicTier === "Developed"
-                ? 70
-                : economyState.structure?.economicTier === "Emerging"
-                  ? 55
-                  : 40;
+            const economicComplexity =
+              economyState.structure?.economicTier === "Advanced"
+                ? 85
+                : economyState.structure?.economicTier === "Developed"
+                  ? 70
+                  : economyState.structure?.economicTier === "Emerging"
+                    ? 55
+                    : 40;
 
-            const innovationIndex = sectors.length > 0
-              ? sectors.reduce((sum: number, s: any) => sum + (s.innovation ?? 50), 0) / sectors.length
-              : undefined;
+            const innovationIndex =
+              sectors.length > 0
+                ? sectors.reduce((sum: number, s: any) => sum + (s.innovation ?? 50), 0) /
+                  sectors.length
+                : undefined;
 
-            const competitivenessRank = sectors.length > 0
-              ? Math.round(100 - sectors.reduce((sum: number, s: any) => sum + (s.competitiveness ?? 50), 0) / sectors.length)
-              : undefined;
+            const competitivenessRank =
+              sectors.length > 0
+                ? Math.round(
+                    100 -
+                      sectors.reduce((sum: number, s: any) => sum + (s.competitiveness ?? 50), 0) /
+                        sectors.length
+                  )
+                : undefined;
 
-            const exportsGDPPercent = sectors.length > 0
-              ? sectors.reduce((sum: number, s: any) => sum + ((s.exports ?? 0) * (s.gdpContribution ?? 0)) / 100, 0)
-              : undefined;
+            const exportsGDPPercent =
+              sectors.length > 0
+                ? sectors.reduce(
+                    (sum: number, s: any) =>
+                      sum + ((s.exports ?? 0) * (s.gdpContribution ?? 0)) / 100,
+                    0
+                  )
+                : undefined;
 
-            const importsGDPPercent = sectors.length > 0
-              ? sectors.reduce((sum: number, s: any) => sum + ((s.imports ?? 0) * (s.gdpContribution ?? 0)) / 100, 0)
-              : undefined;
+            const importsGDPPercent =
+              sectors.length > 0
+                ? sectors.reduce(
+                    (sum: number, s: any) =>
+                      sum + ((s.imports ?? 0) * (s.gdpContribution ?? 0)) / 100,
+                    0
+                  )
+                : undefined;
 
-            const tradeBalance = (economyState.structure?.totalGDP !== undefined && sectors.length > 0)
-              ? economyState.structure.totalGDP * sectors.reduce((sum: number, s: any) => sum + (((s.exports ?? 0) - (s.imports ?? 0)) * (s.gdpContribution ?? 0)) / 10000, 0)
-              : undefined;
+            const tradeBalance =
+              economyState.structure?.totalGDP !== undefined && sectors.length > 0
+                ? economyState.structure.totalGDP *
+                  sectors.reduce(
+                    (sum: number, s: any) =>
+                      sum +
+                      (((s.exports ?? 0) - (s.imports ?? 0)) * (s.gdpContribution ?? 0)) / 10000,
+                    0
+                  )
+                : undefined;
 
-            const sectorBreakdownJson = sectors.length > 0
-              ? JSON.stringify(
-                  sectors.map((s: any) => ({
-                    name: s.name,
-                    gdp: s.gdpContribution,
-                    employment: s.employmentShare,
-                    productivity: s.productivity,
-                    growthRate: s.growthRate,
-                  }))
-                )
-              : (economyState.structure ? JSON.stringify(economyState.structure) : undefined);
+            const sectorBreakdownJson =
+              sectors.length > 0
+                ? JSON.stringify(
+                    sectors.map((s: any) => ({
+                      name: s.name,
+                      gdp: s.gdpContribution,
+                      employment: s.employmentShare,
+                      productivity: s.productivity,
+                      growthRate: s.growthRate,
+                    }))
+                  )
+                : economyState.structure
+                  ? JSON.stringify(economyState.structure)
+                  : undefined;
 
             await tx.economicProfile.upsert({
               where: { countryId: country.id },
@@ -1040,29 +1079,32 @@ export const managementUpdateProcedures = {
             if (laborConfig) {
               const youthUnemploymentRate = laborConfig.youthUnemploymentRate;
               const femaleParticipationRate = laborConfig.femaleParticipationRate;
-              const medianWage = laborConfig.livingWageHourly !== undefined
-                ? laborConfig.livingWageHourly * 2000
-                : undefined;
+              const medianWage =
+                laborConfig.livingWageHourly !== undefined
+                  ? laborConfig.livingWageHourly * 2000
+                  : undefined;
               const wageGrowthRate = 2.5;
 
-              const employmentBySector = sectors.length > 0
-                ? JSON.stringify(
-                    sectors.map((s: any) => ({
-                      sector: s.name,
-                      employment: s.employmentShare,
-                      productivity: s.productivity,
-                    }))
-                  )
-                : undefined;
+              const employmentBySector =
+                sectors.length > 0
+                  ? JSON.stringify(
+                      sectors.map((s: any) => ({
+                        sector: s.name,
+                        employment: s.employmentShare,
+                        productivity: s.productivity,
+                      }))
+                    )
+                  : undefined;
 
-              const wageBySector = (sectors.length > 0 && laborConfig.livingWageHourly !== undefined)
-                ? JSON.stringify(
-                    sectors.map((s: any) => ({
-                      sector: s.name,
-                      avgWage: laborConfig.livingWageHourly * ((s.productivity ?? 100) / 100),
-                    }))
-                  )
-                : undefined;
+              const wageBySector =
+                sectors.length > 0 && laborConfig.livingWageHourly !== undefined
+                  ? JSON.stringify(
+                      sectors.map((s: any) => ({
+                        sector: s.name,
+                        avgWage: laborConfig.livingWageHourly * ((s.productivity ?? 100) / 100),
+                      }))
+                    )
+                  : undefined;
 
               await tx.laborMarket.upsert({
                 where: { countryId: country.id },
@@ -1093,9 +1135,7 @@ export const managementUpdateProcedures = {
               const ageDistribution = demoConfig.ageDistribution
                 ? JSON.stringify(demoConfig.ageDistribution)
                 : undefined;
-              const regions = demoConfig.regions
-                ? JSON.stringify(demoConfig.regions)
-                : undefined;
+              const regions = demoConfig.regions ? JSON.stringify(demoConfig.regions) : undefined;
               const educationLevels = demoConfig.educationLevels
                 ? JSON.stringify(demoConfig.educationLevels)
                 : undefined;

@@ -290,7 +290,8 @@ export function BuilderNotchBar({
     if (!container) return;
 
     const threshold = 25;
-    const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 15;
+    const isAtBottom =
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 15;
 
     if (window.scrollY < threshold) {
       container.style.transform = "translateY(0px)";
@@ -343,7 +344,7 @@ export function BuilderNotchBar({
             transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
             className={cn(
               "pointer-events-none z-[900] w-full",
-              isAtBottomState ? "fixed bottom-[20px] left-0 right-0" : "sticky top-[68px]"
+              isAtBottomState ? "fixed right-0 bottom-[20px] left-0" : "sticky top-[68px]"
             )}
             style={isAtBottomState ? { paddingBottom: "6px" } : { paddingTop: "6px" }}
           >
@@ -352,7 +353,7 @@ export function BuilderNotchBar({
               <div
                 className={cn(
                   "mx-auto max-w-[680px] px-2",
-                  (isScrolled && !isAtBottomState) ? "pointer-events-none" : "pointer-events-auto"
+                  isScrolled && !isAtBottomState ? "pointer-events-none" : "pointer-events-auto"
                 )}
                 // ponytail: box-shadow on the glass element instead of `filter: drop-shadow`
                 // on this wrapper. A `filter` ancestor makes a `backdrop-filter` child render

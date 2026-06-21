@@ -37,7 +37,8 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
   );
 
   const stats = useMemo<ContextStat[]>(() => {
-    const activeEmbassiesList = embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active") ?? [];
+    const activeEmbassiesList =
+      embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active") ?? [];
     const activeEmbassies = activeEmbassiesList.length;
 
     const relationsTargetIds = new Set(relations?.map((r: any) => r.targetCountryId) ?? []);

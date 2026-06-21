@@ -87,7 +87,7 @@ export function PillarCards({ countryId, onNavigate }: PillarCardsProps) {
   // Diplomacy stats
   const activeEmbassies =
     embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
-  
+
   const relationsTargetIds = new Set(relations?.map((r: any) => r.targetCountryId) ?? []);
   let additionalRelationsCount = 0;
   embassies?.forEach((e: any) => {

@@ -1443,8 +1443,7 @@ export function useBuilderState(
   }, [builderState, mode]);
 
   const triggerManualSave = useCallback(async () => {
-    const stateKey =
-      mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
+    const stateKey = mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
     const savedKey =
       mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
 
@@ -1465,8 +1464,7 @@ export function useBuilderState(
           builderStateRef.current.economicInputs?.countryName ||
           builderStateRef.current.economicInputs?.nationalIdentity?.countryName ||
           "",
-        economicInputs:
-          sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
+        economicInputs: sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
         // Skip (undefined) rather than [] when empty: a present array is
         // authoritative server-side and would delete-then-recreate, wiping the
         // DB's components on a transient empty state. (Mirrors the autosave path.)

@@ -130,7 +130,9 @@ export function useBorderEditorLayers({
   const safeSetData = useCallback(
     (sourceId: string, data: FeatureCollection) => {
       if (!map) return false;
-      const source = map.getSource(sourceId) as { setData?: (d: FeatureCollection) => void } | undefined;
+      const source = map.getSource(sourceId) as
+        | { setData?: (d: FeatureCollection) => void }
+        | undefined;
       if (!source?.setData) return false;
       source.setData(data);
       return true;
@@ -340,7 +342,10 @@ export function useBorderEditorLayers({
           features: [
             {
               type: "Feature",
-              geometry: { type: "Polygon", coordinates: [getCircleCoords(center, brushRadiusRef.current)] },
+              geometry: {
+                type: "Polygon",
+                coordinates: [getCircleCoords(center, brushRadiusRef.current)],
+              },
               properties: {},
             },
           ],

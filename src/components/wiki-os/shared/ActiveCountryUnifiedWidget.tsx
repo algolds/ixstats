@@ -65,12 +65,14 @@ export function ActiveCountryUnifiedWidget({
 
   return (
     <div className="relative w-full" ref={popoverRef}>
-      <div className={cn(
-        "group flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out outline-none relative",
-        isLocalHoverExpanded
-          ? "w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
-          : "w-full border-transparent bg-transparent hover:bg-white/5"
-      )}>
+      <div
+        className={cn(
+          "group relative flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out outline-none",
+          isLocalHoverExpanded
+            ? "z-50 w-[12rem] border border-white/10 bg-neutral-950/90 shadow-lg backdrop-blur-md"
+            : "w-full border-transparent bg-transparent hover:bg-white/5"
+        )}
+      >
         <button
           onClick={() => {
             if (isCollapsed) {
