@@ -171,6 +171,20 @@
   )}
   ```
 
-- [ ] **Step 8: Run check to verify build**
-  Run: `bun run build`
-  Expected: Production build passes successfully without errors.
+---
+
+## Verification Plan
+
+### Automated Tests
+* None. (Do not run build per developer constraints).
+
+### Manual Verification
+* Run dev environment: `bun run dev`
+* Navigate to dashboard page.
+* Confirm that "National Health" section displays 4 vitality rings.
+* Hover on each ring and check tooltip display.
+* Click each ring to ensure expected behavior:
+  * Economy -> GdpDetailsModal opens.
+  * Pop. -> PopulationDetailsModal opens.
+  * Diplo. -> Tab switches to Diplomacy.
+  * Gov. -> GovernmentSpendingModal opens.
