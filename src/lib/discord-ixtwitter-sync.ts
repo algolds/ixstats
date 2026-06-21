@@ -12,6 +12,7 @@
 import { PrismaClient } from "@prisma/client";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
+import { DOMParser } from "@xmldom/xmldom";
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
 // IxTwitter is one-way (Discord → feed only). The dedicated ThinkPages channel handles feed → Discord.
@@ -849,7 +850,10 @@ export function formatThinkPagesEmbed(
 
   const embedColor = 0x9835ff;
 
-  const description = post.content;
+  let description = htmlToDiscordMarkdown(post.content);
+  if (description.length > 4000) {
+    description = description.slice(0, 3997) + "...";
+  }
 
   const embeds: any[] = [
     {
@@ -1058,3 +1062,201 @@ export async function removeDiscordReaction(
     return false;
   }
 }
+
+export function decodeHtmlEntities(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
+export function autoCloseHtmlTags(html: string): string {
+  const tags = ["strong", "b", "em", "i", "u", "s", "del", "strike", "code", "pre", "p", "a", "ul", "ol", "li"];
+  let closedHtml = html;
+
+  for (const tag of tags) {
+    const openCount = (closedHtml.match(new RegExp(`<${tag}\\b[^>]*>`, "gi")) || []).length;
+    const closeCount = (closedHtml.match(new RegExp(`</${tag}>`, "gi")) || []).length;
+
+    if (openCount > closeCount) {
+      const missing = openCount - closeCount;
+      closedHtml += `</${tag}>`.repeat(missing);
+    }
+  }
+
+  return closedHtml;
+}
+
+export function htmlToDiscordMarkdown(html: string): string {
+  if (!html) return "";
+
+  const closedHtml = autoCloseHtmlTags(html);
+
+  try {
+    const parser = new DOMParser({
+      errorHandler: {
+        warning: () => {},
+        error: () => {},
+        fatalError: (err) => {
+          throw err;
+        },
+      },
+    });
+
+    const doc = parser.parseFromString(`<div>${closedHtml}</div>`, "text/xml");
+    const root = doc.documentElement;
+    if (root) {
+      const result = convertNodeToMarkdown(root).trim();
+      return result.replace(/\n{3,}/g, "\n\n");
+    }
+  } catch (err) {
+    console.warn("[htmlToDiscordMarkdown] XML parsing failed, using regex fallback:", err);
+  }
+
+  return fallbackHtmlToMarkdown(closedHtml);
+}
+
+function convertNodeToMarkdown(node: any): string {
+  if (!node) return "";
+
+  // Text Node
+  if (node.nodeType === 3) {
+    return decodeHtmlEntities(node.nodeValue || "");
+  }
+
+  // Element Node
+  if (node.nodeType === 1) {
+    const tagName = node.tagName.toLowerCase();
+    const children = Array.from(node.childNodes || [])
+      .map((child) => convertNodeToMarkdown(child))
+      .join("");
+
+    switch (tagName) {
+      case "div":
+        if (node.getAttribute && node.getAttribute("data-wikiembed") === "true") {
+          const title = node.getAttribute("data-title") || "";
+          const summary = node.getAttribute("data-summary") || "";
+          const source = node.getAttribute("data-source") || "ixwiki";
+          const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(
+            title.replace(/ /g, "_")
+          )}`;
+          return `\n**Wiki Embed: [${title}](${wikiUrl})**\n*Source: ${source}*\n> ${summary}\n`;
+        }
+        return children;
+      case "p":
+        return `\n${children}\n`;
+      case "strong":
+      case "b":
+        return `**${children}**`;
+      case "em":
+      case "i":
+        return `*${children}*`;
+      case "u":
+        return `__${children}__`;
+      case "s":
+      case "del":
+      case "strike":
+        return `~~${children}~~`;
+      case "code":
+        return `\`${children}\``;
+      case "pre":
+        return `\`\`\`\n${children}\n\`\`\``;
+      case "ul":
+      case "ol":
+        return `\n${children}\n`;
+      case "li":
+        return `- ${children.trim()}\n`;
+      case "br":
+        return "\n";
+      case "a": {
+        const href = node.getAttribute ? node.getAttribute("href") || "" : "";
+        let url = href;
+        if (href.startsWith("/wiki/")) {
+          url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
+        } else if (href.startsWith("/") && !href.startsWith("//")) {
+          url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
+        }
+        return `[${children}](${url})`;
+      }
+      case "img": {
+        const src = node.getAttribute ? node.getAttribute("src") || "" : "";
+        const alt = node.getAttribute ? node.getAttribute("alt") || "" : "";
+        return `[Image: ${alt || "image"}](${src})`;
+      }
+      default:
+        return children;
+    }
+  }
+
+  return "";
+}
+
+function fallbackHtmlToMarkdown(html: string): string {
+  let text = html;
+
+  // Wiki embed cards replacement
+  text = text.replace(
+    /<div[^>]*data-wikiembed="true"[^>]*data-title="([^"]+)"[^>]*data-summary="([^"]*)"[^>]*data-source="([^"]*)"[^>]*><\/div>/gi,
+    (_, title, summary, source) => {
+      const decodedTitle = decodeHtmlEntities(title);
+      const decodedSummary = decodeHtmlEntities(summary);
+      const decodedSource = decodeHtmlEntities(source || "ixwiki");
+      const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(
+        decodedTitle.replace(/ /g, "_")
+      )}`;
+      return `\n**Wiki Embed: [${decodedTitle}](${wikiUrl})**\n*Source: ${decodedSource}*\n> ${decodedSummary}\n`;
+    }
+  );
+
+  // Structural elements
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<p[^>]*>/gi, "\n").replace(/<\/p>/gi, "\n");
+  text = text.replace(/<ul[^>]*>/gi, "\n").replace(/<\/ul>/gi, "\n");
+  text = text.replace(/<ol[^>]*>/gi, "\n").replace(/<\/ol>/gi, "\n");
+  text = text.replace(/<li[^>]*>/gi, "- ").replace(/<\/li>/gi, "\n");
+
+  // Formatting inline tags
+  text = text.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
+  text = text.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**");
+  text = text.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*");
+  text = text.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*");
+  text = text.replace(/<u[^>]*>(.*?)<\/u>/gi, "__$1__");
+  text = text.replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~");
+  text = text.replace(/<del[^>]*>(.*?)<\/del>/gi, "~~$1~~");
+  text = text.replace(/<strike[^>]*>(.*?)<\/strike>/gi, "~~$1~~");
+  text = text.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`");
+  text = text.replace(/<pre[^>]*>(.*?)<\/pre>/gi, "```\n$1\n```");
+
+  // Links formatting
+  text = text.replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, (_, href, content) => {
+    let url = href;
+    if (href.startsWith("/wiki/")) {
+      url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
+    } else if (href.startsWith("/") && !href.startsWith("//")) {
+      url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
+    }
+    return `[${content}](${url})`;
+  });
+
+  // Img formatting
+  text = text.replace(/<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, (_, src, alt) => {
+    return `[Image: ${alt || "image"}](${src})`;
+  });
+
+  // Strip remaining HTML tags
+  text = text.replace(/<[^>]+>/g, "");
+
+  // Decode entities
+  text = decodeHtmlEntities(text);
+
+  // Clean up spacing
+  text = text.replace(/\n{3,}/g, "\n\n");
+
+  return text.trim();
+}
+

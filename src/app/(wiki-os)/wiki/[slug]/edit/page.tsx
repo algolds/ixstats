@@ -44,6 +44,10 @@ export default function WikiOSEditPage() {
 
   const [mode, setMode] = useState<EditorMode>(() => {
     if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const m = params.get("mode");
+      if (m === "visual" || m === "source") return m;
+
       const htmlDraft = localStorage.getItem(`wikios-draft-html-${title}`);
       const wtDraft = localStorage.getItem(`wikios-draft-${title}`);
       if (htmlDraft && !wtDraft) {
@@ -93,6 +97,51 @@ export default function WikiOSEditPage() {
 
   const convertWikitextToHtml = api.wikios.convertWikitextToHtml.useMutation();
   const convertHtmlToWikitext = api.wikios.htmlToWikitext.useMutation();
+
+  const [prefillLoaded, setPrefillLoaded] = useState(false);
+
+  useEffect(() => {
+    if (isLoading || prefillLoaded) return;
+
+    const isNewPage =
+      (mode === "source" && wikitextData && wikitextData.wikitext === "") ||
+      (mode === "visual" && editorHtml && editorHtml.html === "");
+
+    if (!isNewPage) {
+      setPrefillLoaded(true);
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const prefill = params.get("prefill");
+
+    if (prefill) {
+      const decodedPrefill = decodeURIComponent(prefill);
+      if (mode === "source") {
+        setActiveWikitext(decodedPrefill);
+        setPrefillLoaded(true);
+      } else if (mode === "visual") {
+        setConverting(true);
+        convertWikitextToHtml
+          .mutateAsync({ wikitext: decodedPrefill, title })
+          .then((res) => {
+            setActiveHtml(res.html);
+            setPrefillLoaded(true);
+          })
+          .catch((err) => {
+            console.error("Failed to convert prefill wikitext to HTML:", err);
+            setMode("source");
+            setActiveWikitext(decodedPrefill);
+            setPrefillLoaded(true);
+          })
+          .finally(() => {
+            setConverting(false);
+          });
+      }
+    } else {
+      setPrefillLoaded(true);
+    }
+  }, [isLoading, mode, title, wikitextData, editorHtml, convertWikitextToHtml, prefillLoaded]);
 
   const switchMode = useCallback(
     async (newMode: EditorMode, dirty: boolean, currentContent: string) => {

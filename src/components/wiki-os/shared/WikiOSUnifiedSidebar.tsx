@@ -30,6 +30,7 @@ import {
   Home,
   Shuffle,
   Bookmark,
+  Plus,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -59,6 +60,8 @@ const getGlowColor = (id: string) => {
       return "rgba(168, 85, 247, 0.45)";
     case "lorewards":
       return "rgba(234, 179, 8, 0.45)";
+    case "create-page":
+      return "rgba(16, 185, 129, 0.45)";
     default:
       return "rgba(255, 255, 255, 0.15)";
   }
@@ -84,6 +87,8 @@ const getGlowTextColorClass = (id: string) => {
       return "text-purple-400 border-purple-500/20 bg-purple-950/80";
     case "lorewards":
       return "text-amber-400 border-amber-500/20 bg-amber-950/80";
+    case "create-page":
+      return "text-emerald-400 border-emerald-500/20 bg-emerald-950/80";
     default:
       return "text-blue-400 border-blue-500/20 bg-blue-950/80";
   }
@@ -177,6 +182,7 @@ interface WikiOSUnifiedSidebarProps {
   pathname: string;
   forceCollapsed?: boolean;
   sections?: TocEntry[];
+  onCreatePageClick?: () => void;
 }
 
 export function WikiOSUnifiedSidebar({
@@ -191,6 +197,7 @@ export function WikiOSUnifiedSidebar({
   pathname,
   forceCollapsed = false,
   sections,
+  onCreatePageClick,
 }: WikiOSUnifiedSidebarProps) {
   const { isCollapsed: sidebarCollapsed, toggleCollapsed, isHovered } = useSidebar();
   const isCollapsedReal = forceCollapsed || sidebarCollapsed;
@@ -261,6 +268,8 @@ export function WikiOSUnifiedSidebar({
         return "text-purple-400 border-purple-500/30 bg-purple-500/10";
       case "lorewards":
         return "text-amber-400 border-amber-500/30 bg-amber-500/10";
+      case "create-page":
+        return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
       default:
         return "text-blue-400 border-blue-500/30 bg-blue-500/10";
     }
@@ -425,6 +434,17 @@ export function WikiOSUnifiedSidebar({
               ⌘K
             </kbd>
           ),
+          index: rowIndex++,
+        })}
+
+        {renderRow({
+          id: "create-page",
+          onClick: onCreatePageClick,
+          icon: Plus,
+          title: "Create New Page",
+          glowClass:
+            "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 rail-glow-green rail-animate-pulse",
+          isActive: activeId === "create-page",
           index: rowIndex++,
         })}
 

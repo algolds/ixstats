@@ -27,6 +27,7 @@ import {
 import { SearchModal } from "./SearchModal";
 import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
+import { CreatePageModal } from "./CreatePageModal";
 
 import type { TocEntry } from "~/lib/wiki-os/html-transformer";
 
@@ -47,6 +48,7 @@ export function WikiOSLayout({
   const { articleTitle, setActiveModal } = useWikiContext();
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [createPageOpen, setCreatePageOpen] = useState(false);
 
   // Global Cmd+K to open search
   useEffect(() => {
@@ -151,6 +153,7 @@ export function WikiOSLayout({
     <WikiOSUnifiedSidebar
       activeId={activeId}
       onSearchClick={() => setSearchOpen(true)}
+      onCreatePageClick={() => setCreatePageOpen(true)}
       title={activeTitle}
       slug={slug}
       isSignedIn={isSignedIn}
@@ -208,6 +211,7 @@ export function WikiOSLayout({
 
       {/* Search Modal */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
     </div>
   );
 }

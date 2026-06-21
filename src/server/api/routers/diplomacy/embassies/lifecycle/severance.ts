@@ -154,7 +154,7 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
           countryId: otherCountryId,
           category: "diplomatic",
           priority: "high",
-          href: "/diplomatic",
+          href: "/mycountry/diplomacy",
           source: "diplomatic-system",
           actionable: false,
         });

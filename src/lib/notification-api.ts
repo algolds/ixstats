@@ -282,7 +282,7 @@ class NotificationAPIService {
         category: "diplomatic",
         type: eventType === "conflict" ? "warning" : "info",
         priority: eventType === "conflict" ? "high" : "medium",
-        href: withBasePath("/diplomatic"),
+        href: withBasePath("/mycountry/diplomacy"),
         source: "diplomatic-system",
         actionable: true,
         metadata: { eventType, countries },

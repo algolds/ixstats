@@ -187,6 +187,17 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
+   * Check if a page exists in local DB or MediaWiki.
+   */
+  checkPageExists: publicProcedure
+    .input(z.object({ title: z.string().min(1).max(500) }))
+    .query(async ({ input }) => {
+      const resolvedTitle = await resolveRedirectMySQL(input.title);
+      const article = await getArticleWikitext(resolvedTitle, "ixwiki");
+      return { exists: !!article, resolvedTitle };
+    }),
+
+  /**
    * Get Parsoid HTML for the visual editor.
    * Returns raw Parsoid output with data-mw attributes preserved.
    * This is the HTML that can round-trip back to wikitext via Parsoid.
@@ -195,21 +206,33 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getEditorHtml: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
-      const [article, revMeta] = await Promise.all([
-        getArticleHtmlViaParsoid(input.title),
-        getCurrentRevisionMeta(input.title),
-      ]);
+      try {
+        const [article, revMeta] = await Promise.all([
+          getArticleHtmlViaParsoid(input.title),
+          getCurrentRevMeta(input.title),
+        ]);
 
-      // Extract just the <body> content from the full Parsoid HTML document
-      const bodyMatch = article.html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-      const bodyHtml = bodyMatch ? bodyMatch[1]! : article.html;
+        // Extract just the <body> content from the full Parsoid HTML document
+        const bodyMatch = article.html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+        const bodyHtml = bodyMatch ? bodyMatch[1]! : article.html;
 
-      return {
-        html: bodyHtml,
-        title: article.title,
-        revid: revMeta?.revid ?? null,
-        timestamp: revMeta?.timestamp ?? null,
-      };
+        return {
+          html: bodyHtml,
+          title: article.title,
+          revid: revMeta?.revid ?? null,
+          timestamp: revMeta?.timestamp ?? null,
+        };
+      } catch (err: any) {
+        if (err.message?.includes("returned 404") || err.message?.includes("404")) {
+          return {
+            html: "",
+            title: input.title,
+            revid: null,
+            timestamp: null,
+          };
+        }
+        throw err;
+      }
     }),
 
   /**

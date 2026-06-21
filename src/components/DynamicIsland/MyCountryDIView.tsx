@@ -63,6 +63,7 @@ const getPremiumDaysRemaining = (createdAt: string | Date | undefined): number =
 
 interface MyCountryDIViewProps {
   onClose: () => void;
+  onSwitchMode?: (mode: any) => void;
 }
 
 export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {

@@ -182,7 +182,7 @@ export const intelCoreDiplomaticRouter = createTRPCRouter({
             priority:
               input.priority === "URGENT" || input.priority === "CRITICAL" ? "high" : "medium",
             type: "info",
-            href: "/diplomatic/messages",
+            href: "/messages/diplomatic",
             source: "diplomatic-system",
             actionable: true,
             metadata: {

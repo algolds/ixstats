@@ -298,7 +298,7 @@ export function GdpPerCapitaDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="facet-modal facet-refraction !fixed max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)] lg:max-w-5xl">
+      <DialogContent className="facet-modal facet-material-paper !fixed max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)] lg:max-w-5xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -480,7 +480,7 @@ export function GdpPerCapitaDetailsModal({
               ) : comparisonData.length > 0 ? (
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={comparisonData} layout="horizontal">
+                    <BarChart data={comparisonData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
                       <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} stroke="rgba(255, 255, 255, 0.3)" />
                       <YAxis dataKey="name" type="category" width={80} stroke="rgba(255, 255, 255, 0.3)" />
@@ -500,7 +500,7 @@ export function GdpPerCapitaDetailsModal({
                           return item?.fullName || label;
                         }}
                       />
-                      <Bar dataKey="gdpPerCapita" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="gdpPerCapita" fill="#fbbf24" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

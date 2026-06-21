@@ -2,7 +2,7 @@
 // @ts-nocheck
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Building,
   DollarSign,
@@ -13,6 +13,7 @@ import {
   Wallet,
   Scale,
   Landmark,
+  Info,
 } from "lucide-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
@@ -35,9 +36,11 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 import { format, subMonths } from "date-fns";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
+import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
 
 interface GovernmentSpendingModalProps {
@@ -57,21 +60,12 @@ const TABS: MetricModalTab[] = [
 const SPENDING_COLORS = [
   "#3b82f6", // blue - education
   "#ef4444", // red - healthcare
-  "#22c55e", // green - defense
-  "#f59e0b", // amber - social
+  "#10b981", // green - defense
+  "#fbbf24", // amber - social
   "#8b5cf6", // purple - infrastructure
   "#06b6d4", // cyan - other
 ];
 
-/**
- * GovernmentSpendingModal - Government budget and spending analysis
- *
- * Displays:
- * - Overview: Total spending, budget balance, spending as % of GDP
- * - Trends: Historical spending with time range control
- * - Comparison: Global/regional benchmarking
- * - Breakdown: Spending by category (education, healthcare, defense, etc.)
- */
 export function GovernmentSpendingModal({
   isOpen,
   onClose,
@@ -105,7 +99,6 @@ export function GovernmentSpendingModal({
   const isLoading = countryLoading || govLoading || historicalLoading || globalLoading;
 
   // Process historical data for charts
-  // Derive spending from GDP using current spending-to-GDP ratio
   const processHistoricalData = (timeRange: TimeRange) => {
     if (!historicalData || historicalData.length === 0) return [];
 
@@ -147,10 +140,24 @@ export function GovernmentSpendingModal({
   };
 
   const chartConfig = {
-    totalSpending: { label: "Total Spending (B)", color: "#7c3aed" },
-    spendingGdpPercent: { label: "% of GDP", color: "#2563eb" },
-    budgetBalance: { label: "Budget Balance (B)", color: "#16a34a" },
+    totalSpending: { label: "Total Spending (B)", color: "#fbbf24" },
+    spendingGdpPercent: { label: "% of GDP", color: "#3b82f6" },
+    budgetBalance: { label: "Budget Balance (B)", color: "#10b981" },
   };
+
+  // Derive stats for Sidebar
+  const defaultProcessedData = useMemo(() => processHistoricalData("1y"), [historicalData, economyData]);
+  const spendStats = useMemo(() => {
+    if (!defaultProcessedData || defaultProcessedData.length === 0) return null;
+    const spends = defaultProcessedData.map(p => p.totalSpending);
+    const balances = defaultProcessedData.map(p => p.budgetBalance);
+
+    return {
+      maxSpending: Math.max(...spends),
+      avgBalance: balances.reduce((acc, v) => acc + v, 0) / balances.length,
+      dataPoints: defaultProcessedData.length,
+    };
+  }, [defaultProcessedData]);
 
   const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
     switch (activeTab) {
@@ -170,11 +177,17 @@ export function GovernmentSpendingModal({
   const renderOverviewTab = () => {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
+        <MetricModalLayout variant="economy">
+          <MetricModalLayout.MainArea>
+            <Skeleton className="h-[300px] w-full" />
+          </MetricModalLayout.MainArea>
+          <MetricModalLayout.Sidebar>
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </MetricModalLayout.Sidebar>
+        </MetricModalLayout>
       );
     }
 
@@ -186,118 +199,97 @@ export function GovernmentSpendingModal({
     const budgetBalance = fiscal?.budgetDeficitSurplus || 0;
 
     return (
-      <div className="space-y-6">
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Total Budget</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    $<NumberFlowDisplay value={totalBudget / 1e9} decimalPlaces={1} />B
-                  </p>
+      <MetricModalLayout variant="economy">
+        <MetricModalLayout.MainArea>
+          <Card className="facet-refraction border-white/5 flex-1 p-6 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="flex items-center gap-2">
+                <Landmark className="h-5 w-5 text-amber-500" />
+                Budget Summary
+              </CardTitle>
+              <CardDescription>Government fiscal allocation and spending summary.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 flex flex-col justify-center">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                  <div className="text-lg font-bold text-blue-400">
+                    ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
+                  </div>
+                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Tax Revenue</div>
                 </div>
-                <Wallet className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">% of GDP</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    <NumberFlowDisplay value={spendingGdpPercent} decimalPlaces={1} />%
-                  </p>
+                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                  <div className="text-lg font-bold text-green-400">
+                    {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
+                  </div>
+                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Revenue % GDP</div>
                 </div>
-                <PieChart className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Budget Balance</p>
-                  <p
-                    className={`text-2xl font-bold ${budgetBalance >= 0 ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {budgetBalance >= 0 ? "+" : ""}
-                    $<NumberFlowDisplay value={Math.abs(budgetBalance) / 1e9} decimalPlaces={1} />B
-                  </p>
-                </div>
-                <Scale className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Per Capita</p>
-                  <p className="text-2xl font-bold text-amber-600">
+                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                  <div className="text-lg font-bold text-purple-400">
                     $
-                    <NumberFlowDisplay
-                      value={totalBudget / (countryData?.currentPopulation || 1)}
-                      decimalPlaces={0}
-                    />
-                  </p>
+                    {(
+                      (((fiscal?.totalDebtGDPRatio || 0) / 100) *
+                        (countryData?.currentTotalGdp || 0)) /
+                      1e9
+                    ).toFixed(1)}
+                    B
+                  </div>
+                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Public Debt</div>
                 </div>
-                <DollarSign className="h-8 w-8 text-amber-500" />
+                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                  <div className="text-lg font-bold text-rose-450">
+                    {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
+                  </div>
+                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Debt to GDP</div>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs text-muted-foreground flex gap-3 items-start">
+                <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  Budget dynamics balance societal infrastructure investments with revenue collections. Stable surpluses build cash reserves, while persistent deficits expand public debt limits and require careful interest rate servicing.
+                </p>
               </div>
             </CardContent>
           </Card>
-        </div>
+        </MetricModalLayout.MainArea>
 
-        {/* Budget Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Landmark className="h-5 w-5 text-purple-500" />
-              Budget Summary
-            </CardTitle>
-            <CardDescription>Government fiscal position and spending overview</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-              <div className="text-center">
-                <div className="text-lg font-semibold text-blue-600">
-                  ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
-                </div>
-                <div className="text-muted-foreground text-sm">Tax Revenue</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-green-600">
-                  {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
-                </div>
-                <div className="text-muted-foreground text-sm">Revenue % GDP</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-purple-600">
-                  $
-                  {(
-                    (((fiscal?.totalDebtGDPRatio || 0) / 100) *
-                      (countryData?.currentTotalGdp || 0)) /
-                    1e9
-                  ).toFixed(1)}
-                  B
-                </div>
-                <div className="text-muted-foreground text-sm">Public Debt</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-red-600">
-                  {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
-                </div>
-                <div className="text-muted-foreground text-sm">Debt to GDP</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <MetricModalLayout.Sidebar>
+          <MetricModalLayout.StatCard
+            label="Total Budget"
+            value={totalBudget / 1e9}
+            prefix="$"
+            suffix="B"
+            decimalPlaces={1}
+            icon={Wallet}
+            variant="economy"
+          />
+          <MetricModalLayout.StatCard
+            label="Budget % GDP"
+            value={spendingGdpPercent}
+            suffix="%"
+            decimalPlaces={1}
+            icon={PieChart}
+            variant="economy"
+          />
+          <MetricModalLayout.StatCard
+            label="Budget Balance"
+            value={budgetBalance / 1e9}
+            prefix="$"
+            suffix="B"
+            decimalPlaces={1}
+            icon={Scale}
+            variant="economy"
+          />
+          <MetricModalLayout.StatCard
+            label="Per Capita Spending"
+            value={totalBudget / (countryData?.currentPopulation || 1)}
+            prefix="$"
+            decimalPlaces={0}
+            icon={DollarSign}
+            variant="economy"
+          />
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
@@ -305,14 +297,23 @@ export function GovernmentSpendingModal({
     const processedData = processHistoricalData(timeRange);
 
     if (historicalLoading) {
-      return <Skeleton className="h-80" />;
+      return (
+        <MetricModalLayout variant="economy">
+          <MetricModalLayout.MainArea>
+            <Skeleton className="h-[350px] w-full" />
+          </MetricModalLayout.MainArea>
+          <MetricModalLayout.Sidebar>
+            <Skeleton className="h-full w-full" />
+          </MetricModalLayout.Sidebar>
+        </MetricModalLayout>
+      );
     }
 
     if (processedData.length === 0) {
       return (
-        <Card>
+        <Card className="facet-refraction border-white/5">
           <CardContent className="py-12 text-center">
-            <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-muted-foreground">No historical data available</p>
           </CardContent>
         </Card>
@@ -323,66 +324,115 @@ export function GovernmentSpendingModal({
       chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
 
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Government Spending Trends</CardTitle>
-          <CardDescription>Historical budget and spending metrics</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig} className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ChartComponent data={processedData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} />
-                <YAxis tick={{ fontSize: 10 }} tickLine={false} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                {chartType === "area" ? (
-                  <Area
-                    type="monotone"
-                    dataKey="totalSpending"
-                    stroke="#7c3aed"
-                    fill="#7c3aed"
-                    fillOpacity={0.3}
-                    name="Total Spending (B)"
-                  />
-                ) : chartType === "bar" ? (
-                  <Bar dataKey="totalSpending" fill="#7c3aed" name="Total Spending (B)" />
-                ) : (
-                  <>
-                    <Line
-                      type="monotone"
-                      dataKey="totalSpending"
-                      stroke="#7c3aed"
-                      strokeWidth={2}
-                      dot={false}
-                      name="Total Spending (B)"
+      <MetricModalLayout variant="economy">
+        <MetricModalLayout.MainArea>
+          <Card className="facet-refraction border-white/5 p-6">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle>Government Spending Trends</CardTitle>
+              <CardDescription>Historical budget and spending metrics</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ChartContainer config={chartConfig} className="h-[320px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ChartComponent data={processedData}>
+                    <defs>
+                      <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
+                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
+                        />
+                      }
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="spendingGdpPercent"
-                      stroke="#2563eb"
-                      strokeWidth={2}
-                      dot={false}
-                      name="% of GDP"
-                    />
-                  </>
-                )}
-              </ChartComponent>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+                    {chartType === "area" ? (
+                      <Area
+                        type="monotone"
+                        dataKey="totalSpending"
+                        stroke="#fbbf24"
+                        fillOpacity={1}
+                        fill="url(#spendGrad)"
+                        strokeWidth={2}
+                        name="Total Spending (B)"
+                      />
+                    ) : chartType === "bar" ? (
+                      <Bar dataKey="totalSpending" fill="#fbbf24" name="Total Spending (B)" radius={[4, 4, 0, 0]} />
+                    ) : (
+                      <>
+                        <Line
+                          type="monotone"
+                          dataKey="totalSpending"
+                          stroke="#fbbf24"
+                          strokeWidth={2}
+                          dot={false}
+                          name="Total Spending (B)"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="spendingGdpPercent"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          dot={false}
+                          name="% of GDP"
+                        />
+                      </>
+                    )}
+                  </ChartComponent>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </MetricModalLayout.MainArea>
+
+        <MetricModalLayout.Sidebar>
+          <div className="flex flex-col gap-4 flex-1">
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Peak Spending (B)
+              </span>
+              <span className="text-xl font-bold text-amber-500">
+                {spendStats?.maxSpending ? `$${spendStats.maxSpending.toFixed(1)}B` : "N/A"}
+              </span>
+            </div>
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Avg Budget Balance
+              </span>
+              <span className="text-xl font-bold text-green-400">
+                {spendStats?.avgBalance ? `$${spendStats.avgBalance.toFixed(1)}B` : "N/A"}
+              </span>
+            </div>
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Data Points
+              </span>
+              <span className="text-xl font-bold text-purple-400">
+                {spendStats?.dataPoints || 0}
+              </span>
+            </div>
+          </div>
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
   const renderComparisonTab = () => {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-48" />
-          ))}
-        </div>
+        <MetricModalLayout variant="economy">
+          <MetricModalLayout.MainArea>
+            <Skeleton className="h-[350px] w-full" />
+          </MetricModalLayout.MainArea>
+          <MetricModalLayout.Sidebar>
+            <Skeleton className="h-full w-full" />
+          </MetricModalLayout.Sidebar>
+        </MetricModalLayout>
       );
     }
 
@@ -393,104 +443,116 @@ export function GovernmentSpendingModal({
       ((governmentData?.totalBudget || spending?.totalSpending || 0) /
         (countryData?.currentTotalGdp || 1)) *
         100;
-    const globalAvgSpending = 35; // Placeholder
+    const globalAvgSpending = 35.0;
     const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
     const budgetBalance = fiscal?.budgetDeficitSurplus || 0;
 
+    const compData = [
+      {
+        name: "Spending % GDP",
+        "Your Country": spendingGdpPercent,
+        "Global Avg": globalAvgSpending,
+      },
+      {
+        name: "Tax Revenue % GDP",
+        "Your Country": fiscal?.taxRevenueGDPPercent || 0,
+        "Global Avg": 30.0,
+      },
+    ];
+
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Globe className="h-4 w-4 text-blue-500" />
-              Global Comparison
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Spending % GDP</span>
-                <Badge variant={spendingGdpPercent <= globalAvgSpending ? "default" : "secondary"}>
-                  {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
-                </Badge>
+      <MetricModalLayout variant="economy">
+        <MetricModalLayout.MainArea>
+          <Card className="facet-refraction border-white/5 p-6 flex-1">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-amber-500" />
+                Fiscal Health Benchmarks
+              </CardTitle>
+              <CardDescription>
+                Compare spending ratios against global baselines.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={compData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                    <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
+                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} suffix="%" />
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(18, 20, 24, 0.8)",
+                        backdropFilter: "blur(8px)",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Bar dataKey="Your Country" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Global Avg" fill="rgba(255, 255, 255, 0.15)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">
-                  {spendingGdpPercent.toFixed(1)}%
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  vs {globalAvgSpending}% global average
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </MetricModalLayout.MainArea>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Scale className="h-4 w-4 text-green-500" />
-              Fiscal Health
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Debt-to-GDP</span>
-                <Badge
-                  variant={
-                    debtToGdp < 60 ? "default" : debtToGdp < 100 ? "secondary" : "destructive"
-                  }
-                >
-                  {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
-                </Badge>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{debtToGdp.toFixed(1)}%</div>
-                <div className="text-muted-foreground text-sm">Public debt ratio</div>
-              </div>
+        <MetricModalLayout.Sidebar>
+          <div className="flex flex-col gap-4 h-full justify-between">
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Global Allocation
+              </span>
+              <span className="text-xl font-bold text-amber-500">
+                {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
+              </span>
+              <span className="text-muted-foreground text-[10px] mt-1">
+                Spending: {spendingGdpPercent.toFixed(1)}% vs {globalAvgSpending}% global avg
+              </span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Wallet className="h-4 w-4 text-amber-500" />
-              Budget Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Balance</span>
-                <Badge variant={budgetBalance >= 0 ? "default" : "destructive"}>
-                  {budgetBalance >= 0 ? "Surplus" : "Deficit"}
-                </Badge>
-              </div>
-              <div className="text-center">
-                <div
-                  className={`text-3xl font-bold ${budgetBalance >= 0 ? "text-green-600" : "text-red-600"}`}
-                >
-                  {budgetBalance >= 0 ? "+" : ""}
-                  {(budgetBalance / 1e9).toFixed(1)}B
-                </div>
-                <div className="text-muted-foreground text-sm">Annual balance</div>
-              </div>
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Fiscal Stability
+              </span>
+              <span className="text-xl font-bold text-green-400">
+                {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
+              </span>
+              <span className="text-muted-foreground text-[10px] mt-1">
+                Public Debt: {debtToGdp.toFixed(1)}% of GDP
+              </span>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Budget Status
+              </span>
+              <span className="text-xl font-bold text-purple-400">
+                {budgetBalance >= 0 ? "Surplus" : "Deficit"}
+              </span>
+              <span className="text-muted-foreground text-[10px] mt-1">
+                Annual Balance: {(budgetBalance / 1e9).toFixed(1)}B
+              </span>
+            </div>
+          </div>
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
   const renderBreakdownTab = () => {
     if (isLoading) {
-      return <Skeleton className="h-80" />;
+      return (
+        <MetricModalLayout variant="economy">
+          <MetricModalLayout.MainArea>
+            <Skeleton className="h-[350px] w-full" />
+          </MetricModalLayout.MainArea>
+          <MetricModalLayout.Sidebar>
+            <Skeleton className="h-full w-full" />
+          </MetricModalLayout.Sidebar>
+        </MetricModalLayout>
+      );
     }
 
     const spending = economyData?.spending;
-    // Build categories from spendingCategories array or use named fields
     const spendingCategories = spending?.spendingCategories;
     const categories =
       spendingCategories && spendingCategories.length > 0
@@ -524,24 +586,24 @@ export function GovernmentSpendingModal({
           ];
 
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Spending by Category</CardTitle>
-            <CardDescription>Budget allocation across government sectors</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <MetricModalLayout variant="economy">
+        <MetricModalLayout.MainArea>
+          <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle>Spending by Category</CardTitle>
+              <CardDescription>Budget allocation across government sectors</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 flex flex-col md:flex-row gap-6 items-center">
               {/* Pie Chart */}
-              <div className="h-64">
+              <div className="h-44 w-44 shrink-0 flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
                     <Pie
                       data={categories}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
+                      innerRadius={45}
+                      outerRadius={60}
                       paddingAngle={2}
                       dataKey="value"
                     >
@@ -549,53 +611,61 @@ export function GovernmentSpendingModal({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(18, 20, 24, 0.8)",
+                        backdropFilter: "blur(8px)",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                      }}
+                    />
                   </RechartsPieChart>
                 </ResponsiveContainer>
               </div>
 
               {/* Category List */}
-              <div className="space-y-3">
+              <div className="space-y-2 flex-1 w-full max-h-[220px] overflow-y-auto pr-1">
                 {categories.map((category: any) => (
-                  <div key={category.name} className="flex items-center justify-between">
+                  <div key={category.name} className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-lg text-xs">
                     <div className="flex items-center gap-2">
                       <div
-                        className="h-3 w-3 rounded-full"
+                        className="h-2.5 w-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: category.color }}
                       />
-                      <span className="text-sm">{category.name}</span>
+                      <span className="font-medium text-muted-foreground">{category.name}</span>
                     </div>
-                    <span className="font-semibold">{category.value.toFixed(1)}%</span>
+                    <span className="font-semibold text-white">{category.value.toFixed(1)}%</span>
                   </div>
                 ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </MetricModalLayout.MainArea>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Priority Spending</CardTitle>
-            <CardDescription>Key budget priorities and allocations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {governmentData?.priorityPolicies
-                ?.slice(0, 6)
-                .map((policy: string, index: number) => (
-                  <div key={index} className="bg-muted/30 rounded-lg p-3 text-center">
-                    <Badge variant="outline" className="mb-2">
+        <MetricModalLayout.Sidebar>
+          <Card className="facet-refraction border-white/5 p-4 flex-1 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-sm font-semibold">Priority Spending</CardTitle>
+              <CardDescription className="text-[10px]">Key budget policies and priorities</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 flex-1">
+              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                {governmentData?.priorityPolicies?.length > 0 ? (
+                  governmentData.priorityPolicies.slice(0, 6).map((policy: string, index: number) => (
+                    <div key={index} className="bg-white/5 border border-white/5 rounded-xl p-2 text-center text-xs font-semibold text-amber-400">
                       {policy}
-                    </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-muted-foreground text-xs">No priority policies defined</p>
                   </div>
-                )) || (
-                <div className="col-span-3 py-4 text-center">
-                  <p className="text-muted-foreground">No priority policies defined</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
@@ -608,10 +678,11 @@ export function GovernmentSpendingModal({
       title="Government Spending Analysis"
       description="Budget allocation and fiscal metrics"
       icon={Building}
-      iconColor="text-purple-500"
+      iconColor="text-amber-500"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}
+      variant="economy"
     >
       {renderTabContent}
     </BaseMetricDetailsModal>

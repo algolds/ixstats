@@ -155,7 +155,7 @@ export const diplomaticEmbassiesMissionsExecutionRouter = createTRPCRouter({
           category: "diplomatic",
           priority: "low",
           type: "info",
-          href: "/diplomatic",
+          href: "/mycountry/diplomacy",
           source: "diplomatic-system",
           actionable: false,
           metadata: {

@@ -115,7 +115,17 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
         timestamp: point.ixTimeTimestamp,
         totalGdp: point.totalGdp / 1e12,
         gdpPerCapita: point.gdpPerCapita,
-        gdpGrowth: point.gdpGrowth || 0,
+        gdpGrowth: (() => {
+          const rate = point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : (point.gdpGrowth || 0);
+          const abs = Math.abs(rate);
+          if (abs < 0.01) {
+            return rate * 2500;
+          } else if (abs <= 0.5) {
+            return rate * 100;
+          } else {
+            return rate;
+          }
+        })(),
         realGdp: point.totalGdp / 1e12,
         nominalGdp: point.totalGdp / 1e12,
       }))
@@ -130,31 +140,36 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     if (!processedData || processedData.length === 0) return null;
 
     const current = processedData[processedData.length - 1];
-    const previous = processedData[processedData.length - 2];
     const firstPoint = processedData[0];
 
-    const growth =
-      previous && current?.totalGdp && previous.totalGdp
-        ? ((current.totalGdp - previous.totalGdp) / previous.totalGdp) * 100
-        : 0;
-    const totalGrowth =
-      current?.totalGdp && firstPoint?.totalGdp
-        ? ((current.totalGdp - firstPoint.totalGdp) / firstPoint.totalGdp) * 100
-        : 0;
-    const avgGrowth = (totalGrowth / processedData.length) * 12;
+    const growth = current?.gdpGrowth || 0;
+
+    const firstTimestamp = new Date(firstPoint.timestamp).getTime();
+    const currentTimestamp = new Date(current.timestamp).getTime();
+    const yearsElapsed = (currentTimestamp - firstTimestamp) / (365.25 * 24 * 60 * 60 * 1000);
+
+    // Compound the growth rates over the intervals
+    const compoundGrowthFactor = processedData.reduce((acc, p, i) => {
+      if (i === 0) return 1;
+      const prev = processedData[i - 1];
+      const dt = (new Date(p.timestamp).getTime() - new Date(prev.timestamp).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+      return acc * Math.pow(1 + prev.gdpGrowth / 100, dt);
+    }, 1);
+
+    const totalGrowth = (compoundGrowthFactor - 1) * 100;
+    const avgGrowth = yearsElapsed > 0.05 ? (Math.pow(compoundGrowthFactor, 1 / yearsElapsed) - 1) * 100 : growth;
 
     const values = processedData.map((p) => p.totalGdp);
     const maxGdp = Math.max(...values);
     const minGdp = Math.min(...values);
+
+    const growthValues = processedData.map((p) => p.gdpGrowth);
+    const meanGrowth = growthValues.reduce((a, b) => a + b, 0) / growthValues.length;
     const volatility =
-      values.length > 1
+      growthValues.length > 1
         ? Math.sqrt(
-            values.reduce((acc, val, i, arr) => {
-              if (i === 0) return 0;
-              const change = (val - arr[i - 1]!) / arr[i - 1]!;
-              return acc + Math.pow(change * 100, 2);
-            }, 0) /
-              (values.length - 1)
+            growthValues.reduce((acc, val) => acc + Math.pow(val - meanGrowth, 2), 0) /
+              (growthValues.length - 1)
           )
         : 0;
 
@@ -775,7 +790,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
               </div>
               <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
                 <span className="text-2xl font-bold text-purple-400">
-                  {(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.minGdp) * 100).toFixed(1)}%
+                  {(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%
                 </span>
                 <span className="text-sm font-medium mt-1">Peak-to-Trough</span>
                 <span className="text-muted-foreground text-[10px] mt-0.5">Maximum variance</span>

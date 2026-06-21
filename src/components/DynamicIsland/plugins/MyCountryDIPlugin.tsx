@@ -13,6 +13,7 @@ import React, { useMemo } from "react";
 import { Crown } from "lucide-react";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { PreText } from "~/components/ui/pretext";
+import { MyCountryCommandPalette } from "~/components/DynamicIsland/MyCountryCommandPalette";
 
 function MyCountryLabel() {
   return (
@@ -31,6 +32,7 @@ export function MyCountryDIPlugin() {
       id: "mycountry",
       priority: 5, // lower than wiki/forum so context-specific plugins win
       center: <MyCountryLabel />,
+      expandedViews: { mycountry: MyCountryCommandPalette },
       accentColor: "#f59e0b",
       stickyLabel: "MyCountry",
     }),

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { api } from "~/trpc/react";
 import {
   Search,
   Loader2,
@@ -110,6 +111,57 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   const [previewImgError, setPreviewImgError] = useState(false);
   const [flagImgError, setFlagImgError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const parseInfoboxMutation = api.countries.parseInfobox.useMutation();
+  const [detailedCountryData, setDetailedCountryData] = useState<Record<string, any>>({});
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [_detailsError, setDetailsError] = useState<string | null>(null);
+
+  // Lazy load country details on preview selection
+  useEffect(() => {
+    if (!previewingCountry) {
+      setDetailsError(null);
+      return;
+    }
+
+    const title = previewingCountry.title;
+    if (detailedCountryData[title]) {
+      return;
+    }
+
+    const fetchDetails = async () => {
+      setLoadingDetails(true);
+      setDetailsError(null);
+      try {
+        const data = await parseInfoboxMutation.mutateAsync({
+          pageName: title,
+          site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
+        });
+        if (data) {
+          setDetailedCountryData((prev) => ({
+            ...prev,
+            [title]: data,
+          }));
+        } else {
+          setDetailsError("Could not retrieve country details.");
+        }
+      } catch (err) {
+        setDetailsError(err instanceof Error ? err.message : "Failed to load details");
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+
+    fetchDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewingCountry, selectedSite.name]);
+
+  const previewData = previewingCountry
+    ? {
+        ...previewingCountry,
+        ...detailedCountryData[previewingCountry.title],
+      }
+    : null;
 
   const handleToggleWiki = useCallback(
     (e: React.MouseEvent) => {
@@ -274,11 +326,17 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   }, []);
 
   const handleContinueWithPreview = useCallback(() => {
-    if (previewingCountry && onContinueWithCountry) {
-      onContinueWithCountry(previewingCountry);
+    const pData = previewingCountry
+      ? {
+          ...previewingCountry,
+          ...detailedCountryData[previewingCountry.title],
+        }
+      : null;
+    if (pData && onContinueWithCountry) {
+      onContinueWithCountry(pData);
     }
     setPreviewingCountry(null);
-  }, [previewingCountry, onContinueWithCountry]);
+  }, [previewingCountry, detailedCountryData, onContinueWithCountry]);
 
   const isParsing = !!selectedResult && !parsedData;
   const isParsed = !!parsedData;
@@ -622,9 +680,9 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                             </button>
 
                             <div className="mb-4 flex items-center gap-3">
-                              {previewingCountry.flagUrl && !previewImgError ? (
+                              {previewData?.flagUrl && !previewImgError ? (
                                 <img
-                                  src={previewingCountry.flagUrl}
+                                  src={previewData.flagUrl}
                                   alt="Flag"
                                   className="border-border h-8 w-12 rounded border object-cover shadow-sm"
                                   referrerPolicy="no-referrer"
@@ -637,80 +695,100 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                               )}
                               <div>
                                 <h3 className="text-foreground text-lg font-semibold">
-                                  {previewingCountry.title}
+                                  {previewData?.title}
                                 </h3>
-                                <p className="text-muted-foreground text-xs">Country Preview</p>
+                                <p className="text-muted-foreground text-xs">
+                                  {loadingDetails ? "Fetching details..." : "Country Preview"}
+                                </p>
                               </div>
                             </div>
 
-                            {(previewingCountry.population ||
-                              previewingCountry.gdpPerCapita ||
-                              previewingCountry.capital ||
-                              previewingCountry.government) && (
-                              <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-                                {previewingCountry.population && (
-                                  <div className="border-border rounded-lg border p-3">
-                                    <div className="mb-1 flex items-center gap-1.5">
-                                      <Users className="text-info h-3 w-3" />
-                                      <span className="text-muted-foreground text-xs">
-                                        Population
-                                      </span>
-                                    </div>
-                                    <p className="text-foreground text-sm font-semibold">
-                                      {formatNumber(previewingCountry.population, 0)}
-                                    </p>
-                                  </div>
-                                )}
-                                {previewingCountry.gdpPerCapita && (
-                                  <div className="border-border rounded-lg border p-3">
-                                    <div className="mb-1 flex items-center gap-1.5">
-                                      <DollarSign className="text-success h-3 w-3" />
-                                      <span className="text-muted-foreground text-xs">
-                                        GDP/Capita
-                                      </span>
-                                    </div>
-                                    <p className="text-foreground text-sm font-semibold">
-                                      ${formatNumber(previewingCountry.gdpPerCapita)}
-                                    </p>
-                                  </div>
-                                )}
-                                {previewingCountry.capital && (
-                                  <div className="border-border rounded-lg border p-3">
-                                    <div className="mb-1 flex items-center gap-1.5">
-                                      <MapPin className="text-error h-3 w-3" />
-                                      <span className="text-muted-foreground text-xs">Capital</span>
-                                    </div>
-                                    <p
-                                      className="text-foreground truncate text-sm font-semibold"
-                                      dangerouslySetInnerHTML={{
-                                        __html: sanitizeWikiContent(previewingCountry.capital),
-                                      }}
-                                    />
-                                  </div>
-                                )}
-                                {previewingCountry.government && (
-                                  <div className="border-border rounded-lg border p-3">
-                                    <div className="mb-1 flex items-center gap-1.5">
-                                      <Building className="text-brand-secondary h-3 w-3" />
-                                      <span className="text-muted-foreground text-xs">
-                                        Government
-                                      </span>
-                                    </div>
-                                    <p
-                                      className="text-foreground truncate text-sm font-semibold"
-                                      dangerouslySetInnerHTML={{
-                                        __html: sanitizeWikiContent(previewingCountry.government),
-                                      }}
-                                    />
-                                  </div>
-                                )}
+                            {loadingDetails ? (
+                              <div className="mb-4 grid animate-pulse grid-cols-2 gap-2 md:grid-cols-4">
+                                {[...Array(4)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="border-border/30 h-[66px] rounded-lg border bg-white/5 p-3"
+                                  />
+                                ))}
                               </div>
+                            ) : (
+                              (previewData?.population ||
+                                previewData?.gdpPerCapita ||
+                                previewData?.capital ||
+                                previewData?.government) && (
+                                <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                                  {previewData.population && (
+                                    <div className="border-border rounded-lg border p-3">
+                                      <div className="mb-1 flex items-center gap-1.5">
+                                        <Users className="text-info h-3 w-3" />
+                                        <span className="text-muted-foreground text-xs">
+                                          Population
+                                        </span>
+                                      </div>
+                                      <p className="text-foreground text-sm font-semibold">
+                                        {formatNumber(previewData.population, 0)}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {previewData.gdpPerCapita && (
+                                    <div className="border-border rounded-lg border p-3">
+                                      <div className="mb-1 flex items-center gap-1.5">
+                                        <DollarSign className="text-success h-3 w-3" />
+                                        <span className="text-muted-foreground text-xs">
+                                          GDP/Capita
+                                        </span>
+                                      </div>
+                                      <p className="text-foreground text-sm font-semibold">
+                                        ${formatNumber(previewData.gdpPerCapita)}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {previewData.capital && (
+                                    <div className="border-border rounded-lg border p-3">
+                                      <div className="mb-1 flex items-center gap-1.5">
+                                        <MapPin className="text-error h-3 w-3" />
+                                        <span className="text-muted-foreground text-xs">
+                                          Capital
+                                        </span>
+                                      </div>
+                                      <p
+                                        className="text-foreground truncate text-sm font-semibold"
+                                        dangerouslySetInnerHTML={{
+                                          __html: sanitizeWikiContent(previewData.capital),
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                  {previewData.government && (
+                                    <div className="border-border rounded-lg border p-3">
+                                      <div className="mb-1 flex items-center gap-1.5">
+                                        <Building className="text-brand-secondary h-3 w-3" />
+                                        <span className="text-muted-foreground text-xs">
+                                          Government
+                                        </span>
+                                      </div>
+                                      <p
+                                        className="text-foreground truncate text-sm font-semibold"
+                                        dangerouslySetInnerHTML={{
+                                          __html: sanitizeWikiContent(previewData.government),
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              )
                             )}
 
                             <p
-                              className="text-text-secondary mb-4 text-sm leading-relaxed"
+                              className={cn(
+                                "text-text-secondary mb-4 text-sm leading-relaxed",
+                                loadingDetails && "animate-pulse opacity-50"
+                              )}
                               dangerouslySetInnerHTML={{
-                                __html: sanitizeWikiContent(previewingCountry.snippet),
+                                __html: sanitizeWikiContent(
+                                  previewData?.wikiIntro || previewData?.snippet || ""
+                                ),
                               }}
                             />
 
@@ -723,7 +801,8 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                               </button>
                               <button
                                 onClick={handleContinueWithPreview}
-                                className="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600"
+                                disabled={loadingDetails}
+                                className="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 Import Country
                               </button>

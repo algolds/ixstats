@@ -171,7 +171,7 @@ class GlobalNotificationBridge extends EventEmitter {
             id: "view-diplomatic",
             label: "View Diplomatic Relations",
             type: "primary",
-            onClick: () => (window.location.href = createAbsoluteUrl("/diplomatic")),
+            onClick: () => (window.location.href = createAbsoluteUrl("/mycountry/diplomacy")),
           },
         ],
       },

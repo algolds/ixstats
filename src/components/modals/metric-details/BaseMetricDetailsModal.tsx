@@ -152,7 +152,7 @@ export function BaseMetricDetailsModal({
       <DialogContent
         className={cn(
           // Glass physics styling
-          "facet-modal facet-refraction !fixed",
+          "facet-modal facet-material-paper !fixed",
           // Sizing
           "max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)]",
           "sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]",

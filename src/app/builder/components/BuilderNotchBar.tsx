@@ -34,6 +34,7 @@ import type { BuilderAlertResult } from "../lib/builder-alerts";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
 import { TAX_SYSTEM_TEMP_DISABLED } from "~/app/builder/constants";
 import { scrollToField } from "../components/enhanced/tabs/utils/validation";
+import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 
 // Sub-navigation theme styles mapping
 const SUBNAV_THEME_STYLES: Record<
@@ -280,6 +281,7 @@ export function BuilderNotchBar({
     mode === "edit" ? activeSection === "identity" : activeSection === "foundation";
 
   const isOnPreview = activeSection === "preview";
+  const { isSticky } = useNavigationScroll();
   const containerRef = useRef<HTMLDivElement>(null);
   const handleScrollRef = useRef<() => void>(() => {});
   const [isScrolled, setIsScrolled] = useState(false);
@@ -289,11 +291,10 @@ export function BuilderNotchBar({
     const container = containerRef.current;
     if (!container) return;
 
-    const threshold = 25;
     const isAtBottom =
       window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 15;
 
-    if (window.scrollY < threshold) {
+    if (!isSticky) {
       container.style.transform = "translateY(0px)";
       container.style.opacity = "1";
       container.style.visibility = "visible";

@@ -80,8 +80,7 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
 
   React.useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
-    const isLargeScreen = typeof window !== "undefined" && window.innerWidth >= 1024;
-    if (isLargeScreen && !hasTriggeredRestoreExpansion) {
+    if (!hasTriggeredRestoreExpansion) {
       setHasTriggeredRestoreExpansion(true);
       timer = setTimeout(() => {
         filter.triggerDIExpansion();

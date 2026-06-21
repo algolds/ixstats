@@ -25,6 +25,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
   AreaChart,
   Area,
@@ -37,11 +38,13 @@ import {
 } from "recharts";
 import { formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
+import { cn } from "~/lib/utils";
 import {
   BaseMetricDetailsModal,
   type MetricModalTab,
 } from "./metric-details/BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./metric-details/types";
+import { MetricModalLayout } from "./metric-details/MetricModalLayout";
 
 interface PopulationDetailsModalProps {
   isOpen: boolean;
@@ -77,7 +80,7 @@ export function PopulationDetailsModal({
     isLoading: isEconomicLoading,
     refetch,
   } = api.countries.getByIdWithEconomicData.useQuery(
-    { countryId },
+    { id: countryId },
     {
       enabled: isOpen,
       staleTime: 5 * 60 * 1000,
@@ -300,27 +303,47 @@ export function PopulationDetailsModal({
   }, [economicData]);
 
   const performanceMetrics = useMemo(() => {
-    if (!defaultChartData.length || !globalStats) return null;
+    if (!economicData) return null;
 
-    const current = defaultChartData[defaultChartData.length - 1];
-    const previous = defaultChartData[defaultChartData.length - 2];
+    const currentPop = economicData.currentPopulation;
+    const growthRate = economicData.populationGrowthRate;
+    const density = economicData.populationDensity || (currentPop / (economicData?.landArea || 1));
 
-    if (!current || !previous) return null;
+    let growth = growthRate * 100;
+    let globalComparison = 0;
+    let globalAverage = 0;
+    let rank = 1;
+    let totalCountries = 1;
 
-    const growth = ((current.population - previous.population) / previous.population) * 100;
-    const globalComparison =
-      ((current.population - globalStats.averagePopulation) / globalStats.averagePopulation) * 100;
+    if (globalStats) {
+      globalAverage = globalStats.averagePopulation;
+      globalComparison = ((currentPop - globalAverage) / globalAverage) * 100;
+    }
+
+    if (comparisonData.length > 0) {
+      const idx = comparisonData.findIndex((c: any) => c.isCurrentCountry);
+      rank = idx !== -1 ? idx + 1 : 1;
+      totalCountries = comparisonData.length;
+    }
+
+    if (defaultChartData && defaultChartData.length >= 2) {
+      const current = defaultChartData[defaultChartData.length - 1];
+      const previous = defaultChartData[defaultChartData.length - 2];
+      if (current && previous && previous.population > 0) {
+        growth = ((current.population - previous.population) / previous.population) * 100;
+      }
+    }
 
     return {
-      currentValue: current.population,
+      currentValue: currentPop,
       growth,
       globalComparison,
-      globalAverage: globalStats.averagePopulation,
-      rank: comparisonData.findIndex((c: any) => c.isCurrentCountry) + 1,
-      totalCountries: comparisonData.length,
-      density: current.populationDensity,
+      globalAverage,
+      rank,
+      totalCountries,
+      density,
     };
-  }, [defaultChartData, globalStats, comparisonData]);
+  }, [economicData, defaultChartData, globalStats, comparisonData]);
 
   const renderTabContent = (activeTab: string, timeRange: TimeRange, _chartType: ChartType) => {
     switch (activeTab) {
@@ -340,142 +363,138 @@ export function PopulationDetailsModal({
   const renderOverviewTab = () => {
     if (isEconomicLoading) {
       return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
+        <MetricModalLayout variant="social">
+          <MetricModalLayout.MainArea>
+            <Skeleton className="h-[300px] w-full" />
+          </MetricModalLayout.MainArea>
+          <MetricModalLayout.Sidebar>
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </MetricModalLayout.Sidebar>
+        </MetricModalLayout>
       );
     }
 
     if (!economicData) return null;
 
     return (
-      <div className="space-y-6">
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">Current Population</span>
-              </div>
-              <p className="text-2xl font-bold text-blue-600">
-                {formatPopulation(economicData.currentPopulation)}
-              </p>
-              <p className="text-muted-foreground text-xs">
-                {populationTierInfo?.currentTier?.name}
-              </p>
-            </CardContent>
-          </Card>
+      <MetricModalLayout variant="social">
+        <MetricModalLayout.MainArea>
+          {performanceMetrics && globalStats && (
+            <Card className="facet-refraction border-white/5 flex-1 p-6 flex flex-col justify-between">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-cyan-500" />
+                  Demographics Performance Summary
+                </CardTitle>
+                <CardDescription>Key growth metrics and global ranking statistics.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 flex-1 flex flex-col justify-center">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col justify-center">
+                    <div className="mb-1 flex items-center justify-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                      {performanceMetrics.growth > 0 ? (
+                        <ArrowUp className="h-4 w-4 text-green-500" />
+                      ) : performanceMetrics.growth < 0 ? (
+                        <ArrowDown className="h-4 w-4 text-red-500" />
+                      ) : (
+                        <Equal className="h-4 w-4 text-gray-500" />
+                      )}
+                      Recent Growth
+                    </div>
+                    <span
+                      className={`text-xl font-bold ${
+                        performanceMetrics.growth > 0
+                          ? "text-green-400"
+                          : performanceMetrics.growth < 0
+                            ? "text-red-400"
+                            : "text-gray-400"
+                      }`}
+                    >
+                      {performanceMetrics.growth > 0 ? "+" : ""}
+                      {performanceMetrics.growth.toFixed(3)}%
+                    </span>
+                  </div>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">Growth Rate</span>
-              </div>
-              <p className="text-2xl font-bold text-green-600">
-                {(economicData.populationGrowthRate * 100).toFixed(3)}%
-              </p>
-              <p className="text-muted-foreground text-xs">annually</p>
-            </CardContent>
-          </Card>
+                  <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col justify-center">
+                    <div className="mb-1 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                      vs Global Average
+                    </div>
+                    <span
+                      className={`text-xl font-bold ${
+                        performanceMetrics.globalComparison > 0 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {performanceMetrics.globalComparison > 0 ? "+" : ""}
+                      {performanceMetrics.globalComparison.toFixed(1)}%
+                    </span>
+                    <span className="text-muted-foreground text-[10px] mt-0.5">
+                      Avg: {formatPopulation(performanceMetrics.globalAverage)}
+                    </span>
+                  </div>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <Globe className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium">World Ranking</span>
-              </div>
-              <p className="text-2xl font-bold text-purple-600">
-                #{performanceMetrics?.rank || "N/A"}
-              </p>
-              <p className="text-muted-foreground text-xs">by population</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium">Population Density</span>
-              </div>
-              <p className="text-2xl font-bold text-orange-600">
-                {performanceMetrics?.density
-                  ? `${Math.round(performanceMetrics.density)}/km²`
-                  : "N/A"}
-              </p>
-              <p className="text-muted-foreground text-xs">people per km²</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Performance Summary */}
-        {performanceMetrics && globalStats && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Card>
-              <CardContent className="p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  {performanceMetrics.growth > 0 ? (
-                    <ArrowUp className="h-4 w-4 text-green-600" />
-                  ) : performanceMetrics.growth < 0 ? (
-                    <ArrowDown className="h-4 w-4 text-red-600" />
-                  ) : (
-                    <Equal className="h-4 w-4 text-gray-600" />
-                  )}
-                  <span className="font-medium">Recent Growth</span>
+                  <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col justify-center">
+                    <div className="mb-1 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                      World Ranking
+                    </div>
+                    <span className="text-xl font-bold text-purple-400">
+                      #{performanceMetrics.rank}
+                    </span>
+                    <span className="text-muted-foreground text-[10px] mt-0.5">
+                      of {performanceMetrics.totalCountries} countries
+                    </span>
+                  </div>
                 </div>
-                <p
-                  className={`text-2xl font-bold ${
-                    performanceMetrics.growth > 0
-                      ? "text-green-600"
-                      : performanceMetrics.growth < 0
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {performanceMetrics.growth > 0 ? "+" : ""}
-                  {performanceMetrics.growth.toFixed(3)}%
-                </p>
               </CardContent>
             </Card>
+          )}
+        </MetricModalLayout.MainArea>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">vs Global Average</span>
-                </div>
-                <p
-                  className={`text-2xl font-bold ${
-                    performanceMetrics.globalComparison > 0 ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {performanceMetrics.globalComparison > 0 ? "+" : ""}
-                  {performanceMetrics.globalComparison.toFixed(1)}%
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Global avg: {formatPopulation(performanceMetrics.globalAverage)}
-                </p>
-              </CardContent>
-            </Card>
+        <MetricModalLayout.Sidebar>
+          <MetricModalLayout.StatCard
+            label="Current Population"
+            value={economicData.currentPopulation}
+            suffix=""
+            decimalPlaces={0}
+            icon={Users}
+            variant="social"
+          />
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-purple-600" />
-                  <span className="font-medium">World Ranking</span>
-                </div>
-                <p className="text-2xl font-bold text-purple-600">#{performanceMetrics.rank}</p>
-                <p className="text-muted-foreground text-xs">
-                  of {performanceMetrics.totalCountries} countries
-                </p>
-              </CardContent>
-            </Card>
+          <MetricModalLayout.StatCard
+            label="Growth Rate"
+            value={economicData.populationGrowthRate * 100}
+            suffix="%"
+            decimalPlaces={3}
+            icon={TrendingUp}
+            variant="social"
+          />
+
+          <MetricModalLayout.StatCard
+            label="Population Density"
+            value={performanceMetrics?.density ? Math.round(performanceMetrics.density) : 0}
+            suffix="/km²"
+            icon={MapPin}
+            variant="social"
+          />
+
+          <div className="facet-refraction p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 relative overflow-hidden flex flex-col justify-between flex-1 min-h-[100px]">
+            <div>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Demographics Classification
+              </span>
+              <div className="mt-2">
+                <Badge className="text-sm font-semibold border-none bg-cyan-500/20 text-cyan-400">
+                  {populationTierInfo?.currentTier?.name || "Unknown"}
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
+              Influences national worker recruitment capacity, taxable demographic brackets, and structural demands.
+            </p>
           </div>
-        )}
-      </div>
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
@@ -483,12 +502,21 @@ export function PopulationDetailsModal({
     const chartData = processChartData(timeRange);
 
     if (isHistoricalLoading) {
-      return <Skeleton className="h-80" />;
+      return (
+        <MetricModalLayout variant="social">
+          <MetricModalLayout.MainArea>
+            <Skeleton className="h-[400px] w-full" />
+          </MetricModalLayout.MainArea>
+          <MetricModalLayout.Sidebar>
+            <Skeleton className="h-full w-full" />
+          </MetricModalLayout.Sidebar>
+        </MetricModalLayout>
+      );
     }
 
     if (chartData.length === 0) {
       return (
-        <Card>
+        <Card className="facet-refraction border-white/5">
           <CardContent className="py-12 text-center">
             <Activity className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-muted-foreground">No historical data available</p>
@@ -498,260 +526,324 @@ export function PopulationDetailsModal({
     }
 
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Population Growth Trends
-          </CardTitle>
-          <CardDescription>
-            Population development over time with {chartData.length} data points
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="timestamp"
-                  domain={["dataMin", "dataMax"]}
-                  type="number"
-                  scale="time"
-                  name="Time"
-                  tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
-                />
-                <YAxis
-                  yAxisId="population"
-                  orientation="left"
-                  label={{ value: "Population", angle: -90, position: "insideLeft" }}
-                  tickFormatter={(value) => formatPopulation(value)}
-                />
-                <YAxis
-                  yAxisId="growth"
-                  orientation="right"
-                  label={{ value: "Growth Rate (%)", angle: 90, position: "insideRight" }}
-                />
-                <Tooltip
-                  formatter={(value: any, name: string) => {
-                    if (name === "population") {
-                      return [formatPopulation(value), "Population"];
-                    }
-                    if (name === "populationGrowthRate") {
-                      return [`${value.toFixed(3)}%`, "Growth Rate"];
-                    }
-                    return [value, name];
-                  }}
-                  labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
-                />
-                <Area
-                  yAxisId="population"
-                  type="monotone"
-                  dataKey="population"
-                  stroke="#3b82f6"
-                  fill="#3b82f6"
-                  fillOpacity={0.3}
-                  strokeWidth={3}
-                />
-                <Bar
-                  yAxisId="growth"
-                  dataKey="populationGrowthRate"
-                  fill="#10b981"
-                  opacity={0.6}
-                  radius={[2, 2, 0, 0]}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+      <MetricModalLayout variant="social">
+        <MetricModalLayout.MainArea>
+          <Card className="facet-refraction border-white/5 p-6">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-cyan-500" />
+                Population Growth Trends
+              </CardTitle>
+              <CardDescription>
+                Population development over time with {chartData.length} data points
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData}>
+                    <defs>
+                      <linearGradient id="popColor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                    <XAxis
+                      dataKey="timestamp"
+                      domain={["dataMin", "dataMax"]}
+                      type="number"
+                      scale="time"
+                      name="Time"
+                      tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
+                      stroke="rgba(255, 255, 255, 0.3)"
+                    />
+                    <YAxis
+                      yAxisId="population"
+                      orientation="left"
+                      tickFormatter={(value) => formatPopulation(value)}
+                      stroke="rgba(255, 255, 255, 0.3)"
+                    />
+                    <YAxis
+                      yAxisId="growth"
+                      orientation="right"
+                      stroke="rgba(255, 255, 255, 0.3)"
+                      tickFormatter={(value) => `${value.toFixed(2)}%`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(18, 20, 24, 0.8)",
+                        backdropFilter: "blur(8px)",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: any, name: string) => {
+                        if (name === "population") {
+                          return [formatPopulation(value), "Population"];
+                        }
+                        if (name === "populationGrowthRate") {
+                          return [`${value.toFixed(3)}%`, "Growth Rate"];
+                        }
+                        return [value, name];
+                      }}
+                      labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
+                    <Area
+                      yAxisId="population"
+                      type="monotone"
+                      dataKey="population"
+                      stroke="#06b6d4"
+                      fillOpacity={1}
+                      fill="url(#popColor)"
+                      strokeWidth={3}
+                      name="Population"
+                    />
+                    <Bar
+                      yAxisId="growth"
+                      dataKey="populationGrowthRate"
+                      fill="#10b981"
+                      opacity={0.4}
+                      name="Growth Rate"
+                      radius={[2, 2, 0, 0]}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </MetricModalLayout.MainArea>
+
+        <MetricModalLayout.Sidebar>
+          <div className="flex flex-col gap-4 flex-1">
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Peak Population
+              </span>
+              <span className="text-xl font-bold text-cyan-400">
+                {chartData.length > 0
+                  ? formatPopulation(Math.max(...chartData.map((d) => d.population)))
+                  : "N/A"}
+              </span>
+            </div>
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+                Recent Growth
+              </span>
+              <span className="text-xl font-bold text-emerald-400">
+                {performanceMetrics?.growth ? `${performanceMetrics.growth.toFixed(3)}%` : "N/A"}
+              </span>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
   const renderComparisonTab = () => {
     return (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* World Rankings */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
+      <MetricModalLayout variant="social">
+        <MetricModalLayout.MainArea>
+          <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col">
+            <CardHeader className="p-0 mb-4">
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
+                <Globe className="h-5 w-5 text-cyan-500" />
                 Global Population Rankings
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 flex-1 flex flex-col justify-center">
               {isTopCountriesLoading ? (
-                <Skeleton className="h-80" />
+                <Skeleton className="h-64 w-full" />
               ) : comparisonData.length > 0 ? (
-                <div className="h-80">
+                <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={comparisonData.slice(0, 10)} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" tickFormatter={(value) => formatPopulation(value)} />
-                      <YAxis dataKey="name" type="category" width={80} />
+                    <BarChart data={comparisonData.slice(0, 10)} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                      <XAxis type="number" tickFormatter={(value) => formatPopulation(value)} stroke="rgba(255, 255, 255, 0.3)" />
+                      <YAxis dataKey="name" type="category" width={80} stroke="rgba(255, 255, 255, 0.3)" />
                       <Tooltip
+                        contentStyle={{
+                          background: "rgba(18, 20, 24, 0.8)",
+                          backdropFilter: "blur(8px)",
+                          borderColor: "rgba(255, 255, 255, 0.1)",
+                          borderRadius: "8px",
+                        }}
                         formatter={(value: any) => [formatPopulation(value), "Population"]}
                         labelFormatter={(label, payload) => {
                           const item = payload?.[0]?.payload;
                           return item?.fullName || label;
                         }}
                       />
-                      <Bar dataKey="population" fill="#94a3b8" />
+                      <Bar dataKey="population" fill="#06b6d4" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="text-muted-foreground flex h-80 items-center justify-center">
+                <div className="text-muted-foreground flex h-64 items-center justify-center">
                   No comparison data available
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
+        </MetricModalLayout.MainArea>
 
-        {/* Demographics Breakdown */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Demographics Breakdown</CardTitle>
+        <MetricModalLayout.Sidebar>
+          <Card className="facet-refraction border-white/5 p-4 flex-1 flex flex-col justify-between">
+            <CardHeader className="p-0 mb-3">
+              <CardTitle className="text-sm font-semibold">Demographics Breakdown</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={demographicBreakdown}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={(props: any) =>
-                          `${props.name ?? ""} ${(props.payload?.percentage ?? 0).toFixed(1)}%`
-                        }
-                      >
-                        {demographicBreakdown.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: any) => formatPopulation(value)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="space-y-2">
-                  {demographicBreakdown.map((segment) => (
-                    <div
-                      key={segment.name}
-                      className="bg-muted/50 flex items-center justify-between rounded p-2"
+            <CardContent className="p-0 space-y-3">
+              <div className="h-44 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={demographicBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={60}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={(props: any) => props.name}
+                      labelLine={false}
                     >
-                      <span className="text-sm font-medium">{segment.name}</span>
-                      <div className="text-right">
-                        <div className="text-sm font-bold">{formatPopulation(segment.value)}</div>
-                        <div className="text-muted-foreground text-xs">
-                          {segment.percentage.toFixed(1)}%
-                        </div>
-                      </div>
+                      {demographicBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(18, 20, 24, 0.8)",
+                        backdropFilter: "blur(8px)",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                      }}
+                      formatter={(value: any) => formatPopulation(value)}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                {demographicBreakdown.map((segment) => (
+                  <div
+                    key={segment.name}
+                    className="bg-white/5 rounded-lg p-2 flex items-center justify-between border border-white/5 text-[11px]"
+                  >
+                    <span className="font-medium text-muted-foreground">{segment.name}</span>
+                    <div className="text-right">
+                      <div className="font-bold text-white">{formatPopulation(segment.value)}</div>
+                      <div className="text-[9px] text-cyan-400">{segment.percentage.toFixed(1)}%</div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
   const renderDetailsTab = () => {
     return (
-      <div className="space-y-6">
-        {/* Population Tier System */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Population Tier System</CardTitle>
-            <CardDescription>Classification based on total population</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {populationTierInfo && (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-                {populationTierInfo.allTiers.map((tier, index) => (
-                  <div
-                    key={tier.name}
-                    className={`rounded-lg border-2 p-3 transition-all ${
-                      index === populationTierInfo.currentIndex
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="space-y-2 text-center">
-                      <div className="font-medium">{tier.name}</div>
-                      <div className="text-muted-foreground text-xs">{tier.description}</div>
-                      {index === populationTierInfo.currentIndex && (
-                        <Badge variant="default" className="text-xs">
-                          Current
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <MetricModalLayout variant="social">
+        <MetricModalLayout.MainArea>
+          {economicData && (
+            <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col justify-between">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-cyan-500" />
+                  20-Year Population Projections
+                  <Badge variant="outline" className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-cyan-400">
+                    {(economicData.populationGrowthRate * 100).toFixed(3)}% growth
+                  </Badge>
+                </CardTitle>
+                <CardDescription>Projected population assuming constant growth rates</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 flex-1 flex flex-col justify-center">
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={projectionData}>
+                      <defs>
+                        <linearGradient id="popProjGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                      <XAxis dataKey="year" stroke="rgba(255, 255, 255, 0.3)" />
+                      <YAxis
+                        tickFormatter={(value) => formatPopulation(value)}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "rgba(18, 20, 24, 0.8)",
+                          backdropFilter: "blur(8px)",
+                          borderColor: "rgba(255, 255, 255, 0.1)",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: any) => [formatPopulation(value), "Population"]}
+                        labelFormatter={(label) => `Year ${label}`}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="population"
+                        stroke="#06b6d4"
+                        fillOpacity={1}
+                        fill="url(#popProjGrad)"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="text-muted-foreground text-[10px] mt-4 space-y-0.5">
+                  <p>* Projections assume constant growth rates and no major demographic changes</p>
+                  <p>* Actual results may vary based on economic development, migration, and policy changes</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </MetricModalLayout.MainArea>
 
-        {/* Population Projections */}
-        {economicData && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                20-Year Population Projections
-                <Badge variant="outline" className="ml-2">
-                  {(economicData.populationGrowthRate * 100).toFixed(3)}% growth
-                </Badge>
-              </CardTitle>
-              <CardDescription>Projected population assuming constant growth rates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={projectionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis
-                      label={{ value: "Population", angle: -90, position: "insideLeft" }}
-                      tickFormatter={(value) => formatPopulation(value)}
-                    />
-                    <Tooltip
-                      formatter={(value: any) => [formatPopulation(value), "Population"]}
-                      labelFormatter={(label) => `Year ${label}`}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="population"
-                      stroke="#ff7300"
-                      fill="#ff7300"
-                      fillOpacity={0.4}
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+        <MetricModalLayout.Sidebar>
+          {populationTierInfo && (
+            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 space-y-3 flex-1 flex flex-col justify-between">
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Population Tier System</h4>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {populationTierInfo.allTiers.map((tier, index) => (
+                    <div
+                      key={tier.name}
+                      className={cn(
+                        "rounded-lg border p-2 text-xs transition-all",
+                        index === populationTierInfo.currentIndex
+                          ? "border-cyan-500/40 bg-cyan-500/10 shadow-inner"
+                          : "border-white/5 bg-black/10"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold text-[11px] text-white">
+                          <span className={cn(index === populationTierInfo.currentIndex && "text-cyan-400")}>
+                            {tier.name}
+                          </span>
+                          {index === populationTierInfo.currentIndex && (
+                            <Badge className="text-[8px] px-1 py-0 bg-cyan-500/20 text-cyan-400 border-none scale-90 ml-1.5">
+                              Current
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground text-[10px] mt-1 leading-relaxed">{tier.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="text-muted-foreground mt-4 text-sm">
-                <p>* Projections assume constant growth rates and no major demographic changes</p>
-                <p>
-                  * Actual results may vary based on economic development, migration, and policy
-                  changes
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          )}
+        </MetricModalLayout.Sidebar>
+      </MetricModalLayout>
     );
   };
 
@@ -768,6 +860,7 @@ export function PopulationDetailsModal({
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}
+      variant="social"
     >
       {renderTabContent}
     </BaseMetricDetailsModal>

@@ -12,6 +12,18 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **WikiOS Creation Wizard, Dynamic Island Command Palette, & Nation Builder Performance**:
+  - Implemented the **WikiOS "Create New Page" Wizard** (`CreatePageModal.tsx`) supporting page title duplication checks (`checkPageExists` tRPC query), editor mode selection, template boilerplate selections, and prefilled infobox fields.
+  - Wired the page creation wizard modal into `WikiOSUnifiedSidebar.tsx` and `WikiOSLayout.tsx`.
+  - Added query parameter-based prefill loading in the wiki edit page, dynamically converting wikitext template snippets to HTML client-side for the visual editor.
+  - Designed and built the **MyCountry Command Palette** (`MyCountryCommandPalette.tsx`) search HUD in the Dynamic Island (Halo) using the Facet design system.
+  - Implemented client-side section switching via history `pushState` for instant transitions on `/mycountry` pages, along with fully functional keyboard navigation (Arrow keys, Enter, Esc).
+  - Registered the command palette as the expanded view in `MyCountryDIPlugin.tsx`, binding center label clicks to toggle the HUD.
+  - Expanded the Nation Builder Dynamic Island (Halo) view configuration by default on the builder page (`BuilderDIPlugin.tsx`).
+  - Optimized the nation builder import process by omitting parallel infobox parsing queries during the initial search phase, returning search results instantly.
+  - Added lazy/on-demand parsing of page metadata in the preview overlay (`DynamicIslandSearch.tsx`) and cached/reused the parsed preview data on import confirmation to prevent duplicate API hits.
+  - Synchronized the **Builder Notch Bar** stickiness state with the main Halo by consuming `useNavigationScroll` and dynamically checking `isSticky` instead of using a hardcoded pixel threshold.
+
 - **MyCountry Core Loops Phase 2 — Unified Spine, Ledger, Financial Debits, and Narrative Prose**:
   - Implemented database-backed `CountryChangeLog` ledger tracking delta diffs of stat updates.
   - Built a static `CountryEventSpine` processor as a single source of truth for stat consequence updates, news posts, and activity feed syncs.

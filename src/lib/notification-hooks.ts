@@ -116,7 +116,7 @@ export async function onDiplomaticEvent(params: {
         userId,
         category: "diplomatic",
         priority: params.eventType === "conflict" ? "high" : "medium",
-        href: "/diplomatic",
+        href: "/mycountry/diplomacy",
         actionable: true,
       });
     }

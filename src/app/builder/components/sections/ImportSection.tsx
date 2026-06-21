@@ -170,42 +170,14 @@ export const ImportSection = React.memo(function ImportSection({
           categoryFilter.toLowerCase() === "countries" ||
           categoryFilter.toLowerCase() === "nations"
         ) {
-          // Fetch infobox data for each result to show in search results
+          // Only fetch flag URLs (fast cache/lookup), omitting expensive parallel infobox parsing
           const resultsWithFlags = await Promise.all(
             results.map(async (result) => {
               try {
                 const flagUrl = await unifiedFlagService.getFlagUrl(result.title);
-                let additionalData: Record<string, unknown> = {};
-                try {
-                  const countryData = await parseInfoboxMutation.mutateAsync({
-                    pageName: result.title,
-                    site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
-                  });
-
-                  if (countryData) {
-                    const d = countryData as Record<string, unknown>;
-                    const wikiIntro = d.wikiIntro as string | undefined;
-                    additionalData = {
-                      population: d.population ?? d.population_estimate ?? d.population_total,
-                      gdpPerCapita:
-                        d.gdpPerCapita ?? d.GDP_nominal_per_capita ?? d.GDP_PPP_per_capita,
-                      capital: d.capital,
-                      government: d.government_type ?? d.government,
-                      snippet:
-                        wikiIntro ||
-                        d.conventional_long_name ||
-                        d.official_name ||
-                        d.common_name ||
-                        result.snippet,
-                    };
-                  }
-                } catch {
-                  // Parsing failed - use wiki search snippet as fallback
-                  additionalData = { snippet: result.snippet };
-                }
-                return { ...result, flagUrl, ...additionalData };
+                return { ...result, flagUrl };
               } catch {
-                return { ...result, flagUrl: null, snippet: result.snippet };
+                return { ...result, flagUrl: null };
               }
             })
           );
@@ -240,7 +212,7 @@ export const ImportSection = React.memo(function ImportSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedSite.name, categoryFilter]);
 
-  const handleSelectResult = async (result: SearchResult) => {
+  const handleSelectResult = async (result: SearchResult, cachedData?: any) => {
     setSelectedResult(result);
     setIsLoading(true);
     setError(null);
@@ -251,12 +223,22 @@ export const ImportSection = React.memo(function ImportSection({
     try {
       let data: any;
 
-      // All wikis use tRPC (server-side proxy)
-      // eslint-disable-next-line prefer-const
-      data = await parseInfoboxMutation.mutateAsync({
-        pageName: result.title,
-        site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
-      });
+      if (
+        cachedData &&
+        (cachedData.population ||
+          cachedData.gdpPerCapita ||
+          cachedData.capital ||
+          cachedData.government_type ||
+          cachedData.templateName)
+      ) {
+        data = cachedData;
+      } else {
+        // All wikis use tRPC (server-side proxy)
+        data = await parseInfoboxMutation.mutateAsync({
+          pageName: result.title,
+          site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
+        });
+      }
 
       if (data?.flagUrl) setSelectedCountryFlag(data.flagUrl as string);
 
@@ -272,8 +254,8 @@ export const ImportSection = React.memo(function ImportSection({
     }
   };
 
-  const handleContinueWithCountry = (result: SearchResult) => {
-    handleSelectResult(result);
+  const handleContinueWithCountry = (result: any) => {
+    handleSelectResult(result, result);
   };
 
   const loadMoreResults = () => {
