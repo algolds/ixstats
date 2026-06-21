@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
+import { MetricModalLayout } from "./metric-details/MetricModalLayout";
 
 interface GdpPerCapitaDetailsModalProps {
   isOpen: boolean;
@@ -297,11 +298,11 @@ export function GdpPerCapitaDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="facet-modal facet-refraction max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]">
+      <DialogContent className="facet-modal facet-refraction !fixed max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)] lg:max-w-5xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+              <Users className="h-5 w-5 text-amber-500" />
               GDP per Capita Analysis - {countryName}
             </DialogTitle>
             <Button
@@ -321,231 +322,176 @@ export function GdpPerCapitaDetailsModal({
           </div>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Current Overview */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            {isEconomicLoading ? (
-              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)
-            ) : economicData ? (
-              <>
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium">Current GDP/Capita</span>
-                  </div>
-                  <p className="text-2xl font-bold text-green-600">
-                    {economicData &&
-                    typeof economicData === "object" &&
-                    economicData !== null &&
-                    "currentGdpPerCapita" in economicData
-                      ? formatCurrency((economicData as any).currentGdpPerCapita)
-                      : "N/A"}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {economicData &&
-                    typeof economicData === "object" &&
-                    economicData !== null &&
-                    "economicTier" in economicData
-                      ? (economicData as any).economicTier
-                      : "N/A"}
-                  </p>
+        <MetricModalLayout variant="economy">
+          <MetricModalLayout.MainArea className="space-y-6">
+            {/* Historical Trends */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-base font-semibold">
+                  <Activity className="h-5 w-5 text-amber-500" />
+                  GDP per Capita Trends
+                </h3>
+                <div className="flex items-center gap-4">
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3m">3 Months</SelectItem>
+                      <SelectItem value="6m">6 Months</SelectItem>
+                      <SelectItem value="1y">1 Year</SelectItem>
+                      <SelectItem value="2y">2 Years</SelectItem>
+                      <SelectItem value="5y">5 Years</SelectItem>
+                      <SelectItem value="all">All Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" onClick={() => void refetch()} className="h-8">
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                    Refresh
+                  </Button>
                 </div>
+              </div>
 
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium">Growth Rate</span>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-600">
+              {isHistoricalLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : chartData.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                      <XAxis
+                        dataKey="timestamp"
+                        domain={["dataMin", "dataMax"]}
+                        type="number"
+                        scale="time"
+                        name="Time"
+                        tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
+                      <YAxis
+                        tickFormatter={(value) => formatCurrency(value)}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "rgba(18, 20, 24, 0.8)",
+                          backdropFilter: "blur(8px)",
+                          borderColor: "rgba(255, 255, 255, 0.1)",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: any) => [formatCurrency(value), "GDP per Capita"]}
+                        labelFormatter={(label) =>
+                          `Year ${IxTime.getCurrentGameYear(label as number)}`
+                        }
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="gdpPerCapita"
+                        stroke="#fbbf24"
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-muted-foreground flex h-64 items-center justify-center">
+                  No historical data available
+                </div>
+              )}
+            </div>
+
+            <Separator className="bg-white/5" />
+
+            {/* GDP per Capita Projections */}
+            {economicData && (
+              <div className="space-y-4">
+                <h3 className="flex items-center gap-2 text-base font-semibold">
+                  <TrendingUp className="h-5 w-5 text-amber-500" />
+                  10-Year GDP per Capita Projections
+                  <Badge variant="outline" className="ml-2 border-yellow-500/20 bg-yellow-500/5 text-yellow-500">
                     {economicData &&
                     typeof economicData === "object" &&
                     economicData !== null &&
                     "adjustedGdpGrowth" in economicData
                       ? ((economicData as any).adjustedGdpGrowth * 100).toFixed(2)
                       : "N/A"}
-                    %
-                  </p>
-                  <p className="text-muted-foreground text-xs">annually</p>
+                    % growth
+                  </Badge>
+                </h3>
+
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={projectionData}>
+                      <defs>
+                        <linearGradient id="projColor" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                      <XAxis dataKey="year" stroke="rgba(255, 255, 255, 0.3)" />
+                      <YAxis
+                        tickFormatter={(value) => formatCurrency(value)}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "rgba(18, 20, 24, 0.8)",
+                          backdropFilter: "blur(8px)",
+                          borderColor: "rgba(255, 255, 255, 0.1)",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: any) => [formatCurrency(value), "GDP per Capita"]}
+                        labelFormatter={(label) => `Year ${label}`}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="gdpPerCapita"
+                        stroke="#fbbf24"
+                        fillOpacity={1}
+                        fill="url(#projColor)"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 </div>
 
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm font-medium">Global Ranking</span>
-                  </div>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {performanceMetrics?.rank || "N/A"}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    of {performanceMetrics?.totalCountries || "N/A"} countries
-                  </p>
+                <div className="text-muted-foreground text-[10px] space-y-0.5">
+                  <p>* Projections assume constant growth rates and current economic policies</p>
+                  <p>* Economic tier advancements may affect actual growth rates</p>
                 </div>
-
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-orange-600" />
-                    <span className="text-sm font-medium">Tier Progress</span>
-                  </div>
-                  <p className="text-lg font-bold text-orange-600">
-                    {economicTierInfo?.currentTier?.icon}{" "}
-                    {economicTierInfo?.currentIndex !== undefined
-                      ? economicTierInfo.currentIndex + 1
-                      : "N/A"}
-                    /7
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {economicTierInfo?.currentTier?.name}
-                  </p>
-                </div>
-              </>
-            ) : null}
-          </div>
-
-          <Separator />
-
-          {/* Historical Trends */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Activity className="h-5 w-5" />
-                GDP per Capita Trends
-              </h3>
-              <div className="flex items-center gap-4">
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="3m">3 Months</SelectItem>
-                    <SelectItem value="6m">6 Months</SelectItem>
-                    <SelectItem value="1y">1 Year</SelectItem>
-                    <SelectItem value="2y">2 Years</SelectItem>
-                    <SelectItem value="5y">5 Years</SelectItem>
-                    <SelectItem value="all">All Time</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" size="sm" onClick={() => void refetch()}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-
-            {isHistoricalLoading ? (
-              <Skeleton className="h-80" />
-            ) : chartData.length > 0 ? (
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="timestamp"
-                      domain={["dataMin", "dataMax"]}
-                      type="number"
-                      scale="time"
-                      name="Time"
-                      tickFormatter={(ts) => String(IxTime.getCurrentGameYear(ts as number))}
-                    />
-                    <YAxis
-                      label={{ value: "GDP per Capita ($)", angle: -90, position: "insideLeft" }}
-                      tickFormatter={(value) => formatCurrency(value)}
-                    />
-                    <Tooltip
-                      formatter={(value: any) => [formatCurrency(value), "GDP per Capita"]}
-                      labelFormatter={(label) =>
-                        `Year ${IxTime.getCurrentGameYear(label as number)}`
-                      }
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="gdpPerCapita"
-                      stroke="#3b82f6"
-                      strokeWidth={3}
-                      dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="text-muted-foreground flex h-80 items-center justify-center">
-                No historical data available
               </div>
             )}
-          </div>
 
-          <Separator />
+            <Separator className="bg-white/5" />
 
-          {/* GDP per Capita Projections */}
-          {economicData && (
+            {/* Global Rankings */}
             <div className="space-y-4">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <TrendingUp className="h-5 w-5" />
-                10-Year GDP per Capita Projections
-                <Badge variant="outline" className="ml-2">
-                  {economicData &&
-                  typeof economicData === "object" &&
-                  economicData !== null &&
-                  "adjustedGdpGrowth" in economicData
-                    ? ((economicData as any).adjustedGdpGrowth * 100).toFixed(2)
-                    : "N/A"}
-                  % growth
-                </Badge>
-              </h3>
-
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={projectionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis
-                      label={{ value: "GDP per Capita ($)", angle: -90, position: "insideLeft" }}
-                      tickFormatter={(value) => formatCurrency(value)}
-                    />
-                    <Tooltip
-                      formatter={(value: any) => [formatCurrency(value), "GDP per Capita"]}
-                      labelFormatter={(label) => `Year ${label}`}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="gdpPerCapita"
-                      stroke="#ff7300"
-                      fill="#ff7300"
-                      fillOpacity={0.3}
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="text-muted-foreground text-sm">
-                <p>* Projections assume constant growth rates and current economic policies</p>
-                <p>* Economic tier advancements may affect actual growth rates</p>
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Global Comparison */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Globe className="h-5 w-5" />
+              <h3 className="flex items-center gap-2 text-base font-semibold">
+                <Globe className="h-5 w-5 text-amber-500" />
                 Global Rankings
               </h3>
 
               {isTopCountriesLoading ? (
-                <Skeleton className="h-80" />
+                <Skeleton className="h-64" />
               ) : comparisonData.length > 0 ? (
-                <div className="h-80">
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={comparisonData} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
-                      <YAxis dataKey="name" type="category" width={80} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
+                      <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} stroke="rgba(255, 255, 255, 0.3)" />
+                      <YAxis dataKey="name" type="category" width={80} stroke="rgba(255, 255, 255, 0.3)" />
                       <Tooltip
-                        formatter={(value: any, name, props) => [
+                        contentStyle={{
+                          background: "rgba(18, 20, 24, 0.8)",
+                          backdropFilter: "blur(8px)",
+                          borderColor: "rgba(255, 255, 255, 0.1)",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: any) => [
                           formatCurrency(value),
                           "GDP per Capita",
                         ]}
@@ -554,150 +500,124 @@ export function GdpPerCapitaDetailsModal({
                           return item?.fullName || label;
                         }}
                       />
-                      <Bar dataKey="gdpPerCapita" fill="#94a3b8" />
+                      <Bar dataKey="gdpPerCapita" fill="#fbbf24" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="text-muted-foreground flex h-80 items-center justify-center">
+                <div className="text-muted-foreground flex h-64 items-center justify-center">
                   No comparison data available
                 </div>
               )}
             </div>
+          </MetricModalLayout.MainArea>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Economic Tier System</h3>
+          <MetricModalLayout.Sidebar className="space-y-4">
+            {economicData && (
+              <>
+                <MetricModalLayout.StatCard
+                  label="Current GDP/Capita"
+                  value={
+                    economicData &&
+                    typeof economicData === "object" &&
+                    economicData !== null &&
+                    "currentGdpPerCapita" in economicData
+                      ? (economicData as any).currentGdpPerCapita
+                      : 0
+                  }
+                  prefix="$"
+                  icon={DollarSign}
+                  variant="economy"
+                />
 
-              {economicTierInfo && (
-                <div className="space-y-3">
+                <MetricModalLayout.StatCard
+                  label="Growth Rate"
+                  value={
+                    economicData &&
+                    typeof economicData === "object" &&
+                    economicData !== null &&
+                    "adjustedGdpGrowth" in economicData
+                      ? (economicData as any).adjustedGdpGrowth * 100
+                      : 0
+                  }
+                  suffix="%"
+                  decimalPlaces={2}
+                  icon={TrendingUp}
+                  variant="economy"
+                />
+
+                <MetricModalLayout.StatCard
+                  label="Global Ranking"
+                  value={performanceMetrics?.rank || 0}
+                  prefix="#"
+                  icon={Globe}
+                  variant="economy"
+                />
+
+                <MetricModalLayout.StatCard
+                  label="Tier Progress"
+                  value={
+                    economicTierInfo?.currentIndex !== undefined
+                      ? economicTierInfo.currentIndex + 1
+                      : 0
+                  }
+                  suffix="/7"
+                  icon={Activity}
+                  variant="economy"
+                />
+              </>
+            )}
+
+            {economicTierInfo && (
+              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Economic Tier System</h4>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                   {economicTierInfo.allTiers.map((tier, index) => (
                     <div
                       key={tier.name}
-                      className={`rounded-lg border-2 p-3 ${
+                      className={cn(
+                        "rounded-lg border p-2 text-xs transition-all",
                         index === economicTierInfo.currentIndex
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200"
-                      }`}
+                          ? "border-yellow-500/40 bg-yellow-500/10 shadow-inner"
+                          : "border-white/5 bg-black/10"
+                      )}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{tier.icon}</span>
-                          <span className="font-medium">{tier.name}</span>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <span>{tier.icon}</span>
+                          <span className={cn(index === economicTierInfo.currentIndex && "text-yellow-500")}>
+                            {tier.name}
+                          </span>
                           {index === economicTierInfo.currentIndex && (
-                            <Badge variant="default">Current</Badge>
+                            <Badge className="text-[9px] px-1 py-0 bg-yellow-500/20 text-yellow-500 border-none scale-90">
+                              Current
+                            </Badge>
                           )}
                         </div>
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-muted-foreground text-[10px]">
                           {formatCurrency(tier.min)} -{" "}
                           {tier.max === Infinity ? "∞" : formatCurrency(tier.max)}
                         </div>
                       </div>
 
                       {index === economicTierInfo.currentIndex && economicData && (
-                        <div className="mt-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <span>
-                              Current:{" "}
-                              {economicData &&
-                              typeof economicData === "object" &&
-                              economicData !== null &&
-                              "currentGdpPerCapita" in economicData
-                                ? formatCurrency((economicData as any).currentGdpPerCapita)
-                                : "N/A"}
+                        <div className="mt-1 text-[10px] text-muted-foreground border-t border-white/5 pt-1">
+                          Current:{" "}
+                          {formatCurrency((economicData as any).currentGdpPerCapita)}
+                          {economicTierInfo.nextTier && (
+                            <span className="block text-[9px] mt-0.5 text-yellow-500/80">
+                              (Need {formatCurrency(economicTierInfo.nextTier.min - (economicData as any).currentGdpPerCapita)} for {economicTierInfo.nextTier.name})
                             </span>
-                            {economicTierInfo.nextTier &&
-                              economicData &&
-                              typeof economicData === "object" &&
-                              economicData !== null &&
-                              "currentGdpPerCapita" in economicData && (
-                                <span className="text-muted-foreground">
-                                  (Need{" "}
-                                  {formatCurrency(
-                                    economicTierInfo.nextTier.min -
-                                      (economicData as any).currentGdpPerCapita
-                                  )}{" "}
-                                  for {economicTierInfo.nextTier.name})
-                                </span>
-                              )}
-                          </div>
+                          )}
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Performance Summary */}
-          {performanceMetrics && globalStats && (
-            <>
-              <Separator />
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Performance Summary</h3>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      {performanceMetrics.growth > 0 ? (
-                        <ArrowUp className="h-4 w-4 text-green-600" />
-                      ) : performanceMetrics.growth < 0 ? (
-                        <ArrowDown className="h-4 w-4 text-red-600" />
-                      ) : (
-                        <Equal className="h-4 w-4 text-gray-600" />
-                      )}
-                      <span className="font-medium">Recent Growth</span>
-                    </div>
-                    <p
-                      className={`text-2xl font-bold ${
-                        performanceMetrics.growth > 0
-                          ? "text-green-600"
-                          : performanceMetrics.growth < 0
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}
-                    >
-                      {performanceMetrics.growth > 0 ? "+" : ""}
-                      {performanceMetrics.growth.toFixed(2)}%
-                    </p>
-                  </div>
-
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">vs Global Average</span>
-                    </div>
-                    <p
-                      className={`text-2xl font-bold ${
-                        performanceMetrics.globalComparison > 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {performanceMetrics.globalComparison > 0 ? "+" : ""}
-                      {performanceMetrics.globalComparison.toFixed(1)}%
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      Global avg:{" "}
-                      {typeof performanceMetrics.globalAverage === "number"
-                        ? formatCurrency(performanceMetrics.globalAverage)
-                        : "N/A"}
-                    </p>
-                  </div>
-
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium">World Ranking</span>
-                    </div>
-                    <p className="text-2xl font-bold text-purple-600">#{performanceMetrics.rank}</p>
-                    <p className="text-muted-foreground text-xs">
-                      of {performanceMetrics.totalCountries} countries
-                    </p>
-                  </div>
-                </div>
               </div>
-            </>
-          )}
-        </div>
+            )}
+          </MetricModalLayout.Sidebar>
+        </MetricModalLayout>
       </DialogContent>
     </Dialog>
   );
