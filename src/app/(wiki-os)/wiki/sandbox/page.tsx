@@ -26,7 +26,7 @@ export default function WikiSandboxPage() {
     <WikiOSLayout title="Kapwa Sandbox">
       <div className="kapwa-sandbox flex flex-col gap-6 p-4">
         {/* Experimental Notice styled as Kapwa Alert inside glass card */}
-        <div className="kp-card flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4 text-amber-500">
+        <div className="kp-card flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4 text-amber-700 dark:text-amber-500">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
             <h4 className="text-xs font-bold">Kapwa Trial Sandbox (Experimental)</h4>
@@ -39,7 +39,7 @@ export default function WikiSandboxPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-2 border-b border-white/10 pb-3">
+        <div className="flex gap-2 border-b border-[var(--wikios-border)] pb-3">
           {(["playground", "recent-changes", "stashes"] as SandboxTab[]).map((tab) => (
             <button
               key={tab}
@@ -47,7 +47,7 @@ export default function WikiSandboxPage() {
               className={`rounded px-3 py-1.5 text-xs font-semibold transition-colors ${
                 activeTab === tab
                   ? "bg-[var(--wikios-accent)] text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]"
-                  : "text-[var(--wikios-text-muted)] hover:bg-white/5 hover:text-white"
+                  : "text-[var(--wikios-text-muted)] hover:bg-black/5 hover:text-[var(--wikios-text)] dark:hover:bg-white/5"
               }`}
             >
               {tab.replace("-", " ").toUpperCase()}
@@ -72,7 +72,7 @@ export default function WikiSandboxPage() {
 
               <div className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Buttons Showcase */}
-                <div className="flex flex-col gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
+                <div className="flex flex-col gap-3 rounded border border-[var(--wikios-border)] bg-black/[0.01] p-4 dark:bg-white/[0.01]">
                   <h4 className="text-xs font-bold text-[var(--wikios-text-muted)]">
                     Button Presets
                   </h4>
@@ -80,14 +80,14 @@ export default function WikiSandboxPage() {
                     <button className="rounded bg-[var(--color-kapwa-brand-600)] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/10 transition-colors hover:bg-[var(--color-kapwa-brand-500)]">
                       Primary Action
                     </button>
-                    <button className="rounded border border-[var(--color-kapwa-border-default)] px-4 py-2 text-xs font-bold text-[var(--color-kapwa-text-default)] transition-colors hover:bg-white/5">
+                    <button className="rounded border border-[var(--color-kapwa-border-default)] px-4 py-2 text-xs font-bold text-[var(--color-kapwa-text-default)] transition-colors hover:bg-black/5 dark:hover:bg-white/5">
                       Outline Action
                     </button>
                   </div>
                 </div>
 
                 {/* Status Badges */}
-                <div className="flex flex-col gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
+                <div className="flex flex-col gap-3 rounded border border-[var(--wikios-border)] bg-black/[0.01] p-4 dark:bg-white/[0.01]">
                   <h4 className="text-xs font-bold text-[var(--wikios-text-muted)]">
                     Badges and Tags
                   </h4>
@@ -106,7 +106,7 @@ export default function WikiSandboxPage() {
               </div>
 
               {/* Scoped Alert Notice */}
-              <div className="kp-card mt-2 flex items-start gap-3 border-blue-500/20 bg-blue-500/5 p-4 text-blue-400">
+              <div className="kp-card mt-2 flex items-start gap-3 border-blue-500/20 bg-blue-500/5 p-4 text-blue-600 dark:text-blue-400">
                 <Info className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
                   <h4 className="text-xs font-bold">Information Notice</h4>
@@ -171,7 +171,7 @@ function RecentChangesSimulator() {
             return (
               <div
                 key={idx}
-                className="flex items-start justify-between rounded border border-white/5 bg-white/[0.01] p-3 transition-colors hover:bg-white/[0.03]"
+                className="flex items-start justify-between rounded border border-[var(--wikios-border)] bg-black/[0.01] p-3 transition-colors hover:bg-black/[0.03] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
               >
                 <div className="flex min-w-0 flex-1 items-start gap-2.5">
                   {change.type === "new" ? (

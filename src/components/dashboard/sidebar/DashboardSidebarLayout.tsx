@@ -143,9 +143,9 @@ export function DashboardSidebarLayout({
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
-                "relative sticky top-6 z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
+                "relative z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
                 variant === "rail"
-                  ? isCollapsedNow
+                  ? isCollapsedNow && !isHoverActive
                     ? "-left-6 w-14 opacity-100 xl:-left-12"
                     : cn("-left-6 opacity-100 xl:-left-12", resolvedExpandedWidthClass)
                   : isCollapsedNow
@@ -155,7 +155,7 @@ export function DashboardSidebarLayout({
               style={{
                 width:
                   variant === "rail"
-                    ? isCollapsedNow
+                    ? isCollapsedNow && !isHoverActive
                       ? "3.5rem"
                       : resolvedExpandedWidthStyle
                     : isCollapsedNow
@@ -165,25 +165,13 @@ export function DashboardSidebarLayout({
             >
               <div
                 className={cn(
-                  "space-y-4 transition-all duration-300 ease-in-out",
+                  "sticky top-6 space-y-4 transition-all duration-300 ease-in-out",
                   variant === "rail"
-                    ? isCollapsedNow
-                      ? "absolute top-0 left-0 z-40 rounded-2xl border border-black/5 bg-white/85 p-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/75"
-                      : "relative"
+                    ? "translate-x-0 opacity-100"
                     : isCollapsedNow
                       ? "translate-x-[-120%] opacity-0"
                       : "translate-x-0 opacity-100"
                 )}
-                style={{
-                  width:
-                    variant === "rail"
-                      ? isCollapsedNow
-                        ? isHoverActive
-                          ? resolvedExpandedWidthStyle
-                          : "3.5rem"
-                        : "100%"
-                      : undefined,
-                }}
               >
                 {sidebarContent ? (
                   sidebarContent
