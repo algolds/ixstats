@@ -138,10 +138,12 @@ export async function getCountryComponentsStatsData(db: any, countryId: string) 
   });
 
   // Fetch active policies and sum maintenanceCost
-  const activePolicies = await db.policy.findMany({
-    where: { countryId, status: "active" },
-    select: { maintenanceCost: true },
-  }).catch(() => []);
+  const activePolicies = await db.policy
+    .findMany({
+      where: { countryId, status: "active" },
+      select: { maintenanceCost: true },
+    })
+    .catch(() => []);
 
   const activePolicyMaintenanceCost = activePolicies.reduce(
     (sum: number, p: any) => sum + (p.maintenanceCost || 0),

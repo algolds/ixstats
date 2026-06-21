@@ -3,7 +3,17 @@
 import { useState } from "react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { api } from "~/trpc/react";
-import { Clock, FileText, FilePlus, FolderOpen, Bookmark, Hash, AlertTriangle, Layers, Info } from "lucide-react";
+import {
+  Clock,
+  FileText,
+  FilePlus,
+  FolderOpen,
+  Bookmark,
+  Hash,
+  AlertTriangle,
+  Layers,
+  Info,
+} from "lucide-react";
 import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
 import { useFacetDepth } from "~/components/ui/facet-container";
 
@@ -16,12 +26,14 @@ export default function WikiSandboxPage() {
     <WikiOSLayout title="Kapwa Sandbox">
       <div className="kapwa-sandbox flex flex-col gap-6 p-4">
         {/* Experimental Notice styled as Kapwa Alert inside glass card */}
-        <div className="kp-card p-4 flex items-start gap-3 border-amber-500/30 bg-amber-500/5 text-amber-500">
-          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+        <div className="kp-card flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4 text-amber-500">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
-            <h4 className="font-bold text-xs">Kapwa Trial Sandbox (Experimental)</h4>
-            <p className="text-[10px] mt-1 leading-relaxed opacity-80">
-              This sandbox is a scoped visual integration test comparing Kapwa components and layouts in the WikiOS environment. Kapwa styling variables have been mapped to Facet glass and paper design system variables.
+            <h4 className="text-xs font-bold">Kapwa Trial Sandbox (Experimental)</h4>
+            <p className="mt-1 text-[10px] leading-relaxed opacity-80">
+              This sandbox is a scoped visual integration test comparing Kapwa components and
+              layouts in the WikiOS environment. Kapwa styling variables have been mapped to Facet
+              glass and paper design system variables.
             </p>
           </div>
         </div>
@@ -32,7 +44,7 @@ export default function WikiSandboxPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors ${
+              className={`rounded px-3 py-1.5 text-xs font-semibold transition-colors ${
                 activeTab === tab
                   ? "bg-[var(--wikios-accent)] text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]"
                   : "text-[var(--wikios-text-muted)] hover:bg-white/5 hover:text-white"
@@ -46,40 +58,47 @@ export default function WikiSandboxPage() {
         {/* Tab Renderers */}
         {activeTab === "playground" && (
           <div className="flex flex-col gap-6">
-            <div className="kp-card p-5 flex flex-col gap-4">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="kp-card flex flex-col gap-4 p-5">
+              <div className="mb-1 flex items-center gap-2">
                 <Layers className="h-4 w-4 text-[var(--wikios-accent)]" />
-                <h3 className="text-sm font-bold text-[var(--wikios-text)]">Component Playground</h3>
+                <h3 className="text-sm font-bold text-[var(--wikios-text)]">
+                  Component Playground
+                </h3>
               </div>
-              <p className="text-xs text-[var(--wikios-text-muted)] leading-relaxed">
-                These elements are rendered using Kapwa classes, styled as volumetric glass structures, and inherit colors from the active WikiOS theme.
+              <p className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
+                These elements are rendered using Kapwa classes, styled as volumetric glass
+                structures, and inherit colors from the active WikiOS theme.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+              <div className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Buttons Showcase */}
-                <div className="flex flex-col gap-3 p-4 border border-white/5 rounded bg-white/[0.01]">
-                  <h4 className="text-xs font-bold text-[var(--wikios-text-muted)]">Button Presets</h4>
+                <div className="flex flex-col gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
+                  <h4 className="text-xs font-bold text-[var(--wikios-text-muted)]">
+                    Button Presets
+                  </h4>
                   <div className="flex flex-wrap gap-3">
-                    <button className="px-4 py-2 bg-[var(--color-kapwa-brand-600)] hover:bg-[var(--color-kapwa-brand-500)] text-white text-xs font-bold rounded transition-colors shadow-lg shadow-blue-500/10">
+                    <button className="rounded bg-[var(--color-kapwa-brand-600)] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/10 transition-colors hover:bg-[var(--color-kapwa-brand-500)]">
                       Primary Action
                     </button>
-                    <button className="px-4 py-2 border border-[var(--color-kapwa-border-default)] text-[var(--color-kapwa-text-default)] text-xs font-bold rounded hover:bg-white/5 transition-colors">
+                    <button className="rounded border border-[var(--color-kapwa-border-default)] px-4 py-2 text-xs font-bold text-[var(--color-kapwa-text-default)] transition-colors hover:bg-white/5">
                       Outline Action
                     </button>
                   </div>
                 </div>
 
                 {/* Status Badges */}
-                <div className="flex flex-col gap-3 p-4 border border-white/5 rounded bg-white/[0.01]">
-                  <h4 className="text-xs font-bold text-[var(--wikios-text-muted)]">Badges and Tags</h4>
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <div className="flex flex-col gap-3 rounded border border-white/5 bg-white/[0.01] p-4">
+                  <h4 className="text-xs font-bold text-[var(--wikios-text-muted)]">
+                    Badges and Tags
+                  </h4>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-400">
                       Active
                     </span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                       Completed
                     </span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-400">
                       Pending
                     </span>
                   </div>
@@ -87,12 +106,13 @@ export default function WikiSandboxPage() {
               </div>
 
               {/* Scoped Alert Notice */}
-              <div className="kp-card p-4 flex items-start gap-3 border-blue-500/20 bg-blue-500/5 text-blue-400 mt-2">
-                <Info className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="kp-card mt-2 flex items-start gap-3 border-blue-500/20 bg-blue-500/5 p-4 text-blue-400">
+                <Info className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
-                  <h4 className="font-bold text-xs">Information Notice</h4>
-                  <p className="text-[10px] mt-1 leading-relaxed opacity-85">
-                    This component demonstrates how the scoped Tailwind integration applies correct typography, padding, and edge-contrast borders automatically.
+                  <h4 className="text-xs font-bold">Information Notice</h4>
+                  <p className="mt-1 text-[10px] leading-relaxed opacity-85">
+                    This component demonstrates how the scoped Tailwind integration applies correct
+                    typography, padding, and edge-contrast borders automatically.
                   </p>
                 </div>
               </div>
@@ -116,55 +136,70 @@ function RecentChangesSimulator() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--wikios-accent)]" />
+      <div className="flex items-center justify-center py-12">
+        <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-[var(--wikios-accent)]" />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="kp-card p-5 flex flex-col gap-2">
-        <div className="flex justify-between items-center mb-3">
+      <div className="kp-card flex flex-col gap-2 p-5">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-[var(--wikios-accent)]" />
-            <h3 className="text-sm font-bold text-[var(--wikios-text)]">Recent Changes Simulator</h3>
+            <h3 className="text-sm font-bold text-[var(--wikios-text)]">
+              Recent Changes Simulator
+            </h3>
           </div>
-          <span className="text-[10px] text-[var(--wikios-text-dim)]">Live tRPC query timeline</span>
+          <span className="text-[10px] text-[var(--wikios-text-dim)]">
+            Live tRPC query timeline
+          </span>
         </div>
 
         <div className="flex flex-col gap-3">
           {changes?.map((change, idx) => {
             const diff = (change.newLen ?? 0) - (change.oldLen ?? 0);
             const diffSign = diff > 0 ? "+" : "";
-            const diffClass = diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-500" : "text-muted-foreground/60";
+            const diffClass =
+              diff > 0
+                ? "text-emerald-500"
+                : diff < 0
+                  ? "text-red-500"
+                  : "text-muted-foreground/60";
 
             return (
-              <div key={idx} className="flex items-start justify-between p-3 border border-white/5 rounded bg-white/[0.01] hover:bg-white/[0.03] transition-colors">
-                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+              <div
+                key={idx}
+                className="flex items-start justify-between rounded border border-white/5 bg-white/[0.01] p-3 transition-colors hover:bg-white/[0.03]"
+              >
+                <div className="flex min-w-0 flex-1 items-start gap-2.5">
                   {change.type === "new" ? (
-                    <FilePlus className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+                    <FilePlus className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                   ) : (
-                    <FileText className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
+                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <span className="text-xs font-semibold text-[var(--wikios-text)] hover:underline cursor-pointer block truncate">
+                    <span className="block cursor-pointer truncate text-xs font-semibold text-[var(--wikios-text)] hover:underline">
                       {change.title}
                     </span>
-                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-[var(--wikios-text-muted)]">
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
                       <span className="font-bold">{change.user}</span>
                       <span className="opacity-40">·</span>
                       <span>{formatMWTimeAgo(change.timestamp)}</span>
                     </div>
                     {change.comment && (
-                      <p className="text-[10px] text-[var(--wikios-text-dim)] italic mt-1 leading-relaxed line-clamp-1">
+                      <p className="mt-1 line-clamp-1 text-[10px] leading-relaxed text-[var(--wikios-text-dim)] italic">
                         "{change.comment}"
                       </p>
                     )}
                   </div>
                 </div>
-                <span className={`text-[10px] font-mono font-semibold shrink-0 ml-4 mt-0.5 ${diffClass}`}>
-                  ({diffSign}{diff.toLocaleString()})
+                <span
+                  className={`mt-0.5 ml-4 shrink-0 font-mono text-[10px] font-semibold ${diffClass}`}
+                >
+                  ({diffSign}
+                  {diff.toLocaleString()})
                 </span>
               </div>
             );
@@ -180,15 +215,15 @@ function StashesSimulator() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--wikios-accent)]" />
+      <div className="flex items-center justify-center py-12">
+        <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-[var(--wikios-accent)]" />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bookmark className="h-4 w-4 text-[var(--wikios-accent)]" />
           <h3 className="text-sm font-bold text-[var(--wikios-text)]">Stash Manager Simulator</h3>
@@ -197,16 +232,16 @@ function StashesSimulator() {
       </div>
 
       {stashes && stashes.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {stashes.map((stash) => (
             <StashCard key={stash.id} stash={stash} />
           ))}
         </div>
       ) : (
-        <div className="kp-card p-8 flex flex-col items-center justify-center text-center gap-3">
+        <div className="kp-card flex flex-col items-center justify-center gap-3 p-8 text-center">
           <FolderOpen className="h-10 w-10 text-[var(--wikios-text-dim)] opacity-20" />
           <h4 className="text-xs font-semibold text-[var(--wikios-text)]">No Stashes Found</h4>
-          <p className="text-[10px] text-[var(--wikios-text-muted)] max-w-xs leading-relaxed">
+          <p className="max-w-xs text-[10px] leading-relaxed text-[var(--wikios-text-muted)]">
             Go save some wiki pages or forum posts to load collections here.
           </p>
         </div>
@@ -215,7 +250,11 @@ function StashesSimulator() {
   );
 }
 
-function StashCard({ stash }: { stash: { id: string; name: string; color: string; itemCount: number } }) {
+function StashCard({
+  stash,
+}: {
+  stash: { id: string; name: string; color: string; itemCount: number };
+}) {
   // Dynamic Facet glass elevation hook
   const { depth, increaseDepth, resetDepth } = useFacetDepth(1);
 
@@ -223,26 +262,27 @@ function StashCard({ stash }: { stash: { id: string; name: string; color: string
     <div
       onMouseEnter={increaseDepth}
       onMouseLeave={resetDepth}
-      className="kp-card p-4 flex flex-col gap-3 transition-transform cursor-pointer"
+      className="kp-card flex cursor-pointer flex-col gap-3 p-4 transition-transform"
       style={{
         transform: depth > 1 ? "translateY(-2px)" : "none",
-        borderColor: stash.color ? `${stash.color}33` : "var(--wikios-border)"
+        borderColor: stash.color ? `${stash.color}33` : "var(--wikios-border)",
       }}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <span
-            className="h-2.5 w-2.5 rounded-full shrink-0"
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ background: stash.color || "var(--wikios-accent)" }}
           />
-          <span className="text-xs font-bold text-[var(--wikios-text)] truncate">{stash.name}</span>
+          <span className="truncate text-xs font-bold text-[var(--wikios-text)]">{stash.name}</span>
         </div>
-        <span className="text-[10px] text-[var(--wikios-text-muted)] flex items-center gap-0.5 shrink-0 ml-3">
+        <span className="ml-3 flex shrink-0 items-center gap-0.5 text-[10px] text-[var(--wikios-text-muted)]">
           <Hash className="h-3 w-3" /> {stash.itemCount} items
         </span>
       </div>
-      <p className="text-[10px] text-[var(--wikios-text-dim)] leading-relaxed">
-        Scoped collection. Hovering over this card activates Facet dynamic elevation spring transitions.
+      <p className="text-[10px] leading-relaxed text-[var(--wikios-text-dim)]">
+        Scoped collection. Hovering over this card activates Facet dynamic elevation spring
+        transitions.
       </p>
     </div>
   );

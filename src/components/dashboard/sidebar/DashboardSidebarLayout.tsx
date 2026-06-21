@@ -57,20 +57,35 @@ export function DashboardSidebarLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(defaultCollapsed);
   const [isMounted, setIsMounted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isHoveredDelayed, setIsHoveredDelayed] = useState(false);
+
+  useEffect(() => {
+    let timer: any = null;
+    if (isHovered) {
+      timer = setTimeout(() => {
+        setIsHoveredDelayed(true);
+      }, 250);
+    } else {
+      setIsHoveredDelayed(false);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isHovered]);
 
   useEffect(() => {
     if (disableCollapse) {
       setIsSidebarCollapsed(false);
       setIsMounted(true);
-      return;
+    } else {
+      const stored = localStorage.getItem("ixstats.sidebar.collapsed");
+      if (stored === "true") {
+        setIsSidebarCollapsed(true);
+      } else if (stored === "false") {
+        setIsSidebarCollapsed(false);
+      }
+      setIsMounted(true);
     }
-    const stored = localStorage.getItem("ixstats.sidebar.collapsed");
-    if (stored === "true") {
-      setIsSidebarCollapsed(true);
-    } else if (stored === "false") {
-      setIsSidebarCollapsed(false);
-    }
-    setIsMounted(true);
   }, [disableCollapse]);
 
   const handleToggleSidebar = () => {
@@ -81,7 +96,7 @@ export function DashboardSidebarLayout({
   };
 
   const isCollapsedNow = !disableCollapse && isSidebarCollapsed && isMounted;
-  const isHoverActive = isCollapsedNow && isHovered;
+  const isHoverActive = isCollapsedNow && isHoveredDelayed;
 
   const defaultExpandedWidthClass = variant === "rail" ? "w-64" : "w-48";
   const defaultExpandedWidthStyle = variant === "rail" ? "16rem" : "12rem";
@@ -128,9 +143,9 @@ export function DashboardSidebarLayout({
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
-                "relative z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
+                "relative sticky top-6 z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
                 variant === "rail"
-                  ? isCollapsedNow && !isHoverActive
+                  ? isCollapsedNow
                     ? "-left-6 w-14 opacity-100 xl:-left-12"
                     : cn("-left-6 opacity-100 xl:-left-12", resolvedExpandedWidthClass)
                   : isCollapsedNow
@@ -140,7 +155,7 @@ export function DashboardSidebarLayout({
               style={{
                 width:
                   variant === "rail"
-                    ? isCollapsedNow && !isHoverActive
+                    ? isCollapsedNow
                       ? "3.5rem"
                       : resolvedExpandedWidthStyle
                     : isCollapsedNow
@@ -150,13 +165,25 @@ export function DashboardSidebarLayout({
             >
               <div
                 className={cn(
-                  "sticky top-6 space-y-4 transition-all duration-300 ease-in-out",
+                  "space-y-4 transition-all duration-300 ease-in-out",
                   variant === "rail"
-                    ? "translate-x-0 opacity-100"
+                    ? isCollapsedNow
+                      ? "absolute top-0 left-0 z-40 rounded-2xl border border-black/5 bg-white/85 p-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/75"
+                      : "relative"
                     : isCollapsedNow
                       ? "translate-x-[-120%] opacity-0"
                       : "translate-x-0 opacity-100"
                 )}
+                style={{
+                  width:
+                    variant === "rail"
+                      ? isCollapsedNow
+                        ? isHoverActive
+                          ? resolvedExpandedWidthStyle
+                          : "3.5rem"
+                        : "100%"
+                      : undefined,
+                }}
               >
                 {sidebarContent ? (
                   sidebarContent

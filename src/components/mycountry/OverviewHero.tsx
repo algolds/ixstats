@@ -796,6 +796,8 @@ export function OverviewHero({
           }}
         />
       )}
+      <TextureOverlay texture="paperGrain" opacity={0.09} />
+
       <button
         onClick={() => onCollapsedChange(true)}
         className="text-muted-foreground hover:bg-muted/30 border-border/20 relative z-10 flex w-full cursor-pointer items-center justify-end border-b px-4 py-1.5 text-[10px] transition-colors"
@@ -817,8 +819,6 @@ export function OverviewHero({
         </div>
 
         <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
-          <TextureOverlay texture="paperGrain" opacity={0.09} />
-
           <div className="flex h-full flex-col justify-between">
             {/* Header */}
             <div>

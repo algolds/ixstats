@@ -839,7 +839,6 @@ function DashboardHero({
         </div>
 
         <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] p-3 shadow-sm backdrop-blur-md md:col-span-2 dark:border-white/10 dark:bg-black/25">
-          <TextureOverlay texture="paperGrain" opacity={0.09} />
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-2 flex items-start justify-between gap-2.5">
               <div className="flex min-w-0 items-center gap-2.5">

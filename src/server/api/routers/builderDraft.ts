@@ -17,17 +17,15 @@ export const builderDraftRouter = createTRPCRouter({
     return draft ? { data: draft.data, updatedAt: draft.updatedAt } : null;
   }),
 
-  save: protectedProcedure
-    .input(z.object({ data: z.any() }))
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.auth?.userId) return { success: false };
-      await ctx.db.builderDraft.upsert({
-        where: { userId: ctx.auth.userId },
-        create: { userId: ctx.auth.userId, data: input.data },
-        update: { data: input.data },
-      });
-      return { success: true };
-    }),
+  save: protectedProcedure.input(z.object({ data: z.any() })).mutation(async ({ ctx, input }) => {
+    if (!ctx.auth?.userId) return { success: false };
+    await ctx.db.builderDraft.upsert({
+      where: { userId: ctx.auth.userId },
+      create: { userId: ctx.auth.userId, data: input.data },
+      update: { data: input.data },
+    });
+    return { success: true };
+  }),
 
   clear: protectedProcedure.mutation(async ({ ctx }) => {
     if (!ctx.auth?.userId) return { success: false };

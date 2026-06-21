@@ -769,12 +769,14 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
                 sourceType: "policy",
                 sourceId: policy.id,
                 description: `Enacted policy "${policy.name}" via decision: Cost of ${policy.implementationCost} deducted from treasury`,
-                consequences: [{
-                  targetModel: "GovernmentStructure",
-                  targetField: "totalBudget",
-                  operation: "subtract",
-                  value: policy.implementationCost,
-                }],
+                consequences: [
+                  {
+                    targetModel: "GovernmentStructure",
+                    targetField: "totalBudget",
+                    operation: "subtract",
+                    value: policy.implementationCost,
+                  },
+                ],
               });
             }
 

@@ -164,8 +164,14 @@ export const diplomaticInboxRouter = createTRPCRouter({
             const embassy = await tx.embassy.findFirst({
               where: {
                 OR: [
-                  { hostCountryId: updatedAction.fromCountryId, guestCountryId: updatedAction.toCountryId },
-                  { hostCountryId: updatedAction.toCountryId, guestCountryId: updatedAction.fromCountryId },
+                  {
+                    hostCountryId: updatedAction.fromCountryId,
+                    guestCountryId: updatedAction.toCountryId,
+                  },
+                  {
+                    hostCountryId: updatedAction.toCountryId,
+                    guestCountryId: updatedAction.fromCountryId,
+                  },
                 ],
               },
             });

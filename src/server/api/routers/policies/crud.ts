@@ -196,13 +196,17 @@ export const policiesCrudRouter = createTRPCRouter({
           sourceType: "policy",
           sourceId: policy.id,
           description: `Enacted policy "${policy.name}": Cost of ${cost} deducted from treasury`,
-          consequences: [{
-            targetModel: "GovernmentStructure",
-            targetField: "totalBudget",
-            operation: "subtract",
-            value: cost
-          }]
-        }).catch((err) => console.error("[Policies] Failed to log budget deduction to spine:", err));
+          consequences: [
+            {
+              targetModel: "GovernmentStructure",
+              targetField: "totalBudget",
+              operation: "subtract",
+              value: cost,
+            },
+          ],
+        }).catch((err) =>
+          console.error("[Policies] Failed to log budget deduction to spine:", err)
+        );
       }
 
       const updatedPolicy = await ctx.db.policy.update({

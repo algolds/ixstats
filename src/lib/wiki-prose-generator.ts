@@ -23,10 +23,20 @@ export class WikiProseGenerator {
     const year = Math.floor(currentIxTime / 12) + 2041;
     const month = (Math.floor(currentIxTime) % 12) + 1;
     const monthName = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ][month - 1];
-    
+
     const timeStr = `[[IxTime: ${monthName} ${year}]]`;
     const country = `[[${details.countryName}]]`;
 

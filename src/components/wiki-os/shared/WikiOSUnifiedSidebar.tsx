@@ -3,10 +3,16 @@
 
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  type MotionValue,
+} from "motion/react";
 import {
   Search,
   Image as ImageIcon,
@@ -32,6 +38,136 @@ import { StashButton } from "~/components/wiki-os/reader/StashButton";
 import { ActiveCountryUnifiedWidget } from "./ActiveCountryUnifiedWidget";
 import { WikiOSProfileWidget } from "./WikiOSProfileWidget";
 import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+
+const getGlowColor = (id: string) => {
+  switch (id) {
+    case "search":
+    case "backlinks":
+      return "rgba(20, 184, 166, 0.45)";
+    case "main":
+    case "edit":
+      return "rgba(59, 130, 246, 0.45)";
+    case "recent":
+    case "history":
+      return "rgba(245, 158, 11, 0.45)";
+    case "random":
+      return "rgba(99, 102, 241, 0.45)";
+    case "stashes":
+      return "rgba(244, 63, 94, 0.45)";
+    case "images":
+    case "talk":
+      return "rgba(168, 85, 247, 0.45)";
+    case "lorewards":
+      return "rgba(234, 179, 8, 0.45)";
+    default:
+      return "rgba(255, 255, 255, 0.15)";
+  }
+};
+
+const getGlowTextColorClass = (id: string) => {
+  switch (id) {
+    case "search":
+    case "backlinks":
+      return "text-teal-400 border-teal-500/20 bg-teal-950/80";
+    case "main":
+    case "edit":
+      return "text-blue-400 border-blue-500/20 bg-blue-950/80";
+    case "recent":
+    case "history":
+      return "text-amber-400 border-amber-500/20 bg-amber-950/80";
+    case "random":
+      return "text-indigo-400 border-indigo-500/20 bg-indigo-950/80";
+    case "stashes":
+      return "text-rose-400 border-rose-500/20 bg-rose-950/80";
+    case "images":
+    case "talk":
+      return "text-purple-400 border-purple-500/20 bg-purple-950/80";
+    case "lorewards":
+      return "text-amber-400 border-amber-500/20 bg-amber-950/80";
+    default:
+      return "text-blue-400 border-blue-500/20 bg-blue-950/80";
+  }
+};
+
+interface FisheyeIconProps {
+  id: string;
+  mouseY: MotionValue<number>;
+  isExpanded: boolean;
+  title: string;
+  children: React.ReactNode;
+}
+
+function FisheyeIcon({ id, mouseY, isExpanded, title, children }: FisheyeIconProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isRowHovered, setIsRowHovered] = useState(false);
+
+  const distance = useTransform(mouseY, (val) => {
+    if (!ref.current || val === Infinity) return Infinity;
+    const bounds = ref.current.getBoundingClientRect();
+    const center = bounds.top + bounds.height / 2;
+    return val - center;
+  });
+
+  const scale = useTransform(distance, (d) => {
+    if (isExpanded || d === Infinity) return 1.0;
+    const maxMag = 0.3; // 1.3 max scale
+    const stdDev = 40; // Pixels of influence
+    const factor = Math.exp(-Math.pow(d, 2) / (2 * Math.pow(stdDev, 2)));
+    return 1 + maxMag * factor;
+  });
+
+  const springScale = useSpring(scale, { stiffness: 250, damping: 20 });
+
+  const glowOpacity = useTransform(scale, [1.0, 1.3], [0, 0.45]);
+  const springGlowOpacity = useSpring(glowOpacity, { stiffness: 250, damping: 20 });
+
+  const glowColor = getGlowColor(id);
+  const glowTextClass = getGlowTextColorClass(id);
+
+  const handleMouseEnter = () => {
+    setIsRowHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsRowHovered(false);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{ scale: springScale }}
+      className="relative origin-center"
+    >
+      <motion.div
+        className="pointer-events-none absolute inset-0 rounded-xl blur-md"
+        style={{
+          boxShadow: `0 0 16px 3px ${glowColor}`,
+          opacity: springGlowOpacity,
+        }}
+      />
+      {children}
+
+      <AnimatePresence>
+        {!isExpanded && isRowHovered && (
+          <motion.div
+            initial={{ opacity: 0, x: -6, y: "-50%" }}
+            animate={{ opacity: 1, x: 0, y: "-50%" }}
+            exit={{ opacity: 0, x: -6, y: "-50%" }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className={cn(
+              "pointer-events-none absolute top-1/2 left-[calc(100%+14px)] z-50 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold tracking-wider whitespace-nowrap uppercase shadow-xl backdrop-blur-md",
+              glowTextClass
+            )}
+          >
+            {title}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
 
 const NAV_GROUP_1 = [
   { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main Page" },
@@ -68,7 +204,22 @@ export function WikiOSUnifiedSidebar({
 }: WikiOSUnifiedSidebarProps) {
   const { isCollapsed: sidebarCollapsed, toggleCollapsed, isHovered } = useSidebar();
   const isCollapsedReal = forceCollapsed || sidebarCollapsed;
-  const isExpanded = !isCollapsedReal || (isHovered && !forceCollapsed);
+  const isExpanded = !isCollapsedReal || (!!isHovered && !forceCollapsed);
+
+  const mouseY = useMotionValue(Infinity);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isExpanded) {
+      mouseY.set(e.clientY);
+    } else {
+      mouseY.set(Infinity);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    mouseY.set(Infinity);
+  };
 
   const isArticlePage = !isSpecialPage && slug;
 
@@ -142,7 +293,7 @@ export function WikiOSUnifiedSidebar({
     const content = (
       <>
         {Icon ? (
-          <div className={itemClass} title={!isExpanded ? title : undefined}>
+          <div className={itemClass}>
             <Icon className="h-4 w-4 shrink-0" />
           </div>
         ) : (
@@ -172,16 +323,20 @@ export function WikiOSUnifiedSidebar({
 
     if (href) {
       return (
-        <Link key={id} href={href} className={wrapperClass}>
-          {content}
-        </Link>
+        <FisheyeIcon key={id} id={id} mouseY={mouseY} isExpanded={isExpanded} title={title}>
+          <Link href={href} className={wrapperClass}>
+            {content}
+          </Link>
+        </FisheyeIcon>
       );
     }
 
     return (
-      <button key={id} onClick={onClick} className={wrapperClass} type="button">
-        {content}
-      </button>
+      <FisheyeIcon key={id} id={id} mouseY={mouseY} isExpanded={isExpanded} title={title}>
+        <button onClick={onClick} className={wrapperClass} type="button">
+          {content}
+        </button>
+      </FisheyeIcon>
     );
   };
 
@@ -194,10 +349,17 @@ export function WikiOSUnifiedSidebar({
   };
 
   return (
-    <div className="wikios-sidebar group/sidebar relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start border-r border-white/5 pr-1.5 pb-2 transition-colors duration-300 select-none hover:border-blue-500/15">
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="wikios-sidebar group/sidebar relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start border-r border-white/5 pr-1.5 pb-2 transition-colors duration-300 select-none hover:border-blue-500/15"
+    >
       <div className="flex w-full flex-col gap-1.5">
         {/* Profile widget — signed-in user's linked wiki profile */}
-        <WikiOSProfileWidget expanded={isExpanded} />
+        <FisheyeIcon id="lorewards" mouseY={mouseY} isExpanded={isExpanded} title="Wiki Profile">
+          <WikiOSProfileWidget expanded={isExpanded} />
+        </FisheyeIcon>
 
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
@@ -305,19 +467,21 @@ export function WikiOSUnifiedSidebar({
             })}
 
             {/* Stash button */}
-            <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
-              <div className="shrink-0">
-                <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
+            <FisheyeIcon id="stashes" mouseY={mouseY} isExpanded={isExpanded} title="Stash Page">
+              <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
+                <div className="shrink-0">
+                  <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
+                </div>
+                <span
+                  className={cn(
+                    "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-all duration-300 ease-in-out group-hover:text-[var(--wikios-text)]",
+                    !isExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
+                  )}
+                >
+                  Stash Page
+                </span>
               </div>
-              <span
-                className={cn(
-                  "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-all duration-300 ease-in-out group-hover:text-[var(--wikios-text)]",
-                  !isExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
-                )}
-              >
-                Stash Page
-              </span>
-            </div>
+            </FisheyeIcon>
 
             {/* Table of Contents Sections */}
             {isExpanded && sections && sections.length > 0 && (
@@ -365,7 +529,14 @@ export function WikiOSUnifiedSidebar({
               className="overflow-hidden"
             >
               <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
-              <ActiveCountryUnifiedWidget country={countryData} />
+              <FisheyeIcon
+                id="lorewards"
+                mouseY={mouseY}
+                isExpanded={isExpanded}
+                title={countryData.name}
+              >
+                <ActiveCountryUnifiedWidget country={countryData} />
+              </FisheyeIcon>
             </motion.div>
           )}
         </AnimatePresence>
