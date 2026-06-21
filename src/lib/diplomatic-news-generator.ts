@@ -15,7 +15,7 @@ import type { PrismaClient } from "@prisma/client";
 // Event types and templates
 // ============================================================
 
-type NewsEventType =
+export type NewsEventType =
   | "embassy_established"
   | "embargo_imposed"
   | "sanction_imposed"

@@ -390,4 +390,32 @@ export const listProcedures = {
         region: c.region,
       }));
     }),
+
+  getChangeLogs: publicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().int().optional().default(20),
+        offset: z.number().int().optional().default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const [logs, total] = await Promise.all([
+        (ctx.db as any).countryChangeLog.findMany({
+          where: { countryId: input.countryId },
+          orderBy: { createdAt: "desc" },
+          take: input.limit,
+          skip: input.offset,
+        }),
+        (ctx.db as any).countryChangeLog.count({
+          where: { countryId: input.countryId },
+        }),
+      ]);
+
+      return {
+        logs,
+        total,
+        hasMore: input.offset + logs.length < total,
+      };
+    }),
 };

@@ -6,6 +6,8 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notification-hooks";
+import { CountryEventSpine } from "~/lib/country-event-spine";
+import { applyPolicyEffect } from "~/lib/policy-effects-sync";
 
 /**
  * QUICK ACTIONS ROUTER
@@ -668,4 +670,135 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
   // ==========================================================================
   // INTELLIGENT POLICY RECOMMENDATIONS
   // ==========================================================================
+
+  implementDecision: protectedProcedure
+    .input(
+      z.object({
+        decisionId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const decision = await ctx.db.meetingDecision.findUnique({
+        where: { id: input.decisionId },
+        include: { meeting: true },
+      });
+
+      if (!decision) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Decision not found",
+        });
+      }
+
+      if (decision.implementationStatus === "implemented") {
+        return { success: true, message: "Decision already implemented" };
+      }
+
+      // Parse estimatedEffect (consequences JSON)
+      let consequences: any[] = [];
+      if (decision.estimatedEffect) {
+        try {
+          consequences = JSON.parse(decision.estimatedEffect);
+        } catch (e) {
+          console.error("[Meetings] Failed to parse estimatedEffect JSON:", e);
+        }
+      }
+
+      // Apply consequences via spine
+      let applied = [];
+      if (consequences.length > 0) {
+        applied = await CountryEventSpine.recordCountryEvent({
+          db: ctx.db,
+          countryId: decision.meeting.countryId,
+          sourceType: "decision",
+          sourceId: decision.id,
+          description: `Implemented cabinet decision: "${decision.title}"`,
+          consequences: consequences.map((c: any) => ({
+            targetModel: c.targetModel,
+            targetField: c.targetField,
+            operation: c.operation || "add",
+            value: c.value,
+            effectType: c.effectType,
+            durationDays: c.durationDays,
+          })),
+        });
+      } else {
+        // Record a trace in ledger even if no consequences are present
+        await CountryEventSpine.recordCountryEvent({
+          db: ctx.db,
+          countryId: decision.meeting.countryId,
+          sourceType: "decision",
+          sourceId: decision.id,
+          description: `Implemented cabinet decision: "${decision.title}"`,
+        });
+      }
+
+      // Update implementationStatus to "implemented"
+      const updatedDecision = await ctx.db.meetingDecision.update({
+        where: { id: decision.id },
+        data: {
+          implementationStatus: "implemented",
+        },
+      });
+
+      // If there is a related policy, we can activate it!
+      let activatedPolicy = null;
+      if (decision.relatedPolicyId) {
+        const policy = await ctx.db.policy.findUnique({
+          where: { id: decision.relatedPolicyId },
+        });
+
+        if (policy && policy.status !== "active") {
+          // Check budget
+          const structure = await ctx.db.governmentStructure.findUnique({
+            where: { countryId: policy.countryId },
+          });
+
+          if (structure && structure.totalBudget >= policy.implementationCost) {
+            // Deduct budget
+            if (policy.implementationCost > 0) {
+              await ctx.db.governmentStructure.update({
+                where: { countryId: policy.countryId },
+                data: { totalBudget: { decrement: policy.implementationCost } },
+              });
+
+              // Log budget deduction consequence via Event Spine
+              await CountryEventSpine.recordCountryEvent({
+                db: ctx.db,
+                countryId: policy.countryId,
+                sourceType: "policy",
+                sourceId: policy.id,
+                description: `Enacted policy "${policy.name}" via decision: Cost of ${policy.implementationCost} deducted from treasury`,
+                consequences: [{
+                  targetModel: "GovernmentStructure",
+                  targetField: "totalBudget",
+                  operation: "subtract",
+                  value: policy.implementationCost,
+                }],
+              });
+            }
+
+            activatedPolicy = await ctx.db.policy.update({
+              where: { id: policy.id },
+              data: {
+                status: "active",
+                effectiveDate: new Date(),
+              },
+            });
+
+            // Make the policy real in the simulation
+            await applyPolicyEffect(ctx.db, activatedPolicy).catch((err) =>
+              console.error("[Meetings] Failed to apply policy effect on decision resolve:", err)
+            );
+          }
+        }
+      }
+
+      return {
+        success: true,
+        decision: updatedDecision,
+        policy: activatedPolicy,
+        appliedConsequencesCount: applied.length,
+      };
+    }),
 });

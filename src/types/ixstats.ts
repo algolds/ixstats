@@ -72,6 +72,7 @@ export interface BaseCountryData {
   taxRevenueGDPPercent?: number | null;
   unemploymentRate?: number | null;
   inflationRate?: number | null;
+  activePolicyMaintenanceCost?: number;
 }
 
 // Current country statistics (calculated)

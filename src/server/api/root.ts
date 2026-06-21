@@ -71,6 +71,7 @@ import { diplomaticCoreRouter } from "./routers/diplomacy/core";
 import { diplomaticEmbassiesRouter } from "./routers/diplomacy/embassies";
 import { diplomaticCulturalRouter } from "./routers/diplomacy/cultural";
 import { diplomaticPoliciesRouter } from "./routers/diplomacy/policies";
+import { diplomaticInboxRouter } from "./routers/diplomacy/inbox";
 import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
 import { diplomaticScenariosRouter } from "./routers/diplomaticScenarios";
 import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
@@ -197,6 +198,7 @@ export const appRouter = createTRPCRouter({
   diplomaticEmbassies: safeRouter("diplomaticEmbassies", () => diplomaticEmbassiesRouter),
   diplomaticCultural: safeRouter("diplomaticCultural", () => diplomaticCulturalRouter),
   diplomaticPolicies: safeRouter("diplomaticPolicies", () => diplomaticPoliciesRouter),
+  diplomaticInbox: safeRouter("diplomaticInbox", () => diplomaticInboxRouter),
   diplomaticIntelligence: safeRouter("diplomaticIntelligence", () => diplomaticIntelligenceRouter),
   diplomaticScenarios: safeRouter("diplomaticScenarios", () => diplomaticScenariosRouter),
   npcPersonalities: safeRouter("npcPersonalities", () => npcPersonalitiesRouter),

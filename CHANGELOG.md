@@ -12,6 +12,17 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **MyCountry Core Loops Phase 2 — Unified Spine, Ledger, Financial Debits, and Narrative Prose**:
+  - Implemented database-backed `CountryChangeLog` ledger tracking delta diffs of stat updates.
+  - Built a static `CountryEventSpine` processor as a single source of truth for stat consequence updates, news posts, and activity feed syncs.
+  - Integrated budget balance validations and immediate `implementationCost` deductions upon policy activation.
+  - Dynamic `maintenanceCost` aggregation of all active policies into the recurring government spending calculations.
+  - Implemented the `implementDecision` tRPC mutation to parse and resolve cabinet meeting choices, applying consequences and related policy activations.
+  - Created `api.diplomaticInbox.*` router to handle fetching and responding to pending NPC relationship, treaty, and embassy upgrades.
+  - Built the `WikiProseGenerator` utility to compile simulation events into stylized, copy-pasteable wikitext paragraphs.
+  - Designed and integrated the vertical `CountryChangeLogTimeline` component below the Executive War Room panels with copy-to-clipboard wikitext actions.
+  - Added a Jest test suite in `src/lib/__tests__/country-event-spine.test.ts` to validate consequence clamping and change log delta formatting.
+
 - **Map Editor Plugin Architecture & Event Delegation Refactoring**:
   - Implemented a modular **Plugin/Extension Architecture** for the Country Map Editor, migrating domain-specific interactions into separate plugins under [plugins/](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/).
   - Created [types.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/types.ts) for `MapEditorPlugin` and context definitions, [context.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/context.tsx) for state management and hotkey delegation, and [registry.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/registry.ts) for static plugin registration.

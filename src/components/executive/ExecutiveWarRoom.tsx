@@ -17,6 +17,7 @@ import { IxTime } from "~/lib/ixtime";
 import { CommandPanel, type PanelStat } from "./CommandPanel";
 import { Button } from "~/components/ui/button";
 import { CommandPanelItem, type PanelItemBadge } from "./CommandPanelItem";
+import { CountryChangeLogTimeline } from "./CountryChangeLogTimeline";
 
 // Lazy-load the full panels for drill-down sheets
 const IssuesInbox = dynamic(
@@ -110,6 +111,12 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [helpTopic, setHelpTopic] = useState<"issues" | "decisions" | "policies" | null>(null);
+
+  // ── Country Name Summary ──
+  const { data: countrySummary } = api.countries.getMapSummary.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
 
   // ── Issues data ──
   const {
@@ -357,6 +364,9 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
           ))}
         </CommandPanel>
       </div>
+
+      {/* ── Ledger Timeline ── */}
+      <CountryChangeLogTimeline countryId={countryId} countryName={countrySummary?.name ?? "Government"} />
 
       {/* ── Drill-Down Sheets ── */}
       <Dialog

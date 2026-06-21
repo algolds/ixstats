@@ -7,6 +7,8 @@ import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationAPI } from "~/lib/notification-api";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policy-effects-sync";
+import { CountryEventSpine } from "~/lib/country-event-spine";
+import { TRPCError } from "@trpc/server";
 
 export const policiesCrudRouter = createTRPCRouter({
   // ==================== POLICY CRUD ====================
@@ -143,7 +145,67 @@ export const policiesCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const policy = await ctx.db.policy.update({
+      const policy = await ctx.db.policy.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!policy) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Policy not found",
+        });
+      }
+
+      if (policy.status === "active") {
+        return policy;
+      }
+
+      // Check country budget
+      const structure = await ctx.db.governmentStructure.findUnique({
+        where: { countryId: policy.countryId },
+      });
+
+      if (!structure) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Government structure not found. Please configure your government first.",
+        });
+      }
+
+      const cost = policy.implementationCost || 0;
+      if (cost > 0 && structure.totalBudget < cost) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Insufficient budget to enact this policy. Required: ${cost}, Available: ${structure.totalBudget}`,
+        });
+      }
+
+      // Deduct budget
+      if (cost > 0) {
+        await ctx.db.governmentStructure.update({
+          where: { countryId: policy.countryId },
+          data: {
+            totalBudget: { decrement: cost },
+          },
+        });
+
+        // Record budget deduction consequence via the Event Spine
+        await CountryEventSpine.recordCountryEvent({
+          db: ctx.db,
+          countryId: policy.countryId,
+          sourceType: "policy",
+          sourceId: policy.id,
+          description: `Enacted policy "${policy.name}": Cost of ${cost} deducted from treasury`,
+          consequences: [{
+            targetModel: "GovernmentStructure",
+            targetField: "totalBudget",
+            operation: "subtract",
+            value: cost
+          }]
+        }).catch((err) => console.error("[Policies] Failed to log budget deduction to spine:", err));
+      }
+
+      const updatedPolicy = await ctx.db.policy.update({
         where: { id: input.id },
         data: {
           status: "active",
@@ -152,9 +214,11 @@ export const policiesCrudRouter = createTRPCRouter({
       });
 
       // ⚙️ Make the policy real: emit the StorytellerEffect the economic engine reads.
-      await applyPolicyEffect(ctx.db, policy).catch((err) =>
+      await applyPolicyEffect(ctx.db, updatedPolicy).catch((err) =>
         console.error("[Policies] Failed to apply policy effect:", err)
       );
+
+      const policyToReturn = updatedPolicy;
 
       // Get user for activity feed
       const user = await ctx.db.user.findFirst({
@@ -210,7 +274,7 @@ export const policiesCrudRouter = createTRPCRouter({
         reason: `New policy enacted: ${policy.description || policy.name}`,
       }).catch((err) => console.error("[Policies] Failed to generate policy news:", err));
 
-      return policy;
+      return policyToReturn;
     }),
 
   suspendPolicy: protectedProcedure

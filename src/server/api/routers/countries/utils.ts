@@ -63,6 +63,7 @@ export const prepareBaseCountryData = (country: any, componentsData?: any): Base
   implementingGovComponents: componentsData?.implementingGovComponents ?? [],
   implementingEconComponents: componentsData?.implementingEconComponents ?? [],
   implementingTaxComponents: componentsData?.implementingTaxComponents ?? [],
+  activePolicyMaintenanceCost: componentsData?.activePolicyMaintenanceCost ?? 0,
 });
 
 export async function getCountryComponentsStatsData(db: any, countryId: string) {
@@ -136,6 +137,17 @@ export async function getCountryComponentsStatsData(db: any, countryId: string) 
     }
   });
 
+  // Fetch active policies and sum maintenanceCost
+  const activePolicies = await db.policy.findMany({
+    where: { countryId, status: "active" },
+    select: { maintenanceCost: true },
+  }).catch(() => []);
+
+  const activePolicyMaintenanceCost = activePolicies.reduce(
+    (sum: number, p: any) => sum + (p.maintenanceCost || 0),
+    0
+  );
+
   return {
     activeGovComponents: activeGov,
     implementingGovComponents: implementingGov,
@@ -143,6 +155,7 @@ export async function getCountryComponentsStatsData(db: any, countryId: string) 
     implementingEconComponents: implementingEcon,
     activeTaxComponents: activeTax,
     implementingTaxComponents: implementingTax,
+    activePolicyMaintenanceCost,
   };
 }
 

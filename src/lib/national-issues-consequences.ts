@@ -19,6 +19,7 @@ import {
   type ConsequenceDefinition,
 } from "./national-issues-engine";
 import type { PrismaClient } from "@prisma/client";
+import { CountryEventSpine } from "./country-event-spine";
 
 // ==================== FIELD BOUNDS ====================
 
@@ -262,82 +263,42 @@ export class NationalIssuesConsequences {
     issueId: string,
     currentIxTime: number
   ): Promise<AppliedConsequence | null> {
-    const modelConfig = MODEL_CONFIG[consequence.targetModel];
-    if (!modelConfig) return null;
-
-    const lookupValue = consequence.targetModel === "Country" ? countryId : countryId;
-
-    // Read current value
-    const record = await (db as any)[modelConfig.prismaModel].findUnique({
-      where: { [modelConfig.lookupField]: lookupValue },
-      select: { [consequence.targetField]: true },
+    const appliedList = await CountryEventSpine.recordCountryEvent({
+      db,
+      countryId,
+      sourceType: "issue",
+      sourceId: issueId,
+      description: `Resolved national issue consequence`,
+      consequences: [{
+        targetModel: consequence.targetModel,
+        targetField: consequence.targetField,
+        operation: consequence.operation as any,
+        value: consequence.value,
+        effectType: consequence.effectType,
+        durationDays: consequence.durationDays
+      }]
     });
 
-    if (!record) return null;
+    if (appliedList.length === 0) return null;
+    const applied = appliedList[0];
 
-    const previousValue = (record[consequence.targetField] as number) ?? 0;
-
-    // Calculate new value
-    let newValue: number;
-    switch (consequence.operation) {
-      case "add":
-        newValue = previousValue + consequence.value;
-        break;
-      case "subtract":
-        newValue = previousValue - consequence.value;
-        break;
-      case "multiply":
-        newValue = previousValue * consequence.value;
-        break;
-      case "set":
-        newValue = consequence.value;
-        break;
-      default:
-        return null;
-    }
-
-    // Clamp to bounds
-    newValue = clampField(consequence.targetField, newValue);
-
-    // Apply to database (immediate effects only; gradual effects are TODO)
-    await (db as any)[modelConfig.prismaModel].update({
-      where: { [modelConfig.lookupField]: lookupValue },
-      data: { [consequence.targetField]: newValue },
-    });
-
-    const delta = newValue - previousValue;
-    const description = this.describeConsequence(
-      consequence.targetField,
-      previousValue,
-      newValue,
-      delta
-    );
-
-    // Create audit trail record
+    // Create local issue consequence audit record
     await (db as any).nationalIssueConsequence.create({
       data: {
         issueId,
         targetModel: consequence.targetModel,
         targetField: consequence.targetField,
-        previousValue: JSON.stringify(previousValue),
-        newValue: JSON.stringify(newValue),
-        deltaValue: delta,
-        description,
-        effectType: consequence.effectType ?? "immediate",
+        previousValue: JSON.stringify(applied.previousValue),
+        newValue: JSON.stringify(applied.newValue),
+        deltaValue: applied.delta,
+        description: applied.description,
+        effectType: applied.effectType,
         effectDuration: consequence.durationDays ?? null,
         appliedIxTime: currentIxTime,
       },
     });
 
-    return {
-      targetModel: consequence.targetModel,
-      targetField: consequence.targetField,
-      previousValue,
-      newValue,
-      delta,
-      description,
-      effectType: consequence.effectType ?? "immediate",
-    };
+    return applied;
   }
 
   /**

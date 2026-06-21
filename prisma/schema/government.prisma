@@ -804,3 +804,26 @@ model StorytellerEffect {
   @@index([worldEventId])
   @@map("DmInputs")
 }
+
+model CountryChangeLog {
+  id              String   @id @default(cuid())
+  countryId       String
+  sourceType      String   // "issue" | "policy" | "decision" | "diplomacy" | "election" | "other"
+  sourceId        String?
+  targetModel     String?  // "Country" | "GovernmentStructure" | "InternalStabilityMetrics"
+  targetField     String?
+  previousValue   String?  // JSON string of value before change
+  newValue        String?  // JSON string of value after change
+  deltaValue      Float?   // Numerical difference, if applicable
+  description     String   // Human-readable delta description
+  appliedIxTime   Float    // In-game IxTime at event resolution
+  createdAt       DateTime @default(now())
+
+  country         Country  @relation("CountryChangeLogs", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([sourceType])
+  @@index([appliedIxTime])
+  @@map("country_change_logs")
+}
+

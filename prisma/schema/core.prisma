@@ -106,6 +106,7 @@ model Country {
   borderSecurity              BorderSecurity?           @relation("CountryBorderSecurity")
   budgetScenarios             BudgetScenario[]          @relation("CountryBudgetScenarios")
   componentChanges            ComponentChangeLog[]      @relation("CountryComponentChanges")
+  changeLogs                  CountryChangeLog[]        @relation("CountryChangeLogs")
   componentSynergies          ComponentSynergy[]        @relation("CountrySynergies")
   archetypeMatches            CountryArchetypeMatch[]   @relation("CountryArchetypes")
   followers                   CountryFollow[]           @relation("CountryFollowing")
