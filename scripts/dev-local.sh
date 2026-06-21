@@ -26,13 +26,21 @@ docker compose up -d
 # Auto-sync local DB from production
 echo "🔄 Syncing database from production..."
 if ssh -q -o ConnectTimeout=3 ixwiki "true" 2>/dev/null; then
-    ssh ixwiki "docker exec ixstats-postgres pg_dump -U postgres -Fc ixstats" > /tmp/ixstats-prod.dump
-    docker exec -i ixstats-postgres pg_restore -U postgres -d ixstats --clean --if-exists --no-owner --no-privileges < /tmp/ixstats-prod.dump
-    echo "✓ Local database refreshed from production dump."
-    
-    echo "🖼️  Syncing gitignored static assets (images, flags, textures, sounds)..."
-    rsync -avz --exclude="images/uploads/" --exclude="images/downloaded/" --exclude="images/uploads_backup/" ixwiki:/ixwiki/public/projects/ixstats/public/ public/
-    echo "✓ Static assets synced."
+    if ssh ixwiki "docker exec ixstats-postgres pg_dump -U postgres -Fc ixstats" > /tmp/ixstats-prod.dump 2>/dev/null; then
+        docker exec -i ixstats-postgres psql -U postgres -d postgres -c "DROP DATABASE IF EXISTS ixstats WITH (FORCE);"
+        docker exec -i ixstats-postgres psql -U postgres -d postgres -c "CREATE DATABASE ixstats;"
+        docker exec -i ixstats-postgres pg_restore -U postgres -d ixstats --no-owner --no-privileges < /tmp/ixstats-prod.dump
+        echo "✓ Local database refreshed from production dump."
+        
+        echo "🖼️  Syncing gitignored static assets (images, flags, textures, sounds)..."
+        if rsync -avz --exclude="images/uploads/" --exclude="images/downloaded/" --exclude="images/uploads_backup/" ixwiki:/ixwiki/public/projects/ixstats/public/ public/ 2>/dev/null; then
+            echo "✓ Static assets synced."
+        else
+            echo "⚠️  Warning: Failed to sync static assets. Continuing with existing assets."
+        fi
+    else
+        echo "⚠️  Warning: Failed to dump production database. Skipping database sync and using existing local data."
+    fi
 else
     echo "⚠️  Warning: Production server (ixwiki) is not reachable. Skipping database sync and using existing local data."
 fi

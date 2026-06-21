@@ -12,12 +12,14 @@ export interface SidebarContextProps {
   isCollapsed: boolean;
   toggleCollapsed: () => void;
   isHovered?: boolean;
+  setIsHovered?: (hovered: boolean) => void;
 }
 
 export const SidebarContext = createContext<SidebarContextProps>({
   isCollapsed: false,
   toggleCollapsed: () => {},
   isHovered: false,
+  setIsHovered: () => {},
 });
 
 export const useSidebar = () => useContext(SidebarContext);
@@ -37,6 +39,7 @@ interface DashboardSidebarLayoutProps {
   variant?: "default" | "rail";
   expandedWidthClassName?: string;
   expandedWidthStyle?: string;
+  disableGlobalHover?: boolean;
 }
 
 export function DashboardSidebarLayout({
@@ -53,6 +56,7 @@ export function DashboardSidebarLayout({
   variant = "default",
   expandedWidthClassName,
   expandedWidthStyle,
+  disableGlobalHover = false,
 }: DashboardSidebarLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(defaultCollapsed);
   const [isMounted, setIsMounted] = useState(false);
@@ -114,6 +118,7 @@ export function DashboardSidebarLayout({
         isCollapsed: isCollapsedNow,
         toggleCollapsed: handleToggleSidebar,
         isHovered: isHoverActive,
+        setIsHovered,
       }}
     >
       <div className="relative flex min-h-full w-full flex-1 flex-col space-y-0">
@@ -144,7 +149,7 @@ export function DashboardSidebarLayout({
           <div className="flex gap-4 sm:gap-6">
             {/* Desktop: Fixed icon rail */}
             <div
-              onMouseEnter={() => setIsHovered(true)}
+              onMouseEnter={disableGlobalHover ? undefined : () => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
                 "relative z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",

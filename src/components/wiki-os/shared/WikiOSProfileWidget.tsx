@@ -12,6 +12,7 @@ import { useUser } from "@clerk/nextjs";
 import { Calendar, FileText, Trophy, Sparkles, UserPlus } from "lucide-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
 
 function getInitials(name: string): string {
   const cleaned = name.trim().replace(/_/g, " ");
@@ -21,9 +22,16 @@ function getInitials(name: string): string {
   return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
 
-export function WikiOSProfileWidget({ expanded }: { expanded: boolean }) {
+export function WikiOSProfileWidget({
+  expanded,
+  isLocalHoverExpanded = false,
+}: {
+  expanded: boolean;
+  isLocalHoverExpanded?: boolean;
+}) {
   const { user, isSignedIn } = useUser();
   const [imgError, setImgError] = useState(false);
+  const showExpanded = expanded || isLocalHoverExpanded;
 
   // Resolve the signed-in user's linked wiki account.
   const status = api.ixnayid.getStatus.useQuery(undefined, {
@@ -79,10 +87,10 @@ export function WikiOSProfileWidget({ expanded }: { expanded: boolean }) {
     </div>
   );
 
-  // ── Signed in but no wiki account linked → subtle link CTA ──
+  // ── Signed in but no wiki account linked ──
   if (!linked) {
     const settingsHref = withBasePath("/settings");
-    if (!expanded) {
+    if (!expanded && !isLocalHoverExpanded) {
       return (
         <Link
           href={settingsHref}
@@ -93,10 +101,23 @@ export function WikiOSProfileWidget({ expanded }: { expanded: boolean }) {
         </Link>
       );
     }
+    if (isLocalHoverExpanded) {
+      return (
+        <Link
+          href={settingsHref}
+          className="group flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out outline-none relative w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+        >
+          {renderAvatar(false)}
+          <span className="flex-1 overflow-hidden text-left text-xs font-semibold whitespace-nowrap pl-3 text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] opacity-100 w-auto">
+            Link wiki account
+          </span>
+        </Link>
+      );
+    }
     return (
       <Link
         href={settingsHref}
-        className="group flex items-center gap-2.5 rounded-xl border border-dashed border-[var(--wikios-border)] bg-white/[0.03] px-2.5 py-2 transition-all hover:bg-white/[0.07]"
+        className="group flex items-center gap-2.5 rounded-xl border border-dashed border-[var(--wikios-border)] bg-white/[0.03] px-2.5 py-2 transition-all hover:bg-white/[0.07] w-full"
       >
         {renderAvatar(false)}
         <div className="min-w-0">
@@ -114,7 +135,7 @@ export function WikiOSProfileWidget({ expanded }: { expanded: boolean }) {
   const profileHref = withBasePath(`/wiki/user/${encodeURIComponent(wikiUsername!)}`);
 
   // ── Collapsed rail → avatar + rank badge only ──
-  if (!expanded) {
+  if (!expanded && !isLocalHoverExpanded) {
     return (
       <Link
         href={profileHref}
@@ -126,11 +147,26 @@ export function WikiOSProfileWidget({ expanded }: { expanded: boolean }) {
     );
   }
 
-  // ── Expanded → glass profile card ──
+  // ── Hovered state in collapsed rail → single row horizontal pill ──
+  if (isLocalHoverExpanded) {
+    return (
+      <Link
+        href={profileHref}
+        className="group flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out outline-none relative w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+      >
+        {renderAvatar(true)}
+        <span className="flex-1 overflow-hidden text-left text-xs font-semibold whitespace-nowrap pl-3 text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] opacity-100 w-auto">
+          {displayName}
+        </span>
+      </Link>
+    );
+  }
+
+  // ── Expanded (Locked Sidebar) → glass profile card ──
   return (
     <Link
       href={profileHref}
-      className="group block rounded-xl border border-[var(--wikios-border)] bg-white/5 p-2 transition-all hover:border-blue-500/30 hover:bg-white/[0.08]"
+      className="group block rounded-xl border border-[var(--wikios-border)] bg-white/5 p-2 transition-all hover:border-blue-500/30 hover:bg-white/[0.08] w-full"
     >
       <div className="flex items-center gap-2.5">
         {renderAvatar(true)}

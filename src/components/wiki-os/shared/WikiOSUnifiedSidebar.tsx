@@ -101,6 +101,7 @@ interface FisheyeIconProps {
 
 function FisheyeIcon({ id, mouseY, isExpanded, title, children, index, onHover }: FisheyeIconProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const { setIsHovered } = useSidebar();
 
   const distance = useTransform(mouseY, (val) => {
     if (!ref.current || val === Infinity) return Infinity;
@@ -126,6 +127,9 @@ function FisheyeIcon({ id, mouseY, isExpanded, title, children, index, onHover }
 
   const handleMouseEnter = () => {
     onHover(index);
+    if (setIsHovered) {
+      setIsHovered(true);
+    }
   };
 
   return (
@@ -275,6 +279,9 @@ export function WikiOSUnifiedSidebar({
     badge?: ReactNode;
     index: number;
   }) => {
+    const isRowExpanded = isExpanded || (hoveredIndex === index);
+    const isLocalHoverExpanded = !isExpanded && hoveredIndex === index;
+
     const activeColorClass = getActiveColorClass(id);
     const itemClass = cn(
       "wikios-sidebar-icon-box flex h-9 w-9 items-center justify-center rounded-xl border transition-all shadow-md active:scale-95 shrink-0",
@@ -295,12 +302,12 @@ export function WikiOSUnifiedSidebar({
             <Icon className="h-4 w-4 shrink-0" />
           </div>
         ) : (
-          isExpanded && <div className="flex w-9 shrink-0 items-center justify-center" />
+          isRowExpanded && <div className="flex w-9 shrink-0 items-center justify-center" />
         )}
         <span
           className={cn(
             "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap transition-all duration-300 ease-in-out",
-            !isExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100",
+            !isRowExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100",
             isActive
               ? cn("font-semibold", activeColorClass.split(" ")[0])
               : "text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]"
@@ -309,15 +316,18 @@ export function WikiOSUnifiedSidebar({
         >
           {title}
         </span>
-        {badge && isExpanded && (
+        {badge && isRowExpanded && (
           <div className="shrink-0 pl-2 transition-opacity duration-300">{badge}</div>
         )}
       </>
     );
 
     const wrapperClass = cn(
-      "flex w-full items-center px-2.5 py-1 rounded-xl transition-all duration-200 group outline-none",
-      isActive ? "bg-white/[0.03]" : "hover:bg-white/5"
+      "flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out group outline-none relative",
+      isLocalHoverExpanded
+        ? "w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+        : "w-full border-transparent bg-transparent hover:bg-white/5",
+      isActive ? "bg-white/[0.03]" : ""
     );
 
     if (href) {
@@ -326,7 +336,7 @@ export function WikiOSUnifiedSidebar({
           key={id}
           id={id}
           mouseY={mouseY}
-          isExpanded={isExpanded}
+          isExpanded={isRowExpanded}
           title={title}
           index={index}
           onHover={setHoveredIndex}
@@ -343,7 +353,7 @@ export function WikiOSUnifiedSidebar({
         key={id}
         id={id}
         mouseY={mouseY}
-        isExpanded={isExpanded}
+        isExpanded={isRowExpanded}
         title={title}
         index={index}
         onHover={setHoveredIndex}
@@ -374,16 +384,25 @@ export function WikiOSUnifiedSidebar({
     >
       <div className="flex w-full flex-col gap-1.5">
         {/* Profile widget — signed-in user's linked wiki profile */}
-        <FisheyeIcon
-          id="lorewards"
-          mouseY={mouseY}
-          isExpanded={isExpanded}
-          title="Wiki Profile"
-          index={rowIndex++}
-          onHover={setHoveredIndex}
-        >
-          <WikiOSProfileWidget expanded={isExpanded} />
-        </FisheyeIcon>
+        {(() => {
+          const profileIndex = rowIndex++;
+          const isProfileHovered = !isExpanded && hoveredIndex === profileIndex;
+          return (
+            <FisheyeIcon
+              id="lorewards"
+              mouseY={mouseY}
+              isExpanded={isExpanded || isProfileHovered}
+              title="Wiki Profile"
+              index={profileIndex}
+              onHover={setHoveredIndex}
+            >
+              <WikiOSProfileWidget
+                expanded={isExpanded}
+                isLocalHoverExpanded={isProfileHovered}
+              />
+            </FisheyeIcon>
+          );
+        })()}
 
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
@@ -501,23 +520,30 @@ export function WikiOSUnifiedSidebar({
             {(() => {
               const currentStashIndex = rowIndex++;
               const transitionStyle = getTransitionStyle(currentStashIndex);
+              const isStashExpanded = isExpanded || (hoveredIndex === currentStashIndex);
+              const isStashLocalHovered = !isExpanded && hoveredIndex === currentStashIndex;
               return (
                 <FisheyeIcon
                   id="stashes"
                   mouseY={mouseY}
-                  isExpanded={isExpanded}
+                  isExpanded={isStashExpanded}
                   title="Stash Page"
                   index={currentStashIndex}
                   onHover={setHoveredIndex}
                 >
-                  <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
+                  <div className={cn(
+                    "group flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out relative",
+                    isStashLocalHovered
+                      ? "w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+                      : "w-full border-transparent bg-transparent hover:bg-white/5"
+                  )}>
                     <div className="shrink-0">
                       <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
                     </div>
                     <span
                       className={cn(
                         "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-all duration-300 ease-in-out group-hover:text-[var(--wikios-text)]",
-                        !isExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
+                        !isStashExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
                       )}
                       style={transitionStyle}
                     >
@@ -576,11 +602,12 @@ export function WikiOSUnifiedSidebar({
               <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
               {(() => {
                 const currentCountryIndex = rowIndex++;
+                const isCountryHovered = !isExpanded && hoveredIndex === currentCountryIndex;
                 return (
                   <FisheyeIcon
                     id="lorewards"
                     mouseY={mouseY}
-                    isExpanded={isExpanded}
+                    isExpanded={isExpanded || isCountryHovered}
                     title={countryData.name}
                     index={currentCountryIndex}
                     onHover={setHoveredIndex}
@@ -588,6 +615,7 @@ export function WikiOSUnifiedSidebar({
                     <ActiveCountryUnifiedWidget
                       country={countryData}
                       transitionStyle={getTransitionStyle(currentCountryIndex)}
+                      isLocalHoverExpanded={isCountryHovered}
                     />
                   </FisheyeIcon>
                 );

@@ -172,6 +172,7 @@ export function WikiOSLayout({
         variant="rail"
         expandedWidthClassName="w-48"
         expandedWidthStyle="12rem"
+        disableGlobalHover={true}
       >
         <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
           {children}

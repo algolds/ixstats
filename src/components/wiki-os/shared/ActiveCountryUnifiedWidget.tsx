@@ -14,11 +14,17 @@ import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
 interface ActiveCountryUnifiedWidgetProps {
   country: any;
   transitionStyle?: React.CSSProperties;
+  isLocalHoverExpanded?: boolean;
 }
 
-export function ActiveCountryUnifiedWidget({ country, transitionStyle }: ActiveCountryUnifiedWidgetProps) {
+export function ActiveCountryUnifiedWidget({
+  country,
+  transitionStyle,
+  isLocalHoverExpanded = false,
+}: ActiveCountryUnifiedWidgetProps) {
   const { isCollapsed: sidebarCollapsed, isHovered } = useSidebar();
   const isCollapsed = sidebarCollapsed && !isHovered;
+  const isRowCollapsed = isCollapsed && !isLocalHoverExpanded;
   const { country: myCountry, userProfile } = useUserCountry();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
@@ -59,7 +65,12 @@ export function ActiveCountryUnifiedWidget({ country, transitionStyle }: ActiveC
 
   return (
     <div className="relative w-full" ref={popoverRef}>
-      <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
+      <div className={cn(
+        "group flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out outline-none relative",
+        isLocalHoverExpanded
+          ? "w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+          : "w-full border-transparent bg-transparent hover:bg-white/5"
+      )}>
         <button
           onClick={() => {
             if (isCollapsed) {
@@ -84,7 +95,7 @@ export function ActiveCountryUnifiedWidget({ country, transitionStyle }: ActiveC
           onClick={() => setActionsMenuOpen(true)}
           className={cn(
             "flex-1 overflow-hidden text-left whitespace-nowrap transition-all duration-300 ease-in-out outline-none",
-            isCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
+            isRowCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
           )}
           style={transitionStyle}
           type="button"
