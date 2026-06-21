@@ -26,12 +26,15 @@ import { api } from "~/trpc/react";
 import { ParliamentHemicycle } from "./ParliamentHemicycle";
 import { IxTime } from "~/lib/ixtime";
 import { IxTimePicker } from "~/components/ui/ixtime-picker";
+import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 
 interface ElectionSimulatorProps {
   countryId: string;
+  /** When set, scroll to + highlight (and expand) this election. */
+  focusId?: string | null;
 }
 
-export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
+export function ElectionSimulator({ countryId, focusId }: ElectionSimulatorProps) {
   const utils = api.useUtils();
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [candidateOpen, setCandidateOpen] = useState(false);
@@ -55,10 +58,18 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
     }
   }, [scheduleOpen]);
 
+  // Per-item targeting: expand the clicked election (effect only needs focusId).
+  useEffect(() => {
+    if (focusId) setExpandedElection(focusId);
+  }, [focusId]);
+
   const { data: elections = [], refetch: refetchElections } = api.elections.getElections.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
+
+  // Scroll to + highlight the targeted election once the rows have rendered.
+  useScrollToFocus(focusId, [elections]);
 
   const { data: parties = [] } = api.elections.getParties.useQuery(
     { countryId },
@@ -297,6 +308,7 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
               {pendingElections.map((election: any) => (
                 <div
                   key={election.id}
+                  data-focus-id={election.id}
                   className="rounded-lg border border-amber-200/50 bg-amber-50/30 p-3 dark:border-amber-800/30 dark:bg-amber-950/20"
                 >
                   <div className="flex items-center justify-between">
@@ -466,7 +478,7 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                 const winner = sortedResults[0];
 
                 return (
-                  <div key={election.id} className="rounded-lg border p-3">
+                  <div key={election.id} data-focus-id={election.id} className="rounded-lg border p-3">
                     <button
                       className="flex w-full items-center justify-between text-left"
                       onClick={() => setExpandedElection(isExpanded ? null : election.id)}

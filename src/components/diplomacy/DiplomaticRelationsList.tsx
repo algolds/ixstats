@@ -6,9 +6,12 @@ import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Globe, Calendar, Landmark, Activity, Handshake, AlertCircle } from "lucide-react";
+import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 
 interface DiplomaticRelationsListProps {
   countryId: string;
+  /** When set, scroll to + highlight the relation with this target country id. */
+  focusId?: string | null;
 }
 
 const STATUS_THEMES: Record<string, { badge: string; text: string; progress: string }> = {
@@ -39,12 +42,14 @@ const STATUS_THEMES: Record<string, { badge: string; text: string; progress: str
   },
 };
 
-export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListProps) {
+export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelationsListProps) {
   const {
     data: relations,
     isLoading,
     error,
   } = api.diplomaticCore.getRelationships.useQuery({ countryId }, { enabled: !!countryId });
+
+  useScrollToFocus(focusId, [relations]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -109,6 +114,7 @@ export function DiplomaticRelationsList({ countryId }: DiplomaticRelationsListPr
         return (
           <div
             key={rel.id}
+            data-focus-id={rel.targetCountryId ?? rel.id}
             className="glass-hierarchy-child border-border/40 bg-card/40 flex flex-col justify-between rounded-xl border p-4 shadow-sm backdrop-blur-sm transition-all hover:scale-[1.01] hover:shadow-md"
           >
             {/* Header info */}

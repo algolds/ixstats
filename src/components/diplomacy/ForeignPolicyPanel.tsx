@@ -11,9 +11,11 @@ import { api } from "~/trpc/react";
 
 interface ForeignPolicyPanelProps {
   countryId: string;
+  /** When set, scroll to + highlight this policy in the active-policies list. */
+  focusId?: string | null;
 }
 
-export function ForeignPolicyPanel({ countryId }: ForeignPolicyPanelProps) {
+export function ForeignPolicyPanel({ countryId, focusId }: ForeignPolicyPanelProps) {
   const [showCreator, setShowCreator] = useState(false);
   const utils = api.useUtils();
 
@@ -89,7 +91,7 @@ export function ForeignPolicyPanel({ countryId }: ForeignPolicyPanelProps) {
       </div>
 
       {/* Active policies */}
-      <ActivePoliciesList countryId={countryId} />
+      <ActivePoliciesList countryId={countryId} focusId={focusId} />
 
       {/* Bilateral trade viewer */}
       <TradeImpactChart countryId={countryId} />

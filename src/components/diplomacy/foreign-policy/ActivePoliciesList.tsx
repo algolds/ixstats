@@ -28,9 +28,12 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
+import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 
 interface ActivePoliciesListProps {
   countryId: string;
+  /** When set, scroll to + highlight this policy row. */
+  focusId?: string | null;
 }
 
 const ACTION_CONFIG: Record<
@@ -64,13 +67,15 @@ const ACTION_CONFIG: Record<
   },
 };
 
-export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
+export function ActivePoliciesList({ countryId, focusId }: ActivePoliciesListProps) {
   const [showExpired, setShowExpired] = useState(false);
 
   const { data: policies, refetch } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
     { countryId, includeExpired: showExpired },
     { enabled: !!countryId }
   );
+
+  useScrollToFocus(focusId, [policies]);
 
   const liftMutation = api.diplomaticPolicies.liftForeignPolicyAction.useMutation({
     onSuccess: () => void refetch(),
@@ -116,6 +121,7 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
         return (
           <div
             key={policy.id}
+            data-focus-id={policy.id}
             className={`rounded-lg border p-4 ${
               policy.status === "active" ? "border-cyan-500/20" : "border-muted opacity-60"
             }`}

@@ -68,6 +68,13 @@ const IDEOLOGY_BADGES: Record<string, { label: string; colorClass: string }> = {
 
 export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
   const [activeSheet, setActiveSheet] = useState<SheetView>(null);
+  // Per-item targeting: the specific row the user clicked.
+  const [focusId, setFocusId] = useState<string | null>(null);
+
+  const openSheet = (sheet: SheetView, focus: string | null = null) => {
+    setFocusId(focus);
+    setActiveSheet(sheet);
+  };
 
   const { data: parties } = api.elections.getParties.useQuery(
     { countryId },
@@ -155,9 +162,9 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
             ...(filledSeats > 0 ? [{ label: "filled", value: filledSeats }] : []),
           ]}
           ctaLabel="Configure"
-          onCta={() => setActiveSheet("legislature")}
+          onCta={() => openSheet("legislature")}
           footerLabel="View Details"
-          onFooter={() => setActiveSheet("legislature")}
+          onFooter={() => openSheet("legislature")}
           emptyIcon={Landmark}
           emptyTitle={totalSeats === 0 ? "Establish your parliament" : "No seats assigned yet"}
           emptyDescription={
@@ -174,6 +181,7 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
                   accentColor="indigo"
                   title={seat.party?.name ?? "Unknown Party"}
                   subtitle={`${seat.seats} seat${seat.seats !== 1 ? "s" : ""}`}
+                  onClick={() => openSheet("parties", seat.party?.id)}
                   trailingText={
                     totalSeats > 0 ? `${Math.round((seat.seats / totalSeats) * 100)}%` : undefined
                   }
@@ -186,6 +194,7 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
               accentColor="amber"
               title="Parliament configured"
               subtitle={`${totalSeats} seats · No elections held yet`}
+              onClick={() => openSheet("legislature")}
               badges={[
                 { label: "SETUP", colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30" },
               ]}
@@ -200,9 +209,9 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
           accentColor="purple"
           stats={sortedParties.length > 0 ? [{ label: "active", value: sortedParties.length }] : []}
           ctaLabel="New Party"
-          onCta={() => setActiveSheet("parties")}
+          onCta={() => openSheet("parties")}
           footerLabel="View All"
-          onFooter={() => setActiveSheet("parties")}
+          onFooter={() => openSheet("parties")}
           totalCount={sortedParties.length}
           emptyIcon={Users}
           emptyTitle="Create your first parties"
@@ -219,6 +228,7 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
                 accentColor="purple"
                 title={party.name}
                 subtitle={party.leader ? `Led by ${party.leader}` : undefined}
+                onClick={() => openSheet("parties", party.id)}
                 badges={[ideology]}
                 trailingText={`${party.baseSupport ?? 0}%`}
                 trailingColor="text-purple-600"
@@ -241,9 +251,9 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
               : []),
           ]}
           ctaLabel="Schedule"
-          onCta={() => setActiveSheet("elections")}
+          onCta={() => openSheet("elections")}
           footerLabel="View All"
-          onFooter={() => setActiveSheet("elections")}
+          onFooter={() => openSheet("elections")}
           totalCount={allElections.length}
           emptyIcon={BarChart3}
           emptyTitle="No elections yet"
@@ -255,6 +265,7 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
               accentColor="amber"
               title={election.name ?? "Election"}
               subtitle={election.electionType ?? "general"}
+              onClick={() => openSheet("elections", election.id)}
               badges={[
                 {
                   label: "PENDING",
@@ -273,6 +284,7 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
                 accentColor="green"
                 title={election.name ?? "Election"}
                 subtitle={election.electionType ?? "general"}
+                onClick={() => openSheet("elections", election.id)}
                 badges={[
                   {
                     label: "COMPLETED",
@@ -313,7 +325,7 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
             <DialogDescription>Manage parties, ideologies, and support bases</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <PartyManager countryId={countryId} />
+            <PartyManager countryId={countryId} focusId={focusId} />
           </div>
         </DialogContent>
       </Dialog>
@@ -330,7 +342,7 @@ export function PoliticsWarRoom({ countryId }: PoliticsWarRoomProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <ElectionSimulator countryId={countryId} />
+            <ElectionSimulator countryId={countryId} focusId={focusId} />
           </div>
         </DialogContent>
       </Dialog>

@@ -22,6 +22,7 @@ import {
 } from "~/components/ui/dialog";
 import { Plus, Users, Trash2, Pencil } from "lucide-react";
 import { api } from "~/trpc/react";
+import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 
 const IDEOLOGY_OPTIONS = [
@@ -36,9 +37,11 @@ const IDEOLOGY_OPTIONS = [
 
 interface PartyManagerProps {
   countryId: string;
+  /** When set, scroll to + highlight this party row. */
+  focusId?: string | null;
 }
 
-export function PartyManager({ countryId }: PartyManagerProps) {
+export function PartyManager({ countryId, focusId }: PartyManagerProps) {
   const utils = api.useUtils();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingParty, setEditingParty] = useState<string | null>(null);
@@ -55,6 +58,8 @@ export function PartyManager({ countryId }: PartyManagerProps) {
     { countryId },
     { enabled: !!countryId }
   );
+
+  useScrollToFocus(focusId, [parties]);
 
   const createParty = api.elections.createParty.useMutation({
     onSuccess: () => {
@@ -270,6 +275,7 @@ export function PartyManager({ countryId }: PartyManagerProps) {
             {parties.map((party: any) => (
               <div
                 key={party.id}
+                data-focus-id={party.id}
                 className="hover:bg-muted/30 flex items-center justify-between rounded-lg border p-3 transition-colors"
               >
                 <div className="flex items-center gap-3">

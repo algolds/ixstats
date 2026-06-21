@@ -34,6 +34,10 @@ const EmbassyCreatorSheet = dynamic(
   () => import("./EmbassyCreatorSheet").then((m) => ({ default: m.EmbassyCreatorSheet })),
   { ssr: false }
 );
+const EmbassyDetailSheet = dynamic(
+  () => import("./EmbassyDetailSheet").then((m) => ({ default: m.EmbassyDetailSheet })),
+  { ssr: false }
+);
 
 interface DiplomacyWarRoomProps {
   countryId: string;
@@ -64,9 +68,50 @@ const ACTION_TYPE_BADGES: Record<string, { label: string; colorClass: string }> 
   },
 };
 
+// Full, human-readable labels for the relation + foreign-policy subtitles
+// (e.g. "free_trade" → "Free Trade Agreement", not "free trade").
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  free_trade: "Free Trade Agreement",
+  military_alliance: "Military Alliance",
+  non_aggression: "Non-Aggression Pact",
+  cultural_exchange: "Cultural Exchange",
+  embargo: "Embargo",
+  sanction: "Sanctions",
+  blockade: "Blockade",
+};
+
+const RELATIONSHIP_LABELS: Record<string, string> = {
+  alliance: "Alliance",
+  ally: "Alliance",
+  allied: "Alliance",
+  trade: "Trade Partner",
+  trade_partner: "Trade Partner",
+  economic: "Economic Partnership",
+  friendly: "Friendly",
+  neutral: "Neutral",
+  tension: "Tension",
+  rival: "Rivalry",
+  rivalry: "Rivalry",
+  hostile: "Hostile",
+  war: "At War",
+};
+
+function titleCase(s?: string): string {
+  if (!s) return "";
+  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
   const [activeSheet, setActiveSheet] = useState<SheetView>(null);
   const [embassyCreatorOpen, setEmbassyCreatorOpen] = useState(false);
+  // Per-item targeting: the specific row the user clicked.
+  const [selectedEmbassyId, setSelectedEmbassyId] = useState<string | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
+
+  const openSheet = (sheet: SheetView, focus: string | null = null) => {
+    setFocusId(focus);
+    setActiveSheet(sheet);
+  };
 
   const { data: embassies, refetch: refetchEmbassies } =
     api.diplomaticEmbassies.getEmbassies.useQuery({ countryId }, { enabled: !!countryId });
@@ -119,7 +164,7 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           ctaLabel="Establish"
           onCta={() => setEmbassyCreatorOpen(true)}
           footerLabel="View All"
-          onFooter={() => setActiveSheet("embassies")}
+          onFooter={() => openSheet("embassies")}
           totalCount={embassyData.all.length}
           emptyIcon={Building2}
           emptyTitle="Build your diplomatic network"
@@ -131,6 +176,7 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
               accentColor="cyan"
               title={embassy.country ?? embassy.name ?? "Embassy"}
               subtitle={`${embassy.role === "host" ? "Hosting" : "Guest"} · Level ${embassy.level ?? 1}`}
+              onClick={() => setSelectedEmbassyId(embassy.id)}
               badges={[
                 {
                   label: "ACTIVE",
@@ -148,6 +194,7 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
                 accentColor="amber"
                 title={embassy.country ?? embassy.name ?? "Embassy"}
                 subtitle={embassy.role === "host" ? "Hosting" : "Guest"}
+                onClick={() => setSelectedEmbassyId(embassy.id)}
                 badges={[
                   {
                     label: "PENDING",
@@ -174,7 +221,7 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           ctaLabel="Establish Embassy"
           onCta={() => setEmbassyCreatorOpen(true)}
           footerLabel="View All"
-          onFooter={() => setActiveSheet("relations")}
+          onFooter={() => openSheet("relations")}
           totalCount={relationData.sorted.length}
           emptyIcon={Globe}
           emptyTitle="No relations yet"
@@ -188,8 +235,13 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
               <CommandPanelItem
                 key={rel.id}
                 accentColor={color}
-                title={rel.targetCountry?.name ?? rel.countryB?.name ?? "Unknown"}
-                subtitle={rel.relationType ?? "diplomatic"}
+                title={rel.targetCountryName ?? rel.targetCountry ?? "Unknown"}
+                subtitle={
+                  rel.relationship
+                    ? (RELATIONSHIP_LABELS[rel.relationship] ?? titleCase(rel.relationship))
+                    : "Diplomatic"
+                }
+                onClick={() => openSheet("relations", rel.targetCountryId ?? rel.id)}
                 trailingText={`${strength}%`}
                 trailingColor={
                   strength >= 70
@@ -210,9 +262,9 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           accentColor="indigo"
           stats={activeFP.length > 0 ? [{ label: "active", value: activeFP.length }] : []}
           ctaLabel="Propose Policy"
-          onCta={() => setActiveSheet("foreign-policy")}
+          onCta={() => openSheet("foreign-policy")}
           footerLabel="View All"
-          onFooter={() => setActiveSheet("foreign-policy")}
+          onFooter={() => openSheet("foreign-policy")}
           totalCount={foreignPolicies?.length ?? 0}
           emptyIcon={Scale}
           emptyTitle="No foreign policy enacted"
@@ -233,7 +285,8 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
                     : "red"
                 }
                 title={targetName}
-                subtitle={fp.actionType?.replace(/_/g, " ")}
+                subtitle={ACTION_TYPE_LABELS[fp.actionType] ?? titleCase(fp.actionType)}
+                onClick={() => openSheet("foreign-policy", fp.id)}
                 badges={[badge]}
               />
             );
@@ -269,7 +322,7 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
             <DialogDescription>Detailed list of diplomatic relationships</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <DiplomaticRelationsList countryId={countryId} />
+            <DiplomaticRelationsList countryId={countryId} focusId={focusId} />
           </div>
         </DialogContent>
       </Dialog>
@@ -284,7 +337,7 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
             <DialogDescription>Strategic foreign relations framework</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <ForeignPolicyPanel countryId={countryId} />
+            <ForeignPolicyPanel countryId={countryId} focusId={focusId} />
           </div>
         </DialogContent>
       </Dialog>
@@ -299,6 +352,14 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           }}
         />
       )}
+
+      {/* Per-item: click a specific embassy row → open its detail */}
+      <EmbassyDetailSheet
+        embassyId={selectedEmbassyId}
+        countryId={countryId}
+        onClose={() => setSelectedEmbassyId(null)}
+        onEmbassyChanged={() => void refetchEmbassies()}
+      />
     </>
   );
 }
