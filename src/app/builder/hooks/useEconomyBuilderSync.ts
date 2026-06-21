@@ -114,8 +114,22 @@ export function useEconomyBuilderSync({
   // ============================================================
   // INTEGRATION SERVICE SUBSCRIPTION
   // ============================================================
+  // When inside the unified builder (enabled === false), the integration service
+  // is DISPLAY-ONLY: it must never push its regenerated/derived economyBuilder or
+  // economicInputs back into builderState. That back-channel was the "edit one
+  // thing and everything else resets" bug — e.g. changing atomic components
+  // regenerates economyBuilder in the service, which then clobbered the user's
+  // detailed economy config in builderState. builderState is the single source
+  // of truth; only direct user edits write to it.
+  const enabledRef = useRef(enabled);
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
+
   useEffect(() => {
     const unsubscribe = economyIntegrationService.subscribe((state) => {
+      if (!enabledRef.current) return;
+
       // Use refs for comparison to avoid stale closures
       if (state.economyBuilder && !isEqual(state.economyBuilder, economyBuilderRef.current)) {
         setEconomyBuilder(state.economyBuilder);

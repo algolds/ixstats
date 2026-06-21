@@ -439,7 +439,12 @@ export const managementCreateProcedures = {
               interestRates: fiscalSystem.interestRates || 3.5,
               debtServiceCosts: fiscalSystem.debtServiceCosts || nominalGDP * 0.7 * 0.035,
               povertyRate: incomeWealth.povertyRate || 15,
-              incomeInequalityGini: incomeWealth.incomeInequalityGini || 0.38,
+              incomeInequalityGini:
+                incomeWealth.incomeInequalityGini !== undefined
+                  ? incomeWealth.incomeInequalityGini
+                  : incomeWealth.giniIndex !== undefined
+                    ? incomeWealth.giniIndex / 100
+                    : 0.38,
               socialMobilityIndex: incomeWealth.socialMobilityIndex || 60,
               totalGovernmentSpending: governmentSpending.totalSpending || nominalGDP * 0.22,
               spendingGDPPercent: governmentSpending.spendingGDPPercent || 22,
@@ -566,7 +571,8 @@ export const managementCreateProcedures = {
             });
 
             if (taxSystemData.categories && taxSystemData.categories.length > 0) {
-              for (const categoryData of taxSystemData.categories) {
+              for (let categoryIndex = 0; categoryIndex < taxSystemData.categories.length; categoryIndex++) {
+                const categoryData = taxSystemData.categories[categoryIndex];
                 const taxCategory = await tx.taxCategory.create({
                   data: {
                     taxSystemId: taxSystem.id,
@@ -605,6 +611,52 @@ export const managementCreateProcedures = {
                     });
                   }
                 }
+
+                // TaxDeduction[] for this category — keyed by category index in the
+                // builder (deductions: Record<categoryIndex, TaxDeductionInput[]>).
+                // Previously dropped entirely on save.
+                const categoryDeductions = taxSystemData.deductions?.[String(categoryIndex)];
+                if (Array.isArray(categoryDeductions)) {
+                  for (const ded of categoryDeductions) {
+                    await tx.taxDeduction.create({
+                      data: {
+                        categoryId: taxCategory.id,
+                        deductionName: ded.deductionName,
+                        deductionType: ded.deductionType,
+                        description: ded.description,
+                        maximumAmount: ded.maximumAmount,
+                        percentage: ded.percentage,
+                        qualifications:
+                          ded.qualifications != null ? JSON.stringify(ded.qualifications) : null,
+                        isActive: ded.isActive ?? true,
+                        priority: ded.priority ?? 50,
+                      },
+                    });
+                  }
+                }
+              }
+            }
+
+            // TaxExemption[] — taxSystem-scoped flat array in the builder; previously
+            // deleted on save but never recreated. categoryId left null (the builder's
+            // category linkage is index-based, not a DB id).
+            if (Array.isArray(taxSystemData.exemptions) && taxSystemData.exemptions.length > 0) {
+              for (const ex of taxSystemData.exemptions) {
+                await tx.taxExemption.create({
+                  data: {
+                    taxSystemId: taxSystem.id,
+                    exemptionName: ex.exemptionName,
+                    exemptionType: ex.exemptionType,
+                    description: ex.description,
+                    exemptionAmount: ex.exemptionAmount,
+                    exemptionRate: ex.exemptionRate,
+                    qualifications:
+                      ex.qualifications != null ? JSON.stringify(ex.qualifications) : null,
+                    isActive: ex.isActive ?? true,
+                    startDate: ex.startDate,
+                    endDate: ex.endDate,
+                  },
+                });
               }
             }
           }
@@ -654,7 +706,6 @@ export const managementCreateProcedures = {
                 });
                 deptIdMap.set(tempId, department.id);
               }
-
               for (const deptInput of govInput.departments) {
                 if (deptInput.parentDepartmentId) {
                   const tempId = deptInput.id || deptInput.name;
@@ -667,6 +718,50 @@ export const managementCreateProcedures = {
                     });
                   }
                 }
+              }
+
+              // BudgetAllocation[] — resolve the builder's departmentId to the real
+              // DB id via deptIdMap; skip unresolved or duplicate (departmentId, budgetYear).
+              if (Array.isArray(govInput.budgetAllocations)) {
+                const seenAlloc = new Set<string>();
+                for (const alloc of govInput.budgetAllocations) {
+                  const realDeptId = deptIdMap.get(alloc.departmentId);
+                  if (!realDeptId) continue;
+                  const budgetYear = alloc.budgetYear ?? new Date().getFullYear();
+                  const dedupeKey = `${realDeptId}:${budgetYear}`;
+                  if (seenAlloc.has(dedupeKey)) continue;
+                  seenAlloc.add(dedupeKey);
+                  await tx.budgetAllocation.create({
+                    data: {
+                      governmentStructureId: govStructure.id,
+                      departmentId: realDeptId,
+                      budgetYear,
+                      allocatedAmount: alloc.allocatedAmount ?? 0,
+                      allocatedPercent: alloc.allocatedPercent ?? 0,
+                      notes: alloc.notes,
+                    },
+                  });
+                }
+              }
+            }
+
+            // RevenueSource[]
+            if (Array.isArray(govInput.revenueSources)) {
+              for (const rev of govInput.revenueSources) {
+                await tx.revenueSource.create({
+                  data: {
+                    governmentStructureId: govStructure.id,
+                    name: rev.name,
+                    category: rev.category,
+                    description: rev.description,
+                    rate: rev.rate,
+                    revenueAmount: rev.revenueAmount ?? 0,
+                    revenuePercent: rev.revenuePercent ?? 0,
+                    isActive: rev.isActive ?? true,
+                    collectionMethod: rev.collectionMethod,
+                    administeredBy: rev.administeredBy,
+                  },
+                });
               }
             }
           }
@@ -772,14 +867,175 @@ export const managementCreateProcedures = {
               }
             }
 
-            await tx.economicProfile.create({
-              data: {
+            const sectors = Array.isArray(economyState.sectors) ? economyState.sectors : [];
+
+            // Calculate EconomicProfile metrics
+            const gdpGrowthVolatility = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + Math.abs((s.growthRate ?? 2.5) - 2.5), 0) / sectors.length
+              : undefined;
+
+            const economicComplexity = economyState.structure?.economicTier === "Advanced"
+              ? 85
+              : economyState.structure?.economicTier === "Developed"
+                ? 70
+                : economyState.structure?.economicTier === "Emerging"
+                  ? 55
+                  : 40;
+
+            const innovationIndex = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + (s.innovation ?? 50), 0) / sectors.length
+              : undefined;
+
+            const competitivenessRank = sectors.length > 0
+              ? Math.round(100 - sectors.reduce((sum: number, s: any) => sum + (s.competitiveness ?? 50), 0) / sectors.length)
+              : undefined;
+
+            const exportsGDPPercent = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + ((s.exports ?? 0) * (s.gdpContribution ?? 0)) / 100, 0)
+              : undefined;
+
+            const importsGDPPercent = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + ((s.imports ?? 0) * (s.gdpContribution ?? 0)) / 100, 0)
+              : undefined;
+
+            const tradeBalance = (economyState.structure?.totalGDP !== undefined && sectors.length > 0)
+              ? economyState.structure.totalGDP * sectors.reduce((sum: number, s: any) => sum + (((s.exports ?? 0) - (s.imports ?? 0)) * (s.gdpContribution ?? 0)) / 10000, 0)
+              : undefined;
+
+            const sectorBreakdownJson = sectors.length > 0
+              ? JSON.stringify(
+                  sectors.map((s: any) => ({
+                    name: s.name,
+                    gdp: s.gdpContribution,
+                    employment: s.employmentShare,
+                    productivity: s.productivity,
+                    growthRate: s.growthRate,
+                  }))
+                )
+              : (economyState.structure ? JSON.stringify(economyState.structure) : undefined);
+
+            await tx.economicProfile.upsert({
+              where: { countryId: country.id },
+              update: {
+                sectorBreakdown: sectorBreakdownJson,
+                gdpGrowthVolatility,
+                economicComplexity,
+                innovationIndex,
+                competitivenessRank,
+                exportsGDPPercent,
+                importsGDPPercent,
+                tradeBalance,
+              },
+              create: {
                 countryId: country.id,
-                sectorBreakdown: economyState.structure
-                  ? JSON.stringify(economyState.structure)
-                  : undefined,
+                sectorBreakdown: sectorBreakdownJson,
+                gdpGrowthVolatility: gdpGrowthVolatility ?? 2.5,
+                economicComplexity: economicComplexity ?? 50,
+                innovationIndex: innovationIndex ?? 50,
+                competitivenessRank: competitivenessRank ?? 50,
+                exportsGDPPercent: exportsGDPPercent ?? 20,
+                importsGDPPercent: importsGDPPercent ?? 22,
+                tradeBalance: tradeBalance ?? -2,
               },
             });
+
+            const laborConfig = economyState.laborMarket;
+            if (laborConfig) {
+              const youthUnemploymentRate = laborConfig.youthUnemploymentRate;
+              const femaleParticipationRate = laborConfig.femaleParticipationRate;
+              const medianWage = laborConfig.livingWageHourly !== undefined
+                ? laborConfig.livingWageHourly * 2000
+                : undefined;
+              const wageGrowthRate = 2.5;
+
+              const employmentBySector = sectors.length > 0
+                ? JSON.stringify(
+                    sectors.map((s: any) => ({
+                      sector: s.name,
+                      employment: s.employmentShare,
+                      productivity: s.productivity,
+                    }))
+                  )
+                : undefined;
+
+              const wageBySector = (sectors.length > 0 && laborConfig.livingWageHourly !== undefined)
+                ? JSON.stringify(
+                    sectors.map((s: any) => ({
+                      sector: s.name,
+                      avgWage: laborConfig.livingWageHourly * ((s.productivity ?? 100) / 100),
+                    }))
+                  )
+                : undefined;
+
+              await tx.laborMarket.upsert({
+                where: { countryId: country.id },
+                update: {
+                  youthUnemploymentRate,
+                  femaleParticipationRate,
+                  informalEmploymentRate: laborConfig.employmentType?.informal,
+                  medianWage,
+                  wageGrowthRate,
+                  employmentBySector,
+                  wageBySector,
+                },
+                create: {
+                  countryId: country.id,
+                  youthUnemploymentRate: youthUnemploymentRate ?? 6.0,
+                  femaleParticipationRate: femaleParticipationRate ?? 50,
+                  informalEmploymentRate: laborConfig.employmentType?.informal ?? 5.0,
+                  medianWage: medianWage ?? 30000,
+                  wageGrowthRate: wageGrowthRate ?? 2.5,
+                  employmentBySector: employmentBySector ?? "[]",
+                  wageBySector: wageBySector ?? "[]",
+                },
+              });
+            }
+
+            const demoConfig = economyState.demographics;
+            if (demoConfig) {
+              const ageDistribution = demoConfig.ageDistribution
+                ? JSON.stringify(demoConfig.ageDistribution)
+                : undefined;
+              const regions = demoConfig.regions
+                ? JSON.stringify(demoConfig.regions)
+                : undefined;
+              const educationLevels = demoConfig.educationLevels
+                ? JSON.stringify(demoConfig.educationLevels)
+                : undefined;
+              const birthRate = demoConfig.birthRate;
+              const deathRate = demoConfig.deathRate;
+              const migrationRate = demoConfig.netMigrationRate;
+              const dependencyRatio = demoConfig.totalDependencyRatio;
+              const medianAge = demoConfig.medianAge;
+              const populationGrowthProjection = demoConfig.populationGrowthRate;
+
+              await tx.demographics.upsert({
+                where: { countryId: country.id },
+                update: {
+                  ageDistribution,
+                  regions,
+                  educationLevels,
+                  birthRate,
+                  deathRate,
+                  migrationRate,
+                  dependencyRatio,
+                  medianAge,
+                  populationGrowthProjection,
+                },
+                create: {
+                  countryId: country.id,
+                  ageDistribution: ageDistribution ?? "{}",
+                  regions: regions ?? "[]",
+                  educationLevels: educationLevels ?? "{}",
+                  birthRate: birthRate ?? 12.5,
+                  deathRate: deathRate ?? 8.0,
+                  migrationRate: migrationRate ?? 0,
+                  dependencyRatio: dependencyRatio ?? 54,
+                  medianAge: medianAge ?? 35,
+                  populationGrowthProjection: populationGrowthProjection ?? 0.5,
+                },
+              });
+            }
           }
 
           await tx.user.update({

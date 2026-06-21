@@ -118,16 +118,16 @@ export function useNationalIdentityState(
     [inputs.nationalIdentity, inputs.countryName]
   );
 
-  // Auto-sync for national identity (edit mode only)
+  // Auto-sync DISABLED: this hook only ever runs inside the unified builder, where
+  // useBuilderState's updateCountry (1.5s) is the single writer and already persists
+  // nationalIdentity. This was a parallel partial-write side-channel that could race
+  // updateCountry and push a stale 15s-old identity snapshot to the DB. Identity now
+  // flows through builderState only. (enabled:false keeps the hook's shape intact.)
   const autoSync = useNationalIdentityAutoSync(countryId, identity, {
-    enabled: !!countryId, // Only enable in edit mode
-    debounceMs: 15000, // 15 seconds
-    onSyncSuccess: () => {
-      console.log("[NationalIdentity] Autosave successful");
-    },
-    onSyncError: (error) => {
-      console.warn("[NationalIdentity] Autosave failed:", error);
-    },
+    enabled: false,
+    debounceMs: 15000,
+    onSyncSuccess: () => {},
+    onSyncError: () => {},
   });
 
   // Sync local state with loaded identity data

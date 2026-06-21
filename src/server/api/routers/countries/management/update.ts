@@ -355,7 +355,9 @@ export const managementUpdateProcedures = {
               incomeInequalityGini:
                 incomeWealth.incomeInequalityGini !== undefined
                   ? incomeWealth.incomeInequalityGini
-                  : existingCountry.incomeInequalityGini,
+                  : incomeWealth.giniIndex !== undefined
+                    ? incomeWealth.giniIndex / 100
+                    : existingCountry.incomeInequalityGini,
               socialMobilityIndex:
                 incomeWealth.socialMobilityIndex !== undefined
                   ? incomeWealth.socialMobilityIndex
@@ -499,6 +501,7 @@ export const managementUpdateProcedures = {
               update: {
                 ageDistribution: JSON.stringify(demographics.ageDistribution || []),
                 educationLevels: JSON.stringify(demographics.educationLevels || []),
+                regions: JSON.stringify(demographics.regions || []),
                 birthRate: demographics.birthRate,
                 deathRate: demographics.deathRate,
                 migrationRate: demographics.migrationRate,
@@ -510,6 +513,7 @@ export const managementUpdateProcedures = {
                 countryId: country.id,
                 ageDistribution: JSON.stringify(demographics.ageDistribution || []),
                 educationLevels: JSON.stringify(demographics.educationLevels || []),
+                regions: JSON.stringify(demographics.regions || []),
                 birthRate: demographics.birthRate,
                 deathRate: demographics.deathRate,
                 migrationRate: demographics.migrationRate,
@@ -517,6 +521,31 @@ export const managementUpdateProcedures = {
                 medianAge: demographics.medianAge,
                 populationGrowthProjection: demographics.populationGrowthRate,
               },
+            });
+          }
+
+          // IncomeDistribution.economicClasses — accepted in the payload but
+          // previously never written (only the scalar Country.* fields were).
+          if (Array.isArray(incomeWealth.economicClasses) && incomeWealth.economicClasses.length > 0) {
+            const economicClassesJson = JSON.stringify(incomeWealth.economicClasses);
+            await tx.incomeDistribution.upsert({
+              where: { countryId: country.id },
+              update: { economicClasses: economicClassesJson },
+              create: { countryId: country.id, economicClasses: economicClassesJson },
+            });
+          }
+
+          // GovernmentBudget.spendingCategories — accepted in the payload but
+          // previously never written (only the scalar Country.* spending fields were).
+          if (
+            Array.isArray(governmentSpending.spendingCategories) &&
+            governmentSpending.spendingCategories.length > 0
+          ) {
+            const spendingCategoriesJson = JSON.stringify(governmentSpending.spendingCategories);
+            await tx.governmentBudget.upsert({
+              where: { countryId: country.id },
+              update: { spendingCategories: spendingCategoriesJson },
+              create: { countryId: country.id, spendingCategories: spendingCategoriesJson },
             });
           }
 
@@ -561,6 +590,12 @@ export const managementUpdateProcedures = {
             });
 
             if (existingTaxSys) {
+              // Exemptions can be taxSystem-scoped (categoryId null) so they don't
+              // all cascade from the category delete — clear them explicitly.
+              // Deductions are category-scoped and cascade with taxCategory below.
+              await tx.taxExemption.deleteMany({
+                where: { taxSystemId: existingTaxSys.id },
+              });
               await tx.taxBracket.deleteMany({
                 where: { taxSystemId: existingTaxSys.id },
               });
@@ -605,7 +640,8 @@ export const managementUpdateProcedures = {
             });
 
             if (taxSystemData.categories && taxSystemData.categories.length > 0) {
-              for (const categoryData of taxSystemData.categories) {
+              for (let categoryIndex = 0; categoryIndex < taxSystemData.categories.length; categoryIndex++) {
+                const categoryData = taxSystemData.categories[categoryIndex];
                 const taxCategory = await tx.taxCategory.create({
                   data: {
                     taxSystemId: taxSystem.id,
@@ -644,6 +680,52 @@ export const managementUpdateProcedures = {
                     });
                   }
                 }
+
+                // TaxDeduction[] for this category — keyed by category index in the
+                // builder (deductions: Record<categoryIndex, TaxDeductionInput[]>).
+                // Previously dropped entirely on save.
+                const categoryDeductions = taxSystemData.deductions?.[String(categoryIndex)];
+                if (Array.isArray(categoryDeductions)) {
+                  for (const ded of categoryDeductions) {
+                    await tx.taxDeduction.create({
+                      data: {
+                        categoryId: taxCategory.id,
+                        deductionName: ded.deductionName,
+                        deductionType: ded.deductionType,
+                        description: ded.description,
+                        maximumAmount: ded.maximumAmount,
+                        percentage: ded.percentage,
+                        qualifications:
+                          ded.qualifications != null ? JSON.stringify(ded.qualifications) : null,
+                        isActive: ded.isActive ?? true,
+                        priority: ded.priority ?? 50,
+                      },
+                    });
+                  }
+                }
+              }
+            }
+
+            // TaxExemption[] — taxSystem-scoped flat array in the builder; previously
+            // deleted on save but never recreated. categoryId left null (the builder's
+            // category linkage is index-based, not a DB id).
+            if (Array.isArray(taxSystemData.exemptions) && taxSystemData.exemptions.length > 0) {
+              for (const ex of taxSystemData.exemptions) {
+                await tx.taxExemption.create({
+                  data: {
+                    taxSystemId: taxSystem.id,
+                    exemptionName: ex.exemptionName,
+                    exemptionType: ex.exemptionType,
+                    description: ex.description,
+                    exemptionAmount: ex.exemptionAmount,
+                    exemptionRate: ex.exemptionRate,
+                    qualifications:
+                      ex.qualifications != null ? JSON.stringify(ex.qualifications) : null,
+                    isActive: ex.isActive ?? true,
+                    startDate: ex.startDate,
+                    endDate: ex.endDate,
+                  },
+                });
               }
             }
           }
@@ -730,6 +812,57 @@ export const managementUpdateProcedures = {
                     });
                   }
                 }
+              }
+
+              // BudgetAllocation[] — resolve the builder's departmentId to the real
+              // DB id via deptIdMap; these cascade-deleted with the departments above,
+              // so just recreate. Skip unresolved or duplicate (departmentId, budgetYear).
+              if (Array.isArray(govInput.budgetAllocations)) {
+                const seenAlloc = new Set<string>();
+                for (const alloc of govInput.budgetAllocations) {
+                  const realDeptId = deptIdMap.get(alloc.departmentId);
+                  if (!realDeptId) continue;
+                  const budgetYear = alloc.budgetYear ?? new Date().getFullYear();
+                  const dedupeKey = `${realDeptId}:${budgetYear}`;
+                  if (seenAlloc.has(dedupeKey)) continue;
+                  seenAlloc.add(dedupeKey);
+                  await tx.budgetAllocation.create({
+                    data: {
+                      governmentStructureId: govStructure.id,
+                      departmentId: realDeptId,
+                      budgetYear,
+                      allocatedAmount: alloc.allocatedAmount ?? 0,
+                      allocatedPercent: alloc.allocatedPercent ?? 0,
+                      notes: alloc.notes,
+                    },
+                  });
+                }
+              }
+            }
+
+            // RevenueSource[] — governmentStructure-scoped (no department FK), so they
+            // do NOT cascade from the department delete. Only touch them when the client
+            // actually sends the array (undefined = leave DB as-is, no wipe). Previously
+            // never written at all.
+            if (Array.isArray(govInput.revenueSources)) {
+              await tx.revenueSource.deleteMany({
+                where: { governmentStructureId: govStructure.id },
+              });
+              for (const rev of govInput.revenueSources) {
+                await tx.revenueSource.create({
+                  data: {
+                    governmentStructureId: govStructure.id,
+                    name: rev.name,
+                    category: rev.category,
+                    description: rev.description,
+                    rate: rev.rate,
+                    revenueAmount: rev.revenueAmount ?? 0,
+                    revenuePercent: rev.revenuePercent ?? 0,
+                    isActive: rev.isActive ?? true,
+                    collectionMethod: rev.collectionMethod,
+                    administeredBy: rev.administeredBy,
+                  },
+                });
               }
             }
           }
@@ -831,20 +964,175 @@ export const managementUpdateProcedures = {
               }
             }
 
+            const sectors = Array.isArray(economyState.sectors) ? economyState.sectors : [];
+
+            // Calculate EconomicProfile metrics
+            const gdpGrowthVolatility = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + Math.abs((s.growthRate ?? 2.5) - 2.5), 0) / sectors.length
+              : undefined;
+
+            const economicComplexity = economyState.structure?.economicTier === "Advanced"
+              ? 85
+              : economyState.structure?.economicTier === "Developed"
+                ? 70
+                : economyState.structure?.economicTier === "Emerging"
+                  ? 55
+                  : 40;
+
+            const innovationIndex = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + (s.innovation ?? 50), 0) / sectors.length
+              : undefined;
+
+            const competitivenessRank = sectors.length > 0
+              ? Math.round(100 - sectors.reduce((sum: number, s: any) => sum + (s.competitiveness ?? 50), 0) / sectors.length)
+              : undefined;
+
+            const exportsGDPPercent = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + ((s.exports ?? 0) * (s.gdpContribution ?? 0)) / 100, 0)
+              : undefined;
+
+            const importsGDPPercent = sectors.length > 0
+              ? sectors.reduce((sum: number, s: any) => sum + ((s.imports ?? 0) * (s.gdpContribution ?? 0)) / 100, 0)
+              : undefined;
+
+            const tradeBalance = (economyState.structure?.totalGDP !== undefined && sectors.length > 0)
+              ? economyState.structure.totalGDP * sectors.reduce((sum: number, s: any) => sum + (((s.exports ?? 0) - (s.imports ?? 0)) * (s.gdpContribution ?? 0)) / 10000, 0)
+              : undefined;
+
+            const sectorBreakdownJson = sectors.length > 0
+              ? JSON.stringify(
+                  sectors.map((s: any) => ({
+                    name: s.name,
+                    gdp: s.gdpContribution,
+                    employment: s.employmentShare,
+                    productivity: s.productivity,
+                    growthRate: s.growthRate,
+                  }))
+                )
+              : (economyState.structure ? JSON.stringify(economyState.structure) : undefined);
+
             await tx.economicProfile.upsert({
               where: { countryId: country.id },
               update: {
-                sectorBreakdown: economyState.structure
-                  ? JSON.stringify(economyState.structure)
-                  : undefined,
+                sectorBreakdown: sectorBreakdownJson,
+                gdpGrowthVolatility,
+                economicComplexity,
+                innovationIndex,
+                competitivenessRank,
+                exportsGDPPercent,
+                importsGDPPercent,
+                tradeBalance,
               },
               create: {
                 countryId: country.id,
-                sectorBreakdown: economyState.structure
-                  ? JSON.stringify(economyState.structure)
-                  : undefined,
+                sectorBreakdown: sectorBreakdownJson,
+                gdpGrowthVolatility: gdpGrowthVolatility ?? 2.5,
+                economicComplexity: economicComplexity ?? 50,
+                innovationIndex: innovationIndex ?? 50,
+                competitivenessRank: competitivenessRank ?? 50,
+                exportsGDPPercent: exportsGDPPercent ?? 20,
+                importsGDPPercent: importsGDPPercent ?? 22,
+                tradeBalance: tradeBalance ?? -2,
               },
             });
+
+            const laborConfig = economyState.laborMarket;
+            if (laborConfig) {
+              const youthUnemploymentRate = laborConfig.youthUnemploymentRate;
+              const femaleParticipationRate = laborConfig.femaleParticipationRate;
+              const medianWage = laborConfig.livingWageHourly !== undefined
+                ? laborConfig.livingWageHourly * 2000
+                : undefined;
+              const wageGrowthRate = 2.5;
+
+              const employmentBySector = sectors.length > 0
+                ? JSON.stringify(
+                    sectors.map((s: any) => ({
+                      sector: s.name,
+                      employment: s.employmentShare,
+                      productivity: s.productivity,
+                    }))
+                  )
+                : undefined;
+
+              const wageBySector = (sectors.length > 0 && laborConfig.livingWageHourly !== undefined)
+                ? JSON.stringify(
+                    sectors.map((s: any) => ({
+                      sector: s.name,
+                      avgWage: laborConfig.livingWageHourly * ((s.productivity ?? 100) / 100),
+                    }))
+                  )
+                : undefined;
+
+              await tx.laborMarket.upsert({
+                where: { countryId: country.id },
+                update: {
+                  youthUnemploymentRate,
+                  femaleParticipationRate,
+                  informalEmploymentRate: laborConfig.employmentType?.informal,
+                  medianWage,
+                  wageGrowthRate,
+                  employmentBySector,
+                  wageBySector,
+                },
+                create: {
+                  countryId: country.id,
+                  youthUnemploymentRate: youthUnemploymentRate ?? 6.0,
+                  femaleParticipationRate: femaleParticipationRate ?? 50,
+                  informalEmploymentRate: laborConfig.employmentType?.informal ?? 5.0,
+                  medianWage: medianWage ?? 30000,
+                  wageGrowthRate: wageGrowthRate ?? 2.5,
+                  employmentBySector: employmentBySector ?? "[]",
+                  wageBySector: wageBySector ?? "[]",
+                },
+              });
+            }
+
+            const demoConfig = economyState.demographics;
+            if (demoConfig) {
+              const ageDistribution = demoConfig.ageDistribution
+                ? JSON.stringify(demoConfig.ageDistribution)
+                : undefined;
+              const regions = demoConfig.regions
+                ? JSON.stringify(demoConfig.regions)
+                : undefined;
+              const educationLevels = demoConfig.educationLevels
+                ? JSON.stringify(demoConfig.educationLevels)
+                : undefined;
+              const birthRate = demoConfig.birthRate;
+              const deathRate = demoConfig.deathRate;
+              const migrationRate = demoConfig.netMigrationRate;
+              const dependencyRatio = demoConfig.totalDependencyRatio;
+              const medianAge = demoConfig.medianAge;
+              const populationGrowthProjection = demoConfig.populationGrowthRate;
+
+              await tx.demographics.upsert({
+                where: { countryId: country.id },
+                update: {
+                  ageDistribution,
+                  regions,
+                  educationLevels,
+                  birthRate,
+                  deathRate,
+                  migrationRate,
+                  dependencyRatio,
+                  medianAge,
+                  populationGrowthProjection,
+                },
+                create: {
+                  countryId: country.id,
+                  ageDistribution: ageDistribution ?? "{}",
+                  regions: regions ?? "[]",
+                  educationLevels: educationLevels ?? "{}",
+                  birthRate: birthRate ?? 12.5,
+                  deathRate: deathRate ?? 8.0,
+                  migrationRate: migrationRate ?? 0,
+                  dependencyRatio: dependencyRatio ?? 54,
+                  medianAge: medianAge ?? 35,
+                  populationGrowthProjection: populationGrowthProjection ?? 0.5,
+                },
+              });
+            }
           }
 
           return country;
