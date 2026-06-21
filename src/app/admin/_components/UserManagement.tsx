@@ -497,6 +497,17 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            localStorage.setItem("ixstats.play_as_user", user.clerkUserId);
+                            window.location.href = "/dashboard";
+                          }}
+                          className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20"
+                        >
+                          Play as User
+                        </Button>
                         <div className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-purple-500" />
                           <label className="cursor-pointer text-sm font-medium">Premium</label>
@@ -591,6 +602,17 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            localStorage.setItem("ixstats.play_as_user", user.clerkUserId);
+                            window.location.href = "/dashboard";
+                          }}
+                          className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20"
+                        >
+                          Play as User
+                        </Button>
                         <div className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-purple-500" />
                           <label className="cursor-pointer text-sm font-medium">Premium</label>
@@ -944,18 +966,31 @@ export function UserManagement({ className, mode }: UserManagementProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {user.role && (
-                        <Can I="manage" a="Role">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveUserRole(user.clerkUserId)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Remove Role
-                          </Button>
-                        </Can>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            localStorage.setItem("ixstats.play_as_user", user.clerkUserId);
+                            window.location.href = "/dashboard";
+                          }}
+                          className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20"
+                        >
+                          Play as User
+                        </Button>
+                        {user.role && (
+                          <Can I="manage" a="Role">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveUserRole(user.clerkUserId)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Remove Role
+                            </Button>
+                          </Can>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
