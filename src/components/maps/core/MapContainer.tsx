@@ -5,7 +5,7 @@
  * for the IxWorldMap component. Fetches GeoJSON data via tRPC.
  */
 
-import { useRef, useMemo, useCallback, useState } from "react";
+import { useRef, useMemo, useCallback, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useIsAdmin } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
@@ -61,6 +61,10 @@ export interface MapContainerProps {
   controlledVisibleLayers?: Set<MapLayerType>;
   onToggleLayer?: (layer: MapLayerType) => void;
   hideEditButtons?: boolean;
+  /** Exposes the live MapLibre instance so callers can attach overlays/editors. */
+  onMapReady?: (map: import("maplibre-gl").Map | null) => void;
+  /** Suppress country click-to-select + flyTo (e.g. while a border editor owns clicks). */
+  disableCountrySelect?: boolean;
 }
 
 export function MapContainer({
@@ -79,6 +83,8 @@ export function MapContainer({
   controlledVisibleLayers,
   onToggleLayer,
   hideEditButtons = false,
+  onMapReady,
+  disableCountrySelect = false,
 }: MapContainerProps) {
   const isAdmin = useIsAdmin();
   const toolsVisible = showTools ?? showControls;
@@ -87,6 +93,12 @@ export function MapContainer({
 
   // Real-time sync: invalidate map caches when any geo mutation succeeds
   useMapLiveSync();
+
+  // Clear the exposed map handle when this container unmounts.
+  useEffect(() => {
+    return () => onMapReady?.(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Pin tool state
   const {
@@ -284,11 +296,14 @@ export function MapContainer({
         capitals={capitalsGeoJson}
         overlayFeatures={overlayFeatures ?? undefined}
         overlayVisibility={overlayVisibility}
-        onCountryClick={handleCountryClick}
+        onCountryClick={disableCountrySelect ? undefined : handleCountryClick}
         onCountryHover={handleCountryHover}
         onMapClick={handleMapClickWithLayers}
         onFeatureClick={handleFeatureClick}
-        onReady={() => setMapEngineReady(true)}
+        onReady={() => {
+          setMapEngineReady(true);
+          onMapReady?.(mapRef.current?.getMap() ?? null);
+        }}
         selectedCountryId={selectedCountry?.countryId || selectedCountry?.featureId}
         isMeasuring={isMeasuring}
         geographyFilter={geographyFilter}

@@ -681,11 +681,15 @@ export const MAP_SYMBOL_FONTS =
 import { getStyleForTheme, type MapTheme } from "./map-styles/registry";
 
 /** Build the base MapLibre style for a given theme */
-export function buildBaseStyle(theme: MapTheme = "standard"): Record<string, unknown> {
+export function buildBaseStyle(
+  theme: MapTheme = "standard",
+  projectionMode: ProjectionMode = "dynamic"
+): Record<string, unknown> {
   const base = getStyleForTheme(theme, getMapGlyphsUrl(), MAP_SYMBOL_FONTS);
-  base.projection = {
-    type: ["interpolate", ["linear"], ["zoom"], 2.5, "globe", 4, "mercator"],
-  };
+  // The style-level projection wins over the constructor option and survives
+  // setStyle(), so it must reflect the requested mode — otherwise a forced-flat
+  // editor map snaps back to the globe on every theme/style apply.
+  base.projection = getProjectionSpec(projectionMode);
   return base;
 }
 

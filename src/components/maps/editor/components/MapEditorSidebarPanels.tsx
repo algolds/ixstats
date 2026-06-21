@@ -18,6 +18,7 @@ import { LinkageValidationPanel } from "./LinkageValidationPanel";
 import { SovereigntyPanel } from "./SovereigntyPanel";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { HistoryPanel } from "./HistoryPanel";
+import { EditQueuePanel } from "~/app/admin/maps/_components/EditQueuePanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 
 interface MapEditorSidebarPanelsProps {
@@ -58,7 +59,7 @@ export function MapEditorSidebarPanels({
   brushTargetId,
   setBrushTargetId,
 }: MapEditorSidebarPanelsProps) {
-  const { editor, isWorldMode, panelsLocked } = state;
+  const { editor, isWorldMode, panelsLocked, isAdmin } = state;
 
   const handleSelectFeature = (feat: any) => {
     state.handleSelectFeature?.(feat);
@@ -207,10 +208,15 @@ export function MapEditorSidebarPanels({
   // World editor: panelB must always have the properties tab — it is the primary
   // interaction surface for the properties panel content. localStorage may have
   // a stale config from a prior session where all tabs were dragged out.
-  const tabs: TabId[] =
+  let tabs: TabId[] =
     panelId === "panelB" && isWorldMode && !config.tabs.includes("properties")
       ? [...config.tabs, "properties" as TabId]
       : config.tabs;
+  // World editor (admins): surface the map edit-request queue as a panel tab.
+  // Injected at render time so a stale localStorage panel config can't hide it.
+  if (panelId === "panelA" && isWorldMode && isAdmin && !tabs.includes("queue")) {
+    tabs = [...tabs, "queue" as TabId];
+  }
 
   return (
     <EditorPanel
@@ -235,6 +241,7 @@ export function MapEditorSidebarPanels({
       linkagesContent={<LinkageValidationPanel {...state} />}
       sovereigntyContent={<SovereigntyPanel {...state} />}
       historyContent={renderHistoryElement()}
+      queueContent={isWorldMode && isAdmin ? <EditQueuePanel /> : undefined}
       featureCount={editor.allFeatures.length}
       featuresLoading={editor.featuresLoading}
       featureListContent={

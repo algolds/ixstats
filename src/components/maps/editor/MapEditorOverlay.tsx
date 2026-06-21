@@ -35,6 +35,7 @@ import { MapEditorSidebarPanels } from "./components/MapEditorSidebarPanels";
 import { MapEditorAuxiliaryOverlays } from "./components/MapEditorAuxiliaryOverlays";
 
 import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapEditorOverlayState";
+import { useBorderEditorLayers } from "~/components/maps/editor/hooks/useBorderEditorLayers";
 import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
 import { RegionHoverTooltip } from "~/components/maps/editor/components/RegionHoverTooltip";
 import { MapEditorPluginProvider } from "~/components/maps/editor/plugins/context";
@@ -51,19 +52,6 @@ const MapContainer = dynamic(
       <div className="bg-muted flex h-full items-center justify-center">
         <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
         <p className="text-muted-foreground ml-2 text-[11px]">Loading map canvas...</p>
-      </div>
-    ),
-  }
-);
-
-const BorderEditorMap = dynamic(
-  () => import("~/components/maps/editor/BorderEditorMap").then((m) => m.BorderEditorMap),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="bg-muted flex h-full items-center justify-center">
-        <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
-        <p className="text-muted-foreground ml-2 text-[11px]">Loading border editor...</p>
       </div>
     ),
   }
@@ -100,6 +88,9 @@ export default function MapEditorOverlay({
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [brushRadius, setBrushRadius] = useState(20);
   const [brushTargetId, setBrushTargetId] = useState<string | null>(null);
+  // Shared world-map instance — stays mounted across view ↔ border_edit so the
+  // border editor attaches to it rather than spinning up a second map.
+  const [sharedWorldMap, setSharedWorldMap] = useState<import("maplibre-gl").Map | null>(null);
 
   const state = useMapEditorOverlayState({
     countryId,
@@ -164,6 +155,26 @@ export default function MapEditorOverlay({
     panelsLocked,
     setPanelsLocked,
   } = state;
+
+  // Attach border-editing layers/handlers to the shared world map when active.
+  useBorderEditorLayers({
+    map: sharedWorldMap,
+    isActive: isWorldMode && activeEditorMode === "border_edit",
+    geometry: borderState.geometry,
+    neighborGeometries: neighborGeoms,
+    mode: borderState.mode,
+    splitLine: borderState.splitLine,
+    mergeTargets: borderState.mergeTargets,
+    selectedVertex: borderState.selectedVertex,
+    onMapClick: borderActions.handleMapClick,
+    onVertexDrag: borderActions.handleVertexDrag,
+    onDragEnd: borderActions.commitDrag,
+    brushRadius,
+    brushTargetId,
+    onBrushStroke: borderActions.applyBrushTransfer,
+    traceStart: borderState.traceStart,
+    onToggleMergeTarget: borderActions.toggleMergeTarget,
+  });
 
   const selectedCitiesCount = React.useMemo(() => {
     return editor.allFeatures.filter((f) => editor.selectedIds.has(f.id) && f.type === "city")
@@ -487,7 +498,10 @@ export default function MapEditorOverlay({
                   >
                     <div className="flex flex-col gap-1">
                       <button
-                        onClick={() => void borderActions.repair()}
+                        onClick={() =>
+                          confirm("Repair geometry spikes on this border? You can undo this.") &&
+                          void borderActions.repair()
+                        }
                         className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                         title="Repair geometry spikes"
                       >
@@ -495,7 +509,10 @@ export default function MapEditorOverlay({
                         <span>Repair Spikes</span>
                       </button>
                       <button
-                        onClick={() => void borderActions.smooth()}
+                        onClick={() =>
+                          confirm("Smooth (Chaikin) this border geometry? You can undo this.") &&
+                          void borderActions.smooth()
+                        }
                         className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                         title="Soften corners (Chaikin smoothing)"
                       >
@@ -503,7 +520,11 @@ export default function MapEditorOverlay({
                         <span>Smooth Geometry</span>
                       </button>
                       <button
-                        onClick={() => void borderActions.naturalize()}
+                        onClick={() =>
+                          confirm(
+                            "Naturalize this coastline? This subdivides and randomizes the border. You can undo this."
+                          ) && void borderActions.naturalize()
+                        }
                         className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                         title="Subdivide and randomize for organic coastlines"
                       >
@@ -511,7 +532,11 @@ export default function MapEditorOverlay({
                         <span>Naturalize Coastline</span>
                       </button>
                       <button
-                        onClick={() => void borderActions.simplify()}
+                        onClick={() =>
+                          confirm(
+                            "Simplify this border (reduce vertex count)? You can undo this."
+                          ) && void borderActions.simplify()
+                        }
                         className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
                         title="Reduce vertex count (Douglas-Peucker)"
                       >
@@ -665,35 +690,23 @@ export default function MapEditorOverlay({
               </div>
             )}
             <EditorErrorBoundary name="Map">
-              {isWorldMode && activeEditorMode === "view" ? (
+              {isWorldMode ? (
+                // One persistent world map for both view and border_edit. Border
+                // editing attaches its layers via useBorderEditorLayers, so the map
+                // never reloads on mode switch. Country selection is suppressed while
+                // editing so clicks drive vertex/split/brush logic instead.
                 <MapContainer
                   showControls={true}
                   showTools={false}
                   showPopup={false}
                   selectedCountryId={activeCountryId}
                   onCountrySelect={handleMapSelect}
+                  disableCountrySelect={activeEditorMode === "border_edit"}
                   forceFlatProjection={true}
                   controlledVisibleLayers={editorVisibleLayers}
                   onToggleLayer={toggleEditorLayer}
                   hideEditButtons={true}
-                />
-              ) : isWorldMode && activeEditorMode === "border_edit" ? (
-                <BorderEditorMap
-                  geometry={borderState.geometry}
-                  neighborGeometries={neighborGeoms}
-                  mode={borderState.mode}
-                  splitLine={borderState.splitLine}
-                  mergeTargets={borderState.mergeTargets}
-                  selectedVertex={borderState.selectedVertex}
-                  onMapClick={borderActions.handleMapClick}
-                  onVertexDrag={borderActions.handleVertexDrag}
-                  onDragEnd={borderActions.commitDrag}
-                  worldMapLayers={worldMapLayers}
-                  brushRadius={brushRadius}
-                  brushTargetId={brushTargetId}
-                  onBrushStroke={borderActions.applyBrushTransfer}
-                  traceStart={borderState.traceStart}
-                  onToggleMergeTarget={borderActions.toggleMergeTarget}
+                  onMapReady={setSharedWorldMap}
                 />
               ) : (
                 <EditorMap

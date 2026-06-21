@@ -19,6 +19,7 @@ import {
   Link as LinkIcon,
   Layout,
   History,
+  Inbox,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
@@ -35,7 +36,8 @@ export type TabId =
   | "wiki"
   | "linkages"
   | "sovereignty"
-  | "history";
+  | "history"
+  | "queue";
 
 const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }> = {
   layers: { label: "Layers", Icon: Layers },
@@ -45,6 +47,7 @@ const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }>
   sovereignty: { label: "Sovereign", Icon: Globe },
   wiki: { label: "Wiki", Icon: BookOpen },
   history: { label: "History", Icon: History },
+  queue: { label: "Queue", Icon: Inbox },
 };
 
 interface EditorPanelProps {
@@ -69,6 +72,7 @@ interface EditorPanelProps {
   linkagesContent?: React.ReactNode;
   sovereigntyContent?: React.ReactNode;
   historyContent?: React.ReactNode;
+  queueContent?: React.ReactNode;
   /** Feature count for badge */
   featureCount?: number;
   /** Whether import wizard should take over the panel */
@@ -98,6 +102,7 @@ export function EditorPanel({
   linkagesContent,
   sovereigntyContent,
   historyContent,
+  queueContent,
   featureCount,
   importWizardContent,
   featuresLoading,
@@ -458,6 +463,9 @@ export function EditorPanel({
               )}
               {activeTab === "history" && historyContent && (
                 <div className="h-full overflow-y-auto">{historyContent}</div>
+              )}
+              {activeTab === "queue" && queueContent && (
+                <div className="h-full overflow-y-auto px-3 py-3">{queueContent}</div>
               )}
               {activeTab === "layers" && (
                 <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">

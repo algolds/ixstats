@@ -115,7 +115,13 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
           )}
 
           {/* Actions */}
-          <div className="mt-5 flex justify-end gap-2">
+          <p className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+            {props.type === "split"
+              ? "This permanently replaces the original country with two new ones. It cannot be undone."
+              : "This permanently merges the selected countries into one. It cannot be undone."}
+          </p>
+
+          <div className="mt-4 flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"

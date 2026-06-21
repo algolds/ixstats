@@ -236,9 +236,9 @@ const IxWorldMap = memo(
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
-      const newStyle = buildBaseStyle(theme);
+      const newStyle = buildBaseStyle(theme, projectionMode);
       map.setStyle(newStyle as any, { diff: true });
-    }, [theme, isLoaded]);
+    }, [theme, isLoaded, projectionMode]);
 
     // Initialize MapLibre Map instance
     useEffect(() => {
@@ -264,7 +264,7 @@ const IxWorldMap = memo(
 
           const map = new maplibregl.Map({
             container: containerRef.current,
-            style: buildBaseStyle(theme) as maplibregl.StyleSpecification,
+            style: buildBaseStyle(theme, projectionMode) as maplibregl.StyleSpecification,
             center: initialCenter || MAP_DEFAULTS.center,
             zoom: initialZoom ?? MAP_DEFAULTS.zoom,
             minZoom: MAP_DEFAULTS.minZoom,
