@@ -70,6 +70,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
   // Extract Clerk auth information if available
   let auth = null;
   let user = null;
+  let impersonatorId: string | undefined = undefined;
 
   try {
     // Try to get auth from request first (for app router)
@@ -109,18 +110,60 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     // Get user from database if we have a userId
     if (auth?.userId) {
       try {
+        const playAsUserHeader = opts.headers.get("x-play-as-user");
+        let activeUserId = auth.userId;
+
+        if (playAsUserHeader && playAsUserHeader !== auth.userId) {
+          // Look up the admin user requesting the play-as mode
+          let impersonator = getCachedUserContext(auth.userId);
+          if (!impersonator) {
+            impersonator = await db.user.findUnique({
+              where: { clerkUserId: auth.userId },
+              include: {
+                role: true,
+              },
+            });
+            if (impersonator) {
+              setCachedUserContext(auth.userId, impersonator);
+            }
+          }
+
+          if (impersonator) {
+            const isSystemOwnerUser = isSystemOwner(auth.userId);
+            const roleLevel = impersonator.role?.level ?? 999;
+            const roleName = impersonator.role?.name || "NO_ROLE";
+            const isAdmin =
+              isSystemOwnerUser ||
+              ["owner", "admin", "staff"].includes(roleName) ||
+              roleLevel <= 20;
+
+            if (isAdmin) {
+              activeUserId = playAsUserHeader;
+              impersonatorId = auth.userId;
+              auth = { ...auth, userId: activeUserId };
+              if (VERBOSE) {
+                console.log(`[TRPC Context] Admin ${impersonatorId} playing as user ${activeUserId}`);
+              }
+            } else {
+              console.warn(
+                `[TRPC Context] Unauthorized impersonation attempt: User ${auth.userId} tried to play as ${playAsUserHeader}`
+              );
+            }
+          }
+        }
+
         // Check short-lived user context cache first (avoids redundant DB queries during parallel calls)
-        user = getCachedUserContext(auth.userId);
+        user = getCachedUserContext(activeUserId);
         if (user) {
-          if (VERBOSE) console.log(`[TRPC Context] User ${auth.userId} served from context cache`);
+          if (VERBOSE) console.log(`[TRPC Context] User ${activeUserId} served from context cache`);
         } else if (isDatabaseReadOnly) {
           // In read-only mode, only look up existing users (no creation)
           if (VERBOSE)
             console.log(
-              `[TRPC Context] Read-only mode: Looking up user ${auth.userId} (no creation)`
+              `[TRPC Context] Read-only mode: Looking up user ${activeUserId} (no creation)`
             );
           user = await db.user.findUnique({
-            where: { clerkUserId: auth.userId },
+            where: { clerkUserId: activeUserId },
             include: {
               country: true,
               role: {
@@ -136,29 +179,29 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
           });
           if (!user) {
             console.warn(
-              `[TRPC Context] Read-only mode: User ${auth.userId} not found in database (cannot create)`
+              `[TRPC Context] Read-only mode: User ${activeUserId} not found in database (cannot create)`
             );
           } else {
-            setCachedUserContext(auth.userId, user);
+            setCachedUserContext(activeUserId, user);
           }
         } else {
           // Normal mode: use centralized user management service to ensure correct role
           if (VERBOSE)
-            console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
+            console.log(`[TRPC Context] Using centralized service for user: ${activeUserId}`);
           const userService = new UserManagementService(db as any);
-          user = await userService.getOrCreateUser(auth.userId);
+          user = await userService.getOrCreateUser(activeUserId);
           if (user) {
-            setCachedUserContext(auth.userId, user);
+            setCachedUserContext(activeUserId, user);
           }
         }
 
         if (user) {
           if (VERBOSE)
             console.log(
-              `[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
+              `[TRPC Context] User loaded: ${activeUserId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
             );
         } else {
-          console.error(`[TRPC Context] Failed to get/create user: ${auth.userId}`);
+          console.error(`[TRPC Context] Failed to get/create user: ${activeUserId}`);
         }
       } catch (dbError) {
         console.error("[TRPC Context] Database user lookup failed:", dbError);
@@ -183,6 +226,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     auth,
     user,
     rateLimitIdentifier,
+    impersonatorId,
     ...opts,
   };
 };
@@ -502,6 +546,7 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
           : path.includes("Intelligence")
             ? "MEDIUM"
             : "LOW",
+        impersonatorId: (ctx as any).impersonatorId || null,
       };
 
       // Log based on security level
@@ -522,6 +567,7 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
                   ip: auditEntry.ip,
                   userAgent: auditEntry.userAgent,
                   inputSummary: auditEntry.inputSummary,
+                  impersonatorId: auditEntry.impersonatorId,
                 }),
                 success: auditEntry.success,
                 error: auditEntry.errorMessage,
