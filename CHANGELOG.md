@@ -12,6 +12,13 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **MyCountry Policy Strategy Rework**:
+  - **Predefined Strategy Registry**: Built a code-defined catalog of policy decretals (`universal-basic-income`, `border-tariffs`, `surveillance-oversight`) in `src/lib/policies/registry.ts` with custom template fallback mappers.
+  - **Cabinet & Decision Center Transaction Integration**: Modified policy activation to execute inside a single transaction that deducts treasury budget and automatically logs a completed `CabinetMeeting`, a completed `MeetingDecision` with modifiers, and a pending `MeetingActionItem` in the Decision Center assigned to the matching minister role.
+  - **National Issues Engine Policy/Settings Awareness**: Extended `CountrySnapshot` to load active policies and decode their settings. Updated the trigger condition evaluator to support dot-notation nested configuration settings (e.g. `policySettings.universal-basic-income.stipend`). Restricted issue option choices using the `requiredPolicyKey` constraint.
+  - **Premium Strategy UI Layouts**: Added template selectors and live projections to the Policy Creator Sheet, strategy settings tables to the Policy Detail Sheet, and inline required policy alerts and disabled button states to the Issue Detail Modal.
+  - **Rework Verification Suite**: Added a Jest test suite `src/lib/__tests__/policy-strategy-rework.test.ts` validating registry formulas, dotted snapshot trigger evaluations, and database transaction consistency.
+
 - **WikiOS Creation Wizard, Dynamic Island Command Palette, & Nation Builder Performance**:
   - Implemented the **WikiOS "Create New Page" Wizard** (`CreatePageModal.tsx`) supporting page title duplication checks (`checkPageExists` tRPC query), editor mode selection, template boilerplate selections, and prefilled infobox fields.
   - Wired the page creation wizard modal into `WikiOSUnifiedSidebar.tsx` and `WikiOSLayout.tsx`.

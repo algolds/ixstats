@@ -206,6 +206,7 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full" }: IssuesInb
         onClose={closeIssue}
         onRespond={handleRespond}
         isResponding={isResponding}
+        countryId={countryId}
       />
     </div>
   );

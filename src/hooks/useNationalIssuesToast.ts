@@ -17,7 +17,7 @@ import { useToastQueueStore } from "~/stores/toastQueueStore";
 const STORAGE_KEY = "national_issues_last_counts";
 
 export function useNationalIssuesToast(countryId: string | undefined) {
-  const { total, urgent } = useIssueCount(countryId);
+  const { total, urgent, isLoading } = useIssueCount(countryId);
   const enqueue = useToastQueueStore((s) => s.enqueue);
   const dismiss = useToastQueueStore((s) => s.dismiss);
 
@@ -37,6 +37,11 @@ export function useNationalIssuesToast(countryId: string | undefined) {
   }, []);
 
   useEffect(() => {
+    // Avoid running effect if country hasn't loaded or query is in loading state
+    if (!countryId || isLoading) {
+      return;
+    }
+
     if (total === 0) {
       if (toastIdRef.current) {
         dismiss(toastIdRef.current);
@@ -90,7 +95,7 @@ export function useNationalIssuesToast(countryId: string | undefined) {
     } catch (e) {
       // Ignore
     }
-  }, [total, urgent, enqueue, dismiss]);
+  }, [total, urgent, countryId, isLoading, enqueue, dismiss]);
 
   useEffect(() => {
     return () => {

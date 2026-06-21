@@ -105,6 +105,10 @@ export interface CountrySnapshot {
   currentIxTime: number;
   currentIxYear: number;
   currentIxMonth: number;
+
+  // Active policies & settings
+  activePoliciesList: string[];
+  policySettings: Record<string, Record<string, number>>;
 }
 
 export type TriggerCondition =
@@ -342,7 +346,6 @@ export class NationalIssuesEngine {
 
     if (!country) return null;
 
-    // Run aggregate counts in parallel
     const [
       embassyCount,
       policyCount,
@@ -351,6 +354,7 @@ export class NationalIssuesEngine {
       govComps,
       econComps,
       taxComps,
+      activePolicies,
     ] = await Promise.all([
       (db as any).embassy.count({
         where: {
@@ -384,6 +388,10 @@ export class NationalIssuesEngine {
       (db as any).taxComponent.findMany({
         where: { countryId },
         select: { componentType: true, isActive: true, implementationDate: true },
+      }),
+      (db as any).policy.findMany({
+        where: { countryId, status: "active" },
+        select: { id: true, name: true, calculatedEffects: true }
       }),
     ]);
 
@@ -435,6 +443,25 @@ export class NationalIssuesEngine {
       country.currentPopulation ?? 0,
       country.governmentStructure?.governmentEffectiveness ?? 50
     );
+
+    const activePoliciesList: string[] = [];
+    const policySettings: Record<string, Record<string, number>> = {};
+
+    for (const policy of activePolicies) {
+      if (policy.calculatedEffects) {
+        try {
+          const parsed = JSON.parse(policy.calculatedEffects);
+          const key = parsed.decretalKey || policy.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          activePoliciesList.push(key);
+          if (parsed.settings) {
+            policySettings[key] = parsed.settings;
+          }
+        } catch {}
+      } else {
+        const key = policy.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        activePoliciesList.push(key);
+      }
+    }
 
     return {
       id: country.id,
@@ -489,6 +516,8 @@ export class NationalIssuesEngine {
       currentIxTime,
       currentIxYear: ixDate.getFullYear(),
       currentIxMonth: ixDate.getMonth() + 1,
+      activePoliciesList,
+      policySettings,
     };
   }
 
@@ -558,19 +587,23 @@ export class NationalIssuesEngine {
   }
 
   /**
-   * Get a field value from the snapshot by key name.
+   * Get a field value from the snapshot by key name. Supports nested dot notation.
    */
   private static getSnapshotField(
     snapshot: CountrySnapshot,
     field: string
-  ): number | string | boolean | string[] | null {
+  ): any {
+    if (field.includes(".")) {
+      const parts = field.split(".");
+      let current: any = snapshot;
+      for (const part of parts) {
+        if (current === null || current === undefined) return null;
+        current = current[part];
+      }
+      return current;
+    }
     if (field in snapshot) {
-      return (snapshot as Record<string, any>)[field] as
-        | number
-        | string
-        | boolean
-        | string[]
-        | null;
+      return (snapshot as Record<string, any>)[field];
     }
     return null;
   }

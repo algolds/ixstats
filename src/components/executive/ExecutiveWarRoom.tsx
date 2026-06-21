@@ -436,6 +436,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
         onClose={closeIssue}
         onRespond={respond}
         isResponding={isResponding}
+        countryId={countryId}
       />
 
       <MeetingDetailModal

@@ -1,5 +1,6 @@
 "use client";
 
+import { api } from "~/trpc/react";
 import { useState, useCallback, memo } from "react";
 import {
   TrendingUp,
@@ -98,6 +99,11 @@ function IssueDetailModalInner({
   const [showOutcome, setShowOutcome] = useState(false);
   const [localOutcome, setLocalOutcome] = useState<string | null>(null);
   const notify = useNotify();
+
+  const { data: activePolicies = [] } = api.policies.getPolicies.useQuery(
+    { countryId: countryId!, status: "active" },
+    { enabled: !!countryId && isOpen }
+  );
 
   const handleRespond = useCallback(
     async (optionId: string) => {
@@ -258,6 +264,19 @@ function IssueDetailModalInner({
 
             {options.map((option) => {
               const isConfirming = confirmingOptionId === option.id;
+              const requiredPolicyKey = (option as any).requiredPolicyKey;
+
+              const isPolicyActive = !requiredPolicyKey || activePolicies.some(p => {
+                const nameMatch = p.name.toLowerCase() === requiredPolicyKey.toLowerCase().replace(/-/g, " ");
+                let effectsMatch = false;
+                if (p.calculatedEffects) {
+                  try {
+                    const parsed = JSON.parse(p.calculatedEffects);
+                    effectsMatch = parsed?.decretalKey === requiredPolicyKey;
+                  } catch {}
+                }
+                return nameMatch || effectsMatch;
+              });
 
               return (
                 <div
@@ -266,11 +285,11 @@ function IssueDetailModalInner({
                     isConfirming
                       ? "border-amber-500/50 bg-amber-500/10"
                       : "border-white/10 hover:border-white/20 hover:bg-white/5"
-                  }`}
+                  } ${!isPolicyActive ? "opacity-75" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <h4 className="mb-1 text-sm font-medium">{option.label}</h4>
+                      <h4 className={`mb-1 text-sm font-medium ${!isPolicyActive ? "text-muted-foreground" : ""}`}>{option.label}</h4>
                       <p className="text-muted-foreground mb-2 text-xs">{option.description}</p>
 
                       {/* Effect previews */}
@@ -302,6 +321,14 @@ function IssueDetailModalInner({
                           />
                         )}
                       </div>
+
+                      {/* Policy Requirement Warning */}
+                      {requiredPolicyKey && !isPolicyActive && (
+                        <div className="mt-2 flex items-center gap-1.5 text-xs text-red-400 font-medium">
+                          <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
+                          <span>Requires Active Policy: {requiredPolicyKey.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="shrink-0">
@@ -319,7 +346,7 @@ function IssueDetailModalInner({
                             size="sm"
                             className="h-7 bg-amber-600 px-3 text-xs hover:bg-amber-700"
                             onClick={() => handleRespond(option.id)}
-                            disabled={isResponding ?? false}
+                            disabled={(isResponding ?? false) || !isPolicyActive}
                           >
                             {isResponding ? "..." : "Confirm"}
                           </Button>
@@ -330,6 +357,7 @@ function IssueDetailModalInner({
                           variant="outline"
                           className="h-7 text-xs"
                           onClick={() => setConfirmingOptionId(option.id)}
+                          disabled={!isPolicyActive}
                         >
                           Choose
                         </Button>

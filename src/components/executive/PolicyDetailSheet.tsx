@@ -26,9 +26,11 @@ import {
   Layers,
   Play,
   Pause,
+  Sliders,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
+import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
 
 interface PolicyDetailSheetProps {
   policyId: string | null;
@@ -80,6 +82,47 @@ function InfoRow({ label, value }: { label: string; value: string | React.ReactN
   );
 }
 
+function getActiveSettingsDisplay(
+  decretalKey: string | undefined,
+  settings: Record<string, number> | undefined
+) {
+  if (!decretalKey || !settings) return null;
+
+  const decretal = PREDEFINED_DECRETALS[decretalKey];
+  if (decretal) {
+    return decretal.sliders.map((slider) => {
+      const activeValue = settings[slider.key];
+      const selectedOption = slider.options.find((opt) => opt.value === activeValue);
+      return {
+        label: slider.label,
+        value: selectedOption ? selectedOption.label : String(activeValue ?? "N/A"),
+      };
+    });
+  }
+
+  // Fallback for custom DB templates
+  return Object.entries(settings).map(([key, val]) => {
+    let label = key.charAt(0).toUpperCase() + key.slice(1);
+    if (key === "funding") label = "Funding Level";
+
+    let valLabel = String(val);
+    if (key === "funding") {
+      const map: Record<number, string> = {
+        1: "Minimal",
+        2: "Standard",
+        3: "High",
+        4: "Extreme",
+      };
+      valLabel = map[val] ?? String(val);
+    }
+
+    return {
+      label,
+      value: valLabel,
+    };
+  });
+}
+
 export function PolicyDetailSheet({
   policyId,
   onClose,
@@ -93,6 +136,24 @@ export function PolicyDetailSheet({
     { id: policyId! },
     { enabled: !!policyId }
   );
+
+  // Parse policy settings
+  let decretalKey: string | undefined;
+  let settings: Record<string, number> | undefined;
+  let stabilityEffect: number | undefined;
+
+  if (policy?.calculatedEffects) {
+    try {
+      const parsed = JSON.parse(policy.calculatedEffects);
+      if (parsed && typeof parsed === "object" && "decretalKey" in parsed) {
+        decretalKey = parsed.decretalKey;
+        settings = parsed.settings;
+        stabilityEffect = parsed.stabilityEffect;
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
 
   const activatePolicy = api.policies.activatePolicy.useMutation({
     onSuccess: () => {
@@ -245,6 +306,31 @@ export function PolicyDetailSheet({
                   <p className="text-muted-foreground text-sm leading-relaxed">
                     {policy.description}
                   </p>
+                </div>
+              )}
+
+              {decretalKey && settings && (
+                <div className="space-y-2">
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+                    <Sliders className="h-3.5 w-3.5" />
+                    Active Strategy Configurations
+                  </h4>
+                  <div className="bg-indigo-500/5 border-indigo-500/10 rounded-md border p-3 space-y-2">
+                    {getActiveSettingsDisplay(decretalKey, settings)?.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{item.label}:</span>
+                        <span className="font-semibold text-indigo-400">{item.value}</span>
+                      </div>
+                    ))}
+                    {stabilityEffect !== undefined && stabilityEffect !== 0 && (
+                      <div className="flex justify-between text-xs border-t border-indigo-500/10 pt-1.5 mt-1.5">
+                        <span className="text-muted-foreground">Stability Impact:</span>
+                        <span className={`font-semibold ${stabilityEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                          {stabilityEffect >= 0 ? "+" : ""}{stabilityEffect.toFixed(2)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

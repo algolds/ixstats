@@ -116,6 +116,11 @@ export async function queryLLM(
     modelName = modelName || "gpt-4o-mini";
   }
 
+  // Auto-append chat completions path if only the base URL was configured
+  if (apiUrl && !apiUrl.endsWith("/chat/completions")) {
+    apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
+  }
+
   const controller = new AbortController();
   const timeoutMs = provider === "nvidia" ? 60000 : 15000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

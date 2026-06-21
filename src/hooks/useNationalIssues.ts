@@ -126,7 +126,7 @@ export function useNationalIssues(countryId: string | undefined) {
  * Lightweight hook for just the pending count (for badges).
  */
 export function useIssueCount(countryId: string | undefined) {
-  const { data } = api.nationalIssues.getPendingCount.useQuery(
+  const { data, isLoading } = api.nationalIssues.getPendingCount.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId, refetchInterval: 30000 }
   );
@@ -134,5 +134,6 @@ export function useIssueCount(countryId: string | undefined) {
   return {
     total: data?.total ?? 0,
     urgent: data?.urgent ?? 0,
+    isLoading,
   };
 }

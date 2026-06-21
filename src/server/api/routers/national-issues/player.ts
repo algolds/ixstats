@@ -277,6 +277,44 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const issue = await ctx.db.nationalIssue.findUnique({
+        where: { id: input.issueId },
+        select: { countryId: true, responseOptions: true }
+      });
+
+      if (!issue) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Issue not found",
+        });
+      }
+
+      let options: any[] = [];
+      try {
+        options = JSON.parse(issue.responseOptions);
+      } catch {}
+
+      const option = options.find((o: any) => o.id === input.optionId);
+      if (option && option.requiredPolicyKey) {
+        const activePolicy = await ctx.db.policy.findFirst({
+          where: {
+            countryId: issue.countryId,
+            status: "active",
+            OR: [
+              { calculatedEffects: { contains: option.requiredPolicyKey } },
+              { name: { mode: "insensitive", equals: option.requiredPolicyKey.replace(/-/g, " ") } }
+            ]
+          }
+        });
+
+        if (!activePolicy) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: `This choice requires the policy "${option.requiredPolicyKey}" to be active.`,
+          });
+        }
+      }
+
       const result = await NationalIssuesConsequences.resolveIssue(
         input.issueId,
         input.optionId,

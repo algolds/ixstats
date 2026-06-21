@@ -50,6 +50,11 @@ export async function narrateEvents(
     modelName = modelName || "gpt-4o-mini";
   }
 
+  // Auto-append chat completions path if only the base URL was configured
+  if (apiUrl && !apiUrl.endsWith("/chat/completions")) {
+    apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
+  }
+
   try {
     const inputDescriptions = events.map((e) => e.description);
     const systemPrompt = `You are a professional sports commentator for a ${options.sport} match.
@@ -207,6 +212,11 @@ async function queryLLM(
   } else {
     apiUrl = apiUrl || "https://api.openai.com/v1/chat/completions";
     modelName = modelName || "gpt-4o-mini";
+  }
+
+  // Auto-append chat completions path if only the base URL was configured
+  if (apiUrl && !apiUrl.endsWith("/chat/completions")) {
+    apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
   }
 
   const controller = new AbortController();

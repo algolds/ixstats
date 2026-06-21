@@ -9,6 +9,8 @@ import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policy-effects-sync";
 import { CountryEventSpine } from "~/lib/country-event-spine";
 import { TRPCError } from "@trpc/server";
+import { getPolicyDecretals } from "~/lib/policies/registry";
+import { IxTime } from "~/lib/ixtime";
 
 export const policiesCrudRouter = createTRPCRouter({
   // ==================== POLICY CRUD ====================
@@ -28,12 +30,60 @@ export const policiesCrudRouter = createTRPCRouter({
         implementationCost: z.number().optional(),
         maintenanceCost: z.number().optional(),
         priority: z.enum(["critical", "high", "medium", "low"]).default("medium"),
+        decretalKey: z.string().optional(),
+        settings: z.record(z.string(), z.number()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { decretalKey, settings, ...baseInput } = input;
+
+      let gdpEffect = 0;
+      let employmentEffect = 0;
+      let inflationEffect = 0;
+      let taxRevenueEffect = 0;
+      let implementationCost = baseInput.implementationCost ?? 0;
+      let maintenanceCost = baseInput.maintenanceCost ?? 0;
+      let calculatedEffectsJson: string | null = null;
+
+      if (decretalKey) {
+        const decretals = await getPolicyDecretals(ctx.db);
+        const decretal = decretals[decretalKey];
+        if (decretal) {
+          const country = await ctx.db.country.findUnique({
+            where: { id: input.countryId },
+            select: { currentPopulation: true }
+          });
+          const metrics = {
+            currentPopulation: country?.currentPopulation ?? 1000000
+          };
+          const calcSettings = settings ?? {};
+          const results = decretal.calculate(calcSettings, metrics);
+
+          implementationCost = results.implementationCost;
+          maintenanceCost = results.maintenanceCost;
+          gdpEffect = results.gdpEffect;
+          employmentEffect = results.employmentEffect;
+          inflationEffect = results.inflationEffect;
+          taxRevenueEffect = results.taxRevenueEffect;
+
+          calculatedEffectsJson = JSON.stringify({
+            decretalKey,
+            settings: calcSettings,
+            stabilityEffect: results.stabilityEffect
+          });
+        }
+      }
+
       return await ctx.db.policy.create({
         data: {
-          ...input,
+          ...baseInput,
+          implementationCost,
+          maintenanceCost,
+          gdpEffect,
+          employmentEffect,
+          inflationEffect,
+          taxRevenueEffect,
+          calculatedEffects: calculatedEffectsJson,
           status: "draft",
         },
       });
@@ -145,140 +195,189 @@ export const policiesCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const policy = await ctx.db.policy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!policy) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Policy not found",
+      return await ctx.db.$transaction(async (tx: any) => {
+        const policy = await tx.policy.findUnique({
+          where: { id: input.id },
         });
-      }
 
-      if (policy.status === "active") {
-        return policy;
-      }
+        if (!policy) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Policy not found",
+          });
+        }
 
-      // Check country budget
-      const structure = await ctx.db.governmentStructure.findUnique({
-        where: { countryId: policy.countryId },
-      });
+        if (policy.status === "active") {
+          return policy;
+        }
 
-      if (!structure) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Government structure not found. Please configure your government first.",
-        });
-      }
-
-      const cost = policy.implementationCost || 0;
-      if (cost > 0 && structure.totalBudget < cost) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Insufficient budget to enact this policy. Required: ${cost}, Available: ${structure.totalBudget}`,
-        });
-      }
-
-      // Deduct budget
-      if (cost > 0) {
-        await ctx.db.governmentStructure.update({
+        const structure = await tx.governmentStructure.findUnique({
           where: { countryId: policy.countryId },
+        });
+
+        if (!structure) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Government structure not found. Please configure your government first.",
+          });
+        }
+
+        const cost = policy.implementationCost || 0;
+        if (cost > 0 && structure.totalBudget < cost) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Insufficient budget to enact this policy. Required: ${cost}, Available: ${structure.totalBudget}`,
+          });
+        }
+
+        if (cost > 0) {
+          await tx.governmentStructure.update({
+            where: { countryId: policy.countryId },
+            data: {
+              totalBudget: { decrement: cost },
+            },
+          });
+
+          await CountryEventSpine.recordCountryEvent({
+            db: tx,
+            countryId: policy.countryId,
+            sourceType: "policy",
+            sourceId: policy.id,
+            description: `Enacted policy "${policy.name}": Cost of ${cost} deducted from treasury`,
+            consequences: [
+              {
+                targetModel: "GovernmentStructure",
+                targetField: "totalBudget",
+                operation: "subtract",
+                value: cost,
+              },
+            ],
+          }).catch((err) =>
+            console.error("[Policies] Failed to log budget deduction to spine:", err)
+          );
+        }
+
+        const currentIxTime = IxTime.getCurrentIxTime();
+
+        const meeting = await tx.cabinetMeeting.create({
           data: {
-            totalBudget: { decrement: cost },
+            countryId: policy.countryId,
+            userId: ctx.auth.userId,
+            title: `Cabinet Session: Enactment of ${policy.name}`,
+            description: `A cabinet session convened to formally enact the policy: ${policy.name}.`,
+            scheduledDate: new Date(),
+            scheduledIxTime: currentIxTime,
+            completedAt: new Date(),
+            status: "completed",
+            duration: 45,
+          }
+        });
+
+        const decision = await tx.meetingDecision.create({
+          data: {
+            meetingId: meeting.id,
+            title: `Enactment of ${policy.name}`,
+            description: `Decided to enact the policy: ${policy.name}. Modifiers: GDP ${policy.gdpEffect}%, Unemployment ${policy.employmentEffect}%, Inflation ${policy.inflationEffect}%.`,
+            decisionType: "policy_approval",
+            implementationStatus: "implemented",
+            relatedPolicyId: policy.id,
+          }
+        });
+
+        const categoryToRole: Record<string, string> = {
+          fiscal: "Minister of Finance",
+          trade: "Minister of Trade",
+          labor: "Minister of Labor",
+          education: "Minister of Education",
+          healthcare: "Minister of Health",
+          environment: "Minister of Environment",
+          defense: "Minister of Defense",
+          housing: "Minister of Housing",
+          technology: "Minister of Science and Technology",
+          agriculture: "Minister of Agriculture",
+        };
+        const assignedRole = categoryToRole[policy.category] ?? "Cabinet Member";
+
+        await tx.meetingActionItem.create({
+          data: {
+            meetingId: meeting.id,
+            decisionId: decision.id,
+            title: `Oversee rollout of ${policy.name}`,
+            description: `Oversee implementation and ensure operational stability of the newly active policy: ${policy.name}.`,
+            status: "pending",
+            priority: policy.priority === "critical" || policy.priority === "high" ? "high" : "normal",
+            assignedTo: assignedRole,
+            dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000),
+            dueIxTime: currentIxTime + 7 * 24 * 3600,
+            category: policy.category,
+          }
+        });
+
+        const updatedPolicy = await tx.policy.update({
+          where: { id: input.id },
+          data: {
+            status: "active",
+            effectiveDate: new Date(),
+            effectiveIxTime: currentIxTime,
           },
         });
 
-        // Record budget deduction consequence via the Event Spine
-        await CountryEventSpine.recordCountryEvent({
-          db: ctx.db,
-          countryId: policy.countryId,
-          sourceType: "policy",
-          sourceId: policy.id,
-          description: `Enacted policy "${policy.name}": Cost of ${cost} deducted from treasury`,
-          consequences: [
-            {
-              targetModel: "GovernmentStructure",
-              targetField: "totalBudget",
-              operation: "subtract",
-              value: cost,
-            },
-          ],
-        }).catch((err) =>
-          console.error("[Policies] Failed to log budget deduction to spine:", err)
+        await applyPolicyEffect(tx, updatedPolicy).catch((err) =>
+          console.error("[Policies] Failed to apply policy effect:", err)
         );
-      }
 
-      const updatedPolicy = await ctx.db.policy.update({
-        where: { id: input.id },
-        data: {
-          status: "active",
-          effectiveDate: new Date(),
-        },
-      });
+        try {
+          const priorityMap: Record<string, "high" | "medium" | "low"> = {
+            critical: "high",
+            high: "high",
+            medium: "medium",
+            low: "low",
+          };
 
-      // ⚙️ Make the policy real: emit the StorytellerEffect the economic engine reads.
-      await applyPolicyEffect(ctx.db, updatedPolicy).catch((err) =>
-        console.error("[Policies] Failed to apply policy effect:", err)
-      );
+          await notificationAPI.create({
+            title: "📜 Policy Activated",
+            message: `"${policy.name}" has been activated and is now in effect`,
+            countryId: policy.countryId,
+            category: "policy",
+            priority: priorityMap[policy.priority] || "medium",
+            type: "success",
+            href: "/mycountry/policies",
+            source: "policy-system",
+            actionable: false,
+            metadata: { policyId: policy.id, policyType: policy.policyType },
+          });
+        } catch (error) {
+          console.error("[Policies] Failed to send policy activation notification:", error);
+        }
 
-      const policyToReturn = updatedPolicy;
-
-      // Get user for activity feed
-      const user = await ctx.db.user.findFirst({
-        where: { countryId: policy.countryId },
-        select: { clerkUserId: true },
-      });
-
-      // Generate activity for policy activation (non-blocking)
-      if (policy.category === "economic") {
-        await ActivityHooks.Economic.onTaxPolicyChange(
-          policy.countryId,
-          policy.category,
-          policy.name,
-          0, // Population affected - could be calculated
-          user?.clerkUserId
-        ).catch((err) => console.error("Failed to create policy activity:", err));
-      }
-
-      // 🔔 Notify country about policy activation
-      try {
-        const priorityMap: Record<string, "high" | "medium" | "low"> = {
-          critical: "high",
-          high: "high",
-          medium: "medium",
-          low: "low",
-        };
-
-        await notificationAPI.create({
-          title: "📜 Policy Activated",
-          message: `"${policy.name}" has been activated and is now in effect`,
-          countryId: policy.countryId,
-          category: "policy",
-          priority: priorityMap[policy.priority] || "medium",
-          type: "success",
-          href: "/mycountry/policies",
-          source: "policy-system",
-          actionable: false,
-          metadata: { policyId: policy.id, policyType: policy.policyType },
+        const user = await tx.user.findFirst({
+          where: { countryId: policy.countryId },
+          select: { clerkUserId: true },
         });
-      } catch (error) {
-        console.error("[Policies] Failed to send policy activation notification:", error);
-      }
 
-      // Narrative output: post policy enactment to ThinkPages (fire-and-forget)
-      const country = await ctx.db.country.findUnique({
-        where: { id: policy.countryId },
-        select: { name: true },
+        if (policy.category === "economic") {
+          await ActivityHooks.Economic.onTaxPolicyChange(
+            policy.countryId,
+            policy.category,
+            policy.name,
+            0,
+            user?.clerkUserId
+          ).catch((err) => console.error("Failed to create policy activity:", err));
+        }
+
+        const country = await tx.country.findUnique({
+          where: { id: policy.countryId },
+          select: { name: true },
+        });
+        void generateDiplomaticNews(tx, policy.countryId, "free_trade_signed", {
+          countryName: country?.name ?? "Government",
+          targetName: policy.name,
+          severity: "light",
+          reason: `New policy enacted: ${policy.description || policy.name}`,
+        }).catch((err) => console.error("[Policies] Failed to generate policy news:", err));
+
+        return updatedPolicy;
       });
-      void generateDiplomaticNews(ctx.db, policy.countryId, "free_trade_signed", {
-        countryName: country?.name ?? "Government",
-        targetName: policy.name,
-        severity: "light",
-        reason: `New policy enacted: ${policy.description || policy.name}`,
-      }).catch((err) => console.error("[Policies] Failed to generate policy news:", err));
-
-      return policyToReturn;
     }),
 
   suspendPolicy: protectedProcedure

@@ -9,6 +9,7 @@ import {
   Heart,
   AlertTriangle,
   Zap,
+  Gavel,
   type LucideIcon,
 } from "lucide-react";
 import { api } from "~/trpc/react";
@@ -26,64 +27,28 @@ const CATEGORY_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
   military: { icon: Swords, color: "text-red-500" },
   social: { icon: Heart, color: "text-pink-500" },
   emergency: { icon: AlertTriangle, color: "text-amber-500" },
+  governance: { icon: Gavel, color: "text-indigo-500" },
 };
 
-function resolveCategory(inputType: string, description: string | null): string {
-  const t = inputType.toLowerCase();
-  const d = (description ?? "").toLowerCase();
-  if (t.includes("diplo") || d.includes("diplom") || d.includes("embassy") || d.includes("treaty"))
-    return "diplomatic";
-  if (
-    t.includes("econom") ||
-    t.includes("trade") ||
-    d.includes("econom") ||
-    d.includes("trade") ||
-    d.includes("gdp")
-  )
-    return "economic";
-  if (t.includes("militar") || t.includes("war") || t.includes("defense") || d.includes("militar"))
-    return "military";
-  if (t.includes("social") || d.includes("social") || d.includes("population")) return "social";
-  if (
-    t.includes("emergenc") ||
-    t.includes("crisis") ||
-    d.includes("emergenc") ||
-    d.includes("crisis")
-  )
-    return "emergency";
-  return "diplomatic";
-}
-
-interface FeedItem {
-  id: string;
-  description: string | null;
-  inputType: string;
-  value: number;
-  ixTimeTimestamp: Date;
-  createdAt: Date;
-}
-
 export function NewsFeedWidget({ countryId }: NewsFeedWidgetProps) {
-  const { data: effects, isLoading } = api.mycountry.getNewsFeed.useQuery(
-    { countryId },
+  const { data: canonItems, isLoading } = api.mycountry.getCanonFeed.useQuery(
+    { countryId, limit: 12 },
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const activity = useMemo<ContextActivityEntry[]>(() => {
-    if (!effects || effects.length === 0) return [];
-    return (effects as FeedItem[]).slice(0, 8).map((e) => {
-      const text = e.description ?? e.inputType;
-      const cat = resolveCategory(e.inputType, e.description);
-      const { icon, color } = CATEGORY_ICONS[cat] ?? CATEGORY_ICONS["diplomatic"];
+    if (!canonItems || canonItems.length === 0) return [];
+    return canonItems.slice(0, 8).map((item) => {
+      const { icon, color } = CATEGORY_ICONS[item.category] ?? CATEGORY_ICONS["diplomatic"];
       return {
-        id: e.id,
+        id: item.id,
         icon,
         iconColor: color,
-        text: text.length > 120 ? text.slice(0, 117) + "..." : text,
-        time: new Date(e.ixTimeTimestamp ?? e.createdAt),
+        text: item.title.length > 120 ? item.title.slice(0, 117) + "..." : item.title,
+        time: new Date(item.timestamp),
       };
     });
-  }, [effects]);
+  }, [canonItems]);
 
   const amber = ACCENT_CLASSES["amber"];
 
@@ -114,7 +79,7 @@ export function NewsFeedWidget({ countryId }: NewsFeedWidgetProps) {
           <div key={e.id} className="flex items-start gap-2 py-1">
             <e.icon className={e.iconColor + " mt-0.5 h-3 w-3 shrink-0"} />
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-[11px] leading-snug">{e.text}</p>
+              <p className="line-clamp-2 text-[11px] leading-snug">{e.text}</p>
               <span className="text-muted-foreground text-[10px]">{timeAgo(e.time)}</span>
             </div>
           </div>
