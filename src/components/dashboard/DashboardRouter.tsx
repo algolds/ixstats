@@ -15,8 +15,6 @@ import {
   Swords,
   ChevronUp,
   Coins,
-  Wallet,
-  Flame,
   Bell,
   FileText,
   Layers,
@@ -49,7 +47,7 @@ import { cn, toTitleCase } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { EconomicTierBadge, PopulationTierBadge, LocationBadge } from "~/components/ui/tier-badge";
+import { EconomicTierBadge, PopulationTierBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { HealthRing } from "~/components/ui/health-ring";
 import { PreText } from "~/components/ui/pretext";
@@ -973,26 +971,7 @@ function DashboardHero({
 
             <div className="min-h-0 flex-1">{renderSectionContent()}</div>
 
-            <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-2 text-[10px]">
-              {vaultData && (
-                <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-400">
-                  <Wallet className="h-3 w-3 shrink-0" />
-                  <UnifiedCountryFlag
-                    showTooltip={false}
-                    countryName={stats.countryName}
-                    size="sm"
-                    className="mr-0.5 h-3.5 w-auto shrink-0 rounded-sm border border-white/10"
-                  />
-                  {vaultData.credits.toLocaleString()}
-                  <Flame className="ml-0.5 h-2.5 w-2.5 shrink-0" />
-                  {vaultData.loginStreak}d
-                </span>
-              )}
-              {stats.continent && <LocationBadge type="continent" value={stats.continent} />}
-              {stats.governmentType && (
-                <LocationBadge type="government" value={toTitleCase(stats.governmentType)} />
-              )}
-            </div>
+
           </div>
 
           <div className="flex items-center justify-between gap-x-2 gap-y-1.5">
