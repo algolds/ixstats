@@ -213,8 +213,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Advanced mode state
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
 
-  // Manual save state
-  const [isManualSaving, setIsManualSaving] = useState(false);
   // Flash label: briefly shows section name in DI center on navigation, then clears
   const [navFlashLabel, setNavFlashLabel] = useState<string | null>(null);
   const navFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -414,17 +412,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     [handleNavigate]
   );
 
-  // Manual save handler
-  const handleManualSave = useCallback(async () => {
-    setIsManualSaving(true);
-    try {
-      // Trigger a sync - the context handles the actual save
-      // For now just wait a bit to show the save indicator
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    } finally {
-      setIsManualSaving(false);
-    }
-  }, []);
+  // Manual save now lives in the Dynamic Island (BuilderDIPlugin → triggerManualSave).
 
   // Toggle advanced mode
   const handleToggleAdvanced = useCallback(() => {

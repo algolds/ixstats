@@ -354,7 +354,9 @@ export function BuilderNotchBar({
                   "mx-auto max-w-[680px] px-2",
                   (isScrolled && !isAtBottomState) ? "pointer-events-none" : "pointer-events-auto"
                 )}
-                style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.25))" }}
+                // ponytail: box-shadow on the glass element instead of `filter: drop-shadow`
+                // on this wrapper. A `filter` ancestor makes a `backdrop-filter` child render
+                // fully INVISIBLE in Firefox; box-shadow is identical for a rounded rect.
               >
                 <div
                   onMouseEnter={() => setIsHovered(true)}
@@ -364,6 +366,7 @@ export function BuilderNotchBar({
                     background: "var(--color-glass)",
                     backdropFilter: "blur(20px) saturate(180%)",
                     WebkitBackdropFilter: "blur(20px) saturate(180%)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
                   }}
                 >
                   <div className="flex w-full items-center gap-1 px-0.5">

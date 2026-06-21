@@ -2,6 +2,7 @@
 // Policy management and tracking system
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
 export const policiesIntegrationRouter = createTRPCRouter({
@@ -40,6 +41,25 @@ export const policiesIntegrationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Ownership gate: only the country's owner (or an admin/system-owner) may
+      // create policies for it — otherwise any authed user could pollute any
+      // country's policy list via this endpoint.
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        include: { role: true },
+      });
+      const role = user?.role?.name;
+      if (
+        user?.countryId !== input.countryId &&
+        role !== "admin" &&
+        role !== "system-owner"
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to edit this country's policies.",
+        });
+      }
+
       const results = [];
 
       for (const policyData of input.policySelections) {

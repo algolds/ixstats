@@ -21,6 +21,10 @@ import { api } from "~/trpc/react";
 
 interface UseEconomyBuilderSyncProps {
   countryId?: string;
+  // When false, the cross-builder server sync mutations are suppressed (the
+  // unified builder's updateCountry is the single writer). Local refs and the
+  // in-memory integration service still run. Defaults to true (standalone use).
+  enabled?: boolean;
   economyBuilder: EconomyBuilderState;
   economicInputs: EconomicInputs;
   governmentComponents?: any[];
@@ -56,6 +60,7 @@ interface UseEconomyBuilderSyncReturn {
  */
 export function useEconomyBuilderSync({
   countryId,
+  enabled = true,
   economyBuilder,
   economicInputs,
   governmentComponents,
@@ -154,7 +159,7 @@ export function useEconomyBuilderSync({
   const lastSyncedTaxRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!countryId) return;
+    if (!countryId || !enabled) return;
 
     // Sync government components if changed
     if (governmentComponents && governmentComponents.length > 0) {
@@ -180,7 +185,7 @@ export function useEconomyBuilderSync({
         });
       }
     }
-  }, [countryId, governmentComponents, taxSystemData, syncGovernmentMutation, syncTaxMutation]);
+  }, [countryId, enabled, governmentComponents, taxSystemData, syncGovernmentMutation, syncTaxMutation]);
 
   // ============================================================
   // SYNC STATUS TRACKING (based on mutation states)

@@ -17,7 +17,8 @@ import { BuilderDIView } from "~/components/DynamicIsland/BuilderDIView";
 import { MyCountryDIPlugin } from "./MyCountryDIPlugin";
 import { PreText } from "~/components/ui/pretext";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { AlertCircle } from "lucide-react";
+import { notifyFromStore } from "~/hooks/useNotify";
+import { AlertCircle, Save } from "lucide-react";
 
 function BuilderCompactLabel() {
   return (
@@ -98,6 +99,33 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
   );
   const hasError = errorCount > 0;
 
+  const isSaving = context.isAutoSaving || context.isSyncing;
+  const saveAction = useMemo(
+    () => ({
+      id: "builder-save",
+      icon: Save,
+      label: isSaving ? "Saving…" : "Save progress",
+      onClick: async () => {
+        try {
+          await context.triggerManualSave();
+          notifyFromStore({
+            title: "Progress saved",
+            type: "success",
+            category: "system",
+          });
+        } catch (e) {
+          notifyFromStore({
+            title: "Save failed",
+            message: e instanceof Error ? e.message : "Could not save your changes.",
+            type: "error",
+            category: "system",
+          });
+        }
+      },
+    }),
+    [context, isSaving]
+  );
+
   const plugin = useMemo(() => {
     return {
       id: "builder",
@@ -107,23 +135,26 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
       accentColor: hasError ? "#ef4444" : "#f59e0b",
       stickyLabel: "Builder",
       badge: hasError ? { color: "#ef4444", pulse: true } : undefined,
-      actions: hasError
-        ? [
-            {
-              id: "builder-errors",
-              icon: AlertCircle,
-              label: `${errorCount} validation error${errorCount === 1 ? "" : "s"}`,
-              onClick: () => {
-                window.dispatchEvent(new CustomEvent("ix:open-validation-toast"));
+      actions: [
+        ...(hasError
+          ? [
+              {
+                id: "builder-errors",
+                icon: AlertCircle,
+                label: `${errorCount} validation error${errorCount === 1 ? "" : "s"}`,
+                onClick: () => {
+                  window.dispatchEvent(new CustomEvent("ix:open-validation-toast"));
+                },
+                badge: errorCount,
               },
-              badge: errorCount,
-            },
-          ]
-        : undefined,
+            ]
+          : []),
+        saveAction,
+      ],
       filter,
       context,
     };
-  }, [filter, context, hasError, errorCount]);
+  }, [filter, context, hasError, errorCount, saveAction]);
 
   useDIPlugin(plugin);
   return null;

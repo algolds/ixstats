@@ -486,7 +486,12 @@ export function EconomyBuilderPage({
     syncNow,
     showSuccessAnimation,
   } = useEconomyBuilderAutoSync(countryId, economyDataForSync, {
-    enabled: !!countryId, // Only enable in edit mode
+    // Inside the unified builder, useBuilderState owns persistence (updateCountry
+    // in edit mode, BuilderDraft in create mode). Disable this side-channel so it
+    // can't race/clobber the Country row or fire against a template countryCode in
+    // create mode (which FORBIDDEN-fails after flashing optimistic "Saved").
+    // Only autosave when used standalone (no BuilderStateProvider).
+    enabled: !!countryId && !builderContext,
     onSyncSuccess: () => {
       console.log("[EconomyBuilder] Autosave successful");
       setLastSaved(new Date());
@@ -552,6 +557,8 @@ export function EconomyBuilderPage({
     syncTaxMutation: _syncTaxMutation,
   } = useEconomyBuilderSync({
     countryId,
+    // Unified builder owns persistence — suppress cross-builder server syncs here.
+    enabled: !builderContext,
     economyBuilder,
     economicInputs,
     governmentComponents,

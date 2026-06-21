@@ -608,7 +608,22 @@ export function useBuilderState(
         const savedState = safeGetItemSync(stateKey);
         const savedLastSaved = safeGetItemSync(savedKey);
 
-        if (savedState) {
+        // localStorage is a crash-recovery buffer, NOT a co-equal source of truth.
+        // Only let it override the freshly-loaded DB row when the local copy is
+        // strictly newer than the DB's updatedAt (i.e. unsaved edits from a crash
+        // or a sync that never completed). Otherwise the DB wins and we drop the
+        // stale local copy so it can't resurrect old data over good server data.
+        const localSavedAt = savedLastSaved ? new Date(savedLastSaved).getTime() : 0;
+        const dbUpdatedAt = (existingCountry as any)?.updatedAt
+          ? new Date((existingCountry as any).updatedAt).getTime()
+          : 0;
+        const localIsNewer = localSavedAt > dbUpdatedAt;
+
+        if (savedState && !localIsNewer) {
+          safeRemoveItemSync(stateKey);
+          safeRemoveItemSync(savedKey);
+          console.log("[useBuilderState] Discarded stale edit-mode localStorage (DB is newer)");
+        } else if (savedState) {
           let parsedState;
           try {
             parsedState = JSON.parse(savedState);
@@ -1321,8 +1336,15 @@ export function useBuilderState(
         builderState.economicInputs?.nationalIdentity?.countryName ||
         "",
       economicInputs: sanitizeEconomicInputs(builderState.economicInputs) || undefined,
+      // Send undefined (skip) rather than [] when there are no components: the
+      // server treats a present array as authoritative and deletes-then-recreates,
+      // so an empty array on a transient/unloaded state would wipe the DB's
+      // components. ponytail: can't persist "user cleared all components" via
+      // autosave; clearing all is rare and goes through explicit save/remove paths.
       governmentComponents:
-        builderState.governmentComponents?.map((comp) => ({ componentType: comp })) || [],
+        builderState.governmentComponents && builderState.governmentComponents.length > 0
+          ? builderState.governmentComponents.map((comp) => ({ componentType: comp }))
+          : undefined,
       taxSystemData: builderState.taxSystemData || undefined,
       governmentStructure: builderState.governmentStructure || undefined,
       economyBuilderState: builderState.economyBuilderState || undefined,
@@ -1421,39 +1443,48 @@ export function useBuilderState(
   }, [builderState, mode]);
 
   const triggerManualSave = useCallback(async () => {
-    try {
-      const stateKey =
-        mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
-      const savedKey =
-        mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
+    const stateKey =
+      mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
+    const savedKey =
+      mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
 
+    // localStorage is best-effort — a storage failure must never block the DB save.
+    try {
       safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
       const now = new Date();
       safeSetItemSync(savedKey, now.toISOString());
       setLastSaved(now);
-
-      if (mode === "edit" && countryId && !isLoadingCountry) {
-        const currentSyncPayload = {
-          id: countryId,
-          name:
-            builderStateRef.current.economicInputs?.countryName ||
-            builderStateRef.current.economicInputs?.nationalIdentity?.countryName ||
-            "",
-          economicInputs:
-            sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
-          governmentComponents:
-            builderStateRef.current.governmentComponents?.map((comp) => ({
-              componentType: comp,
-            })) || [],
-          taxSystemData: builderStateRef.current.taxSystemData || undefined,
-          governmentStructure: builderStateRef.current.governmentStructure || undefined,
-          economyBuilderState: builderStateRef.current.economyBuilderState || undefined,
-        };
-        lastSyncedStateRef.current = currentSyncPayload;
-        await updateMutation.mutateAsync(currentSyncPayload);
-      }
     } catch (error) {
-      console.error("Manual save failed:", error);
+      console.warn("Manual save: localStorage write failed:", error);
+    }
+
+    if (mode === "edit" && countryId && !isLoadingCountry) {
+      const currentSyncPayload = {
+        id: countryId,
+        name:
+          builderStateRef.current.economicInputs?.countryName ||
+          builderStateRef.current.economicInputs?.nationalIdentity?.countryName ||
+          "",
+        economicInputs:
+          sanitizeEconomicInputs(builderStateRef.current.economicInputs) || undefined,
+        // Skip (undefined) rather than [] when empty: a present array is
+        // authoritative server-side and would delete-then-recreate, wiping the
+        // DB's components on a transient empty state. (Mirrors the autosave path.)
+        governmentComponents:
+          builderStateRef.current.governmentComponents &&
+          builderStateRef.current.governmentComponents.length > 0
+            ? builderStateRef.current.governmentComponents.map((comp) => ({
+                componentType: comp,
+              }))
+            : undefined,
+        taxSystemData: builderStateRef.current.taxSystemData || undefined,
+        governmentStructure: builderStateRef.current.governmentStructure || undefined,
+        economyBuilderState: builderStateRef.current.economyBuilderState || undefined,
+      };
+      lastSyncedStateRef.current = currentSyncPayload;
+      // Let the error propagate so callers (the DI Save button) can surface a real
+      // failure instead of flashing a false "Saved".
+      await updateMutation.mutateAsync(currentSyncPayload);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, countryId, isLoadingCountry]);
