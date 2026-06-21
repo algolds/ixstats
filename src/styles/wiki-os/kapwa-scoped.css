@@ -1,0 +1,48 @@
+/* Scoped Kapwa and Facet Theme Mapping */
+.kapwa-sandbox {
+  @import "@bettergov/kapwa/kapwa.css";
+
+  /* Core Canvas/Surface Color Mapping */
+  --color-kapwa-bg-canvas: var(--wikios-bg);
+  --color-kapwa-bg-surface: var(--wikios-surface);
+  --color-kapwa-border-default: var(--wikios-border);
+  --color-kapwa-text-default: var(--wikios-text);
+  --color-kapwa-text-muted: var(--wikios-text-muted);
+  --color-kapwa-text-dim: var(--wikios-text-dim);
+
+  /* Accents & Link Mapping */
+  --color-kapwa-brand-600: var(--wikios-accent);
+  --color-kapwa-brand-500: var(--wikios-accent-hover);
+  --color-kapwa-link-default: var(--wikios-link);
+
+  /* Volumetric Translucent Card Backgrounds */
+  --color-kapwa-bg-card: rgba(30, 32, 40, 0.45);
+  --color-kapwa-shadow-card: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Volumetric satin glass overrides for Kapwa card elements inside the sandbox */
+.kapwa-sandbox .kp-card {
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--wikios-border) !important;
+  border-radius: 8px;
+  position: relative;
+  background: var(--color-kapwa-bg-card) !important;
+}
+
+/* Scoped glare sheen overlay for Kapwa cards (Facet Refraction Overlay) */
+.kapwa-sandbox .kp-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02)
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}

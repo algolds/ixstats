@@ -152,6 +152,7 @@
     "websocket:server": "tsx src/lib/websocket-server.ts"
   },
   "dependencies": {
+    "@bettergov/kapwa": "^1.4.1",
     "@c15t/backend": "^2.1.0",
     "@c15t/dev-tools": "^2.1.0",
     "@c15t/nextjs": "^2.1.0",
