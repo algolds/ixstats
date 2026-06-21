@@ -71,6 +71,7 @@ export function SvgProcessingDialog({
       utils.geoCore.getMapStats.invalidate();
       utils.geoAdmin.getSvgUploadHistory.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       onCommitted();
     },
   });

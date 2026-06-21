@@ -28,6 +28,7 @@ import {
   Pause,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
+import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
 
 interface PolicyDetailSheetProps {
   policyId: string | null;
@@ -230,6 +231,14 @@ export function PolicyDetailSheet({
         ) : policy ? (
           <>
             <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+              <ParadoxFlavorCard
+                id={policy.id}
+                type="policy"
+                title={policy.name}
+                description={policy.description}
+                countryId={policy.countryId}
+              />
+
               {/* Description */}
               {policy.description && (
                 <div>

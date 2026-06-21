@@ -104,6 +104,11 @@ const MyLeagueAdminPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
+const NarratorAdminPanel = dynamic(
+  () => import("./NarratorAdminPanel").then((m) => m.NarratorAdminPanel),
+  { loading: Loader, ssr: false }
+);
+
 const UnifiedMediaServiceAdmin = dynamic(
   () => import("./UnifiedMediaServiceAdmin").then((m) => m.UnifiedMediaServiceAdmin),
   { loading: Loader, ssr: false }
@@ -253,6 +258,8 @@ export function AdminRouter() {
       // Labs
       case "myleague":
         return <MyLeagueAdminPanel />;
+      case "narrator":
+        return <NarratorAdminPanel />;
 
       // Ungrouped
       case "facet-lab":

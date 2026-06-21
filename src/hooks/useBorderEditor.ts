@@ -573,6 +573,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
 
       if (result.applied) {
         await utils.geoCore.getWorldMap.invalidate();
+        await utils.geoCore.getMapBundle.invalidate();
         await utils.geoCore.getCountryGeometry.invalidate();
         await utils.countryGeo.getCountryGeoBundle.invalidate();
         await utils.geoCore.getNeighborGeometries.invalidate();
@@ -604,6 +605,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       });
 
       await utils.geoCore.getWorldMap.invalidate();
+      await utils.geoCore.getMapBundle.invalidate();
       await utils.geoCore.getCountryGeometry.invalidate();
       await utils.countryGeo.getCountryGeoBundle.invalidate();
       await utils.geoCore.getNeighborGeometries.invalidate();
@@ -624,6 +626,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       });
 
       await utils.geoCore.getWorldMap.invalidate();
+      await utils.geoCore.getMapBundle.invalidate();
       await utils.geoCore.getCountryGeometry.invalidate();
       await utils.countryGeo.getCountryGeoBundle.invalidate();
       await utils.geoCore.getNeighborGeometries.invalidate();

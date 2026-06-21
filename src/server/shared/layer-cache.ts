@@ -20,10 +20,17 @@ export const layerCache = new Map<string, { data: FeatureCollection; timestamp: 
  */
 export function clearLayerCache(layerType?: string): void {
   if (layerType) {
-    for (const key of layerCache.keys()) {
+    layerCache.forEach((_, key) => {
       if (key === layerType || key.startsWith(`${layerType}:`)) {
         layerCache.delete(key);
       }
+    });
+    if (layerType === "political") {
+      layerCache.forEach((_, key) => {
+        if (key === "country_labels" || key.startsWith("country_labels:")) {
+          layerCache.delete(key);
+        }
+      });
     }
   } else {
     layerCache.clear();

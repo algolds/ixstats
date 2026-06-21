@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
+import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
 
 interface MeetingDetailModalProps {
   meetingId: string | null;
@@ -208,6 +209,13 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                       className="rounded-lg border border-white/5 bg-white/5 p-3 text-xs"
                     >
                       <h4 className="mb-1 font-medium text-blue-400">{dec.title}</h4>
+                      <ParadoxFlavorCard
+                        id={dec.id}
+                        type="decision"
+                        title={dec.title}
+                        description={dec.description}
+                        countryId={meeting.countryId}
+                      />
                       <p className="text-muted-foreground mb-2 whitespace-pre-line">
                         {dec.description}
                       </p>

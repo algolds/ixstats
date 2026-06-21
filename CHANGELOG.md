@@ -15,7 +15,7 @@ capability integer. Each release entry below lists which components advanced and
 - **WikiOS Creation Wizard, Dynamic Island Command Palette, & Nation Builder Performance**:
   - Implemented the **WikiOS "Create New Page" Wizard** (`CreatePageModal.tsx`) supporting page title duplication checks (`checkPageExists` tRPC query), editor mode selection, template boilerplate selections, and prefilled infobox fields.
   - Wired the page creation wizard modal into `WikiOSUnifiedSidebar.tsx` and `WikiOSLayout.tsx`.
-  - Added query parameter-based prefill loading in the wiki edit page, dynamically converting wikitext template snippets to HTML client-side for the visual editor.
+  - Added query parameter-based prefill loading in the wiki edit page, dynamically converting wikitext template snippets to HTML client-side for the visual editor, and fixed a `Temporal Dead Zone` runtime `ReferenceError` where `isLoading` was referenced in the `useEffect` dependency array before its initialization.
   - Designed and built the **MyCountry Command Palette** (`MyCountryCommandPalette.tsx`) search HUD in the Dynamic Island (Halo) using the Facet design system.
   - Implemented client-side section switching via history `pushState` for instant transitions on `/mycountry` pages, along with fully functional keyboard navigation (Arrow keys, Enter, Esc).
   - Registered the command palette as the expanded view in `MyCountryDIPlugin.tsx`, binding center label clicks to toggle the HUD.

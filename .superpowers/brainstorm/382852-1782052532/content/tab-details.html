@@ -1,0 +1,73 @@
+<h2>Tabbed Layout Sections</h2>
+<p class="subtitle">Here is the detailed functional breakdown for each of the three tabs. Select your preferences for additional features.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Tab 1: API Settings & Controls</div>
+    <div class="mockup-body">
+      <ul>
+        <li><strong>Global Toggle:</strong> Enable/disable AI flavorization console-wide.</li>
+        <li><strong>Provider Selection:</strong> Dropdown to switch between Nvidia (DeepSeek), OpenRouter (Llama 3.1), or OpenAI (GPT-4o-mini).</li>
+        <li><strong>API Credentials:</strong> View status of configured API keys, with inputs to save overrides to `SystemConfig`.</li>
+        <li><strong>Parameters:</strong> Slider controls for LLM temperature and max tokens.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Tab 2: Live Narrative Playground</div>
+    <div class="mockup-body">
+      <ul>
+        <li><strong>Two Input Modes:</strong>
+          <ul>
+            <li><em>Real Data Mode:</em> Select a Country → Select target event type (Issue/Policy/Decision) → Select concrete database item (e.g. Issue: "High Unemployment").</li>
+            <li><em>Sandbox Mode:</em> Blank fields for custom Title, Description, and raw Country Metrics JSON.</li>
+          </ul>
+        </li>
+        <li><strong>Live Run Button:</strong> Submits to backend and shows a live loading shimmer.</li>
+        <li><strong>Paradox Card Previewer:</strong> Renders the actual generated text in the real styled Paradox card wrapper.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top: 20px;">
+  <div class="mockup-header">Tab 3: Cache Lab & Stats</div>
+  <div class="mockup-body">
+    <div style="display: flex; gap: 20px;">
+      <div style="flex: 1;">
+        <strong>Metrics:</strong>
+        <ul>
+          <li>Total entries cached</li>
+          <li>API savings / hit rate percentage</li>
+          <li>Average LLM latency</li>
+        </ul>
+      </div>
+      <div style="flex: 1;">
+        <strong>Actions:</strong>
+        <ul>
+          <li>Clear Cache button (wipes narrator:custom keys)</li>
+          <li>List of 10 most recent cached event IDs</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options" data-multiselect style="margin-top: 20px;">
+  <div class="option" data-choice="custom-sandbox" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Keep both Real Data and Sandbox input modes</h3>
+      <p>Recommended: Allows testing real database issues/policies and typing arbitrary custom scenarios.</p>
+    </div>
+  </div>
+  
+  <div class="option" data-choice="prompt-editor" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Add System Prompt Customization Editor</h3>
+      <p>Let admins temporarily edit and test custom System Prompts directly in the playground to fine-tune the CK3/Paradox tone.</p>
+    </div>
+  </div>
+</div>

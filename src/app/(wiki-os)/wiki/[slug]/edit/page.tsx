@@ -83,6 +83,8 @@ export default function WikiOSEditPage() {
     { enabled: !!title && mode === "source", staleTime: 5 * 60 * 1000 }
   );
 
+  const isLoading = mode === "visual" ? editorLoading : wtLoading;
+
   useEffect(() => {
     if (editorHtml?.html && activeHtml === null) {
       setActiveHtml(editorHtml.html);
@@ -262,8 +264,6 @@ export default function WikiOSEditPage() {
     },
     [saveWikitext, title, router, articleUrl, wikitextData?.timestamp, refetchWikitext]
   );
-
-  const isLoading = mode === "visual" ? editorLoading : wtLoading;
 
   // Edit conflict banner
   const conflictBanner = editConflict && (

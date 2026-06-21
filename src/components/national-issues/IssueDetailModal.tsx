@@ -24,6 +24,7 @@ import { Button } from "~/components/ui/button";
 import { IxTime } from "~/lib/ixtime";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
 import { useNotify } from "~/hooks/useNotify";
+import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
 
 interface ResponseOption {
   id: string;
@@ -91,6 +92,7 @@ function IssueDetailModalInner({
   onClose,
   onRespond,
   isResponding,
+  countryId,
 }: IssueDetailModalProps) {
   const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
@@ -208,6 +210,13 @@ function IssueDetailModalInner({
 
         {/* Narrative */}
         <div className="mt-2 space-y-3">
+          <ParadoxFlavorCard
+            id={issue.id}
+            type="issue"
+            title={issue.title}
+            description={issue.description}
+            countryId={countryId}
+          />
           <p className="text-muted-foreground text-sm leading-relaxed">{issue.description}</p>
           {issue.longDescription && (
             <div className="text-muted-foreground border-l-2 border-white/10 pl-3 text-sm leading-relaxed whitespace-pre-line">

@@ -136,6 +136,9 @@ import { ixnayidRouter } from "./routers/ixnayid";
 // ─── Sports ──────────────────────────────────────────────────────────────────
 import { sportsRouter } from "./routers/sports";
 
+// ─── Narrator ────────────────────────────────────────────────────────────────
+import { narratorRouter } from "./routers/narrator";
+
 // ─── MyCountry ───────────────────────────────────────────────────────────────
 import { myCountryRouter } from "./routers/mycountry";
 import { historicalRouter } from "./routers/historical";
@@ -262,6 +265,9 @@ export const appRouter = createTRPCRouter({
 
   // ─── Sports ────────────────────────────────────────────────────────────────
   sports: safeRouter("sports", () => sportsRouter),
+
+  // ─── Narrator ──────────────────────────────────────────────────────────────
+  narrator: safeRouter("narrator", () => narratorRouter),
 
   // ─── MyCountry ─────────────────────────────────────────────────────────────
   mycountry: safeRouter("mycountry", () => myCountryRouter),

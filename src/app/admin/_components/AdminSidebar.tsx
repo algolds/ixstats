@@ -144,6 +144,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: Terminal,
     description: "System & Server Audit Trail",
   },
+  {
+    label: "AI Narrator",
+    href: "/admin/narrator",
+    icon: Sparkles,
+    description: "LLM Narrator & Playground",
+  },
 ];
 
 function isActive(pathname: string, href: string, exact?: boolean): boolean {

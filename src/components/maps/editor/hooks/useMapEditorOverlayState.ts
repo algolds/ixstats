@@ -175,6 +175,7 @@ export function useMapEditorOverlayState({
       utils.geoCore.listCountries.invalidate();
       utils.geoCore.getMapStats.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
       setAssigningFeatureId(null);
       setAssignCountryId("");
@@ -186,6 +187,7 @@ export function useMapEditorOverlayState({
       utils.geoCore.listCountries.invalidate();
       utils.geoCore.getMapStats.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
       setMapSelectedCountry(null);
       setActiveCountryId(null);
@@ -197,6 +199,7 @@ export function useMapEditorOverlayState({
       utils.geoEditor.validateLinkage.invalidate();
       utils.geoCore.listCountries.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
       alert("Linkages synced successfully!");
     },
@@ -207,6 +210,7 @@ export function useMapEditorOverlayState({
       utils.geoEditor.validateLinkage.invalidate();
       utils.geoCore.listCountries.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
       alert("Auto-matching complete!");
     },
@@ -216,6 +220,7 @@ export function useMapEditorOverlayState({
     onSuccess: () => {
       utils.geoSovereignty.getSovereigntyRelations.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       utils.geoCore.getMapStats.invalidate();
       resetSovereigntyForm();
     },
@@ -225,6 +230,7 @@ export function useMapEditorOverlayState({
     onSuccess: () => {
       utils.geoSovereignty.getSovereigntyRelations.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       resetSovereigntyForm();
     },
   });
@@ -233,6 +239,7 @@ export function useMapEditorOverlayState({
     onSuccess: () => {
       utils.geoSovereignty.getSovereigntyRelations.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       utils.geoCore.getMapStats.invalidate();
     },
   });
@@ -241,6 +248,7 @@ export function useMapEditorOverlayState({
     onSuccess: () => {
       utils.geoCore.listCountries.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
       alert("Feature properties updated successfully!");
     },
@@ -253,6 +261,7 @@ export function useMapEditorOverlayState({
     onSuccess: () => {
       utils.geoCore.listCountries.invalidate();
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
     },
     onError: (err) => {
@@ -775,6 +784,7 @@ export function useMapEditorOverlayState({
       await borderActions.submitEdit(true, saveReason);
       setShowConfirmSaveModal(false);
       utils.geoCore.getWorldMap.invalidate();
+      utils.geoCore.getMapBundle.invalidate();
       refetchValidation();
       setActiveEditorMode("view");
     } catch (err) {
@@ -804,6 +814,7 @@ export function useMapEditorOverlayState({
         await borderActions.executeSplit(nameA, nameB);
         setShowSplitDialog(false);
         utils.geoCore.getWorldMap.invalidate();
+        utils.geoCore.getMapBundle.invalidate();
         refetchValidation();
         setActiveEditorMode("view");
       } catch (err) {
@@ -822,6 +833,7 @@ export function useMapEditorOverlayState({
         await borderActions.executeMerge(newName);
         setShowMergeDialog(false);
         utils.geoCore.getWorldMap.invalidate();
+        utils.geoCore.getMapBundle.invalidate();
         refetchValidation();
         setActiveEditorMode("view");
       } catch (err) {

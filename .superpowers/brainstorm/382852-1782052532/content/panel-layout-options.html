@@ -1,0 +1,43 @@
+<h2>Narrator Admin Panel Layout</h2>
+<p class="subtitle">Select the visual layout that works best for managing and testing the system-wide AI Narrator.</p>
+
+<div class="options">
+  <div class="option" data-choice="tabbed" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Tabbed Navigation Layout (Recommended)</h3>
+      <p>Organizes the dashboard into three distinct tabs: 
+        <strong>1. API Settings</strong> (API keys, URLs, model selection), 
+        <strong>2. Playground</strong> (select country, write test prompts, hit API, and see live Paradox outcomes), and 
+        <strong>3. Cache Lab</strong> (view cache stats, clean entries, inspect cached keys). Fits existing admin tab styles.
+      </p>
+    </div>
+  </div>
+  
+  <div class="option" data-choice="split" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Split Workspace Layout</h3>
+      <p>A side-by-side split screen: the left column houses all configuration settings and cache controls, while the right column acts as a persistent live playground. Great for rapid prompt tweaking and seeing results immediately without switching tabs.</p>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>Tabbed Pros & Cons</h4>
+    <ul>
+      <li>Clean, focused view of each feature area</li>
+      <li>Consistent with existing admin panels (like Myleague/Storyteller)</li>
+      <li>Requires switching tabs to change configuration and then test</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>Split Pros & Cons</h4>
+    <ul>
+      <li>Fast workflow — edit a setting and test it on the same screen</li>
+      <li>Perfect for large screens, but may feel cramped on smaller viewports</li>
+      <li>Different from standard admin visual hierarchy</li>
+    </ul>
+  </div>
+</div>

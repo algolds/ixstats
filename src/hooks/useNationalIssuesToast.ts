@@ -14,6 +14,8 @@ import { useEffect, useRef } from "react";
 import { useIssueCount } from "./useNationalIssues";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 
+const STORAGE_KEY = "national_issues_last_counts";
+
 export function useNationalIssuesToast(countryId: string | undefined) {
   const { total, urgent } = useIssueCount(countryId);
   const enqueue = useToastQueueStore((s) => s.enqueue);
@@ -22,6 +24,18 @@ export function useNationalIssuesToast(countryId: string | undefined) {
   const toastIdRef = useRef<string | null>(null);
   const lastCountRef = useRef<{ total: number; urgent: number }>({ total: 0, urgent: 0 });
 
+  // Load from sessionStorage on mount (client-side only)
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        lastCountRef.current = JSON.parse(stored);
+      }
+    } catch (e) {
+      // Ignore sessionStorage/JSON parse errors
+    }
+  }, []);
+
   useEffect(() => {
     if (total === 0) {
       if (toastIdRef.current) {
@@ -29,10 +43,15 @@ export function useNationalIssuesToast(countryId: string | undefined) {
         toastIdRef.current = null;
       }
       lastCountRef.current = { total: 0, urgent: 0 };
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        // Ignore
+      }
       return;
     }
 
-    // Same counts — skip
+    // Same counts — skip showing new toast (survives reload)
     if (total === lastCountRef.current.total && urgent === lastCountRef.current.urgent) {
       return;
     }
@@ -65,6 +84,12 @@ export function useNationalIssuesToast(countryId: string | undefined) {
 
     toastIdRef.current = id;
     lastCountRef.current = { total, urgent };
+
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ total, urgent }));
+    } catch (e) {
+      // Ignore
+    }
   }, [total, urgent, enqueue, dismiss]);
 
   useEffect(() => {
@@ -76,3 +101,4 @@ export function useNationalIssuesToast(countryId: string | undefined) {
     };
   }, [dismiss]);
 }
+

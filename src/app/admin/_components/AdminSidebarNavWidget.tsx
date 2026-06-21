@@ -256,6 +256,14 @@ const NAV_GROUPS: NavGroup[] = [
         activeColor: "text-amber-500 dark:text-amber-400 border-l-amber-500",
         section: "myleague",
       },
+      {
+        label: "AI Narrator Settings",
+        href: "/admin/narrator",
+        icon: Sparkles,
+        description: "Flavorizer LLM configs & sandbox",
+        activeColor: "text-amber-450 dark:text-amber-350 border-l-amber-500",
+        section: "narrator",
+      },
     ],
   },
 ];
