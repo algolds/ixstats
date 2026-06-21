@@ -192,6 +192,43 @@ interface EconomyBuilderPageProps {
  * />
  * ```
  */
+// Default demographics shape. Used to backfill stale localStorage blobs that
+// predate newer fields, so the builder never reads undefined nested values.
+const DEFAULT_DEMOGRAPHICS: EconomyBuilderState["demographics"] = {
+  totalPopulation: 0,
+  populationGrowthRate: 0,
+  ageDistribution: { under15: 20, age15to64: 65, over65: 15 },
+  urbanRuralSplit: { urban: 50, rural: 50 },
+  regions: [],
+  lifeExpectancy: 75,
+  literacyRate: 90,
+  educationLevels: { noEducation: 5, primary: 25, secondary: 45, tertiary: 25 },
+  netMigrationRate: 0,
+  immigrationRate: 0,
+  emigrationRate: 0,
+  infantMortalityRate: 10,
+  maternalMortalityRate: 50,
+  healthExpenditureGDP: 5,
+  youthDependencyRatio: 30,
+  elderlyDependencyRatio: 23,
+  totalDependencyRatio: 53,
+};
+
+// Deep-merge a possibly-stale persisted demographics object over the defaults,
+// filling missing scalars and nested objects in one pass.
+function mergeDemographics(
+  d: Partial<EconomyBuilderState["demographics"]> | undefined
+): EconomyBuilderState["demographics"] {
+  return {
+    ...DEFAULT_DEMOGRAPHICS,
+    ...d,
+    ageDistribution: { ...DEFAULT_DEMOGRAPHICS.ageDistribution, ...d?.ageDistribution },
+    urbanRuralSplit: { ...DEFAULT_DEMOGRAPHICS.urbanRuralSplit, ...d?.urbanRuralSplit },
+    educationLevels: { ...DEFAULT_DEMOGRAPHICS.educationLevels, ...d?.educationLevels },
+    regions: d?.regions ?? [],
+  };
+}
+
 interface EconomyTabHeaderProps {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -246,35 +283,7 @@ export function EconomyBuilderPage({
 
   // State Management - Memoized to prevent unnecessary re-renders
   const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState>(() => {
-    if (persistedEconomyBuilder) {
-      const d = persistedEconomyBuilder.demographics ?? ({} as EconomyBuilderState["demographics"]);
-      return {
-        ...persistedEconomyBuilder,
-        laborMarket: {
-          ...persistedEconomyBuilder.laborMarket,
-          averageAnnualIncome:
-            typeof persistedEconomyBuilder.laborMarket?.averageAnnualIncome === "number"
-              ? persistedEconomyBuilder.laborMarket.averageAnnualIncome
-              : Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
-        },
-        // ponytail: backfill nested demographics objects so older localStorage blobs
-        // (pre-ageDistribution shape) don't crash preview useMemos reading them.
-        demographics: {
-          ...d,
-          ageDistribution: { under15: 20, age15to64: 65, over65: 15, ...d.ageDistribution },
-          urbanRuralSplit: { urban: 50, rural: 50, ...d.urbanRuralSplit },
-          educationLevels: {
-            noEducation: 5,
-            primary: 25,
-            secondary: 45,
-            tertiary: 25,
-            ...d.educationLevels,
-          },
-        },
-      };
-    }
-
-    return {
+    const defaults: EconomyBuilderState = {
       structure: {
         economicModel: "Mixed Economy",
         primarySectors: [],
@@ -388,6 +397,35 @@ export function EconomyBuilderPage({
       },
       lastUpdated: new Date(),
       version: "1.0.0",
+    };
+
+    if (!persistedEconomyBuilder) return defaults;
+
+    // Deep-merge a possibly-stale persisted blob over the full defaults so missing
+    // nested fields (older localStorage shapes) can never crash a tab/useMemo.
+    const p = persistedEconomyBuilder;
+    return {
+      ...defaults,
+      ...p,
+      structure: { ...defaults.structure, ...p.structure },
+      laborMarket: {
+        ...defaults.laborMarket,
+        ...p.laborMarket,
+        sectorDistribution: {
+          ...defaults.laborMarket.sectorDistribution,
+          ...p.laborMarket?.sectorDistribution,
+        },
+        employmentType: { ...defaults.laborMarket.employmentType, ...p.laborMarket?.employmentType },
+        workerProtections: {
+          ...defaults.laborMarket.workerProtections,
+          ...p.laborMarket?.workerProtections,
+        },
+        averageAnnualIncome:
+          typeof p.laborMarket?.averageAnnualIncome === "number"
+            ? p.laborMarket.averageAnnualIncome
+            : defaults.laborMarket.averageAnnualIncome,
+      },
+      demographics: mergeDemographics(p.demographics),
     };
   });
 
@@ -808,10 +846,10 @@ export function EconomyBuilderPage({
             economyBuilder.laborMarket.averageAnnualIncome ??
             Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
         },
-        demographics: {
+        demographics: mergeDemographics({
           ...economyBuilder.demographics,
           ...existingConfiguration.demographics,
-        },
+        }),
         selectedAtomicComponents: existingConfiguration.selectedAtomicComponents || [],
         version: existingConfiguration.version ?? economyBuilder.version,
         isValid: true,
