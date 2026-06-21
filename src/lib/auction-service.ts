@@ -7,7 +7,7 @@
  * Features:
  * - Atomic transactions for race condition protection
  * - IxCredits integration via vault-service
- * - IxTime-based auction timing
+ * - real-time auction timing
  * - Auto-extension for last-minute bids
  * - Market fee calculation (10% on sales >100 IxC)
  * - Listing fees (5 IxC standard, 10 IxC featured)
@@ -15,7 +15,6 @@
  */
 
 import { vaultService, getVaultConfig } from "./vault-service";
-import { IxTime } from "./ixtime";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 import { getMarketWebSocketServer } from "~/lib/market-websocket-server";
@@ -124,8 +123,8 @@ export class AuctionService {
       });
     }
 
-    // 5. Calculate end time (using IxTime)
-    const now = IxTime.getCurrentIxTime();
+    // 5. Calculate end time (real-world wall clock — auctions run in real time)
+    const now = Date.now();
     const endTime = now + params.duration * 60 * 1000; // Convert minutes to ms
 
     // 6. Create auction and lock card (atomic transaction)
@@ -285,8 +284,8 @@ export class AuctionService {
       });
     }
 
-    // Check if auction expired
-    const now = IxTime.getCurrentIxTime();
+    // Check if auction expired (real time)
+    const now = Date.now();
     if (new Date(auction.endTime).getTime() < now) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -711,8 +710,8 @@ export class AuctionService {
       return; // Already completed or doesn't exist
     }
 
-    // Check if expired
-    const now = IxTime.getCurrentIxTime();
+    // Check if expired (real time)
+    const now = Date.now();
     if (new Date(auction.endTime).getTime() > now) {
       return; // Not expired yet
     }

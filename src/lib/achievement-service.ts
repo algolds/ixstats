@@ -12,6 +12,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { getAchievementById, type ExtendedAchievementData } from "./achievement-definitions";
+import { getScaleThresholds } from "./achievement-scaling";
 import { vaultService } from "./vault-service";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { getCardRewardForAchievement, hasCardReward } from "./achievement-card-rewards";
@@ -180,10 +181,10 @@ export class AchievementService {
   }
 
   private evaluateRule(
-    rule: { metric: string; operator: string; value: any },
+    rule: { metric: string; operator: string; value?: any; percentile?: number },
     data: ExtendedAchievementData
   ): boolean {
-    const { metric, operator, value } = rule;
+    const { metric, operator } = rule;
     let currentValue: any = undefined;
 
     if (metric in data) {
@@ -194,6 +195,14 @@ export class AchievementService {
 
     if (currentValue === undefined) {
       return false;
+    }
+
+    // Dynamic, distribution-relative threshold (see achievement-scaling.ts).
+    // Resolved from the live percentile snapshot attached to the data.
+    let value = rule.value;
+    if (rule.percentile != null) {
+      value = data.scaleThresholds?.[metric as keyof typeof data.scaleThresholds]?.[rule.percentile];
+      if (value == null) return false; // snapshot unavailable → don't unlock
     }
 
     switch (operator) {
@@ -375,7 +384,11 @@ export class AchievementService {
           .catch(() => 0),
       ]);
 
+      // Live percentile thresholds for scale achievements (cached, see scaling module)
+      const scaleThresholds = await getScaleThresholds(db).catch(() => ({}));
+
       const achievementData: ExtendedAchievementData = {
+        scaleThresholds,
         country: {
           id: country.id,
           currentTotalGdp: country.currentTotalGdp,

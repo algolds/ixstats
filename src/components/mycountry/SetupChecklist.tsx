@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   CheckCircle2,
@@ -12,6 +12,7 @@ import {
   Shield,
   BookOpen,
   ChevronDown,
+  X,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
@@ -50,6 +51,18 @@ interface ChecklistRow {
  */
 export function SetupChecklist({ countryId, onNavigate }: SetupChecklistProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  // Persisted "don't show again" — lets players dismiss the checklist before
+  // finishing all four steps. Read after mount to avoid an SSR hydration mismatch.
+  const dismissKey = `mc-setup-dismissed-${countryId}`;
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    setDismissed(localStorage.getItem(dismissKey) === "1");
+  }, [dismissKey]);
+  const dismiss = () => {
+    localStorage.setItem(dismissKey, "1");
+    setDismissed(true);
+  };
+
   const embassies = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId },
     { staleTime: 5 * 60_000 }
@@ -127,8 +140,8 @@ export function SetupChecklist({ countryId, onNavigate }: SetupChecklistProps) {
   const autoRows = rows.filter((r) => r.auto);
   const completedAuto = autoRows.filter((r) => r.done).length;
 
-  // Hide the checklist entirely once an established nation has done all four.
-  if (completedAuto >= autoRows.length) {
+  // Hide the checklist once all four are done, or once the player dismisses it.
+  if (completedAuto >= autoRows.length || dismissed) {
     return null;
   }
 
@@ -168,6 +181,15 @@ export function SetupChecklist({ countryId, onNavigate }: SetupChecklistProps) {
                   !isCollapsed && "rotate-180"
                 )}
               />
+            </button>
+            <button
+              type="button"
+              onClick={dismiss}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md p-1 transition-colors focus:outline-none"
+              aria-label="Dismiss checklist"
+              title="Dismiss — don't show this again"
+            >
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>

@@ -11,6 +11,8 @@
  * - Condition function for auto-unlock detection
  */
 
+import { meetsScale, RARITY_PERCENTILE } from "./achievement-scaling";
+
 export type AchievementCategory =
   | "Economic"
   | "Military"
@@ -86,6 +88,13 @@ export interface ExtendedAchievementData {
   loreCardCount?: number;
   retiredCardCount?: number;
   distinctCountryIdCount?: number;
+
+  /**
+   * Live percentile thresholds for scale metrics (population/GDP/GDP-per-capita),
+   * keyed by metric then percentile. Populated per-check by the achievement
+   * service so scale achievements stay relative to the real country distribution.
+   */
+  scaleThresholds?: import("./achievement-scaling").ScaleThresholds;
 }
 
 export interface AchievementDefinition {
@@ -115,93 +124,93 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   // ==========================================
   {
     id: "econ-first-million",
-    title: "First Million",
-    description: "Reach $1 million total GDP",
+    title: "Emerging Economy",
+    description: "Rank in the top 75% of nations by total GDP",
     category: "Economic",
     rarity: "Common",
     points: 10,
     iconUrl: "💵",
-    condition: (data) => data.country.currentTotalGdp >= 1_000_000,
+    condition: (data) => meetsScale(data, "currentTotalGdp", RARITY_PERCENTILE.Common),
   },
   {
     id: "econ-millionaire-nation",
-    title: "Millionaire Nation",
-    description: "Reach $1 billion total GDP",
+    title: "Major Economy",
+    description: "Rank in the top 50% of nations by total GDP",
     category: "Economic",
     rarity: "Uncommon",
     points: 25,
     iconUrl: "💰",
-    condition: (data) => data.country.currentTotalGdp >= 1_000_000_000,
+    condition: (data) => meetsScale(data, "currentTotalGdp", RARITY_PERCENTILE.Uncommon),
   },
   {
     id: "econ-economic-powerhouse",
     title: "Economic Powerhouse",
-    description: "Reach $100 billion total GDP",
+    description: "Rank in the top 25% of nations by total GDP",
     category: "Economic",
     rarity: "Rare",
     points: 50,
     iconUrl: "🏦",
-    condition: (data) => data.country.currentTotalGdp >= 100_000_000_000,
+    condition: (data) => meetsScale(data, "currentTotalGdp", RARITY_PERCENTILE.Rare),
   },
   {
     id: "econ-trillion-club",
-    title: "Trillion Dollar Club",
-    description: "Reach $1 trillion total GDP",
+    title: "Economic Heavyweight",
+    description: "Rank in the top 10% of nations by total GDP",
     category: "Economic",
     rarity: "Epic",
     points: 100,
     iconUrl: "💎",
-    condition: (data) => data.country.currentTotalGdp >= 1_000_000_000_000,
+    condition: (data) => meetsScale(data, "currentTotalGdp", RARITY_PERCENTILE.Epic),
   },
   {
     id: "econ-global-titan",
     title: "Global Economic Titan",
-    description: "Reach $10 trillion total GDP",
+    description: "Rank in the top 2% of nations by total GDP",
     category: "Economic",
     rarity: "Legendary",
     points: 250,
     iconUrl: "👑",
-    condition: (data) => data.country.currentTotalGdp >= 10_000_000_000_000,
+    condition: (data) => meetsScale(data, "currentTotalGdp", RARITY_PERCENTILE.Legendary),
   },
   {
     id: "econ-wealthy-citizens",
     title: "Wealthy Citizens",
-    description: "Reach $10,000 GDP per capita",
+    description: "Rank in the top 75% of nations by GDP per capita",
     category: "Economic",
     rarity: "Common",
     points: 15,
     iconUrl: "💳",
-    condition: (data) => data.country.currentGdpPerCapita >= 10_000,
+    condition: (data) => meetsScale(data, "currentGdpPerCapita", RARITY_PERCENTILE.Common),
   },
   {
     id: "econ-prosperity-nation",
     title: "Prosperity Nation",
-    description: "Reach $25,000 GDP per capita",
+    description: "Rank in the top 50% of nations by GDP per capita",
     category: "Economic",
     rarity: "Uncommon",
     points: 30,
     iconUrl: "🏛️",
-    condition: (data) => data.country.currentGdpPerCapita >= 25_000,
+    condition: (data) => meetsScale(data, "currentGdpPerCapita", RARITY_PERCENTILE.Uncommon),
   },
   {
     id: "econ-first-world-status",
     title: "First World Status",
-    description: "Reach $50,000 GDP per capita",
+    description: "Rank in the top 25% of nations by GDP per capita",
     category: "Economic",
     rarity: "Rare",
     points: 60,
     iconUrl: "🌟",
-    condition: (data) => data.country.currentGdpPerCapita >= 50_000,
+    condition: (data) => meetsScale(data, "currentGdpPerCapita", RARITY_PERCENTILE.Rare),
   },
   {
     id: "econ-ultra-prosperity",
     title: "Ultra Prosperity",
-    description: "Reach $100,000 GDP per capita",
+    description: "Rank in the top 10% of nations by GDP per capita",
     category: "Economic",
     rarity: "Epic",
     points: 120,
     iconUrl: "💸",
-    condition: (data) => data.country.currentGdpPerCapita >= 100_000,
+    condition: (data) => meetsScale(data, "currentGdpPerCapita", RARITY_PERCENTILE.Epic),
   },
   {
     id: "econ-growth-rocket",
@@ -724,14 +733,54 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     condition: (data) => (data.totalAchievements ?? 0) >= 50,
   },
   {
+    id: "pop-rising-nation",
+    title: "Rising Nation",
+    description: "Rank in the top 75% of nations by population",
+    category: "General",
+    rarity: "Common",
+    points: 10,
+    iconUrl: "🧑‍🤝‍🧑",
+    condition: (data) => meetsScale(data, "currentPopulation", RARITY_PERCENTILE.Common),
+  },
+  {
     id: "gen-population-growth",
     title: "Population Boom",
-    description: "Reach 10 million population",
+    description: "Rank in the top 50% of nations by population",
     category: "General",
     rarity: "Uncommon",
     points: 25,
     iconUrl: "👥",
-    condition: (data) => data.country.currentPopulation >= 10_000_000,
+    condition: (data) => meetsScale(data, "currentPopulation", RARITY_PERCENTILE.Uncommon),
+  },
+  {
+    id: "pop-major-power",
+    title: "Demographic Major Power",
+    description: "Rank in the top 25% of nations by population",
+    category: "General",
+    rarity: "Rare",
+    points: 50,
+    iconUrl: "🏙️",
+    condition: (data) => meetsScale(data, "currentPopulation", RARITY_PERCENTILE.Rare),
+  },
+  {
+    id: "pop-superpower",
+    title: "Demographic Superpower",
+    description: "Rank in the top 10% of nations by population",
+    category: "General",
+    rarity: "Epic",
+    points: 100,
+    iconUrl: "🌆",
+    condition: (data) => meetsScale(data, "currentPopulation", RARITY_PERCENTILE.Epic),
+  },
+  {
+    id: "pop-demographic-titan",
+    title: "Demographic Titan",
+    description: "Rank in the top 2% of nations by population",
+    category: "General",
+    rarity: "Legendary",
+    points: 250,
+    iconUrl: "🌐",
+    condition: (data) => meetsScale(data, "currentPopulation", RARITY_PERCENTILE.Legendary),
   },
   {
     id: "vid-end-of-days",

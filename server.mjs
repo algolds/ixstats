@@ -295,6 +295,51 @@ app
         }
       });
 
+      // 9. National Issues background generation (every 15 minutes; per-country debounced)
+      scheduleCron("National Issues generation", "*/15 * * * *", async () => {
+        try {
+          const { generateNationalIssues } = await import(
+            "./src/lib/national-issues-generation-cron.js"
+          );
+          const r = await generateNationalIssues();
+          if (r.issuesGenerated > 0) {
+            console.log(
+              `[Cron] Issues: generated ${r.issuesGenerated} across ${r.countriesEvaluated} countries`
+            );
+          }
+        } catch (error) {
+          console.error("[Cron] National Issues generation failed:", error.message);
+        }
+      });
+
+      // 10. Scheduled elections (every 10 minutes; resolves due elections on the IxTime clock)
+      scheduleCron("Scheduled elections", "*/10 * * * *", async () => {
+        try {
+          const { processDueElections } = await import("./src/lib/election-cron.js");
+          const r = await processDueElections();
+          if (r.resolved > 0) {
+            console.log(`[Cron] Elections: resolved ${r.resolved}, scheduled ${r.scheduled} next`);
+          }
+        } catch (error) {
+          console.error("[Cron] Scheduled elections failed:", error.message);
+        }
+      });
+
+      // 11. Politics drift — party support + stability recompute (every 6 hours)
+      scheduleCron("Politics drift", "0 */6 * * *", async () => {
+        try {
+          const { runPoliticsDrift } = await import("./src/lib/politics-drift-cron.js");
+          const r = await runPoliticsDrift();
+          if (r.partiesUpdated > 0) {
+            console.log(
+              `[Cron] Politics: ${r.partiesUpdated} parties drifted across ${r.countriesProcessed} countries`
+            );
+          }
+        } catch (error) {
+          console.error("[Cron] Politics drift failed:", error.message);
+        }
+      });
+
       subsystems.cron = {
         status: cronJobsFailed === 0 ? "ok" : "partial",
         detail: `${cronJobsScheduled} scheduled, ${cronJobsFailed} failed`,

@@ -55,9 +55,9 @@ function AuctionCard({
   const artwork = card?.artwork;
   const currentBid = auction.currentBid ?? auction.startingPrice;
   const bidCount = auction.bidCount ?? auction.AuctionBid?.length ?? 0;
+  // Auctions run in real time — measure remaining time against the wall clock.
   const endTime = new Date(auction.endTime);
-  const now = new Date();
-  const msLeft = endTime.getTime() - now.getTime();
+  const msLeft = endTime.getTime() - Date.now();
   const minsLeft = Math.max(0, Math.floor(msLeft / 60000));
   const isUrgent = minsLeft < 10;
   const minNextBid = Math.ceil(currentBid * 1.05);
@@ -485,6 +485,16 @@ export function VaultAuctionsTab() {
 
   const { placeBid, executeBuyout, isBidding, isBuyingOut } = useAuctionBid();
 
+  const utils = api.useUtils();
+  const cancelAuction = api.cardMarket.cancelAuction.useMutation({
+    onSuccess: (data) => {
+      vaultNotify.success((data as any)?.message ?? "Auction cancelled");
+      void utils.cardMarket.getMyActiveAuctions.invalidate();
+      void utils.cardMarket.getActiveAuctions.invalidate();
+    },
+    onError: (error) => vaultNotify.error(error.message),
+  });
+
   useAuctionWebSocket({ enabled: selectedTab === "browse" || selectedTab === "ending" });
 
   const activeAuctions = activeData?.auctions ?? [];
@@ -865,10 +875,26 @@ export function VaultAuctionsTab() {
                           </p>
                         </div>
                       </div>
-                      <span className="flex items-center gap-0.5 font-mono text-sm font-bold text-amber-600 dark:text-amber-500">
-                        <IxCreditsSymbol className="h-3 w-3 shrink-0" />
-                        {currentBid.toLocaleString()}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-0.5 font-mono text-sm font-bold text-amber-600 dark:text-amber-500">
+                          <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                          {currentBid.toLocaleString()}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-input hover:bg-destructive/10 hover:text-destructive text-foreground h-7 bg-transparent text-[10px]"
+                          disabled={bidCount > 0 || cancelAuction.isPending}
+                          title={
+                            bidCount > 0
+                              ? "Auctions with bids can't be cancelled"
+                              : "Cancel this listing"
+                          }
+                          onClick={() => cancelAuction.mutate({ auctionId: auction.id })}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}

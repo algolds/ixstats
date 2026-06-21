@@ -6,6 +6,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationAPI } from "~/lib/notification-api";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policy-effects-sync";
 
 export const policiesCrudRouter = createTRPCRouter({
   // ==================== POLICY CRUD ====================
@@ -126,6 +127,10 @@ export const policiesCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Clear any active sim effect before removing the policy.
+      await clearPolicyEffect(ctx.db, input.id).catch((err) =>
+        console.error("[Policies] Failed to clear policy effect on delete:", err)
+      );
       return await ctx.db.policy.delete({
         where: { id: input.id },
       });
@@ -145,6 +150,11 @@ export const policiesCrudRouter = createTRPCRouter({
           effectiveDate: new Date(),
         },
       });
+
+      // ⚙️ Make the policy real: emit the StorytellerEffect the economic engine reads.
+      await applyPolicyEffect(ctx.db, policy).catch((err) =>
+        console.error("[Policies] Failed to apply policy effect:", err)
+      );
 
       // Get user for activity feed
       const user = await ctx.db.user.findFirst({
@@ -218,6 +228,11 @@ export const policiesCrudRouter = createTRPCRouter({
         },
       });
 
+      // Pause the sim effect while suspended.
+      await clearPolicyEffect(ctx.db, input.id).catch((err) =>
+        console.error("[Policies] Failed to clear policy effect on suspend:", err)
+      );
+
       // 🔔 Notify country about policy suspension
       try {
         await notificationAPI.create({
@@ -265,6 +280,11 @@ export const policiesCrudRouter = createTRPCRouter({
           expiryDate: new Date(),
         },
       });
+
+      // Remove the sim effect — repealed policies no longer influence the economy.
+      await clearPolicyEffect(ctx.db, input.id).catch((err) =>
+        console.error("[Policies] Failed to clear policy effect on repeal:", err)
+      );
 
       // 🔔 Notify country about policy repeal
       try {

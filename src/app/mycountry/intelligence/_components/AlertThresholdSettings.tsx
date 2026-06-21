@@ -206,9 +206,9 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
       <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Set custom thresholds for metrics to receive automatic alerts when values fall outside
-          your defined ranges. Configure separate thresholds for critical, high, and medium severity
-          levels.
+          An alert fires when a metric goes <strong>outside</strong> the range you set — below the
+          "Alert if below" value or above the "Alert if above" value. Leave a field blank to skip
+          that side. Configure separate ranges for critical, high, and medium severity levels.
         </AlertDescription>
       </Alert>
 
@@ -283,7 +283,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                   </div>
                   <div className="space-y-2">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Minimum</Label>
+                      <Label className="text-xs">Alert if below</Label>
                       <Input
                         type="number"
                         placeholder="Min value"
@@ -297,7 +297,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Maximum</Label>
+                      <Label className="text-xs">Alert if above</Label>
                       <Input
                         type="number"
                         placeholder="Max value"
@@ -323,7 +323,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                   </div>
                   <div className="space-y-2">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Minimum</Label>
+                      <Label className="text-xs">Alert if below</Label>
                       <Input
                         type="number"
                         placeholder="Min value"
@@ -337,7 +337,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Maximum</Label>
+                      <Label className="text-xs">Alert if above</Label>
                       <Input
                         type="number"
                         placeholder="Max value"
@@ -363,7 +363,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                   </div>
                   <div className="space-y-2">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Minimum</Label>
+                      <Label className="text-xs">Alert if below</Label>
                       <Input
                         type="number"
                         placeholder="Min value"
@@ -377,7 +377,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs">Maximum</Label>
+                      <Label className="text-xs">Alert if above</Label>
                       <Input
                         type="number"
                         placeholder="Max value"

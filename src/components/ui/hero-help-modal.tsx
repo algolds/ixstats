@@ -63,7 +63,10 @@ export function HeroHelpModal({
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="border-border/60 bg-background/95 max-w-md gap-0 overflow-hidden border p-0 shadow-2xl backdrop-blur-2xl">
+        <DialogContent
+          showCloseButton={false}
+          className="border-border/60 bg-background/95 max-w-md gap-0 overflow-hidden border p-0 shadow-2xl backdrop-blur-2xl"
+        >
           <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-5 py-3 dark:bg-black/[0.1]">
             <div className="flex items-center gap-2">
               <HelpCircle className={cn("h-4 w-4", accentClass)} />

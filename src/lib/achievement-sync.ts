@@ -1,6 +1,7 @@
 import { type PrismaClient } from "@prisma/client";
-import { ACHIEVEMENT_DEFINITIONS } from "./achievement-definitions";
+import { ACHIEVEMENT_DEFINITIONS, type AchievementRarity } from "./achievement-definitions";
 import { getCardRewardForAchievement } from "./achievement-card-rewards";
+import { SCALE_METRIC_BY_ID, RARITY_PERCENTILE } from "./achievement-scaling";
 
 export async function syncAchievements(db: PrismaClient): Promise<void> {
   console.log("[Achievement Sync] Starting baseline synchronization...");
@@ -29,7 +30,7 @@ export async function syncAchievements(db: PrismaClient): Promise<void> {
     }
 
     // Build trigger condition JSON based on standard baseline definition keys
-    const condition = determineCondition(def.id);
+    const condition = determineCondition(def.id, def.rarity);
 
     try {
       await db.achievement.upsert({
@@ -87,62 +88,19 @@ interface ConditionConfig {
   rules: any;
 }
 
-function determineCondition(id: string): ConditionConfig {
+function determineCondition(id: string, rarity?: AchievementRarity): ConditionConfig {
+  // Scale-based achievements (population / GDP / GDP-per-capita) are dynamic:
+  // the threshold is a percentile of the live country distribution, picked by
+  // rarity. No hardcoded absolute values — see achievement-scaling.ts.
+  const scaleMetric = SCALE_METRIC_BY_ID[id];
+  if (scaleMetric && rarity) {
+    return {
+      triggerType: scaleMetric === "currentPopulation" ? "GENERAL" : "ECONOMIC",
+      rules: { metric: scaleMetric, operator: ">=", percentile: RARITY_PERCENTILE[rarity] },
+    };
+  }
+
   if (id.startsWith("econ-")) {
-    if (id === "econ-first-million") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000 },
-      };
-    }
-    if (id === "econ-millionaire-nation") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000_000 },
-      };
-    }
-    if (id === "econ-economic-powerhouse") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentTotalGdp", operator: ">=", value: 100_000_000_000 },
-      };
-    }
-    if (id === "econ-trillion-club") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentTotalGdp", operator: ">=", value: 1_000_000_000_000 },
-      };
-    }
-    if (id === "econ-global-titan") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentTotalGdp", operator: ">=", value: 10_000_000_000_000 },
-      };
-    }
-    if (id === "econ-wealthy-citizens") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 10_000 },
-      };
-    }
-    if (id === "econ-prosperity-nation") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 25_000 },
-      };
-    }
-    if (id === "econ-first-world-status") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 50_000 },
-      };
-    }
-    if (id === "econ-ultra-prosperity") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "currentGdpPerCapita", operator: ">=", value: 100_000 },
-      };
-    }
     if (id === "econ-growth-rocket") {
       return {
         triggerType: "ECONOMIC",
@@ -447,12 +405,6 @@ function determineCondition(id: string): ConditionConfig {
       return {
         triggerType: "GENERAL",
         rules: { metric: "totalAchievements", operator: ">=", value: 50 },
-      };
-    }
-    if (id === "gen-population-growth") {
-      return {
-        triggerType: "GENERAL",
-        rules: { metric: "currentPopulation", operator: ">=", value: 10_000_000 },
       };
     }
     if (id.startsWith("vid-")) {

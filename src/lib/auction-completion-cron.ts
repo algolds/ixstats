@@ -15,7 +15,6 @@
 
 import { db } from "~/server/db";
 import { auctionService } from "./auction-service";
-import { IxTime } from "./ixtime";
 
 /**
  * Process all expired auctions
@@ -27,7 +26,7 @@ export async function processExpiredAuctions() {
   const startTime = Date.now();
   console.log("[CRON] Checking for expired auctions at", new Date().toISOString());
 
-  const now = IxTime.getCurrentIxTime();
+  const now = Date.now();
 
   try {
     // Find all active auctions that have expired
@@ -114,7 +113,7 @@ export async function processExpiredAuctions() {
  */
 export async function getAuctionCronStatus() {
   try {
-    const now = IxTime.getCurrentIxTime();
+    const now = Date.now();
 
     // Count active auctions
     const activeCount = await db.cardAuction.count({

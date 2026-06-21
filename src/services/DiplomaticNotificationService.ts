@@ -307,9 +307,34 @@ interface Achievement {
   rewards?: any[];
 }
 
+const ACHIEVEMENT_NOTIFY_STORAGE_KEY = "achievement-notified-ids";
+
+function loadNotifiedAchievementIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(ACHIEVEMENT_NOTIFY_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveNotifiedAchievementIds(ids: Set<string>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ACHIEVEMENT_NOTIFY_STORAGE_KEY, JSON.stringify([...ids]));
+  } catch {
+    // ignore quota / serialization errors — dedup degrades to per-session
+  }
+}
+
 class AchievementNotificationService {
   private static instance: AchievementNotificationService;
-  private unlockedAchievements = new Set<string>();
+  // Persisted across sessions so a still-true condition (e.g. "max population")
+  // doesn't re-fire its notification on every login. ponytail: localStorage is
+  // fine here — these are notification-only; the DB-backed achievementService
+  // owns the authoritative unlock record.
+  private unlockedAchievements = new Set<string>(loadNotifiedAchievementIds());
 
   static getInstance(): AchievementNotificationService {
     if (!AchievementNotificationService.instance) {
@@ -343,6 +368,7 @@ class AchievementNotificationService {
     try {
       globalNotificationBridge.wireAchievementStream(notification);
       this.unlockedAchievements.add(achievement.id);
+      saveNotifiedAchievementIds(this.unlockedAchievements);
 
       console.log(
         `[AchievementNotificationService] Achievement unlocked: ${achievement.name} (${achievement.rarity})`

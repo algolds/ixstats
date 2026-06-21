@@ -17,8 +17,12 @@ function envBool(name: string, dflt: boolean): boolean {
 }
 
 export const GAMEPLAY_FLAGS = {
-  /** Auto-generate national issues from country state when the inbox is opened. */
-  issuesAutoGenerate: envBool("ISSUES_AUTO_GENERATE", false),
+  /**
+   * Auto-generate national issues from country state (on inbox open + via the
+   * background generation cron). Default ON — issues are the core Executive loop.
+   * Set ISSUES_AUTO_GENERATE=0 to return to pure narrative mode.
+   */
+  issuesAutoGenerate: envBool("ISSUES_AUTO_GENERATE", true),
   /** Enforce issue deadlines: block dismiss of deadline issues + auto-resolve on expiry. */
   issuesEnforceDeadlines: envBool("ISSUES_ENFORCE_DEADLINES", false),
   /** Award IxCredits for resolving issues (engagement reward). */

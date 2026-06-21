@@ -42,8 +42,8 @@ import {
   KEY_ACHIEVEMENTS,
 } from "~/lib/diplomatic-profile-options";
 import { vaultService } from "~/lib/vault-service";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { ActivityHooks } from "~/lib/activity-hooks";
 
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
@@ -201,6 +201,55 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
           console.error("[Diplomatic] Failed to award embassy establishment credits:", error);
         }
       }
+
+      // 🤝 Ensure a DiplomaticRelation exists between the two countries.
+      // Establishing an embassy is what opens formal relations — without this,
+      // the Relations list and the Foreign Policy target dropdown stay empty.
+      try {
+        const existingRelation = await ctx.db.diplomaticRelation.findFirst({
+          where: {
+            OR: [
+              { country1: input.guestCountryId, country2: input.hostCountryId },
+              { country1: input.hostCountryId, country2: input.guestCountryId },
+            ],
+          },
+          select: { id: true },
+        });
+
+        if (!existingRelation) {
+          await ctx.db.diplomaticRelation.create({
+            data: {
+              country1: input.guestCountryId,
+              country2: input.hostCountryId,
+              relationship: "neutral",
+              strength: 25, // baseline goodwill from opening an embassy
+              status: "active",
+              lastContact: new Date(),
+              diplomaticChannels: JSON.stringify(["embassy"]),
+            },
+          });
+        } else {
+          // Refresh contact + nudge strength up for re-engagement
+          await ctx.db.diplomaticRelation.update({
+            where: { id: existingRelation.id },
+            data: { lastContact: new Date(), status: "active" },
+          });
+        }
+      } catch (error) {
+        console.error("[Diplomatic] Failed to upsert diplomatic relation:", error);
+      }
+
+      // 📰 In-world narrative: post the embassy news to ThinkPages + activity feed.
+      void generateDiplomaticNews(ctx.db, input.guestCountryId, "embassy_established", {
+        countryName: guestCountryName ?? "A nation",
+        targetName: hostCountryName ?? "another nation",
+      });
+      void ActivityHooks.Diplomatic.onEmbassyEstablished(
+        input.guestCountryId,
+        input.hostCountryId,
+        "basic",
+        ctx.auth?.userId ?? undefined
+      );
 
       return {
         ...embassy,
