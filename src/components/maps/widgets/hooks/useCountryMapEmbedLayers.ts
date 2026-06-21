@@ -433,7 +433,11 @@ export function useCountryMapEmbedLayers({
 
             const anyBranch: any[] = [[">=", ["coalesce", ["get", "population"], 0], popThreshold]];
             if (showRegionCapitals) anyBranch.push(["==", ["get", "isRegionCapital"], true]);
-            const filterExpr: any = ["all", ["!=", ["get", "isCapital"], true], ["any", ...anyBranch]];
+            const filterExpr: any = [
+              "all",
+              ["!=", ["get", "isCapital"], true],
+              ["any", ...anyBranch],
+            ];
             if (map.getLayer("city-circles")) {
               map.setFilter("city-circles", filterExpr);
             }

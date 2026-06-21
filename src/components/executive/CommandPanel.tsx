@@ -109,7 +109,7 @@ export const CommandPanel = React.memo(function CommandPanel({
       {/* Gradient header */}
       <div className={cn("px-3.5 py-3", theme.headerBg)}>
         <div className="flex items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex min-w-0 items-center gap-2.5">
             <div className={cn("shrink-0 rounded-lg p-1.5", theme.iconBg)}>
               <Icon size={14} className="text-white" />
             </div>
@@ -121,7 +121,7 @@ export const CommandPanel = React.memo(function CommandPanel({
                 e.stopPropagation();
                 onHelp();
               }}
-              className="text-muted-foreground hover:text-foreground shrink-0 transition-colors p-0.5 rounded hover:bg-white/10"
+              className="text-muted-foreground hover:text-foreground shrink-0 rounded p-0.5 transition-colors hover:bg-white/10"
               title="Help"
             >
               <HelpCircle size={14} />

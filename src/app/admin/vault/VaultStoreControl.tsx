@@ -213,8 +213,7 @@ export function VaultStoreControl() {
       cosmeticKind,
       effectColor: activeCust.color || "#f59e0b",
       effectIcon: activeCust.icon || "Crown",
-      yieldBoostPct:
-        typeof perks.yieldBoost === "number" ? Math.round(perks.yieldBoost * 100) : 0,
+      yieldBoostPct: typeof perks.yieldBoost === "number" ? Math.round(perks.yieldBoost * 100) : 0,
       cardCapacity: typeof perks.cardCapacity === "number" ? perks.cardCapacity : 0,
       loreTokens: typeof perks.loreTokens === "number" ? perks.loreTokens : 0,
     });
@@ -603,8 +602,8 @@ export function VaultStoreControl() {
             </div>
 
             {/* Effects editor — defines what the item actually does */}
-            <div className="border-border/40 space-y-3 rounded-lg border bg-muted/20 p-3">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="border-border/40 bg-muted/20 space-y-3 rounded-lg border p-3">
+              <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                 {formData.category === "upgrades" ? "Upgrade Perks" : "Cosmetic Effect"}
               </Label>
 
@@ -658,7 +657,10 @@ export function VaultStoreControl() {
                     <Select
                       value={formData.cosmeticKind}
                       onValueChange={(val) =>
-                        setFormData({ ...formData, cosmeticKind: val as typeof formData.cosmeticKind })
+                        setFormData({
+                          ...formData,
+                          cosmeticKind: val as typeof formData.cosmeticKind,
+                        })
                       }
                     >
                       <SelectTrigger className="bg-background border-border/40 text-foreground">

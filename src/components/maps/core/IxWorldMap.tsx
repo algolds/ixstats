@@ -272,6 +272,7 @@ const IxWorldMap = memo(
             attributionControl: false,
             dragRotate: false,
             touchPitch: false,
+            projection: (projectionMode === "mercator" ? { type: "mercator" } : undefined) as any,
           });
 
           map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");

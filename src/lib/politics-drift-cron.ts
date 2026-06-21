@@ -35,7 +35,9 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
     where: { countryId: { not: null } },
     select: { countryId: true },
   });
-  const countryIds = [...new Set(owners.map((o) => o.countryId).filter((id): id is string => !!id))];
+  const countryIds = [
+    ...new Set(owners.map((o) => o.countryId).filter((id): id is string => !!id)),
+  ];
 
   for (const countryId of countryIds) {
     try {
@@ -55,8 +57,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
 
         for (const p of parties) {
           const meanRevert = (p.baseSupport - p.currentSupport) * 0.1;
-          const econEffect =
-            (p.id === governing.id ? econMod : -econMod / oppositionSplit) * 0.3;
+          const econEffect = (p.id === governing.id ? econMod : -econMod / oppositionSplit) * 0.3;
           // Deterministic-ish jitter per party (no Math.random — keep cron resumable-safe).
           const jitter = ((p.id.charCodeAt(0) % 7) - 3) * 0.1;
           const next = clamp(p.currentSupport + meanRevert + econEffect + jitter, 1, 99);

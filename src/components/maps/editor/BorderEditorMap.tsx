@@ -31,6 +31,7 @@ interface BorderEditorMapProps {
     targetFeatureId: string
   ) => boolean;
   traceStart?: [number, number] | null;
+  onToggleMergeTarget?: (featureId: string) => void;
 }
 
 const EMPTY_FC: FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -69,6 +70,7 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
   brushTargetId = null,
   onBrushStroke,
   traceStart = null,
+  onToggleMergeTarget,
 }: BorderEditorMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -90,6 +92,8 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
   onBrushStrokeRef.current = onBrushStroke;
   const onDragEndRef = useRef(onDragEnd);
   onDragEndRef.current = onDragEnd;
+  const onToggleMergeTargetRef = useRef(onToggleMergeTarget);
+  onToggleMergeTargetRef.current = onToggleMergeTarget;
   const sourcesReady = useRef(false);
 
   // Initialize map context layers
@@ -273,6 +277,20 @@ export const BorderEditorMap = React.memo(function BorderEditorMap({
 
     map.on("click", (e) => {
       if (modeRef.current === "brush") return;
+
+      if (modeRef.current === "merge") {
+        const hits = map.queryRenderedFeatures(e.point, {
+          layers: ["neighbors-fill"],
+        });
+        if (hits.length > 0) {
+          const hitId = hits[0]?.properties?.id as string | undefined;
+          if (hitId && onToggleMergeTargetRef.current) {
+            onToggleMergeTargetRef.current(hitId);
+            return;
+          }
+        }
+      }
+
       onMapClick(e.lngLat.lng, e.lngLat.lat);
     });
 

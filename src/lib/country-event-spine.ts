@@ -95,7 +95,14 @@ export interface RecordEventParams {
   consequences?: ConsequenceInput[];
   newsTemplate?: NewsEventType;
   newsVars?: Record<string, any>;
-  activityCategory?: "game" | "diplomatic" | "government" | "economic" | "security" | "social" | "user";
+  activityCategory?:
+    | "game"
+    | "diplomatic"
+    | "government"
+    | "economic"
+    | "security"
+    | "social"
+    | "user";
   activityHookName?: string;
   activityHookArgs?: any[];
 }

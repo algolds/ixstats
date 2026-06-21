@@ -55,7 +55,7 @@ export function HeroHelpModal({
         aria-label={triggerLabel}
         title={triggerLabel}
         className={cn(
-          "inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground",
+          "text-muted-foreground hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors hover:bg-white/10",
           className
         )}
       >
@@ -94,7 +94,7 @@ export function HeroHelpModal({
                   key={i}
                   className={cn(
                     "h-1.5 rounded-full transition-all",
-                    i === index ? cn("w-4 bg-current", accentClass) : "w-1.5 bg-muted-foreground/30"
+                    i === index ? cn("w-4 bg-current", accentClass) : "bg-muted-foreground/30 w-1.5"
                   )}
                 />
               ))}

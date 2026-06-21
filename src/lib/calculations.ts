@@ -221,7 +221,10 @@ export class IxStatsCalculator {
       populationDensity: newPopulationDensity,
       gdpDensity: newGdpDensity,
       lastCalculated: new Date(targetTimeMs),
-      totalGovernmentSpending: (baselineStats.totalGovernmentSpending ?? 0) + mods.maintenanceCost + (baselineStats.activePolicyMaintenanceCost ?? 0),
+      totalGovernmentSpending:
+        (baselineStats.totalGovernmentSpending ?? 0) +
+        mods.maintenanceCost +
+        (baselineStats.activePolicyMaintenanceCost ?? 0),
       taxRevenueGDPPercent: Math.max(
         0,
         Math.min(100, (baselineStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)
@@ -447,7 +450,10 @@ export class IxStatsCalculator {
       populationDensity: newPopulationDensity,
       gdpDensity: newGdpDensity,
       lastCalculated: new Date(nowIxTimeMs),
-      totalGovernmentSpending: (currentStats.totalGovernmentSpending ?? 0) + mods.maintenanceCost + (currentStats.activePolicyMaintenanceCost ?? 0),
+      totalGovernmentSpending:
+        (currentStats.totalGovernmentSpending ?? 0) +
+        mods.maintenanceCost +
+        (currentStats.activePolicyMaintenanceCost ?? 0),
       taxRevenueGDPPercent: Math.max(
         0,
         Math.min(100, (currentStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)

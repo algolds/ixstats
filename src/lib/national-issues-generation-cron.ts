@@ -32,7 +32,9 @@ export async function generateNationalIssues(): Promise<IssuesGenerationResult> 
     where: { countryId: { not: null } },
     select: { countryId: true },
   });
-  const countryIds = [...new Set(owners.map((o) => o.countryId).filter((id): id is string => !!id))];
+  const countryIds = [
+    ...new Set(owners.map((o) => o.countryId).filter((id): id is string => !!id)),
+  ];
   result.countriesChecked = countryIds.length;
 
   for (const countryId of countryIds) {

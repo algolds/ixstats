@@ -594,7 +594,12 @@ export function useBuilderState(
   useEffect(() => {
     // Skip quick-start and wiki import in edit mode, but still load saved edits.
     // Guarded to run ONCE — re-running clobbers fresh DB data with stale localStorage.
-    if (mode === "edit" && editModeInitialized.current && !isLoadingCountry && !editRestoreDone.current) {
+    if (
+      mode === "edit" &&
+      editModeInitialized.current &&
+      !isLoadingCountry &&
+      !editRestoreDone.current
+    ) {
       editRestoreDone.current = true;
       try {
         const stateKey = `builder_state_${countryId}`;
@@ -1399,7 +1404,6 @@ export function useBuilderState(
     if (serverDraftQuery.data?.updatedAt) {
       setLastSaved(new Date(serverDraftQuery.data.updatedAt));
     }
-     
   }, [serverDraftQuery.isLoading, serverDraftQuery.data, mode]);
 
   // Debounced server save (create mode), gated on restore-decision + real progress

@@ -538,7 +538,11 @@ export default function MapEditorOverlay({
                 {/* Revert edits */}
                 <button
                   onClick={borderActions.revert}
-                  disabled={!borderState.isDirty}
+                  disabled={
+                    !borderState.isDirty &&
+                    borderState.splitLine.length === 0 &&
+                    borderState.mergeTargets.length === 0
+                  }
                   className="flex h-6 cursor-pointer items-center gap-1 rounded bg-red-500/10 px-2 text-[11px] font-medium text-red-600 transition-colors hover:bg-red-500/20 disabled:opacity-30"
                   title="Revert all unsaved changes for this feature"
                 >
@@ -549,7 +553,11 @@ export default function MapEditorOverlay({
                 {/* Apply & Exit */}
                 <button
                   onClick={handleBorderToolbarSubmit}
-                  disabled={!borderState.isDirty}
+                  disabled={
+                    !borderState.isDirty &&
+                    !(borderState.mode === "split" && borderState.splitLine.length >= 2) &&
+                    !(borderState.mode === "merge" && borderState.mergeTargets.length > 0)
+                  }
                   className="flex h-6 cursor-pointer items-center gap-1 rounded bg-emerald-600/20 px-2 text-[11px] font-medium text-emerald-500 transition-colors hover:bg-emerald-600/30 disabled:opacity-30"
                   title="Apply and exit"
                 >
@@ -685,6 +693,7 @@ export default function MapEditorOverlay({
                   brushTargetId={brushTargetId}
                   onBrushStroke={borderActions.applyBrushTransfer}
                   traceStart={borderState.traceStart}
+                  onToggleMergeTarget={borderActions.toggleMergeTarget}
                 />
               ) : (
                 <EditorMap

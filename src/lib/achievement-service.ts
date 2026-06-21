@@ -201,7 +201,8 @@ export class AchievementService {
     // Resolved from the live percentile snapshot attached to the data.
     let value = rule.value;
     if (rule.percentile != null) {
-      value = data.scaleThresholds?.[metric as keyof typeof data.scaleThresholds]?.[rule.percentile];
+      value =
+        data.scaleThresholds?.[metric as keyof typeof data.scaleThresholds]?.[rule.percentile];
       if (value == null) return false; // snapshot unavailable → don't unlock
     }
 

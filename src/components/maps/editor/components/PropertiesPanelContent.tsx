@@ -29,7 +29,7 @@ interface PropertiesPanelContentProps {
   jsonError: string | null;
   setJsonError: (err: string | null) => void;
   parsedProperties: any;
-  handleSaveFeatureProperties: (props: any) => void;
+  handleSaveFeatureProperties: (props?: any) => void;
   selectedRouteId: string | null;
   setSelectedRouteId: (id: string | null) => void;
   handleSubmit: any;
@@ -46,6 +46,11 @@ interface PropertiesPanelContentProps {
   availableCountries?: any[];
   brushTargetId?: string | null;
   setBrushTargetId?: (id: string | null) => void;
+  editableFeatureName: string;
+  setEditableFeatureName: (name: string) => void;
+  editableCountryLinkageId: string;
+  setEditableCountryLinkageId: (id: string) => void;
+  countries?: any[];
 }
 
 export function PropertiesPanelContent({
@@ -84,6 +89,11 @@ export function PropertiesPanelContent({
   availableCountries,
   brushTargetId,
   setBrushTargetId,
+  editableFeatureName,
+  setEditableFeatureName,
+  editableCountryLinkageId,
+  setEditableCountryLinkageId,
+  countries,
 }: PropertiesPanelContentProps) {
   const router = useRouter();
   const [showGenerator, setShowGenerator] = useState(false);
@@ -250,6 +260,71 @@ export function PropertiesPanelContent({
             </span>
           </div>
 
+          {/* Feature Settings (editable display name & linkage) */}
+          <div className="border-border/30 bg-muted/10 space-y-3 rounded-lg border p-3">
+            <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              Feature Settings
+            </label>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <span className="text-muted-foreground text-[10px] font-medium">Display Name</span>
+                <input
+                  type="text"
+                  value={editableFeatureName}
+                  onChange={(e) => setEditableFeatureName(e.target.value)}
+                  className={inputClasses}
+                  placeholder="e.g. Caphiria"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-muted-foreground text-[10px] font-medium">
+                  Country Linkage
+                </span>
+                <select
+                  value={editableCountryLinkageId}
+                  onChange={(e) => setEditableCountryLinkageId(e.target.value)}
+                  className="border-border bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="">— unlinked —</option>
+                  {countries &&
+                    countries.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {!isUnclaimed && (
+                <div className="space-y-1">
+                  <span className="text-muted-foreground text-[10px] font-medium">
+                    Wiki Linkage
+                  </span>
+                  <input
+                    type="text"
+                    value={wikiPageTitle}
+                    onChange={(e) => setWikiPageTitle(e.target.value)}
+                    placeholder="e.g. Caphiria"
+                    className={inputClasses}
+                  />
+                </div>
+              )}
+
+              {(editableFeatureName !== (mapSelectedCountry.displayName || "") ||
+                editableCountryLinkageId !== (mapSelectedCountry.countryId || "") ||
+                wikiPageTitle !== (featureDetails?.wikiPageTitle || "")) && (
+                <button
+                  onClick={() => handleSaveFeatureProperties()}
+                  disabled={updatePropertiesMutation.isPending}
+                  className="mt-2 w-full cursor-pointer rounded-lg bg-blue-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {updatePropertiesMutation.isPending ? "Saving..." : "Save Feature Info"}
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Feature data card (always visible) */}
           <div className="border-border/30 bg-muted/10 space-y-2 rounded-lg border p-3">
             <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
@@ -260,18 +335,6 @@ export function PropertiesPanelContent({
                 <span className="text-muted-foreground">Feature ID</span>
                 <span className="text-foreground/80 max-w-[180px] truncate font-mono text-[10px]">
                   {mapSelectedCountry.featureId || "—"}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Display Name</span>
-                <span className="text-foreground/80">{mapSelectedCountry.displayName || "—"}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Country ID</span>
-                <span className="text-foreground/80 font-mono text-[10px]">
-                  {mapSelectedCountry.countryId || (
-                    <span className="text-amber-500 italic">unlinked</span>
-                  )}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
@@ -424,31 +487,6 @@ export function PropertiesPanelContent({
                   {createCountryFromShapePending ? "Creating…" : "+ Create new country from shape"}
                 </button>
               )}
-            </div>
-          )}
-
-          {/* Wiki linkage — only for claimed shapes */}
-          {!isUnclaimed && (
-            <div>
-              <label className="text-muted-foreground text-[10px] font-medium uppercase">
-                Wiki Linkage
-              </label>
-              <div className="mt-1 flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={wikiPageTitle}
-                  onChange={(e) => setWikiPageTitle(e.target.value)}
-                  placeholder="e.g. Caphiria"
-                  className={inputClasses}
-                />
-                <button
-                  onClick={handleLinkFeature}
-                  disabled={updatePropertiesMutation.isPending}
-                  className="bg-blue-650 rounded-lg px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Link
-                </button>
-              </div>
             </div>
           )}
 

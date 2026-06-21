@@ -989,7 +989,6 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [wandMatchLevel, setWandMatchLevel] = useState(false);
   const [wandMatchParent, setWandMatchParent] = useState(false);
 
-
   // Fetch country features
   const {
     data: features,

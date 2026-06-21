@@ -48,7 +48,10 @@ interface GroupedEvent {
   }>;
 }
 
-export function CountryChangeLogTimeline({ countryId, countryName }: CountryChangeLogTimelineProps) {
+export function CountryChangeLogTimeline({
+  countryId,
+  countryName,
+}: CountryChangeLogTimelineProps) {
   const [limit, setLimit] = useState(25);
   const [offset, setOffset] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<GroupedEvent | null>(null);
@@ -91,7 +94,10 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
         let prev = 0;
         let next = 0;
         try {
-          prev = typeof log.previousValue === "string" ? JSON.parse(log.previousValue) : log.previousValue;
+          prev =
+            typeof log.previousValue === "string"
+              ? JSON.parse(log.previousValue)
+              : log.previousValue;
           next = typeof log.newValue === "string" ? JSON.parse(log.newValue) : log.newValue;
         } catch {
           prev = Number(log.previousValue) || 0;
@@ -122,8 +128,18 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
     const year = Math.floor(ixTime / 12) + 2041;
     const month = (Math.floor(ixTime) % 12) + 1;
     const monthName = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ][month - 1];
     return `${monthName} ${year}`;
   };
@@ -227,64 +243,59 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
   }
 
   return (
-    <div className="glass-panel relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 shadow-xl backdrop-blur-md mt-6">
-      <div className="flex items-center justify-between border-b border-white/15 pb-4 mb-6">
+    <div className="glass-panel relative mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 shadow-xl backdrop-blur-md">
+      <div className="mb-6 flex items-center justify-between border-b border-white/15 pb-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
             <History className="h-5 w-5 text-amber-400" />
             National Ledger & Timeline
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Historical ledger of executive decisions, issues, policy changes, and simulation updates.
+          <p className="text-muted-foreground mt-1 text-xs">
+            Historical ledger of executive decisions, issues, policy changes, and simulation
+            updates.
           </p>
         </div>
-        {isFetching && (
-          <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-        )}
+        {isFetching && <Loader2 className="h-4 w-4 animate-spin text-amber-400" />}
       </div>
 
       {groupedEvents.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground text-sm">
+        <div className="text-muted-foreground py-8 text-center text-sm">
           No entries found in the national ledger yet.
         </div>
       ) : (
-        <div className="relative pl-6 border-l border-white/15 space-y-8 ml-2">
+        <div className="relative ml-2 space-y-8 border-l border-white/15 pl-6">
           {groupedEvents.map((event) => {
             const { eventName } = parseEventDetails(event);
             return (
-              <div key={event.id} className="relative group">
+              <div key={event.id} className="group relative">
                 {/* Timeline node dot */}
-                <div className="absolute -left-[35px] top-1.5 flex h-7.5 w-7.5 items-center justify-center rounded-full border border-white/15 bg-[#161618] shadow-md transition-transform group-hover:scale-110">
+                <div className="absolute top-1.5 -left-[35px] flex h-7.5 w-7.5 items-center justify-center rounded-full border border-white/15 bg-[#161618] shadow-md transition-transform group-hover:scale-110">
                   {getSourceIcon(event.sourceType)}
                 </div>
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-semibold text-amber-400/90 font-mono">
+                      <span className="font-mono text-xs font-semibold text-amber-400/90">
                         {formatIxTime(event.appliedIxTime)}
                       </span>
                       <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${getSourceBadgeColor(
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase ${getSourceBadgeColor(
                           event.sourceType
                         )}`}
                       >
                         {event.sourceType}
                       </span>
                     </div>
-                    <h3 className="text-sm font-semibold text-white tracking-wide">
-                      {eventName}
-                    </h3>
-                    <p className="text-xs text-muted-foreground max-w-xl">
-                      {event.description}
-                    </p>
+                    <h3 className="text-sm font-semibold tracking-wide text-white">{eventName}</h3>
+                    <p className="text-muted-foreground max-w-xl text-xs">{event.description}</p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/15 hover:bg-white/10 text-xs gap-1 cursor-pointer"
+                      className="cursor-pointer gap-1 border-white/15 text-xs hover:bg-white/10"
                       onClick={() => handleOpenProseModal(event)}
                     >
                       Generate Wikitext
@@ -295,16 +306,16 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
 
                 {/* Consequences pills list */}
                 {event.consequences.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2 pt-1">
+                  <div className="mt-2 flex flex-wrap gap-2 pt-1">
                     {event.consequences.map((c, idx) => {
                       const isPositive = c.delta > 0;
                       return (
                         <div
                           key={idx}
-                          className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                          className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${
                             isPositive
-                              ? "bg-green-500/10 border-green-500/20 text-green-400"
-                              : "bg-red-500/10 border-red-500/20 text-red-400"
+                              ? "border-green-500/20 bg-green-500/10 text-green-400"
+                              : "border-red-500/20 bg-red-500/10 text-red-400"
                           }`}
                         >
                           {isPositive ? (
@@ -332,7 +343,7 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
 
       {/* Pagination controls */}
       {(hasMore || offset > 0) && (
-        <div className="flex items-center justify-between border-t border-white/15 pt-4 mt-6">
+        <div className="mt-6 flex items-center justify-between border-t border-white/15 pt-4">
           <Button
             variant="outline"
             size="sm"
@@ -342,7 +353,7 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
           >
             Previous
           </Button>
-          <span className="text-xs text-muted-foreground font-mono">
+          <span className="text-muted-foreground font-mono text-xs">
             Page {Math.floor(offset / limit) + 1}
           </span>
           <Button
@@ -358,7 +369,10 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
       )}
 
       {/* Wikitext Prose Dialog Modal */}
-      <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+      <Dialog
+        open={selectedEvent !== null}
+        onOpenChange={(open) => !open && setSelectedEvent(null)}
+      >
         <DialogContent className="max-w-md border-white/15 bg-[#1a1a1e] text-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -370,7 +384,7 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
             </DialogDescription>
           </DialogHeader>
 
-          <div className="bg-[#101012] border border-white/10 rounded-lg p-3 text-xs font-mono leading-relaxed select-all whitespace-pre-wrap max-h-60 overflow-y-auto text-slate-300">
+          <div className="max-h-60 overflow-y-auto rounded-lg border border-white/10 bg-[#101012] p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-slate-300 select-all">
             {generatedWikitext}
           </div>
 
@@ -386,7 +400,7 @@ export function CountryChangeLogTimeline({ countryId, countryName }: CountryChan
             <Button
               size="sm"
               onClick={handleCopyToClipboard}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-medium gap-1.5"
+              className="gap-1.5 bg-amber-600 font-medium text-white hover:bg-amber-700"
             >
               {copied ? (
                 <>

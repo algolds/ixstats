@@ -223,8 +223,24 @@ export const geoEditorLinkageRouter = createTRPCRouter({
         data: updateData,
       });
 
-      // Update wikiPageTitle on Country if linked
       const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
+
+      // Update Country name and slug if displayName is changed and country is linked
+      if (targetCountryId && input.displayName !== undefined) {
+        const slug = input.displayName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "");
+        await ctx.db.country.update({
+          where: { id: targetCountryId },
+          data: {
+            name: input.displayName,
+            slug,
+          },
+        });
+      }
+
+      // Update wikiPageTitle on Country if linked
       if (targetCountryId && input.wikiPageTitle !== undefined) {
         await ctx.db.country.update({
           where: { id: targetCountryId },

@@ -756,7 +756,7 @@ export function useMapEditorOverlayState({
       {
         featureId: mapSelectedCountry.featureId,
         displayName: editableFeatureName || undefined,
-        countryId: editableCountryLinkageId || undefined,
+        countryId: editableCountryLinkageId || null,
         properties: parsedProperties,
         wikiPageTitle: wikiPageTitle || null,
       },

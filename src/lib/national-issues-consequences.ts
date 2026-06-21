@@ -269,14 +269,16 @@ export class NationalIssuesConsequences {
       sourceType: "issue",
       sourceId: issueId,
       description: `Resolved national issue consequence`,
-      consequences: [{
-        targetModel: consequence.targetModel,
-        targetField: consequence.targetField,
-        operation: consequence.operation as any,
-        value: consequence.value,
-        effectType: consequence.effectType,
-        durationDays: consequence.durationDays
-      }]
+      consequences: [
+        {
+          targetModel: consequence.targetModel,
+          targetField: consequence.targetField,
+          operation: consequence.operation as any,
+          value: consequence.value,
+          effectType: consequence.effectType,
+          durationDays: consequence.durationDays,
+        },
+      ],
     });
 
     if (appliedList.length === 0) return null;

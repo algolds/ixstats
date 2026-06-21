@@ -23,7 +23,9 @@ describe("CountryEventSpine", () => {
     // Set up a mock database client
     mockDb = {
       country: {
-        findUnique: jest.fn().mockResolvedValue({ id: countryId, name: "Testland", publicApproval: 70 }),
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: countryId, name: "Testland", publicApproval: 70 }),
         update: jest.fn().mockResolvedValue({ id: countryId }),
       },
       governmentStructure: {

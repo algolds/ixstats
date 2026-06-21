@@ -178,8 +178,12 @@ export async function simulateElectionCore(
   }
 
   // Step 4: ElectionResult records
-  const results: { partyId: string; candidateId: string; votePercentage: number; seatsWon: number }[] =
-    [];
+  const results: {
+    partyId: string;
+    candidateId: string;
+    votePercentage: number;
+    seatsWon: number;
+  }[] = [];
   const totalRawVotes = partyVotes.reduce((s, x) => s + x.votes, 0);
   for (const pv of partyVotes) {
     const pctOfTotal = (pv.votes / totalRawVotes) * 100;

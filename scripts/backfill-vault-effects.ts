@@ -21,7 +21,9 @@ const APPLY = process.argv.includes("--apply");
 // original scratch-backfill-effects.ts).
 const CANONICAL: Record<string, any> = {
   cosmetic_gold_glow: {
-    customizations: { avatarGlow: { enabled: true, color: "rgba(245,158,11,0.65)", intensity: "15px" } },
+    customizations: {
+      avatarGlow: { enabled: true, color: "rgba(245,158,11,0.65)", intensity: "15px" },
+    },
   },
   cosmetic_neon_frame: {
     customizations: { neonFrame: { enabled: true, color: "#22d3ee", style: "pulse" } },
@@ -39,7 +41,12 @@ function hasEffects(effects: unknown): boolean {
 }
 
 /** Infer effects for an admin-created item from its text + category. */
-function infer(item: { name: string; badgeText: string | null; category: string; glowColor: string | null }): any | null {
+function infer(item: {
+  name: string;
+  badgeText: string | null;
+  category: string;
+  glowColor: string | null;
+}): any | null {
   const text = `${item.name} ${item.badgeText ?? ""}`.toLowerCase();
 
   if (item.category === "upgrades") {

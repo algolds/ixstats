@@ -119,15 +119,8 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   );
 
   // ── Issues data ──
-  const {
-    activeIssues,
-    urgentCount,
-    selectedIssue,
-    isResponding,
-    respond,
-    openIssue,
-    closeIssue,
-  } = useNationalIssues(countryId);
+  const { activeIssues, urgentCount, selectedIssue, isResponding, respond, openIssue, closeIssue } =
+    useNationalIssues(countryId);
   const { total: issueCount } = useIssueCount(countryId);
 
   // ── Meetings data ──
@@ -366,7 +359,10 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
       </div>
 
       {/* ── Ledger Timeline ── */}
-      <CountryChangeLogTimeline countryId={countryId} countryName={countrySummary?.name ?? "Government"} />
+      <CountryChangeLogTimeline
+        countryId={countryId}
+        countryName={countrySummary?.name ?? "Government"}
+      />
 
       {/* ── Drill-Down Sheets ── */}
       <Dialog
@@ -471,22 +467,29 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 text-sm mt-3 leading-relaxed">
+          <div className="mt-3 space-y-4 text-sm leading-relaxed">
             {helpTopic === "issues" && (
               <>
                 <p>
-                  As the ruler, you must respond to various <strong>National Issues</strong> and crises that arise dynamically based on your country's attributes and previous actions.
+                  As the ruler, you must respond to various <strong>National Issues</strong> and
+                  crises that arise dynamically based on your country's attributes and previous
+                  actions.
                 </p>
-                <div className="border-l-2 border-amber-500 bg-amber-500/5 p-3 rounded-r-md">
-                  <h4 className="font-semibold text-xs text-amber-500 mb-1">CRITICAL CRISES & DEADLINES</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Urgent issues have deadlines. If they expire before you choose a response, they will auto-resolve—often with unfavorable outcomes.
+                <div className="rounded-r-md border-l-2 border-amber-500 bg-amber-500/5 p-3">
+                  <h4 className="mb-1 text-xs font-semibold text-amber-500">
+                    CRITICAL CRISES & DEADLINES
+                  </h4>
+                  <p className="text-muted-foreground text-xs">
+                    Urgent issues have deadlines. If they expire before you choose a response, they
+                    will auto-resolve—often with unfavorable outcomes.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-xs mb-1">Making Decisions</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Review the previews of how each option will impact Approval, Economic health, stability, and diplomatic relations. Committing to a choice resolves the issue and records the outcome.
+                  <h4 className="mb-1 text-xs font-medium">Making Decisions</h4>
+                  <p className="text-muted-foreground text-xs">
+                    Review the previews of how each option will impact Approval, Economic health,
+                    stability, and diplomatic relations. Committing to a choice resolves the issue
+                    and records the outcome.
                   </p>
                 </div>
               </>
@@ -495,18 +498,22 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
             {helpTopic === "decisions" && (
               <>
                 <p>
-                  The <strong>Decision Center</strong> coordinates collaboration and action across government departments.
+                  The <strong>Decision Center</strong> coordinates collaboration and action across
+                  government departments.
                 </p>
-                <div className="border-l-2 border-blue-500 bg-blue-500/5 p-3 rounded-r-md">
-                  <h4 className="font-semibold text-xs text-blue-400 mb-1">CABINET MEETINGS</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Schedule meetings with ministers, set agendas, record decisions, and invite officials to represent departments.
+                <div className="rounded-r-md border-l-2 border-blue-500 bg-blue-500/5 p-3">
+                  <h4 className="mb-1 text-xs font-semibold text-blue-400">CABINET MEETINGS</h4>
+                  <p className="text-muted-foreground text-xs">
+                    Schedule meetings with ministers, set agendas, record decisions, and invite
+                    officials to represent departments.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-xs mb-1">Action Items</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Action items are tasks assigned to cabinet officials or departments during meetings. Resolve pending and overdue tasks to maintain government effectiveness.
+                  <h4 className="mb-1 text-xs font-medium">Action Items</h4>
+                  <p className="text-muted-foreground text-xs">
+                    Action items are tasks assigned to cabinet officials or departments during
+                    meetings. Resolve pending and overdue tasks to maintain government
+                    effectiveness.
                   </p>
                 </div>
               </>
@@ -515,18 +522,24 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
             {helpTopic === "policies" && (
               <>
                 <p>
-                  <strong>Policy Strategy</strong> governs the long-term laws, systems, and economic reforms of your nation.
+                  <strong>Policy Strategy</strong> governs the long-term laws, systems, and economic
+                  reforms of your nation.
                 </p>
-                <div className="border-l-2 border-indigo-500 bg-indigo-500/5 p-3 rounded-r-md">
-                  <h4 className="font-semibold text-xs text-indigo-400 mb-1">ACTIVE VS DRAFT STATUS</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Draft policies can be reviewed. Activating a policy incurs an upfront implementation cost and ongoing maintenance fees, but starts applying policy effects to the nation.
+                <div className="rounded-r-md border-l-2 border-indigo-500 bg-indigo-500/5 p-3">
+                  <h4 className="mb-1 text-xs font-semibold text-indigo-400">
+                    ACTIVE VS DRAFT STATUS
+                  </h4>
+                  <p className="text-muted-foreground text-xs">
+                    Draft policies can be reviewed. Activating a policy incurs an upfront
+                    implementation cost and ongoing maintenance fees, but starts applying policy
+                    effects to the nation.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-xs mb-1">Economic Adjustments</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Active policies exert continuous multipliers on economic components (GDP, employment, inflation, tax revenue), steering the long-term national simulation.
+                  <h4 className="mb-1 text-xs font-medium">Economic Adjustments</h4>
+                  <p className="text-muted-foreground text-xs">
+                    Active policies exert continuous multipliers on economic components (GDP,
+                    employment, inflation, tax revenue), steering the long-term national simulation.
                   </p>
                 </div>
               </>
