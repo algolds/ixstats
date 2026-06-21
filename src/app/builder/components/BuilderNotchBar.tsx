@@ -283,23 +283,34 @@ export function BuilderNotchBar({
   const containerRef = useRef<HTMLDivElement>(null);
   const handleScrollRef = useRef<() => void>(() => {});
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAtBottomState, setIsAtBottomState] = useState(false);
 
   const handleScroll = () => {
     const container = containerRef.current;
     if (!container) return;
 
     const threshold = 25;
+    const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 15;
+
     if (window.scrollY < threshold) {
       container.style.transform = "translateY(0px)";
       container.style.opacity = "1";
       container.style.visibility = "visible";
       setIsScrolled(false);
+      setIsAtBottomState(false);
+    } else if (isAtBottom) {
+      setIsScrolled(true);
+      setIsAtBottomState(true);
+      container.style.transform = "translateY(0px)";
+      container.style.opacity = "1";
+      container.style.visibility = "visible";
     } else {
       const height = container.offsetHeight || 60;
       container.style.transform = `translateY(${-height - 20}px)`;
       container.style.opacity = "0";
       container.style.visibility = "hidden";
       setIsScrolled(true);
+      setIsAtBottomState(false);
     }
   };
 
@@ -325,20 +336,23 @@ export function BuilderNotchBar({
       <AnimatePresence>
         {visible && (
           <motion.div
-            key="builder-notch"
-            initial={{ opacity: 0, y: -8 }}
+            key={isAtBottomState ? "builder-notch-bottom" : "builder-notch-top"}
+            initial={isAtBottomState ? { opacity: 0, y: 80 } : { opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            exit={isAtBottomState ? { opacity: 0, y: 80 } : { opacity: 0, y: -8 }}
             transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
-            className="pointer-events-none sticky top-[68px] z-[900] w-full"
-            style={{ paddingTop: "6px" }}
+            className={cn(
+              "pointer-events-none z-[900] w-full",
+              isAtBottomState ? "fixed bottom-[20px] left-0 right-0" : "sticky top-[68px]"
+            )}
+            style={isAtBottomState ? { paddingBottom: "6px" } : { paddingTop: "6px" }}
           >
             <div ref={containerRef} className="w-full transition-all duration-300 ease-in-out">
               {/* Notch bar */}
               <div
                 className={cn(
                   "mx-auto max-w-[680px] px-2",
-                  isScrolled ? "pointer-events-none" : "pointer-events-auto"
+                  (isScrolled && !isAtBottomState) ? "pointer-events-none" : "pointer-events-auto"
                 )}
                 style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.25))" }}
               >
@@ -754,7 +768,7 @@ export function BuilderNotchBar({
 
       {/* Flanking buttons when scrolled */}
       <AnimatePresence>
-        {isScrolled && visible && (
+        {isScrolled && !isAtBottomState && visible && (
           <>
             {/* Left Back button flanking the DI */}
             <motion.div

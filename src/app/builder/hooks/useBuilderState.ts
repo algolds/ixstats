@@ -204,7 +204,7 @@ const getInitialState = (mode: "create" | "edit" = "create"): BuilderState => {
       step: "core",
       completedSteps: ["foundation"],
       activeCoreTab: "identity",
-      activeIdentitySubTab: "archetype",
+      activeIdentitySubTab: "basic",
     };
   }
 
@@ -576,7 +576,7 @@ export function useBuilderState(
         governmentStructure,
         completedSteps: ["foundation"], // Auto-complete foundation step
         activeCoreTab: "identity",
-        activeIdentitySubTab: "archetype",
+        activeIdentitySubTab: "basic",
         activeGovernmentTab: "components",
         activeEconomicsTab: "components",
         showAdvancedMode: false,
@@ -645,7 +645,7 @@ export function useBuilderState(
                 governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
                 economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
                 activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
-                activeIdentitySubTab: "archetype",
+                activeIdentitySubTab: "basic",
                 activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
                 activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
               };

@@ -37,9 +37,20 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
   );
 
   const stats = useMemo<ContextStat[]>(() => {
-    const activeEmbassies =
-      embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
-    const totalRelations = relations?.length ?? 0;
+    const activeEmbassiesList = embassies?.filter((e: any) => e.status === "ACTIVE" || e.status === "active") ?? [];
+    const activeEmbassies = activeEmbassiesList.length;
+
+    const relationsTargetIds = new Set(relations?.map((r: any) => r.targetCountryId) ?? []);
+    let additionalRelationsCount = 0;
+    activeEmbassiesList.forEach((e: any) => {
+      const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
+      if (!relationsTargetIds.has(partnerId)) {
+        additionalRelationsCount++;
+        relationsTargetIds.add(partnerId);
+      }
+    });
+
+    const totalRelations = (relations?.length ?? 0) + additionalRelationsCount;
     const avgStrength =
       totalRelations > 0
         ? Math.round(
@@ -51,7 +62,7 @@ export function DiplomacySidebarWidget({ countryId }: DiplomacySidebarWidgetProp
       { label: "Relations", value: totalRelations, accentText: true },
       { label: "Avg", value: `${avgStrength}%`, accentText: true },
     ];
-  }, [embassies, relations]);
+  }, [embassies, relations, countryId]);
 
   const activity = useMemo<ContextActivityEntry[]>(() => {
     const entries: ContextActivityEntry[] = [];

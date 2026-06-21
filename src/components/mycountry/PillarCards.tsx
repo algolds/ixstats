@@ -87,7 +87,20 @@ export function PillarCards({ countryId, onNavigate }: PillarCardsProps) {
   // Diplomacy stats
   const activeEmbassies =
     embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
-  const totalRelations = relations?.length ?? 0;
+  
+  const relationsTargetIds = new Set(relations?.map((r: any) => r.targetCountryId) ?? []);
+  let additionalRelationsCount = 0;
+  embassies?.forEach((e: any) => {
+    if (e.status === "ACTIVE" || e.status === "active") {
+      const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
+      if (!relationsTargetIds.has(partnerId)) {
+        additionalRelationsCount++;
+        relationsTargetIds.add(partnerId);
+      }
+    }
+  });
+
+  const totalRelations = (relations?.length ?? 0) + additionalRelationsCount;
   const avgStrength =
     totalRelations > 0
       ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)

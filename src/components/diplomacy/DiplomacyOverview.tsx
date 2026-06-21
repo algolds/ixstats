@@ -38,7 +38,20 @@ export function DiplomacyOverview({ countryId, onTabChange }: DiplomacyOverviewP
   const activeEmbassies = embassies.filter(
     (e: any) => e.status === "ACTIVE" || e.status === "active"
   ).length;
-  const totalRelationships = relationships.length;
+
+  const relationsTargetIds = new Set(relationships.map((r: any) => r.targetCountryId));
+  let additionalRelationsCount = 0;
+  embassies.forEach((e: any) => {
+    if (e.status === "ACTIVE" || e.status === "active") {
+      const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
+      if (!relationsTargetIds.has(partnerId)) {
+        additionalRelationsCount++;
+        relationsTargetIds.add(partnerId);
+      }
+    }
+  });
+
+  const totalRelationships = relationships.length + additionalRelationsCount;
   const strongRelationships = relationships.filter((r: any) => (r.strength ?? 0) >= 70).length;
   const allianceCount = alliances.length;
   const activePolicies = Array.isArray(policies)

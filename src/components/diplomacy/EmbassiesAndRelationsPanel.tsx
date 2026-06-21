@@ -101,7 +101,20 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     const activeEmbassies = embassiesWithSynergies.filter(
       (e) => e.status === "ACTIVE" || e.status === "active"
     ).length;
-    const totalRelations = relations?.length ?? 0;
+
+    const relationsTargetIds = new Set(relations?.map((r: any) => r.targetCountryId) ?? []);
+    let additionalRelationsCount = 0;
+    embassiesWithSynergies.forEach((e: any) => {
+      if (e.status === "ACTIVE" || e.status === "active") {
+        const partnerId = e.guestCountryId === countryId ? e.hostCountryId : e.guestCountryId;
+        if (!relationsTargetIds.has(partnerId)) {
+          additionalRelationsCount++;
+          relationsTargetIds.add(partnerId);
+        }
+      }
+    });
+
+    const totalRelations = (relations?.length ?? 0) + additionalRelationsCount;
     const allianceCount = alliances?.length ?? 0;
     const avgStrength =
       totalRelations > 0
@@ -109,7 +122,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         : 0;
 
     return { activeEmbassies, totalRelations, allianceCount, avgStrength };
-  }, [embassiesWithSynergies, relations, alliances]);
+  }, [embassiesWithSynergies, relations, alliances, countryId]);
 
   const countryName = country?.name ?? "Your Country";
 

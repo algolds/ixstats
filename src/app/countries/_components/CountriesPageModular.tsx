@@ -289,6 +289,17 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   return (
     <div className="bg-background relative min-h-screen">
       <div className="relative z-50 container mx-auto px-4 py-8">
+        {/* Header */}
+        <CountriesHeader
+          onOpenCommandPalette={() => {
+            window.dispatchEvent(
+              new CustomEvent("ix:switch-di-mode", {
+                detail: { mode: "plugin:countries" },
+              })
+            );
+          }}
+        />
+
         {/* Stats */}
         <CountriesStats
           countries={processedCountries}

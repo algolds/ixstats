@@ -833,6 +833,7 @@ function DashboardHero({
             height="h-full"
             showNeighbors={true}
             showCities={true}
+            showSubdivisions={true}
             interactive={true}
             boundsPadding={30}
           />

@@ -330,7 +330,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
 
   const currentSubStepLabel = useMemo(() => {
     if (activeSection === "identity") {
-      const tab = builderState.activeIdentitySubTab || "archetype";
+      const tab = builderState.activeIdentitySubTab || (mode === "edit" ? "basic" : "archetype");
       const labels: Record<string, string> = {
         archetype: "Archetype/Preset",
         basic: "Basic Info",

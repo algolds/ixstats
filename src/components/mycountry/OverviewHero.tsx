@@ -813,6 +813,7 @@ export function OverviewHero({
             className="w-full flex-1"
             showNeighbors={true}
             showCities={true}
+            showSubdivisions={true}
             interactive={true}
             boundsPadding={30}
           />
