@@ -22,6 +22,7 @@ import {
 import { RefreshCw, BarChart3, TrendingUp, Globe, Info, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { type TimeRange, type ChartType, TIME_RANGE_OPTIONS, CHART_TYPE_OPTIONS } from "./types";
+import { type MetricThemeVariant, getThemeClasses } from "./MetricModalLayout";
 
 export interface MetricModalTab {
   id: string;
@@ -58,6 +59,8 @@ export interface BaseMetricDetailsModalProps {
   showChartType?: boolean;
   /** Render function for tab content */
   children: (activeTab: string, timeRange: TimeRange, chartType: ChartType) => React.ReactNode;
+  /** Theme variation for Facet UI color styling */
+  variant?: MetricThemeVariant;
 }
 
 /**
@@ -111,17 +114,19 @@ export function BaseMetricDetailsModal({
   title,
   description,
   icon: Icon,
-  iconColor = "text-primary",
+  iconColor,
   tabs = DEFAULT_TABS,
   isLoading = false,
   onRefresh,
   showTimeRange = true,
   showChartType = true,
+  variant = "default",
   children,
 }: BaseMetricDetailsModalProps) {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id || "overview");
   const [timeRange, setTimeRange] = useState<TimeRange>("1y");
   const [chartType, setChartType] = useState<ChartType>("line");
+  const theme = getThemeClasses(variant);
 
   // Enhanced escape functionality and body scroll lock
   useEffect(() => {
@@ -147,7 +152,7 @@ export function BaseMetricDetailsModal({
       <DialogContent
         className={cn(
           // Glass physics styling
-          "facet-modal facet-refraction",
+          "facet-modal facet-refraction !fixed",
           // Sizing
           "max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)]",
           "sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]",
@@ -158,7 +163,7 @@ export function BaseMetricDetailsModal({
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Icon className={cn("h-5 w-5", iconColor)} />
+            <Icon className={cn("h-5 w-5", iconColor || theme.textHighlight)} />
             {title}
             {countryName && (
               <span className="text-muted-foreground font-normal">— {countryName}</span>
@@ -167,15 +172,18 @@ export function BaseMetricDetailsModal({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4 w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4 w-full flex-1 flex flex-col">
           {/* Tab List with Controls */}
-          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className={cn("grid w-full sm:w-auto", `grid-cols-${tabs.length}`)}>
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4">
+            <TabsList className="facet-refraction p-1 bg-black/20 rounded-xl border border-white/5 flex gap-1 w-full sm:w-auto">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="flex items-center gap-1.5 text-xs sm:text-sm"
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex-1 sm:flex-none",
+                    "data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-inner text-muted-foreground hover:text-foreground"
+                  )}
                 >
                   <tab.icon className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{tab.label}</span>
