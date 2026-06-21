@@ -12,3 +12,36 @@
 @import "./facet/integrations.css";
 @import "./facet/accessibility.css";
 @import "./facet/compatibility.css";
+
+/* ==========================================================================
+   NESTED COMPONENTS OVERRIDES FOR FACET MODALS
+   ========================================================================== */
+
+/* Nested cards inside Facet depth 4 modals / facet-modal containers inherit hierarchy-child styles */
+.facet-depth-4 [data-slot="card"],
+.facet-modal [data-slot="card"] {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+
+.dark .facet-depth-4 [data-slot="card"],
+.dark .facet-modal [data-slot="card"] {
+  background: linear-gradient(135deg, rgba(9, 9, 11, 0.5) 0%, rgba(9, 9, 11, 0.3) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* flat informational panel overrides (bg-muted/50) */
+.facet-depth-4 .bg-muted\/50,
+.facet-modal .bg-muted\/50 {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 0.5rem;
+}
+
+.dark .facet-depth-4 .bg-muted\/50,
+.dark .facet-modal .bg-muted\/50 {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.03) !important;
+}
+
