@@ -145,10 +145,10 @@ export function BaseMetricDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
         className={cn(
           // Glass physics styling
-          "bg-background/95 backdrop-blur-xl",
-          "border-2 border-white/10 shadow-2xl",
+          "facet-modal facet-refraction border-none shadow-none bg-transparent",
           // Sizing
           "max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)]",
           "sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]",
