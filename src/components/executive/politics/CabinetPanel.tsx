@@ -163,7 +163,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               </p>
             </div>
           ) : (
-            <ScrollArea className="max-h-[440px] pr-2">
+            <ScrollArea className="h-[440px] pr-2">
               <div className="space-y-2">
                 {departments.map((dept) => {
                   const deptOfficials = officialsByDepartment.get(dept.id) ?? [];

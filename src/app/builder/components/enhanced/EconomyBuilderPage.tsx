@@ -247,6 +247,7 @@ export function EconomyBuilderPage({
   // State Management - Memoized to prevent unnecessary re-renders
   const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState>(() => {
     if (persistedEconomyBuilder) {
+      const d = persistedEconomyBuilder.demographics ?? ({} as EconomyBuilderState["demographics"]);
       return {
         ...persistedEconomyBuilder,
         laborMarket: {
@@ -255,6 +256,20 @@ export function EconomyBuilderPage({
             typeof persistedEconomyBuilder.laborMarket?.averageAnnualIncome === "number"
               ? persistedEconomyBuilder.laborMarket.averageAnnualIncome
               : Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
+        },
+        // ponytail: backfill nested demographics objects so older localStorage blobs
+        // (pre-ageDistribution shape) don't crash preview useMemos reading them.
+        demographics: {
+          ...d,
+          ageDistribution: { under15: 20, age15to64: 65, over65: 15, ...d.ageDistribution },
+          urbanRuralSplit: { urban: 50, rural: 50, ...d.urbanRuralSplit },
+          educationLevels: {
+            noEducation: 5,
+            primary: 25,
+            secondary: 45,
+            tertiary: 25,
+            ...d.educationLevels,
+          },
         },
       };
     }
