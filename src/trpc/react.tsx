@@ -84,6 +84,14 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
               }
             }
 
+            // Impersonation header injection
+            if (typeof window !== "undefined") {
+              const playAsUser = localStorage.getItem("ixstats.play_as_user");
+              if (playAsUser) {
+                headers["x-play-as-user"] = playAsUser;
+              }
+            }
+
             return headers;
           },
         }),
