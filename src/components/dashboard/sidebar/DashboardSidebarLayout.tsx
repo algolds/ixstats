@@ -62,16 +62,20 @@ export function DashboardSidebarLayout({
   useEffect(() => {
     let timer: any = null;
     if (isHovered) {
-      timer = setTimeout(() => {
+      if (variant === "rail") {
         setIsHoveredDelayed(true);
-      }, 250);
+      } else {
+        timer = setTimeout(() => {
+          setIsHoveredDelayed(true);
+        }, 250);
+      }
     } else {
       setIsHoveredDelayed(false);
     }
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isHovered]);
+  }, [isHovered, variant]);
 
   useEffect(() => {
     if (disableCollapse) {

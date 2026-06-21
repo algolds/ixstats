@@ -95,11 +95,12 @@ interface FisheyeIconProps {
   isExpanded: boolean;
   title: string;
   children: React.ReactNode;
+  index: number;
+  onHover: (index: number | null) => void;
 }
 
-function FisheyeIcon({ id, mouseY, isExpanded, title, children }: FisheyeIconProps) {
+function FisheyeIcon({ id, mouseY, isExpanded, title, children, index, onHover }: FisheyeIconProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isRowHovered, setIsRowHovered] = useState(false);
 
   const distance = useTransform(mouseY, (val) => {
     if (!ref.current || val === Infinity) return Infinity;
@@ -122,21 +123,15 @@ function FisheyeIcon({ id, mouseY, isExpanded, title, children }: FisheyeIconPro
   const springGlowOpacity = useSpring(glowOpacity, { stiffness: 250, damping: 20 });
 
   const glowColor = getGlowColor(id);
-  const glowTextClass = getGlowTextColorClass(id);
 
   const handleMouseEnter = () => {
-    setIsRowHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsRowHovered(false);
+    onHover(index);
   };
 
   return (
     <motion.div
       ref={ref}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       style={{ scale: springScale }}
       className="relative origin-center"
     >
@@ -148,23 +143,6 @@ function FisheyeIcon({ id, mouseY, isExpanded, title, children }: FisheyeIconPro
         }}
       />
       {children}
-
-      <AnimatePresence>
-        {!isExpanded && isRowHovered && (
-          <motion.div
-            initial={{ opacity: 0, x: -6, y: "-50%" }}
-            animate={{ opacity: 1, x: 0, y: "-50%" }}
-            exit={{ opacity: 0, x: -6, y: "-50%" }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className={cn(
-              "pointer-events-none absolute top-1/2 left-[calc(100%+14px)] z-50 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold tracking-wider whitespace-nowrap uppercase shadow-xl backdrop-blur-md",
-              glowTextClass
-            )}
-          >
-            {title}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }
@@ -209,6 +187,8 @@ export function WikiOSUnifiedSidebar({
   const mouseY = useMotionValue(Infinity);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isExpanded) {
       mouseY.set(e.clientY);
@@ -219,6 +199,20 @@ export function WikiOSUnifiedSidebar({
 
   const handleMouseLeave = () => {
     mouseY.set(Infinity);
+    setHoveredIndex(null);
+  };
+
+  const getTransitionStyle = (index: number) => {
+    if (!isExpanded) {
+      return {
+        transitionDuration: "150ms",
+        transitionDelay: "0ms",
+      };
+    }
+    return {
+      transitionDuration: "300ms",
+      transitionDelay: hoveredIndex !== null ? `${Math.abs(index - hoveredIndex) * 45}ms` : "0ms",
+    };
   };
 
   const isArticlePage = !isSpecialPage && slug;
@@ -269,6 +263,7 @@ export function WikiOSUnifiedSidebar({
     glowClass,
     isActive,
     badge,
+    index,
   }: {
     id: string;
     href?: string;
@@ -278,6 +273,7 @@ export function WikiOSUnifiedSidebar({
     glowClass?: string;
     isActive: boolean;
     badge?: ReactNode;
+    index: number;
   }) => {
     const activeColorClass = getActiveColorClass(id);
     const itemClass = cn(
@@ -289,6 +285,8 @@ export function WikiOSUnifiedSidebar({
             glowClass
           )
     );
+
+    const transitionStyle = getTransitionStyle(index);
 
     const content = (
       <>
@@ -307,6 +305,7 @@ export function WikiOSUnifiedSidebar({
               ? cn("font-semibold", activeColorClass.split(" ")[0])
               : "text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]"
           )}
+          style={transitionStyle}
         >
           {title}
         </span>
@@ -323,7 +322,15 @@ export function WikiOSUnifiedSidebar({
 
     if (href) {
       return (
-        <FisheyeIcon key={id} id={id} mouseY={mouseY} isExpanded={isExpanded} title={title}>
+        <FisheyeIcon
+          key={id}
+          id={id}
+          mouseY={mouseY}
+          isExpanded={isExpanded}
+          title={title}
+          index={index}
+          onHover={setHoveredIndex}
+        >
           <Link href={href} className={wrapperClass}>
             {content}
           </Link>
@@ -332,7 +339,15 @@ export function WikiOSUnifiedSidebar({
     }
 
     return (
-      <FisheyeIcon key={id} id={id} mouseY={mouseY} isExpanded={isExpanded} title={title}>
+      <FisheyeIcon
+        key={id}
+        id={id}
+        mouseY={mouseY}
+        isExpanded={isExpanded}
+        title={title}
+        index={index}
+        onHover={setHoveredIndex}
+      >
         <button onClick={onClick} className={wrapperClass} type="button">
           {content}
         </button>
@@ -348,6 +363,8 @@ export function WikiOSUnifiedSidebar({
     toggleCollapsed();
   };
 
+  let rowIndex = 0;
+
   return (
     <div
       ref={containerRef}
@@ -357,7 +374,14 @@ export function WikiOSUnifiedSidebar({
     >
       <div className="flex w-full flex-col gap-1.5">
         {/* Profile widget — signed-in user's linked wiki profile */}
-        <FisheyeIcon id="lorewards" mouseY={mouseY} isExpanded={isExpanded} title="Wiki Profile">
+        <FisheyeIcon
+          id="lorewards"
+          mouseY={mouseY}
+          isExpanded={isExpanded}
+          title="Wiki Profile"
+          index={rowIndex++}
+          onHover={setHoveredIndex}
+        >
           <WikiOSProfileWidget expanded={isExpanded} />
         </FisheyeIcon>
 
@@ -377,6 +401,7 @@ export function WikiOSUnifiedSidebar({
               ⌘K
             </kbd>
           ),
+          index: rowIndex++,
         })}
 
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
@@ -400,6 +425,7 @@ export function WikiOSUnifiedSidebar({
             title: item.title,
             glowClass,
             isActive: activeId === item.id,
+            index: rowIndex++,
           });
         })}
 
@@ -416,6 +442,7 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
               isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
+              index: rowIndex++,
             })}
 
             {renderRow({
@@ -426,6 +453,7 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
               isActive: pathname === "/wiki/repository" || pathname.startsWith("/wiki/repository/"),
+              index: rowIndex++,
             })}
 
             {renderRow({
@@ -436,6 +464,7 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
               isActive: pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
+              index: rowIndex++,
             })}
           </>
         )}
@@ -454,6 +483,7 @@ export function WikiOSUnifiedSidebar({
                 glowClass:
                   "rail-glow-blue rail-animate-bounce border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15",
                 isActive: activeId === "edit",
+                index: rowIndex++,
               })}
 
             {renderRow({
@@ -464,24 +494,39 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
               isActive: activeId === "talk",
+              index: rowIndex++,
             })}
 
             {/* Stash button */}
-            <FisheyeIcon id="stashes" mouseY={mouseY} isExpanded={isExpanded} title="Stash Page">
-              <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
-                <div className="shrink-0">
-                  <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
-                </div>
-                <span
-                  className={cn(
-                    "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-all duration-300 ease-in-out group-hover:text-[var(--wikios-text)]",
-                    !isExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
-                  )}
+            {(() => {
+              const currentStashIndex = rowIndex++;
+              const transitionStyle = getTransitionStyle(currentStashIndex);
+              return (
+                <FisheyeIcon
+                  id="stashes"
+                  mouseY={mouseY}
+                  isExpanded={isExpanded}
+                  title="Stash Page"
+                  index={currentStashIndex}
+                  onHover={setHoveredIndex}
                 >
-                  Stash Page
-                </span>
-              </div>
-            </FisheyeIcon>
+                  <div className="group flex w-full items-center rounded-xl px-2.5 py-1 transition-all duration-200 hover:bg-white/5">
+                    <div className="shrink-0">
+                      <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
+                    </div>
+                    <span
+                      className={cn(
+                        "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap text-[var(--wikios-text-muted)] transition-all duration-300 ease-in-out group-hover:text-[var(--wikios-text)]",
+                        !isExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
+                      )}
+                      style={transitionStyle}
+                    >
+                      Stash Page
+                    </span>
+                  </div>
+                </FisheyeIcon>
+              );
+            })()}
 
             {/* Table of Contents Sections */}
             {isExpanded && sections && sections.length > 0 && (
@@ -529,14 +574,24 @@ export function WikiOSUnifiedSidebar({
               className="overflow-hidden"
             >
               <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
-              <FisheyeIcon
-                id="lorewards"
-                mouseY={mouseY}
-                isExpanded={isExpanded}
-                title={countryData.name}
-              >
-                <ActiveCountryUnifiedWidget country={countryData} />
-              </FisheyeIcon>
+              {(() => {
+                const currentCountryIndex = rowIndex++;
+                return (
+                  <FisheyeIcon
+                    id="lorewards"
+                    mouseY={mouseY}
+                    isExpanded={isExpanded}
+                    title={countryData.name}
+                    index={currentCountryIndex}
+                    onHover={setHoveredIndex}
+                  >
+                    <ActiveCountryUnifiedWidget
+                      country={countryData}
+                      transitionStyle={getTransitionStyle(currentCountryIndex)}
+                    />
+                  </FisheyeIcon>
+                );
+              })()}
             </motion.div>
           )}
         </AnimatePresence>
@@ -552,6 +607,7 @@ export function WikiOSUnifiedSidebar({
             glowClass:
               "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
             isActive: false,
+            index: rowIndex++,
           })}
 
         {/* Extra Items (always visible when expanded/opening on article page) */}
@@ -567,6 +623,7 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
               isActive: pathname === "/wiki/repository" || pathname.startsWith("/wiki/repository/"),
+              index: rowIndex++,
             })}
 
             {renderRow({
@@ -577,6 +634,7 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
               isActive: pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
+              index: rowIndex++,
             })}
 
             {renderRow({
@@ -587,6 +645,7 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-amber rail-animate-spin border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
               isActive: activeId === "history",
+              index: rowIndex++,
             })}
 
             {renderRow({
@@ -597,6 +656,7 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-teal rail-animate-bounce border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15",
               isActive: activeId === "backlinks",
+              index: rowIndex++,
             })}
           </>
         )}

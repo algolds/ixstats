@@ -13,9 +13,10 @@ import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
 
 interface ActiveCountryUnifiedWidgetProps {
   country: any;
+  transitionStyle?: React.CSSProperties;
 }
 
-export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidgetProps) {
+export function ActiveCountryUnifiedWidget({ country, transitionStyle }: ActiveCountryUnifiedWidgetProps) {
   const { isCollapsed: sidebarCollapsed, isHovered } = useSidebar();
   const isCollapsed = sidebarCollapsed && !isHovered;
   const { country: myCountry, userProfile } = useUserCountry();
@@ -85,6 +86,7 @@ export function ActiveCountryUnifiedWidget({ country }: ActiveCountryUnifiedWidg
             "flex-1 overflow-hidden text-left whitespace-nowrap transition-all duration-300 ease-in-out outline-none",
             isCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
           )}
+          style={transitionStyle}
           type="button"
         >
           <span className="block truncate text-xs font-semibold text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]">
