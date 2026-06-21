@@ -493,18 +493,19 @@ const DynamicIslandContent = ({
   const [isImpersonating, setIsImpersonating] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const checkPlayAs = () => {
-        setIsImpersonating(!!localStorage.getItem("ixstats.play_as_user"));
-      };
-      checkPlayAs();
-      window.addEventListener("storage", checkPlayAs);
-      window.addEventListener("ixstats-play-as-change", checkPlayAs);
-      return () => {
-        window.removeEventListener("storage", checkPlayAs);
-        window.removeEventListener("ixstats-play-as-change", checkPlayAs);
-      };
+    if (typeof window === "undefined") {
+      return;
     }
+    const checkPlayAs = () => {
+      setIsImpersonating(!!localStorage.getItem("ixstats.play_as_user"));
+    };
+    checkPlayAs();
+    window.addEventListener("storage", checkPlayAs);
+    window.addEventListener("ixstats-play-as-change", checkPlayAs);
+    return () => {
+      window.removeEventListener("storage", checkPlayAs);
+      window.removeEventListener("ixstats-play-as-change", checkPlayAs);
+    };
   }, []);
 
   // Dynamic height tracking using ResizeObserver — runs for all sizes so content always drives dimensions

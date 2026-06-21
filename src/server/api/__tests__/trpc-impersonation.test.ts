@@ -1,6 +1,6 @@
 import { describe, it, expect, jest } from "@jest/globals";
 import { createTRPCContext } from "../trpc";
-import { db } from "~/server/db";
+import { db } from "../../db";
 
 // Mock dependencies
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
