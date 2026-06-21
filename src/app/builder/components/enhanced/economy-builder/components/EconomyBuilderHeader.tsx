@@ -21,8 +21,6 @@ import {
   HelpCircle,
   // eslint-disable-next-line unused-imports/no-unused-imports
   Sparkles,
-  RefreshCw,
-  CheckCircle,
   AlertTriangle,
   Info,
   Loader2,
@@ -45,10 +43,9 @@ import { cn } from "~/lib/utils";
 
 interface EconomyBuilderHeaderProps {
   isLoadingConfig: boolean;
-  isAutoSaveEnabled: boolean;
-  hasUnsavedChanges: boolean;
-  lastSaved: Date | null;
-  showSuccessAnimation: boolean;
+  // Save/autosave status is centralized in the builder Dynamic Island
+  // (BuilderDIPlugin) + the global updateCountry autosave. No per-component
+  // autosave indicators here.
   validationStatus: {
     isValid: boolean;
     hasWarnings: boolean;
@@ -61,10 +58,6 @@ interface EconomyBuilderHeaderProps {
 
 export function EconomyBuilderHeader({
   isLoadingConfig,
-  isAutoSaveEnabled,
-  hasUnsavedChanges,
-  lastSaved,
-  showSuccessAnimation,
   validationStatus,
   onHelpClick,
   selectedArchetypeName,
@@ -92,34 +85,6 @@ export function EconomyBuilderHeader({
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Loading configuration...</span>
-            </div>
-          )}
-
-          {isAutoSaveEnabled && (
-            <div className="flex items-center gap-2 text-sm">
-              <RefreshCw
-                className={cn(
-                  "h-4 w-4",
-                  hasUnsavedChanges ? "animate-spin text-amber-600" : "text-green-600"
-                )}
-              />
-              <span className={cn(hasUnsavedChanges ? "text-amber-600" : "text-green-600")}>
-                {hasUnsavedChanges ? "Auto-save pending..." : "Auto-save enabled"}
-              </span>
-            </div>
-          )}
-
-          {showSuccessAnimation && (
-            <div className="flex items-center gap-2 text-sm text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              <span>Autosaved!</span>
-            </div>
-          )}
-
-          {lastSaved && (
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span>Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
             </div>
           )}
 

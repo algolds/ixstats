@@ -997,10 +997,6 @@ export function EconomyBuilderPage({
         {/* Header */}
         <EconomyBuilderHeader
           isLoadingConfig={isLoadingConfig}
-          isAutoSaveEnabled={!!countryId}
-          hasUnsavedChanges={autoSyncState.pendingChanges}
-          lastSaved={lastSaved}
-          showSuccessAnimation={showSuccessAnimation}
           validationStatus={validationStatus}
           onHelpClick={() => setWelcomeOpen(true)}
           selectedArchetypeName={selectedArchetype?.name || null}

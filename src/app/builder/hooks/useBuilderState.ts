@@ -314,8 +314,21 @@ export function useBuilderState(
       }
     );
 
+  // Relational subsystems not included in getByIdAtTime — needed so the editor
+  // rehydrates ALL saved data (gov/economic atomic components, demographics
+  // detail, income classes, spending categories) on re-entry.
+  const { data: editorRelations, isLoading: relationsLoading } =
+    api.countries.getEditorRelations.useQuery(
+      { countryId: countryId || "" },
+      {
+        enabled: mode === "edit" && !!countryId,
+        staleTime: 5 * 60 * 1000,
+      }
+    );
+
   const isLoadingCountry =
-    mode === "edit" && (countryLoading || governmentLoading || taxSystemLoading);
+    mode === "edit" &&
+    (countryLoading || governmentLoading || taxSystemLoading || relationsLoading);
 
   // Initialize edit mode with existing data
   useEffect(() => {
@@ -460,6 +473,73 @@ export function useBuilderState(
         region: existingCountry.region || "",
       };
 
+      // ── Hydrate relational subsystems (from getEditorRelations) ──────────
+      // These are persisted by updateCountry but not returned by getByIdAtTime,
+      // so without this the editor would show defaults on re-entry = "reset".
+      const parseJsonArray = (v: unknown): any[] => {
+        if (Array.isArray(v)) return v;
+        if (typeof v === "string" && v.trim()) {
+          try {
+            const parsed = JSON.parse(v);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      const rel = editorRelations as any;
+      if (rel?.demographics) {
+        const ageDist = parseJsonArray(rel.demographics.ageDistribution);
+        if (ageDist.length) inputs.demographics.ageDistribution = ageDist;
+        const eduLevels = parseJsonArray(rel.demographics.educationLevels);
+        if (eduLevels.length) (inputs.demographics as any).educationLevels = eduLevels;
+        const regions = parseJsonArray(rel.demographics.regions);
+        if (regions.length) (inputs.demographics as any).regions = regions;
+      }
+      if (rel?.incomeDistribution?.economicClasses) {
+        const classes = parseJsonArray(rel.incomeDistribution.economicClasses);
+        if (classes.length) (inputs.incomeWealth as any).economicClasses = classes;
+      }
+      if (rel?.governmentBudget?.spendingCategories) {
+        const cats = parseJsonArray(rel.governmentBudget.spendingCategories);
+        if (cats.length) (inputs.governmentSpending as any).spendingCategories = cats;
+      }
+
+      // Atomic government components (line was a TODO: [] — now actually loaded)
+      const loadedGovernmentComponents: ComponentType[] = (rel?.governmentComponents || []).map(
+        (c: any) => c.componentType as ComponentType
+      );
+
+      // Economy builder state: atomic economic components + persisted structure JSON
+      let loadedEconomyBuilderState: EconomyBuilderState | null = null;
+      const economicComps: any[] = rel?.economicComponents || [];
+      let parsedStructure: any = null;
+      if (rel?.economicProfile?.sectorBreakdown) {
+        try {
+          parsedStructure = JSON.parse(rel.economicProfile.sectorBreakdown);
+        } catch {
+          parsedStructure = null;
+        }
+      }
+      if (economicComps.length > 0 || parsedStructure) {
+        loadedEconomyBuilderState = {
+          structure: parsedStructure || ({ sectors: [] } as any),
+          sectors: parsedStructure?.sectors || [],
+          laborMarket: {
+            unemploymentRate: inputs.laborEmployment.unemploymentRate,
+            participationRate: inputs.laborEmployment.laborForceParticipationRate,
+          } as any,
+          demographics: { totalPopulation: currentPop } as any,
+          selectedAtomicComponents: economicComps.map((c: any) => c.componentType),
+          isValid: true,
+          errors: {} as any,
+          lastUpdated: new Date(),
+          version: "1.0.0",
+        };
+      }
+
       // Convert existing government to builder format
       let governmentStructure: GovernmentBuilderState | null = null;
       if (existingGovernment) {
@@ -571,7 +651,7 @@ export function useBuilderState(
         selectedCountry: null, // No foundation selection in edit mode
         selectedArchetypeId: null,
         economicInputs: inputs,
-        governmentComponents: [], // TODO: Extract from existing government if atomic components exist
+        governmentComponents: loadedGovernmentComponents,
         taxSystemData,
         governmentStructure,
         completedSteps: ["foundation"], // Auto-complete foundation step
@@ -580,7 +660,7 @@ export function useBuilderState(
         activeGovernmentTab: "components",
         activeEconomicsTab: "components",
         showAdvancedMode: false,
-        economyBuilderState: null,
+        economyBuilderState: loadedEconomyBuilderState,
       });
 
       console.log(
@@ -588,7 +668,14 @@ export function useBuilderState(
         existingCountry.name
       );
     }
-  }, [mode, existingCountry, existingGovernment, existingTaxSystem, isLoadingCountry]);
+  }, [
+    mode,
+    existingCountry,
+    existingGovernment,
+    existingTaxSystem,
+    editorRelations,
+    isLoadingCountry,
+  ]);
 
   // Load saved state on mount - runs AFTER initial database load
   useEffect(() => {

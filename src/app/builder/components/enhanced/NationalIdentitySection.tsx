@@ -8,7 +8,7 @@ const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
-import { Globe, Landmark, Heart, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { Globe, Landmark, Heart } from "lucide-react";
 import type {
   EconomicInputs,
   RealCountryData,
@@ -83,15 +83,9 @@ export function NationalIdentitySection({
   referenceCountry,
   countryId,
 }: NationalIdentitySectionProps) {
-  // Get builder context for autosync registration and state management
-  const {
-    registerAutoSync,
-    unregisterAutoSync,
-    builderState,
-    setBuilderState,
-    mode,
-    updateArchetypeId,
-  } = useBuilderContext();
+  // Get builder context for state management. Save/autosave is centralized
+  // (updateCountry autosave + Dynamic Island save button) — no per-section sync.
+  const { builderState, setBuilderState, mode, updateArchetypeId } = useBuilderContext();
   const notify = useNotify();
 
   // All hooks must be called unconditionally (Rules of Hooks)
@@ -119,66 +113,7 @@ export function NationalIdentitySection({
     handleFlagUrlChange,
     handleCoatOfArmsUrlChange,
     handleFieldValueSave,
-    autoSync,
   } = useNationalIdentityState(inputs, onInputsChange, referenceCountry, countryId);
-
-  // Register autosync function with the builder context
-  useEffect(() => {
-    if (countryId && autoSync.syncNow) {
-      registerAutoSync("nationalIdentity", autoSync.syncNow);
-
-      // Cleanup on unmount
-      return () => {
-        unregisterAutoSync("nationalIdentity");
-      };
-    }
-    return;
-  }, [countryId, autoSync.syncNow, registerAutoSync, unregisterAutoSync]);
-
-  // Helper function to render autosave status
-  const renderAutosaveStatus = () => {
-    if (!countryId) return null; // Only show in edit mode
-
-    const { syncState } = autoSync;
-
-    if (syncState.isSyncing) {
-      return (
-        <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Saving...</span>
-        </div>
-      );
-    }
-
-    if (syncState.syncError) {
-      return (
-        <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
-          <AlertCircle className="h-3 w-3" />
-          <span>Save failed</span>
-        </div>
-      );
-    }
-
-    if (syncState.lastSyncTime) {
-      return (
-        <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-          <CheckCircle className="h-3 w-3" />
-          <span>Saved</span>
-        </div>
-      );
-    }
-
-    if (syncState.pendingChanges) {
-      return (
-        <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-          <span>Pending</span>
-        </div>
-      );
-    }
-
-    return null;
-  };
 
   const handleGovernmentStructureChange = useCallback(
     (structure: any) => {
@@ -260,11 +195,7 @@ export function NationalIdentitySection({
   return (
     <>
       <div className="relative space-y-4">
-        {/* Autosave Status (Top right) */}
-        <div className="absolute -top-10 right-0 z-10 flex h-8 items-center pr-2">
-          {renderAutosaveStatus()}
-        </div>
-
+        {/* Save status is centralized in the builder Dynamic Island (BuilderDIPlugin). */}
         <BuilderTabCard
           tabs={tabs}
           activeTab={activeTab}

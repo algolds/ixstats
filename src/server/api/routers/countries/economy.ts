@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   publicProcedure,
+  protectedProcedure,
   rateLimitedPublicProcedure,
   cachedStaticProcedure,
 } from "~/server/api/trpc";
@@ -312,6 +314,58 @@ export const economyProcedures = {
         country: country.name,
         timeElapsed: calculatedStats.timeElapsed,
         calculationDate: calculatedStats.calculationDate,
+      };
+    }),
+
+  // Editor-only loader: the relational subsystems the builder/editor needs to
+  // rehydrate state that getByIdAtTime (kept lean for its 14 hot-path callers)
+  // does not include. Owner/admin gated like updateCountry.
+  getEditorRelations: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        include: { role: true },
+      });
+      const role = user?.role?.name;
+      if (
+        user?.countryId !== input.countryId &&
+        role !== "admin" &&
+        role !== "system-owner"
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to load this country's editor data.",
+        });
+      }
+
+      const [
+        demographics,
+        incomeDistribution,
+        governmentBudget,
+        economicProfile,
+        governmentComponents,
+        economicComponents,
+      ] = await Promise.all([
+        ctx.db.demographics.findUnique({ where: { countryId: input.countryId } }),
+        ctx.db.incomeDistribution.findUnique({ where: { countryId: input.countryId } }),
+        ctx.db.governmentBudget.findUnique({ where: { countryId: input.countryId } }),
+        ctx.db.economicProfile.findUnique({ where: { countryId: input.countryId } }),
+        ctx.db.governmentComponent.findMany({
+          where: { countryId: input.countryId, isActive: true },
+        }),
+        ctx.db.economicComponent.findMany({
+          where: { countryId: input.countryId, isActive: true },
+        }),
+      ]);
+
+      return {
+        demographics,
+        incomeDistribution,
+        governmentBudget,
+        economicProfile,
+        governmentComponents,
+        economicComponents,
       };
     }),
 
