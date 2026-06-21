@@ -297,7 +297,10 @@ export function GdpPerCapitaDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-background/95 z-[13000] max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto border-2 border-white/10 shadow-2xl backdrop-blur-xl sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]">
+      <DialogContent
+        style={{ background: "transparent", border: "none", boxShadow: "none" }}
+        className="facet-modal facet-refraction max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto border-none shadow-none bg-transparent sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]"
+      >
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
