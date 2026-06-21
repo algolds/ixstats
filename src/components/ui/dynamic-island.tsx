@@ -490,6 +490,23 @@ const DynamicIslandContent = ({
 
   const dimensions = calculateDimensions(state.size, screenSize, currentSize);
 
+  const [isImpersonating, setIsImpersonating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const checkPlayAs = () => {
+        setIsImpersonating(!!localStorage.getItem("ixstats.play_as_user"));
+      };
+      checkPlayAs();
+      window.addEventListener("storage", checkPlayAs);
+      window.addEventListener("ixstats-play-as-change", checkPlayAs);
+      return () => {
+        window.removeEventListener("storage", checkPlayAs);
+        window.removeEventListener("ixstats-play-as-change", checkPlayAs);
+      };
+    }
+  }, []);
+
   // Dynamic height tracking using ResizeObserver — runs for all sizes so content always drives dimensions
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -555,8 +572,17 @@ const DynamicIslandContent = ({
           backfaceVisibility: "hidden",
         }}
       >
-        <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
-        <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
+        {isImpersonating ? (
+          <>
+            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
+            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
+            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
+          </>
+        )}
       </motion.div>
 
       {/* Main dynamic island — matching maps DI background and borders */}
@@ -564,7 +590,11 @@ const DynamicIslandContent = ({
         id={id}
         layout
         layoutId="dynamic-island-main"
-        className="focus-within:bg-accent/80 force-gpu relative mx-auto items-center justify-center border border-white/20 text-center shadow-2xl shadow-black/40 transition-colors duration-200 dark:border-white/10"
+        className={`focus-within:bg-accent/80 force-gpu relative mx-auto items-center justify-center border text-center shadow-2xl shadow-black/40 transition-colors duration-200 ${
+          isImpersonating
+            ? "border-red-500/80 dark:border-red-500/60 shadow-[0_0_15px_rgba(239,68,68,0.45)]"
+            : "border-white/20 dark:border-white/10"
+        }`}
         initial={{
           width: dimensions.width,
           height: targetHeight,
