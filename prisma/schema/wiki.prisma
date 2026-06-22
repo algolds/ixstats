@@ -18,6 +18,48 @@ model WikiCache {
   @@index([countryName])
 }
 
+/// Postgres shadow of MediaWiki article wikitext — groundwork for the source-of-truth
+/// migration (see plans/WIKIOS.md → MediaWiki Independence Path, Stage 2).
+/// Populated read-through on article load (lib/wiki-os/article-store.ts). MediaWiki MySQL
+/// stays authoritative; this lets WikiOS keep serving content if MediaWiki is unavailable.
+model WikiArticle {
+  id           String   @id @default(cuid())
+  source       String   @default("ixwiki") // ixwiki | iiwiki | althistory
+  title        String                       // normalized DB title (spaces → underscores)
+  wikitext     String
+  revisionId   Int?                          // MW rev_id this content was synced from
+  revTimestamp String?                       // MW rev_timestamp of revisionId
+  syncedAt     DateTime @default(now())      // last pull from MediaWiki
+  updatedAt    DateTime @updatedAt
+
+  revisions    WikiRevision[]
+
+  @@unique([source, title])
+  @@index([source])
+  @@map("wiki_articles")
+}
+
+/// Append-only local revision history for WikiOS articles (Stage 2b).
+/// Written through on save (WikiOS-originated edits) and by the recentchanges
+/// sync job (edits made directly on MediaWiki). MediaWiki still owns the canonical
+/// revid (mwRevId); this mirrors it so history/diff survive MediaWiki downtime.
+model WikiRevision {
+  id        String      @id @default(cuid())
+  articleId String
+  article   WikiArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  mwRevId   Int?                          // MediaWiki rev_id (null if MW edit returned none)
+  wikitext  String
+  author    String?
+  summary   String?
+  minor     Boolean     @default(false)
+  source    String      @default("ixwiki") // ixwiki | iiwiki | althistory
+  createdAt DateTime    @default(now())
+
+  @@index([articleId, createdAt])
+  @@index([source, mwRevId])
+  @@map("wiki_revisions")
+}
+
 /// Wiki template registry — cached TemplateData schemas from MediaWiki.
 model WikiTemplate {
   id            String   @id @default(cuid())

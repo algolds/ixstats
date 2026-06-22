@@ -17,7 +17,6 @@ import {
   getPageSections,
   getPageHistory,
   resolveRedirect as resolveRedirectMySQL,
-  getRevisionWikitext as getRevisionWikitextMySQL,
   getCurrentRevMeta,
   getPageProps,
   getPageProtection,
@@ -30,6 +29,11 @@ import {
   applyResolvedTemplates,
 } from "~/lib/wiki-os/template-resolver";
 import { computeWikitextDiff } from "~/lib/wiki-os/wikitext-diff";
+import {
+  getArticleWikitextShadow,
+  getArticleHistoryShadow,
+  getRevisionWikitextShadow,
+} from "~/lib/wiki-os/article-store";
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
 
 import { db } from "~/server/db";
@@ -175,14 +179,12 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getWikitext: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
-      const [article, revMeta] = await Promise.all([
-        getArticleWikitext(input.title, "ixwiki"),
-        getCurrentRevisionMeta(input.title),
-      ]);
+      // Read-through the Postgres shadow store (resilient to MediaWiki downtime).
+      const result = await getArticleWikitextShadow(input.title, "ixwiki");
       return {
-        wikitext: article?.wikitext ?? "",
-        revid: revMeta?.revid ?? null,
-        timestamp: revMeta?.timestamp ?? null,
+        wikitext: result?.wikitext ?? "",
+        revid: result?.revid ?? null,
+        timestamp: result?.timestamp ?? null,
       };
     }),
 
@@ -295,12 +297,12 @@ export const wikiosPageContentRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      // Direct MySQL — ~40ms vs ~400ms via API
-      const result = await getPageHistory(
-        input.title,
-        input.limit,
-        input.offset ? parseInt(input.offset, 10) : undefined
-      );
+      // Read-through: serve local revisions from Postgres (resilient to MediaWiki
+      // downtime), falling back to direct MySQL. Paginated requests (offset) go
+      // straight to MySQL — local history is first-page/recent only.
+      const result = input.offset
+        ? await getPageHistory(input.title, input.limit, parseInt(input.offset, 10))
+        : await getArticleHistoryShadow(input.title, input.limit, "ixwiki");
       return {
         revisions: result.revisions,
         continueToken:
@@ -324,8 +326,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
       // Node.js diff engine — ~50ms vs ~500ms via API
       // Fetch both revisions' wikitext via direct MySQL
       const [fromData, toData] = await Promise.all([
-        getRevisionWikitext(input.fromrev),
-        getRevisionWikitext(input.torev),
+        getRevisionWikitextShadow(input.fromrev, "ixwiki"),
+        getRevisionWikitextShadow(input.torev, "ixwiki"),
       ]);
 
       if (!fromData || !toData) throw new Error("One or both revisions not found");
@@ -335,7 +337,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       // Get revision metadata (user, comment) from page history
       const pageTitle = toData.title;
-      const history = await getPageHistory(pageTitle, 100);
+      const history = await getArticleHistoryShadow(pageTitle, 100, "ixwiki");
       const fromRev = history.revisions.find((r) => r.revid === input.fromrev);
       const toRev = history.revisions.find((r) => r.revid === input.torev);
 
@@ -386,7 +388,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getRevisionContent: publicProcedure
     .input(z.object({ revid: z.number() }))
     .query(async ({ input }) => {
-      const result = await getRevisionWikitext(input.revid);
+      const result = await getRevisionWikitextShadow(input.revid, "ixwiki");
       if (!result) throw new Error("Revision not found");
       return result;
     }),
@@ -528,20 +530,6 @@ async function saveToMediaWiki(
     success: editData.edit?.result === "Success",
     revisionId: editData.edit?.newrevid ?? null,
   };
-}
-
-/**
- * Get the wikitext content of a specific revision by ID via direct MySQL.
- */
-async function getRevisionWikitext(revid: number) {
-  return getRevisionWikitextMySQL(revid);
-}
-
-/**
- * Get the current revision metadata (revid + timestamp) via direct MySQL.
- */
-async function getCurrentRevisionMeta(title: string) {
-  return getCurrentRevMeta(title);
 }
 
 /**

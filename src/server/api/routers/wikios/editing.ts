@@ -8,6 +8,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { htmlToWikitext, wikitextToHtml, invalidateCache } from "~/lib/wiki-os/parsoid-client";
+import { invalidateArticleShadow, recordArticleRevision } from "~/lib/wiki-os/article-store";
 import {
   getArticleWikitext,
   getPageHistory,
@@ -342,6 +343,20 @@ async function saveToMediaWiki(
   }
 
   invalidateCache(title);
+
+  // Write-through the Postgres shadow + append a local revision (best-effort,
+  // non-blocking). Falls back to invalidating the shadow if the write fails.
+  const editor = ctx.user?.wikiUsername ?? ctx.auth?.userId ?? null;
+  void recordArticleRevision({
+    title,
+    wikitext,
+    mwRevId: editData.edit?.newrevid ?? null,
+    author: editor,
+    summary,
+    minor,
+  }).then((ok) => {
+    if (!ok) void invalidateArticleShadow(title);
+  });
 
   // Notify stash owners about the edit (non-blocking)
   notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch(

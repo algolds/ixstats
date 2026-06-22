@@ -72,7 +72,7 @@ WikiOS does **not** own its content — MediaWiki's MySQL/MariaDB is the source 
 
 **Stance:** keep MediaWiki as a *headless parse/render engine* (its strongest role) and move storage + UX into WikiOS incrementally. "Full independence" = reimplementing the parser and Lua sandbox, which is out of scope for the foreseeable future. The staged migration path lives in [`plans/WIKIOS.md`](../../../plans/WIKIOS.md#mediawiki-independence-path).
 
-Local Postgres state (`prisma/schema/wiki.prisma`) holds only WikiOS-native data: `WikiCache`, `WikiTemplate` (TemplateData), Lore Stash, Lorewards, Blurbs, `WikiArticleAward` — **no article content**.
+Local Postgres state (`prisma/schema/wiki.prisma`) holds WikiOS-native data: `WikiCache`, `WikiTemplate` (TemplateData), Lore Stash, Lorewards, Blurbs, `WikiArticleAward`. As of Stage 2 it also holds a `WikiArticle` **shadow copy** of article wikitext — populated read-through (`lib/wiki-os/article-store.ts`), so WikiOS keeps serving content if MediaWiki is down. **Stage 2b** adds `WikiRevision` (`wiki_revisions`): an append-only local revision history written through on save (dual-write alongside the MediaWiki edit) and backfilled by a recentchanges sync cron (`src/server/cron/sync-wiki-recentchanges.ts`) that captures edits made directly on MediaWiki. History/diff endpoints (`page-content.ts` `getHistory`/`getDiff`/`getRevisionContent`) read through Postgres with MySQL fallback. MediaWiki MySQL remains authoritative (it owns the canonical `mwRevId`).
 
 ## Data sources (tRPC)
 

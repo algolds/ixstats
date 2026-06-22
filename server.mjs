@@ -151,6 +151,7 @@ app
       let cronSchedule_lorewardsScoring = "0 6 * * *";
       let cronSchedule_passiveIncome = "0 0 * * *";
       let cronSchedule_cardValue = "0 */6 * * *";
+      let cronSchedule_wikiRecentChanges = "*/10 * * * *";
 
       try {
         const { PrismaClient } = await import("@prisma/client");
@@ -162,6 +163,7 @@ app
                 "cronSchedule_lorewardsScoring",
                 "cronSchedule_passiveIncome",
                 "cronSchedule_cardValue",
+                "cronSchedule_wikiRecentChanges",
               ],
             },
           },
@@ -173,6 +175,8 @@ app
             cronSchedule_passiveIncome = config.value.trim();
           } else if (config.key === "cronSchedule_cardValue" && config.value) {
             cronSchedule_cardValue = config.value.trim();
+          } else if (config.key === "cronSchedule_wikiRecentChanges" && config.value) {
+            cronSchedule_wikiRecentChanges = config.value.trim();
           }
         }
         await dbInstance.$disconnect();
@@ -337,6 +341,24 @@ app
           }
         } catch (error) {
           console.error("[Cron] Politics drift failed:", error.message);
+        }
+      });
+
+      // 12. WikiOS recentchanges sync (every 10 min default; captures edits made
+      //     directly on MediaWiki into the local WikiRevision history)
+      scheduleCron("WikiOS recentchanges sync", cronSchedule_wikiRecentChanges, async () => {
+        try {
+          const { syncWikiRecentChanges } = await import(
+            "./src/server/cron/sync-wiki-recentchanges.js"
+          );
+          const r = await syncWikiRecentChanges();
+          if (r.recorded > 0) {
+            console.log(
+              `[Cron] WikiOS recentchanges: recorded ${r.recorded}, skipped ${r.skipped} of ${r.changesSeen}`
+            );
+          }
+        } catch (error) {
+          console.error("[Cron] WikiOS recentchanges sync failed:", error.message);
         }
       });
 
