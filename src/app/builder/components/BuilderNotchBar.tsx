@@ -294,7 +294,10 @@ export function BuilderNotchBar({
     const isAtBottom =
       window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 15;
 
-    if (!isSticky) {
+    // ponytail: when the section has sub-tabs, never play the hide-and-flank
+    // dance — the flanking buttons only replace the main nav, so hiding the
+    // notch would strand the subnav row (its only home) off-screen.
+    if (!isSticky || subTabs.length > 0) {
       container.style.transform = "translateY(0px)";
       container.style.opacity = "1";
       container.style.visibility = "visible";
