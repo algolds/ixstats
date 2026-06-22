@@ -54,6 +54,19 @@ export const identityProcedures = {
       };
     }),
 
+  // Lightweight check: is this country linked to a map feature (i.e. on the map)?
+  // A country is "on the map" once geo-linking sets its centroid (see getCountryGeoProfile).
+  // Selects only the small centroid array — never the heavy geometry blob.
+  getMapLinkStatus: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { id: true, centroid: true },
+      });
+      return { isMapped: !!country?.centroid };
+    }),
+
   updateNationalIdentity: protectedProcedure
     .input(
       z.object({

@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, type ReactNode } from "react";
+import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import { MyCountrySidebarLayout } from "~/components/mycountry/MyCountrySidebarLayout";
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
 import { useCountryData } from "./CountryDataProvider";
 import { OverviewHero } from "../OverviewHero";
+import { api } from "~/trpc/react";
 
 interface SectionShellProps {
   /** Which section this shell renders (defaults the active nav state). */
@@ -39,6 +40,19 @@ export function SectionShell({
 }: SectionShellProps) {
   const { country } = useCountryData();
   const [heroCollapsed, setHeroCollapsed] = useState(false);
+
+  // Collapse the hero by default for a valid-but-unmapped country. Applied once
+  // when the map status resolves; never fights the user's later expand/collapse.
+  const { data: mapStatus } = api.countries.getMapLinkStatus.useQuery(
+    { countryId: country?.id ?? "" },
+    { enabled: !!country?.id }
+  );
+  const appliedDefaultCollapse = useRef(false);
+  useEffect(() => {
+    if (appliedDefaultCollapse.current || !mapStatus) return;
+    appliedDefaultCollapse.current = true;
+    if (!mapStatus.isMapped) setHeroCollapsed(true);
+  }, [mapStatus]);
 
   // Fallback to standard OverviewHero if no custom hero is passed
   const finalHero =

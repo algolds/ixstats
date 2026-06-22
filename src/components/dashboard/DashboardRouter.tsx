@@ -1049,6 +1049,22 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
     document.title = "Dashboard - IxStats";
   }, []);
 
+  // Collapse the hero by default for a valid-but-unmapped country. Applied once
+  // when the map status resolves; never fights the user's later expand/collapse.
+  const { user } = useUser();
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
+  const countryId = userProfile?.countryId || "";
+  const { data: mapStatus } = api.countries.getMapLinkStatus.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const appliedDefaultCollapse = useRef(false);
+  useEffect(() => {
+    if (appliedDefaultCollapse.current || !mapStatus) return;
+    appliedDefaultCollapse.current = true;
+    if (!mapStatus.isMapped) setHeroCollapsed(true);
+  }, [mapStatus]);
+
   return (
     <DashboardSidebarLayout
       alerts={<NewVersionNotice />}
