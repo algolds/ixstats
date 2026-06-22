@@ -15,9 +15,7 @@ import {
   getCategoryMembers,
   getSiteStats,
   getRandomPage,
-  resolveRedirect as resolveRedirectMySQL,
   getRevisionWikitext as getRevisionWikitextMySQL,
-  getCurrentRevMeta,
   fullTextSearch,
   getParentCategories as getParentCategoriesMySQL,
   getCategoryInfo,
@@ -274,13 +272,6 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
 // Shared helper: save wikitext to MediaWiki via Action API
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve a page title through redirects via direct MySQL.
- */
-async function resolveRedirect(title: string): Promise<string> {
-  return resolveRedirectMySQL(title);
-}
-
 async function saveToMediaWiki(
   title: string,
   wikitext: string,
@@ -361,13 +352,6 @@ async function saveToMediaWiki(
  */
 async function getRevisionWikitext(revid: number) {
   return getRevisionWikitextMySQL(revid);
-}
-
-/**
- * Get the current revision metadata (revid + timestamp) via direct MySQL.
- */
-async function getCurrentRevisionMeta(title: string) {
-  return getCurrentRevMeta(title);
 }
 
 /**

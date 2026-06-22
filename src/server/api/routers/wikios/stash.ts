@@ -10,9 +10,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/wiki-os/parsoid-client";
 import {
   getArticleWikitext,
-  resolveRedirect as resolveRedirectMySQL,
   getRevisionWikitext as getRevisionWikitextMySQL,
-  getCurrentRevMeta,
 } from "~/lib/wiki-bridge";
 
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
@@ -331,13 +329,6 @@ export const wikiosStashRouter = createTRPCRouter({
 // Shared helper: save wikitext to MediaWiki via Action API
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve a page title through redirects via direct MySQL.
- */
-async function resolveRedirect(title: string): Promise<string> {
-  return resolveRedirectMySQL(title);
-}
-
 async function saveToMediaWiki(
   title: string,
   wikitext: string,
@@ -418,13 +409,6 @@ async function saveToMediaWiki(
  */
 async function getRevisionWikitext(revid: number) {
   return getRevisionWikitextMySQL(revid);
-}
-
-/**
- * Get the current revision metadata (revid + timestamp) via direct MySQL.
- */
-async function getCurrentRevisionMeta(title: string) {
-  return getCurrentRevMeta(title);
 }
 
 /**

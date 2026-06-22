@@ -309,6 +309,16 @@ export function WikiVisualEditor({
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const handler = () => {
+      // Only inspect formatting state when the selection is inside this editor —
+      // otherwise every selection anywhere on the page runs 8 queryCommandState calls.
+      const sel = window.getSelection();
+      if (
+        !sel ||
+        sel.rangeCount === 0 ||
+        !editableRef.current?.contains(sel.getRangeAt(0).commonAncestorContainer)
+      ) {
+        return;
+      }
       const fmt = new Set<string>();
       try {
         if (document.queryCommandState("bold")) fmt.add("bold");

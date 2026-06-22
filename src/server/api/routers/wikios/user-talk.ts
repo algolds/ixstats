@@ -13,9 +13,7 @@ import {
   getUserContribs,
   getUserInfo,
   getBacklinks,
-  resolveRedirect as resolveRedirectMySQL,
   getRevisionWikitext as getRevisionWikitextMySQL,
-  getCurrentRevMeta,
   getNamespacedWikitext,
 } from "~/lib/wiki-bridge";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
@@ -322,13 +320,6 @@ export const wikiosUserTalkRouter = createTRPCRouter({
 // Shared helper: save wikitext to MediaWiki via Action API
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve a page title through redirects via direct MySQL.
- */
-async function resolveRedirect(title: string): Promise<string> {
-  return resolveRedirectMySQL(title);
-}
-
 async function saveToMediaWiki(
   title: string,
   wikitext: string,
@@ -409,13 +400,6 @@ async function saveToMediaWiki(
  */
 async function getRevisionWikitext(revid: number) {
   return getRevisionWikitextMySQL(revid);
-}
-
-/**
- * Get the current revision metadata (revid + timestamp) via direct MySQL.
- */
-async function getCurrentRevisionMeta(title: string) {
-  return getCurrentRevMeta(title);
 }
 
 /**

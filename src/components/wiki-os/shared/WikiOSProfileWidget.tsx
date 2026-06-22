@@ -12,7 +12,6 @@ import { useUser } from "@clerk/nextjs";
 import { Calendar, FileText, Trophy, Sparkles, UserPlus } from "lucide-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { cn } from "~/lib/utils";
 
 function getInitials(name: string): string {
   const cleaned = name.trim().replace(/_/g, " ");

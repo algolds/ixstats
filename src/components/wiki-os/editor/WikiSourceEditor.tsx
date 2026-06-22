@@ -448,15 +448,18 @@ export function WikiSourceEditor({
     const updateStats = EditorView.updateListener.of((update) => {
       if (update.docChanged || update.selectionSet) {
         const doc = update.state.doc;
-        const text = doc.toString();
-        setWordCount(text.split(/\s+/).filter(Boolean).length);
-        setLineCount(doc.lines);
 
+        // Cursor position is cheap — update on any cursor/selection change.
         const sel = update.state.selection.main;
         const line = doc.lineAt(sel.head);
         setCursorPos({ line: line.number, col: sel.head - line.from + 1 });
 
+        // Word/line count scans the whole doc — only recompute when text changes,
+        // not on every cursor move (ponytail: full-doc scan, fine until articles get huge).
         if (update.docChanged) {
+          const text = doc.toString();
+          setWordCount(text.split(/\s+/).filter(Boolean).length);
+          setLineCount(doc.lines);
           setIsDirty(true);
           refreshPreviewRef.current();
         }
