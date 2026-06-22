@@ -26,8 +26,9 @@ export const atomicProcedures = {
             },
           },
           atomicEffectiveness: true,
+          nationalIdentity: true,
         },
-      })) as CountryWithAtomicComponents | null;
+      })) as (CountryWithAtomicComponents & { nationalIdentity: any }) | null;
 
       if (!country) return null;
 

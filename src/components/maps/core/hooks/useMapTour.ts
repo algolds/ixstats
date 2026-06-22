@@ -18,51 +18,51 @@ export interface TourStep {
 export const TOUR_STEPS: TourStep[] = [
   {
     name: "Caphiria",
-    featureId: "caphiria",
-    countryId: "caphiria",
+    featureId: "Caphiria",
+    countryId: "Caphiria",
     fallbackCapital: "Caphiria City",
     fallbackBlurb: "Sarpedon's preeminent empire, characterized by its classical military heritage and administrative centralization.",
-    camera: { center: [15.0, -25.0], zoom: 4.2, pitch: 45, bearing: 15 }
+    camera: { center: [26.3626, -19.6347], zoom: 4.2, pitch: 45, bearing: 15 }
   },
   {
     name: "Fiannria",
-    featureId: "fiannria",
-    countryId: "fiannria",
+    featureId: "Fiannria",
+    countryId: "Fiannria",
     fallbackCapital: "Fiannria Harbor",
     fallbackBlurb: "A historic maritime gateway in Levantia, pivotal in regional trade corridors across the Kilikas Sea.",
-    camera: { center: [18.0, 50.0], zoom: 4.8, pitch: 35, bearing: -20 }
+    camera: { center: [63.5578, 41.0640], zoom: 4.8, pitch: 35, bearing: -20 }
   },
   {
     name: "Faneria",
-    featureId: "faneria",
-    countryId: "faneria",
+    featureId: "Faneria",
+    countryId: "Faneria",
     fallbackCapital: "Faneria Harbor",
     fallbackBlurb: "Located on the Gallia Magna coast of Levantia, an industrial powerhouse built on engineering and maritime commerce.",
-    camera: { center: [10.0, 52.0], zoom: 5.0, pitch: 40, bearing: 30 }
+    camera: { center: [50.6548, 45.2802], zoom: 5.0, pitch: 40, bearing: 30 }
   },
   {
     name: "Kiravia",
-    featureId: "kiravia",
-    countryId: "kiravia",
+    featureId: "Kiravia",
+    countryId: "Kiravia",
     fallbackCapital: "Kiravia Prime",
     fallbackBlurb: "The expansive northern state of Kiroborea, boasting massive natural resource industries and high technological research hubs.",
-    camera: { center: [80.0, 60.0], zoom: 4.5, pitch: 50, bearing: 45 }
+    camera: { center: [-22.2237, 53.5878], zoom: 4.5, pitch: 50, bearing: 45 }
   },
   {
     name: "Tierrador",
-    featureId: "tierrador",
-    countryId: "tierrador",
+    featureId: "Tierrador",
+    countryId: "Tierrador",
     fallbackCapital: "Tierrador Port",
     fallbackBlurb: "The gateway of South Crona, critical for agricultural exports and raw mineral shipping routes.",
-    camera: { center: [-90.0, -30.0], zoom: 4.4, pitch: 30, bearing: -15 }
+    camera: { center: [-86.3198, 3.0441], zoom: 4.4, pitch: 30, bearing: -15 }
   },
   {
     name: "Daxia",
-    featureId: "daxia",
-    countryId: "daxia",
+    featureId: "Daxia",
+    countryId: "Daxia",
     fallbackCapital: "Daxia Harbor",
     fallbackBlurb: "Audonia's southern trading hub, dominating commerce in the Levantine Ocean and Southeast Asian routes.",
-    camera: { center: [95.0, 18.0], zoom: 4.6, pitch: 45, bearing: 25 }
+    camera: { center: [164.8931, -8.8810], zoom: 4.6, pitch: 45, bearing: 25 }
   }
 ];
 
@@ -79,6 +79,7 @@ interface UseMapTourProps {
   projectionMode: ProjectionMode;
   setProjectionMode: (mode: ProjectionMode) => void;
   setSelectedCountry: (country: any) => void;
+  mapLayers?: any[];
 }
 
 export function useMapTour({
@@ -86,6 +87,7 @@ export function useMapTour({
   projectionMode,
   setProjectionMode,
   setSelectedCountry,
+  mapLayers,
 }: UseMapTourProps) {
   const [tourState, setTourState] = useState<TourState>("idle");
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -148,8 +150,29 @@ export function useMapTour({
     const step = TOUR_STEPS[idx];
     const map = mapRef.current?.getMap();
     if (map && step) {
+      let center = step.camera.center;
+
+      if (mapLayers) {
+        const politicalLayer = mapLayers.find((l) => l.type === "political");
+        const features = politicalLayer?.data?.features || [];
+        const feature = features.find(
+          (f: any) =>
+            f.properties?._id?.toLowerCase() === step.featureId.toLowerCase() ||
+            f.properties?._displayName?.toLowerCase() === step.name.toLowerCase()
+        );
+
+        if (feature?.properties) {
+          const lng = feature.properties._centroidLng;
+          const lat = feature.properties._centroidLat;
+          if (typeof lng === "number" && typeof lat === "number" && lng !== 0 && lat !== 0) {
+            center = [lng, lat];
+            console.log(`[useMapTour] Found dynamic centroid for ${step.name}:`, center);
+          }
+        }
+      }
+
       map.flyTo({
-        center: step.camera.center,
+        center: center,
         zoom: step.camera.zoom,
         pitch: step.camera.pitch,
         bearing: step.camera.bearing,
@@ -157,7 +180,7 @@ export function useMapTour({
         essential: true,
       });
     }
-  }, [mapRef]);
+  }, [mapRef, mapLayers]);
 
   const nextStep = useCallback(() => {
     if (currentStepIndex < TOUR_STEPS.length - 1) {

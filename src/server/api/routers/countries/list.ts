@@ -201,6 +201,11 @@ export const listProcedures = {
           landArea: true,
           leader: true,
           governmentType: true,
+          nationalIdentity: {
+            select: {
+              capitalCity: true,
+            },
+          },
         },
       });
       if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
@@ -220,6 +225,7 @@ export const listProcedures = {
         landArea: c.landArea,
         leader: c.leader,
         governmentType: c.governmentType,
+        capitalCity: c.nationalIdentity?.capitalCity ?? null,
       };
     }),
 
@@ -250,6 +256,11 @@ export const listProcedures = {
           landArea: true,
           leader: true,
           governmentType: true,
+          nationalIdentity: {
+            select: {
+              capitalCity: true,
+            },
+          },
         },
       });
       const result: Record<string, any> = {};
@@ -270,6 +281,7 @@ export const listProcedures = {
           landArea: c.landArea,
           leader: c.leader,
           governmentType: c.governmentType,
+          capitalCity: c.nationalIdentity?.capitalCity ?? null,
         };
       }
       return result;

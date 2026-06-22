@@ -178,26 +178,6 @@ export function MapContainer({
     clearPin,
   });
 
-  // 1.5 Hook: Tour & Demo Mode State Machine
-  const {
-    tourState,
-    currentStepIndex,
-    isPaused,
-    progress,
-    startTour,
-    exitTour,
-    nextStep,
-    prevStep,
-    togglePause,
-    currentStepData,
-    totalSteps,
-  } = useMapTour({
-    mapRef,
-    projectionMode,
-    setProjectionMode,
-    setSelectedCountry,
-  });
-
   // 2. Hook: Manage Queries & Prefetching
   const {
     userCountryId: _queriedUserCountryId,
@@ -222,6 +202,27 @@ export function MapContainer({
     setSelectedCountry,
     onCountrySelect,
     selectedCountry,
+  });
+
+  // 1.5 Hook: Tour & Demo Mode State Machine
+  const {
+    tourState,
+    currentStepIndex,
+    isPaused,
+    progress,
+    startTour,
+    exitTour,
+    nextStep,
+    prevStep,
+    togglePause,
+    currentStepData,
+    totalSteps,
+  } = useMapTour({
+    mapRef,
+    projectionMode,
+    setProjectionMode,
+    setSelectedCountry,
+    mapLayers,
   });
 
   // Bind aggregated layer properties needed by state handlers
