@@ -5,6 +5,8 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { requireWikiUserId } from "~/lib/wiki-os/auth";
+import { findWikiUserByAuthId } from "~/lib/wiki-os/storage";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 
@@ -26,10 +28,8 @@ export const blurbsRespondRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const user = await db.user.findUnique({
-        where: { clerkUserId: ctx.auth?.userId },
-        select: { id: true },
-      });
+      const userId = requireWikiUserId(ctx);
+      const user = await findWikiUserByAuthId(userId);
       if (!user) return { responses: [], nextCursor: undefined };
 
       const responses = await db.blurbResponse.findMany({
@@ -55,10 +55,8 @@ export const blurbsRespondRouter = createTRPCRouter({
   getMyResponse: protectedProcedure
     .input(z.object({ promptId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const user = await db.user.findUnique({
-        where: { clerkUserId: ctx.auth?.userId },
-        select: { id: true },
-      });
+      const userId = requireWikiUserId(ctx);
+      const user = await findWikiUserByAuthId(userId);
       if (!user) return null;
 
       return db.blurbResponse.findUnique({
@@ -92,11 +90,9 @@ export const blurbsRespondRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const userId = requireWikiUserId(ctx);
       // Look up the user and their country
-      const user = await db.user.findUnique({
-        where: { clerkUserId: ctx.auth?.userId },
-        select: { id: true, countryId: true },
-      });
+      const user = await findWikiUserByAuthId(userId);
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
       if (!user.countryId)
         throw new TRPCError({
@@ -131,7 +127,7 @@ export const blurbsRespondRouter = createTRPCRouter({
       let thinkpagesPostId: string | null = null;
       try {
         thinkpagesPostId = await crossPostToThinkPages(
-          ctx.auth?.userId,
+          userId,
           user.countryId,
           input.content,
           prompt.title,
@@ -172,10 +168,8 @@ export const blurbsRespondRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await db.user.findUnique({
-        where: { clerkUserId: ctx.auth?.userId },
-        select: { id: true },
-      });
+      const userId = requireWikiUserId(ctx);
+      const user = await findWikiUserByAuthId(userId);
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       const response = await db.blurbResponse.findUnique({
@@ -209,6 +203,7 @@ export const blurbsRespondRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const userId = requireWikiUserId(ctx);
       // Auto-generate slug from title
       const baseSlug = input.title
         .toLowerCase()
@@ -224,7 +219,7 @@ export const blurbsRespondRouter = createTRPCRouter({
           question: input.question,
           slug,
           status: "DRAFT",
-          createdBy: ctx.auth?.userId ?? "unknown",
+          createdBy: userId,
         },
       });
     }),
@@ -239,15 +234,17 @@ export const blurbsRespondRouter = createTRPCRouter({
 // ---------------------------------------------------------------------------
 
 async function crossPostToThinkPages(
-  clerkUserId: string,
+  authId: string,
   countryId: string,
   content: string,
   promptTitle: string,
   promptSlug: string
 ): Promise<string | null> {
   // Find or skip — if user doesn't have a ThinkPages account, don't create one
+  // C3 residual: thinkpagesAccount has its own clerkUserId column (not the User
+  // identity seam) — out of scope for the wiki-os storage seam.
   const account = await db.thinkpagesAccount.findFirst({
-    where: { clerkUserId, countryId },
+    where: { clerkUserId: authId, countryId },
     select: { id: true },
   });
   if (!account) return null;

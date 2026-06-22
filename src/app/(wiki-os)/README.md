@@ -1,6 +1,6 @@
 # WikiOS
 
-**Last updated:** June 21, 2026
+**Last updated:** June 22, 2026
 
 WikiOS is a modern, React-based wiki frontend that replaces the MediaWiki UI for IxWiki. MediaWiki continues to run headlessly as the backend — it stores content, processes Lua/Scribunto templates, and exposes the Action API and Parsoid REST API. WikiOS replaces everything the reader and editor see and touch, served from the `(wiki-os)` Next.js route group at `/wiki/*`.
 
@@ -55,7 +55,7 @@ Roadmap items (not built): real-time collaboration, autosave/drafts, live WebSoc
 | Editor core | `editor/WikiVisualEditor.tsx` (contentEditable), `editor/WikiSourceEditor.tsx` (CodeMirror 6), `editor/TemplateInserter.tsx`, `editor/ImageSearchModal.tsx` |
 | Shell | `shared/WikiOSLayout.tsx`, `WikiOSUnifiedSidebar.tsx`, `WikiContext.tsx`, `useWikiOSShortcuts.ts` |
 | Blurbs UI | `src/components/blurbs/` |
-| Lib | `src/lib/wiki-os/` — `parsoid-client.ts`, `html-transformer.ts`, `template-registry.ts`, `template-resolver.ts`, `url-compat.ts`, `wikitext-diff.ts`, `csrf-cache.ts`, `mediawiki-timestamp.ts`, `safe-decode.ts`, `fix-editor-images.ts` |
+| Lib | `src/lib/wiki-os/` — `parsoid-client.ts`, `html-transformer.ts`, `template-registry.ts`, `template-resolver.ts`, `article-store.ts` (Postgres shadow + revisions), `auth.ts` + `use-wiki-auth.ts` (auth seam), `storage.ts` (identity/storage seam), `url-compat.ts`, `wikitext-diff.ts`, `csrf-cache.ts`, `wiki-embed-shared.ts`, `mediawiki-timestamp.ts`, `safe-decode.ts`, `fix-editor-images.ts` |
 | Styles | `src/styles/wiki-os.css` (entry) + `src/styles/wiki-os/` (variables, layout, elements, components, integrations, lorewards, editors, animations) |
 
 **Parsoid bridge:** `lib/wiki-os/parsoid-client.ts` fetches rendered HTML from the MediaWiki Parsoid REST API (localhost loopback, cached). `html-transformer.ts` post-processes it (infobox/TOC/notice extraction). The visual editor saves by sending edited HTML back through Parsoid to wikitext, then to the MediaWiki API. `lib/wiki-bridge.ts` provides direct DB-backed reads (wikitext, history, revisions, redirects, category members) used by **both** the `wiki` router and the `wikios` router (`page-content.ts`, `editing.ts` rollback/revert).
@@ -73,6 +73,19 @@ WikiOS does **not** own its content — MediaWiki's MySQL/MariaDB is the source 
 **Stance:** keep MediaWiki as a *headless parse/render engine* (its strongest role) and move storage + UX into WikiOS incrementally. "Full independence" = reimplementing the parser and Lua sandbox, which is out of scope for the foreseeable future. The staged migration path lives in [`plans/WIKIOS.md`](../../../plans/WIKIOS.md#mediawiki-independence-path).
 
 Local Postgres state (`prisma/schema/wiki.prisma`) holds WikiOS-native data: `WikiCache`, `WikiTemplate` (TemplateData), Lore Stash, Lorewards, Blurbs, `WikiArticleAward`. As of Stage 2 it also holds a `WikiArticle` **shadow copy** of article wikitext — populated read-through (`lib/wiki-os/article-store.ts`), so WikiOS keeps serving content if MediaWiki is down. **Stage 2b** adds `WikiRevision` (`wiki_revisions`): an append-only local revision history written through on save (dual-write alongside the MediaWiki edit) and backfilled by a recentchanges sync cron (`src/server/cron/sync-wiki-recentchanges.ts`) that captures edits made directly on MediaWiki. History/diff endpoints (`page-content.ts` `getHistory`/`getDiff`/`getRevisionContent`) read through Postgres with MySQL fallback. MediaWiki MySQL remains authoritative (it owns the canonical `mwRevId`).
+
+**Stage 3** (render-service isolation — lock MediaWiki's public UI, expose only the API/Parsoid to WikiOS) is **planned and signed off but not cut over** — see [`plans/wikios-stage3-config-plan.md`](../../../plans/wikios-stage3-config-plan.md). It's blocked on first repointing WikiOS to an internal MediaWiki endpoint, and the public-redirect half is effectively an alpha launch, so it waits for a deliberate cutover window.
+
+## Packaging & portability seams (Workstream C)
+
+WikiOS is being decoupled from IxStats so it can be packaged/licensed for other worldbuilding wiki communities, backed by a small headless MediaWiki core. The platform couplings are funnelled through **seam files** — swap the deployer-specific behaviour by editing only these, not feature code:
+
+| Seam | File(s) | Swap point |
+|------|---------|------------|
+| **Auth (identity + admin)** | `lib/wiki-os/auth.ts` (server: `getWikiAuth`/`requireWikiUserId`/`getWikiActorLabel`/`isWikiAdmin`), `lib/wiki-os/use-wiki-auth.ts` (client: `useWikiAuth`) | Map your auth provider here. **Zero `@clerk` imports remain in WikiOS code** outside `use-wiki-auth.ts`; zero raw `ctx.auth`/`ctx.user` reads outside `auth.ts`. |
+| **Storage / identity** | `lib/wiki-os/storage.ts` (`resolveActiveCountryId`, `findWikiUserByAuthId`) | The IxStats-specific `User.clerkUserId` column + User↔Country lookup live only here. |
+
+**Done:** auth seam (C2), storage seam (C3), admin fold (`isWikiAdmin`), and relocating WikiOS-only utilities into the boundary (A). **Note:** `lib/wiki-bridge.ts` is *shared* IxStats↔MediaWiki infra (34 importers, 23 outside WikiOS) — Core depends on it like Prisma; it is **not** WikiOS-private. **Remaining** (see [`plans/wikios-extraction-blockers.md`](../../../plans/wikios-extraction-blockers.md)): C5 design/Facet decoupling (the largest piece, visual-gated), C4 country/maps/template-resolver plugin slot, then config/extraction. Full workflow: [`plans/wikios-workstream-c-execution.md`](../../../plans/wikios-workstream-c-execution.md); boundary: [`plans/wikios-core-boundary.md`](../../../plans/wikios-core-boundary.md).
 
 ## Data sources (tRPC)
 

@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { api } from "~/trpc/react";
-import { useAuth } from "@clerk/nextjs";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
@@ -94,7 +94,7 @@ export function WikiOSLayout({
     }
   );
 
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useWikiAuth();
 
   const getActiveId = () => {
     const p = stripBasePath(pathname);

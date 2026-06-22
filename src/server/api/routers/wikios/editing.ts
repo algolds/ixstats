@@ -9,6 +9,8 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { htmlToWikitext, wikitextToHtml, invalidateCache } from "~/lib/wiki-os/parsoid-client";
 import { invalidateArticleShadow, recordArticleRevision } from "~/lib/wiki-os/article-store";
+import { getWikiAuth, getWikiActorLabel } from "~/lib/wiki-os/auth";
+import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import {
   getArticleWikitext,
   getPageHistory,
@@ -233,7 +235,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       formData.append("filename", input.filename);
       formData.append(
         "comment",
-        `${input.comment} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`
+        `${input.comment} (via WikiOS by ${getWikiActorLabel(ctx)})`
       );
       formData.append("text", input.description);
       formData.append("token", csrfToken);
@@ -308,7 +310,7 @@ async function saveToMediaWiki(
     action: "edit",
     title,
     text: wikitext,
-    summary: `${summary} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
+    summary: `${summary} (via WikiOS by ${getWikiActorLabel(ctx)})`,
     token: csrfToken,
     format: "json",
   });
@@ -346,7 +348,8 @@ async function saveToMediaWiki(
 
   // Write-through the Postgres shadow + append a local revision (best-effort,
   // non-blocking). Falls back to invalidating the shadow if the write fails.
-  const editor = ctx.user?.wikiUsername ?? ctx.auth?.userId ?? null;
+  const { userId, wikiUsername } = getWikiAuth(ctx);
+  const editor = wikiUsername ?? userId;
   void recordArticleRevision({
     title,
     wikitext,
@@ -359,7 +362,7 @@ async function saveToMediaWiki(
   });
 
   // Notify stash owners about the edit (non-blocking)
-  notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch(
+  notifyStashOwners(title, userId, editData.edit?.newrevid ?? null).catch(
     (err: unknown) => {
       console.error("[WikiOS] Background op failed:", (err as Error).message);
     }
@@ -446,16 +449,7 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
   console.log(`[WikiOS] Syncing ${keys.length} custom templates:`, keys);
 
   // 2. Resolve the dynamic database values
-  let activeCountryId: string | undefined;
-  if (ctx.auth?.userId) {
-    const user = await ctx.db.user.findFirst({
-      where: { clerkUserId: ctx.auth.userId },
-      select: { countryId: true },
-    });
-    if (user?.countryId) {
-      activeCountryId = user.countryId;
-    }
-  }
+  const activeCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
 
   const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, activeCountryId);
 

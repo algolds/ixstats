@@ -7,7 +7,7 @@
 
 import { env } from "~/env";
 import { TRPCError } from "@trpc/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { getWikiAuth, isWikiAdmin } from "~/lib/wiki-os/auth";
 
 let cachedBotToken: string | null = null;
 let cachedBotCookies: string[] = [];
@@ -117,7 +117,7 @@ export async function getUserSessionAndToken(ctx: {
   auth: { userId: string | null };
   headers: Headers;
 }): Promise<{ cookies: string[]; csrfToken: string }> {
-  const wikiUsername = ctx.user?.wikiUsername;
+  const { wikiUsername } = getWikiAuth(ctx);
   if (!wikiUsername) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
@@ -129,7 +129,7 @@ export async function getUserSessionAndToken(ctx: {
 
   // Dev & System Owner fallback to bot session if no MediaWiki session cookies are passed
   const isDev = env.NODE_ENV === "development";
-  const isOwner = ctx.auth?.userId && isSystemOwner(ctx.auth.userId);
+  const isOwner = isWikiAdmin(ctx);
   const hasMWCookie =
     cookieHeader.includes("session") ||
     cookieHeader.includes("UserID") ||

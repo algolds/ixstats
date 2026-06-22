@@ -23,7 +23,7 @@ import { withBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wiki-os/html-transformer";
 import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
-import { useWikiSetting } from "~/hooks/useWikiSetting";
+import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -31,14 +31,14 @@ import { CategoryBreadcrumb } from "~/components/wiki-os/reader/CategoryBreadcru
 import { useAnnotationOverlay } from "~/components/wiki-os/reader/AnnotationOverlay";
 import { useCiteTooltips } from "~/components/wiki-os/reader/useCiteTooltips";
 import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flag-color-extractor";
 import { safeDecodeURI } from "~/lib/wiki-os/safe-decode";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createPortal } from "react-dom";
 import { MapPin } from "lucide-react";
-import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-embed-shared";
+import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/wiki-embed-shared";
 import dynamic from "next/dynamic";
 
 const CoordinatesMapEmbed = dynamic(
@@ -499,8 +499,8 @@ export function ArticleRenderer({
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const { setWikiPage, activeModal, setActiveModal, setActiveSectionId } = useWikiContext();
-  const { user } = useUser();
-  const isAuthenticated = !!user;
+  const { isSignedIn } = useWikiAuth();
+  const isAuthenticated = isSignedIn;
   const [tocOpen, setTocOpen] = useState(false);
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
 

@@ -9,6 +9,7 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 
 const wikiSourceSchema = z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki");
 
@@ -67,14 +68,8 @@ export async function resolveWikiPlaceholdersInternal(
   activeCountryId?: string
 ): Promise<Record<string, { value: string; rawVal: any; metadata?: any }>> {
   let userCountryId = activeCountryId;
-  if (!userCountryId && ctx.auth?.userId) {
-    const user = await ctx.db.user.findFirst({
-      where: { clerkUserId: ctx.auth.userId },
-      select: { countryId: true },
-    });
-    if (user?.countryId) {
-      userCountryId = user.countryId;
-    }
+  if (!userCountryId) {
+    userCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
   }
 
   // Collect all country names, company names to resolve

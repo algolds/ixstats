@@ -5,6 +5,7 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { requireWikiUserId } from "~/lib/wiki-os/auth";
 import { db } from "~/server/db";
 
 export const blurbsModerateRouter = createTRPCRouter({
@@ -57,6 +58,7 @@ export const blurbsModerateRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const userId = requireWikiUserId(ctx);
       return db.blurbPrompt.create({
         data: {
           title: input.title,
@@ -67,7 +69,7 @@ export const blurbsModerateRouter = createTRPCRouter({
           closedAt: input.closedAt ? new Date(input.closedAt) : null,
           isRecurring: input.isRecurring,
           publishedAt: input.status === "ACTIVE" ? new Date() : null,
-          createdBy: ctx.auth?.userId ?? "system",
+          createdBy: userId,
         },
       });
     }),

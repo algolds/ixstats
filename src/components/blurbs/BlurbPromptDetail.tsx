@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@clerk/nextjs";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -12,7 +12,7 @@ import { Badge } from "~/components/ui/badge";
  * Single prompt view with all responses and a submission form.
  */
 export function BlurbPromptDetail({ slug }: { slug: string }) {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useWikiAuth();
 
   const { data: prompt, isLoading: promptLoading } = api.blurbs.getPrompt.useQuery({ slug });
 

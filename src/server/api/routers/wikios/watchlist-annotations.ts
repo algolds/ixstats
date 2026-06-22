@@ -7,6 +7,8 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { getWikiAuth, getWikiActorLabel, requireWikiUserId } from "~/lib/wiki-os/auth";
+import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { invalidateCache } from "~/lib/wiki-os/parsoid-client";
 import {
   getArticleWikitext,
@@ -62,7 +64,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         where: { id: input.itemId },
         include: { stash: true },
       });
-      if (!item || item.stash.userId !== ctx.auth.userId) throw new Error("Item not found");
+      if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
       return db.loreStashAnnotation.create({ data: input });
     }),
 
@@ -80,7 +82,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         where: { id: input.id },
         include: { item: { include: { stash: true } } },
       });
-      if (!ann || ann.item.stash.userId !== ctx.auth.userId)
+      if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
         throw new Error("Annotation not found");
       return db.loreStashAnnotation.update({
         where: { id: input.id },
@@ -99,7 +101,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         where: { id: input.id },
         include: { item: { include: { stash: true } } },
       });
-      if (!ann || ann.item.stash.userId !== ctx.auth.userId)
+      if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
         throw new Error("Annotation not found");
       await db.loreStashAnnotation.delete({ where: { id: input.id } });
       return { success: true };
@@ -109,8 +111,9 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   getAnnotations: protectedProcedure
     .input(z.object({ pageTitle: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       const annotations = await db.loreStashAnnotation.findMany({
-        where: { item: { pageTitle: input.pageTitle, stash: { userId: ctx.auth.userId } } },
+        where: { item: { pageTitle: input.pageTitle, stash: { userId } } },
         orderBy: { createdAt: "asc" },
       });
       return annotations.map((a) => ({
@@ -163,7 +166,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   watchPage: protectedProcedure
     .input(z.object({ pageTitle: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = requireWikiUserId(ctx);
       // Find or create the "Watchlist" stash
       let watchlistStash = await ctx.db.loreStash.findFirst({
         where: { userId, name: "Watchlist" },
@@ -192,7 +195,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   unwatchPage: protectedProcedure
     .input(z.object({ pageTitle: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = requireWikiUserId(ctx);
       const watchlistStash = await ctx.db.loreStash.findFirst({
         where: { userId, name: "Watchlist" },
       });
@@ -207,7 +210,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
    * Get the user's full watchlist (most recently saved first, max 100).
    */
   getWatchlist: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.auth.userId;
+    const userId = requireWikiUserId(ctx);
     const watchlistStash = await ctx.db.loreStash.findFirst({
       where: { userId, name: "Watchlist" },
       include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
@@ -221,7 +224,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   isPageWatched: protectedProcedure
     .input(z.object({ pageTitle: z.string() }))
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = requireWikiUserId(ctx);
       const watchlistStash = await ctx.db.loreStash.findFirst({
         where: { userId, name: "Watchlist" },
       });
@@ -256,7 +259,7 @@ async function saveToMediaWiki(
     action: "edit",
     title,
     text: wikitext,
-    summary: `${summary} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
+    summary: `${summary} (via WikiOS by ${getWikiActorLabel(ctx)})`,
     token: csrfToken,
     format: "json",
   });
@@ -293,7 +296,7 @@ async function saveToMediaWiki(
   invalidateCache(title);
 
   // Notify stash owners about the edit (non-blocking)
-  notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch(
+  notifyStashOwners(title, getWikiAuth(ctx).userId, editData.edit?.newrevid ?? null).catch(
     (err: unknown) => {
       console.error("[WikiOS] Background op failed:", (err as Error).message);
     }
@@ -380,16 +383,7 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
   console.log(`[WikiOS] Syncing ${keys.length} custom templates:`, keys);
 
   // 2. Resolve the dynamic database values
-  let activeCountryId: string | undefined;
-  if (ctx.auth?.userId) {
-    const user = await ctx.db.user.findFirst({
-      where: { clerkUserId: ctx.auth.userId },
-      select: { countryId: true },
-    });
-    if (user?.countryId) {
-      activeCountryId = user.countryId;
-    }
-  }
+  const activeCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
 
   const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, activeCountryId);
 

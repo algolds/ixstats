@@ -7,6 +7,8 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { getWikiAuth, getWikiActorLabel, requireWikiUserId } from "~/lib/wiki-os/auth";
+import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { invalidateCache } from "~/lib/wiki-os/parsoid-client";
 import {
   getArticleWikitext,
@@ -41,8 +43,9 @@ export const wikiosStashRouter = createTRPCRouter({
 
   /** Get all stashes for the current user with item counts. */
   getStashes: protectedProcedure.query(async ({ ctx }) => {
+    const userId = requireWikiUserId(ctx);
     const stashes = await db.loreStash.findMany({
-      where: { userId: ctx.auth.userId },
+      where: { userId },
       orderBy: { order: "asc" },
       include: { _count: { select: { items: true } } },
     });
@@ -59,12 +62,13 @@ export const wikiosStashRouter = createTRPCRouter({
 
   /** Get or auto-create the user's default stash. */
   getDefaultStash: protectedProcedure.query(async ({ ctx }) => {
+    const userId = requireWikiUserId(ctx);
     let stash = await db.loreStash.findFirst({
-      where: { userId: ctx.auth.userId, isDefault: true },
+      where: { userId, isDefault: true },
     });
     if (!stash) {
       stash = await db.loreStash.create({
-        data: { userId: ctx.auth.userId, name: "My Stash", color: "#3b82f6", isDefault: true },
+        data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
       });
     }
     return { id: stash.id, name: stash.name, color: stash.color };
@@ -80,14 +84,15 @@ export const wikiosStashRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       const existing = await db.loreStash.findMany({
-        where: { userId: ctx.auth.userId },
+        where: { userId },
         select: { id: true },
       });
       if (existing.length >= 25) throw new Error("Maximum of 25 stashes allowed");
       return db.loreStash.create({
         data: {
-          userId: ctx.auth.userId,
+          userId,
           name: input.name,
           color: input.color,
           icon: input.icon,
@@ -107,8 +112,9 @@ export const wikiosStashRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       return db.loreStash.update({
-        where: { id: input.id, userId: ctx.auth.userId },
+        where: { id: input.id, userId },
         data: {
           ...(input.name && { name: input.name }),
           ...(input.color && { color: input.color }),
@@ -121,8 +127,9 @@ export const wikiosStashRouter = createTRPCRouter({
   deleteStash: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       const stash = await db.loreStash.findUnique({ where: { id: input.id } });
-      if (!stash || stash.userId !== ctx.auth.userId) throw new Error("Stash not found");
+      if (!stash || stash.userId !== userId) throw new Error("Stash not found");
       if (stash.isDefault) throw new Error("Cannot delete default stash");
       await db.loreStash.delete({ where: { id: input.id } });
       return { success: true };
@@ -132,9 +139,10 @@ export const wikiosStashRouter = createTRPCRouter({
   reorderStashes: protectedProcedure
     .input(z.object({ ids: z.array(z.string()) }))
     .mutation(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       await Promise.all(
         input.ids.map((id, idx) =>
-          db.loreStash.updateMany({ where: { id, userId: ctx.auth.userId }, data: { order: idx } })
+          db.loreStash.updateMany({ where: { id, userId }, data: { order: idx } })
         )
       );
       return { success: true };
@@ -144,14 +152,15 @@ export const wikiosStashRouter = createTRPCRouter({
   stashPage: protectedProcedure
     .input(z.object({ pageTitle: z.string().min(1).max(500), stashId: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       let stashId = input.stashId;
       if (!stashId) {
         let defaultStash = await db.loreStash.findFirst({
-          where: { userId: ctx.auth.userId, isDefault: true },
+          where: { userId, isDefault: true },
         });
         if (!defaultStash) {
           defaultStash = await db.loreStash.create({
-            data: { userId: ctx.auth.userId, name: "My Stash", color: "#3b82f6", isDefault: true },
+            data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
           });
         }
         stashId = defaultStash.id;
@@ -169,18 +178,19 @@ export const wikiosStashRouter = createTRPCRouter({
   unstashPage: protectedProcedure
     .input(z.object({ pageTitle: z.string().min(1).max(500), stashId: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       if (input.stashId) {
         await db.loreStashItem.deleteMany({
           where: {
             stashId: input.stashId,
             pageTitle: input.pageTitle,
-            stash: { userId: ctx.auth.userId },
+            stash: { userId },
           },
         });
       } else {
         // Remove from all user's stashes
         const stashIds = (
-          await db.loreStash.findMany({ where: { userId: ctx.auth.userId }, select: { id: true } })
+          await db.loreStash.findMany({ where: { userId }, select: { id: true } })
         ).map((s) => s.id);
         if (stashIds.length > 0) {
           await db.loreStashItem.deleteMany({
@@ -195,8 +205,9 @@ export const wikiosStashRouter = createTRPCRouter({
   isStashed: protectedProcedure
     .input(z.object({ pageTitle: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       const items = await db.loreStashItem.findMany({
-        where: { pageTitle: input.pageTitle, stash: { userId: ctx.auth.userId } },
+        where: { pageTitle: input.pageTitle, stash: { userId } },
         include: { stash: { select: { id: true, color: true, name: true } } },
       });
       return {
@@ -215,8 +226,9 @@ export const wikiosStashRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
+      const userId = requireWikiUserId(ctx);
       const items = await db.loreStashItem.findMany({
-        where: { stashId: input.stashId, stash: { userId: ctx.auth.userId } },
+        where: { stashId: input.stashId, stash: { userId } },
         orderBy: { savedAt: "desc" },
         take: input.limit + 1,
         ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
@@ -246,7 +258,7 @@ export const wikiosStashRouter = createTRPCRouter({
         where: { id: input.itemId },
         include: { stash: true },
       });
-      if (!item || item.stash.userId !== ctx.auth.userId) {
+      if (!item || item.stash.userId !== requireWikiUserId(ctx)) {
         throw new Error("Item not found");
       }
       return {
@@ -269,7 +281,7 @@ export const wikiosStashRouter = createTRPCRouter({
         where: { id: input.itemId },
         include: { stash: true },
       });
-      if (!item || item.stash.userId !== ctx.auth.userId) throw new Error("Item not found");
+      if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
       return db.loreStashItem.update({
         where: { id: input.itemId },
         data: { stashId: input.toStashId },
@@ -284,7 +296,7 @@ export const wikiosStashRouter = createTRPCRouter({
         where: { id: input.itemId },
         include: { stash: true },
       });
-      if (!item || item.stash.userId !== ctx.auth.userId) throw new Error("Item not found");
+      if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
       return db.loreStashItem.update({ where: { id: input.itemId }, data: { note: input.note } });
     }),
 
@@ -348,7 +360,7 @@ async function saveToMediaWiki(
     action: "edit",
     title,
     text: wikitext,
-    summary: `${summary} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
+    summary: `${summary} (via WikiOS by ${getWikiActorLabel(ctx)})`,
     token: csrfToken,
     format: "json",
   });
@@ -385,7 +397,7 @@ async function saveToMediaWiki(
   invalidateCache(title);
 
   // Notify stash owners about the edit (non-blocking)
-  notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch(
+  notifyStashOwners(title, getWikiAuth(ctx).userId, editData.edit?.newrevid ?? null).catch(
     (err: unknown) => {
       console.error("[WikiOS] Background op failed:", (err as Error).message);
     }
@@ -472,16 +484,7 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
   console.log(`[WikiOS] Syncing ${keys.length} custom templates:`, keys);
 
   // 2. Resolve the dynamic database values
-  let activeCountryId: string | undefined;
-  if (ctx.auth?.userId) {
-    const user = await ctx.db.user.findFirst({
-      where: { clerkUserId: ctx.auth.userId },
-      select: { countryId: true },
-    });
-    if (user?.countryId) {
-      activeCountryId = user.countryId;
-    }
-  }
+  const activeCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
 
   const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, activeCountryId);
 

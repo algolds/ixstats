@@ -7,6 +7,8 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { getWikiAuth, getWikiActorLabel } from "~/lib/wiki-os/auth";
+import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { getArticleHtml, invalidateCache } from "~/lib/wiki-os/parsoid-client";
 import {
   getArticleWikitext,
@@ -242,7 +244,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         title: talkTitle,
         section: String(input.sectionIndex),
         text: newText,
-        summary: `Reply (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
+        summary: `Reply (via WikiOS by ${getWikiActorLabel(ctx)})`,
         token: csrfToken,
         format: "json",
       });
@@ -339,7 +341,7 @@ async function saveToMediaWiki(
     action: "edit",
     title,
     text: wikitext,
-    summary: `${summary} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
+    summary: `${summary} (via WikiOS by ${getWikiActorLabel(ctx)})`,
     token: csrfToken,
     format: "json",
   });
@@ -376,7 +378,7 @@ async function saveToMediaWiki(
   invalidateCache(title);
 
   // Notify stash owners about the edit (non-blocking)
-  notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch(
+  notifyStashOwners(title, getWikiAuth(ctx).userId, editData.edit?.newrevid ?? null).catch(
     (err: unknown) => {
       console.error("[WikiOS] Background op failed:", (err as Error).message);
     }
@@ -463,16 +465,7 @@ async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
   console.log(`[WikiOS] Syncing ${keys.length} custom templates:`, keys);
 
   // 2. Resolve the dynamic database values
-  let activeCountryId: string | undefined;
-  if (ctx.auth?.userId) {
-    const user = await ctx.db.user.findFirst({
-      where: { clerkUserId: ctx.auth.userId },
-      select: { countryId: true },
-    });
-    if (user?.countryId) {
-      activeCountryId = user.countryId;
-    }
-  }
+  const activeCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
 
   const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, activeCountryId);
 

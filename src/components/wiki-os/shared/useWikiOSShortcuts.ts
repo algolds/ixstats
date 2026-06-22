@@ -9,12 +9,12 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
-import { useAuth } from "@clerk/nextjs";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 
 export function useWikiOSShortcuts() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useWikiAuth();
 
   // Listen for "wikios:edit" event from Dynamic Island double-Tab
   useEffect(() => {

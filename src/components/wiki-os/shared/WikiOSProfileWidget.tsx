@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { Calendar, FileText, Trophy, Sparkles, UserPlus } from "lucide-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
@@ -28,7 +28,7 @@ export function WikiOSProfileWidget({
   expanded: boolean;
   isLocalHoverExpanded?: boolean;
 }) {
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn } = useWikiAuth();
   const [imgError, setImgError] = useState(false);
   const showExpanded = expanded || isLocalHoverExpanded;
 
