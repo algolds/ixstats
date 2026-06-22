@@ -357,6 +357,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
       const [geomA, geomB] = result;
       const featureIdA = input.nameA.replace(/\s+/g, "_");
       const featureIdB = input.nameB.replace(/\s+/g, "_");
+      // Capture before the transaction nulls the original feature's link.
+      const originalCountryId = feature.countryId;
 
       await ctx.db.$transaction(async (tx) => {
         // Deactivate and rename original to prevent unique constraint violation

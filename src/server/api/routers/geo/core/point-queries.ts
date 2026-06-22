@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { rateLimitedPublicProcedure, countryOwnerProcedure } from "~/server/api/trpc";
 import { featureIdToDisplayName } from "~/lib/map-utils";
 import { getZoneByColor } from "~/lib/elevation-config";
@@ -22,7 +23,10 @@ const POINT_QUERY_TIMEOUT_MS = 8000;
  * gracefully to "no info at this point" (returns null / empty). SET LOCAL is scoped
  * to the surrounding transaction, so it cannot leak to other pooled queries.
  */
-async function withPointQueryTimeout<T>(db: any, run: (tx: any) => Promise<T>): Promise<T> {
+async function withPointQueryTimeout<T>(
+  db: any,
+  run: (tx: Prisma.TransactionClient) => Promise<T>
+): Promise<T> {
   return db.$transaction(
     async (tx: any) => {
       await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = ${POINT_QUERY_TIMEOUT_MS}`);
