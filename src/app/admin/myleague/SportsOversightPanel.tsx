@@ -38,6 +38,7 @@ import {
   ArrowLeft,
   Sparkles,
   Settings,
+  Star,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
@@ -826,6 +827,9 @@ export default function SportsOversightPanel() {
 
   const { data: globalStats, refetch: refetchStats } = api.sports.getAdminGlobalStats.useQuery();
 
+  const { data: featuredId, refetch: refetchFeatured } =
+    api.sports.getFeaturedLeagueId.useQuery();
+
   // Mutations
   const deleteMutation = api.sports.deleteLeague.useMutation({
     onSuccess: () => {
@@ -865,6 +869,20 @@ export default function SportsOversightPanel() {
 
   const handleToggleCanonical = (id: string, currentVal: boolean) => {
     updateLeagueMutation.mutate({ id, isCanonical: !currentVal });
+  };
+
+  const setFeaturedMutation = api.sports.setFeaturedLeague.useMutation({
+    onSuccess: () => {
+      notify.success("Featured Updated", "The MyLeague lobby hero has been updated.");
+      void refetchFeatured();
+    },
+    onError: (error) => {
+      notify.error("Update Failed", error.message ?? "Could not set featured league.");
+    },
+  });
+
+  const handleToggleFeatured = (id: string) => {
+    setFeaturedMutation.mutate({ leagueId: featuredId === id ? null : id });
   };
 
   const handleView = (id: string) => {
@@ -934,6 +952,12 @@ export default function SportsOversightPanel() {
                   <div className="flex items-center gap-2">
                     <span>{icon}</span>
                     <span className="max-w-[180px] truncate">{league.name}</span>
+                    {league.id === featuredId && (
+                      <Star
+                        className="h-3.5 w-3.5 shrink-0 fill-amber-500 text-amber-500"
+                        aria-label="Featured on lobby"
+                      />
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground capitalize">
@@ -1084,6 +1108,33 @@ export default function SportsOversightPanel() {
               </div>
               <h2 className="text-foreground mt-2 text-2xl font-black">{managedLeague.name}</h2>
               <p className="text-muted-foreground mt-1 text-xs">ID: {managedLeague.id}</p>
+
+              <div className="mt-3">
+                <Button
+                  variant={managedLeague.id === featuredId ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleToggleFeatured(managedLeague.id)}
+                  disabled={setFeaturedMutation.isPending}
+                  className={cn(
+                    "gap-1.5 text-xs font-bold",
+                    managedLeague.id === featuredId &&
+                      "bg-amber-500 text-slate-950 hover:bg-amber-600"
+                  )}
+                >
+                  <Star
+                    className={cn(
+                      "h-3.5 w-3.5",
+                      managedLeague.id === featuredId && "fill-slate-950"
+                    )}
+                  />
+                  {managedLeague.id === featuredId
+                    ? "Featured on Lobby — Unset"
+                    : "Set as Featured League"}
+                </Button>
+                <p className="text-muted-foreground mt-1.5 text-[11px]">
+                  The featured league is shown as the hero on the MyLeague lobby. Only one at a time.
+                </p>
+              </div>
             </div>
 
             <Tabs defaultValue="actions" className="w-full">

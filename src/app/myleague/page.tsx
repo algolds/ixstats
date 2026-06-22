@@ -28,7 +28,27 @@ import { LeagueCover } from "~/components/sports/LeagueCover";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
+
+const MYLEAGUE_HELP_STEPS: HeroHelpStep[] = [
+  {
+    title: "Welcome to MyLeague",
+    body: "MyLeague is where you build and run sports competitions — leagues, cups, circuits and brackets across seven sports. The featured association up top is the showcase league; everything else lives in the grid below.",
+  },
+  {
+    title: "Find a league",
+    body: "Use the sport tabs, status filter, and search to narrow the grid. Click any league to open its hub: standings, schedule, results, history and records.",
+  },
+  {
+    title: "Create your own",
+    body: 'Hit "Create League" to launch the builder — pick a sport, archetype, and team count, and the engine generates rosters and a schedule for you.',
+  },
+  {
+    title: "Run a club",
+    body: 'Open "MyClub" to claim and manage a team: set tactics and lineups, train players, work the transfer market, and keep an eye on your wage bill and budget.',
+  },
+];
 
 const SPORT_LABELS: Record<string, string> = {
   soccer: "Soccer",
@@ -73,14 +93,19 @@ export default function MyLeaguePage() {
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const { data: leagues, isLoading } = api.sports.getLeagues.useQuery({});
+  const { data: featuredId } = api.sports.getFeaturedLeagueId.useQuery();
 
-  // 1. Identify primary featured league. ponytail: derive from `leagues`
-  //    instead of a second getLeagues({isCanonical}) fetch — isCanonical is on
-  //    each row and both queries share the same createdAt-desc ordering.
+  // 1. Identify primary featured league. Admin-configured id wins; otherwise
+  //    fall back to the first canonical league, then the first league overall.
   const featuredLeague = useMemo(() => {
     if (!leagues || leagues.length === 0) return null;
-    return leagues.find((l) => l.isCanonical) ?? leagues[0] ?? null;
-  }, [leagues]);
+    return (
+      (featuredId ? leagues.find((l) => l.id === featuredId) : undefined) ??
+      leagues.find((l) => l.isCanonical) ??
+      leagues[0] ??
+      null
+    );
+  }, [leagues, featuredId]);
 
   // 2. Filter leagues for the grid (excluding the one in the hero)
   const filteredLeagues = useMemo(() => {
@@ -116,9 +141,16 @@ export default function MyLeaguePage() {
       {/* ─── HEADER ─── */}
       <div className="facet-surface border-border/40 mb-8 flex flex-col gap-4 rounded-2xl border p-6 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-foreground from-foreground to-foreground/70 bg-gradient-to-r bg-clip-text text-3xl font-black tracking-tight">
-            MyLeague
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-foreground from-foreground to-foreground/70 bg-gradient-to-r bg-clip-text text-3xl font-black tracking-tight">
+              MyLeague
+            </h1>
+            <HeroHelpModal
+              title="MyLeague guide"
+              steps={MYLEAGUE_HELP_STEPS}
+              accentClass="text-amber-500"
+            />
+          </div>
           <p className="text-muted-foreground mt-1 text-sm">
             Create, simulate, and manage sports leagues with full club operations.
           </p>

@@ -10,7 +10,6 @@ import {
   ImageIcon,
   Download,
   RefreshCw,
-  AlertTriangle,
 } from "lucide-react";
 
 const MediaSearchModal = dynamic(

@@ -8,181 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { getPreset, type SportPresetKey, type TeamRatingVector } from "~/lib/sports";
 import { exchangeService } from "~/lib/exchange-service";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function simpleHash(seasonId: string, matchDay: number, matchIndex: number): number {
-  return (
-    seasonId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 31 + matchDay * 7 + matchIndex
-  );
-}
-
-function teamIndexHash(leagueId: string, teamIndex: number, playerIndex: number): number {
-  return (
-    leagueId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) * 17 +
-    teamIndex * 13 +
-    playerIndex * 3
-  );
-}
-
-async function getTeamModifiers(team: any, db: any, effectsMap?: Map<string, any[]>) {
-  if (!team.nationId) return undefined;
-
-  let effects: any[] = [];
-  if (effectsMap) {
-    effects = effectsMap.get(team.nationId) ?? [];
-  } else {
-    effects = await db.storytellerEffect.findMany({
-      where: {
-        countryId: team.nationId,
-        isActive: true,
-      },
-    });
-  }
-
-  let saintBlessing = 0;
-  let countryScandal = 0;
-  for (const e of effects) {
-    if (e.inputType === "sports_saint_blessing") {
-      saintBlessing += Math.abs(e.value);
-    } else if (e.inputType === "sports_scandal") {
-      countryScandal += Math.abs(e.value);
-    }
-  }
-
-  return {
-    saintName: (team as any).patronSaint || undefined,
-    saintBlessing: saintBlessing > 0 ? saintBlessing : undefined,
-    countryScandal: countryScandal > 0 ? countryScandal : undefined,
-  };
-}
-
-const careerStageMultiplier: Record<string, number> = {
-  rookie: 0.7,
-  developing: 0.85,
-  prime: 1.0,
-  plateau: 0.95,
-  declining: 0.75,
-  retired: 0,
-};
-
-function computeTeamRatingVector(
-  players: Array<{
-    isActive: boolean;
-    ratings: Record<string, unknown> | null;
-    careerStage: string;
-    position?: string;
-    id?: string;
-  }>,
-  coaches: Array<{ isActive: boolean; ratings: Record<string, unknown> | null }>,
-  sportPresetKey: string = "soccer",
-  formAdjustment = 0
-): TeamRatingVector {
-  const activePlayers = players.filter((p) => p.isActive && p.ratings);
-  const preset = getPreset(sportPresetKey as SportPresetKey) || getPreset("soccer");
-
-  // 1. Group players by position
-  const positionGroups: Record<string, typeof activePlayers> = {};
-  for (const player of activePlayers) {
-    const pos = player.position || preset.positions[0] || "GK";
-    positionGroups[pos] = positionGroups[pos] || [];
-    positionGroups[pos].push(player);
-  }
-
-  // Sort each group by overall rating descending
-  const getPlayerOverall = (p: any): number => {
-    const ratings = p.ratings as Record<string, number>;
-    if (!ratings) return 50;
-    if (typeof ratings.overall === "number") return ratings.overall;
-    const values = Object.values(ratings).filter((v) => typeof v === "number") as number[];
-    if (values.length === 0) return 50;
-    return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-  };
-
-  for (const pos of Object.keys(positionGroups)) {
-    positionGroups[pos].sort((a, b) => getPlayerOverall(b) - getPlayerOverall(a));
-  }
-
-  // 2. Select starters based on startingSlots
-  const starters: typeof activePlayers = [];
-  const bench: typeof activePlayers = [];
-  const slotsConfig = preset.startingSlots || {};
-
-  const assignedPlayerIds = new Set<string>();
-
-  // Assign players to their primary starting positions
-  for (const [pos, count] of Object.entries(slotsConfig)) {
-    const available = positionGroups[pos] || [];
-    const startersForPos = available.slice(0, count as number);
-    starters.push(...startersForPos);
-    startersForPos.forEach((p) => p.id && assignedPlayerIds.add(p.id));
-  }
-
-  // Any active player not assigned is bench
-  for (const player of activePlayers) {
-    if (player.id && !assignedPlayerIds.has(player.id)) {
-      bench.push(player);
-    }
-  }
-
-  // 3. Compute ratings averages
-  const computeAverageAttribute = (
-    playerSet: typeof activePlayers,
-    attributes: string[]
-  ): number => {
-    if (playerSet.length === 0) return 60;
-    let sum = 0;
-    let count = 0;
-    for (const p of playerSet) {
-      const mult = careerStageMultiplier[p.careerStage] ?? 0.8;
-      const ratings = p.ratings as Record<string, number>;
-      for (const attr of attributes) {
-        if (ratings && typeof ratings[attr] === "number") {
-          sum += ratings[attr] * mult;
-          count++;
-        }
-      }
-    }
-    return count > 0 ? Math.round(sum / count) : 60;
-  };
-
-  const computeAverageOverall = (playerSet: typeof activePlayers): number => {
-    if (playerSet.length === 0) return 60;
-    let sum = 0;
-    for (const p of playerSet) {
-      const mult = careerStageMultiplier[p.careerStage] ?? 0.8;
-      sum += getPlayerOverall(p) * mult;
-    }
-    return Math.round(sum / playerSet.length);
-  };
-
-  const overall = computeAverageOverall(starters);
-  const offense = computeAverageAttribute(starters, preset.offenseAttributes);
-  const defense = computeAverageAttribute(starters, preset.defenseAttributes);
-  const depth = computeAverageOverall(bench);
-
-  // Coach rating
-  const activeCoaches = coaches.filter((c) => c.isActive && c.ratings);
-  let coaching = 50;
-  if (activeCoaches.length > 0) {
-    const sum = activeCoaches.reduce((acc, c) => {
-      const r = c.ratings as Record<string, number>;
-      return acc + (r.strategy ?? 50);
-    }, 0);
-    coaching = Math.round(sum / activeCoaches.length);
-  }
-
-  return {
-    overall,
-    offense,
-    defense,
-    form: 50 + formAdjustment,
-    depth,
-    coaching,
-  };
-}
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 
@@ -362,6 +188,80 @@ export const sportsTransfersRouter = createTRPCRouter({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to respond to bid",
         });
+      }
+    }),
+
+  // Bidder withdraws their own pending bid; escrow is refunded.
+  withdrawTransferBid: protectedProcedure
+    .input(z.object({ bidId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const bid = await (ctx.db as any).sportTransferBid.findUnique({
+          where: { id: input.bidId },
+        });
+        if (!bid || bid.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Bid not active" });
+        }
+        if (bid.bidderUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your bid" });
+        }
+        await exchangeService.earn(
+          ctx.user.id,
+          bid.amount,
+          "ADMIN_ADJUSTMENT",
+          `TRANSFER_BID_REFUND:${bid.id}`,
+          ctx.db as any
+        );
+        await (ctx.db as any).sportTransferBid.update({
+          where: { id: bid.id },
+          data: { status: "withdrawn" },
+        });
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to withdraw bid" });
+      }
+    }),
+
+  // Seller cancels a listing; all pending bids are refunded and rejected.
+  cancelTransferListing: protectedProcedure
+    .input(z.object({ listingId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const listing = await (ctx.db as any).sportTransferListing.findUnique({
+          where: { id: input.listingId },
+          include: { player: { include: { team: true } } },
+        });
+        if (!listing || listing.status !== "open") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
+        }
+        if (listing.player.team.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this listing" });
+        }
+        const pendingBids = await (ctx.db as any).sportTransferBid.findMany({
+          where: { listingId: listing.id, status: "pending" },
+        });
+        for (const b of pendingBids) {
+          await exchangeService.earn(
+            b.bidderUserId,
+            b.amount,
+            "ADMIN_ADJUSTMENT",
+            `TRANSFER_BID_REFUND:${b.id}`,
+            ctx.db as any
+          );
+          await (ctx.db as any).sportTransferBid.update({
+            where: { id: b.id },
+            data: { status: "rejected" },
+          });
+        }
+        await (ctx.db as any).sportTransferListing.update({
+          where: { id: listing.id },
+          data: { status: "cancelled" },
+        });
+        return { success: true, refunded: pendingBids.length };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to cancel listing" });
       }
     }),
 

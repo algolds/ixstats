@@ -166,6 +166,14 @@ describe("MyLeague Off-Season & Transition Logic", () => {
         },
         sportTeam: {
           findMany: jest.fn().mockResolvedValue(mockSeason.league.teams as any),
+          update: jest.fn().mockResolvedValue({} as any),
+        },
+        sportMatchStat: {
+          findMany: jest.fn().mockResolvedValue([] as any),
+        },
+        sportSeasonRecord: {
+          deleteMany: jest.fn().mockResolvedValue({} as any),
+          createMany: jest.fn().mockResolvedValue({} as any),
         },
         sportStanding: {
           findMany: jest.fn().mockResolvedValue([] as any),

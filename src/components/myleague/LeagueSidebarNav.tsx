@@ -14,7 +14,6 @@ import { cn } from "~/lib/utils";
 import { getSportEmoji } from "~/lib/sports/presets";
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
 import { withBasePath } from "~/lib/base-path";
 
 export type LeagueSection =

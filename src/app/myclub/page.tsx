@@ -13,6 +13,26 @@ import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { sportCoverUrl } from "~/lib/sports/league-covers";
 import { Trophy, Users, ArrowRight } from "lucide-react";
+import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
+
+const MYCLUB_HELP_STEPS: HeroHelpStep[] = [
+  {
+    title: "Welcome to MyClub",
+    body: "MyClub is your team manager. Each card here is a franchise you own — click one to open its hub: roster, lineup, tactics, finances and season fixtures.",
+  },
+  {
+    title: "Claim a team",
+    body: "Don't own a team yet? Head to MyLeague, open a league, and claim an unclaimed club. Once claimed, it shows up here for you to manage.",
+  },
+  {
+    title: "Build your squad",
+    body: "Set your starting lineup and formation, choose a tactical intent, and train players to raise their ratings. Work the transfer market to buy and sell talent.",
+  },
+  {
+    title: "Run the finances",
+    body: "Collect matchday revenue, pick a sponsor, set ticket prices and upgrade your stadium. Watch your wage bill — player wages are deducted from the club budget each season.",
+  },
+];
 
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "\u26BD",
@@ -220,7 +240,14 @@ export default function MyClubPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="facet-surface border-border/40 mb-8 flex items-center justify-between rounded-xl border p-6">
         <div>
-          <h1 className="text-3xl font-bold">MyClub</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold">MyClub</h1>
+            <HeroHelpModal
+              title="MyClub guide"
+              steps={MYCLUB_HELP_STEPS}
+              accentClass="text-cyan-500"
+            />
+          </div>
           <p className="text-muted-foreground mt-1">Manage your sports teams and franchises</p>
         </div>
         <div className="flex gap-3">
