@@ -31,6 +31,9 @@ const STORAGE_KEY = "ixworld-welcome-seen";
 interface MapWelcomeModalProps {
   /** Only show after the map is ready */
   isMapReady: boolean;
+  onStartTour?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 const TIPS = [
@@ -76,8 +79,15 @@ const SHORTCUTS = [
   { keys: ["Esc"], action: "Close panels" },
 ];
 
-export function MapWelcomeModal({ isMapReady }: MapWelcomeModalProps) {
+export function MapWelcomeModal({ isMapReady, onStartTour, isOpen, onClose }: MapWelcomeModalProps) {
   const [show, setShow] = useState(false);
+
+  // Sync parent isOpen control
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      setShow(isOpen);
+    }
+  }, [isOpen]);
 
   // Current IxTime for the tooltip
   const currentIxTime = useMemo(() => {
@@ -107,10 +117,11 @@ export function MapWelcomeModal({ isMapReady }: MapWelcomeModalProps) {
 
   const handleClose = useCallback(() => {
     setShow(false);
+    onClose?.();
     try {
       localStorage.setItem(STORAGE_KEY, IXWORLD_VERSION);
     } catch {}
-  }, []);
+  }, [onClose]);
 
   const totalPages = 2; // Tips page + Shortcuts page
 
@@ -387,13 +398,25 @@ export function MapWelcomeModal({ isMapReady }: MapWelcomeModalProps) {
                       <ChevronRight className="h-3 w-3" />
                     </button>
                   ) : (
-                    <button
-                      onClick={handleClose}
-                      className="flex items-center gap-1 rounded-lg bg-blue-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-600"
-                    >
-                      Start Exploring
-                      <Navigation className="h-3 w-3" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          handleClose();
+                          onStartTour?.();
+                        }}
+                        className="flex items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3.5 py-1.5 text-xs font-medium text-blue-400 transition-colors hover:bg-blue-500/20"
+                      >
+                        <Compass className="h-3.5 w-3.5" />
+                        Take a Tour
+                      </button>
+                      <button
+                        onClick={handleClose}
+                        className="flex items-center gap-1.5 rounded-lg bg-blue-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-600"
+                      >
+                        Start Exploring
+                        <Navigation className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

@@ -35,6 +35,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // Extracted hooks
 import { useMapState } from "./hooks/useMapState";
 import { useMapDataQueries } from "./hooks/useMapDataQueries";
+import { useMapTour } from "./hooks/useMapTour";
+import { TourHUD } from "./components/TourHUD";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
@@ -176,6 +178,26 @@ export function MapContainer({
     clearPin,
   });
 
+  // 1.5 Hook: Tour & Demo Mode State Machine
+  const {
+    tourState,
+    currentStepIndex,
+    isPaused,
+    progress,
+    startTour,
+    exitTour,
+    nextStep,
+    prevStep,
+    togglePause,
+    currentStepData,
+    totalSteps,
+  } = useMapTour({
+    mapRef,
+    projectionMode,
+    setProjectionMode,
+    setSelectedCountry,
+  });
+
   // 2. Hook: Manage Queries & Prefetching
   const {
     userCountryId: _queriedUserCountryId,
@@ -215,6 +237,9 @@ export function MapContainer({
   // "as-of" political FeatureCollection and swap it into the political layer.
   // `null` = at "now", live data flows through.
   const [historicalIxTime, setHistoricalIxTime] = useState<number | null>(null);
+
+  // Parent control state for the welcome & help modal
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState<boolean | undefined>(undefined);
 
   const historicalYear =
     historicalIxTime === null ? null : IxTime.getCurrentGameYear(historicalIxTime);
@@ -296,10 +321,10 @@ export function MapContainer({
         capitals={capitalsGeoJson}
         overlayFeatures={overlayFeatures ?? undefined}
         overlayVisibility={overlayVisibility}
-        onCountryClick={disableCountrySelect ? undefined : handleCountryClick}
-        onCountryHover={handleCountryHover}
+        onCountryClick={disableCountrySelect || tourState !== "idle" ? undefined : handleCountryClick}
+        onCountryHover={tourState !== "idle" ? undefined : handleCountryHover}
         onMapClick={handleMapClickWithLayers}
-        onFeatureClick={handleFeatureClick}
+        onFeatureClick={tourState !== "idle" ? undefined : handleFeatureClick}
         onReady={() => {
           setMapEngineReady(true);
           onMapReady?.(mapRef.current?.getMap() ?? null);
@@ -318,7 +343,7 @@ export function MapContainer({
       />
 
       {/* Layer controls + tools toolbar */}
-      {showControls && (
+      {showControls && tourState === "idle" && (
         <MapControls
           visibleLayers={controlledVisibleLayers ?? visibleLayers}
           onToggleLayer={onToggleLayer ?? toggleLayer}
@@ -349,11 +374,12 @@ export function MapContainer({
       )}
 
       {/* Dynamic Island */}
-      {toolsVisible && (
+      {toolsVisible && tourState === "idle" && (
         <MapDynamicIsland
           projectionMode={forceFlatProjection ? "mercator" : projectionMode}
           onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
           onSearchResult={handleSearchResult}
+          onOpenWelcome={() => setIsWelcomeOpen(true)}
         />
       )}
 
@@ -428,7 +454,28 @@ export function MapContainer({
       {showLoading && <MapLoadingScreen isReady={!isPreloading && mapEngineReady} />}
 
       {/* First-visit welcome modal */}
-      {showControls && <MapWelcomeModal isMapReady={!isPreloading && mapEngineReady} />}
+      {showControls && (
+        <MapWelcomeModal
+          isMapReady={!isPreloading && mapEngineReady}
+          onStartTour={startTour}
+          isOpen={isWelcomeOpen}
+          onClose={() => setIsWelcomeOpen(false)}
+        />
+      )}
+
+      {/* Tour / Demo Mode HUD overlay */}
+      <TourHUD
+        tourState={tourState}
+        currentStepIndex={currentStepIndex}
+        isPaused={isPaused}
+        progress={progress}
+        exitTour={exitTour}
+        nextStep={nextStep}
+        prevStep={prevStep}
+        togglePause={togglePause}
+        currentStepData={currentStepData}
+        totalSteps={totalSteps}
+      />
 
       {/* Map editor overlay */}
       {isEditing && editingCountryId && (
@@ -451,7 +498,7 @@ export function MapContainer({
       )}
 
       {/* Historical timeline scrubber (read-only) */}
-      {showControls && <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />}
+      {showControls && tourState === "idle" && <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />}
 
       {/* WebGL/Loading Error Fallback Overlay */}
       {(webglError || mapLoadTimeout) && (

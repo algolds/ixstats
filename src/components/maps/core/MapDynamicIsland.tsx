@@ -16,7 +16,7 @@
  */
 
 import { AnimatePresence, motion } from "motion/react";
-import { Search, X, Globe, Loader2, MessageCircle, Bell } from "lucide-react";
+import { Search, X, Globe, Loader2, MessageCircle, Bell, HelpCircle } from "lucide-react";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "~/lib/base-path";
 import type { ProjectionMode } from "~/lib/map-config";
@@ -45,6 +45,7 @@ interface MapDynamicIslandProps {
   projectionMode: ProjectionMode;
   onProjectionChange: (mode: ProjectionMode) => void;
   onSearchResult: (result: MapSearchResult) => void;
+  onOpenWelcome?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,6 +56,7 @@ export function MapDynamicIsland({
   projectionMode,
   onProjectionChange,
   onSearchResult,
+  onOpenWelcome,
 }: MapDynamicIslandProps) {
   const {
     searchOpen,
@@ -226,6 +228,15 @@ export function MapDynamicIsland({
                     title="Search (⌘K)"
                   >
                     <Search className="h-3.5 w-3.5" />
+                  </button>
+
+                  {/* Help & Tour button */}
+                  <button
+                    onClick={onOpenWelcome}
+                    className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
+                    title="Help & Tour"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
                   </button>
 
                   {/* Unified Notification/Messages Badge */}
