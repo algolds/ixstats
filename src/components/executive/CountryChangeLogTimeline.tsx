@@ -25,6 +25,7 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { WikiProseGenerator } from "~/lib/wiki-prose-generator";
+import { IxTime } from "~/lib/ixtime";
 
 interface CountryChangeLogTimelineProps {
   countryId: string;
@@ -123,25 +124,11 @@ export function CountryChangeLogTimeline({
 
   const hasMore = (data?.total ?? 0) > offset + limit;
 
-  // Format IxTime to standard year & month representations
+  // appliedIxTime is an IxTime epoch (ms); some legacy rows stored seconds.
   const formatIxTime = (ixTime: number) => {
-    const year = Math.floor(ixTime / 12) + 2041;
-    const month = (Math.floor(ixTime) % 12) + 1;
-    const monthName = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ][month - 1];
-    return `${monthName} ${year}`;
+    // ponytail: rows < 1e12 were written in seconds, not ms — normalize
+    const ms = ixTime < 1e12 ? ixTime * 1000 : ixTime;
+    return IxTime.formatIxTime(ms);
   };
 
   const getSourceIcon = (type: string) => {
@@ -236,7 +223,7 @@ export function CountryChangeLogTimeline({
 
   if (isLoading && offset === 0) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-xl border border-white/10 bg-white/5 backdrop-blur-md">
+      <div className="glass-hierarchy-child flex h-32 items-center justify-center rounded-xl">
         <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
       </div>
     );
@@ -246,7 +233,7 @@ export function CountryChangeLogTimeline({
     <div className="glass-panel relative mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 shadow-xl backdrop-blur-md">
       <div className="mb-6 flex items-center justify-between border-b border-white/15 pb-4">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
+          <h2 className="text-foreground flex items-center gap-2 text-xl font-bold tracking-tight">
             <History className="h-5 w-5 text-amber-400" />
             National Ledger & Timeline
           </h2>
@@ -269,7 +256,7 @@ export function CountryChangeLogTimeline({
             return (
               <div key={event.id} className="group relative">
                 {/* Timeline node dot */}
-                <div className="absolute top-1.5 -left-[35px] flex h-7.5 w-7.5 items-center justify-center rounded-full border border-white/15 bg-[#161618] shadow-md transition-transform group-hover:scale-110">
+                <div className="bg-background absolute top-1.5 -left-[35px] flex h-7.5 w-7.5 items-center justify-center rounded-full border border-white/15 shadow-md transition-transform group-hover:scale-110">
                   {getSourceIcon(event.sourceType)}
                 </div>
 
@@ -287,7 +274,7 @@ export function CountryChangeLogTimeline({
                         {event.sourceType}
                       </span>
                     </div>
-                    <h3 className="text-sm font-semibold tracking-wide text-white">{eventName}</h3>
+                    <h3 className="text-foreground text-sm font-semibold tracking-wide">{eventName}</h3>
                     <p className="text-muted-foreground max-w-xl text-xs">{event.description}</p>
                   </div>
 
@@ -373,18 +360,18 @@ export function CountryChangeLogTimeline({
         open={selectedEvent !== null}
         onOpenChange={(open) => !open && setSelectedEvent(null)}
       >
-        <DialogContent className="max-w-md border-white/15 bg-[#1a1a1e] text-white">
+        <DialogContent className="text-foreground max-w-md border-white/15">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Scroll className="h-5 w-5 text-amber-500" />
               Wiki Prose Generator
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Copy the wikitext below to post directly into the national wiki page.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-60 overflow-y-auto rounded-lg border border-white/10 bg-[#101012] p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-slate-300 select-all">
+          <div className="bg-muted text-muted-foreground max-h-60 overflow-y-auto rounded-lg border border-white/10 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap select-all">
             {generatedWikitext}
           </div>
 
@@ -393,7 +380,7 @@ export function CountryChangeLogTimeline({
               variant="outline"
               size="sm"
               onClick={() => setSelectedEvent(null)}
-              className="border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
+              className="text-muted-foreground hover:text-foreground border-white/10 hover:bg-white/10"
             >
               Close
             </Button>
