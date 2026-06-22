@@ -63,13 +63,13 @@ bun run ts:build          # build with project references (lib + server)
 
 | Layer | Location | Notes |
 |-------|----------|-------|
-| Pages | `src/app/` | Next.js 16.2 App Router, 187 routes |
-| Components | `src/components/` | 893+ UI components, Facet design system (was "Glass Physics") |
-| API (tRPC) | `src/server/api/routers/` | **87 routers** (52 split into subdirs via `mergeRouters`, 24 flat), **1,376 procedures**. Register new routers in `src/server/api/root.ts` |
-| Database | `prisma/schema/` | 237 models split across 12 `.prisma` files |
+| Pages | `src/app/` | Next.js 16.2 App Router, 210+ routes |
+| Components | `src/components/` | 750+ UI components, Facet design system (was "Glass Physics") |
+| API (tRPC) | `src/server/api/routers/` | **90 routers** (domain-split into subdirs via `mergeRouters` + flat files), **1,450+ procedures**. Register new routers in `src/server/api/root.ts` |
+| Database | `prisma/schema/` | 296 models split across 15 `.prisma` files |
 | Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers (NOT `middleware.ts`) |
 | Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
-| Hooks | `src/hooks/` | 107+ custom React hooks |
+| Hooks | `src/hooks/` | 90+ custom React hooks |
 | Lib | `src/lib/` | Utilities, rate limiter, WebSocket server, memory config |
 | Shared server primitives | `src/server/shared/` | Cross-router shared utilities (e.g. `layer-cache.ts`) — keeps routers decoupled |
 | Architecture guard | `scripts/audit/audit-arch.ts` | Enforces ≤700-line file ceiling, ratchet baseline, blocks cross-router imports |
@@ -80,7 +80,7 @@ bun run ts:build          # build with project references (lib + server)
 - `/vault` — IxVault (cards, credits, marketplace)
 - `/thinkpages` — Social knowledge sharing
 - `/maps` — IxWorld interactive map (also standalone at maps.ixwiki.com)
-- `/admin` — 28 admin CMS interfaces (system-owner or admin role required)
+- `/admin` — 50+ admin CMS interfaces (system-owner or admin role required)
 
 ### Path aliases
 - `~/*` → `./src/*`
@@ -151,7 +151,7 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 
 Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference/revision.md)** (canonical "Versioning & Release Architecture"). OS-inspired model — single source of truth is the **Version Registry** `VERSIONS` in [src/lib/buildVersion.ts](file:///ixwiki/public/projects/ixstats/src/lib/buildVersion.ts). **Never hardcode version strings** elsewhere; read derived exports (`APP_VERSION`, `WIKIOS_VERSION`, `CHANNEL`, …) from the registry, and reference the registry from docs rather than quoting numbers.
 
-- **Platform**: `Major.Minor.Patch` + permanent epoch **release name** + **channel** → **IxStates 1.1.0 "Ogma"** (channel: Alpha). Legacy `1.42`/`2.1` retired; `package.json` version is `1.0.0` (build-tooling only).
+- **Platform**: `Major.Minor.Patch` + permanent epoch **release name** + **channel** → **IxStates 1.1.1 "Ogma"** (channel: Alpha). Legacy `1.42`/`2.1` retired; `package.json` version is `1.0.0` (build-tooling only).
 - **Apps / Engines / Systems / Design** each carry a **single capability integer** (not SemVer), all defined in the registry:
   - **Apps**: `IXWORLD_VERSION`, `WIKIOS_VERSION` (Canvas sub-version: `CANVAS_VERSION`), `IXVAULT_VERSION`
   - **Engines** (internal, Dev-panel only): `MYCOUNTRY_ENGINE_VERSION`, `CONCORD_ENGINE_VERSION`, `ATLAS_ENGINE_VERSION`
@@ -186,7 +186,7 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 
 - **Unused vars**: Prefix with `_` to suppress ESLint warning (`unused-imports` plugin, not `@typescript-eslint/no-unused-vars`)
 - **Prettier**: 2-space indent, semicolons, trailing comma (es5), 100 char print width, tailwindcss plugin
-- **React**: Use `React.memo`, `useMemo`, `useCallback` for performance. Glass physics design patterns.
+- **React**: Use `React.memo`, `useMemo`, `useCallback` for performance. Facet (glass/refraction/depth) design patterns.
 - **tRPC**: All API access goes through tRPC routers. Do not query Prisma directly from components.
 - **Modular architecture**: For components >500 lines, extract business logic to `src/lib/`, state to `src/hooks/`, UI to focused components under `src/components/domain/feature/`.
 
@@ -206,7 +206,7 @@ Process: scout that the router is live + a single flat `createTRPCRouter` (dead/
 
 - `CLAUDE.md` — Detailed architecture, design system, MyCountry routing, maps system
 - `docs/README.md` — Documentation hub
-- `docs/reference/api-complete.md` — Full tRPC API catalog (1,376 procedures across 87 routers)
+- `docs/reference/api-complete.md` — Full tRPC API catalog (1,450+ procedures across 90 routers)
 - `docs/systems/` — System-specific guides
 - `IMPLEMENTATION_STATUS.md` — Feature maturity matrix (archived, gitignored)
 -  `/ixwiki/.cursor/rules/design.mdc` — for design token mappings and usage guidelines

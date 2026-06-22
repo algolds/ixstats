@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, Activity, Network } from "lucide-react";
+import { Clock, Activity, RefreshCw } from "lucide-react";
 import {
   ArticleLayout,
   Section,
@@ -13,135 +13,121 @@ import {
 export default function IxTimeArticle() {
   return (
     <ArticleLayout
-      title="Understanding IxTime"
-      description="IxTime is the in-world clock that drives everything in IxStats. Here's what it means for you and your country."
+      title="The World Clock (IxTime)"
+      description="Time here moves at twice real speed. Here's what that means for your nation."
       icon={Clock}
+      prevLink={{ href: "/help/getting-started/gameplay-overview", label: "How It All Fits Together" }}
+      nextLink={{ href: "/help/getting-started/navigation", label: "Finding Your Way Around" }}
     >
       <ContentCard>
-        <Section title="What Is IxTime?">
+        <Section title="A World on Its Own Clock">
           <p className="mb-4 text-slate-700 dark:text-slate-300">
-            IxTime is the accelerated clock used throughout IxStats. It runs at{" "}
-            <strong>twice the speed of real time</strong>, meaning one real-world hour equals two
-            hours of in-game time. This faster pace keeps the simulation dynamic and ensures your
-            country is always evolving.
+            IxStats keeps its own time, called <strong>IxTime</strong>, and it runs at{" "}
+            <strong>twice the speed of real life</strong> — one real hour is two hours in the world.
+            That faster pace is what keeps the world feeling alive: history piles up, economies move,
+            and events arrive at a steady, satisfying clip.
           </p>
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              Every event, economic cycle, and diplomatic interaction is tied to IxTime rather than
-              your local clock.
+              Everything in the world — your economy, events, diplomacy — runs on IxTime, not your
+              local clock.
             </li>
             <li>
-              The same clock is shared by the Discord bot and all scheduled in-world events, so
-              everything stays perfectly in sync.
+              The whole community shares the same clock, so everyone&rsquo;s nations move through the
+              same moment in history together.
             </li>
             <li>
-              You can see the current IxTime displayed in the navigation bar and on your{" "}
+              You can always see the current date and time at the top of the screen and on your{" "}
               <Link
                 href="/help/mycountry/overview"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                My Country
-              </Link>{" "}
-              dashboard.
+                MyCountry overview
+              </Link>
+              .
             </li>
           </ul>
         </Section>
 
-        <Section title="How IxTime Affects Your Country">
+        <Section title="What It Means for Your Nation">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>National Issues</strong> &mdash; New{" "}
+              <strong>Issues arrive faster</strong> — new{" "}
               <Link
                 href="/help/gameplay/national-issues"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                issues and decisions
+                national issues
               </Link>{" "}
-              arrive on the IxTime schedule. Because time moves at 2x speed, you will see new issues
-              appear roughly twice as often as you might expect.
+              show up on the world clock, so they come around about twice as often as you&rsquo;d
+              expect by your own watch.
             </li>
             <li>
-              <strong>Economy</strong> &mdash; GDP growth, tax revenue, trade balances, and all{" "}
+              <strong>Your economy keeps moving</strong> — growth, revenue, and{" "}
               <Link
                 href="/help/economy/calculations"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                economic calculations
+                the numbers
               </Link>{" "}
-              are computed on the accelerated clock. Projections and historical charts use IxTime
-              dates, not real-world dates.
+              all advance on IxTime, and your charts are dated in IxTime too.
             </li>
             <li>
-              <strong>Diplomacy</strong> &mdash;{" "}
+              <strong>Diplomacy is quicker</strong> —{" "}
               <Link
                 href="/help/diplomacy/missions"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Diplomatic missions
-              </Link>
-              , treaty countdowns, and{" "}
+                missions
+              </Link>{" "}
+              and{" "}
               <Link
                 href="/help/diplomacy/scenarios"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                scenario events
+                scenarios
               </Link>{" "}
-              all follow IxTime. A mission that takes "one day" in-game actually completes in about
+              resolve on the world clock. A mission that says &ldquo;one day&rdquo; finishes in about
               twelve real-world hours.
             </li>
             <li>
-              <strong>Crisis Events</strong> &mdash;{" "}
+              <strong>Crises feel urgent</strong> —{" "}
               <Link
                 href="/help/defense/crisis-events"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Crises
+                crises
               </Link>{" "}
-              and natural disasters unfold on the IxTime timeline, so their deadlines and escalation
-              windows feel faster than wall-clock time.
+              and disasters unfold on IxTime, so their deadlines arrive sooner than wall-clock time
+              would suggest.
             </li>
             <li>
-              <strong>Intelligence Feeds</strong> &mdash; All timestamps on your{" "}
-              <Link
-                href="/help/mycountry/intelligence"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                intelligence dashboard
-              </Link>{" "}
-              and diplomatic feeds are shown in IxTime so you can track events within the simulation
-              timeline.
+              <strong>A timeline you can look back on</strong> — every event and headline is stamped
+              with IxTime, so your nation builds a real, readable history over time.
             </li>
           </ul>
         </Section>
       </ContentCard>
 
       <ContentCard>
-        <Section title="Where to See IxTime">
-          <InfoBox title="Finding the Clock">
+        <Section title="Where to See the Clock">
+          <InfoBox title="Always within reach">
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <strong>Navigation Bar</strong> &mdash; The current IxTime date and time are
-                displayed at the top of the screen so you always know where you are in the
-                simulation.
+                <strong>Top of the screen</strong> — the current IxTime date and time, so you always
+                know where you are in the world.
               </li>
               <li>
-                <strong>My Country Dashboard</strong> &mdash; Your{" "}
-                <Link
-                  href="/help/mycountry/overview"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  country overview
-                </Link>{" "}
-                shows IxTime alongside your national vitality metrics.
+                <strong>Your MyCountry overview</strong> — the clock sits right alongside your
+                nation&rsquo;s vital signs.
               </li>
               <li>
-                <strong>Event Timestamps</strong> &mdash; Every notification, news item, and
-                diplomatic event is stamped with IxTime so you can piece together what happened and
-                when.
+                <strong>On every event</strong> — notifications, headlines, and diplomatic moments
+                are all stamped with IxTime so you can piece together what happened and when.
               </li>
               <li>
-                <strong>Discord</strong> &mdash; The IxStats Discord bot announces the current
-                IxTime and keeps your community in sync with in-game events.
+                <strong>In the community</strong> — the shared world clock keeps everyone&rsquo;s
+                nations in the same moment.
               </li>
             </ul>
           </InfoBox>
@@ -150,14 +136,13 @@ export default function IxTimeArticle() {
         <WarningBox title="Good to Know">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <Activity className="inline h-4 w-4" /> Because time moves at 2x speed, deadlines
-              approach faster than you might expect. Check your dashboards regularly so you don't
-              miss important decisions or expiring events.
+              <Activity className="inline h-4 w-4" /> Because time moves at 2&times; speed, deadlines
+              sneak up faster than you expect. Check in regularly so you don&rsquo;t miss a decision
+              or let an event expire.
             </li>
             <li>
-              <Network className="inline h-4 w-4" /> If the displayed IxTime ever looks out of sync
-              with other players, try refreshing the page. The clock re-syncs automatically on each
-              page load.
+              <RefreshCw className="inline h-4 w-4" /> If the clock ever looks out of step with other
+              players, just refresh the page — it&rsquo;ll catch right back up.
             </li>
           </ul>
         </WarningBox>

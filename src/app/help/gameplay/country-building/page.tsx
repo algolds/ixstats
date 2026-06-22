@@ -109,8 +109,8 @@ export default function CountryBuildingArticle() {
               from wiki infoboxes and structured content
             </li>
             <li>
-              <strong>NationStates Import:</strong> Connect to the NationStates API to import your
-              NS nation&apos;s data, statistics, and government configuration
+              <strong>NationStates Import:</strong> Bring your NationStates nation straight in — its
+              data, statistics, and government setup, ready to build on
             </li>
           </ul>
           <p className="mt-2">

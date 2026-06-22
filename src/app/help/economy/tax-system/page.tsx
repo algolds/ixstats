@@ -9,16 +9,16 @@ const linkClass = "text-blue-600 hover:underline dark:text-blue-400";
 export default function TaxSystemArticle() {
   return (
     <ArticleLayout
-      title="Tax System"
-      description="Configure 42 tax components, set brackets and exemptions, and preview revenue projections for your nation."
+      title="Taxes &amp; Revenue"
+      description="Set your tax rates, brackets, and exemptions — and fund the nation you want to build."
       icon={Receipt}
     >
       <ContentCard>
         <Section title="How Your Tax System Works">
           <p>
-            Your nation&apos;s tax system is built from 42 different tax components that you select
-            and configure. The Tax Builder walks you through the process step by step, helping you
-            create a fiscal policy that fits your nation&apos;s goals.
+            Your tax system is built from dozens of tax pieces you choose and tune. The Tax Builder
+            walks you through it step by step, helping you craft a tax policy that fits the nation you
+            want to be.
           </p>
         </Section>
 
@@ -31,9 +31,9 @@ export default function TaxSystemArticle() {
                 framework
               </li>
               <li>
-                <strong>Choose Components:</strong> Pick from 42 tax components — each one has an
-                effectiveness score so you can see how well it works. Options include income tax,
-                corporate tax, VAT, property tax, capital gains, and more.
+                <strong>Choose your taxes:</strong> Pick from dozens of tax types — each shows how
+                effective it is, so you can see what works. Income tax, corporate tax, VAT, property
+                tax, capital gains, and more.
               </li>
               <li>
                 <strong>Exemptions & Deductions:</strong> Set up tax breaks for specific sectors,
@@ -121,9 +121,9 @@ export default function TaxSystemArticle() {
             </li>
             <li>
               <Link href="/help/government/components" className={linkClass}>
-                Component Catalog
+                The Component Library
               </Link>{" "}
-              — Browse all 106 government, economic, and tax components
+              — browse the full set of government, economic, and tax pieces
             </li>
             <li>
               <Link href="/help/gameplay/country-building" className={linkClass}>

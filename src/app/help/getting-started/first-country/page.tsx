@@ -7,146 +7,144 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function FirstCountryArticle() {
   return (
     <ArticleLayout
-      title="Creating Your First Country"
-      description="A step-by-step guide to building your nation from the ground up -- identity, government, economy, and more."
+      title="Create Your First Nation"
+      description="From a blank page to a living country in a few minutes. Here's the whole journey."
       icon={Globe}
-      prevLink={{ href: "/help/getting-started/navigation", label: "Finding Your Way Around" }}
-      nextLink={{ href: "/help/getting-started/gameplay-overview", label: "Gameplay Overview" }}
+      prevLink={{ href: "/help/getting-started/welcome", label: "Welcome to IxStats" }}
+      nextLink={{ href: "/help/getting-started/gameplay-overview", label: "How It All Fits Together" }}
     >
       <ContentCard>
-        <Section title="Step 1: Open the Country Builder">
+        <Section title="Two Ways to Begin">
           <p>
-            Head to the{" "}
+            Open the{" "}
             <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
               Country Builder
             </Link>{" "}
-            from the top navigation menu. You have two ways to get started:
+            from the top menu. You can start either way:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Start from scratch:</strong> Build every aspect of your nation exactly the way
-              you want it.
+              <strong>From scratch</strong> — shape every part of your nation exactly how you picture
+              it.
             </li>
             <li>
-              <strong>Import from IxWiki:</strong> Pull in baseline data from an existing wiki
-              article and customize it to fit your vision.
+              <strong>Import from IxWiki</strong> — already written factbooks? Pull your existing
+              article in as a starting point, then refine. Your lore becomes a nation that actually
+              runs.
             </li>
           </ul>
         </Section>
 
-        <Section title="Step 2: Work Through Each Section">
-          <ol className="list-decimal space-y-2 pl-6">
+        <Section title="Build It, Section by Section">
+          <p>The builder walks you through your nation one piece at a time:</p>
+          <ol className="mt-2 list-decimal space-y-2 pl-6">
             <li>
-              <strong>Identity:</strong> Set your nation&rsquo;s name, flag, motto, and basic
-              details.
+              <strong>Identity</strong> — name, flag, motto, and the character of the place.
             </li>
             <li>
-              <strong>Government:</strong> Choose from over 20 government components -- combine them
-              for{" "}
+              <strong>Government</strong> — choose how your nation is run. Mix components for{" "}
               <Link
                 href="/help/government/synergy"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
                 synergy bonuses
               </Link>{" "}
-              that boost your governance effectiveness.
+              when the right parts work together.
             </li>
             <li>
-              <strong>Economy:</strong> Configure your economic model, sectors, and growth strategy.
-              Learn more about how{" "}
+              <strong>Economy</strong> — set your sectors and growth strategy, and see which{" "}
               <Link
                 href="/help/economy/tiers"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                economic tiers
+                economic tier
               </Link>{" "}
-              affect your nation.
+              your nation starts in.
             </li>
             <li>
-              <strong>Labor & Demographics:</strong> Define your workforce, population distribution,
-              and social indicators.
+              <strong>People</strong> — your population, workforce, and the social makeup of your
+              nation.
             </li>
             <li>
-              <strong>Fiscal Policy:</strong> Set up your{" "}
+              <strong>Money</strong> — your{" "}
               <Link
                 href="/help/economy/tax-system"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                tax system
+                taxes
               </Link>{" "}
-              and government spending priorities.
+              and spending priorities. This is where you decide what kind of country you can afford to
+              be.
             </li>
           </ol>
         </Section>
 
-        <Section title="Step 3: Review and Save">
+        <Section title="Review, Then Make It Live">
           <p>
-            Before publishing, you will see a full summary of your nation. Take a moment to review
-            your choices and tweak anything that does not look right. The builder also suggests
-            policy recommendations based on your configuration -- these are great starting points
-            for fine-tuning your nation later.
+            Before you publish, you&rsquo;ll see a full summary of your nation. Take a minute to read
+            it over and adjust anything that doesn&rsquo;t feel right. The builder also suggests
+            policies based on your choices — handy starting points you can fine-tune later.
           </p>
-        </Section>
-
-        <Section title="Helpful Tools Along the Way">
-          <InfoBox title="Builder Tips">
-            <ul className="list-disc space-y-1 pl-6">
-              <li>
-                <strong>Wiki Import:</strong> If your nation already has an IxWiki page, you can
-                pull in that data as a starting point and customize from there.
-              </li>
-              <li>
-                <strong>Component Synergies:</strong> Certain government and economic components
-                work better together. Look for synergy indicators as you build -- they give your
-                nation real performance bonuses. See the{" "}
-                <Link
-                  href="/help/government/atomic"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Atomic Components Guide
-                </Link>{" "}
-                for details.
-              </li>
-              <li>
-                <strong>Policy Advisor:</strong> As you fill in each section, the builder will
-                suggest optimizations and flag potential conflicts in your setup.
-              </li>
-            </ul>
-          </InfoBox>
         </Section>
       </ContentCard>
 
       <ContentCard>
-        <Section title="What Happens After You Save">
+        <Section title="A Few Things That Help">
+          <InfoBox title="Worth knowing as you build">
+            <ul className="list-disc space-y-1 pl-6">
+              <li>
+                <strong>Nothing is permanent.</strong> You can come back to the builder any time and
+                evolve your nation as its story grows.
+              </li>
+              <li>
+                <strong>Watch for synergies.</strong> Certain government and economic choices boost
+                each other — the builder flags them as you go. See the{" "}
+                <Link
+                  href="/help/government/atomic"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  atomic components guide
+                </Link>{" "}
+                for the deep version.
+              </li>
+              <li>
+                <strong>Lean on the advisor.</strong> As you fill in each section, the builder
+                suggests improvements and flags choices that work against each other.
+              </li>
+            </ul>
+          </InfoBox>
+        </Section>
+
+        <Section title="What Happens When You Save">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              Your nation goes live immediately. Head to{" "}
+              Your nation goes live right away. Head to{" "}
               <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
                 MyCountry
               </Link>{" "}
-              to see your vitality rings, compliance tasks, and quick actions.
+              to see it running — your vital signs, suggested next steps, and quick actions.
             </li>
             <li>
-              Your country will appear on the{" "}
+              It takes its place on the{" "}
+              <Link href="/maps" className="text-blue-600 hover:underline dark:text-blue-400">
+                world map
+              </Link>{" "}
+              and the{" "}
               <Link
                 href="/leaderboards"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Leaderboards
+                leaderboards
               </Link>{" "}
-              -- check how you stack up against other nations.
+              alongside everyone else&rsquo;s.
             </li>
             <li>
-              You can return to the{" "}
-              <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
-                Country Builder
-              </Link>{" "}
-              at any time to make changes and evolve your nation as you play.
+              From here on, the world keeps moving — and your nation grows with the choices you make.
             </li>
           </ul>
         </Section>
 
-        <InfoBox title="Learn More">
+        <InfoBox title="Go Deeper">
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <MapPin className="inline h-4 w-4" />{" "}
@@ -154,9 +152,9 @@ export default function FirstCountryArticle() {
                 href="/help/gameplay/country-building"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Country Building Guide
+                Shaping Your Nation
               </Link>{" "}
-              -- deep dive into all the options available in the builder.
+              — a fuller tour of everything the builder can do.
             </li>
             <li>
               <Settings className="inline h-4 w-4" />{" "}
@@ -173,7 +171,7 @@ export default function FirstCountryArticle() {
               >
                 Economic Tiers
               </Link>{" "}
-              -- advanced configuration guides for experienced players.
+              — for when you&rsquo;re ready to optimize.
             </li>
           </ul>
         </InfoBox>

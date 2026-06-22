@@ -7,106 +7,113 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function MyCountryOverviewArticle() {
   return (
     <ArticleLayout
-      title="National Overview"
-      description="Real-time vitality rings, metrics grid, and sector breakdown for your nation at a glance."
+      title="Your National Overview"
+      description="Your nation's health at a glance — the vital signs you check first each visit."
       icon={LayoutDashboard}
     >
       <ContentCard>
-        <Section title="What the Overview Shows">
+        <Section title="The First Thing You'll See">
           <p>
-            The Overview tab is your nation&apos;s real-time monitoring dashboard. It provides a
-            snapshot of your country&apos;s health across all domains without any action queues or
-            decision-making — that happens in the other MyCountry sections.
+            The Overview is your nation&rsquo;s home screen — a calm, at-a-glance read on how your
+            country is doing across the board. No decisions to make here; this is where you take the
+            temperature. The doing happens in the other MyCountry sections.
           </p>
         </Section>
 
-        <Section title="Vitality Rings">
-          <p>Four animated rings at the top of the page show overall health scores (0-100):</p>
+        <Section title="The Vital Signs">
+          <p>Four rings up top give your nation a quick health score in each area:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Economic Health:</strong> GDP growth, debt ratio, trade balance, and sector
-              diversity combined into a single score.
+              <strong>Economy</strong> — growth, debt, trade, and how varied your economy is, rolled
+              into one number.
             </li>
             <li>
-              <strong>Social Stability:</strong> Population growth, literacy, healthcare access, and
-              public satisfaction metrics.
+              <strong>Society</strong> — how your people are doing: population, education, health, and
+              everyday satisfaction.
             </li>
             <li>
-              <strong>Diplomatic Strength:</strong> Embassy count, relationship quality, alliance
-              network, and international standing.
+              <strong>Diplomacy</strong> — your standing in the world: embassies, relationships, and
+              alliances.
             </li>
             <li>
-              <strong>Defense Readiness:</strong> Military readiness, equipment maintenance,
-              security score, and threat assessment.
+              <strong>Defense</strong> — how ready and secure your nation is, at home and abroad.
             </li>
           </ul>
+          <p className="mt-2">
+            Green is healthy, amber is worth a look, red wants your attention. A glance tells you
+            where to spend your time.
+          </p>
         </Section>
 
-        <Section title="Metrics Grid">
-          <InfoBox title="Clickable Metric Cards">
+        <Section title="Tap Any Number for the Story Behind It">
+          <InfoBox title="Drill into the details">
             <p>
-              The metrics grid displays key indicators like GDP, population, growth rate, and debt.
-              Each card is clickable and opens a drill-down modal with four tabs:
+              The key figures — GDP, population, growth, debt and more — are all tappable. Open one
+              and you&rsquo;ll get the full picture:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <strong>Overview:</strong> Current value with context and key factors
+                <strong>Overview</strong> — where the number stands now, and what&rsquo;s driving it.
               </li>
               <li>
-                <strong>Trends:</strong> Historical charts showing change over time
+                <strong>Trends</strong> — how it&rsquo;s moved over time.
               </li>
               <li>
-                <strong>Comparison:</strong> How your country ranks against others
+                <strong>Comparison</strong> — how you stack up against other nations.
               </li>
               <li>
-                <strong>Details:</strong> Detailed breakdown of contributing factors
+                <strong>Details</strong> — the pieces that add up to the total.
               </li>
             </ul>
           </InfoBox>
-          <p className="mt-3">
-            Available drill-down modals: GDP, Population, Labor, Government Spending, Debt, and
-            Demographics Health.
-          </p>
         </Section>
       </ContentCard>
 
       <ContentCard>
-        <Section title="Sector Breakdown">
+        <Section title="Where Your Economy Goes">
           <p>
-            Below the metrics grid, sector breakdown cards show the distribution of your economy
-            across primary, secondary, and tertiary sectors, along with government spending
-            allocation across categories like education, healthcare, defense, and infrastructure.
+            Below the key figures, a breakdown shows how your economy splits across its sectors, and
+            where your government spends — education, healthcare, defense, infrastructure, and the
+            rest. It&rsquo;s the quickest way to see what kind of nation you&rsquo;re actually
+            running.
           </p>
         </Section>
 
-        <Section title="Sidebar Widgets">
+        <Section title="Handy on the Side">
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <Activity className="inline h-4 w-4 text-amber-500" />{" "}
-              <strong>National Issues Banner:</strong> Shows pending issue count with urgency
-              coloring. Click to navigate to the Executive section.
+              <strong>Issues waiting</strong> — a heads-up when decisions are piling up. Tap through to
+              the{" "}
+              <Link
+                href="/help/mycountry/executive"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Executive desk
+              </Link>{" "}
+              to handle them.
             </li>
             <li>
-              <BarChart3 className="inline h-4 w-4 text-cyan-500" /> <strong>Vault Widget:</strong>{" "}
-              Displays your IxCredits balance and vault level.
+              <BarChart3 className="inline h-4 w-4 text-cyan-500" /> <strong>Your Vault</strong> — a
+              quick peek at your IxCredits and Vault level.
             </li>
             <li>
-              <Target className="inline h-4 w-4 text-purple-500" /> <strong>Quick Actions:</strong>{" "}
-              Shortcuts to frequently used features across all MyCountry sections.
+              <Target className="inline h-4 w-4 text-purple-500" /> <strong>Quick actions</strong> —
+              shortcuts to the things you do most.
             </li>
           </ul>
         </Section>
 
-        <InfoBox title="Related Documentation">
+        <InfoBox title="Keep Exploring">
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Link
                 href="/help/mycountry/executive"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Executive Command Center
+                The Executive Desk
               </Link>{" "}
-              — Executive command and decision-making
+              — where the big decisions get made.
             </li>
             <li>
               <Link
@@ -115,16 +122,16 @@ export default function MyCountryOverviewArticle() {
               >
                 Economic Tiers
               </Link>{" "}
-              — Economic tier system and growth modeling
+              — how your economy climbs from one stage to the next.
             </li>
             <li>
               <Link
                 href="/help/vault/ixcredits"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                IxCredits Economy
+                IxCredits
               </Link>{" "}
-              — IxCredits economy
+              — earning and spending the currency.
             </li>
           </ul>
         </InfoBox>

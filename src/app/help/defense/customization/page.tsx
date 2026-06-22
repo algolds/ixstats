@@ -28,10 +28,8 @@ export default function DefenseCustomizationArticle() {
               <li>
                 Open the Defense tab and select the module or task force you want to configure.
               </li>
-              <li>
-                Apply changes; the UI persists updates via `api.sdi` and `api.security` mutations.
-              </li>
-              <li>Verify new stats in readiness gauges and compliance lists.</li>
+              <li>Apply your changes — they save right away.</li>
+              <li>Check your new numbers in the readiness gauges.</li>
             </ol>
           </InfoBox>
         </Section>

@@ -4,14 +4,14 @@
 
 > **Naming note:** IxStates is the platform/ecosystem (future product). IxStats is the current dev codename used in the repository (`package.json` name: `ixstates`) and database. The two names coexist — code is `ixstats`, brand is IxStates.
 
-> **Versioning note:** All version numbers come from the **Version Registry** at `src/lib/buildVersion.ts` (the single source of truth) — see [`revision.md`](./revision.md). This doc intentionally does **not** quote version numbers; consult the registry, the About page, or the Developer panel for live values. The platform is **IxStates 1.1.0 "Ogma"** (channel: Alpha); Apps/Engines/Systems each carry a single capability integer.
+> **Versioning note:** All version numbers come from the **Version Registry** at `src/lib/buildVersion.ts` (the single source of truth) — see [`revision.md`](./revision.md). This doc intentionally does **not** quote version numbers; consult the registry, the About page, or the Developer panel for live values. The platform is **IxStates 1.1.1 "Ogma"** (channel: Alpha); Apps/Engines/Systems each carry a single capability integer.
 
 ---
 
 ## Brand Architecture
 
 ```
-IxStates (platform/ecosystem)         ← versioned: 1.1.0 "Ogma" (Major.Minor.Patch + epoch + channel)
+IxStates (platform/ecosystem)         ← versioned: 1.1.1 "Ogma" (Major.Minor.Patch + epoch + channel)
 ├── dev codename: IxStats
 
 ├── Apps (own brand, ship/break independently — single integer)
@@ -64,7 +64,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.1.0 "Ogma" (Major.Minor.P
 | **Name** | IxStates™ (platform/ecosystem) |
 | **Dev codename** | IxStats (repo, package, database) |
 | **Project name** | `ixstates` (`package.json`, Prisma schema headers) |
-| **Version** | `APP_VERSION` (from registry) — platform **1.1.0 "Ogma"**, channel Alpha |
+| **Version** | `APP_VERSION` (from registry) — platform **1.1.1 "Ogma"**, channel Alpha |
 | **Homepage** | `https://ixwiki.com/projects/ixstats` |
 | **Meta title** | `IxStats — Nations, economy, lore` |
 | **Meta description** | `Build your country from the ground up...` |
@@ -401,7 +401,7 @@ Global contextual UI overlay system with plugin architecture. *(Formerly "Dynami
 
 ### 3.8 Admin CMS
 
-28 admin interfaces for platform management. Icon: Settings (Lucide). Accent: `#ef4444` (red-500). Shine: `["#ef4444", "#dc2626", "#f87171"]`. Glow: `text-red-400`.
+50+ admin interfaces for platform management. Icon: Settings (Lucide). Accent: `#ef4444` (red-500). Shine: `["#ef4444", "#dc2626", "#f87171"]`. Glow: `text-red-400`.
 
 | Category | Interfaces |
 |---|---|
@@ -519,7 +519,7 @@ Production-only scheduled jobs (`server.mjs` + `src/lib/*-cron.ts`).
 | **External API Cache** | Multi-tier cache for MediaWiki, Unsplash, Wikimedia, FlagCDN, REST Countries. |
 | **Rate Limiter** | Per-user and global rate limiting (`src/lib/rate-limiter.ts`). |
 | **Clerk Auth** | User authentication (`@clerk/nextjs`, `src/proxy.ts`). |
-| **Database** | PostgreSQL + PostGIS via Prisma. 12 schema files, 237 models. |
+| **Database** | PostgreSQL + PostGIS via Prisma. 15 schema files, 296 models. |
 
 ---
 

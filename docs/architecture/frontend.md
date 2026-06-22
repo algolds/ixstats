@@ -2,7 +2,7 @@
 
 **Last updated:** June 2026
 
-The frontend is built entirely on the Next.js 16.2.9 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (893+ components, 187 page routes).
+The frontend is built entirely on the Next.js 16.2.9 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (750+ components, 210+ page routes).
 
 ## Layout Composition
 - **App Router** – Each route folder contains `page.tsx`, optional `layout.tsx`, and feature-specific components. The root layout lives at `src/app/layout.tsx`.

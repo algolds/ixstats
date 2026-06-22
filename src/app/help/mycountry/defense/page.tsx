@@ -7,69 +7,63 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function MyCountryDefenseArticle() {
   return (
     <ArticleLayout
-      title="MyCountry Defense"
-      description="Military command, force customization, and operations management from the Defense tab."
+      title="Defense &amp; Security"
+      description="Command your military, shape your forces, and keep your nation secure."
       icon={Shield}
     >
       <ContentCard>
-        <Section title="Defense Tab Layout">
-          <p>
-            The Defense section manages your nation&apos;s military capabilities across three tabs:
-          </p>
+        <Section title="How It's Laid Out">
+          <p>Everything about your nation&rsquo;s security sits in three areas:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Command:</strong> Security assessment, readiness scoring, and threat
-              monitoring
+              <strong>Command</strong> — the big-picture read on threats and readiness.
             </li>
             <li>
-              <strong>Forces:</strong> Military branch management, equipment assignment, and force
-              composition
+              <strong>Forces</strong> — your branches, your troops, and the gear they carry.
             </li>
             <li>
-              <strong>Operations:</strong> Active deployments, deployment wizard, and conflict
-              management
+              <strong>Operations</strong> — what your military is actually doing right now.
             </li>
           </ul>
         </Section>
 
-        <Section title="Command Tab">
-          <p>The Command panel provides a comprehensive security overview:</p>
+        <Section title="Command">
+          <p>A clear view of how safe your nation is:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <Crosshair className="inline h-4 w-4 text-red-500" />{" "}
-              <strong>Security Assessment:</strong> Overall threat level with contributing factors
+              <Crosshair className="inline h-4 w-4 text-red-500" /> <strong>Threat level</strong> —
+              where things stand, and what&rsquo;s driving it.
             </li>
             <li>
-              <strong>Readiness Scoring:</strong> Military readiness percentage across all branches
+              <strong>Readiness</strong> — how prepared your forces are across the board.
             </li>
             <li>
-              <strong>Threat Monitoring:</strong> Active threats and incident tracking
+              <strong>Threats</strong> — what&rsquo;s out there and worth watching.
             </li>
             <li>
-              <strong>Compliance Tasks:</strong> Defense-related compliance items requiring action
+              <strong>Needs attention</strong> — the defense matters waiting on a decision from you.
             </li>
           </ul>
         </Section>
 
-        <Section title="Forces Tab">
-          <InfoBox title="Military Customization">
-            <p>The Forces tab lets you customize your military structure:</p>
+        <Section title="Forces">
+          <InfoBox title="Building your military">
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <Swords className="inline h-4 w-4" /> <strong>Branch Management:</strong> Configure
-                army, navy, air force, and special forces branches with personnel allocations
+                <Swords className="inline h-4 w-4" /> <strong>Branches</strong> — set up your army,
+                navy, air force, and special forces, and decide how many serve in each.
               </li>
               <li>
-                <strong>Equipment Assignment:</strong> Assign equipment from the 500+ item catalog
-                to branches
+                <strong>Equipment</strong> — kit out your forces from a deep, real-world-inspired
+                armory.
               </li>
               <li>
-                <strong>Force Composition:</strong> Balance between active duty, reserves, and
-                support personnel
+                <strong>Make-up</strong> — balance active troops, reserves, and the support that keeps
+                them going.
               </li>
               <li>
-                <strong>Vitality Rings:</strong> Branch count, average readiness, security score,
-                and security level
+                <strong>At a glance</strong> — branch count, average readiness, and your overall
+                security score.
               </li>
             </ul>
           </InfoBox>
@@ -77,24 +71,24 @@ export default function MyCountryDefenseArticle() {
       </ContentCard>
 
       <ContentCard>
-        <Section title="Operations Tab">
-          <p>Manage active and planned military operations:</p>
+        <Section title="Operations">
+          <p>Plan and follow what your forces are doing:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <Settings className="inline h-4 w-4 text-blue-500" />{" "}
-              <strong>Active Operations:</strong> Monitor ongoing deployments with status tracking
+              <Settings className="inline h-4 w-4 text-blue-500" /> <strong>What&rsquo;s active</strong>{" "}
+              — keep tabs on every deployment in progress.
             </li>
             <li>
-              <strong>Deployment Wizard:</strong> Step-by-step guide for planning new deployments
-              with objectives, force allocation, and timeline
+              <strong>Plan a deployment</strong> — a step-by-step walk-through for setting objectives,
+              committing forces, and timing your move.
             </li>
             <li>
-              <strong>PvP Conflicts:</strong> Player-vs-player conflict management and resolution
+              <strong>Conflicts</strong> — manage and resolve standoffs with other nations.
             </li>
           </ul>
         </Section>
 
-        <InfoBox title="Related Documentation">
+        <InfoBox title="Keep Exploring">
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Link
@@ -103,25 +97,25 @@ export default function MyCountryDefenseArticle() {
               >
                 Defense Overview
               </Link>{" "}
-              — Defense system overview
+              — where to start with your military.
             </li>
             <li>
               <Link
                 href="/help/defense/units"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Military Units
+                Units &amp; Assets
               </Link>{" "}
-              — Military unit types and capabilities
+              — the forces at your command.
             </li>
             <li>
               <Link
                 href="/help/defense/equipment"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Equipment Catalog
+                The Equipment Catalog
               </Link>{" "}
-              — Equipment catalog (500+ items)
+              — the armory you&rsquo;ll outfit them from.
             </li>
           </ul>
         </InfoBox>

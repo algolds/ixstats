@@ -188,7 +188,7 @@ export default function ReferenceDataArticle() {
               -- Admin system architecture and capabilities.
             </li>
             <li>
-              The database schema backing all content types spans 209 models across the platform.
+              A rich, interconnected data model sits behind every content type you manage.
             </li>
           </ul>
         </InfoBox>

@@ -143,10 +143,10 @@ export default function EconomicModelingArticle() {
             </li>
             <li>
               <LineChart className="inline h-4 w-4" />{" "}
-              <Link href="/help/economy/overview" className={linkClass}>
-                Economy Overview
+              <Link href="/help/economy/tiers" className={linkClass}>
+                Economic Tiers
               </Link>{" "}
-              &mdash; A broad introduction to how the economic system works.
+              &mdash; how your economy grows and climbs the ladder.
             </li>
           </ul>
         </InfoBox>

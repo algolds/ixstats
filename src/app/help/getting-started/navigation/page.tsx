@@ -8,81 +8,85 @@ export default function NavigationArticle() {
   return (
     <ArticleLayout
       title="Finding Your Way Around"
-      description="Everything you need to know about menus, shortcuts, and getting where you want to go fast."
+      description="Where everything lives, plus a few shortcuts to get around fast."
       icon={Navigation}
-      prevLink={{ href: "/help/getting-started/welcome", label: "Welcome" }}
-      nextLink={{
-        href: "/help/getting-started/first-country",
-        label: "Creating Your First Country",
-      }}
+      prevLink={{ href: "/help/getting-started/ixtime", label: "The World Clock (IxTime)" }}
+      nextLink={{ href: "/help/mycountry/overview", label: "Your National Overview" }}
     >
       <ContentCard>
-        <Section title="The Main Menu">
+        <Section title="The Top Menu">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>Top Navigation Bar:</strong> Once you&rsquo;re signed in, the top bar gives
-              you quick access to{" "}
+              <strong>The top bar</strong> is your home row. Once you&rsquo;re signed in, it gets you
+              to{" "}
               <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
                 MyCountry
               </Link>
-              ,{" "}
+              , the{" "}
               <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
                 Country Builder
               </Link>
-              ,{" "}
+              , your{" "}
               <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
-                Dashboards
+                dashboards
               </Link>
-              ,{" "}
+              , the{" "}
               <Link href="/thinkpages" className="text-blue-600 hover:underline dark:text-blue-400">
-                ThinkPages
+                community
               </Link>
-              , and{" "}
-              <Link href="/help" className="text-blue-600 hover:underline dark:text-blue-400">
-                Help
-              </Link>
-              . The menu adapts based on whether you&rsquo;re signed in and what permissions you
-              have.
-            </li>
-            <li>
-              <strong>MyCountry Dropdown:</strong> Hover over{" "}
-              <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
-                MyCountry
-              </Link>{" "}
-              in the navigation to jump straight into any of your seven sections: Overview,
-              Executive, Diplomacy, Intelligence, Defense, Politics, and Map Editor.
-            </li>
-            <li>
-              <strong>Home Page:</strong> Your signed-in home page surfaces quick links, alerts, and
-              dynamic cards so you can jump back into whatever you were working on.
-            </li>
-            <li>
-              <strong>Help Center:</strong> The{" "}
+              , and this{" "}
               <Link href="/help" className="text-blue-600 hover:underline dark:text-blue-400">
                 Help Center
-              </Link>{" "}
-              is always available from the top menu, with articles covering every platform feature.
+              </Link>
+              . The menu adjusts to who you are and what you can do.
+            </li>
+            <li>
+              <strong>The MyCountry menu</strong> jumps you straight into any part of your nation —
+              Overview, Executive, Diplomacy, Intelligence, Defense, Politics, and the Map Editor.
+            </li>
+            <li>
+              <strong>Your home page</strong> gathers quick links, alerts, and live cards so you can
+              pick right back up where you left off.
             </li>
           </ul>
         </Section>
 
-        <Section title="Quick Actions & Shortcuts">
-          <InfoBox title="Inside MyCountry">
+        <Section title="Shortcuts Worth Knowing">
+          <InfoBox title="Get around faster">
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                Use the MyCountry dropdown or sidebar to navigate between sections like{" "}
+                <strong>Search anything, instantly.</strong> Press{" "}
+                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
+                  Ctrl
+                </kbd>{" "}
+                +{" "}
+                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
+                  K
+                </kbd>{" "}
+                (or{" "}
+                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
+                  Cmd
+                </kbd>{" "}
+                +{" "}
+                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
+                  K
+                </kbd>{" "}
+                on a Mac) to open the command palette and jump anywhere on the platform.
+              </li>
+              <li>
+                Inside MyCountry, use the sidebar to move between sections like{" "}
                 <Link
                   href="/help/mycountry/overview"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  National Overview
+                  Overview
                 </Link>
                 ,{" "}
                 <Link
                   href="/help/mycountry/executive"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  Executive Command
+                  Executive
                 </Link>
                 ,{" "}
                 <Link
@@ -108,33 +112,8 @@ export default function NavigationArticle() {
                 .
               </li>
               <li>
-                Each section has its own tabs and content. For example, the Executive section
-                includes meetings, policies, and national issues, while Intelligence offers
-                dashboards, analysis, and reports.
-              </li>
-              <li>
-                Compliance alerts can appear anywhere in MyCountry to keep you informed of urgent
-                tasks.
-              </li>
-              <li>
-                <strong>Command Palette:</strong> Press{" "}
-                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
-                  Ctrl
-                </kbd>{" "}
-                +{" "}
-                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
-                  K
-                </kbd>{" "}
-                (or{" "}
-                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
-                  Cmd
-                </kbd>{" "}
-                +{" "}
-                <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold dark:bg-slate-700">
-                  K
-                </kbd>{" "}
-                on Mac) to open the command palette for quick searches and navigation across the
-                entire platform.
+                Helpful nudges and alerts can appear anywhere in MyCountry when something needs your
+                attention — a decision to make, or an opportunity worth a look.
               </li>
             </ul>
           </InfoBox>
@@ -142,23 +121,21 @@ export default function NavigationArticle() {
       </ContentCard>
 
       <ContentCard>
-        <Section title="Dark Mode & Appearance">
+        <Section title="Light & Dark">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              Toggle between light and dark themes from your profile menu in the top-right corner of
-              the screen.
+              Switch between light and dark from your profile menu in the top-right corner.
             </li>
-            <li>Your preference is saved automatically, so it persists every time you visit.</li>
+            <li>Your choice is remembered, so it stays the way you like it every visit.</li>
             <li>
-              Some views, like the{" "}
+              Different areas have their own signature colors — gold for{" "}
               <Link
                 href="/help/mycountry/overview"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                MyCountry dashboard
+                MyCountry
               </Link>
-              , use custom color themes (gold for MyCountry, blue for Global, and more) that work
-              beautifully in both modes.
+              , blue for the wider world — and they look great in both modes.
             </li>
           </ul>
         </Section>
@@ -168,12 +145,12 @@ export default function NavigationArticle() {
             <li>
               <LayoutDashboard className="inline h-4 w-4" />{" "}
               <Link
-                href="/help/technical/architecture"
+                href="/help/mycountry/overview"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Platform Architecture
+                Your National Overview
               </Link>{" "}
-              -- a deeper look at how everything fits together.
+              — the heart of your nation, and where most visits begin.
             </li>
             <li>
               <Menu className="inline h-4 w-4" />{" "}
@@ -181,9 +158,9 @@ export default function NavigationArticle() {
                 href="/help/getting-started/first-country"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Creating Your First Country
+                Create Your First Nation
               </Link>{" "}
-              -- ready to build? Start here.
+              — ready to build? Start here.
             </li>
           </ul>
         </InfoBox>

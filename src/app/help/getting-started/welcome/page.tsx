@@ -1,183 +1,166 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Compass, Flag } from "lucide-react";
+import { Sparkles, Compass, Globe2 } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function WelcomeArticle() {
   return (
     <ArticleLayout
       title="Welcome to IxStats"
-      description="Your gateway to building, managing, and growing a nation. Here's everything you need to get started."
+      description="Build a nation, then watch it come alive in a shared, living world. Here's how to begin."
       icon={Sparkles}
-      nextLink={{ href: "/help/getting-started/navigation", label: "Finding Your Way Around" }}
+      nextLink={{ href: "/help/getting-started/first-country", label: "Create Your First Nation" }}
     >
       <ContentCard>
-        <Section title="What's New in v2">
-          <ul className="list-disc space-y-2 pl-6">
-            <li>
-              <strong>Faster, Smoother Experience:</strong> Major platform upgrades deliver quicker
-              load times, snappier interactions, and a more polished feel across every page.
-            </li>
-            <li>
-              <strong>Cards & Vault:</strong> A full trading card system with pack opening,
-              marketplace auctions, lore cards, and an{" "}
-              <Link
-                href="/help/vault/ixcredits"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                IxCredits
-              </Link>{" "}
-              economy.
-            </li>
-            <li>
-              <strong>Elections & Politics:</strong> Political parties, legislature configuration,
-              and proportional representation elections you can run from your{" "}
-              <Link
-                href="/help/mycountry/politics"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Politics
-              </Link>{" "}
-              dashboard.
-            </li>
-            <li>
-              <strong>National Issues:</strong> Events that appear based on your nation&rsquo;s
-              conditions, each with multiple-choice responses and real consequences for your
-              country.
-            </li>
-            <li>
-              <strong>Hundreds of Components:</strong> Over 500 pieces of military equipment, 100+
-              diplomatic scenarios, and a fully dynamic content library that keeps growing.
-            </li>
-          </ul>
+        <Section title="What is IxStats?">
+          <p>
+            IxStats is a worldbuilding platform built around one idea: your nation should feel{" "}
+            <em>alive</em>. You design a country — its economy, government, military, culture, and
+            borders — and it becomes a living part of a shared world that keeps moving, growing, and
+            reacting on its own.
+          </p>
+          <p className="mt-3">
+            You&rsquo;re not filling out a profile. You&rsquo;re running a nation, telling its story,
+            and watching the numbers and the map respond to your choices.
+          </p>
         </Section>
 
-        <Section title="Three Things You Can Do Today">
-          <ul className="list-disc space-y-2 pl-6">
-            <li>
-              Claim or create a nation and explore the{" "}
-              <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
-                MyCountry
-              </Link>{" "}
-              command suite for executive dashboards, intelligence, and diplomacy.
-            </li>
-            <li>
-              Browse live economic, diplomatic, and social data through the{" "}
-              <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
-                Dashboard
-              </Link>
-              ,{" "}
-              <Link
-                href="/leaderboards"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Leaderboards
-              </Link>
-              , and{" "}
-              <Link href="/thinkpages" className="text-blue-600 hover:underline dark:text-blue-400">
-                ThinkPages
-              </Link>
-              .
-            </li>
-            <li>
-              Collaborate with other players using achievements, ThinkShare messaging, and this
-              in-app help center.
-            </li>
-          </ul>
+        <Section title="Coming from NationStates?">
+          <InfoBox title="You'll feel at home — with a lot more under your hands">
+            <p className="mb-2">
+              If you&rsquo;ve built nations on NationStates, the instinct is exactly the same: create
+              a country, give it character, tell its story. Here&rsquo;s what&rsquo;s different:
+            </p>
+            <ul className="list-disc space-y-1 pl-6">
+              <li>
+                Your <strong>economy actually runs the numbers</strong> — GDP, trade, taxes, and
+                growth are modeled and live, not a one-line stat.
+              </li>
+              <li>
+                Your nation lives on a <strong>real, editable world map</strong> — borders, terrain,
+                and neighbors you can see and shape.
+              </li>
+              <li>
+                Government, military, diplomacy, and intelligence are{" "}
+                <strong>connected systems</strong>, not separate flavor text — a choice in one shows
+                up in the others.
+              </li>
+              <li>
+                The world runs on its own clock (
+                <Link
+                  href="/help/getting-started/ixtime"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  IxTime
+                </Link>
+                ) — things keep happening whether or not you&rsquo;re watching.
+              </li>
+            </ul>
+            <p className="mt-2">Less answering issues. More building and running a nation.</p>
+          </InfoBox>
         </Section>
       </ContentCard>
 
       <ContentCard>
-        <Section title="Key Destinations">
-          <InfoBox title="Start Exploring">
+        <Section title="Your First Few Minutes">
+          <ol className="list-decimal space-y-2 pl-6">
+            <li>
+              <strong>Create your nation</strong> in the{" "}
+              <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
+                Country Builder
+              </Link>{" "}
+              — from a blank slate, or by importing a starting point from your IxWiki article.
+            </li>
+            <li>
+              <strong>Give it an identity</strong> — name, flag, motto, and the feel of the place.
+            </li>
+            <li>
+              <strong>Visit{" "}
+              <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
+                MyCountry
+              </Link>
+              </strong>{" "}
+              — your nation&rsquo;s home base — and watch it come to life.
+            </li>
+            <li>
+              <strong>Find your spot</strong> on the{" "}
+              <Link href="/maps" className="text-blue-600 hover:underline dark:text-blue-400">
+                world map
+              </Link>
+              .
+            </li>
+          </ol>
+        </Section>
+
+        <Section title="Where Things Live">
+          <InfoBox title="The places you'll come back to">
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <Link
-                  href="/mycountry"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
+                <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
                   <strong>MyCountry</strong>
                 </Link>{" "}
-                -- your nation&rsquo;s home base for intelligence, compliance, defense, and
-                analytics.
+                — your nation&rsquo;s home base. Economy, cabinet, military, and diplomacy, all in one
+                place.
               </li>
               <li>
                 <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
                   <strong>Country Builder</strong>
                 </Link>{" "}
-                -- configure your nation with over 100 government, economic, and tax components.
+                — where you create and reshape your nation, any time.
               </li>
               <li>
-                <Link
-                  href="/dashboard"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  <strong>Global Dashboard</strong>
+                <Link href="/maps" className="text-blue-600 hover:underline dark:text-blue-400">
+                  <strong>The World Map</strong>
                 </Link>{" "}
-                -- leaderboards, global stats, and live economic data at a glance.
+                — the shared world every nation lives on.
               </li>
               <li>
-                <Link href="/help" className="text-blue-600 hover:underline dark:text-blue-400">
-                  <strong>Help Center</strong>
+                <Link href="/thinkpages" className="text-blue-600 hover:underline dark:text-blue-400">
+                  <strong>Community</strong>
                 </Link>{" "}
-                -- guides and articles covering every feature on the platform.
+                — meet the worldbuilders behind the other nations.
+              </li>
+              <li>
+                <Link href="/vault" className="text-blue-600 hover:underline dark:text-blue-400">
+                  <strong>Cards &amp; Vault</strong>
+                </Link>{" "}
+                — collect and trade as you play.
               </li>
             </ul>
           </InfoBox>
         </Section>
 
-        <Section title="Next Steps">
+        <Section title="Need a Hand?">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              Visit{" "}
+              <Compass className="inline h-4 w-4" /> Ready to build? Walk through{" "}
               <Link
                 href="/help/getting-started/first-country"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Creating Your First Country
+                Create Your First Nation
               </Link>{" "}
-              to walk through the builder workflow step by step.
+              step by step.
             </li>
             <li>
-              Take the{" "}
+              <Globe2 className="inline h-4 w-4" /> Curious how it all fits together? See{" "}
               <Link
-                href="/help/getting-started/navigation"
+                href="/help/getting-started/gameplay-overview"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Interface Tour
-              </Link>{" "}
-              to learn about navigation, quick actions, and live feeds.
+                How It All Fits Together
+              </Link>
+              .
             </li>
             <li>
-              Bookmark the{" "}
+              Every feature on the platform has its own guide right here in the{" "}
               <Link href="/help" className="text-blue-600 hover:underline dark:text-blue-400">
                 Help Center
-              </Link>{" "}
-              -- every major feature has its own guide, and new articles are added regularly.
+              </Link>
+              .
             </li>
           </ul>
-        </Section>
-
-        <Section title="Need Help?">
-          <InfoBox title="Support Channels">
-            <ul className="list-disc space-y-1 pl-6">
-              <li>
-                <Compass className="inline h-4 w-4" /> Explore the rest of the{" "}
-                <Link
-                  href="/help/getting-started/gameplay-overview"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Getting Started
-                </Link>{" "}
-                series for gameplay tips and walkthroughs.
-              </li>
-              <li>
-                <Flag className="inline h-4 w-4" /> Reach out to admins via ThinkShare or the
-                project Discord for account issues.
-              </li>
-            </ul>
-          </InfoBox>
         </Section>
       </ContentCard>
     </ArticleLayout>

@@ -7,75 +7,74 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function VaultOverviewArticle() {
   return (
     <ArticleLayout
-      title="Vault Overview"
-      description="Your card collection, IxCredits balance, and vault progression system."
+      title="Your Vault"
+      description="Your collection, your IxCredits, and how your Vault grows as you play."
       icon={Coins}
     >
       <ContentCard>
-        <Section title="What is the Vault?">
+        <Section title="What the Vault Is">
           <p>
-            The Vault is your central hub for the IxStats card collection system. It manages your
-            trading cards, IxCredits virtual currency, and progression. Access it from the Vault
-            link in the main navigation.
+            The Vault is your home for collecting — your trading cards, your IxCredits, and the
+            progress you make as you play. You&rsquo;ll find it in the main menu, organized into five
+            simple areas:
           </p>
-          <p className="mt-3">The Vault has five sections:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Dashboard:</strong> IxCredits balance, vault level, daily bonus, and quick
-              actions
+              <strong>Dashboard</strong> — your balance, your level, your daily bonus, and quick
+              actions.
             </li>
             <li>
-              <strong>Cards:</strong> Browse and manage your card collection
+              <strong>Cards</strong> — browse and sort your whole collection.
             </li>
             <li>
-              <strong>Acquire:</strong> Purchase card packs and browse the marketplace
+              <strong>Acquire</strong> — open packs and shop the marketplace.
             </li>
             <li>
-              <strong>Create:</strong> Create custom cards and initiate trades
+              <strong>Create</strong> — make your own cards and set up trades.
             </li>
             <li>
-              <strong>Import:</strong> Import cards from NationStates
+              <strong>Import</strong> — bring cards in from NationStates.
             </li>
           </ul>
         </Section>
 
-        <Section title="Card Types">
+        <Section title="Kinds of Cards">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <Layers className="inline h-4 w-4 text-blue-500" /> <strong>Nation Cards:</strong>{" "}
-              Cards representing countries with stats, flags, and government data
+              <Layers className="inline h-4 w-4 text-blue-500" /> <strong>Nation Cards</strong> —
+              countries, with their stats, flags, and government on show.
             </li>
             <li>
-              <Layers className="inline h-4 w-4 text-purple-500" /> <strong>Lore Cards:</strong>{" "}
-              Wiki-generated cards from IxWiki articles with excerpts and holographic effects
+              <Layers className="inline h-4 w-4 text-purple-500" /> <strong>Lore Cards</strong> —
+              made from wiki articles, complete with excerpts and holographic shine.
             </li>
             <li>
               <Layers className="inline h-4 w-4 text-emerald-500" />{" "}
-              <strong>NationStates Import Cards:</strong> Cards imported from NationStates profiles
+              <strong>NationStates Cards</strong> — pulled straight from NationStates profiles.
             </li>
           </ul>
         </Section>
 
-        <Section title="Rarity System">
-          <InfoBox title="Card Rarities">
-            <p>Cards come in five rarity tiers, each with distinct visual treatments:</p>
+        <Section title="Rarity">
+          <InfoBox title="Five tiers, from plain to dazzling">
+            <p>Every card has a rarity, and the rarer it is, the more it shows off:</p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <strong>Common:</strong> Standard card appearance
+                <strong>Common</strong> — clean and classic.
               </li>
               <li>
-                <strong>Uncommon:</strong> Subtle shimmer effect
+                <strong>Uncommon</strong> — a subtle shimmer.
               </li>
               <li>
-                <strong>Rare:</strong> Enhanced border glow
+                <strong>Rare</strong> — a glowing border.
               </li>
               <li>
-                <Star className="inline h-4 w-4 text-purple-500" /> <strong>Epic:</strong>{" "}
-                Holographic cover with animated effects
+                <Star className="inline h-4 w-4 text-purple-500" /> <strong>Epic</strong> — holographic,
+                with motion.
               </li>
               <li>
-                <Star className="inline h-4 w-4 text-amber-500" /> <strong>Legendary:</strong> Full
-                holographic treatment with premium animations
+                <Star className="inline h-4 w-4 text-amber-500" /> <strong>Legendary</strong> — the full
+                dazzling treatment.
               </li>
             </ul>
           </InfoBox>
@@ -83,33 +82,32 @@ export default function VaultOverviewArticle() {
       </ContentCard>
 
       <ContentCard>
-        <Section title="Vault Dashboard">
+        <Section title="Your Dashboard">
           <p>
-            The dashboard shows your IxCredits balance with animated number transitions, current
-            vault level and XP progress, daily login bonus streak status, and quick-action buttons
-            to open packs, browse the marketplace, or start a trade.
+            Open the Vault and the dashboard greets you with your IxCredits, your level and how close
+            you are to the next one, your daily login streak, and one-tap buttons to open a pack,
+            browse the marketplace, or start a trade.
           </p>
         </Section>
 
-        <Section title="Collection Management">
+        <Section title="Your Collection">
           <p>
-            <Package className="inline h-4 w-4 text-amber-500" /> The Cards section displays your
-            full collection in a filterable grid. Sort by rarity, type, or acquisition date. View
-            detailed card information including stats, lore text, and holographic effects by
-            clicking any card.
+            <Package className="inline h-4 w-4 text-amber-500" /> The Cards area lays out everything
+            you own in a grid you can filter and sort — by rarity, type, or when you got it. Tap any
+            card to see it up close, lore and shine and all.
           </p>
         </Section>
 
-        <InfoBox title="Related Articles">
+        <InfoBox title="Keep Exploring">
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Link
                 href="/help/vault/card-packs"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Card Packs &amp; Opening
+                Packs &amp; Opening
               </Link>{" "}
-              - Card pack purchasing and opening
+              — buying packs and the thrill of the reveal.
             </li>
             <li>
               <Link
@@ -118,16 +116,16 @@ export default function VaultOverviewArticle() {
               >
                 Trading &amp; Marketplace
               </Link>{" "}
-              - Marketplace and trading
+              — auctions, bids, and trades.
             </li>
             <li>
               <Link
                 href="/help/vault/ixcredits"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                IxCredits Economy
+                IxCredits
               </Link>{" "}
-              - IxCredits economy details
+              — earning and spending the currency.
             </li>
           </ul>
         </InfoBox>

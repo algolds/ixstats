@@ -7,139 +7,125 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function MyCountryDiplomacyArticle() {
   return (
     <ArticleLayout
-      title="MyCountry Diplomacy"
-      description="Manage embassies, communicate with other nations, and set foreign policy from the Diplomacy tab."
+      title="Foreign Affairs"
+      description="Manage embassies, talk to other nations, and steer your foreign policy."
       icon={Globe}
     >
       <ContentCard>
-        <Section title="Diplomacy Tab Layout">
-          <p>
-            The Diplomacy section is organized into four tabs that cover all aspects of your
-            nation&apos;s international relations:
-          </p>
+        <Section title="How It's Laid Out">
+          <p>Your foreign affairs are split into four easy areas:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Overview:</strong> High-level diplomatic health with vitality rings
+              <strong>Overview</strong> — your diplomatic health at a glance.
             </li>
             <li>
-              <strong>Embassies & Relations:</strong> Embassy management and relationship tracking
+              <strong>Embassies &amp; Relations</strong> — your network abroad and how each
+              relationship is doing.
             </li>
             <li>
-              <strong>Communications:</strong> Direct messaging between nations
+              <strong>Messages</strong> — talk directly with other nations.
             </li>
             <li>
-              <strong>Foreign Policy:</strong> Policy creation and active policy management
+              <strong>Foreign Policy</strong> — the stances you take toward the rest of the world.
             </li>
           </ul>
         </Section>
 
-        <Section title="Overview Tab">
-          <p>The overview displays vitality rings showing your diplomatic health at a glance:</p>
+        <Section title="At a Glance">
+          <p>The overview gives you a quick read on where you stand in the world:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Active Embassies:</strong> Number of established embassies vs. total possible
+              <strong>Embassies</strong> — how many you&rsquo;ve opened, out of the ones you could.
             </li>
             <li>
-              <strong>Relations Count:</strong> Total diplomatic relationships
+              <strong>Relationships</strong> — how many nations you have ties with.
             </li>
             <li>
-              <strong>Average Strength:</strong> Mean relationship strength across all connections
+              <strong>Average warmth</strong> — how strong those ties are, on the whole.
             </li>
             <li>
-              <strong>Strong Ties:</strong> Percentage of relationships with strength of 70% or
-              higher
+              <strong>Close friends</strong> — the share of relationships that are genuinely strong.
             </li>
           </ul>
         </Section>
 
-        <Section title="Embassies & Relations">
-          <InfoBox title="Embassy Management">
+        <Section title="Embassies &amp; Relations">
+          <InfoBox title="Building your network">
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <Building className="inline h-4 w-4" /> Establish new embassies with other nations
-                using the Embassy Creator
+                <Building className="inline h-4 w-4" /> Open new embassies with other nations.
               </li>
-              <li>View and manage existing embassy network with staffing and influence tracking</li>
-              <li>Alliance Dashboard shows alliance memberships and coalition opportunities</li>
-              <li>Relationship strength updated based on diplomatic actions and events</li>
+              <li>Manage the embassies you have — their staff and the influence they earn you.</li>
+              <li>See your alliances and spot opportunities to join forces.</li>
+              <li>Watch relationships warm or cool as you act on the world stage.</li>
             </ul>
           </InfoBox>
         </Section>
       </ContentCard>
 
       <ContentCard>
-        <Section title="Communications">
+        <Section title="Talking to Other Nations">
           <p>
-            <MessageSquare className="inline h-4 w-4 text-cyan-500" /> The Communications tab
-            provides direct messaging between nations. Send diplomatic messages, respond to
-            proposals, and maintain communication channels with allies and rivals.
+            <MessageSquare className="inline h-4 w-4 text-cyan-500" /> Send messages straight to other
+            nations — float proposals, answer theirs, and keep the lines open with allies and rivals
+            alike.
           </p>
         </Section>
 
         <Section title="Foreign Policy">
           <p>
-            <FileText className="inline h-4 w-4 text-indigo-500" /> Create and manage foreign
-            policies that affect your diplomatic standing:
+            <FileText className="inline h-4 w-4 text-indigo-500" /> Set the stances that shape how the
+            world sees you:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Policy Creator:</strong> Draft new foreign policies with scope and objectives
+              <strong>Draft a policy</strong> — define what you&rsquo;re after and who it concerns.
             </li>
             <li>
-              <strong>Active Policies List:</strong> Monitor currently enforced policies and their
-              effects
+              <strong>Track what&rsquo;s active</strong> — keep an eye on your standing policies and
+              their effects.
             </li>
             <li>
-              <strong>Trade Impact Charts:</strong> Visualize how policies affect trade
-              relationships
-            </li>
-          </ul>
-          <p className="mt-3 text-slate-700 dark:text-slate-300">
-            All foreign policy actions now execute{" "}
-            <strong>atomically in database transactions</strong>, ensuring that policy enactment and
-            its side effects &mdash; including relationship changes, economic impacts, and narrative
-            generation &mdash; either succeed together or roll back entirely.
-          </p>
-        </Section>
-
-        <Section title="Diplomatic Consequences & AI Response">
-          <p className="mb-3 text-slate-700 dark:text-slate-300">
-            Your foreign policy decisions carry real weight. Target countries can now{" "}
-            <strong>respond or retaliate</strong> through the respondToForeignPolicy system. When
-            you enact a policy, the affected nation evaluates it based on their interests,
-            relationship strength, and current diplomatic posture.
-          </p>
-          <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
-            <li>
-              <strong>Diplomatic Incidents:</strong> Policy actions can generate diplomatic
-              incidents &mdash; unexpected crises ranging from minor protocol breaches to major
-              international disputes. Incidents appear in your national issues feed and may require
-              immediate executive attention.
-            </li>
-            <li>
-              <strong>NPC Personalities:</strong> AI-controlled countries make diplomatic decisions
-              based on defined personality profiles. An aggressive militaristic NPC will react
-              differently to your policies than a cooperative trading nation. NPC traits influence
-              their tolerance, willingness to negotiate, and likelihood of escalation.
-            </li>
-            <li>
-              <strong>Narrative Feed:</strong> Diplomatic events are surfaced in your narrative feed
-              alongside executive actions and issues, giving you a cohesive timeline of your
-              nation&apos;s international story.
+              <strong>See the trade impact</strong> — watch how your stances ripple through trade.
             </li>
           </ul>
         </Section>
 
-        <InfoBox title="Related Documentation">
+        <Section title="Your Choices Have Consequences">
+          <p className="mb-3">
+            Foreign policy isn&rsquo;t shouting into the void — other nations notice, and they push
+            back. When you make a move, the nation it touches weighs it against their own interests
+            and how they feel about you.
+          </p>
+          <ul className="list-disc space-y-2 pl-6">
+            <li>
+              <strong>Incidents</strong> — a bold or careless move can spark anything from a minor
+              snub to a full-blown international dispute. These land in your issues feed and may need
+              your attention right away.
+            </li>
+            <li>
+              <strong>Different leaders, different reactions</strong> — every nation has a character of
+              its own. A proud, militaristic neighbor will take your policy very differently than a
+              friendly trading partner. Get to know who you&rsquo;re dealing with.
+            </li>
+            <li>
+              <strong>One running story</strong> — diplomatic moments show up in your news feed
+              alongside your other big decisions, so your nation&rsquo;s story on the world stage
+              reads as one continuous tale.
+            </li>
+          </ul>
+        </Section>
+
+        <InfoBox title="Keep Exploring">
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Link
                 href="/help/diplomacy/embassies"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Embassy Network
+                Embassies
               </Link>{" "}
-              — Detailed embassy network guide
+              — building your network abroad.
             </li>
             <li>
               <Link
@@ -148,16 +134,16 @@ export default function MyCountryDiplomacyArticle() {
               >
                 Diplomatic Missions
               </Link>{" "}
-              — Diplomatic mission mechanics
+              — sending envoys to get things done.
             </li>
             <li>
               <Link
                 href="/help/diplomacy/npc-personalities"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                NPC Personality System
+                Meeting Other Leaders
               </Link>{" "}
-              — NPC behavioral AI system
+              — who you&rsquo;re negotiating with, and what makes them tick.
             </li>
           </ul>
         </InfoBox>

@@ -13,56 +13,45 @@ import {
 export default function NationalIssuesArticle() {
   return (
     <ArticleLayout
-      title="National Issues System"
-      description="Template-based events with trigger conditions, multiple-choice responses, and real consequences."
+      title="National Issues &amp; Decisions"
+      description="Events that land on your desk and ask what kind of leader you are — and your choices stick."
       icon={Bell}
     >
       <ContentCard>
         <Section title="What Are National Issues?">
           <p>
-            National Issues are dynamic events generated from your country&apos;s current
-            conditions. Inspired by NationStates, issues present you with real decisions that affect
-            your economy, society, diplomacy, and defense. A maximum of 3 new issues can appear per
-            evaluation cycle.
+            National Issues are events that grow out of what&apos;s actually happening in your nation.
+            If you&apos;ve answered issues on NationStates, you&apos;ll recognize the spirit &mdash;
+            but here your choices ripple straight into your economy, society, diplomacy, and defense.
+            Up to three fresh issues turn up at a time.
           </p>
           <p className="mt-3">
-            Issues appear in the Executive tab&apos;s Issues inbox and are evaluated using lazy
-            evaluation — the engine runs when you open your inbox, debounced by 5 IxTime minutes.
+            You&apos;ll find them in your{" "}
+            <Link
+              href="/help/mycountry/executive"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Executive
+            </Link>{" "}
+            inbox, ready whenever you open it.
           </p>
         </Section>
 
-        <Section title="How Issues Are Generated">
-          <InfoBox title="Generation Engine">
+        <Section title="Where Issues Come From">
+          <InfoBox title="Always about your nation, right now">
             <p>
-              <Cog className="inline h-4 w-4" /> The engine follows this process:
+              <Cog className="inline h-4 w-4" /> Issues are never random. When you open your inbox, the
+              game takes a fresh look at your nation and surfaces the situations that fit:
             </p>
-            <ol className="mt-2 list-decimal space-y-1 pl-6">
+            <ul className="mt-2 list-disc space-y-1 pl-6">
+              <li>It reads your nation as it stands — your economy, politics, and relationships.</li>
+              <li>It finds the events that genuinely make sense for where you are right now.</li>
               <li>
-                <strong>Build Snapshot:</strong> Gather current country data in a single optimized
-                query
+                The leaders of other nations — and their personalities — shape which ones land on your
+                desk.
               </li>
-              <li>
-                <strong>Load Templates:</strong> Fetch active issue templates from the database
-              </li>
-              <li>
-                <strong>Evaluate Triggers:</strong> Check each template&apos;s conditions against
-                the snapshot using JSON expression trees (no eval)
-              </li>
-              <li>
-                <strong>Apply NPC Modifiers:</strong> NPC personality traits influence which issues
-                surface
-              </li>
-              <li>
-                <strong>Select Top Issues:</strong> Rank eligible issues by relevance and pick up to
-                3
-              </li>
-              <li>
-                <strong>Variable Substitution:</strong> Insert country-specific data into issue text
-              </li>
-              <li>
-                <strong>Persist:</strong> Save instantiated issues to the database
-              </li>
-            </ol>
+              <li>You get the few that matter most, written with your own nation&apos;s details.</li>
+            </ul>
           </InfoBox>
         </Section>
       </ContentCard>

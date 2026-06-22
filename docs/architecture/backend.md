@@ -2,7 +2,7 @@
 
 **Last updated:** June 2026
 
-IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **87 routers** and **1,376 procedures**. Routers live in `src/server/api/routers`, while shared infrastructure is defined in `src/server/api/trpc.ts` and supporting libraries under `src/lib`. **52 of the 87 routers are split into subdirectories** (`mergeRouters` recombination) — see "Router Composition" below.
+IxStates (IxStats) uses tRPC 11.17 to expose a fully typed API layer with **90 routers** and **1,450+ procedures**. Routers live in `src/server/api/routers`, while shared infrastructure is defined in `src/server/api/trpc.ts` and supporting libraries under `src/lib`. **Most routers are split into subdirectories** (`mergeRouters` recombination) — see "Router Composition" below.
 
 ## Context & Middleware
 - **Auth Context** – `createTRPCContext` loads Clerk sessions (via `@clerk/nextjs/server`) and auto-provisions users into the database when needed.

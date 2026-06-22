@@ -27,9 +27,9 @@ export default function LoreCardsArticle() {
 
         <Section title="Finding Articles">
           <p>
-            <Search className="inline h-4 w-4 text-blue-500" /> Use the Article Search tool to find
-            wiki articles suitable for card generation. Search by title, category, or keyword. The
-            search connects to the IxWiki API to find relevant articles.
+            <Search className="inline h-4 w-4 text-blue-500" /> Use the article search to find wiki
+            articles worth turning into cards. Search by title, category, or keyword, and it&apos;ll
+            pull matching articles from across IxWiki.
           </p>
         </Section>
 

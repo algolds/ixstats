@@ -154,13 +154,10 @@ export default function AtomicGovernmentArticle() {
             </li>
           </ul>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
-            The <strong>applyGovernmentComponentEffects</strong> engine processes your component
-            configuration and computes real numerical effects on your nation&apos;s game state.
-            Every component you add or remove triggers this engine, updating GDP, population growth,
-            political stability, and other metrics based on the component&apos;s type, tier, and
-            synergy/conflict interactions. These effects are recorded as StorytellerEffect records
-            so you can trace how each governance decision shaped your country&apos;s development
-            over time.
+            Every component you add or remove updates your nation&apos;s real numbers &mdash; GDP,
+            population growth, political stability, and more &mdash; based on its kind, its strength,
+            and how it plays with your other choices. Each change is recorded, so you can trace how a
+            single governance decision shaped your country over time.
           </p>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
             You can view your effectiveness score and a breakdown of these factors on your{" "}
@@ -206,12 +203,12 @@ export default function AtomicGovernmentArticle() {
             </li>
             <li>
               <Link
-                href="/help/government/overview"
+                href="/help/government/traditional"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Government Overview
+                Government Types
               </Link>{" "}
-              — General introduction to how government works in IxStats.
+              — the quick way to choose how your nation is governed.
             </li>
             <li>
               <Link

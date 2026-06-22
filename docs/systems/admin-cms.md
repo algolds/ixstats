@@ -2,7 +2,7 @@
 
 **Last updated:** May 2026
 
-Comprehensive guide to IxStats' 28+ admin interfaces for managing dynamic content, reference data, and system configuration.
+Comprehensive guide to IxStats' 50+ admin interfaces for managing dynamic content, reference data, and system configuration.
 
 ## Table of Contents
 1. [Overview](#overview)

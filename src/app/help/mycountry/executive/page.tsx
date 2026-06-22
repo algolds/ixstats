@@ -7,82 +7,76 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function ExecutiveArticle() {
   return (
     <ArticleLayout
-      title="Executive Command Center"
-      description="Manage national issues, cabinet meetings, policies, and strategic decisions from the Executive dashboard."
+      title="The Executive Desk"
+      description="Hold cabinet meetings, set national policy, and make the big calls that move your nation."
       icon={Command}
     >
       <ContentCard>
-        <Section title="Overview">
+        <Section title="Where the Big Decisions Happen">
           <p>
-            The Executive Command Center is your central hub for executive governance operations.
-            Access it via <strong>MyCountry &rarr; Executive</strong> in the navigation. This
-            section consolidates issue management, meetings, policy creation, and strategic
-            decisions in one streamlined interface.
+            This is the desk where you actually lead. Find it under{" "}
+            <strong>MyCountry &rarr; Executive</strong>. It brings the issues on your plate, your
+            cabinet, your policies, and your boldest moves together in one place.
           </p>
         </Section>
 
-        <Section title="Features">
+        <Section title="What You'll Do Here">
           <div className="space-y-4">
             <div>
               <h4 className="flex items-center gap-2 font-semibold">
                 <Bell className="h-4 w-4 text-amber-600" />
                 National Issues
               </h4>
-              <p className="text-muted-foreground mt-1 text-sm">
-                The Issues inbox presents dynamic national events triggered by your country&apos;s
-                conditions. Each issue offers multiple-choice responses with real consequences for
-                your economy, society, diplomacy, and defense. Up to 3 new issues appear per
-                evaluation cycle, with urgency levels and auto-resolution deadlines. Responding
-                earns IxCredits (5 base + risk bonus).
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Your inbox of events — situations that come up because of how your nation is doing.
+                Each one offers a few ways to respond, and your choice has real consequences for your
+                economy, your people, your standing abroad, and your security. Handling them earns
+                IxCredits, and the riskier calls pay a little more.
               </p>
             </div>
 
             <div>
               <h4 className="flex items-center gap-2 font-semibold">
                 <Calendar className="h-4 w-4 text-purple-600" />
-                Meetings & Decisions
+                Meetings &amp; Decisions
               </h4>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Schedule cabinet meetings, manage agendas, record attendance, and track meeting
-                outcomes. Record executive decisions from meetings and track associated action items
-                with responsibilities, deadlines, and completion status.
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Call cabinet meetings, set the agenda, and record what gets decided. Turn decisions
+                into action items with owners and deadlines so nothing falls through the cracks — and
+                so your nation&rsquo;s history has a paper trail.
               </p>
             </div>
 
             <div>
               <h4 className="flex items-center gap-2 font-semibold">
                 <FileText className="h-4 w-4 text-indigo-600" />
-                Policies & Strategy
+                Policies &amp; Strategy
               </h4>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Draft, review, and implement national policies across all government sectors. Track
-                policy status (draft, active, archived), assign priorities, and organize by category
-                (economic, social, defense, etc.). Create long-term strategic initiatives and
-                development plans with milestones and progress tracking.
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Draft and enact policies across every part of government. Keep them organized by
+                area, set priorities, and track each one from idea to law. For the long game, lay out
+                strategic plans with milestones you can watch progress against.
               </p>
             </div>
 
             <div>
               <h4 className="flex items-center gap-2 font-semibold">
                 <Target className="h-4 w-4 text-rose-600" />
-                Executive Actions
+                Big Actions
               </h4>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Execute high-impact national directives from your command suite. Nine executive
-                actions are available: <strong>stimulus package</strong>,{" "}
-                <strong>population incentives</strong>, <strong>tax policy</strong>,{" "}
-                <strong>diplomatic mission</strong>, <strong>emergency response</strong>,{" "}
-                <strong>budget allocation</strong>, <strong>infrastructure project</strong>,{" "}
-                <strong>education reform</strong>, and <strong>healthcare investment</strong>.
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                When you&rsquo;re ready to make a real move, nine national actions are at your
+                command: a <strong>stimulus package</strong>, <strong>population incentives</strong>,{" "}
+                <strong>tax changes</strong>, a <strong>diplomatic mission</strong>, an{" "}
+                <strong>emergency response</strong>, <strong>budget reallocation</strong>, an{" "}
+                <strong>infrastructure project</strong>, <strong>education reform</strong>, and{" "}
+                <strong>healthcare investment</strong>.
               </p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Every action produces real economic effects through the StorytellerEffect system,
-                with computed changes to GDP, population, political stability, and other metrics
-                based on the specific action and its input parameters. Each action has a cooldown
-                ranging from <strong>24 to 168 hours</strong> depending on the action type, and
-                costs are deducted from your national budget upon execution. The{" "}
-                <strong>NewsFeedWidget</strong> displays narrative output describing the outcome of
-                each action, immersing you in the story of your nation&apos;s development.
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Each one costs from your national budget, then ripples through your economy and
+                stability — and writes a fresh headline in your nation&rsquo;s story so you can see
+                how it landed. Big actions need time to take effect, so you can&rsquo;t spam them;
+                pick your moments.
               </p>
             </div>
           </div>
@@ -90,50 +84,45 @@ export default function ExecutiveArticle() {
       </ContentCard>
 
       <ContentCard>
-        <Section title="Quick Actions">
-          <p>Access common executive tasks directly:</p>
+        <Section title="Quick Starts">
+          <p>Jump straight into the things you do most:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Review Issues:</strong> Open the issues inbox to respond to pending national
-              events
+              <strong>Review issues</strong> — open your inbox and respond to what&rsquo;s waiting.
             </li>
             <li>
-              <strong>Schedule Meeting:</strong> Opens the meeting scheduler for creating new
-              cabinet sessions
+              <strong>Schedule a meeting</strong> — set up a new cabinet session.
             </li>
             <li>
-              <strong>Create Policy:</strong> Launches the policy creator for drafting new national
-              directives
+              <strong>Create a policy</strong> — start drafting something new.
             </li>
             <li>
-              <strong>Strategic Planning:</strong> Plan long-term initiatives with milestones
+              <strong>Plan ahead</strong> — sketch out a long-term initiative with milestones.
             </li>
           </ul>
         </Section>
 
-        <Section title="Workflow Integration">
-          <p>The Executive Command Center integrates with other MyCountry systems:</p>
+        <Section title="How It Connects">
+          <p>The Executive desk pulls from the rest of your nation:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Intelligence:</strong> Intelligence analysis and key findings inform policy
-              decisions and issue responses
+              <strong>Intelligence</strong> — the insights and findings that should inform your calls.
             </li>
             <li>
-              <strong>Diplomacy:</strong> Foreign policy decisions and diplomatic scenarios connect
-              to the diplomacy section
+              <strong>Diplomacy</strong> — foreign-policy decisions tie back to your relationships
+              abroad.
             </li>
             <li>
-              <strong>Defense:</strong> Military readiness and security status affect crisis
-              response options
+              <strong>Defense</strong> — your readiness and security shape your options in a crisis.
             </li>
             <li>
-              <strong>National Overview:</strong> View comprehensive vitality metrics and economic
-              health from the Overview tab
+              <strong>Overview</strong> — see the effect of your choices on your nation&rsquo;s vital
+              signs.
             </li>
           </ul>
         </Section>
 
-        <InfoBox title="Related Documentation">
+        <InfoBox title="Keep Exploring">
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Target className="inline h-4 w-4" />{" "}
@@ -141,9 +130,9 @@ export default function ExecutiveArticle() {
                 href="/help/gameplay/national-issues"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                National Issues
+                National Issues &amp; Decisions
               </Link>{" "}
-              — National issues system details
+              — how events arrive and why your choices stick.
             </li>
             <li>
               <Calendar className="inline h-4 w-4" />{" "}
@@ -151,9 +140,9 @@ export default function ExecutiveArticle() {
                 href="/help/intelligence/executive-operations"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Executive Operations
+                Command &amp; Operations
               </Link>{" "}
-              — Intelligence operations overview
+              — running your nation&rsquo;s biggest moves.
             </li>
             <li>
               <FileText className="inline h-4 w-4" />{" "}
@@ -161,9 +150,9 @@ export default function ExecutiveArticle() {
                 href="/help/government/components"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Component Catalog
+                The Component Library
               </Link>{" "}
-              — Government system components
+              — the building blocks behind your government.
             </li>
           </ul>
         </InfoBox>

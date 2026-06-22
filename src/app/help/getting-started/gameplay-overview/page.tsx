@@ -7,69 +7,65 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function GameplayOverviewArticle() {
   return (
     <ArticleLayout
-      title="Gameplay Overview"
-      description="How the simulation, economy, diplomacy, and progression systems work together in IxStats."
+      title="How It All Fits Together"
+      description="Economy, government, diplomacy, the map — a quick tour of how your nation comes alive."
       icon={Gamepad2}
-      prevLink={{
-        href: "/help/getting-started/first-country",
-        label: "Creating Your First Country",
-      }}
-      nextLink={{ href: "/help/getting-started/ixtime", label: "Understanding IxTime" }}
+      prevLink={{ href: "/help/getting-started/first-country", label: "Create Your First Nation" }}
+      nextLink={{ href: "/help/getting-started/ixtime", label: "The World Clock (IxTime)" }}
     >
       <ContentCard>
-        <Section title="The IxStats Gameplay Loop">
+        <Section title="The Rhythm of Play">
           <p>
-            IxStats is a nation simulation platform where you build, manage, and grow a country. The
-            core gameplay loop follows five phases:
+            There&rsquo;s no single &ldquo;win&rdquo; here — IxStats is about building a nation and
+            living with it over time. Most of what you do falls into a simple rhythm:
           </p>
           <ol className="mt-2 list-decimal space-y-2 pl-6">
             <li>
-              <Rocket className="inline h-4 w-4 text-blue-500" /> <strong>Create:</strong> Build
-              your nation using the{" "}
+              <Rocket className="inline h-4 w-4 text-blue-500" /> <strong>Create</strong> your nation
+              in the{" "}
               <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
-                Country Builder
+                builder
               </Link>{" "}
-              with government, economy, and demographic configurations
+              — its government, economy, and people.
             </li>
             <li>
-              <strong>Build:</strong> Configure government systems, economic policies, and your tax
-              framework -- combine components for{" "}
+              <strong>Shape</strong> it — tune policies and{" "}
               <Link
                 href="/help/government/synergy"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                synergy bonuses
+                combine choices
               </Link>{" "}
-              that make your nation stronger
+              that make your nation stronger and more like the place you imagined.
             </li>
             <li>
-              <strong>Respond:</strong> Handle{" "}
+              <strong>Decide</strong> — answer{" "}
               <Link
                 href="/help/gameplay/national-issues"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
                 national issues
               </Link>
-              , crisis events, and diplomatic scenarios as they arise, or take proactive action with{" "}
+              , weather crises, and take{" "}
               <Link
                 href="/help/mycountry/executive"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                executive actions
+                big actions
               </Link>{" "}
-              like stimulus packages, infrastructure projects, and diplomatic missions -- each
-              decision has real economic consequences and narrative output
+              like stimulus or infrastructure. Every choice leaves a mark on your economy and your
+              story.
             </li>
             <li>
-              <TrendingUp className="inline h-4 w-4 text-emerald-500" /> <strong>Grow:</strong>{" "}
-              Watch your economy advance through{" "}
+              <TrendingUp className="inline h-4 w-4 text-emerald-500" /> <strong>Grow</strong> — watch
+              your economy climb{" "}
               <Link
                 href="/help/economy/tiers"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
                 tiers
               </Link>
-              , climb{" "}
+              , rise up the{" "}
               <Link
                 href="/leaderboards"
                 className="text-blue-600 hover:underline dark:text-blue-400"
@@ -82,50 +78,36 @@ export default function GameplayOverviewArticle() {
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
                 achievements
-              </Link>{" "}
-              as your nation develops
+              </Link>
+              .
             </li>
             <li>
-              <strong>Engage:</strong> Interact with other players through{" "}
+              <strong>Connect</strong> — open{" "}
               <Link
                 href="/help/mycountry/diplomacy"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
                 diplomacy
-              </Link>
-              , trading cards in the{" "}
-              <Link
-                href="/help/vault/overview"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Vault
-              </Link>
-              ,{" "}
+              </Link>{" "}
+              with other nations and meet their players in the{" "}
               <Link
                 href="/help/social/thinkpages"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                ThinkPages
+                community
               </Link>
-              , and collaborative{" "}
-              <Link
-                href="/help/social/thinktanks"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                ThinkTanks
-              </Link>
+              .
             </li>
           </ol>
         </Section>
       </ContentCard>
 
       <ContentCard>
-        <Section title="Core Systems">
-          <InfoBox title="Six Pillars of Gameplay">
+        <Section title="The Systems Behind Your Nation">
+          <InfoBox title="Six things you steer">
             <ul className="list-disc space-y-2 pl-6">
               <li>
-                <strong>Economy:</strong> A tier-based growth engine with GDP calculations, trade
-                mechanics, sector distribution, and tax revenue.{" "}
+                <strong>Economy</strong> — GDP, trade, jobs, and tax revenue, all modeled and live.{" "}
                 <Link
                   href="/help/economy/modeling"
                   className="text-blue-600 hover:underline dark:text-blue-400"
@@ -134,9 +116,8 @@ export default function GameplayOverviewArticle() {
                 </Link>
               </li>
               <li>
-                <strong>Government:</strong> 56 components across 10 categories with synergy and
-                conflict mechanics that determine how effective your governance is, plus real-time
-                StorytellerEffect computation that impacts your nation's stats.{" "}
+                <strong>Government</strong> — how your nation is run, and how your choices ripple
+                through everything else.{" "}
                 <Link
                   href="/help/government/atomic"
                   className="text-blue-600 hover:underline dark:text-blue-400"
@@ -145,8 +126,8 @@ export default function GameplayOverviewArticle() {
                 </Link>
               </li>
               <li>
-                <strong>Diplomacy:</strong> Embassy networks, diplomatic missions, and NPC
-                interactions with distinct personality traits and behavioral styles.{" "}
+                <strong>Diplomacy</strong> — embassies, missions, and the give-and-take with other
+                nations and their leaders.{" "}
                 <Link
                   href="/help/diplomacy/embassies"
                   className="text-blue-600 hover:underline dark:text-blue-400"
@@ -155,8 +136,8 @@ export default function GameplayOverviewArticle() {
                 </Link>
               </li>
               <li>
-                <strong>Defense:</strong> Military branch management, equipment from a catalog of
-                500+ items, operations, and security assessments.{" "}
+                <strong>Defense</strong> — your military, a deep equipment catalog, and how you keep
+                your nation secure.{" "}
                 <Link
                   href="/help/defense/overview"
                   className="text-blue-600 hover:underline dark:text-blue-400"
@@ -165,8 +146,8 @@ export default function GameplayOverviewArticle() {
                 </Link>
               </li>
               <li>
-                <strong>Intelligence:</strong> Analytics dashboards for economic, diplomatic, and
-                policy analysis, plus forecasting and key findings.{" "}
+                <strong>Intelligence</strong> — the dashboards and forecasts that turn your numbers
+                into clear next moves.{" "}
                 <Link
                   href="/help/mycountry/intelligence"
                   className="text-blue-600 hover:underline dark:text-blue-400"
@@ -175,8 +156,8 @@ export default function GameplayOverviewArticle() {
                 </Link>
               </li>
               <li>
-                <strong>Politics:</strong> Legislature configuration, political parties, and
-                election simulations with realistic seat allocation.{" "}
+                <strong>Politics</strong> — your legislature, parties, and the elections that decide
+                who holds power.{" "}
                 <Link
                   href="/help/mycountry/politics"
                   className="text-blue-600 hover:underline dark:text-blue-400"
@@ -188,38 +169,37 @@ export default function GameplayOverviewArticle() {
           </InfoBox>
         </Section>
 
-        <Section title="Progression Systems">
+        <Section title="Rewards as You Play">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <Trophy className="inline h-4 w-4 text-amber-500" /> <strong>Achievements:</strong>{" "}
-              Five rarity tiers (Common to Legendary) with{" "}
+              <Trophy className="inline h-4 w-4 text-amber-500" /> <strong>Achievements</strong> —
+              milestones across five rarity tiers, each worth{" "}
               <Link
                 href="/help/vault/ixcredits"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
                 IxCredits
-              </Link>{" "}
-              rewards from 5 to 100 per unlock.{" "}
+              </Link>
+              .{" "}
               <Link
                 href="/help/gameplay/achievements"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                See all achievements
+                See them all
               </Link>
             </li>
             <li>
-              <strong>IxCredits:</strong> Virtual currency earned through gameplay. Spend them on{" "}
+              <strong>IxCredits</strong> — earned through play, spent on{" "}
               <Link
                 href="/help/vault/card-packs"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                card packs
+                packs
               </Link>
-              , marketplace trades, and cosmetics.
+              , trades, and cosmetics.
             </li>
             <li>
-              <strong>Vault Leveling:</strong> XP-based progression (1 XP per 1 IxCredit earned,
-              1,000 XP per level) that unlocks new features as you advance.{" "}
+              <strong>Your Vault</strong> — levels up as you go, unlocking more along the way.{" "}
               <Link
                 href="/help/vault/overview"
                 className="text-blue-600 hover:underline dark:text-blue-400"
@@ -228,13 +208,13 @@ export default function GameplayOverviewArticle() {
               </Link>
             </li>
             <li>
-              <strong>Leaderboard Rankings:</strong> Compete across GDP, population, achievements,
-              and diplomatic influence.{" "}
+              <strong>Leaderboards</strong> — see how your nation stacks up by economy, population,
+              and influence.{" "}
               <Link
                 href="/help/gameplay/leaderboards"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                View leaderboards
+                View rankings
               </Link>
             </li>
           </ul>
@@ -242,96 +222,58 @@ export default function GameplayOverviewArticle() {
       </ContentCard>
 
       <ContentCard fullWidth>
-        <Section title="Cards & Collecting">
-          <p>
-            The{" "}
-            <Link
-              href="/help/vault/overview"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Vault
-            </Link>{" "}
-            system adds a collectible dimension to gameplay. Earn IxCredits through normal play,
-            spend them on card packs, and build a collection of Nation Cards,{" "}
-            <Link
-              href="/help/vault/lore-cards"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Lore Cards
-            </Link>
-            , and NationStates Import Cards.{" "}
-            <Link
-              href="/help/vault/trading"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Trade with other players
-            </Link>{" "}
-            on the marketplace or through direct trades.
-          </p>
-        </Section>
-
-        <Section title="Where to Start">
-          <InfoBox title="Recommended Path">
+        <Section title="A Good First Path">
+          <InfoBox title="If you're not sure where to go next">
             <ol className="list-decimal space-y-1 pl-6">
               <li>
-                Read the{" "}
-                <Link
-                  href="/help/getting-started/welcome"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Welcome
-                </Link>{" "}
-                article for a platform overview
-              </li>
-              <li>
-                Follow{" "}
+                Build your nation with{" "}
                 <Link
                   href="/help/getting-started/first-country"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  Creating Your First Country
-                </Link>{" "}
-                to build your nation
+                  Create Your First Nation
+                </Link>
+                .
               </li>
               <li>
-                Explore the{" "}
+                Get to know your home base in the{" "}
                 <Link
                   href="/help/mycountry/overview"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  MyCountry Overview
-                </Link>{" "}
-                to understand your dashboard
+                  MyCountry overview
+                </Link>
+                .
               </li>
               <li>
-                Try responding to a{" "}
+                Answer your first{" "}
                 <Link
                   href="/help/gameplay/national-issues"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  National Issue
+                  national issue
                 </Link>{" "}
-                in the Executive tab
+                and see the consequences play out.
               </li>
               <li>
-                Establish your first{" "}
+                Open your first{" "}
                 <Link
                   href="/help/diplomacy/embassies"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  Embassy
+                  embassy
                 </Link>{" "}
-                to start diplomacy
+                and start building relationships.
               </li>
               <li>
-                Check the{" "}
+                Pop into your{" "}
                 <Link
                   href="/help/vault/overview"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
                   Vault
                 </Link>{" "}
-                to see your IxCredits and open a pack
+                and open a pack.
               </li>
             </ol>
           </InfoBox>
@@ -341,39 +283,30 @@ export default function GameplayOverviewArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Link
-                href="/help/getting-started/first-country"
+                href="/help/gameplay/simulation"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Creating Your First Country
+                How Your Nation Comes Alive
               </Link>{" "}
-              -- building your nation step by step
+              — the living world and its rhythms.
+            </li>
+            <li>
+              <Link
+                href="/help/getting-started/ixtime"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                The World Clock (IxTime)
+              </Link>{" "}
+              — why time moves the way it does here.
             </li>
             <li>
               <Link
                 href="/help/mycountry/overview"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                MyCountry Overview
+                Your National Overview
               </Link>{" "}
-              -- your nation&rsquo;s command center
-            </li>
-            <li>
-              <Link
-                href="/help/vault/overview"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Vault Overview
-              </Link>{" "}
-              -- cards, packs, and IxCredits
-            </li>
-            <li>
-              <Link
-                href="/help/gameplay/simulation"
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Simulation Engine
-              </Link>{" "}
-              -- how the economy and world simulation works under the hood
+              — the vitals you&rsquo;ll check first each visit.
             </li>
           </ul>
         </InfoBox>

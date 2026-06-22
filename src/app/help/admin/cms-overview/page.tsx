@@ -100,15 +100,15 @@ export default function AdminCMSOverviewArticle() {
         <Section title="Analytics & Monitoring (4 Interfaces)">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>API Performance:</strong> tRPC router latencies, error rates, usage patterns
-              (61 routers, 927 endpoints).
+              <strong>Platform Performance:</strong> response times, error rates, and where traffic is
+              going across the platform.
             </li>
             <li>
-              <strong>User Activity:</strong> Login tracking, feature usage, session analytics.
+              <strong>User Activity:</strong> sign-ins, feature usage, and session trends.
             </li>
             <li>
-              <strong>System Health:</strong> Database performance, cache status, WebSocket
-              connections, rate limiting.
+              <strong>System Health:</strong> how the platform&apos;s core services are holding up at a
+              glance.
             </li>
           </ul>
         </Section>
@@ -152,12 +152,12 @@ export default function AdminCMSOverviewArticle() {
         <WarningBox title="Access & Security">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <Shield className="inline h-4 w-4" /> All admin routes protected by role middleware;
-              unauthorized access logged.
+              <Shield className="inline h-4 w-4" /> Admin areas are limited to the right roles, and any
+              unauthorized attempt is logged.
             </li>
             <li>
-              <Database className="inline h-4 w-4" /> Changes persisted to audit_log table with
-              complete change history.
+              <Database className="inline h-4 w-4" /> Every change is recorded in the audit log, with a
+              complete history.
             </li>
             <li>
               <BarChart3 className="inline h-4 w-4" /> Monitor admin activity via the admin
@@ -179,13 +179,10 @@ export default function AdminCMSOverviewArticle() {
               -- Managing game content catalogs.
             </li>
             <li>
-              <Link
-                href="/help/technical/api"
-                className="text-blue-400 underline hover:text-blue-300"
-              >
-                API & tRPC
+              <Link href="/help" className="text-blue-400 underline hover:text-blue-300">
+                Help Center
               </Link>{" "}
-              -- Admin API routers and procedures.
+              -- guides for every part of the platform.
             </li>
           </ul>
         </InfoBox>

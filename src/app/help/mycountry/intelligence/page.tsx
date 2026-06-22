@@ -7,67 +7,63 @@ import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/
 export default function MyCountryIntelligenceArticle() {
   return (
     <ArticleLayout
-      title="MyCountry Intelligence"
-      description="Analytics dashboard, analysis panels, and key findings for data-driven decision making."
+      title="Reading the Room"
+      description="Insights that turn your nation's numbers into clear next moves."
       icon={Brain}
     >
       <ContentCard>
-        <Section title="Intelligence Tab Layout">
+        <Section title="Your Nation, Made Sense Of">
           <p>
-            The Intelligence section is purely analytical — it presents data visualizations and
-            insights rather than action queues. Three tabs organize the intelligence:
+            Intelligence is where the raw numbers become a story you can act on. There&rsquo;s nothing
+            to manage here — it&rsquo;s pure insight, laid out in three views:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Dashboard:</strong> Executive-level intelligence summary with vitality rings
+              <strong>Dashboard</strong> — the headline read on how your nation is doing.
             </li>
             <li>
-              <strong>Analysis:</strong> Deep-dive panels for economic, diplomatic, and policy
-              analysis
+              <strong>Analysis</strong> — deeper dives into your economy, relationships, and policies.
             </li>
             <li>
-              <strong>Reports:</strong> Key findings and prioritized intelligence reports
+              <strong>Reports</strong> — the findings worth knowing, sorted by what matters most.
             </li>
           </ul>
         </Section>
 
-        <Section title="Dashboard Tab">
-          <p>The intelligence dashboard provides a quick health check with four vitality rings:</p>
+        <Section title="The Dashboard">
+          <p>A quick health check across the things that keep you up at night:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Security Score:</strong> Overall security assessment from defense and
-              stability data
+              <strong>Security</strong> — how safe your nation is, drawn from your defense and
+              stability.
             </li>
             <li>
-              <strong>Active Alerts:</strong> Number of unresolved intelligence alerts requiring
-              attention
+              <strong>Open alerts</strong> — how many things are flagged for your attention.
             </li>
             <li>
-              <strong>Embassy Coverage:</strong> Percentage of important nations with active
-              embassies
+              <strong>Embassy coverage</strong> — how well-connected you are to the nations that
+              matter.
             </li>
             <li>
-              <strong>Intelligence Score:</strong> Composite score from all intelligence sources
+              <strong>Overall picture</strong> — everything above, rolled into one read.
             </li>
           </ul>
         </Section>
 
-        <Section title="Analysis Tab">
-          <InfoBox title="Analysis Panels">
-            <p>The Analysis tab contains three specialized panels:</p>
+        <Section title="Digging Deeper">
+          <InfoBox title="Three ways to analyze">
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <BarChart3 className="inline h-4 w-4" /> <strong>Economic Analysis:</strong> GDP
-                trends, sector performance, trade balance projections, and comparative economic
-                indicators
+                <BarChart3 className="inline h-4 w-4" /> <strong>Economy</strong> — growth trends,
+                which sectors are pulling their weight, trade outlook, and how you compare.
               </li>
               <li>
-                <Search className="inline h-4 w-4" /> <strong>Diplomatic Analysis:</strong>{" "}
-                Relationship trends over time, network visualization, alliance health metrics
+                <Search className="inline h-4 w-4" /> <strong>Diplomacy</strong> — how your
+                relationships are trending and where your alliances are strong or fraying.
               </li>
               <li>
-                <Bell className="inline h-4 w-4" /> <strong>Policy Analysis:</strong> Policy
-                effectiveness scoring, simulation of proposed policies, impact predictions
+                <Bell className="inline h-4 w-4" /> <strong>Policy</strong> — what&rsquo;s working,
+                and a chance to test a new idea before you commit to it.
               </li>
             </ul>
           </InfoBox>
@@ -75,50 +71,51 @@ export default function MyCountryIntelligenceArticle() {
       </ContentCard>
 
       <ContentCard>
-        <Section title="Key Findings Panel">
+        <Section title="The Findings That Matter">
           <p>
-            The Reports tab surfaces prioritized intelligence findings. Each finding includes a
-            severity level, affected domain, recommended actions, and source data. Findings are
-            auto-generated from economic shifts, diplomatic events, and defense assessments.
+            The Reports view surfaces the things worth knowing — each with how serious it is, what
+            it touches, and what you might do about it. They&rsquo;re drawn straight from real shifts
+            in your economy, your relationships, and your security, so they&rsquo;re always about your
+            nation right now.
           </p>
         </Section>
 
-        <Section title="Alert Configuration">
+        <Section title="Tune Your Alerts">
           <p>
-            Access Alert Threshold Settings from the intelligence sidebar to customize when and how
-            you receive intelligence notifications. Configure thresholds for economic indicators,
-            diplomatic relationship changes, and security events.
+            Want to hear about a problem the moment it appears — or only when it gets serious? Set
+            your own thresholds for economic swings, changing relationships, and security events, so
+            you get the heads-up that suits how you like to play.
           </p>
         </Section>
 
-        <InfoBox title="Related Documentation">
+        <InfoBox title="Keep Exploring">
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Link
                 href="/help/intelligence/dashboard"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Intelligence Dashboard
+                Your Situation Room
               </Link>{" "}
-              — Executive intelligence dashboard details
+              — a closer look at the dashboard.
             </li>
             <li>
               <Link
                 href="/help/intelligence/alerts"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Alerts & Notifications
+                Alerts &amp; Live Updates
               </Link>{" "}
-              — Alert and notification management
+              — staying ahead of what&rsquo;s happening.
             </li>
             <li>
               <Link
                 href="/help/intelligence/forecasting"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Forecasting & Predictions
+                Looking Ahead
               </Link>{" "}
-              — Predictive analytics and forecasting
+              — where your nation is headed.
             </li>
           </ul>
         </InfoBox>

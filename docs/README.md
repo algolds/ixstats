@@ -4,7 +4,7 @@ The single index for all IxStates documentation. Guides are grouped by purpose s
 engineers, storytellers, and operators land in the right place. Version info comes from
 the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-> Last refreshed June 2026 — **IxStates 1.1.0 "Ogma"**. Treat this structure as the source of truth.
+> Last refreshed June 2026 — **IxStates 1.1.1 "Ogma"** (Alpha). Treat this structure as the source of truth.
 > Working plans/PRDs/audits live in the gitignored root `plans/`; completed/historical docs live in [`archive/`](archive/).
 
 ## Quick Links
@@ -53,7 +53,7 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 | [systems/crisis-events.md](systems/crisis-events.md) | Crisis event types, player responses, outcome mechanics |
 | [systems/social.md](systems/social.md) | ThinkPages, ThinkShare, activity feeds, collaborative research |
 | [systems/achievements.md](systems/achievements.md) | Achievement unlocks, leaderboards, notifications |
-| [systems/admin-cms.md](systems/admin-cms.md) | 28+ admin interfaces, CMS architecture, RBAC |
+| [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, CMS architecture, RBAC |
 | [systems/help.md](systems/help.md) | In-app help center architecture and authoring workflow |
 | [systems/forum.md](systems/forum.md) | XenForo forum integration, widget embedding |
 | [systems/maps.md](systems/maps.md) | IxWorld map: MapLibre GL, layers, geo API, border editor |
@@ -93,7 +93,7 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 
 | Document | Summary |
 | --- | --- |
-| [reference/api-complete.md](reference/api-complete.md) | Complete tRPC API catalog (87 routers, 1,376 procedures) |
+| [reference/api-complete.md](reference/api-complete.md) | Complete tRPC API catalog (90 routers, 1,450+ procedures) |
 | [reference/database.md](reference/database.md) | Prisma models, relations, derived views, data ownership |
 | [reference/revision.md](reference/revision.md) | **Versioning & Release Architecture** — platform/app/engine/system versions, Version Registry |
 | [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, colors, visual tokens |

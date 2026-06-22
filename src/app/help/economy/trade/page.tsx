@@ -134,12 +134,12 @@ export default function TradeArticle() {
             <li>
               <TrendingUp className="mr-1 inline h-4 w-4" />{" "}
               <Link
-                href="/help/economy/overview"
+                href="/help/economy/tiers"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Economy Overview
+                Economic Tiers
               </Link>{" "}
-              — Understand the full picture of your nation's economic health.
+              — see how your economy climbs from one stage to the next.
             </li>
             <li>
               <Factory className="mr-1 inline h-4 w-4" />{" "}

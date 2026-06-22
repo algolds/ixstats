@@ -11,7 +11,7 @@ export default function EmbassiesArticle() {
       description="Learn how to establish embassies abroad, manage your diplomatic staff, and leverage your embassy network for trade, influence, and intelligence."
       icon={Building2}
       prevLink={{ href: "/help/diplomacy/missions", label: "Diplomatic Missions" }}
-      nextLink={{ href: "/help/mycountry/diplomacy", label: "MyCountry Diplomacy" }}
+      nextLink={{ href: "/help/mycountry/diplomacy", label: "Foreign Affairs" }}
     >
       <ContentCard>
         <Section title="What Are Embassies?">
@@ -226,12 +226,12 @@ export default function EmbassiesArticle() {
             </li>
             <li>
               <Link
-                href="/help/diplomacy/overview"
+                href="/help/mycountry/diplomacy"
                 className="text-blue-600 hover:underline dark:text-blue-400"
               >
-                Diplomacy Overview
+                Foreign Affairs
               </Link>{" "}
-              &mdash; A broader look at all diplomatic systems available to your nation.
+              &mdash; the hub for all your diplomacy in MyCountry.
             </li>
             <li>
               <Link

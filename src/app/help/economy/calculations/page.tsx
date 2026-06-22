@@ -42,8 +42,8 @@ export default function EconomicCalculationsArticle() {
         {/* ── What Drives Growth ── */}
         <Section title="What Drives Growth">
           <p className="mb-3 text-slate-700 dark:text-slate-300">
-            Your GDP does not stay still. Every in-game cycle, the system recalculates your economy
-            using several factors:
+            Your GDP does not stay still. Every in-game cycle, your economy is recalculated from
+            several factors:
           </p>
           <ul className="list-disc space-y-3 pl-6 text-slate-700 dark:text-slate-300">
             <li>

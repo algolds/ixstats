@@ -141,12 +141,10 @@ export default function AtomicComponentCatalogArticle() {
             </li>
           </ul>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
-            Adding or removing a component is not cosmetic &mdash; it creates{" "}
-            <strong>StorytellerEffect</strong> records that apply computed changes to your GDP,
-            population, political stability, and other metrics. The system calculates synergy and
-            conflict interactions that modify each component&apos;s overall effectiveness. Use the{" "}
-            <strong>recalculateEffects</strong> procedure to see the projected impact of your
-            configuration on demand, before committing changes.
+            Adding or removing a component isn&apos;t cosmetic &mdash; it moves real numbers: your
+            GDP, population, political stability, and more. Components that suit each other give each
+            other a boost; ones that clash hold each other back. You can preview exactly how a setup
+            would land before you commit to it.
           </p>
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
             To learn more about how components combine into a complete government system, see the{" "}
@@ -168,10 +166,10 @@ export default function AtomicComponentCatalogArticle() {
             </li>
             <li>
               <BookOpen className="inline h-4 w-4" />{" "}
-              <Link href="/help/government/overview" className={linkClass}>
-                Government Overview
+              <Link href="/help/government/traditional" className={linkClass}>
+                Government Types
               </Link>{" "}
-              — introduction to the government system
+              — the quick way to set up how your nation is run
             </li>
             <li>
               <Coins className="inline h-4 w-4" />{" "}

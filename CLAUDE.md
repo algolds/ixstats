@@ -56,13 +56,13 @@ bun run db:sync:prod-to-dev    # pull production snapshot into local
 
 | Layer | Location | Notes |
 |-------|----------|-------|
-| Pages | `src/app/` | Next.js 16.2 App Router, 187 routes |
-| Components | `src/components/` | 893+ UI components (Facet glass design system) |
-| API (tRPC) | `src/server/api/routers/` | **87 routers** (52 split into subdirs via `mergeRouters`, 24 flat), **1,376 procedures**; register new ones in `root.ts` |
-| Database | `prisma/schema/` | 237 models across 12 `.prisma` files |
+| Pages | `src/app/` | Next.js 16.2 App Router, 210+ routes |
+| Components | `src/components/` | 750+ UI components (Facet glass design system) |
+| API (tRPC) | `src/server/api/routers/` | **90 routers** (domain-split into subdirs via `mergeRouters` + flat files), **1,450+ procedures**; register new ones in `root.ts` |
+| Database | `prisma/schema/` | 296 models across 15 `.prisma` files |
 | Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers |
 | Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
-| Hooks | `src/hooks/` | 107+ custom React hooks |
+| Hooks | `src/hooks/` | 90+ custom React hooks |
 | Lib | `src/lib/` | Pure utilities, rate limiter, memory config, map pipeline |
 
 ### Import direction (strictly enforced — see arch.md)
@@ -89,7 +89,7 @@ Routers must only: define endpoints, validate input, call service layer, return 
 - `/vault` — IxVault (cards, credits, marketplace)
 - `/thinkpages` — Social knowledge sharing
 - `/maps` — IxWorld interactive map (also standalone at maps.ixwiki.com)
-- `/admin` — 28 CMS admin interfaces
+- `/admin` — 50+ CMS admin interfaces
 
 ## Key File Locations
 
@@ -99,7 +99,7 @@ Routers must only: define endpoints, validate input, call service layer, return 
 - `src/lib/production-optimizations.ts` — production optimization config
 
 **API Layer:**
-- `src/server/api/root.ts` — tRPC root router (registers all 87 routers with `safeRouter()` wrapper)
+- `src/server/api/root.ts` — tRPC root router (registers all 90 routers with `safeRouter()` wrapper)
 - `src/server/api/routers/` — flat `.ts` files + `geo/`, `diplomacy/`, `intelligence/`, `countries/`, `admin/`, `activities/`, `sports/`, `thinkpages/`, `security/` subdirectories
 - `src/server/api/trpc.ts` — exports `createTRPCRouter`, `mergeRouters`, `publicProcedure`, `protectedProcedure`
 

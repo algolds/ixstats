@@ -9,144 +9,136 @@ export default function EconomicTiersArticle() {
 
   return (
     <ArticleLayout
-      title="Economic Tiers & How to Advance"
-      description="Learn what economic tiers mean for your nation, how they are determined, and what you can do to climb to the next level."
+      title="Economic Tiers"
+      description="What tier your nation sits in, how it's decided, and how to climb to the next one."
       icon={TrendingUp}
-      prevLink={{ href: "/help/economy/calculations", label: "Economic Calculations" }}
-      nextLink={{ href: "/help/economy/modeling", label: "Modeling & Projections" }}
+      prevLink={{ href: "/help/economy/calculations", label: "How Your Economy Is Measured" }}
+      nextLink={{ href: "/help/economy/modeling", label: "Planning Ahead" }}
     >
       <ContentCard>
-        <Section title="What Are Economic Tiers?">
+        <Section title="What Tiers Are">
           <p className="mb-4 text-slate-700 dark:text-slate-300">
-            Every nation in IxStats is assigned an economic tier that reflects its overall wealth
-            and development. Think of tiers as broad categories that group nations with similar
-            living standards together. Your tier affects what you can unlock, how your nation is
-            ranked, and which peers you are compared against.
+            Every nation sits in an economic tier — a simple way of saying how wealthy and developed
+            it is. Your tier shapes what you can unlock, who you&rsquo;re ranked against, and how fast
+            your economy can grow. Think of it as your nation&rsquo;s weight class.
           </p>
           <p className="text-slate-700 dark:text-slate-300">
-            There are seven tiers, from lowest to highest:
+            There are seven, measured by your <strong>GDP per person</strong>, from humblest to
+            grandest:
           </p>
           <ol className="mt-3 list-decimal space-y-2 pl-6 text-slate-700 dark:text-slate-300">
             <li>
-              <strong>Impoverished</strong> — The starting point for many young nations. Basic
-              infrastructure is limited and growth potential is high.
+              <strong>Impoverished</strong> (up to $10k per person) — just getting started, with the
+              most room to grow.
             </li>
             <li>
-              <strong>Developing</strong> — Early signs of industrialisation. Your nation is
-              building the foundations for a modern economy.
+              <strong>Developing</strong> ($10k–$25k) — the foundations of a modern economy are going
+              in.
             </li>
             <li>
-              <strong>Emerging</strong> — A growing middle class and expanding industries.
-              International trade begins to play a larger role.
+              <strong>Developed</strong> ($25k–$35k) — a growing middle class and real industry; trade
+              starts to matter.
             </li>
             <li>
-              <strong>Moderate</strong> — A stable, diversified economy. Most citizens enjoy a
-              reasonable standard of living.
+              <strong>Healthy</strong> ($35k–$45k) — stable and varied, with a comfortable standard of
+              living.
             </li>
             <li>
-              <strong>Prosperous</strong> — Strong GDP per capita and well-funded public services.
-              Your nation is a regional power.
+              <strong>Strong</strong> ($45k–$55k) — a regional power with well-funded public services.
             </li>
             <li>
-              <strong>Wealthy</strong> — Among the richest nations on the platform. Advanced
-              technology, high wages, and global influence.
+              <strong>Very Strong</strong> ($55k–$65k) — among the wealthiest nations, with real
+              global pull.
             </li>
             <li>
-              <strong>Extravagant</strong> — The pinnacle of economic achievement. Only the most
-              successful nations reach this level.
+              <strong>Extravagant</strong> ($65k+) — the summit. Only the most successful nations get
+              here.
             </li>
           </ol>
         </Section>
 
-        <Section title="How Is Your Tier Determined?">
+        <Section title="How Your Tier Is Decided">
           <p className="mb-4 text-slate-700 dark:text-slate-300">
-            Two key factors decide your economic tier:
+            Two things set your tier:
           </p>
           <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
             <li>
-              <strong>GDP per capita</strong> — Your total economic output divided by your
-              population. This is the primary driver. A higher GDP per capita pushes you toward
-              higher tiers.
+              <strong>GDP per person</strong> — your total output shared across your population. This
+              is the main driver: the higher it climbs, the higher your tier.
             </li>
             <li>
-              <strong>Population size</strong> — Larger nations face greater challenges in
-              maintaining high per-capita output. Population is factored in so that a small
-              city-state and a continental power are judged fairly.
+              <strong>Population</strong> — big nations have a harder time keeping per-person output
+              high, so size is taken into account. A tiny city-state and a sprawling empire are judged
+              fairly.
             </li>
           </ul>
           <p className="mt-4 text-slate-700 dark:text-slate-300">
-            Your tier updates automatically as your economy changes. For a detailed look at the math
-            behind these calculations, see the{" "}
+            Your tier updates on its own as your economy moves. Curious about the math?{" "}
             <Link href="/help/economy/calculations" className={linkClass}>
-              Economic Calculations
+              How Your Economy Is Measured
             </Link>{" "}
-            guide.
+            has the details.
           </p>
         </Section>
       </ContentCard>
 
       <ContentCard>
-        <Section title="How to Advance to a Higher Tier">
+        <Section title="How to Climb">
           <p className="mb-4 text-slate-700 dark:text-slate-300">
-            Climbing tiers is one of the central goals in IxStats. Here are practical strategies:
+            Moving up the tiers is one of the great long games here. A few ways to do it:
           </p>
           <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
             <li>
-              <strong>Grow your GDP</strong> — Invest in productive sectors, set favourable tax
-              policies, and encourage trade. Use the{" "}
+              <strong>Grow your economy</strong> — invest in productive sectors, set smart taxes, and
+              trade. Test ideas first with the{" "}
               <Link href="/help/economy/modeling" className={linkClass}>
-                Modeling & Projections
-              </Link>{" "}
-              tools to simulate different strategies before committing.
+                planning tools
+              </Link>
+              .
             </li>
             <li>
-              <strong>Manage population growth</strong> — Rapid population growth can dilute GDP per
-              capita. Balance immigration and birth-rate policies with economic expansion.
+              <strong>Mind your population</strong> — growing too fast can thin out your per-person
+              wealth. Balance growth with prosperity.
             </li>
             <li>
-              <strong>Optimise government spending</strong> — Allocating budget to education,
-              infrastructure, and technology can boost long-term productivity.
+              <strong>Spend wisely</strong> — money put into education, infrastructure, and technology
+              pays off down the road.
             </li>
             <li>
-              <strong>Maintain stability</strong> — Political crises and low approval ratings can
-              damage your economy. Keep your government running smoothly.
+              <strong>Keep things stable</strong> — political turmoil and low approval drag your
+              economy down. A steady hand helps.
             </li>
             <li>
-              <strong>Build diplomatic relationships</strong> — Trade agreements and alliances with
-              prosperous nations can provide economic bonuses.
+              <strong>Make friends</strong> — trade deals and alliances with prosperous nations can
+              give your economy a lift.
             </li>
           </ul>
         </Section>
 
-        <Section title="What Each Tier Unlocks">
-          <InfoBox title="Tier Benefits">
+        <Section title="Why Climbing Is Worth It">
+          <InfoBox title="What higher tiers bring">
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <strong>Achievements</strong> — Many{" "}
+                <strong>Achievements</strong> — many{" "}
                 <Link href="/help/gameplay/achievements" className={linkClass}>
                   achievements
                 </Link>{" "}
-                require reaching a specific tier. Advancing unlocks new badges and recognition.
+                ask you to reach a certain tier.
               </li>
               <li>
-                <strong>Leaderboard rankings</strong> — The{" "}
+                <strong>Fair rankings</strong> — the{" "}
                 <Link href="/help/gameplay/leaderboards" className={linkClass}>
                   leaderboards
                 </Link>{" "}
-                let you filter by tier so you can compare your nation against peers at a similar
-                level.
+                let you compare yourself with nations at your level.
               </li>
               <li>
-                <strong>Growth potential</strong> — Higher tiers come with increased growth caps,
-                meaning your economy can expand even faster once you break through.
+                <strong>Resilience</strong> — wealthier nations shrug off shocks and downturns more
+                easily.
               </li>
               <li>
-                <strong>Resilience</strong> — Wealthier nations are more resilient to economic
-                shocks, crises, and downturns.
-              </li>
-              <li>
-                <strong>ThinkPages badges</strong> — Your tier is displayed on your public profile
-                and social posts, showcasing your progress to other players.
+                <strong>Bragging rights</strong> — your tier shows on your public profile and posts,
+                so the world can see how far you&rsquo;ve come.
               </li>
             </ul>
           </InfoBox>
@@ -155,18 +147,18 @@ export default function EconomicTiersArticle() {
         <Section title="Where to Check Your Tier">
           <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
             <li>
-              <strong>MyCountry &gt; Overview</strong> — Your current economic tier is shown
-              alongside your key national indicators.
+              <strong>Your National Overview</strong> — your tier sits right alongside your key
+              numbers.
             </li>
             <li>
-              <strong>MyCountry &gt; Intelligence &gt; Economic</strong> — Detailed analytics show
-              how close you are to the next tier and track changes over time.
+              <strong>Intelligence</strong> — see how close you are to the next tier and how
+              you&rsquo;re trending.
             </li>
             <li>
               <Link href="/leaderboards" className={linkClass}>
                 Leaderboards
               </Link>{" "}
-              — Filter by tier to see where you rank among nations at your level.
+              — filter by tier to find your true peers.
             </li>
           </ul>
         </Section>
@@ -174,12 +166,12 @@ export default function EconomicTiersArticle() {
         <InfoBox title="Quick Tips">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <BarChart3 className="inline h-4 w-4" /> Check the Intelligence tab regularly to spot
-              trends before they become problems.
+              <BarChart3 className="inline h-4 w-4" /> Check Intelligence now and then to catch trends
+              before they become problems.
             </li>
             <li>
-              <Gauge className="inline h-4 w-4" /> If your tier drops, review your spending
-              priorities and tax policies — small adjustments can make a big difference.
+              <Gauge className="inline h-4 w-4" /> If your tier slips, revisit your spending and taxes
+              — small tweaks add up fast.
             </li>
           </ul>
         </InfoBox>
