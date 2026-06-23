@@ -23,8 +23,11 @@ import {
   Layers,
   Briefcase,
   Clock,
+  Edit3,
+  Eye,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import { Button } from "~/components/ui/button";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
@@ -907,6 +910,30 @@ export function OverviewHero({
                   </Link>
                   <p className="text-muted-foreground text-[10px]">{stats.leader}</p>
                 </div>
+              </div>
+
+              {/* Action Button Row */}
+              <div className="mt-3 mb-3.5 flex gap-2">
+                <Link href={createUrl("/mycountry/editor")} className="flex-1">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full h-8 cursor-pointer gap-1.5 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 hover:bg-amber-500/20 active:scale-[0.98] transition-all"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" />
+                    Edit Country
+                  </Button>
+                </Link>
+                <Link href={createUrl(`/countries/${stats.slug}`)} className="flex-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-8 cursor-pointer gap-1.5 border-white/10 hover:bg-white/10 hover:text-white text-xs font-bold active:scale-[0.98] transition-all"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    View Profile
+                  </Button>
+                </Link>
               </div>
 
               {/* Apple-style Daily Agenda Widget */}
