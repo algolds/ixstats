@@ -282,7 +282,7 @@ const IxWorldMap = memo(
           // Progressive feature loading based on zoom
           let lastFilterZoom = -1;
           const dataRef = fullLayerDataRef;
-          map.on("zoom", () => {
+          map.on("zoomend", () => {
             const zoom = map.getZoom();
 
             const zoomBucket = Math.floor(zoom);
