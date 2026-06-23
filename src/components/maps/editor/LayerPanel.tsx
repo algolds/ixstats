@@ -2,7 +2,7 @@
 // @ts-nocheck
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Eye,
   EyeOff,
@@ -105,17 +105,27 @@ export const LayerPanel = React.memo(function LayerPanel({
     });
   }, []);
 
-  const getLayerFeatures = (layerId: string) => {
-    return features.filter((f) => {
-      if (layerId === "regions") return f.type === "subdivision";
-      if (layerId === "cities") return f.type === "city";
-      if (layerId === "pois") return f.type === "poi";
-      if (layerId === "stories") return f.type === "storyPin";
-      if (layerId === "labels") return f.type === "mapLabel";
-      if (layerId === "routes") return f.type === "route";
-      return false;
-    });
-  };
+  const groupedFeatures = useMemo(() => {
+    const groups = {
+      regions: [] as any[],
+      cities: [] as any[],
+      pois: [] as any[],
+      stories: [] as any[],
+      labels: [] as any[],
+      routes: [] as any[],
+    };
+
+    for (const f of features) {
+      if (f.type === "subdivision") groups.regions.push(f);
+      else if (f.type === "city") groups.cities.push(f);
+      else if (f.type === "poi") groups.pois.push(f);
+      else if (f.type === "storyPin") groups.stories.push(f);
+      else if (f.type === "mapLabel") groups.labels.push(f);
+      else if (f.type === "route") groups.routes.push(f);
+    }
+
+    return groups;
+  }, [features]);
 
   const renderFeatureRow = (feature: any) => {
     const Icon = TYPE_ICONS[feature.type] || MapPin;
@@ -204,7 +214,7 @@ export const LayerPanel = React.memo(function LayerPanel({
       <div className="flex flex-col">
         {layers.map((layer) => {
           const Icon = layer.icon;
-          const layerFeatures = getLayerFeatures(layer.id);
+          const layerFeatures = (groupedFeatures as any)[layer.id] ?? [];
           const count =
             featureCounts?.[layer.id] ??
             (layer.id === "border" || layer.id === "climate" ? undefined : layerFeatures.length);

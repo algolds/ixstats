@@ -282,6 +282,87 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
     return editor.emptyRegionsFeatures?.features?.length ?? 0;
   }, [editor.emptyRegionsFeatures]);
 
+  const editorLayers = useMemo(() => {
+    return [
+      {
+        id: "border",
+        name: "Country Border",
+        icon: Globe,
+        visible: layerStates.border?.visible ?? true,
+        locked: false,
+      },
+      {
+        id: "regions",
+        name: "Subdivisions",
+        icon: Globe,
+        visible: layerStates.regions?.visible ?? true,
+        locked: false,
+        opacity: layerStates.regions?.opacity,
+      },
+      {
+        id: "cities",
+        name: "Cities",
+        icon: Globe,
+        visible: layerStates.cities?.visible ?? true,
+        locked: false,
+      },
+      {
+        id: "pois",
+        name: "Points of Interest",
+        icon: Globe,
+        visible: layerStates.pois?.visible ?? true,
+        locked: false,
+      },
+      {
+        id: "stories",
+        name: "Story Pins",
+        icon: Globe,
+        visible: layerStates.stories?.visible ?? true,
+        locked: false,
+      },
+      {
+        id: "labels",
+        name: "Map Labels",
+        icon: Globe,
+        visible: layerStates.labels?.visible ?? true,
+        locked: false,
+      },
+    ];
+  }, [layerStates]);
+
+  const featureCounts = useMemo(() => {
+    let regions = 0;
+    let cities = 0;
+    let pois = 0;
+    let stories = 0;
+    let labels = 0;
+    for (const f of editor.allFeatures) {
+      if (f.type === "subdivision") regions++;
+      else if (f.type === "city") cities++;
+      else if (f.type === "poi") pois++;
+      else if (f.type === "storyPin") stories++;
+      else if (f.type === "mapLabel") labels++;
+    }
+    return { regions, cities, pois, stories, labels };
+  }, [editor.allFeatures]);
+
+  const handleToggleVisibility = useCallback((id: string) => {
+    if (id === "altitude" || id === "rivers" || id === "lakes") {
+      toggleLayer(id === "altitude" ? "altitudes" : id);
+    }
+    setLayerStates((s) => ({
+      ...s,
+      [id]: { ...s[id]!, visible: !s[id]?.visible },
+    }));
+  }, [toggleLayer]);
+
+  const handleOpacityChange = useCallback((id: string, opacity: number) => {
+    setLayerStates((s) => ({
+      ...s,
+      [id]: { ...s[id]!, opacity },
+    }));
+  }, []);
+
   if (countryLoading || !country) {
     return null;
   }
@@ -456,74 +537,11 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
             }
             layersContent={
               <LayerPanel
-                layers={[
-                  {
-                    id: "border",
-                    name: "Country Border",
-                    icon: Globe,
-                    visible: layerStates.border?.visible ?? true,
-                    locked: false,
-                  },
-                  {
-                    id: "regions",
-                    name: "Subdivisions",
-                    icon: Globe,
-                    visible: layerStates.regions?.visible ?? true,
-                    locked: false,
-                    opacity: layerStates.regions?.opacity,
-                  },
-                  {
-                    id: "cities",
-                    name: "Cities",
-                    icon: Globe,
-                    visible: layerStates.cities?.visible ?? true,
-                    locked: false,
-                  },
-                  {
-                    id: "pois",
-                    name: "Points of Interest",
-                    icon: Globe,
-                    visible: layerStates.pois?.visible ?? true,
-                    locked: false,
-                  },
-                  {
-                    id: "stories",
-                    name: "Story Pins",
-                    icon: Globe,
-                    visible: layerStates.stories?.visible ?? true,
-                    locked: false,
-                  },
-                  {
-                    id: "labels",
-                    name: "Map Labels",
-                    icon: Globe,
-                    visible: layerStates.labels?.visible ?? true,
-                    locked: false,
-                  },
-                ]}
-                onToggleVisibility={(id) => {
-                  if (id === "altitude" || id === "rivers" || id === "lakes") {
-                    toggleLayer(id === "altitude" ? "altitudes" : id);
-                  }
-                  setLayerStates((s) => ({
-                    ...s,
-                    [id]: { ...s[id]!, visible: !s[id]?.visible },
-                  }));
-                }}
+                layers={editorLayers}
+                onToggleVisibility={handleToggleVisibility}
                 onToggleLock={() => {}}
-                onOpacityChange={(id, opacity) => {
-                  setLayerStates((s) => ({
-                    ...s,
-                    [id]: { ...s[id]!, opacity },
-                  }));
-                }}
-                featureCounts={{
-                  regions: editor.allFeatures.filter((f) => f.type === "subdivision").length,
-                  cities: editor.allFeatures.filter((f) => f.type === "city").length,
-                  pois: editor.allFeatures.filter((f) => f.type === "poi").length,
-                  stories: editor.allFeatures.filter((f) => f.type === "storyPin").length,
-                  labels: editor.allFeatures.filter((f) => f.type === "mapLabel").length,
-                }}
+                onOpacityChange={handleOpacityChange}
+                featureCounts={featureCounts}
               />
             }
             wikiContent={<WikiScannerPanel scanner={wikiScanner} />}

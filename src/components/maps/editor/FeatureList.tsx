@@ -114,6 +114,33 @@ export const FeatureList = React.memo(function FeatureList({
     });
   }, [selectedFeature]);
 
+  const groups = useMemo(() => {
+    const cities: EditorFeature[] = [];
+    const subdivisions: EditorFeature[] = [];
+    const pois: EditorFeature[] = [];
+    const storyPins: EditorFeature[] = [];
+    const mapLabels: EditorFeature[] = [];
+    const routes: EditorFeature[] = [];
+
+    for (const f of features) {
+      if (f.type === "city") cities.push(f);
+      else if (f.type === "subdivision") subdivisions.push(f);
+      else if (f.type === "poi") pois.push(f);
+      else if (f.type === "storyPin") storyPins.push(f);
+      else if (f.type === "mapLabel") mapLabels.push(f);
+      else if (f.type === "route") routes.push(f);
+    }
+
+    return [
+      { label: "Cities", items: cities, type: "city" as const },
+      { label: "Regions", items: subdivisions, type: "subdivision" as const },
+      { label: "Points of Interest", items: pois, type: "poi" as const },
+      { label: "Story Pins", items: storyPins, type: "storyPin" as const },
+      { label: "Map Labels", items: mapLabels, type: "mapLabel" as const },
+      { label: "Routes", items: routes, type: "route" as const },
+    ].filter((g) => g.items.length > 0);
+  }, [features]);
+
   if (isLoading) {
     return (
       <div className="space-y-2 py-2">
@@ -146,23 +173,6 @@ export const FeatureList = React.memo(function FeatureList({
       </div>
     );
   }
-
-  // Group by type
-  const cities = features.filter((f) => f.type === "city");
-  const subdivisions = features.filter((f) => f.type === "subdivision");
-  const pois = features.filter((f) => f.type === "poi");
-  const storyPins = features.filter((f) => f.type === "storyPin");
-  const mapLabels = features.filter((f) => f.type === "mapLabel");
-  const routes = features.filter((f) => f.type === "route");
-
-  const groups: Array<{ label: string; items: EditorFeature[]; type: FeatureType }> = [
-    { label: "Cities", items: cities, type: "city" },
-    { label: "Regions", items: subdivisions, type: "subdivision" },
-    { label: "Points of Interest", items: pois, type: "poi" },
-    { label: "Story Pins", items: storyPins, type: "storyPin" },
-    { label: "Map Labels", items: mapLabels, type: "mapLabel" },
-    { label: "Routes", items: routes, type: "route" },
-  ].filter((g) => g.items.length > 0);
 
   return (
     <div className="space-y-1">

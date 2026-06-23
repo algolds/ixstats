@@ -187,26 +187,28 @@ export function useGovernmentBuilderAutoSync(
 
   // Track changes
   useEffect(() => {
-    if (builderState && previousStateRef.current) {
-      const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
-      if (hasChanges) {
-        setSyncState((prev) => {
-          if (prev.pendingChanges) return prev;
-          return { ...prev, pendingChanges: true };
-        });
+    if (!builderState || !previousStateRef.current) return;
 
-        // Trigger debounced save
-        if (enabled && countryId) {
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
+    if (builderState !== previousStateRef.current) {
+      setSyncState((prev) => {
+        if (prev.pendingChanges) return prev;
+        return { ...prev, pendingChanges: true };
+      });
 
-          debounceTimerRef.current = setTimeout(() => {
-            handleAutoSync();
-          }, debounceMs);
+      if (enabled && countryId) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
         }
+
+        debounceTimerRef.current = setTimeout(() => {
+          const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
+          if (hasChanges) {
+            void handleAutoSync();
+          } else {
+            setSyncState((prev) => ({ ...prev, pendingChanges: false }));
+          }
+        }, debounceMs);
       }
-      previousStateRef.current = builderState;
     }
   }, [builderState, enabled, countryId, debounceMs, handleAutoSync]);
 
@@ -390,26 +392,28 @@ export function useTaxBuilderAutoSync(
 
   // Track changes
   useEffect(() => {
-    if (builderState && previousStateRef.current) {
-      const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
-      if (hasChanges) {
-        setSyncState((prev) => {
-          if (prev.pendingChanges) return prev;
-          return { ...prev, pendingChanges: true };
-        });
+    if (!builderState || !previousStateRef.current) return;
 
-        // Trigger debounced save
-        if (enabled && countryId) {
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
+    if (builderState !== previousStateRef.current) {
+      setSyncState((prev) => {
+        if (prev.pendingChanges) return prev;
+        return { ...prev, pendingChanges: true };
+      });
 
-          debounceTimerRef.current = setTimeout(() => {
-            handleAutoSync();
-          }, debounceMs);
+      if (enabled && countryId) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
         }
+
+        debounceTimerRef.current = setTimeout(() => {
+          const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
+          if (hasChanges) {
+            void handleAutoSync();
+          } else {
+            setSyncState((prev) => ({ ...prev, pendingChanges: false }));
+          }
+        }, debounceMs);
       }
-      previousStateRef.current = builderState;
     }
   }, [builderState, enabled, countryId, debounceMs, handleAutoSync]);
 
