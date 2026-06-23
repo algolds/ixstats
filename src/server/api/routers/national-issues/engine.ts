@@ -12,6 +12,7 @@ import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues-engine";
+import { getNationalIssuesConfig, saveNationalIssuesConfig } from "~/lib/national-issues-config";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 
@@ -59,6 +60,11 @@ async function seedSplashShowcaseIssues(db: PrismaClient): Promise<void> {
 }
 
 // ==================== ZOD SCHEMAS ====================
+
+const ConfigUpdateSchema = z.object({
+  maxIssuesPerSession: z.number().int().min(1).max(10),
+  maxIssuesPerWeek: z.number().int().min(1).max(50),
+});
 
 const ConsequenceDefinitionSchema = z.object({
   targetModel: z.string(),
@@ -126,6 +132,23 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
   // ==================== PLAYER ENDPOINTS ====================
 
   // ==================== ADMIN ENDPOINTS ====================
+
+  /**
+   * Get the national issues engine configuration limits.
+   */
+  getEngineConfig: adminProcedure.query(async () => {
+    return getNationalIssuesConfig();
+  }),
+
+  /**
+   * Update the national issues engine configuration limits.
+   */
+  updateEngineConfig: adminProcedure
+    .input(ConfigUpdateSchema)
+    .mutation(async ({ input }) => {
+      saveNationalIssuesConfig(input);
+      return { success: true };
+    }),
 
   /**
    * Force generate an issue from a template for testing.
@@ -384,12 +407,14 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
         countryId: z.string(),
         maxIssues: z.number().int().min(1).max(10).optional(),
         domain: z.string().optional(),
+        bypassLimits: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
       return NationalIssuesEngine.evaluateCountry(input.countryId, ctx.db as any, {
         maxIssues: input.maxIssues,
         forceDomain: input.domain,
+        bypassLimits: input.bypassLimits,
       });
     }),
 
