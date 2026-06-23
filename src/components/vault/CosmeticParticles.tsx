@@ -1,5 +1,6 @@
 "use client";
 
+import { useId, useMemo } from "react";
 import Particles, { ParticlesProvider } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 import type { Engine } from "@tsparticles/engine";
@@ -18,11 +19,12 @@ const initParticles = async (engine: Engine): Promise<void> => {
 };
 
 function CosmeticParticlesInner({ style, containerType, className }: CosmeticParticlesProps) {
-  if (!style) return null;
+  const uniqueId = useId();
 
-  // Map cosmetic style keys to custom SVG paths
-  const getShapesForStyle = (s: string) => {
-    switch (s.toLowerCase()) {
+  // Map cosmetic style keys to custom SVG paths (memoized)
+  const shapes = useMemo(() => {
+    if (!style) return [];
+    switch (style.toLowerCase()) {
       case "winter":
         return [SVG.SVG_SNOWFLAKE, SVG.SVG_SAPPHIRE];
       case "ruby":
@@ -38,13 +40,12 @@ function CosmeticParticlesInner({ style, containerType, className }: CosmeticPar
       default:
         return [SVG.SVG_STAR];
     }
-  };
+  }, [style]);
 
-  const shapes = getShapesForStyle(style);
-
-  // Map cosmetic style keys to colors
-  const getColorsForStyle = (s: string) => {
-    switch (s.toLowerCase()) {
+  // Map cosmetic style keys to colors (memoized)
+  const colors = useMemo(() => {
+    if (!style) return ["#ffffff"];
+    switch (style.toLowerCase()) {
       case "winter":
         return ["#93c5fd", "#e0f2fe", "#38bdf8"];
       case "ruby":
@@ -60,99 +61,100 @@ function CosmeticParticlesInner({ style, containerType, className }: CosmeticPar
       default:
         return ["#ffffff"];
     }
-  };
+  }, [style]);
 
-  const colors = getColorsForStyle(style);
+  // Configure particle physics (memoized to prevent infinite canvas recreate loops)
+  const options = useMemo(() => {
+    const isFrame = containerType === "frame";
+    const particleCount = isFrame ? 5 : 8;
+    const speed = isFrame ? 0.5 : 0.8;
+    const direction = isFrame ? "none" : "top";
 
-  // Configure particle physics based on context (card border frame vs. profile avatar glow background)
-  const isFrame = containerType === "frame";
-  const particleCount = isFrame ? 5 : 8;
-  const speed = isFrame ? 0.5 : 0.8;
-  const direction = isFrame ? "none" : "top";
-
-  const options = {
-    fullScreen: { enable: false },
-    fpsLimit: 45,
-    pauseOnBlur: true,
-    pauseOnOutsideViewport: true,
-    interactivity: {
-      events: {
-        onHover: { enable: false },
-        onClick: { enable: false },
-      },
-    },
-    particles: {
-      number: {
-        value: particleCount,
-        limit: { value: particleCount * 2 },
-      },
-      color: {
-        value: colors,
-      },
-      shape: {
-        type: "image",
-        options: {
-          image: shapes.map((src) => ({
-            src,
-            width: 32,
-            height: 32,
-          })),
+    return {
+      fullScreen: { enable: false },
+      fpsLimit: 45,
+      pauseOnBlur: true,
+      pauseOnOutsideViewport: true,
+      interactivity: {
+        events: {
+          onHover: { enable: false },
+          onClick: { enable: false },
         },
       },
-      opacity: {
-        value: { min: 0.25, max: 0.85 },
-        animation: {
+      particles: {
+        number: {
+          value: particleCount,
+          limit: { value: particleCount * 2 },
+        },
+        color: {
+          value: colors,
+        },
+        shape: {
+          type: "image",
+          options: {
+            image: shapes.map((src) => ({
+              src,
+              width: 32,
+              height: 32,
+            })),
+          },
+        },
+        opacity: {
+          value: { min: 0.25, max: 0.85 },
+          animation: {
+            enable: true,
+            speed: 1,
+            sync: false,
+            startValue: "random",
+          },
+        },
+        size: {
+          value: { min: 8, max: 14 },
+          animation: {
+            enable: true,
+            speed: 2,
+            sync: false,
+          },
+        },
+        move: {
           enable: true,
-          speed: 1,
-          sync: false,
-          startValue: "random",
+          speed: speed,
+          direction: direction as any,
+          random: true,
+          straight: false,
+          outModes: {
+            default: "out" as const,
+          },
+          trail: {
+            enable: false,
+          },
         },
-      },
-      size: {
-        value: { min: 8, max: 14 },
-        animation: {
-          enable: true,
-          speed: 2,
-          sync: false,
+        rotate: {
+          value: { min: 0, max: 360 },
+          direction: "random" as const,
+          animation: {
+            enable: true,
+            speed: 4,
+            sync: false,
+          },
         },
-      },
-      move: {
-        enable: true,
-        speed: speed,
-        direction: direction as any,
-        random: true,
-        straight: false,
-        outModes: {
-          default: "out" as const,
-        },
-        trail: {
+        collisions: {
           enable: false,
         },
       },
-      rotate: {
-        value: { min: 0, max: 360 },
-        direction: "random" as const,
-        animation: {
-          enable: true,
-          speed: 4,
-          sync: false,
-        },
-      },
-      collisions: {
-        enable: false,
-      },
-    },
-    detectRetina: true,
-  };
+      detectRetina: true,
+    };
+  }, [containerType, shapes, colors]);
+
+  if (!style) return null;
+
+  // Generate stable id across renders to prevent infinite canvas recreations
+  const id = `cosmetic-particles-${style}-${containerType}-${uniqueId.replace(/:/g, "")}`;
 
   return (
     <div className={cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", className)}>
       <ParticlesProvider init={initParticles}>
-        <Particles
-          id={`cosmetic-particles-${style}-${containerType}-${Math.random().toString(36).substr(2, 9)}`}
-          options={options as any}
-          className="h-full w-full"
-        />
+        <Particles id={id} options={options as any} className="h-full w-full" />
       </ParticlesProvider>
     </div>
   );
