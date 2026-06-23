@@ -207,3 +207,13 @@
 }
 
 
+
+/* ponytail: kill orphan tsparticles canvases. @tsparticles/react's <Particles>
+   calls engine.load({id}) in an async effect; with dynamic(ssr:false) the target
+   <div id> can be missing when getDomContainer runs, so the engine appends a
+   width/height:100% static <canvas> straight to <body>, inflating every page's
+   height. Real particle canvases live inside div#cosmetic-particles-*, never as a
+   body child, so this only hides the escapee. Upstream fix: pass the element ref. */
+body > canvas[id^="cosmetic-particles-"] {
+  display: none !important;
+}

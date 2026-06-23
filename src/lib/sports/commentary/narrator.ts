@@ -15,6 +15,7 @@ export async function narrateEvents(
       apiUrl?: string;
       modelName?: string;
       temperature?: number;
+      reasoning?: boolean; // off by default — thinking mode is the main latency source
     };
   }
 ): Promise<string[]> {
@@ -41,7 +42,8 @@ export async function narrateEvents(
 
   if (provider === "nvidia") {
     apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    modelName = modelName || "deepseek-ai/deepseek-v4-flash";
+    // Fast non-reasoning default; switch to a deepseek model + reasoning flag for quality.
+    modelName = modelName || "meta/llama-3.1-70b-instruct";
   } else if (provider === "openrouter") {
     apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
     modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
@@ -55,6 +57,9 @@ export async function narrateEvents(
     apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
   }
 
+  // Reasoning/thinking mode is the dominant latency cost — opt-in only.
+  const reasoning = config?.reasoning === true;
+
   try {
     const inputDescriptions = events.map((e) => e.description);
     const systemPrompt = `You are a professional sports commentator for a ${options.sport} match.
@@ -66,7 +71,8 @@ Example Input: ["Match begins. Home team using neutral tactics.", "GOAL! John Sm
 Example Output: { "commentary": ["The referee blows the whistle and we are underway under the floodlights!", "GOAL! John Smith unleashes a thunderous volley into the top corner!"] }`;
 
     const controller = new AbortController();
-    const timeoutMs = provider === "nvidia" ? 60000 : 8000;
+    // Long timeout only when actually reasoning.
+    const timeoutMs = reasoning ? 60000 : 8000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(apiUrl, {
@@ -82,12 +88,13 @@ Example Output: { "commentary": ["The referee blows the whistle and we are under
           { role: "user", content: JSON.stringify(inputDescriptions) },
         ],
         temperature: config?.temperature ?? 0.7,
-        max_tokens: provider === "nvidia" ? 16384 : 2048,
+        max_tokens: reasoning ? 16384 : 2048,
         ...(provider !== "nvidia" && { response_format: { type: "json_object" } }),
-        ...(provider === "nvidia" && {
-          top_p: 0.95,
-          chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
-        }),
+        ...(reasoning &&
+          provider === "nvidia" && {
+            top_p: 0.95,
+            chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
+          }),
       }),
       signal: controller.signal,
     });
@@ -185,6 +192,7 @@ async function queryLLM(
     apiUrl?: string;
     modelName?: string;
     temperature?: number;
+    reasoning?: boolean;
   }
 ): Promise<string> {
   const isEnabled = config?.apiKey ? true : process.env.SPORTS_LLM_COMMENTARY === "true";
@@ -205,7 +213,8 @@ async function queryLLM(
 
   if (provider === "nvidia") {
     apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    modelName = modelName || "deepseek-ai/deepseek-v4-flash";
+    // Fast non-reasoning default; switch to a deepseek model + reasoning flag for quality.
+    modelName = modelName || "meta/llama-3.1-70b-instruct";
   } else if (provider === "openrouter") {
     apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
     modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
@@ -219,8 +228,11 @@ async function queryLLM(
     apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
   }
 
+  // Reasoning/thinking mode is the dominant latency cost — opt-in only.
+  const reasoning = config?.reasoning === true;
+
   const controller = new AbortController();
-  const timeoutMs = provider === "nvidia" ? 60000 : 12000;
+  const timeoutMs = reasoning ? 60000 : 12000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -237,12 +249,13 @@ async function queryLLM(
           { role: "user", content: userPrompt },
         ],
         temperature: config?.temperature ?? 0.7,
-        max_tokens: provider === "nvidia" ? 16384 : jsonMode ? 2048 : 4096,
+        max_tokens: reasoning ? 16384 : jsonMode ? 2048 : 1024,
         ...(jsonMode && provider !== "nvidia" && { response_format: { type: "json_object" } }),
-        ...(provider === "nvidia" && {
-          top_p: 0.95,
-          chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
-        }),
+        ...(reasoning &&
+          provider === "nvidia" && {
+            top_p: 0.95,
+            chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
+          }),
       }),
       signal: controller.signal,
     });
@@ -276,6 +289,7 @@ export async function narrateBulletin(
       apiUrl?: string;
       modelName?: string;
       temperature?: number;
+      reasoning?: boolean;
     };
   }
 ): Promise<string> {
@@ -311,6 +325,7 @@ export async function generateMatchReport(matchData: {
     apiUrl?: string;
     modelName?: string;
     temperature?: number;
+    reasoning?: boolean;
   };
 }): Promise<string> {
   const eventsSummary = matchData.events.map((e) => `[${e.t}'] ${e.description}`).join("\n");
@@ -378,6 +393,7 @@ export async function generateMatchPreview(
     apiUrl?: string;
     modelName?: string;
     temperature?: number;
+    reasoning?: boolean;
   }
 ): Promise<string> {
   const systemPrompt = `You are a sports analyst. Write a concise pre-match preview and prediction for an upcoming ${sport} match between ${homeTeam.name} and ${awayTeam.name}. Give a 1-2 paragraph preview highlighting who is favored based on their standing position and form, and finish with a bold scoreline prediction.`;
@@ -403,6 +419,7 @@ export async function generateSeasonSummary(
     apiUrl?: string;
     modelName?: string;
     temperature?: number;
+    reasoning?: boolean;
   }
 ): Promise<string> {
   const standingsSummary = standings

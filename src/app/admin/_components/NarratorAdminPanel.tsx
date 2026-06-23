@@ -36,6 +36,7 @@ export function NarratorAdminPanel() {
   const [apiUrl, setApiUrl] = useState("");
   const [modelName, setModelName] = useState("");
   const [temperature, setTemperature] = useState(0.7);
+  const [reasoning, setReasoning] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -120,6 +121,7 @@ export function NarratorAdminPanel() {
       setApiUrl(settingsData.apiUrl || "");
       setModelName(settingsData.modelName || "");
       setTemperature(settingsData.temperature ?? 0.7);
+      setReasoning(settingsData.reasoning ?? false);
       setSystemPrompt(settingsData.systemPrompt || "");
     }
   }, [settingsData]);
@@ -144,6 +146,7 @@ export function NarratorAdminPanel() {
       apiUrl: apiUrl || undefined,
       modelName: modelName || undefined,
       temperature,
+      reasoning,
       systemPrompt: systemPrompt || undefined,
     });
   };
@@ -195,7 +198,7 @@ export function NarratorAdminPanel() {
     if (provider === "nvidia") {
       return {
         apiUrl: "https://integrate.api.nvidia.com/v1/chat/completions",
-        modelName: "deepseek-ai/deepseek-v4-flash",
+        modelName: "meta/llama-3.1-70b-instruct",
       };
     }
     if (provider === "openrouter") {
@@ -331,6 +334,23 @@ export function NarratorAdminPanel() {
                     className="h-9 w-full cursor-pointer accent-amber-500"
                   />
                 </div>
+
+                <label className="border-border/40 bg-background/40 flex cursor-pointer items-center justify-between gap-3 rounded-md border p-3">
+                  <span className="space-y-0.5">
+                    <span className="text-muted-foreground block text-xs font-bold uppercase">
+                      Reasoning Mode
+                    </span>
+                    <span className="text-muted-foreground/70 block text-[10px]">
+                      Higher quality, much slower. Off = fast flavor text.
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={reasoning}
+                    onChange={(e) => setReasoning(e.target.checked)}
+                    className="h-4 w-4 cursor-pointer accent-amber-500"
+                  />
+                </label>
 
                 <div className="space-y-2">
                   <label className="text-muted-foreground text-xs font-bold uppercase">

@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { getFlavorText, DEFAULT_FLAVOR_SYSTEM_PROMPT, fetchLiveCountryMetrics } from "~/lib/narrator/flavorization";
+import { getFlavorText, DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/flavorization";
+import { buildCanonContext, formatCanonContext } from "~/lib/narrator/canon-context";
 import { queryLLM } from "~/lib/narrator/client";
 
 export const narratorRouter = createTRPCRouter({
@@ -55,6 +56,7 @@ export const narratorRouter = createTRPCRouter({
               "narrator:llm:modelName",
               "narrator:llm:temperature",
               "narrator:llm:systemPrompt",
+              "narrator:llm:reasoning",
             ],
           },
         },
@@ -70,6 +72,7 @@ export const narratorRouter = createTRPCRouter({
           ? parseFloat(configs.find((c) => c.key === "narrator:llm:temperature")!.value)
           : 0.7,
         systemPrompt: configs.find((c) => c.key === "narrator:llm:systemPrompt")?.value || "",
+        reasoning: configs.find((c) => c.key === "narrator:llm:reasoning")?.value === "true",
       };
     } catch (error) {
       throw new TRPCError({
@@ -89,6 +92,7 @@ export const narratorRouter = createTRPCRouter({
         modelName: z.string().optional(),
         temperature: z.number().optional(),
         systemPrompt: z.string().optional(),
+        reasoning: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -104,6 +108,7 @@ export const narratorRouter = createTRPCRouter({
             value: input.temperature !== undefined ? String(input.temperature) : "",
           },
           { key: "narrator:llm:systemPrompt", value: input.systemPrompt || "" },
+          { key: "narrator:llm:reasoning", value: String(input.reasoning === true) },
         ];
 
         for (const item of keys) {
@@ -180,9 +185,11 @@ export const narratorRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        let metrics: any = null;
-
+        // Live country → real canon context (mirrors production). Sandbox mode
+        // keeps the manual JSON path so admins can probe hypothetical states.
+        let canonContext = "";
         if (input.sandboxMode && input.sandboxMetricsJson) {
+          let metrics: any;
           try {
             metrics = JSON.parse(input.sandboxMetricsJson);
           } catch (e) {
@@ -191,38 +198,30 @@ export const narratorRouter = createTRPCRouter({
               message: "Invalid JSON format in sandbox metrics",
             });
           }
-        } else if (input.countryId) {
-          metrics = await fetchLiveCountryMetrics(input.countryId, ctx.db as any);
-        }
-
-        // Format metrics context for system/user instructions
-        let metricsContext = "";
-        if (metrics) {
-          const name = metrics.name || "the nation";
-          const leader = metrics.leader || "the sovereign";
-          const govType = metrics.governmentType || "government";
           const approval = metrics.approval ?? metrics.publicApproval ?? 50;
-          const stability = metrics.stability ?? metrics.stabilityScore ?? metrics.politicalStability ?? 50;
-
-          metricsContext = `
-[Country Context]
-Country Name: ${name}
-Ruler/Leader: ${leader}
-Government Form: ${govType}
-Public Approval: ${approval}%
-Political Stability: ${stability}%
-`;
+          const stability =
+            metrics.stability ?? metrics.stabilityScore ?? metrics.politicalStability ?? 50;
+          canonContext = `[Canon Context — the ONLY facts you may reference]
+Nation: ${metrics.name || "the nation"}
+Leader: ${metrics.leader || "the sovereign"}
+Government: ${metrics.governmentType || "government"}
+Public approval: ${approval}%
+Political stability: ${stability}%`;
+        } else if (input.countryId) {
+          const canon = await buildCanonContext(ctx.db as any, input.countryId);
+          if (canon) canonContext = formatCanonContext(canon);
         }
 
         const userPrompt = `
-${metricsContext}
+${canonContext}
+
 [Event Details]
 Event Type: ${input.type.toUpperCase()}
 Title: ${input.title}
 Details: ${input.description}
 
-Rewrite this event into an immersive Paradox Interactive-style narrative introduction. Adapt the mood, tone, and description to match the country's metrics (e.g. tense or chaotic description if stability or approval is low, or prosperous/grand description if stability is high and economy is strong).
-Do not add new facts or inject unrelated lore. Limit the narrative to 2-3 immersive sentences (approx. 50-70 words).
+Rewrite this event into an immersive Paradox Interactive-style narrative introduction. Adapt the mood and tone to the canon facts above (tense or chaotic if stability or approval is low; prosperous or grand if stability is high and the economy is strong). Where it fits naturally, reference the nation's real recent history or relationships from the Canon Context for continuity.
+Reference ONLY facts from the [Canon Context]. Do not invent leaders, places, wars, or lore. Limit the narrative to 2-3 immersive sentences (approx. 50-70 words).
 `;
 
         // Resolve system prompt: override > saved config > default

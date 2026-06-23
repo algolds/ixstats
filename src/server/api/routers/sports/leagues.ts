@@ -818,6 +818,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             apiUrl: z.string().optional(),
             modelName: z.string().optional(),
             temperature: z.number().optional(),
+            reasoning: z.boolean().optional(),
           })
           .optional(),
       })
@@ -884,6 +885,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             apiUrl: z.string().optional(),
             modelName: z.string().optional(),
             temperature: z.number().optional(),
+            reasoning: z.boolean().optional(),
           })
           .optional(),
       })
@@ -1021,6 +1023,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             apiUrl: z.string().optional(),
             modelName: z.string().optional(),
             temperature: z.number().optional(),
+            reasoning: z.boolean().optional(),
           })
           .optional(),
       })
@@ -1058,6 +1061,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             apiUrl: z.string().optional(),
             modelName: z.string().optional(),
             temperature: z.number().optional(),
+            reasoning: z.boolean().optional(),
           })
           .optional(),
       })
@@ -1123,6 +1127,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
         apiUrl: z.string().optional(),
         modelName: z.string().optional(),
         temperature: z.number().optional(),
+        reasoning: z.boolean().optional(),
         applyGlobally: z.boolean(),
       })
     )
@@ -1138,6 +1143,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             value: input.temperature !== undefined ? String(input.temperature) : "",
           },
           { key: "sports:llm:applyGlobally", value: String(input.applyGlobally) },
+          { key: "sports:llm:reasoning", value: String(input.reasoning === true) },
         ];
 
         for (const item of keys) {
@@ -1169,6 +1175,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
               "sports:llm:modelName",
               "sports:llm:temperature",
               "sports:llm:applyGlobally",
+              "sports:llm:reasoning",
             ],
           },
         },
@@ -1183,6 +1190,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
           ? parseFloat(configs.find((c) => c.key === "sports:llm:temperature")!.value)
           : undefined,
         applyGlobally: configs.find((c) => c.key === "sports:llm:applyGlobally")?.value === "true",
+        reasoning: configs.find((c) => c.key === "sports:llm:reasoning")?.value === "true",
       };
     } catch (error) {
       throw new TRPCError({

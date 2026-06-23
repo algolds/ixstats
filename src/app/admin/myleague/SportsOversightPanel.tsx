@@ -275,6 +275,7 @@ function AINarratorLab() {
   const [apiUrl, setApiUrl] = useState("");
   const [modelName, setModelName] = useState("");
   const [temperature, setTemperature] = useState(0.7);
+  const [reasoning, setReasoning] = useState(false);
   const [applyGlobally, setApplyGlobally] = useState(false);
 
   const { data: dbSettings } = api.sports.getGlobalAINarratorSettings.useQuery();
@@ -291,6 +292,7 @@ function AINarratorLab() {
         if (parsed.apiUrl) setApiUrl(parsed.apiUrl);
         if (parsed.modelName) setModelName(parsed.modelName);
         if (parsed.temperature !== undefined) setTemperature(parsed.temperature);
+        if (parsed.reasoning !== undefined) setReasoning(parsed.reasoning);
         if (parsed.applyGlobally !== undefined) setApplyGlobally(parsed.applyGlobally);
       }
     } catch (e) {
@@ -306,6 +308,7 @@ function AINarratorLab() {
       if (dbSettings.apiUrl) setApiUrl(dbSettings.apiUrl);
       if (dbSettings.modelName) setModelName(dbSettings.modelName);
       if (dbSettings.temperature !== undefined) setTemperature(dbSettings.temperature);
+      if (dbSettings.reasoning !== undefined) setReasoning(dbSettings.reasoning);
       setApplyGlobally(dbSettings.applyGlobally);
     }
   }, [dbSettings]);
@@ -329,6 +332,7 @@ function AINarratorLab() {
       setApiUrl("");
       setModelName("");
       setTemperature(0.7);
+      setReasoning(false);
       setApplyGlobally(false);
       notify.success("Config Reset", "AI Narrator configurations reverted to defaults.");
     } catch (e) {
@@ -340,7 +344,7 @@ function AINarratorLab() {
     if (provider === "nvidia") {
       return {
         apiUrl: "https://integrate.api.nvidia.com/v1/chat/completions",
-        modelName: "deepseek-ai/deepseek-v4-flash",
+        modelName: "meta/llama-3.1-70b-instruct",
       };
     }
     if (provider === "openrouter") {
@@ -458,6 +462,7 @@ function AINarratorLab() {
         apiUrl: apiUrl || undefined,
         modelName: modelName || undefined,
         temperature,
+        reasoning,
       },
     });
   };
@@ -574,6 +579,26 @@ function AINarratorLab() {
                   </div>
                 </div>
 
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950 p-2">
+                  <span>
+                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                      Reasoning Mode
+                    </span>
+                    <span className="text-muted-foreground/70 block text-[10px]">
+                      Higher quality, much slower. Off = fast commentary.
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={reasoning}
+                    onChange={(e) => {
+                      setReasoning(e.target.checked);
+                      saveConfig("reasoning", e.target.checked);
+                    }}
+                    className="h-4 w-4 cursor-pointer accent-amber-400"
+                  />
+                </label>
+
                 <div className="space-y-1.5">
                   <label className="text-muted-foreground block text-[10px] font-bold uppercase">
                     API Key
@@ -646,6 +671,7 @@ function AINarratorLab() {
                             apiUrl: apiUrl || undefined,
                             modelName: modelName || undefined,
                             temperature,
+                            reasoning,
                             applyGlobally,
                           },
                           {

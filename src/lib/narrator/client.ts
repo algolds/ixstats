@@ -6,6 +6,7 @@ export interface LLMConfig {
   apiUrl?: string;
   modelName?: string;
   temperature?: number;
+  reasoning?: boolean; // off by default — reasoning/thinking mode is the main latency source
 }
 
 export async function getLLMConfig(): Promise<LLMConfig | null> {
@@ -26,6 +27,7 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
             "narrator:llm:apiUrl",
             "narrator:llm:modelName",
             "narrator:llm:temperature",
+            "narrator:llm:reasoning",
           ],
         },
       },
@@ -56,6 +58,8 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
         apiUrl: apiUrl || undefined,
         modelName: modelName || undefined,
         temperature: tempVal ? parseFloat(tempVal) : undefined,
+        reasoning:
+          configs.find((c) => c.key === "narrator:llm:reasoning")?.value === "true",
       };
     }
   } catch (e) {
@@ -80,6 +84,7 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
       modelName:
         process.env.NARRATOR_LLM_MODEL ||
         process.env.SPORTS_LLM_MODEL,
+      reasoning: process.env.NARRATOR_LLM_REASONING === "true",
     };
   }
 
@@ -107,7 +112,8 @@ export async function queryLLM(
 
   if (provider === "nvidia") {
     apiUrl = apiUrl || "https://integrate.api.nvidia.com/v1/chat/completions";
-    modelName = modelName || "deepseek-ai/deepseek-v4-flash";
+    // Fast non-reasoning default; switch to a deepseek model + reasoning flag for quality.
+    modelName = modelName || "meta/llama-3.1-70b-instruct";
   } else if (provider === "openrouter") {
     apiUrl = apiUrl || "https://openrouter.ai/api/v1/chat/completions";
     modelName = modelName || "meta-llama/llama-3.1-70b-instruct";
@@ -121,8 +127,12 @@ export async function queryLLM(
     apiUrl = apiUrl.replace(/\/$/, "") + "/chat/completions";
   }
 
+  // Reasoning/thinking mode is the dominant latency cost — opt-in only.
+  const reasoning = config.reasoning === true;
+
   const controller = new AbortController();
-  const timeoutMs = provider === "nvidia" ? 60000 : 15000;
+  // Long timeout only when actually reasoning; flavor text should return fast.
+  const timeoutMs = reasoning ? 60000 : 15000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -139,12 +149,14 @@ export async function queryLLM(
           { role: "user", content: userPrompt },
         ],
         temperature: options?.temperature ?? config.temperature ?? 0.7,
-        max_tokens: provider === "nvidia" ? 16384 : options?.jsonMode ? 2048 : 4096,
+        // ponytail: flavor text is short; 16k tokens only made the slow path slower
+        max_tokens: reasoning ? 16384 : options?.jsonMode ? 2048 : 1024,
         ...(options?.jsonMode && provider !== "nvidia" && { response_format: { type: "json_object" } }),
-        ...(provider === "nvidia" && {
-          top_p: 0.95,
-          chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
-        }),
+        ...(reasoning &&
+          provider === "nvidia" && {
+            top_p: 0.95,
+            chat_template_kwargs: { thinking: true, reasoning_effort: "high" },
+          }),
       }),
       signal: controller.signal,
     });
