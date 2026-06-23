@@ -73,7 +73,9 @@ export function EnhancedPoliticsContent({
       </div>
 
       {/* Political crises & scandals — reuses the National Issues loop, scoped to politics */}
-      <IssuesInbox countryId={country.id} domain="political" variant="compact" maxVisible={4} />
+      <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+        <IssuesInbox countryId={country.id} domain="political" variant="compact" maxVisible={4} />
+      </div>
 
       {/* Wiki woven inline */}
       <InlineWiki context="politics" accent="indigo" maxSections={1} />

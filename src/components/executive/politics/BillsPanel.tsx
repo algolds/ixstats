@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Gavel, Plus, Check, X, Minus } from "lucide-react";
+import { Gavel, Plus, Check, X, Minus, ChevronRight } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 
 interface BillsPanelProps {
   countryId: string;
@@ -44,6 +51,7 @@ const VOTE_ICON = {
 } as const;
 
 export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -69,147 +77,201 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
     onSuccess: () => void refetch(),
   });
 
+  const committeeCount = bills?.filter((b) => b.status === "in_committee").length ?? 0;
+  const activeCount = bills?.filter((b) => b.status === "active").length ?? 0;
+
   return (
-    <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-4">
-      <div className="flex items-center justify-between">
+    <>
+      {/* Trigger Card - Facet Compliant */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="glass-hierarchy-child border-border flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all hover:bg-muted/10 hover:shadow-md active:scale-[0.99] cursor-pointer"
+      >
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-indigo-500/10 p-2.5">
+            <Gavel className="h-5 w-5 text-indigo-500" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold">Bills on the Floor</h4>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              {bills && bills.length > 0
+                ? `${committeeCount} pending, ${activeCount} passed laws`
+                : "No legislative bills proposed yet"}
+            </p>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
-          <Gavel className="h-4 w-4 text-indigo-600" />
-          <span className="text-sm font-semibold">Bills on the Floor</span>
-          {bills && bills.length > 0 && (
-            <Badge variant="outline" className="text-[10px]">
-              {bills.length}
+          {committeeCount > 0 && (
+            <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-semibold hover:bg-amber-500/20">
+              {committeeCount} Pending
             </Badge>
           )}
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </div>
-        {canManage && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 gap-1 text-xs"
-            onClick={() => setShowForm((v) => !v)}
-          >
-            <Plus className="h-3 w-3" />
-            Draft Bill
-          </Button>
-        )}
-      </div>
+      </button>
 
-      {showForm && canManage && (
-        <div className="bg-muted/30 space-y-2 rounded-md p-3">
-          <input
-            className="bg-background border-border w-full rounded-md border px-2 py-1.5 text-sm"
-            placeholder="Bill name (e.g. Healthcare Reform Act)"
-            value={name}
-            maxLength={120}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <textarea
-            className="bg-background border-border w-full rounded-md border px-2 py-1.5 text-sm"
-            placeholder="What the bill does…"
-            rows={2}
-            value={description}
-            maxLength={1000}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-muted-foreground text-xs">Lean</label>
-            <select
-              className="bg-background border-border rounded-md border px-2 py-1 text-sm"
-              value={ideology}
-              onChange={(e) => setIdeology(e.target.value as typeof ideology)}
-            >
-              {IDEOLOGIES.map((i) => (
-                <option key={i.value} value={i.value}>
-                  {i.label}
-                </option>
-              ))}
-            </select>
-            <label className="text-muted-foreground text-xs">Growth effect %</label>
-            <input
-              type="number"
-              step={0.5}
-              min={-5}
-              max={5}
-              className="bg-background border-border w-16 rounded-md border px-2 py-1 text-sm"
-              value={gdpEffect}
-              onChange={(e) => setGdpEffect(Number(e.target.value))}
-            />
-          </div>
-          <Button
-            size="sm"
-            className="h-7 w-full text-xs"
-            disabled={!name.trim() || !description.trim() || propose.isPending}
-            onClick={() =>
-              propose.mutate({ countryId, name, description, ideology, gdpEffect })
-            }
-          >
-            {propose.isPending ? "Submitting…" : "Submit to Committee"}
-          </Button>
-        </div>
-      )}
+      {/* Floor Vote Modal */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-xl md:max-w-2xl bg-card border-border max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gavel className="h-5 w-5 text-indigo-500" />
+              <span>Legislative Floor</span>
+            </DialogTitle>
+            <DialogDescription>
+              Propose new laws, view the voting alignment of seated parties, and call floor votes.
+            </DialogDescription>
+          </DialogHeader>
 
-      {bills && bills.length > 0 ? (
-        <div className="space-y-1.5">
-          {bills.map((bill) => {
-            const statusMeta = STATUS_BADGE[bill.status] ?? STATUS_BADGE.in_committee!;
-            const result = bill.meta?.voteResult;
-            const isOpen = expanded === bill.id;
-            return (
-              <div key={bill.id} className="bg-muted/30 rounded-md px-2.5 py-1.5">
-                <div className="flex items-center gap-2">
-                  <button
-                    className="min-w-0 flex-1 truncate text-left text-sm"
-                    onClick={() => setExpanded(isOpen ? null : bill.id)}
-                  >
-                    {bill.name}
-                  </button>
-                  {result && (
-                    <span className="text-muted-foreground text-[10px]">
-                      {result.yesSeats}–{result.noSeats}
-                    </span>
-                  )}
-                  <Badge className={`px-1.5 py-0 text-[10px] ${statusMeta.className}`}>
-                    {statusMeta.label}
-                  </Badge>
-                  {canManage && bill.status === "in_committee" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-6 px-2 text-[10px]"
-                      disabled={holdVote.isPending}
-                      onClick={() => holdVote.mutate({ billId: bill.id })}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold">Bills list</span>
+              {canManage && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => setShowForm((v) => !v)}
+                >
+                  <Plus className="h-3 w-3" />
+                  {showForm ? "Cancel" : "Draft Bill"}
+                </Button>
+              )}
+            </div>
+
+            {showForm && canManage && (
+              <div className="bg-muted/30 border border-border/50 space-y-2 rounded-xl p-3">
+                <input
+                  className="bg-background border-border w-full rounded-md border px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Bill name (e.g. Healthcare Reform Act)"
+                  value={name}
+                  maxLength={120}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <textarea
+                  className="bg-background border-border w-full rounded-md border px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="What the bill does…"
+                  rows={2}
+                  value={description}
+                  maxLength={1000}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-muted-foreground text-xs">Lean</label>
+                    <select
+                      className="bg-background border-border rounded-md border px-2 py-1 text-xs"
+                      value={ideology}
+                      onChange={(e) => setIdeology(e.target.value as typeof ideology)}
                     >
-                      Call Vote
-                    </Button>
-                  )}
-                </div>
-                {isOpen && (
-                  <div className="text-muted-foreground mt-1.5 space-y-1 text-xs">
-                    <p>{bill.description}</p>
-                    {result && (
-                      <div className="space-y-0.5 pt-1">
-                        {result.breakdown.map((pv) => (
-                          <div key={pv.partyId} className="flex items-center gap-1.5">
-                            {VOTE_ICON[pv.vote]}
-                            <span className="flex-1 truncate">{pv.partyName}</span>
-                            <span>{pv.seats} seats</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                      {IDEOLOGIES.map((i) => (
+                        <option key={i.value} value={i.value}>
+                          {i.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                )}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-muted-foreground text-xs">Growth effect %</label>
+                    <input
+                      type="number"
+                      step={0.5}
+                      min={-5}
+                      max={5}
+                      className="bg-background border-border w-16 rounded-md border px-2 py-1 text-xs"
+                      value={gdpEffect}
+                      onChange={(e) => setGdpEffect(Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="h-7 w-full text-xs"
+                  disabled={!name.trim() || !description.trim() || propose.isPending}
+                  onClick={() =>
+                    propose.mutate({ countryId, name, description, ideology, gdpEffect })
+                  }
+                >
+                  {propose.isPending ? "Submitting…" : "Submit to Committee"}
+                </Button>
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <Gavel className="h-8 w-8 opacity-30" />
-          <p className="text-sm">No bills before the legislature</p>
-          {canManage && <p className="text-xs">Draft a bill and call it to a vote.</p>}
-        </div>
-      )}
-    </div>
+            )}
+
+            {bills && bills.length > 0 ? (
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {bills.map((bill) => {
+                  const statusMeta = STATUS_BADGE[bill.status] ?? STATUS_BADGE.in_committee!;
+                  const result = bill.meta?.voteResult;
+                  const isBillExpanded = expanded === bill.id;
+                  return (
+                    <div key={bill.id} className="bg-muted/30 border border-border/30 rounded-xl p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          className="min-w-0 flex-1 truncate text-left text-sm font-medium hover:text-indigo-500 transition-colors"
+                          onClick={() => setExpanded(isBillExpanded ? null : bill.id)}
+                        >
+                          {bill.name}
+                        </button>
+                        <div className="flex items-center gap-2">
+                          {result && (
+                            <span className="text-muted-foreground text-[11px] tabular-nums bg-muted px-1.5 py-0.5 rounded">
+                              {result.yesSeats}–{result.noSeats}
+                            </span>
+                          )}
+                          <Badge className={`px-2 py-0.5 text-[10px] font-semibold ${statusMeta.className}`}>
+                            {statusMeta.label}
+                          </Badge>
+                          {canManage && bill.status === "in_committee" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2.5 text-[10px] border-indigo-500/20 bg-indigo-500/5 text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
+                              disabled={holdVote.isPending}
+                              onClick={() => holdVote.mutate({ billId: bill.id })}
+                            >
+                              Call Vote
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {isBillExpanded && (
+                        <div className="text-muted-foreground mt-2 space-y-2 text-xs border-t border-border/40 pt-2">
+                          <p>{bill.description}</p>
+                          {bill.gdpEffect !== 0 && (
+                            <p className="font-semibold text-indigo-500/90">
+                              Projected Growth Effect: {bill.gdpEffect > 0 ? "+" : ""}{bill.gdpEffect}% GDP
+                            </p>
+                          )}
+                          {result && (
+                            <div className="bg-muted/40 border border-border/20 rounded-lg p-2.5 space-y-1">
+                              <p className="font-medium text-foreground mb-1 text-[11px]">Floor Vote Breakdown</p>
+                              {result.breakdown.map((pv) => (
+                                <div key={pv.partyId} className="flex items-center justify-between gap-1.5 py-0.5 border-b border-border/10 last:border-b-0">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    {VOTE_ICON[pv.vote]}
+                                    <span className="truncate text-foreground/90 font-medium">{pv.partyName}</span>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground">{pv.seats} seats</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center">
+                <Gavel className="h-8 w-8 opacity-30" />
+                <p className="text-sm">No bills before the legislature</p>
+                {canManage && <p className="text-xs">Draft a bill and call it to a vote.</p>}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
