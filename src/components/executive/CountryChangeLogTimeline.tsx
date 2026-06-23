@@ -250,81 +250,83 @@ export function CountryChangeLogTimeline({
           No entries found in the national ledger yet.
         </div>
       ) : (
-        <div className="relative ml-2 space-y-8 border-l border-white/15 pl-6">
-          {groupedEvents.map((event) => {
-            const { eventName } = parseEventDetails(event);
-            return (
-              <div key={event.id} className="group relative">
-                {/* Timeline node dot */}
-                <div className="bg-background absolute top-1.5 -left-[35px] flex h-7.5 w-7.5 items-center justify-center rounded-full border border-white/15 shadow-md transition-transform group-hover:scale-110">
-                  {getSourceIcon(event.sourceType)}
-                </div>
-
-                <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-semibold text-amber-400/90">
-                        {formatIxTime(event.appliedIxTime)}
-                      </span>
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase ${getSourceBadgeColor(
-                          event.sourceType
-                        )}`}
-                      >
-                        {event.sourceType}
-                      </span>
-                    </div>
-                    <h3 className="text-foreground text-sm font-semibold tracking-wide">{eventName}</h3>
-                    <p className="text-muted-foreground max-w-xl text-xs">{event.description}</p>
+        <div className="relative max-h-[500px] overflow-y-auto overflow-x-hidden pl-8 pr-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          <div className="relative border-l border-white/15 pl-6 space-y-8">
+            {groupedEvents.map((event) => {
+              const { eventName } = parseEventDetails(event);
+              return (
+                <div key={event.id} className="group relative">
+                  {/* Timeline node dot */}
+                  <div className="bg-background absolute top-1.5 -left-[35px] flex h-7.5 w-7.5 items-center justify-center rounded-full border border-white/15 shadow-md transition-transform group-hover:scale-110">
+                    {getSourceIcon(event.sourceType)}
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="cursor-pointer gap-1 border-white/15 text-xs hover:bg-white/10"
-                      onClick={() => handleOpenProseModal(event)}
-                    >
-                      Generate Wikitext
-                      <ChevronRight className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Consequences pills list */}
-                {event.consequences.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2 pt-1">
-                    {event.consequences.map((c, idx) => {
-                      const isPositive = c.delta > 0;
-                      return (
-                        <div
-                          key={idx}
-                          className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${
-                            isPositive
-                              ? "border-green-500/20 bg-green-500/10 text-green-400"
-                              : "border-red-500/20 bg-red-500/10 text-red-400"
-                          }`}
+                  <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-semibold text-amber-400/90">
+                          {formatIxTime(event.appliedIxTime)}
+                        </span>
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase ${getSourceBadgeColor(
+                            event.sourceType
+                          )}`}
                         >
-                          {isPositive ? (
-                            <TrendingUp className="h-3 w-3" />
-                          ) : (
-                            <TrendingDown className="h-3 w-3" />
-                          )}
-                          <span className="capitalize">
-                            {c.targetField.replace(/([A-Z])/g, " $1").trim()}:
-                          </span>
-                          <span className="font-mono">
-                            {isPositive ? "+" : ""}
-                            {c.delta.toFixed(1)}
-                          </span>
-                        </div>
-                      );
-                    })}
+                          {event.sourceType}
+                        </span>
+                      </div>
+                      <h3 className="text-foreground text-sm font-semibold tracking-wide">{eventName}</h3>
+                      <p className="text-muted-foreground max-w-xl text-xs">{event.description}</p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer gap-1 border-white/15 text-xs hover:bg-white/10"
+                        onClick={() => handleOpenProseModal(event)}
+                      >
+                        Generate Wikitext
+                        <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Consequences pills list */}
+                  {event.consequences.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2 pt-1">
+                      {event.consequences.map((c, idx) => {
+                        const isPositive = c.delta > 0;
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${
+                              isPositive
+                                ? "border-green-500/20 bg-green-500/10 text-green-400"
+                                : "border-red-500/20 bg-red-500/10 text-red-400"
+                            }`}
+                          >
+                            {isPositive ? (
+                              <TrendingUp className="h-3 w-3" />
+                            ) : (
+                              <TrendingDown className="h-3 w-3" />
+                            )}
+                            <span className="capitalize">
+                              {c.targetField.replace(/([A-Z])/g, " $1").trim()}:
+                            </span>
+                            <span className="font-mono">
+                              {isPositive ? "+" : ""}
+                              {c.delta.toFixed(1)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
