@@ -125,64 +125,8 @@ export async function getUserSessionAndToken(ctx: {
     });
   }
 
-  const cookieHeader = ctx.headers.get("cookie") || "";
-
-  // Dev & System Owner fallback to bot session if no MediaWiki session cookies are passed
-  const isDev = env.NODE_ENV === "development";
-  const isOwner = isWikiAdmin(ctx);
-  const hasMWCookie =
-    cookieHeader.includes("session") ||
-    cookieHeader.includes("UserID") ||
-    cookieHeader.includes("UserName");
-
-  if (isDev && isOwner && !hasMWCookie) {
-    console.log(`[WikiOS] Dev owner fallback to bot password session for Heku@WikiOS...`);
-    try {
-      return await getBotSessionAndToken();
-    } catch (err) {
-      console.error("[WikiOS] Dev owner fallback login failed:", err);
-      // Fall through to standard check
-    }
-  }
-
-  if (!cookieHeader) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "MediaWiki session cookies not found. Please log in to IxWiki.",
-    });
-  }
-
-  const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-
-  try {
-    // Fetch user's own CSRF token using their forwarded cookies
-    const res = await fetch(`${apiBase}?action=query&meta=tokens&type=csrf&format=json`, {
-      headers: { Cookie: cookieHeader },
-    });
-    const data = (await res.json()) as any;
-    const csrfToken = data.query?.tokens?.csrftoken;
-
-    // MediaWiki returns "+\\" for anonymous or unauthenticated sessions
-    if (!csrfToken || csrfToken === "+\\") {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "Your MediaWiki session is invalid or has expired. Please log in to IxWiki.",
-      });
-    }
-
-    // Split cookies into array of individual cookies to match the expected format
-    const cookies = cookieHeader
-      .split(";")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    return { cookies, csrfToken };
-  } catch (error) {
-    if (error instanceof TRPCError) throw error;
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: `Failed to authenticate with MediaWiki: ${(error as Error).message}`,
-    });
-  }
+  // Always use the bot session for the Action API call
+  return getBotSessionAndToken();
 }
 
 /**
