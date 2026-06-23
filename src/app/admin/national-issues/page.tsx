@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Newspaper,
   Plus,
@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Checkbox } from "~/components/ui/checkbox";
 import { api } from "~/trpc/react";
 import { TemplateEditorSheet } from "./TemplateEditorSheet";
 
@@ -96,6 +97,11 @@ export default function NationalIssuesAdminPage() {
   const [injectTarget, setInjectTarget] = useState("");
   const [injectLabel, setInjectLabel] = useState("");
 
+  // Engine Limits State
+  const [maxIssuesPerSession, setMaxIssuesPerSession] = useState<number>(3);
+  const [maxIssuesPerWeek, setMaxIssuesPerWeek] = useState<number>(5);
+  const [bypassLimits, setBypassLimits] = useState(false);
+
   // Bulk Import
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [bulkImportText, setBulkImportText] = useState("");
@@ -128,6 +134,23 @@ export default function NationalIssuesAdminPage() {
   const { data: stats, refetch: refetchStats } = api.nationalIssues.getGenerationStats.useQuery(
     { days: 7 }
   );
+
+  // Fetch engine config
+  const { data: engineConfig, refetch: refetchEngineConfig } = api.nationalIssues.getEngineConfig.useQuery();
+
+  const updateEngineConfig = api.nationalIssues.updateEngineConfig.useMutation({
+    onSuccess: () => {
+      void refetchEngineConfig();
+    },
+  });
+
+  // Sync inputs with database config when it changes
+  useEffect(() => {
+    if (engineConfig) {
+      setMaxIssuesPerSession(engineConfig.maxIssuesPerSession);
+      setMaxIssuesPerWeek(engineConfig.maxIssuesPerWeek);
+    }
+  }, [engineConfig]);
 
   // Fetch active/recent issues
   const { data: activeIssuesData, isLoading: isIssuesLoading, refetch: refetchActiveIssues } =
@@ -282,6 +305,58 @@ export default function NationalIssuesAdminPage() {
               </div>
             )}
 
+            {/* Engine Limits Panel */}
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 border-b border-white/10 pb-2 flex items-center gap-1.5">
+                <Sliders className="h-4 w-4" />
+                Engine Generation Limits
+              </h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Max Per Session</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={maxIssuesPerSession}
+                      onChange={(e) => setMaxIssuesPerSession(parseInt(e.target.value) || 1)}
+                      className="bg-white/5 border-white/10 text-xs h-8 text-white"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Max Per Week (7d)</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={maxIssuesPerWeek}
+                      onChange={(e) => setMaxIssuesPerWeek(parseInt(e.target.value) || 1)}
+                      className="bg-white/5 border-white/10 text-xs h-8 text-white"
+                    />
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full h-8 text-xs bg-amber-500 text-black hover:bg-amber-400 font-semibold"
+                  disabled={updateEngineConfig.isPending}
+                  onClick={() =>
+                    updateEngineConfig.mutate({
+                      maxIssuesPerSession,
+                      maxIssuesPerWeek,
+                    })
+                  }
+                >
+                  {updateEngineConfig.isPending ? "Saving..." : "Save Config"}
+                </Button>
+                {updateEngineConfig.isSuccess && (
+                  <p className="text-[10px] text-green-400">
+                    Configuration saved successfully.
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Engine & Seeding Control Panel */}
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 border-b border-white/10 pb-2 flex items-center gap-1.5">
@@ -315,11 +390,22 @@ export default function NationalIssuesAdminPage() {
                       triggerEvaluation.mutate({
                         countryId: evalCountryId === "all" ? "" : evalCountryId,
                         domain: evalDomain !== "all" ? evalDomain : undefined,
+                        bypassLimits,
                       })
                     }
                   >
                     {triggerEvaluation.isPending ? "..." : "Evaluate"}
                   </Button>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Checkbox
+                    id="bypass-limits"
+                    checked={bypassLimits}
+                    onCheckedChange={(checked) => setBypassLimits(!!checked)}
+                  />
+                  <label htmlFor="bypass-limits" className="text-[10px] text-slate-400 font-medium select-none cursor-pointer">
+                    Override limits / Bypass weekly cap
+                  </label>
                 </div>
                 {triggerEvaluation.data && (
                   <p className="text-[10px] text-green-400">
