@@ -30,6 +30,7 @@ import {
 } from "./atomic-government-utils";
 import { mapTaxComponentTypeToId } from "./enums";
 import type { PrismaClient } from "@prisma/client";
+import { getNationalIssuesConfig } from "./national-issues-config";
 
 // ==================== TYPES ====================
 
@@ -749,7 +750,7 @@ export class NationalIssuesEngine {
   static async evaluateCountry(
     countryId: string,
     db: PrismaClient,
-    options?: { maxIssues?: number; forceDomain?: string }
+    options?: { maxIssues?: number; forceDomain?: string; bypassLimits?: boolean }
   ): Promise<EvaluationResult> {
     const startTime = Date.now();
     const result: EvaluationResult = {
@@ -779,7 +780,26 @@ export class NationalIssuesEngine {
         return result;
       }
 
-      const maxIssues = options?.maxIssues ?? 3;
+      const config = getNationalIssuesConfig();
+      let maxIssues = options?.maxIssues ?? config.maxIssuesPerSession;
+
+      if (!options?.bypassLimits) {
+        const sevenIxDaysMs = 7 * 24 * 60 * 60 * 1000;
+        const weekAgoIxTime = IxTime.getCurrentIxTime() - sevenIxDaysMs;
+        const weeklyCount = await (db as any).nationalIssue.count({
+          where: { countryId, createdIxTime: { gte: weekAgoIxTime } },
+        });
+
+        if (weeklyCount >= config.maxIssuesPerWeek) {
+          // Abort normal template generation
+          if (result.issuesGenerated === 0) {
+            return result;
+          }
+        }
+
+        const capacityRemaining = Math.max(0, config.maxIssuesPerWeek - weeklyCount);
+        maxIssues = Math.min(maxIssues, capacityRemaining);
+      }
 
       // Load active templates
       const whereClause: any = { isActive: true };
@@ -971,23 +991,25 @@ export class NationalIssuesEngine {
 
       // Log the evaluation
       result.executionTimeMs = Date.now() - startTime;
-      await (db as any).issueGenerationLog
-        .create({
-          data: {
-            countryId,
-            templatesEvaluated: result.templatesEvaluated,
-            templatesPassed: result.templatesPassed,
-            issuesGenerated: result.issuesGenerated,
-            issuesSkippedCooldown: result.issuesSkippedCooldown,
-            issuesSkippedMaxActive: result.issuesSkippedMaxActive,
-            executionTimeMs: result.executionTimeMs,
-            ixTimeAtEvaluation: snapshot.currentIxTime,
-            errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null,
-          },
-        })
-        .catch(() => {
-          // Non-critical, don't fail evaluation
-        });
+      if (result.issuesGenerated > 0 || result.errors.length > 0) {
+        await (db as any).issueGenerationLog
+          .create({
+            data: {
+              countryId,
+              templatesEvaluated: result.templatesEvaluated,
+              templatesPassed: result.templatesPassed,
+              issuesGenerated: result.issuesGenerated,
+              issuesSkippedCooldown: result.issuesSkippedCooldown,
+              issuesSkippedMaxActive: result.issuesSkippedMaxActive,
+              executionTimeMs: result.executionTimeMs,
+              ixTimeAtEvaluation: snapshot.currentIxTime,
+              errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null,
+            },
+          })
+          .catch(() => {
+            // Non-critical, don't fail evaluation
+          });
+      }
     } catch (err) {
       result.errors.push(`Evaluation failed: ${(err as Error).message}`);
     }
@@ -1001,6 +1023,19 @@ export class NationalIssuesEngine {
    * Returns true if the last evaluation was more than 5 IxTime minutes ago.
    */
   static async shouldEvaluate(countryId: string, db: PrismaClient): Promise<boolean> {
+    const config = getNationalIssuesConfig();
+    const sevenIxDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const weekAgoIxTime = IxTime.getCurrentIxTime() - sevenIxDaysMs;
+
+    // Count issues created for this country in the last 7 IxDays
+    const weeklyCount = await (db as any).nationalIssue.count({
+      where: { countryId, createdIxTime: { gte: weekAgoIxTime } },
+    });
+
+    if (weeklyCount >= config.maxIssuesPerWeek) {
+      return false; // Skip evaluation entirely if weekly cap reached
+    }
+
     const lastLog = await (db as any).issueGenerationLog.findFirst({
       where: { countryId },
       orderBy: { createdAt: "desc" },
