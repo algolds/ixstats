@@ -15,6 +15,7 @@ import {
   parseAnnualWinners,
 } from "~/lib/lorewards-ool-parser";
 import { getWikiDbPool } from "~/lib/wiki-bridge";
+import { getBonusConfig, grantBonus } from "~/lib/vault-bonus";
 
 // Direct MySQL for namespace 4 (Project/IxWiki) pages
 function getPool(): mysql.Pool {
@@ -522,4 +523,38 @@ export async function syncCurrentWinners(force = false): Promise<void> {
   } catch (err) {
     console.error("[Lorewards] Auto-sync of current winners failed:", err);
   }
+}
+
+/**
+ * Grant the Loreward-winner credit bonus to any winning entry whose wiki winnerUser
+ * maps to a platform account (User.wikiUsername). Idempotent: grantBonus(oneTime) keys
+ * off `bonus:loreward:<entryId>`, so re-running after each sync only pays new wins.
+ * Returns the number of newly-granted bonuses.
+ */
+export async function grantLorewardBonuses(): Promise<number> {
+  const cfg = await getBonusConfig(db);
+  if (!cfg.enabled || cfg.loreward <= 0) return 0;
+
+  const entries = await db.lorewardEntry.findMany({
+    where: { winnerUser: { not: null }, status: "approved" },
+    select: { id: true, winnerUser: true, date: true, type: true },
+  });
+
+  let granted = 0;
+  for (const e of entries) {
+    if (!e.winnerUser) continue;
+    const user = await db.user.findFirst({
+      where: { wikiUsername: { equals: e.winnerUser, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (!user) continue; // winner has no linked platform account — skip
+
+    const res = await grantBonus(db, user.id, `bonus:loreward:${e.id}`, cfg.loreward, {
+      oneTime: true,
+      metadata: { entryId: e.id, date: e.date, type: e.type, winnerUser: e.winnerUser },
+    });
+    if (res.granted) granted++;
+  }
+  console.log(`[Lorewards] Granted ${granted} new Loreward bonuses.`);
+  return granted;
 }

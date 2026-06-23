@@ -5,6 +5,7 @@ import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from
 import { invalidateCache } from "~/lib/trpc-cache";
 import { globalCache } from "~/lib/advanced-cache-system";
 import { clearLayerCache } from "~/server/shared/layer-cache";
+import { getBonusConfig, grantBonus } from "~/lib/vault-bonus";
 
 export const managementCreateProcedures = {
   // SECURITY: Admin-only endpoint for triggering system-wide economic narratives
@@ -1086,6 +1087,28 @@ export const managementCreateProcedures = {
         await invalidateCache(["countries.getAll"]);
         clearLayerCache("political");
         await globalCache.delete(`user_profile:${userId}`);
+
+        // Onboarding bonuses (one-time): new player for publishing a country, plus a
+        // wiki-import bonus when the country was founded on a real/wiki nation.
+        try {
+          const bcfg = await getBonusConfig(ctx.db);
+          await grantBonus(ctx.db, userId, "bonus:new_player", bcfg.newPlayer, {
+            oneTime: true,
+            metadata: { countryId: result.id, countryName: result.name },
+          });
+          if (input.foundationCountry) {
+            await grantBonus(ctx.db, userId, "bonus:wiki_import", bcfg.wikiImport, {
+              oneTime: true,
+              metadata: {
+                countryId: result.id,
+                countryName: result.name,
+                foundation: input.foundationCountry,
+              },
+            });
+          }
+        } catch (bonusError) {
+          console.error("[createCountry] Failed to grant onboarding bonus:", bonusError);
+        }
 
         return result;
       } catch (error) {

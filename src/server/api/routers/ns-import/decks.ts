@@ -10,6 +10,8 @@ import { nsApiClient } from "~/lib/ns-api-client";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 import { getVaultConfig, vaultService } from "~/lib/vault-service";
+import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
+import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault-bonus";
 
 const SYNC_TYPE = "NS_CARD_SYNC";
 const activeRunningJobs = new Set<string>();
@@ -34,6 +36,8 @@ async function processNationDeck(
     return { cardsCreated, cardsUpdated, errors };
   }
 
+  const valCfg = await getValuationConfig(db);
+
   // Deduplicate cards in the deck
   const uniqueCards = new Map<string, (typeof deckData.cards)[0]>();
   for (const card of deckData.cards) {
@@ -52,7 +56,14 @@ async function processNationDeck(
       });
 
       if (existing) {
-        const newMarketValue = Math.max(1, parseFloat(nsCard.market_value || "0"));
+        const newMarketValue = computeCardValue(
+          {
+            rarity: nsCard.rarity || existing.rarity,
+            cardType: "NS_IMPORT",
+            nsMarketValue: parseFloat(nsCard.market_value || "0"),
+          },
+          valCfg
+        );
         if (Math.abs(existing.marketValue - newMarketValue) > 0.01) {
           await db.card.update({
             where: { id: existing.id },
@@ -119,7 +130,14 @@ async function processNationDeck(
             importedFrom: `region:${regionName}`,
             importedAt: new Date().toISOString(),
           },
-          marketValue: Math.max(1, parseFloat(nsCard.market_value || "0")),
+          marketValue: computeCardValue(
+            {
+              rarity: nsCard.rarity || "COMMON",
+              cardType: "NS_IMPORT",
+              nsMarketValue: parseFloat(nsCard.market_value || "0"),
+            },
+            valCfg
+          ),
           totalSupply: 1,
           level: 1,
         },
@@ -433,6 +451,7 @@ export const nsImportDecksRouter = createTRPCRouter({
 
       // Get vault config and calculate user's maximum capacity limit
       const config = await getVaultConfig(ctx.db as any);
+      const valCfg = await getValuationConfig(ctx.db);
       const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
       const maxCards = 150 + capacityBoost;
 
@@ -480,7 +499,14 @@ export const nsImportDecksRouter = createTRPCRouter({
             continue;
           }
 
-          const parsedMarketValue = Math.max(1, parseFloat(nsCard.market_value || "0"));
+          const valuedMarketValue = computeCardValue(
+            {
+              rarity: nsCard.rarity || "COMMON",
+              cardType: "NS_IMPORT",
+              nsMarketValue: parseFloat(nsCard.market_value || "0"),
+            },
+            valCfg
+          );
 
           // Check if card definition exists, create if not
           let card = await ctx.db.card.findFirst({
@@ -490,12 +516,12 @@ export const nsImportDecksRouter = createTRPCRouter({
             },
           });
 
-          // Update existing card if it has stale/zero market value
-          if (card && card.marketValue === 0 && parsedMarketValue > 0) {
+          // Refresh an existing card's value if the recomputed value differs
+          if (card && Math.abs(card.marketValue - valuedMarketValue) > 0.01) {
             card = await ctx.db.card.update({
               where: { id: card.id },
               data: {
-                marketValue: parsedMarketValue,
+                marketValue: valuedMarketValue,
                 stats: {
                   ...((card.stats as Record<string, unknown>) || {}),
                   marketValue: nsCard.market_value,
@@ -568,7 +594,7 @@ export const nsImportDecksRouter = createTRPCRouter({
                   importedFrom: nationName,
                   importedAt: new Date().toISOString(),
                 },
-                marketValue: parsedMarketValue,
+                marketValue: valuedMarketValue,
                 totalSupply: 1,
                 level: 1,
                 enhancements: undefined,
@@ -632,40 +658,12 @@ export const nsImportDecksRouter = createTRPCRouter({
         }
       }
 
-      // Award bonus IxCredits for import
-      const bonusAmount = Math.min(importedCardIds.length * 10, 500); // 10 IxC per card, max 500
+      // Award bonus IxCredits for import (per-card, capped — config-tunable)
+      const bcfg = await getBonusConfig(ctx.db);
+      const bonusAmount = nsImportBonus(bcfg, importedCardIds.length);
       if (bonusAmount > 0) {
-        // Get or create user's vault
-        const vault = await ctx.db.myVault.upsert({
-          where: { userId: ctx.user.id },
-          create: {
-            userId: ctx.user.id,
-            credits: bonusAmount,
-          },
-          update: {
-            credits: { increment: bonusAmount },
-          },
-        });
-
-        // Get updated vault balance
-        const updatedVault = await ctx.db.myVault.findUnique({
-          where: { id: vault.id },
-          select: { credits: true },
-        });
-
-        await ctx.db.vaultTransaction.create({
-          data: {
-            id: `vtx_ns_import_${ctx.user.id}_${Date.now()}`,
-            vaultId: vault.id,
-            credits: bonusAmount,
-            balanceAfter: updatedVault?.credits ?? bonusAmount,
-            type: "EARN",
-            source: "ns_import_bonus",
-            metadata: {
-              nationName: nationName,
-              cardsImported: importedCardIds.length,
-            },
-          },
+        await grantBonus(ctx.db, ctx.user.id, "bonus:ns_deck_import", bonusAmount, {
+          metadata: { nationName, cardsImported: importedCardIds.length },
         });
       }
 

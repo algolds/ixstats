@@ -4,6 +4,7 @@
 import { type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { CardType, CardRarity } from "~/lib/card-enums";
+import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
 
 /**
  * Card creation input interface
@@ -607,9 +608,6 @@ export async function getCardMarketValue(db: PrismaClient, cardId: string): Prom
 
     const card = await db.card.findUnique({
       where: { id: cardId },
-      include: {
-        CardOwnership: true,
-      },
     });
 
     if (!card) {
@@ -619,34 +617,13 @@ export async function getCardMarketValue(db: PrismaClient, cardId: string): Prom
       });
     }
 
-    // Base value by rarity
-    const baseValues: Record<CardRarity, number> = {
-      [CardRarity.COMMON]: 10,
-      [CardRarity.UNCOMMON]: 25,
-      [CardRarity.RARE]: 50,
-      [CardRarity.ULTRA_RARE]: 100,
-      [CardRarity.EPIC]: 250,
-      [CardRarity.LEGENDARY]: 500,
-    };
-
-    let value = baseValues[card.rarity as CardRarity] || 10;
-
-    // Supply factor: Lower supply = higher value
-    const totalOwned = card.CardOwnership.length;
-    if (totalOwned > 0) {
-      const supplyMultiplier = Math.max(0.5, Math.min(3.0, 100 / totalOwned));
-      value *= supplyMultiplier;
-    }
-
-    // Type multiplier
-    if (card.cardType === CardType.SPECIAL) {
-      value *= 2.0;
-    } else if (card.cardType === CardType.NATION) {
-      value *= 1.5;
-    }
-
-    // Round to 2 decimal places
-    return Math.round(value * 100) / 100;
+    // Unified valuation: max(rarityFloor × typeMult, nsValue × premium). See card-valuation.ts.
+    const cfg = await getValuationConfig(db);
+    const nsMarketValue = parseFloat(String((card.stats as any)?.marketValue ?? "")) || null;
+    return computeCardValue(
+      { rarity: card.rarity, cardType: card.cardType, nsMarketValue },
+      cfg
+    );
   } catch (error) {
     if (error instanceof TRPCError) {
       throw error;

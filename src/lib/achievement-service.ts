@@ -13,7 +13,7 @@
 import { type PrismaClient } from "@prisma/client";
 import { getAchievementById, type ExtendedAchievementData } from "./achievement-definitions";
 import { getScaleThresholds } from "./achievement-scaling";
-import { vaultService } from "./vault-service";
+import { achievementBonus, getBonusConfig, grantBonus } from "./vault-bonus";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { getCardRewardForAchievement, hasCardReward } from "./achievement-card-rewards";
 import { awardAchievementCard } from "./card-service";
@@ -131,17 +131,6 @@ export class AchievementService {
     } finally {
       this.processingSet.delete(key);
     }
-  }
-
-  private getCreditsForRarity(rarity: string): number {
-    const rarityRewards: Record<string, number> = {
-      Common: 5,
-      Uncommon: 10,
-      Rare: 25,
-      Epic: 50,
-      Legendary: 100,
-    };
-    return rarityRewards[rarity] || 5;
   }
 
   /**
@@ -444,8 +433,8 @@ export class AchievementService {
       for (const achievement of achievementsToCheck) {
         if (this.evaluateCondition(achievement, achievementData)) {
           try {
-            // Parse rewards JSON
-            let creditReward = this.getCreditsForRarity(achievement.rarity);
+            // Credit reward scales by rarity (consistent curve, admin-tunable in vault-bonus)
+            const creditReward = achievementBonus(await getBonusConfig(db), achievement.rarity);
             let cardIds: string[] = [];
             let packIds: string[] = [];
             let titles: string[] = [];
@@ -454,7 +443,6 @@ export class AchievementService {
               try {
                 const rewards = JSON.parse(achievement.rewardsJson);
                 if (rewards) {
-                  if (typeof rewards.credits === "number") creditReward = rewards.credits;
                   if (Array.isArray(rewards.cardIds)) cardIds = rewards.cardIds;
                   if (Array.isArray(rewards.cardPacks)) packIds = rewards.cardPacks;
                   if (Array.isArray(rewards.titles)) titles = rewards.titles;
@@ -494,22 +482,18 @@ export class AchievementService {
             unlocked.push(achievement.key);
             console.log(`[Achievement Service] Unlocked: ${achievement.title} for user ${userId}`);
 
-            // Award IxCredits
+            // Award IxCredits (EARN_BONUS — uncapped; one-time per achievement)
             if (creditReward > 0) {
               try {
-                await vaultService.earnCredits(
-                  userId,
-                  creditReward,
-                  "EARN_ACTIVE",
-                  "achievement_unlock",
-                  db,
-                  {
+                await grantBonus(db, userId, `bonus:achievement:${achievement.key}`, creditReward, {
+                  oneTime: true,
+                  metadata: {
                     achievementId: achievement.key,
                     achievementName: achievement.title,
                     achievementTier: achievement.rarity,
                     achievementCategory: achievement.category,
-                  }
-                );
+                  },
+                });
               } catch (creditError) {
                 console.error(
                   `[Achievement Service] Error awarding credits for "${achievement.title}":`,
@@ -619,7 +603,7 @@ export class AchievementService {
         return false;
       }
 
-      let creditReward = this.getCreditsForRarity(achievement.rarity);
+      const creditReward = achievementBonus(await getBonusConfig(db), achievement.rarity);
       let cardIds: string[] = [];
       let packIds: string[] = [];
       let titles: string[] = [];
@@ -628,7 +612,6 @@ export class AchievementService {
         try {
           const rewards = JSON.parse(achievement.rewardsJson);
           if (rewards) {
-            if (typeof rewards.credits === "number") creditReward = rewards.credits;
             if (Array.isArray(rewards.cardIds)) cardIds = rewards.cardIds;
             if (Array.isArray(rewards.cardPacks)) packIds = rewards.cardPacks;
             if (Array.isArray(rewards.titles)) titles = rewards.titles;
@@ -664,21 +647,17 @@ export class AchievementService {
         },
       });
 
-      // Award credits
+      // Award credits (EARN_BONUS — uncapped; one-time per achievement)
       if (creditReward > 0) {
         try {
-          await vaultService.earnCredits(
-            userId,
-            creditReward,
-            "EARN_ACTIVE",
-            "achievement_unlock",
-            db,
-            {
+          await grantBonus(db, userId, `bonus:achievement:${achievementId}`, creditReward, {
+            oneTime: true,
+            metadata: {
               achievementId,
               achievementName: achievement.title,
               achievementTier: achievement.rarity,
-            }
-          );
+            },
+          });
         } catch (creditError) {
           console.error(`[Achievement Service] Error awarding credits:`, creditError);
         }

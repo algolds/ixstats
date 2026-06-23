@@ -16,6 +16,7 @@ import { notificationHooks } from "~/lib/notification-hooks";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import type { BaseCountryData } from "~/types/ixstats";
 import { globalCache } from "~/lib/advanced-cache-system";
+import { getBonusConfig, grantBonus } from "~/lib/vault-bonus";
 
 // Temporary storage for user-country mappings until we fix the User model
 
@@ -139,6 +140,17 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         }
 
         await globalCache.delete(`user_profile:${input.userId}`);
+
+        // New-player onboarding bonus (one-time, on first country link)
+        try {
+          const bcfg = await getBonusConfig(ctx.db);
+          await grantBonus(ctx.db, input.userId, "bonus:new_player", bcfg.newPlayer, {
+            oneTime: true,
+            metadata: { countryId: input.countryId, countryName: updatedCountry?.name },
+          });
+        } catch (bonusError) {
+          console.error("Failed to grant new-player bonus:", bonusError);
+        }
 
         return {
           success: true,

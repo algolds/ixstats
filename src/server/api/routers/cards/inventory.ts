@@ -7,6 +7,18 @@ import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/a
 import { getUserCards, updateCardStats, transferCard } from "~/lib/card-service";
 import { CardRarity } from "@prisma/client";
 import { globalCache } from "~/lib/advanced-cache-system";
+import {
+  getValuationConfig,
+  junkValue,
+  recomputeAllCardValues,
+  setValuationConfig,
+  type CardValuationConfig,
+} from "~/lib/card-valuation";
+import {
+  getBonusConfig,
+  setBonusConfig,
+  type VaultBonusConfig,
+} from "~/lib/vault-bonus";
 
 /**
  * Cards router for IxCards system
@@ -343,6 +355,81 @@ export const cardsInventoryRouter = createTRPCRouter({
     }
   }),
 
+  // ─── Valuation Admin ─────────────────────────────────────────────
+
+  /** Read the current card-valuation config (defaults overlaid with SystemConfig). */
+  getValuationConfig: adminProcedure.query(async ({ ctx }) => {
+    return getValuationConfig(ctx.db);
+  }),
+
+  /** Update valuation config fields, then recompute every card's value. */
+  setValuationConfig: adminProcedure
+    .input(
+      z
+        .object({
+          floorCommon: z.number().min(0),
+          floorUncommon: z.number().min(0),
+          floorRare: z.number().min(0),
+          floorUltraRare: z.number().min(0),
+          floorEpic: z.number().min(0),
+          floorLegendary: z.number().min(0),
+          nsPremium: z.number().min(0),
+          multSpecial: z.number().min(0),
+          multNation: z.number().min(0),
+          junkRate: z.number().min(0),
+        })
+        .partial()
+    )
+    .mutation(async ({ ctx, input }) => {
+      for (const [field, value] of Object.entries(input)) {
+        if (value != null) {
+          await setValuationConfig(ctx.db, field as keyof CardValuationConfig, value);
+        }
+      }
+      const result = await recomputeAllCardValues(ctx.db);
+      return { config: await getValuationConfig(ctx.db), ...result };
+    }),
+
+  /** Recompute every card's marketValue under the current config (no config change). */
+  recomputeCardValues: adminProcedure.mutation(async ({ ctx }) => {
+    return recomputeAllCardValues(ctx.db);
+  }),
+
+  // ─── Metagame Bonus Admin ────────────────────────────────────────
+
+  /** Read the current vault-bonus config (defaults overlaid with SystemConfig). */
+  getBonusConfig: adminProcedure.query(async ({ ctx }) => {
+    return getBonusConfig(ctx.db);
+  }),
+
+  /** Update vault-bonus config fields (new player, imports, achievements, lorewards). */
+  setBonusConfig: adminProcedure
+    .input(
+      z
+        .object({
+          enabled: z.number().min(0).max(1),
+          newPlayer: z.number().min(0),
+          wikiImport: z.number().min(0),
+          nsPerCard: z.number().min(0),
+          nsCap: z.number().min(0),
+          achievementCommon: z.number().min(0),
+          achievementUncommon: z.number().min(0),
+          achievementRare: z.number().min(0),
+          achievementEpic: z.number().min(0),
+          achievementLegendary: z.number().min(0),
+          loreward: z.number().min(0),
+        })
+        .partial()
+    )
+    .mutation(async ({ ctx, input }) => {
+      for (const [field, value] of Object.entries(input)) {
+        if (value != null) {
+          await setBonusConfig(ctx.db, field as keyof VaultBonusConfig, value);
+        }
+      }
+      return getBonusConfig(ctx.db);
+    }),
+
   // ─── Collection CRUD ─────────────────────────────────────────────
 
   /**
@@ -364,14 +451,7 @@ export const cardsInventoryRouter = createTRPCRouter({
           });
         }
 
-        const JUNK_VALUES: Record<CardRarity, number> = {
-          COMMON: 10,
-          UNCOMMON: 25,
-          RARE: 75,
-          ULTRA_RARE: 200,
-          EPIC: 500,
-          LEGENDARY: 1500,
-        };
+        const valCfg = await getValuationConfig(ctx.db);
 
         // Fetch ownership records along with card rarity
         const ownerships = await ctx.db.cardOwnership.findMany({
@@ -403,8 +483,7 @@ export const cardsInventoryRouter = createTRPCRouter({
         // Calculate total credits to pay out
         let totalCredits = 0;
         for (const ownership of ownerships) {
-          const rarity = ownership.cards.rarity as CardRarity;
-          const payoutPerCard = JUNK_VALUES[rarity] ?? 10;
+          const payoutPerCard = junkValue(valCfg, ownership.cards.rarity);
           const qty = ownership.quantity ?? 1;
           totalCredits += payoutPerCard * qty;
         }

@@ -9,6 +9,7 @@ import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/a
 import { nsApiClient } from "~/lib/ns-api-client";
 import { nsImportService } from "~/lib/ns-import-service";
 import { type PrismaClient } from "@prisma/client";
+import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
 
 const SYNC_TYPE = "NS_CARD_SYNC";
 const activeRunningJobs = new Set<string>();
@@ -33,6 +34,8 @@ async function processNationDeck(
     return { cardsCreated, cardsUpdated, errors };
   }
 
+  const valCfg = await getValuationConfig(db);
+
   // Deduplicate cards in the deck
   const uniqueCards = new Map<string, (typeof deckData.cards)[0]>();
   for (const card of deckData.cards) {
@@ -51,7 +54,14 @@ async function processNationDeck(
       });
 
       if (existing) {
-        const newMarketValue = Math.max(1, parseFloat(nsCard.market_value || "0"));
+        const newMarketValue = computeCardValue(
+          {
+            rarity: nsCard.rarity || existing.rarity,
+            cardType: "NS_IMPORT",
+            nsMarketValue: parseFloat(nsCard.market_value || "0"),
+          },
+          valCfg
+        );
         if (Math.abs(existing.marketValue - newMarketValue) > 0.01) {
           await db.card.update({
             where: { id: existing.id },
@@ -118,7 +128,14 @@ async function processNationDeck(
             importedFrom: `region:${regionName}`,
             importedAt: new Date().toISOString(),
           },
-          marketValue: Math.max(1, parseFloat(nsCard.market_value || "0")),
+          marketValue: computeCardValue(
+            {
+              rarity: nsCard.rarity || "COMMON",
+              cardType: "NS_IMPORT",
+              nsMarketValue: parseFloat(nsCard.market_value || "0"),
+            },
+            valCfg
+          ),
           totalSupply: 1,
           level: 1,
         },

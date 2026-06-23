@@ -25,6 +25,8 @@ import {
   Package,
   Gavel,
   BookOpen,
+  Coins,
+  Gift,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -41,8 +43,10 @@ import {
 import { CardPacksAdmin } from "./CardPacksAdmin";
 import { LoreCardBatchAdmin } from "./LoreCardBatchAdmin";
 import { IxCardSeasonAdmin } from "./IxCardSeasonAdmin";
+import { ValuationAdmin } from "./ValuationAdmin";
+import { BonusAdmin } from "./BonusAdmin";
 
-type AdminTab = "sync" | "packs" | "lore" | "season";
+type AdminTab = "sync" | "packs" | "lore" | "season" | "valuation" | "bonuses";
 
 function SeedDemoAuctionsButton() {
   const notify = useNotify();
@@ -121,6 +125,8 @@ export default function CardAdminDashboardPage() {
     if (tab === "packs") return "packs";
     if (tab === "lore") return "lore";
     if (tab === "season") return "season";
+    if (tab === "valuation") return "valuation";
+    if (tab === "bonuses") return "bonuses";
     return "sync";
   });
 
@@ -308,6 +314,8 @@ export default function CardAdminDashboardPage() {
               { id: "packs" as AdminTab, label: "Card Packs", icon: Package },
               { id: "lore" as AdminTab, label: "Lore Card Generator", icon: BookOpen },
               { id: "season" as AdminTab, label: "IxCard Seasons", icon: Layers },
+              { id: "valuation" as AdminTab, label: "Valuation", icon: Coins },
+              { id: "bonuses" as AdminTab, label: "Bonuses", icon: Gift },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -342,6 +350,12 @@ export default function CardAdminDashboardPage() {
 
         {/* Season Config Tab */}
         {activeTab === "season" && <IxCardSeasonAdmin />}
+
+        {/* Valuation Tab */}
+        {activeTab === "valuation" && <ValuationAdmin />}
+
+        {/* Bonuses Tab */}
+        {activeTab === "bonuses" && <BonusAdmin />}
 
         {/* NS Sync Tab Content */}
         {activeTab === "sync" && (
