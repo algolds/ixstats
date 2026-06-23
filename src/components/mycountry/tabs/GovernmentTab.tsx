@@ -15,6 +15,7 @@ import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
+import { CabinetPanel } from "~/components/executive/politics/CabinetPanel";
 
 export function GovernmentTab({
   country,
@@ -370,6 +371,9 @@ export function GovernmentTab({
                     ]}
                   />
                 </div>
+
+                {/* Cabinet staffing panel */}
+                <CabinetPanel countryId={country.id} />
               </div>
             </motion.div>
           </div>
