@@ -205,6 +205,7 @@ model GovernmentOfficial {
 model CabinetMeeting {
   id              String              @id @default(cuid())
   countryId       String
+  targetCountryId String?             // ID of the invited country
   userId          String
   title           String
   description     String?
@@ -222,6 +223,7 @@ model CabinetMeeting {
   decisions       MeetingDecision[]
 
   @@index([countryId])
+  @@index([targetCountryId])
   @@index([userId])
   @@index([scheduledDate])
   @@index([scheduledIxTime])
@@ -258,6 +260,8 @@ model MeetingAgendaItem {
   presenter      String?
   status         String         @default("pending")
   outcome        String?
+  linkedIssueId  String?        // ID of the linked national issue
+  linkedPolicyId String?        // ID of the linked policy strategy
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   meeting        CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
@@ -265,6 +269,8 @@ model MeetingAgendaItem {
   @@index([meetingId])
   @@index([category])
   @@index([status])
+  @@index([linkedIssueId])
+  @@index([linkedPolicyId])
 }
 
 model MeetingDecision {

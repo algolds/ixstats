@@ -111,6 +111,8 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [helpTopic, setHelpTopic] = useState<"issues" | "decisions" | "policies" | null>(null);
+  const [schedulerPrefill, setSchedulerPrefill] = useState<any>(undefined);
+  const [policyPrefill, setPolicyPrefill] = useState<any>(undefined);
 
   // ── Country Name Summary ──
   const { data: countrySummary } = api.countries.getMapSummary.useQuery(
@@ -216,7 +218,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
       <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
         {/* ── ISSUES COMMAND ── */}
         <CommandPanel
-          title="Issues Command"
+          title="Issues"
           icon={Bell}
           accentColor="amber"
           stats={issueStats}
@@ -249,7 +251,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
 
         {/* ── DECISION CENTER ── */}
         <CommandPanel
-          title="Decision Center"
+          title="Decisions & Schedule"
           icon={Calendar}
           accentColor="blue"
           stats={decisionStats}
@@ -308,7 +310,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
 
         {/* ── POLICY STRATEGY ── */}
         <CommandPanel
-          title="Policy Strategy"
+          title="Policies"
           icon={FileText}
           accentColor="indigo"
           stats={policyStats}
@@ -416,8 +418,12 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
         open={meetingSchedulerOpen}
         onOpenChange={(open) => {
           setMeetingSchedulerOpen(open);
-          if (!open) void refetchMeetings();
+          if (!open) {
+            setSchedulerPrefill(undefined);
+            void refetchMeetings();
+          }
         }}
+        defaultMeeting={schedulerPrefill}
       />
 
       <PolicyCreatorSheet
@@ -425,8 +431,12 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
         open={policyCreatorOpen}
         onOpenChange={(open) => {
           setPolicyCreatorOpen(open);
-          if (!open) void refetchPolicies();
+          if (!open) {
+            setPolicyPrefill(undefined);
+            void refetchPolicies();
+          }
         }}
+        prefill={policyPrefill}
       />
 
       {/* ── Detail Sheets ── */}
@@ -437,6 +447,36 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
         onRespond={respond}
         isResponding={isResponding}
         countryId={countryId}
+        onDraftPolicy={(issue) => {
+          setPolicyPrefill({
+            title: `Decree: Address ${issue.title}`,
+            description: `Drafted to address the national issue: ${issue.description}`,
+            objectives: `Resolve issue ${issue.title} and stabilize the affected sectors.`,
+            targetMetrics: [
+              {
+                metric: issue.domain === "economic" ? "gdpGrowth" : "stability",
+                value: issue.domain === "economic" ? 2.5 : 75,
+                timeline: "1 year"
+              }
+            ]
+          });
+          closeIssue();
+          setPolicyCreatorOpen(true);
+        }}
+        onScheduleMeeting={(issue) => {
+          setSchedulerPrefill({
+            title: `Emergency Cabinet: ${issue.title}`,
+            description: `Cabinet summit called to decide on the response for: ${issue.title}`,
+            prefilledAgenda: {
+              title: `Crisis Review: ${issue.title}`,
+              description: issue.description,
+              category: issue.domain === "political" ? "governance" : "economic",
+              linkedIssueId: issue.id
+            }
+          });
+          closeIssue();
+          setMeetingSchedulerOpen(true);
+        }}
       />
 
       <MeetingDetailModal

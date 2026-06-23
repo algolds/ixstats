@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { FileText, Settings2, ChevronDown, ChevronRight, Sliders, Sparkles, AlertCircle } from "lucide-react";
+import { FileText, Settings2, ChevronDown, ChevronRight, Sliders, Sparkles, AlertCircle, X, Plus } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
 
@@ -34,7 +34,38 @@ interface PolicyCreatorSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  prefill?: {
+    title?: string;
+    description?: string;
+    objectives?: string;
+    targetMetrics?: { metric: string; value: number; timeline: string }[];
+  };
 }
+
+const METRIC_OPTIONS = [
+  { value: "gdpGrowth", label: "GDP Growth", unit: "%", lowerIsBetter: false },
+  { value: "unemploymentRate", label: "Unemployment Rate", unit: "%", lowerIsBetter: true },
+  { value: "stability", label: "Stability", unit: "%", lowerIsBetter: false },
+  { value: "taxRevenue", label: "Tax Revenue", unit: "%", lowerIsBetter: false },
+  { value: "population", label: "Population", unit: "", lowerIsBetter: false },
+  { value: "inflation", label: "Inflation", unit: "%", lowerIsBetter: true },
+];
+
+const CATEGORY_BASE_COSTS: Record<string, { impl: number; maint: number }> = {
+  infrastructure: { impl: 5000000, maint: 1000000 },
+  fiscal: { impl: 2500000, maint: 500000 },
+  technology: { impl: 1500000, maint: 300000 },
+  healthcare: { impl: 1000000, maint: 200000 },
+  education: { impl: 1000000, maint: 200000 },
+  default: { impl: 500000, maint: 100000 },
+};
+
+const PRIORITY_MULTIPLIERS = {
+  low: 0.5,
+  medium: 1.0,
+  high: 1.5,
+  critical: 2.0,
+};
 
 const POLICY_TYPES = [
   { value: "economic", label: "Economic" },
@@ -119,6 +150,7 @@ export function PolicyCreatorSheet({
   open,
   onOpenChange,
   onCreated,
+  prefill,
 }: PolicyCreatorSheetProps) {
   const notify = useNotify();
   const { user } = useUser();
@@ -139,6 +171,12 @@ export function PolicyCreatorSheet({
   const [formMaintCost, setFormMaintCost] = useState("");
   const [formTargetMetrics, setFormTargetMetrics] = useState("");
 
+  // Target metrics structured state
+  const [targetMetrics, setTargetMetrics] = useState<{ metric: string; value: number; timeline: string }[]>([]);
+  const [newMetricKey, setNewMetricKey] = useState("gdpGrowth");
+  const [newMetricValue, setNewMetricValue] = useState("");
+  const [newMetricTimeline, setNewMetricTimeline] = useState("1 year");
+
   // Sliders state for templates
   const [sliderSettings, setSliderSettings] = useState<Record<string, number>>({});
   const [calculatedEffects, setCalculatedEffects] = useState<any>(null);
@@ -156,7 +194,19 @@ export function PolicyCreatorSheet({
     setFormTargetMetrics("");
     setSliderSettings({});
     setCalculatedEffects(null);
+    setTargetMetrics([]);
+    setNewMetricValue("");
   };
+
+  useEffect(() => {
+    if (open && prefill) {
+      if (prefill.title) setFormTitle(prefill.title);
+      if (prefill.description) setFormDescription(prefill.description);
+      if (prefill.objectives) setFormObjectives(prefill.objectives);
+      if (prefill.targetMetrics) setTargetMetrics(prefill.targetMetrics);
+      setSelectedTemplateKey("custom");
+    }
+  }, [open, prefill]);
 
   const [isPending, setIsPending] = useState(false);
 
@@ -216,6 +266,23 @@ export function PolicyCreatorSheet({
     }
   }, [sliderSettings, selectedTemplateKey, country]);
 
+  // Recalculate custom decretal cost live
+  useEffect(() => {
+    if (selectedTemplateKey !== "custom") return;
+
+    const base = CATEGORY_BASE_COSTS[formCategory] ?? CATEGORY_BASE_COSTS.default;
+    const metricCostImpl = targetMetrics.length * 500000;
+    const metricCostMaint = targetMetrics.length * 100000;
+
+    const multiplier = PRIORITY_MULTIPLIERS[formPriority] ?? 1.0;
+
+    const calculatedImpl = (base.impl + metricCostImpl) * multiplier;
+    const calculatedMaint = (base.maint + metricCostMaint) * multiplier;
+
+    setFormImplCost(String(calculatedImpl));
+    setFormMaintCost(String(calculatedMaint));
+  }, [formCategory, formPriority, targetMetrics, selectedTemplateKey]);
+
   const handleCreateDraft = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -242,7 +309,9 @@ export function PolicyCreatorSheet({
         policyType: formType as any,
         category: formCategory,
         priority: formPriority,
-        targetMetrics: formTargetMetrics || undefined,
+        targetMetrics: selectedTemplateKey === "custom"
+          ? (targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined)
+          : (formTargetMetrics || undefined),
         implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
         maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
         decretalKey: selectedTemplateKey !== "custom" ? selectedTemplateKey : undefined,
@@ -284,7 +353,9 @@ export function PolicyCreatorSheet({
         policyType: formType as any,
         category: formCategory,
         priority: formPriority,
-        targetMetrics: formTargetMetrics || undefined,
+        targetMetrics: selectedTemplateKey === "custom"
+          ? (targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined)
+          : (formTargetMetrics || undefined),
         implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
         maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
         decretalKey: selectedTemplateKey !== "custom" ? selectedTemplateKey : undefined,
@@ -542,55 +613,145 @@ export function PolicyCreatorSheet({
               </div>
             )}
 
-            {/* Advanced Options — collapsible for custom */}
+            {/* Custom Decree: Cost Projections & Target Metrics Builder */}
             {selectedTemplateKey === "custom" && (
-              <CollapsibleSection title="Advanced Options" icon={Settings2} defaultOpen={false}>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-xs">Objectives</Label>
-                    <Textarea
-                      value={formObjectives}
-                      onChange={(e) => setFormObjectives(e.target.value)}
-                      placeholder="Key objectives and goals..."
-                      rows={2}
-                      className="text-sm"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Implementation Cost</Label>
-                      <Input
-                        type="number"
-                        value={formImplCost}
-                        onChange={(e) => setFormImplCost(e.target.value)}
-                        placeholder="0"
-                        className="h-8 text-xs"
-                      />
+              <>
+                <div className="bg-indigo-500/5 border-indigo-500/20 rounded-lg border p-3.5 space-y-2">
+                  <p className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">
+                    Estimated Cost Projections
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-muted-foreground">Setup Cost (Implementation):</span>
+                      <span className="font-semibold text-white text-sm">
+                        {formatCurrency(parseFloat(formImplCost) || 0)}
+                      </span>
                     </div>
-                    <div>
-                      <Label className="text-xs">Maintenance Cost</Label>
-                      <Input
-                        type="number"
-                        value={formMaintCost}
-                        onChange={(e) => setFormMaintCost(e.target.value)}
-                        placeholder="0"
-                        className="h-8 text-xs"
-                      />
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-muted-foreground">Annual Maintenance:</span>
+                      <span className="font-semibold text-white text-sm">
+                        {formatCurrency(parseFloat(formMaintCost) || 0)}
+                      </span>
                     </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs">Target Metrics</Label>
-                    <Input
-                      value={formTargetMetrics}
-                      onChange={(e) => setFormTargetMetrics(e.target.value)}
-                      placeholder="e.g., GDP growth, employment rate"
-                      className="h-8 text-xs"
-                    />
                   </div>
                 </div>
-              </CollapsibleSection>
+
+                <div className="space-y-3 border-t border-border/40 pt-3">
+                  <Label className="text-xs font-semibold">Target Simulation Metrics</Label>
+
+                  {/* Added Metrics List */}
+                  {targetMetrics.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {targetMetrics.map((item, index) => {
+                        const option = METRIC_OPTIONS.find((o) => o.value === item.metric);
+                        return (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                          >
+                            <span>
+                              {option?.label}: {item.value}{option?.unit} ({item.timeline})
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setTargetMetrics((prev) => prev.filter((_, i) => i !== index))}
+                              className="ml-1 rounded-full p-0.5 hover:bg-indigo-500/25 cursor-pointer"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Metric Creator Form */}
+                  <div className="flex flex-wrap gap-2 items-end bg-muted/20 border border-border/40 rounded-lg p-3">
+                    <div className="flex-1 min-w-[120px]">
+                      <Label className="text-[10px] text-muted-foreground">Metric</Label>
+                      <Select value={newMetricKey} onValueChange={setNewMetricKey}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {METRIC_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="w-[80px]">
+                      <Label className="text-[10px] text-muted-foreground">Value</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={newMetricValue}
+                          onChange={(e) => setNewMetricValue(e.target.value)}
+                          placeholder="0"
+                          className="h-8 text-xs pr-4"
+                        />
+                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                          {METRIC_OPTIONS.find((o) => o.value === newMetricKey)?.unit}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-[100px]">
+                      <Label className="text-[10px] text-muted-foreground">Timeline</Label>
+                      <Select value={newMetricTimeline} onValueChange={setNewMetricTimeline}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Immediate">Immediate</SelectItem>
+                          <SelectItem value="6 months">6 months</SelectItem>
+                          <SelectItem value="1 year">1 year</SelectItem>
+                          <SelectItem value="2 years">2 years</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!newMetricValue.trim()) return;
+                        const val = parseFloat(newMetricValue);
+                        if (isNaN(val)) return;
+                        setTargetMetrics((prev) => [
+                          ...prev,
+                          { metric: newMetricKey, value: val, timeline: newMetricTimeline },
+                        ]);
+                        setNewMetricValue("");
+                      }}
+                      className="h-8 border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/10 text-xs px-2.5"
+                    >
+                      Add Metric
+                    </Button>
+                  </div>
+                </div>
+
+                <CollapsibleSection title="Advanced Options" icon={Settings2} defaultOpen={false}>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Objectives</Label>
+                      <Textarea
+                        value={formObjectives}
+                        onChange={(e) => setFormObjectives(e.target.value)}
+                        placeholder="Key objectives and goals..."
+                        rows={2}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                </CollapsibleSection>
+              </>
             )}
           </div>
 

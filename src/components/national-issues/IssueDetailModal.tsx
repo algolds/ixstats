@@ -18,6 +18,8 @@ import {
   Minus,
   AlertTriangle,
   X,
+  Sliders,
+  Calendar,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
@@ -64,6 +66,8 @@ interface IssueDetailModalProps {
   onRespond?: (issueId: string, optionId: string) => Promise<any>;
   isResponding?: boolean;
   countryId?: string;
+  onDraftPolicy?: (issue: any) => void;
+  onScheduleMeeting?: (issue: any) => void;
 }
 
 const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> = {
@@ -94,6 +98,8 @@ function IssueDetailModalInner({
   onRespond,
   isResponding,
   countryId,
+  onDraftPolicy,
+  onScheduleMeeting,
 }: IssueDetailModalProps) {
   const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
@@ -254,6 +260,38 @@ function IssueDetailModalInner({
           </div>
         )}
 
+        {!isResolved && (onDraftPolicy || onScheduleMeeting) && (
+          <div className="mt-4 border-t border-border/40 pt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-2">
+              Executive Actions
+            </h3>
+            <div className="flex gap-2.5">
+              {onDraftPolicy && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDraftPolicy(issue)}
+                  className="flex-1 gap-2 border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/10 text-xs h-9"
+                >
+                  <Sliders className="h-4 w-4" />
+                  Draft Policy to Resolve
+                </Button>
+              )}
+              {onScheduleMeeting && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onScheduleMeeting(issue)}
+                  className="flex-1 gap-2 border-blue-500/20 text-blue-300 hover:bg-blue-500/10 text-xs h-9"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Schedule Cabinet Meeting
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Response Options (only if not resolved) */}
         {!isResolved && !showOutcome && (
           <div className="mt-4 space-y-3">
@@ -326,7 +364,7 @@ function IssueDetailModalInner({
                       {requiredPolicyKey && !isPolicyActive && (
                         <div className="mt-2 flex items-center gap-1.5 text-xs text-red-400 font-medium">
                           <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
-                          <span>Requires Active Policy: {requiredPolicyKey.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</span>
+                          <span>Requires Active Policy: {requiredPolicyKey.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</span>
                         </div>
                       )}
                     </div>

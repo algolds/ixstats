@@ -32,6 +32,15 @@ import { useNotify } from "~/hooks/useNotify";
 import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
 
+const METRIC_OPTIONS = [
+  { value: "gdpGrowth", label: "GDP Growth", unit: "%", lowerIsBetter: false },
+  { value: "unemploymentRate", label: "Unemployment Rate", unit: "%", lowerIsBetter: true },
+  { value: "stability", label: "Stability", unit: "%", lowerIsBetter: false },
+  { value: "taxRevenue", label: "Tax Revenue", unit: "%", lowerIsBetter: false },
+  { value: "population", label: "Population", unit: "", lowerIsBetter: false },
+  { value: "inflation", label: "Inflation", unit: "%", lowerIsBetter: true },
+];
+
 interface PolicyDetailSheetProps {
   policyId: string | null;
   onClose: () => void;
@@ -398,10 +407,29 @@ export function PolicyDetailSheet({
                   <InfoRow
                     label="Target Metrics"
                     value={
-                      <span className="flex items-center gap-1">
-                        <Target className="h-3 w-3" />
-                        {policy.targetMetrics}
-                      </span>
+                      <div className="flex flex-wrap gap-1.5 justify-end">
+                        {(() => {
+                          try {
+                            const parsed = JSON.parse(policy.targetMetrics);
+                            if (Array.isArray(parsed)) {
+                              return parsed.map((item: any, i: number) => {
+                                const option = METRIC_OPTIONS.find((o) => o.value === item.metric);
+                                return (
+                                  <Badge key={i} variant="outline" className="px-2 py-0.5 text-xs text-indigo-300 border-indigo-500/20 bg-indigo-500/5">
+                                    {option?.label ?? item.metric}: {item.value}{option?.unit ?? ""} ({item.timeline})
+                                  </Badge>
+                                );
+                              });
+                            }
+                          } catch {}
+                          return (
+                            <span className="flex items-center gap-1 text-xs">
+                              <Target className="h-3 w-3" />
+                              {policy.targetMetrics}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     }
                   />
                 )}

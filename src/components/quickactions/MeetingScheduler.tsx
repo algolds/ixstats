@@ -21,6 +21,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils";
 import {
   Select,
   SelectContent,
@@ -53,7 +54,15 @@ interface MeetingSchedulerProps {
     description?: string;
     ixTime?: number;
     officialIds?: string[];
+    prefilledAgenda?: {
+      title: string;
+      description: string;
+      category: string;
+      linkedIssueId?: string;
+      linkedPolicyId?: string;
+    };
   };
+  defaultTargetCountryId?: string;
 }
 
 interface AgendaItem {
@@ -63,6 +72,8 @@ interface AgendaItem {
   category: string;
   tags: string[];
   presenter: string;
+  linkedIssueId?: string;
+  linkedPolicyId?: string;
 }
 
 const AGENDA_CATEGORIES = [
@@ -134,6 +145,7 @@ export function MeetingScheduler({
   open,
   onOpenChange,
   defaultMeeting,
+  defaultTargetCountryId,
 }: MeetingSchedulerProps) {
   const notify = useNotify();
   const { user } = useUser();
@@ -150,6 +162,12 @@ export function MeetingScheduler({
   );
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
 
+  // Meeting Type states
+  const [meetingType, setMeetingType] = useState<"cabinet" | "bilateral">(
+    defaultTargetCountryId ? "bilateral" : "cabinet"
+  );
+  const [targetCountryId, setTargetCountryId] = useState<string>(defaultTargetCountryId ?? "");
+
   // Agenda item form
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
   const [newAgendaDuration, setNewAgendaDuration] = useState(15);
@@ -159,10 +177,38 @@ export function MeetingScheduler({
   const [newAgendaTags, setNewAgendaTags] = useState<string[]>([]);
   const [newAgendaPresenter, setNewAgendaPresenter] = useState("");
   const [tagInput, setTagInput] = useState("");
+  const [newAgendaLinkedIssueId, setNewAgendaLinkedIssueId] = useState<string | undefined>(undefined);
+  const [newAgendaLinkedPolicyId, setNewAgendaLinkedPolicyId] = useState<string | undefined>(undefined);
 
-  // Get government officials
+  // Get simple list of countries for Bilateral meetings selection
+  const { data: selectCountries } = api.countries.getSelectList.useQuery(
+    { limit: 100 },
+    { enabled: open }
+  );
+
+  // Get government officials (host country)
   const { data: officials, isLoading: officialsLoading } = api.quickActions.getOfficials.useQuery(
     { countryId, activeOnly: true },
+    { enabled: open }
+  );
+
+  // Get government officials (target country)
+  const { data: targetOfficials, isLoading: targetOfficialsLoading } =
+    api.quickActions.getOfficials.useQuery(
+      { countryId: targetCountryId, activeOnly: true },
+      { enabled: open && meetingType === "bilateral" && !!targetCountryId }
+    );
+
+  // Get active national issues (player mode)
+  const { data: activeIssuesData } = api.nationalIssues.getMyIssues.useQuery(
+    { countryId, status: "active" },
+    { enabled: open }
+  );
+  const activeIssues = activeIssuesData?.issues ?? [];
+
+  // Get draft policies
+  const { data: draftPolicies = [] } = api.policies.getPolicies.useQuery(
+    { countryId, status: "draft" },
     { enabled: open }
   );
 
@@ -179,6 +225,8 @@ export function MeetingScheduler({
     setDuration(60);
     setSelectedOfficials([]);
     setAgendaItems([]);
+    setMeetingType(defaultTargetCountryId ? "bilateral" : "cabinet");
+    setTargetCountryId(defaultTargetCountryId ?? "");
     resetAgendaForm();
   };
 
@@ -191,13 +239,76 @@ export function MeetingScheduler({
     setNewAgendaTags([]);
     setNewAgendaPresenter("");
     setTagInput("");
+    setNewAgendaLinkedIssueId(undefined);
+    setNewAgendaLinkedPolicyId(undefined);
   };
+
+  React.useEffect(() => {
+    if (open) {
+      if (defaultMeeting) {
+        setTitle(defaultMeeting.title ?? "");
+        setDescription(defaultMeeting.description ?? "");
+        if (defaultMeeting.ixTime) {
+          setScheduledIxTime(defaultMeeting.ixTime);
+        }
+        if (defaultMeeting.officialIds) {
+          setSelectedOfficials(defaultMeeting.officialIds);
+        }
+        if (defaultMeeting.prefilledAgenda) {
+          const item = defaultMeeting.prefilledAgenda;
+          setAgendaItems([
+            {
+              title: item.title,
+              description: item.description,
+              duration: 30,
+              category: item.category,
+              tags: ["crisis"],
+              presenter: "Cabinet President",
+              linkedIssueId: item.linkedIssueId,
+              linkedPolicyId: item.linkedPolicyId,
+            },
+          ]);
+        } else {
+          setAgendaItems([]);
+        }
+      } else {
+        setTitle("");
+        setDescription("");
+        setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000);
+        setDuration(60);
+        setSelectedOfficials([]);
+        setAgendaItems([]);
+        setMeetingType(defaultTargetCountryId ? "bilateral" : "cabinet");
+        setTargetCountryId(defaultTargetCountryId ?? "");
+      }
+    }
+  }, [open, defaultMeeting, defaultTargetCountryId]);
 
   const toggleOfficial = (officialId: string) => {
     setSelectedOfficials((prev) =>
       prev.includes(officialId) ? prev.filter((id) => id !== officialId) : [...prev, officialId]
     );
   };
+
+  // Merge host officials and target country officials
+  const allOfficials = React.useMemo(() => {
+    const hostList = (officials || []).map((o) => ({
+      ...o,
+      isHost: true,
+      countryLabel: "Internal",
+    }));
+
+    const targetCountry = selectCountries?.find((c) => c.id === targetCountryId);
+    const targetName = targetCountry?.name || "Foreign";
+
+    const targetList = (targetOfficials || []).map((o) => ({
+      ...o,
+      isHost: false,
+      countryLabel: targetName,
+    }));
+
+    return [...hostList, ...targetList];
+  }, [officials, targetOfficials, targetCountryId, selectCountries]);
 
   const addAgendaItem = () => {
     if (!newAgendaTitle.trim()) {
@@ -214,6 +325,8 @@ export function MeetingScheduler({
         category: newAgendaCategory,
         tags: newAgendaTags,
         presenter: newAgendaPresenter,
+        linkedIssueId: newAgendaLinkedIssueId,
+        linkedPolicyId: newAgendaLinkedPolicyId,
       },
     ]);
 
@@ -244,12 +357,17 @@ export function MeetingScheduler({
       return;
     }
 
+    if (meetingType === "bilateral" && !targetCountryId) {
+      notify.error("Please select a target country");
+      return;
+    }
+
     if (agendaItems.length === 0) {
       notify.error("Please add at least one agenda item");
       return;
     }
 
-    if (officials && officials.length > 0 && selectedOfficials.length === 0) {
+    if (allOfficials.length > 0 && selectedOfficials.length === 0) {
       notify.error("Please select at least one attendee");
       return;
     }
@@ -263,6 +381,7 @@ export function MeetingScheduler({
     try {
       const meeting = await createMeeting.mutateAsync({
         countryId,
+        targetCountryId: meetingType === "bilateral" ? targetCountryId : undefined,
         userId: user.id,
         title,
         description: description || undefined,
@@ -275,13 +394,13 @@ export function MeetingScheduler({
       const attendancePromises =
         selectedOfficials.length > 0
           ? selectedOfficials.map((officialId) => {
-              const official = officials?.find((o) => o.id === officialId);
+              const official = allOfficials.find((o) => o.id === officialId);
               return recordAttendance.mutateAsync({
                 meetingId: meeting.id,
                 officialId,
                 attendeeName: official?.name ?? "Official",
                 attendanceStatus: "invited",
-                attendeeRole: official?.title || undefined,
+                attendeeRole: official ? `${official.title} (${official.countryLabel})` : undefined,
               });
             })
           : [
@@ -303,12 +422,21 @@ export function MeetingScheduler({
             order: index,
             estimatedDuration: item.duration,
             priority: "medium",
+            linkedIssueId: item.linkedIssueId,
+            linkedPolicyId: item.linkedPolicyId,
           })
         ),
         ...attendancePromises,
       ]);
 
-      notify.success("Meeting scheduled!", `${title} has been added to your calendar.`);
+      const successMsg =
+        meetingType === "bilateral"
+          ? "Summit request sent to the guest country!"
+          : `${title} has been added to your calendar.`;
+      notify.success(
+        meetingType === "bilateral" ? "Summit Requested" : "Meeting Scheduled",
+        successMsg
+      );
       onOpenChange(false);
       resetForm();
     } catch (error: any) {
@@ -336,13 +464,77 @@ export function MeetingScheduler({
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-amber-500" />
-            Schedule Meeting
+            {meetingType === "bilateral" ? "Request Bilateral Summit" : "Schedule Cabinet Meeting"}
           </DialogTitle>
-          <DialogDescription>Create a meeting with agenda items and attendees.</DialogDescription>
+          <DialogDescription>
+            {meetingType === "bilateral"
+              ? "Request a bilateral meeting with another country's ruler and cabinet."
+              : "Create a cabinet meeting with agenda items and attendees."}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+            {/* Meeting Type Selection */}
+            <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => setMeetingType("cabinet")}
+                className={cn(
+                  "rounded-md py-1.5 text-xs font-medium transition-all",
+                  meetingType === "cabinet"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Cabinet Meeting
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingType("bilateral")}
+                className={cn(
+                  "rounded-md py-1.5 text-xs font-medium transition-all",
+                  meetingType === "bilateral"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Bilateral Summit
+              </button>
+            </div>
+
+            {/* Target Country Selector (Bilateral only) */}
+            {meetingType === "bilateral" && (
+              <div>
+                <Label htmlFor="targetCountry" className="text-xs">
+                  Target Country *
+                </Label>
+                <Select
+                  value={targetCountryId}
+                  onValueChange={setTargetCountryId}
+                  disabled={!!defaultTargetCountryId}
+                >
+                  <SelectTrigger id="targetCountry" className="mt-1 h-9 text-xs">
+                    <SelectValue placeholder="Select invited country..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectCountries
+                      ?.filter((c) => c.id !== countryId)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="flex items-center gap-2">
+                            {c.flagUrl && (
+                              <img src={c.flagUrl} alt="" className="h-3 w-4 rounded object-cover" />
+                            )}
+                            {c.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Basic Info — always visible */}
             <div className="space-y-3">
               <div>
@@ -353,7 +545,9 @@ export function MeetingScheduler({
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Weekly Cabinet Meeting"
+                  placeholder={
+                    meetingType === "bilateral" ? "e.g., Bilateral Trade Summit" : "e.g., Weekly Cabinet Meeting"
+                  }
                   required
                 />
               </div>
@@ -407,24 +601,28 @@ export function MeetingScheduler({
               icon={Users}
               badge={`${selectedOfficials.length} selected`}
             >
-              {officialsLoading ? (
+              {officialsLoading || (meetingType === "bilateral" && targetOfficialsLoading) ? (
                 <div className="text-muted-foreground text-sm">Loading officials...</div>
-              ) : officials && officials.length > 0 ? (
+              ) : allOfficials && allOfficials.length > 0 ? (
                 <div className="grid max-h-36 grid-cols-2 gap-1.5 overflow-y-auto">
-                  {officials.map((official) => (
+                  {allOfficials.map((official) => (
                     <div
                       key={official.id}
                       onClick={() => toggleOfficial(official.id)}
-                      className={`cursor-pointer rounded-md border p-2 text-xs transition-all ${
+                      className={cn(
+                        "cursor-pointer rounded-md border p-2 text-xs transition-all",
                         selectedOfficials.includes(official.id)
                           ? "border-amber-400/50 bg-amber-50 dark:bg-amber-950/30"
                           : "hover:bg-muted border-border/40"
-                      }`}
+                      )}
                     >
                       <div className="flex items-center justify-between gap-1">
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium">{official.name}</p>
-                          <p className="text-muted-foreground truncate">{official.title}</p>
+                          <p className="text-muted-foreground truncate text-[10px] flex items-center gap-1">
+                            <span>{official.title}</span>
+                            <span className="text-[9px] opacity-60">· {official.countryLabel}</span>
+                          </p>
                         </div>
                         {selectedOfficials.includes(official.id) && (
                           <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-amber-600" />
@@ -474,6 +672,16 @@ export function MeetingScheduler({
                             <Badge variant="outline" className="shrink-0 px-1 py-0 text-[0.6rem]">
                               {item.duration}m
                             </Badge>
+                             {item.linkedIssueId && (
+                               <Badge variant="outline" className="px-1 py-0 text-[0.55rem] bg-yellow-500/10 text-yellow-400 border-yellow-500/20 shrink-0">
+                                 Issue
+                               </Badge>
+                             )}
+                             {item.linkedPolicyId && (
+                               <Badge variant="outline" className="px-1 py-0 text-[0.55rem] bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shrink-0">
+                                 Policy
+                               </Badge>
+                             )}
                             {item.tags.length > 0 && (
                               <div className="hidden gap-0.5 sm:flex">
                                 {item.tags.slice(0, 2).map((tag) => (
@@ -587,6 +795,41 @@ export function MeetingScheduler({
                         />
                       </div>
 
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Link National Issue</Label>
+                          <Select value={newAgendaLinkedIssueId || "none"} onValueChange={(v) => setNewAgendaLinkedIssueId(v === "none" ? undefined : v)}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {activeIssues.map((issue: any) => (
+                                <SelectItem key={issue.id} value={issue.id}>
+                                  ⚠️ {issue.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Link Policy Proposal</Label>
+                          <Select value={newAgendaLinkedPolicyId || "none"} onValueChange={(v) => setNewAgendaLinkedPolicyId(v === "none" ? undefined : v)}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {draftPolicies.map((policy: any) => (
+                                <SelectItem key={policy.id} value={policy.id}>
+                                  📜 {policy.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
                       {/* Tags */}
                       <div>
                         <div className="flex gap-1.5">
@@ -680,7 +923,7 @@ export function MeetingScheduler({
               disabled={
                 isSubmitting ||
                 agendaItems.length === 0 ||
-                (officials && officials.length > 0 && selectedOfficials.length === 0)
+                (allOfficials.length > 0 && selectedOfficials.length === 0)
               }
             >
               {isSubmitting ? "Scheduling..." : "Schedule Meeting"}

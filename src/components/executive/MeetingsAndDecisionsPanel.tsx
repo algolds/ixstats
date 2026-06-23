@@ -13,28 +13,73 @@ import {
   ChevronDown,
   ChevronRight,
   Users,
+  Loader2,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
 import { ExecutiveItemCard } from "./ExecutiveItemCard";
+import { useNotify } from "~/hooks/useNotify";
 
 interface MeetingsAndDecisionsPanelProps {
   countryId: string;
 }
 
 export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPanelProps) {
+  const notify = useNotify();
   const [meetingSchedulerOpen, setMeetingSchedulerOpen] = useState(false);
   const [expandedMeetings, setExpandedMeetings] = useState<Set<string>>(new Set());
   const [showPast, setShowPast] = useState(false);
+  const [activeMeetingId, setActiveMeetingId] = useState<string | null>(null);
+
   const { data: meetings = [], refetch: refetchMeetings } = api.meetings.getMeetings.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { upcoming, past } = useMemo(() => {
+  const acceptMutation = api.meetings.acceptMeeting.useMutation({
+    onSuccess: () => {
+      notify.success("Summit invitation accepted successfully!");
+      void refetchMeetings();
+      setActiveMeetingId(null);
+    },
+    onError: (err) => {
+      notify.error(`Failed to accept: ${err.message}`);
+      setActiveMeetingId(null);
+    },
+  });
+
+  const declineMutation = api.meetings.declineMeeting.useMutation({
+    onSuccess: () => {
+      notify.success("Summit invitation declined.");
+      void refetchMeetings();
+      setActiveMeetingId(null);
+    },
+    onError: (err) => {
+      notify.error(`Failed to decline: ${err.message}`);
+      setActiveMeetingId(null);
+    },
+  });
+
+  const handleAccept = (id: string) => {
+    setActiveMeetingId(id);
+    acceptMutation.mutate({ meetingId: id });
+  };
+
+  const handleDecline = (id: string) => {
+    setActiveMeetingId(id);
+    declineMutation.mutate({ meetingId: id });
+  };
+
+  const { pending, upcoming, past } = useMemo(() => {
     const now = new Date();
     return {
+      pending: meetings
+        .filter((m: any) => m.status === "pending")
+        .sort(
+          (a: any, b: any) =>
+            new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+        ),
       upcoming: meetings
         .filter((m: any) => new Date(m.scheduledDate) >= now && m.status === "scheduled")
         .sort(
@@ -45,6 +90,7 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
         .filter(
           (m: any) =>
             m.status === "completed" ||
+            m.status === "declined" ||
             (new Date(m.scheduledDate) < now && m.status === "scheduled")
         )
         .sort(
@@ -130,6 +176,91 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                 {actionItems.attention.filter((a) => a.isOverdue).length !== 1 ? "s" : ""} require
                 attention
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Bilateral Summit Requests */}
+        {pending.length > 0 && (
+          <div>
+            <div className="mb-2">
+              <h4 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                Bilateral Summit Requests
+              </h4>
+            </div>
+            <div className="space-y-2">
+              {pending.map((meeting: any) => {
+                const isInvitee = meeting.targetCountryId === countryId;
+                return (
+                  <ExecutiveItemCard
+                    key={meeting.id}
+                    accentColor="amber"
+                    icon={Calendar}
+                    title={meeting.title}
+                    description={meeting.description}
+                    subtitle={
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <IxTimeDate
+                          date={meeting.scheduledDate}
+                          ixTime={meeting.scheduledIxTime}
+                          format="datetime"
+                          accentColor="amber"
+                        />
+                        <span className="text-muted-foreground">•</span>
+                        <span>{meeting.duration ?? 60} min</span>
+                      </span>
+                    }
+                    badges={[
+                      isInvitee
+                        ? {
+                            label: "INCOMING REQUEST",
+                            colorClass:
+                              "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 border border-yellow-500/20",
+                          }
+                        : {
+                            label: "OUTGOING REQUEST",
+                            colorClass:
+                              "bg-gray-100 text-gray-700 dark:bg-gray-950/30 dark:text-gray-400 border border-gray-500/20",
+                          },
+                    ]}
+                    children={
+                      isInvitee && (
+                        <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-2.5">
+                          <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-7 px-3"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAccept(meeting.id);
+                            }}
+                            disabled={acceptMutation.isPending || declineMutation.isPending}
+                          >
+                            {acceptMutation.isPending && activeMeetingId === meeting.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : null}
+                            Accept Invite
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-200 hover:bg-red-50 hover:text-red-700 text-red-600 dark:border-red-950 dark:hover:bg-red-950/20 text-xs h-7 px-3"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDecline(meeting.id);
+                            }}
+                            disabled={acceptMutation.isPending || declineMutation.isPending}
+                          >
+                            {declineMutation.isPending && activeMeetingId === meeting.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : null}
+                            Decline
+                          </Button>
+                        </div>
+                      )
+                    }
+                  />
+                );
+              })}
             </div>
           </div>
         )}

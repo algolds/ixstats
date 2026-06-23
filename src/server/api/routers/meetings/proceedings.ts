@@ -20,6 +20,8 @@ export const meetingsProceedingsRouter = createTRPCRouter({
         order: z.number(),
         estimatedDuration: z.number().optional(),
         priority: z.enum(["high", "medium", "low"]).default("medium"),
+        linkedIssueId: z.string().optional(),
+        linkedPolicyId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -32,6 +34,8 @@ export const meetingsProceedingsRouter = createTRPCRouter({
           description: input.description,
           order: input.order,
           duration: input.estimatedDuration,
+          linkedIssueId: input.linkedIssueId,
+          linkedPolicyId: input.linkedPolicyId,
         },
       });
     }),

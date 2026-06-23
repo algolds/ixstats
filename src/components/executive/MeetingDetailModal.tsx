@@ -152,6 +152,20 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                           <User className="h-3 w-3" /> Presenter: {item.presenter}
                         </p>
                       )}
+                      {(item.linkedIssueId || item.linkedPolicyId) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {item.linkedIssueId && (
+                            <Badge variant="outline" className="px-1.5 py-0 text-[10px] bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                              Linked Issue
+                            </Badge>
+                          )}
+                          {item.linkedPolicyId && (
+                            <Badge variant="outline" className="px-1.5 py-0 text-[10px] bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+                              Linked Policy
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

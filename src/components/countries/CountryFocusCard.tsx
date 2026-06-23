@@ -76,26 +76,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     const usersIconRef = useRef<any>(null);
     const trendingIconRef = useRef<any>(null);
 
-    // Calculate metrics for visual displays
-    const economicScore = Math.min(100, (country.currentGdpPerCapita / 50000) * 100);
-    const populationScore = Math.min(
-      100,
-      Math.max(0, ((country.populationGrowthRate || 0) * 100 + 2) * 25)
-    );
-    const developmentScore =
-      country.economicTier === "Extravagant"
-        ? 100
-        : country.economicTier === "Very Strong"
-          ? 85
-          : country.economicTier === "Strong"
-            ? 70
-            : country.economicTier === "Healthy"
-              ? 55
-              : country.economicTier === "Developed"
-                ? 40
-                : country.economicTier === "Developing"
-                  ? 25
-                  : 10;
+
 
     const handleCardClick = () => {
       if (isExpanded) {
@@ -353,9 +334,6 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                 </div>
                 <ExpandedCardContent
                   country={country}
-                  economicScore={economicScore}
-                  populationScore={populationScore}
-                  developmentScore={developmentScore}
                   viewerCountryId={viewerCountryId}
                   isOwnCountry={isOwnCountry}
                   onCountryClick={onCountryClick}

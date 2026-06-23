@@ -15,7 +15,6 @@ import {
   Handshake,
   Shield,
   Scale,
-  BarChart3,
   Globe,
   ExternalLink,
   Share2,
@@ -23,9 +22,14 @@ import {
   Check,
   ScrollText,
   Swords,
+  Map,
+  Wallet,
+  Trophy,
+  Calendar,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -57,6 +61,7 @@ export function CountryActionsMenu({
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [schedulerOpen, setSchedulerOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -220,7 +225,9 @@ export function CountryActionsMenu({
 
   if (!mounted) return null;
 
-  return createPortal(
+  return (
+    <>
+      {createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -309,28 +316,28 @@ export function CountryActionsMenu({
 
                     <button
                       onClick={() => {
-                        router.push(createUrl("/mycountry/intelligence"));
+                        router.push(createUrl("/mycountry/editor"));
                         onClose();
                       }}
                       className={actionButtonClass(
-                        "border-cyan-500/20 bg-gradient-to-r from-cyan-500/20 to-sky-500/20 text-cyan-300 hover:from-cyan-500/30 hover:to-sky-500/30"
+                        "border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30"
                       )}
                     >
-                      <BarChart3 className="h-4 w-4" />
-                      Intelligence Center
+                      <Map className="h-4 w-4" />
+                      Map & Territory Editor
                     </button>
 
                     <button
                       onClick={() => {
-                        router.push(createUrl("/mycountry/defense"));
+                        router.push(createUrl("/vault"));
                         onClose();
                       }}
                       className={actionButtonClass(
-                        "border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30"
+                        "border-pink-500/20 bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-pink-300 hover:from-pink-500/30 hover:to-rose-500/30"
                       )}
                     >
-                      <Shield className="h-4 w-4" />
-                      Defense Operations
+                      <Wallet className="h-4 w-4" />
+                      IxVault Cards & Market
                     </button>
 
                     <button
@@ -456,6 +463,23 @@ export function CountryActionsMenu({
                       </button>
 
                       <button
+                        onClick={() => {
+                          if (!viewerCountryId) {
+                            notify.error("You must be logged in to request a meeting");
+                            return;
+                          }
+                          setSchedulerOpen(true);
+                        }}
+                        disabled={!viewerCountryId || isLoading}
+                        className={actionButtonClass(
+                          "border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30"
+                        )}
+                      >
+                        <Calendar className="h-4 w-4" />
+                        Request Meeting
+                      </button>
+
+                      <button
                         onClick={() => handleForeignPolicy("free_trade")}
                         disabled={!viewerCountryId || isLoading}
                         className={actionButtonClass(
@@ -521,15 +545,15 @@ export function CountryActionsMenu({
 
                   <button
                     onClick={() => {
-                      router.push(createUrl(`/countries?compare=${targetCountryId}`));
+                      router.push(createUrl("/leaderboards"));
                       onClose();
                     }}
                     className={actionButtonClass(
-                      "border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 text-indigo-300 hover:from-indigo-500/20 hover:to-violet-500/20"
+                      "border-yellow-500/20 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 text-yellow-300 hover:from-yellow-500/20 hover:to-amber-500/20"
                     )}
                   >
-                    <BarChart3 className="h-4 w-4" />
-                    Compare Countries
+                    <Trophy className="h-4 w-4" />
+                    Global Leaderboard
                   </button>
 
                   <WikiLinkPreview title={targetCountryName}>
@@ -596,5 +620,15 @@ export function CountryActionsMenu({
       )}
     </AnimatePresence>,
     document.body
+  )}
+      {viewerCountryId && (
+        <MeetingScheduler
+          countryId={viewerCountryId}
+          open={schedulerOpen}
+          onOpenChange={setSchedulerOpen}
+          defaultTargetCountryId={targetCountryId}
+        />
+      )}
+    </>
   );
 }
