@@ -22,11 +22,10 @@ import {
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
-import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import { WikiLinkPreview, ForumLinkPreview, WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 import { formatTimeAgo } from "~/lib/time-utils";
-import { renderDiscordEmojis } from "~/lib/text-formatter";
-import { sanitizeUserContent } from "~/lib/sanitize-html";
+import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
 import { cn } from "~/lib/utils";
 import { WikiAuthorPopover } from "./WikiAuthorPopover";
 
@@ -142,10 +141,10 @@ export function UnifiedFeedItem({ activity }: { activity: any }) {
           ? ""
           : titleText.replace(/^(Wiki edit|New wiki page):\s*/i, "")
       : titleText;
-  const titleHtml = displayTitle ? sanitizeUserContent(renderDiscordEmojis(displayTitle)) : "";
+  const titleHtml = displayTitle ? formatThinkpagesContentForDisplay(displayTitle) : "";
 
   const descHtml = activity.content?.description
-    ? sanitizeUserContent(renderDiscordEmojis(activity.content.description))
+    ? formatThinkpagesContentForDisplay(activity.content.description)
     : "";
 
   return (
@@ -176,9 +175,10 @@ export function UnifiedFeedItem({ activity }: { activity: any }) {
                 {wikiPageTitle}
               </Link>
             ) : (
-              <span
+              <WikiHtmlContent
+                html={titleHtml}
+                as="span"
                 className="text-foreground truncate text-sm font-medium"
-                dangerouslySetInnerHTML={{ __html: titleHtml }}
               />
             )}
             {/* Badge — wiki shows nothing, others show dynamic label */}
@@ -272,9 +272,9 @@ export function UnifiedFeedItem({ activity }: { activity: any }) {
           ) : activity.poll ? (
             <FeedPollWidget poll={activity.poll} />
           ) : descHtml ? (
-            <p
+            <WikiHtmlContent
+              html={descHtml}
               className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{ __html: descHtml }}
             />
           ) : null}
 

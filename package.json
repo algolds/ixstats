@@ -47,6 +47,7 @@
     "db:reset": "echo '⛔ DANGEROUS: db:reset is PERMANENTLY blocked. This would destroy 82 nations of production data.' && exit 1",
     "db:restore": "tsx scripts/setup/restore-db.ts",
     "db:seed": "tsx scripts/setup/seed-db.ts",
+    "db:seed:packs": "tsx prisma/seeds/card-packs.ts",
     "db:seed-issues": "tsx prisma/seeds/seed-national-issues.ts",
     "db:seed:sports": "tsx scripts/setup/seed-sports-standalone.ts",
     "db:setup": "bun run db:generate && bun run db:push && bun run db:init",

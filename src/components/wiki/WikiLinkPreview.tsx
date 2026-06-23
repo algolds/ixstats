@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { api } from "~/trpc/react";
+import { withBasePath } from "~/lib/base-path";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { Tooltip } from "~/components/ui/tooltip-card";
 
@@ -144,6 +146,20 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
       <a key={index} href={href} className={className}>
         {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
       </a>
+    );
+  }
+
+  // Custom Handler: Hashtag Link
+  if (tagName === "a" && element.getAttribute("href")?.startsWith("/hashtags/")) {
+    const href = element.getAttribute("href") || "";
+    const className =
+      element.className ||
+      "text-blue-500 hover:underline cursor-pointer font-medium";
+
+    return (
+      <Link key={index} href={withBasePath(href)} className={className}>
+        {Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx))}
+      </Link>
     );
   }
 

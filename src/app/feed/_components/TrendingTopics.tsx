@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { api } from "~/trpc/react";
 import { Flame, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
+import { withBasePath } from "~/lib/base-path";
 
 export function TrendingTopics() {
   const { data: topics, isLoading } = api.activities.getTrendingTopics.useQuery({
@@ -32,31 +34,55 @@ export function TrendingTopics() {
           ))
         ) : topics && topics.length > 0 ? (
           // Trending topics
-          topics.map((topic, index) => (
-            <div
-              key={topic.id}
-              className="hover:bg-accent/10 cursor-pointer rounded-lg p-2 transition-colors"
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-foreground text-sm font-medium">{topic.title}</span>
-                {topic.trend === "up" ? (
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                ) : topic.trend === "down" ? (
-                  <TrendingDown className="h-4 w-4 text-red-500" />
-                ) : (
-                  <Minus className="h-4 w-4 text-slate-400" />
-                )}
+          topics.map((topic, index) => {
+            const isHashtag = topic.title.startsWith("#");
+            const tag = isHashtag ? topic.title.slice(1) : topic.title;
+            const href = isHashtag ? `/hashtags/${tag}` : null;
+
+            const content = (
+              <>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-foreground text-sm font-medium">{topic.title}</span>
+                  {topic.trend === "up" ? (
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  ) : topic.trend === "down" ? (
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <Minus className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    {topic.category}
+                  </Badge>
+                  <span className="text-muted-foreground text-xs">
+                    {topic.participants} participant{topic.participants !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              </>
+            );
+
+            if (href) {
+              return (
+                <Link
+                  key={topic.id}
+                  href={withBasePath(href)}
+                  className="hover:bg-accent/10 block cursor-pointer rounded-lg p-2 transition-colors"
+                >
+                  {content}
+                </Link>
+              );
+            }
+
+            return (
+              <div
+                key={topic.id}
+                className="hover:bg-accent/10 block cursor-pointer rounded-lg p-2 transition-colors"
+              >
+                {content}
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {topic.category}
-                </Badge>
-                <span className="text-muted-foreground text-xs">
-                  {topic.participants} participant{topic.participants !== 1 ? "s" : ""}
-                </span>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           // Empty state
           <div className="py-8 text-center">

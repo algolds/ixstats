@@ -103,37 +103,12 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
             {/* Inner glow border */}
             <div className="h-full w-full rounded-xl bg-gradient-to-br from-white/5 to-transparent p-4">
               {/* Pack artwork */}
-              <div className="relative h-full w-full overflow-hidden rounded-lg">
-                {packArtwork ? (
-                  <div
-                    className="h-full w-full"
-                    style={{
-                      backgroundImage: `url(${packArtwork})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }}
-                  />
-                ) : (
-                  <PackHolographicCover packType={packType} size="lg" className="rounded-lg" />
-                )}
-
-                {/* Shine effect */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                  animate={{
-                    x: ["-100%", "200%"],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                    ease: "linear",
-                  }}
-                  style={{
-                    transform: "skewX(-20deg)",
-                  }}
-                />
-              </div>
+              <PackHolographicCover
+                packType={packType}
+                packArtwork={packArtwork}
+                size="lg"
+                className="rounded-lg"
+              />
             </div>
           </div>
 

@@ -94,7 +94,7 @@ export function formatContentEnhanced(content: string): string {
   // Replace hashtags - match hashtag at word boundary, ignoring HTML entities like &#039;
   formattedContent = formattedContent.replace(
     /\B(?<!&)#([a-zA-Z0-9_]+)/g,
-    '<span class="text-blue-500 hover:underline cursor-pointer font-medium">#$1</span>'
+    '<a href="/hashtags/$1" class="text-blue-500 hover:underline cursor-pointer font-medium">#$1</a>'
   );
 
   // Replace mentions - match mention at word boundary

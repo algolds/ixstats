@@ -6,7 +6,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { runPreviewSeeder } from "../../src/lib/preview-seeder";
+import { seedCardPacks } from "../../prisma/seeds/card-packs";
 
 const db = new PrismaClient();
 
@@ -33,9 +33,9 @@ async function initializeDatabase() {
       return;
     }
 
-    // Seed preview data for development
-    console.log("🌱 Seeding preview data for development...");
-    await runPreviewSeeder();
+    // Seed card packs for development
+    console.log("🌱 Seeding card packs for development...");
+    await seedCardPacks();
 
     console.log("✅ Database initialization complete!");
   } catch (error) {

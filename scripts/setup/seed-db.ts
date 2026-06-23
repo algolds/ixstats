@@ -6,7 +6,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { runPreviewSeeder } from "../../src/lib/preview-seeder";
+import { seedCardPacks } from "../../prisma/seeds/card-packs";
 import { seedSmallArmsEquipment } from "../../prisma/seeds/seed-small-arms-equipment";
 import { seedMilitaryEquipmentCatalog } from "../../prisma/seeds/military-equipment-catalog";
 
@@ -46,8 +46,8 @@ async function seedDatabase() {
       }
     }
 
-    // Seed preview data
-    await runPreviewSeeder();
+    // Seed card packs
+    await seedCardPacks();
 
     // Seed reference catalogs (idempotent — each clears + repopulates its own tables)
     console.log("🔫 Seeding small arms equipment catalog...");
