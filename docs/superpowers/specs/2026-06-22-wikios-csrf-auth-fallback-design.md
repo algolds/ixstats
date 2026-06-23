@@ -32,6 +32,7 @@ Additionally, to eliminate duplicate helper code, we will consolidate the shared
 * **File:** [NEW] `src/lib/wiki-os/wiki-write-service.ts`
 * **Contents:**
   * Define `saveToMediaWiki(title, wikitext, summary, minor, ctx, basetimestamp?, isTemplateSync?)`.
+  * The edit summary suffix appended to the edit comment should simply be ` (via WikiOS)` rather than ` (via WikiOS by username)`, since the edit will already be natively registered to the user's username.
   * After the Action API edit request succeeds, query the `actor_id` for the user's `wikiUsername` from the MediaWiki database.
   * If the user doesn't have an `actor_id` yet, look up their `user_id` from `user` table and create a row in the `actor` table.
   * Execute direct MySQL updates to attribute the edit to the user:
