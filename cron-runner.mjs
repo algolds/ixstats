@@ -151,6 +151,23 @@ async function main() {
     }
   });
 
+  // Pull the bot's local state file every 10 min so the calendar tracks the bot
+  // without waiting for the daily fullSync. Cheap: local JSON read + upserts, no
+  // wiki DB / no stats recompute (fullSync still does the heavy reconciliation).
+  let loreStateSyncRunning = false;
+  scheduleCron("Lorewards state-file sync", "*/10 * * * *", async () => {
+    if (loreStateSyncRunning || loreSyncRunning) return;
+    loreStateSyncRunning = true;
+    try {
+      const { syncFromStateFile } = await import("./src/lib/lorewards-sync.js");
+      await syncFromStateFile();
+    } catch (error) {
+      console.error("[Cron] Lorewards state-file sync failed:", error);
+    } finally {
+      loreStateSyncRunning = false;
+    }
+  });
+
   scheduleCron("Trade expiry", "*/5 * * * *", async () => {
     try {
       const { processExpiredTrades } = await import("./src/lib/trade-expiry-cron.js");

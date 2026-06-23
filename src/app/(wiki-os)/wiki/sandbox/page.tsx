@@ -37,8 +37,26 @@ import {
   LineChart,
   Line,
 } from "recharts";
+// Real, unmodified @bettergov/kapwa components — rendered raw for evaluation.
+import { Banner } from "@bettergov/kapwa/banner";
+import { Button as KapwaButton } from "@bettergov/kapwa/button";
+import { Card, CardHeader, CardContent, CardFooter, CardImage } from "@bettergov/kapwa/card";
+import { Input as KapwaInput } from "@bettergov/kapwa/input";
+import { Label as KapwaLabel } from "@bettergov/kapwa/label";
+import { ArticleCard, ArticleContent } from "@bettergov/kapwa/article";
+import { List as KapwaList } from "@bettergov/kapwa/list";
+import { Table as KapwaTable } from "@bettergov/kapwa/table";
+import { OfficialBiography } from "@bettergov/kapwa/official-biography";
+import { CivicTechBanner } from "@bettergov/kapwa/civic-tech-banner";
+import { StripBanner } from "@bettergov/kapwa/strip-banner";
 
-type SandboxTab = "playground" | "recent-changes" | "stashes" | "wiki-examples" | "analytics";
+type SandboxTab =
+  | "playground"
+  | "recent-changes"
+  | "stashes"
+  | "wiki-examples"
+  | "analytics"
+  | "kapwa-raw";
 
 interface TemplateRow {
   name: string;
@@ -90,6 +108,7 @@ export default function WikiSandboxPage() {
               "stashes",
               "wiki-examples",
               "analytics",
+              "kapwa-raw",
             ] as SandboxTab[]
           ).map((tab) => (
             <button
@@ -116,8 +135,209 @@ export default function WikiSandboxPage() {
         {activeTab === "wiki-examples" && <WikiExamplesTab />}
 
         {activeTab === "analytics" && mounted && <AnalyticsTab />}
+
+        {activeTab === "kapwa-raw" && <KapwaRawTab />}
       </div>
     </WikiOSLayout>
+  );
+}
+
+/* ===========================================================================
+   KAPWA RAW TAB — every real @bettergov/kapwa component, unmodified.
+   The page is wrapped in .kapwa-sandbox, so Kapwa's own CSS applies; note that
+   `.kp-card` is still overridden by the Facet glass rules in kapwa-scoped.css.
+   =========================================================================== */
+const KAPWA_PLACEHOLDER_IMG =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='240'><rect width='100%' height='100%' fill='#3b82f6' opacity='0.25'/><text x='50%' y='50%' fill='#94a3b8' font-family='sans-serif' font-size='16' text-anchor='middle' dominant-baseline='middle'>image</text></svg>`
+  );
+
+function RawBlock({ name, children }: { name: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2 rounded border border-[var(--wikios-border)] bg-black/[0.01] p-4 dark:bg-white/[0.01]">
+      <h4 className="font-mono text-[10px] font-bold tracking-wider text-[var(--wikios-accent)] uppercase">
+        {name}
+      </h4>
+      {children}
+    </div>
+  );
+}
+
+function KapwaRawTab() {
+  const noop = () => {};
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="kp-card flex items-start gap-3 border-blue-500/30 bg-blue-500/5 p-4 text-blue-700 dark:text-blue-400">
+        <Info className="mt-0.5 h-5 w-5 shrink-0" />
+        <div>
+          <h4 className="text-xs font-bold">Raw Kapwa Components (unstyled by us)</h4>
+          <p className="mt-1 text-[10px] leading-relaxed opacity-80">
+            These are the actual <code>@bettergov/kapwa</code> React components with sample data —
+            no Facet restyling applied. Use this to judge which (if any) are worth adopting.
+          </p>
+        </div>
+      </div>
+
+      <RawBlock name="Banner (info / warning / error / success)">
+        <div className="flex flex-col gap-3">
+          <Banner type="info" title="Info banner" description="A general informational notice." />
+          <Banner type="warning" title="Warning" description="Something needs your attention." />
+          <Banner type="error" title="Error" description="An action could not be completed." />
+          <Banner
+            type="success"
+            title="Success"
+            description="With a call-to-action button."
+            cta={{ label: "View", onClick: noop }}
+          />
+        </div>
+      </RawBlock>
+
+      <RawBlock name="Button (variants × sizes)">
+        <div className="flex flex-wrap items-center gap-3">
+          <KapwaButton variant="primary">Primary</KapwaButton>
+          <KapwaButton variant="secondary">Secondary</KapwaButton>
+          <KapwaButton variant="outline">Outline</KapwaButton>
+          <KapwaButton variant="ghost">Ghost</KapwaButton>
+          <KapwaButton variant="link">Link</KapwaButton>
+          <KapwaButton variant="primary" isLoading>
+            Loading
+          </KapwaButton>
+          <KapwaButton variant="primary" size="sm">
+            Small
+          </KapwaButton>
+          <KapwaButton variant="primary" size="lg">
+            Large
+          </KapwaButton>
+        </div>
+      </RawBlock>
+
+      <RawBlock name="Card (Header / Image / Content / Footer)">
+        <Card hoverable className="max-w-sm">
+          <CardImage src={KAPWA_PLACEHOLDER_IMG} alt="placeholder" />
+          <CardHeader>Card Title</CardHeader>
+          <CardContent>
+            Body content inside a Kapwa card. This shows the card&apos;s native padding and layout.
+          </CardContent>
+          <CardFooter>
+            <KapwaButton variant="primary" size="sm">
+              Action
+            </KapwaButton>
+          </CardFooter>
+        </Card>
+      </RawBlock>
+
+      <RawBlock name="Input + Label">
+        <div className="flex max-w-sm flex-col gap-1.5">
+          <KapwaLabel htmlFor="kapwa-demo-input">Email address</KapwaLabel>
+          <KapwaInput id="kapwa-demo-input" type="email" placeholder="you@example.com" />
+        </div>
+      </RawBlock>
+
+      <RawBlock name="ArticleCard">
+        <div className="max-w-sm">
+          <ArticleCard
+            article={{
+              id: 1,
+              image: KAPWA_PLACEHOLDER_IMG,
+              imageAlt: "placeholder",
+              category: "Geography",
+              title: "Sample Article Card",
+              description: "A short description rendered by Kapwa's ArticleCard component.",
+            }}
+          />
+        </div>
+      </RawBlock>
+
+      <RawBlock name="ArticleContent (heading/paragraph schema)">
+        <ArticleContent
+          articleContentTitle="Sample Article"
+          articleContent={[
+            { id: 1, type: "heading", level: 2, content: "Section Heading" },
+            { id: 2, type: "paragraph", content: "A paragraph of body text rendered by Kapwa." },
+            { id: 3, type: "heading", level: 3, content: "Subsection" },
+            { id: 4, type: "paragraph", content: "Another paragraph follows the subsection." },
+          ]}
+        />
+      </RawBlock>
+
+      <RawBlock name="List">
+        <KapwaList
+          title="Latest Items"
+          headerTitle="Recent Activity"
+          headerSubtitle="A simple categorized list"
+          externalLinkText="See all"
+          listItems={[
+            { id: 1, title: "First list item", category: "Politics" },
+            { id: 2, title: "Second list item", category: "Economy" },
+            { id: 3, title: "Third list item", category: "Military" },
+          ]}
+        />
+      </RawBlock>
+
+      <RawBlock name="Table (fixed name/email/status schema)">
+        <KapwaTable
+          title="Users"
+          subtitle="Kapwa's demo table is hardcoded to name/email/status"
+          tableData={[
+            { id: 1, name: "Ada Lovelace", email: "ada@example.com", status: "Active" },
+            { id: 2, name: "Alan Turing", email: "alan@example.com", status: "Pending" },
+            { id: 3, name: "Grace Hopper", email: "grace@example.com", status: "Inactive" },
+          ]}
+        />
+      </RawBlock>
+
+      <RawBlock name="OfficialBiography (Philippine-gov shape)">
+        <OfficialBiography
+          profile={{
+            name: "Juan Dela Cruz",
+            position: "Secretary of Example Affairs",
+            servingSince: "2024",
+            profileImage: KAPWA_PLACEHOLDER_IMG,
+            bannerImage: KAPWA_PLACEHOLDER_IMG,
+            contactInfo: {
+              office: "Example Building, Capital City",
+              phone: "+63 2 1234 5678",
+              email: "office@example.gov",
+              website: "https://example.gov",
+            },
+            education: [
+              { degree: "B.A. Public Administration", institution: "State University", year: "2005" },
+            ],
+            biography: ["A sample biography paragraph describing the official's career."],
+            achievements: ["Sample achievement one", "Sample achievement two"],
+          }}
+        />
+      </RawBlock>
+
+      <RawBlock name="CivicTechBanner (bettergov.ph marketing)">
+        <CivicTechBanner
+          fullBannerTitle="Civic Tech"
+          fullBanner={{
+            title: "Build a better",
+            highlightedWord: "government",
+            description: "Sample marketing copy for the civic-tech banner.",
+            highlightedPhrase: "for everyone",
+            primaryButton: { text: "Get Started", href: "#" },
+            secondaryButton: { text: "Learn More", href: "#" },
+          }}
+        />
+      </RawBlock>
+
+      <RawBlock name="StripBanner (marketing strip)">
+        <StripBanner
+          stripBannerTitle="Strip"
+          stripBanner={{
+            id: 1,
+            emoji: "📣",
+            mainText: "Announcement strip banner",
+            subText: "A compact promotional strip from Kapwa.",
+            primaryButton: { text: "Action", href: "#" },
+            secondaryLink: { text: "Details", href: "#" },
+          }}
+        />
+      </RawBlock>
+    </div>
   );
 }
 

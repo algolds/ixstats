@@ -147,6 +147,92 @@ export const achievementsCountryRouter = createTRPCRouter({
       }
     }),
 
+  // Get country leaderboard ranked by a chosen metric (GDP, population, etc.)
+  getCountryLeaderboard: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        metric: z
+          .enum([
+            "totalGdp",
+            "gdpPerCapita",
+            "population",
+            "populationDensity",
+            "landArea",
+            "gdpGrowth",
+            "avgIncome",
+            "workforce",
+            "employmentRate",
+            "literacyRate",
+            "lifeExpectancy",
+            "govRevenue",
+            "govSpending",
+            "economicVitality",
+            "wellbeing",
+            "nationalHealth",
+            "infrastructure",
+            "urbanization",
+            "approval",
+          ])
+          .default("totalGdp"),
+        limit: z.number().optional().default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // metric id → Country column
+      const field = {
+        totalGdp: "currentTotalGdp",
+        gdpPerCapita: "currentGdpPerCapita",
+        population: "currentPopulation",
+        populationDensity: "populationDensity",
+        landArea: "landArea",
+        gdpGrowth: "realGDPGrowthRate",
+        avgIncome: "averageAnnualIncome",
+        workforce: "totalWorkforce",
+        employmentRate: "employmentRate",
+        literacyRate: "literacyRate",
+        lifeExpectancy: "lifeExpectancy",
+        govRevenue: "governmentRevenueTotal",
+        govSpending: "totalGovernmentSpending",
+        economicVitality: "economicVitality",
+        wellbeing: "populationWellbeing",
+        nationalHealth: "overallNationalHealth",
+        infrastructure: "infrastructureRating",
+        urbanization: "urbanPopulationPercent",
+        approval: "publicApproval",
+      }[input.metric];
+
+      try {
+        const countries = await ctx.db.country.findMany({
+          where: { [field]: { not: null } } as Record<string, unknown>,
+          orderBy: { [field]: "desc" } as Record<string, "desc">,
+          take: input.limit,
+          select: {
+            id: true,
+            name: true,
+            flag: true,
+            economicTier: true,
+            populationTier: true,
+            [field]: true,
+          } as Record<string, true>,
+        });
+
+        return countries.map((c) => {
+          const row = c as Record<string, unknown>;
+          return {
+            countryId: row.id as string,
+            countryName: row.name as string,
+            flag: row.flag as string | null,
+            value: (row[field] as number | null) ?? 0,
+            economicTier: row.economicTier as string,
+            populationTier: row.populationTier as string,
+          };
+        });
+      } catch (error) {
+        console.error("Error fetching country leaderboard:", error);
+        return [];
+      }
+    }),
+
   // Get current user's achievement progress statistics
 
   // Admin action: Manually trigger baseline sync

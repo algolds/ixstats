@@ -114,7 +114,6 @@ function FisheyeIcon({
   onHover,
 }: FisheyeIconProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const { setIsHovered } = useSidebar();
 
   const distance = useTransform(mouseY, (val) => {
     if (!ref.current || val === Infinity) return Infinity;
@@ -138,11 +137,11 @@ function FisheyeIcon({
 
   const glowColor = getGlowColor(id);
 
+  // Only flag the local row hover (flyout label). Do NOT expand the whole rail —
+  // that reflows every row + cancels the fisheye magnification, shifting the icon
+  // out from under the cursor. The rail stays collapsed (disableGlobalHover).
   const handleMouseEnter = () => {
     onHover(index);
-    if (setIsHovered) {
-      setIsHovered(true);
-    }
   };
 
   return (
