@@ -392,4 +392,111 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
         forceDomain: input.domain,
       });
     }),
+
+  /**
+   * Get all active and recent issues in the world for auditing.
+   */
+  getActiveIssues: adminProcedure
+    .input(
+      z.object({
+        status: z.string().optional(),
+        countryId: z.string().optional(),
+        limit: z.number().min(1).max(100).default(20),
+        cursor: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const where: any = {};
+      if (input.status && input.status !== "all") where.status = input.status;
+      if (input.countryId && input.countryId !== "all") where.countryId = input.countryId;
+      if (input.cursor) where.id = { lt: input.cursor };
+
+      const issues = await ctx.db.nationalIssue.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: input.limit + 1,
+        include: {
+          country: {
+            select: { id: true, name: true },
+          },
+        },
+      });
+
+      let nextCursor: string | undefined;
+      if (issues.length > input.limit) {
+        const nextItem = issues.pop();
+        nextCursor = nextItem?.id;
+      }
+
+      return { issues, nextCursor };
+    }),
+
+  /**
+   * Seed default templates from the seed file.
+   */
+  seedDefaultTemplates: adminProcedure.mutation(async ({ ctx }) => {
+    const { NATIONAL_ISSUE_TEMPLATES } = await import("../../../../../prisma/seeds/national-issue-templates");
+
+    let created = 0;
+    let updated = 0;
+    let errors = 0;
+
+    for (const template of NATIONAL_ISSUE_TEMPLATES) {
+      try {
+        const result = await ctx.db.nationalIssueTemplate.upsert({
+          where: { slug: template.slug },
+          update: {
+            title: template.title,
+            description: template.description,
+            longDescription: template.longDescription ?? null,
+            domain: template.domain,
+            category: template.category as any,
+            tags: template.tags ?? null,
+            baseSeverity: template.baseSeverity as any,
+            baseUrgency: template.baseUrgency,
+            deadlineDaysBase: template.deadlineDaysBase,
+            triggerConditions: template.triggerConditions,
+            cooldownDays: template.cooldownDays,
+            maxActivePerCountry: template.maxActivePerCountry,
+            responseOptions: template.responseOptions,
+            followUpTemplateIds: template.followUpTemplateIds ?? null,
+            personalityModifiers: template.personalityModifiers ?? null,
+            isActive: true,
+          },
+          create: {
+            slug: template.slug,
+            title: template.title,
+            description: template.description,
+            longDescription: template.longDescription ?? null,
+            domain: template.domain,
+            category: template.category as any,
+            tags: template.tags ?? null,
+            baseSeverity: template.baseSeverity as any,
+            baseUrgency: template.baseUrgency,
+            deadlineDaysBase: template.deadlineDaysBase,
+            triggerConditions: template.triggerConditions,
+            cooldownDays: template.cooldownDays,
+            maxActivePerCountry: template.maxActivePerCountry,
+            responseOptions: template.responseOptions,
+            followUpTemplateIds: template.followUpTemplateIds ?? null,
+            personalityModifiers: template.personalityModifiers ?? null,
+            isActive: true,
+            authorId: ctx.auth?.userId ?? null,
+          },
+        });
+
+        const isNew = result.createdAt.getTime() === result.updatedAt.getTime();
+        if (isNew) {
+          created++;
+        } else {
+          updated++;
+        }
+      } catch (err) {
+        errors++;
+        console.error(`Error seeding default template "${template.slug}":`, err);
+      }
+    }
+
+    return { created, updated, errors };
+  }),
 });
