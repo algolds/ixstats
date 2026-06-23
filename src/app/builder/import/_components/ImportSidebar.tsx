@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Loader2,
   ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 
 import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
@@ -116,6 +117,31 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Safe & Secure Disclaimer Card */}
+          <div
+            className="rounded-xl border p-4 backdrop-blur-sm"
+            style={{
+              backgroundColor: "var(--color-bg-secondary)",
+              borderColor: "var(--color-border-primary)",
+            }}
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+              <span
+                className="text-xs font-semibold"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Safe & Secure Import
+              </span>
+            </div>
+            <p
+              className="text-[10px] leading-relaxed"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              This tool only reads public wiki infobox data to calculate starting statistics. No account data, private details, or passwords are accessed, stored, or copied.
+            </p>
           </div>
 
           <div
