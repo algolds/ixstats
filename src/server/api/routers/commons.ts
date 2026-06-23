@@ -79,6 +79,23 @@ function stripHtml(html: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Caching & Rate-limit/429 Handling
+// ---------------------------------------------------------------------------
+
+interface CachedImageInfo {
+  data: CommonsImage | null;
+  timestamp: number;
+}
+
+const imageInfoCache = new Map<string, CachedImageInfo>();
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const CACHE_MISS_TTL_MS = 1 * 60 * 60 * 1000; // 1 hour
+
+function normalizeTitle(title: string): string {
+  return title.replace(/_/g, " ").trim();
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
@@ -276,14 +293,69 @@ export const commonsRouter = createTRPCRouter({
     .query(async ({ input }) => {
       if (input.titles.length === 0) return [];
 
-      const data = await commonsApiFetch({
-        action: "query",
-        titles: input.titles.join("|"),
-        prop: "imageinfo",
-        iiprop: "url|extmetadata|size|mime",
-        iiurlwidth: 300,
-      });
+      const now = Date.now();
+      const results: CommonsImage[] = [];
+      const titlesToFetch: string[] = [];
 
-      return parseImagePages(data);
+      for (const title of input.titles) {
+        const normKey = normalizeTitle(title);
+        const cached = imageInfoCache.get(normKey);
+
+        if (cached) {
+          const isExpired =
+            now - cached.timestamp > (cached.data === null ? CACHE_MISS_TTL_MS : CACHE_TTL_MS);
+          if (!isExpired) {
+            if (cached.data !== null) {
+              results.push(cached.data);
+            }
+            continue;
+          }
+        }
+        titlesToFetch.push(title);
+      }
+
+      if (titlesToFetch.length > 0) {
+        try {
+          const data = await commonsApiFetch({
+            action: "query",
+            titles: titlesToFetch.join("|"),
+            prop: "imageinfo",
+            iiprop: "url|extmetadata|size|mime",
+            iiurlwidth: 300,
+          });
+
+          const fetchedImages = parseImagePages(data);
+          const fetchedNormTitles = new Set<string>();
+
+          for (const img of fetchedImages) {
+            const normTitle = normalizeTitle(img.title);
+            imageInfoCache.set(normTitle, { data: img, timestamp: now });
+            fetchedNormTitles.add(normTitle);
+          }
+
+          for (const rawTitle of titlesToFetch) {
+            const normTitle = normalizeTitle(rawTitle);
+            if (!fetchedNormTitles.has(normTitle)) {
+              imageInfoCache.set(normTitle, { data: null, timestamp: now });
+            }
+          }
+        } catch (error) {
+          console.error("[Commons Router] Failed to fetch image info batch from Commons:", error);
+          for (const rawTitle of titlesToFetch) {
+            const normTitle = normalizeTitle(rawTitle);
+            if (!imageInfoCache.has(normTitle)) {
+              imageInfoCache.set(normTitle, { data: null, timestamp: now });
+            }
+          }
+        }
+      }
+
+      return input.titles
+        .map((title) => {
+          const normKey = normalizeTitle(title);
+          const cached = imageInfoCache.get(normKey);
+          return cached ? cached.data : null;
+        })
+        .filter((img): img is CommonsImage => img !== null);
     }),
 });

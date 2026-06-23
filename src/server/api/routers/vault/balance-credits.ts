@@ -330,9 +330,8 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
 
   /**
    * Get budget multiplier for passive income
-   * Admin-only endpoint
    */
-  getBudgetMultiplier: adminProcedure
+  getBudgetMultiplier: protectedProcedure
     .input(
       z.object({
         countryId: z.string().min(1, "Country ID is required"),
@@ -360,9 +359,8 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
 
   /**
    * Get detailed budget multiplier breakdown by department
-   * Admin-only endpoint
    */
-  getBudgetMultiplierBreakdown: adminProcedure
+  getBudgetMultiplierBreakdown: protectedProcedure
     .input(
       z.object({
         countryId: z.string().min(1, "Country ID is required"),

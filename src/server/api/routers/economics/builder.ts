@@ -515,9 +515,19 @@ const economicsBuilderRouter = createTRPCRouter({
         250000000000;
 
       // Transform database data back to economy builder format
-      const sectorBreakdown = country.economicProfile?.sectorBreakdown
-        ? JSON.parse(country.economicProfile.sectorBreakdown)
-        : [];
+      let sectorBreakdown: any[] = [];
+      if (country.economicProfile?.sectorBreakdown) {
+        try {
+          const parsed = JSON.parse(country.economicProfile.sectorBreakdown);
+          if (Array.isArray(parsed)) {
+            sectorBreakdown = parsed.filter(
+              (x): x is Record<string, any> => x !== null && typeof x === "object"
+            );
+          }
+        } catch (e) {
+          console.error("[Economics Builder] Failed to parse sectorBreakdown:", e);
+        }
+      }
 
       return {
         structure: {

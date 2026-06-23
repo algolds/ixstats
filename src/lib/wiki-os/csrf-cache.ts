@@ -7,7 +7,7 @@
 
 import { env } from "~/env";
 import { TRPCError } from "@trpc/server";
-import { getWikiAuth, isWikiAdmin } from "~/lib/wiki-os/auth";
+import { getWikiAuth } from "~/lib/wiki-os/auth";
 
 let cachedBotToken: string | null = null;
 let cachedBotCookies: string[] = [];

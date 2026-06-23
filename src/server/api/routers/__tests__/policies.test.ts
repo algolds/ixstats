@@ -13,6 +13,7 @@ import { notificationAPI } from "~/lib/notification-api";
 type MockFn = jest.Mock<any, any>;
 
 const mockDb = {
+  $transaction: jest.fn(async (cb: any) => cb(mockDb)) as MockFn,
   policy: {
     create: jest.fn() as MockFn,
     update: jest.fn() as MockFn,
@@ -38,6 +39,25 @@ const mockDb = {
   storytellerEffect: {
     create: jest.fn() as MockFn,
     updateMany: jest.fn() as MockFn,
+  },
+  governmentStructure: {
+    findUnique: jest.fn() as MockFn,
+    update: jest.fn() as MockFn,
+  },
+  cabinetMeeting: {
+    create: jest.fn() as MockFn,
+  },
+  meetingDecision: {
+    create: jest.fn() as MockFn,
+  },
+  meetingActionItem: {
+    create: jest.fn() as MockFn,
+  },
+  countryEvent: {
+    create: jest.fn() as MockFn,
+  },
+  countryEventConsequence: {
+    createMany: jest.fn() as MockFn,
   },
 };
 
@@ -131,6 +151,14 @@ describe("policiesRouter scheduling and notifications", () => {
       priority: "critical",
     };
 
+    mockDb.policy.findUnique.mockResolvedValue(policyRecord);
+    mockDb.governmentStructure.findUnique.mockResolvedValue({ totalBudget: 1000000 });
+    mockDb.governmentStructure.update.mockResolvedValue({});
+    mockDb.cabinetMeeting.create.mockResolvedValue({ id: "meeting_1" });
+    mockDb.meetingDecision.create.mockResolvedValue({ id: "decision_1" });
+    mockDb.meetingActionItem.create.mockResolvedValue({ id: "action_item_1" });
+    mockDb.countryEvent.create.mockResolvedValue({ id: "event_1" });
+    mockDb.countryEventConsequence.createMany.mockResolvedValue({ count: 1 });
     mockDb.policy.update.mockResolvedValue({ ...policyRecord, status: "active" });
     mockDb.user.findFirst.mockResolvedValue({ clerkUserId: "user_1" });
     mockDb.country.findUnique.mockResolvedValue({ name: "Testland" });

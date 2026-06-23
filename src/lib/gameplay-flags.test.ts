@@ -14,7 +14,7 @@ describe("GAMEPLAY_FLAGS", () => {
       delete process.env.ISSUES_ENFORCE_DEADLINES;
       delete process.env.ISSUES_AWARD_CREDITS;
       const { GAMEPLAY_FLAGS } = require("./gameplay-flags");
-      expect(GAMEPLAY_FLAGS.issuesAutoGenerate).toBe(false);
+      expect(GAMEPLAY_FLAGS.issuesAutoGenerate).toBe(true);
       expect(GAMEPLAY_FLAGS.issuesEnforceDeadlines).toBe(false);
       expect(GAMEPLAY_FLAGS.issuesAwardCredits).toBe(false);
     });
@@ -42,7 +42,7 @@ describe("GAMEPLAY_FLAGS", () => {
         ISSUES_AWARD_CREDITS: "",
       };
       const { GAMEPLAY_FLAGS } = require("./gameplay-flags");
-      expect(GAMEPLAY_FLAGS.issuesAutoGenerate).toBe(false);
+      expect(GAMEPLAY_FLAGS.issuesAutoGenerate).toBe(true);
       expect(GAMEPLAY_FLAGS.issuesEnforceDeadlines).toBe(false);
       expect(GAMEPLAY_FLAGS.issuesAwardCredits).toBe(false);
     });

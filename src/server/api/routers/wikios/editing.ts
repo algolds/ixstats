@@ -10,16 +10,17 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/parsoid-client";
 import { getWikiAuth } from "~/lib/wiki-os/auth";
 import {
-  getArticleWikitext,
   getPageHistory,
   getRevisionWikitext as getRevisionWikitextMySQL,
 } from "~/lib/wiki-bridge";
 import { transformWikiLinks } from "~/lib/wiki-os/url-compat";
 
-import { getUserSessionAndToken } from "~/lib/wiki-os/csrf-cache";
-
-import { db } from "~/server/db";
-import { saveToMediaWiki, cleanHtmlForParsoid, updateFileUploadActor } from "~/lib/wiki-os/wiki-write-service";
+import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
+import {
+  saveToMediaWiki,
+  cleanHtmlForParsoid,
+  updateFileUploadActor,
+} from "~/lib/wiki-os/wiki-write-service";
 
 export const wikiosEditingRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -225,40 +226,61 @@ export const wikiosEditingRouter = createTRPCRouter({
         throw new Error("File size exceeds 10MB limit");
       }
 
-      const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
+      let { cookies, csrfToken } = await getUserSessionAndToken(ctx);
       const { wikiUsername } = getWikiAuth(ctx);
 
-      // Build multipart form data
-      const formData = new FormData();
-      formData.append("action", "upload");
-      formData.append("filename", input.filename);
-      formData.append(
-        "comment",
-        `${input.comment} (via WikiOS)`
-      );
-      formData.append("token", csrfToken);
-      formData.append("format", "json");
-      formData.append("ignorewarnings", "1");
-      formData.append("file", new Blob([fileBuffer]), input.filename);
+      let attempt = 0;
+      let uploadData: any;
 
-      const uploadRes = await fetch(apiBase, {
-        method: "POST",
-        headers: {
-          Cookie: cookies.join("; "),
-        },
-        body: formData,
-      });
+      while (attempt < 2) {
+        // Build multipart form data
+        const formData = new FormData();
+        formData.append("action", "upload");
+        formData.append("filename", input.filename);
+        formData.append("comment", `${input.comment} (via WikiOS)`);
+        formData.append("token", csrfToken);
+        formData.append("format", "json");
+        formData.append("ignorewarnings", "1");
+        formData.append("file", new Blob([fileBuffer]), input.filename);
 
-      const uploadData = (await uploadRes.json()) as {
-        upload?: {
-          result: string;
-          filename?: string;
-          imageinfo?: { url?: string; descriptionurl?: string };
+        const uploadRes = await fetch(apiBase, {
+          method: "POST",
+          headers: {
+            Cookie: cookies.join("; "),
+          },
+          body: formData,
+        });
+
+        uploadData = (await uploadRes.json()) as {
+          upload?: {
+            result: string;
+            filename?: string;
+            imageinfo?: { url?: string; descriptionurl?: string };
+          };
+          error?: { code: string; info: string };
         };
-        error?: { code: string; info: string };
-      };
 
-      if (uploadData.error) throw new Error(`Upload failed: ${uploadData.error.info}`);
+        if (uploadData.error) {
+          if (uploadData.error.code === "badtoken" && attempt === 0) {
+            console.warn(
+              "[Editing Router] Bad token for upload. Invalidating cache and retrying..."
+            );
+            invalidateCsrfToken();
+            const fresh = await getUserSessionAndToken(ctx);
+            cookies = fresh.cookies;
+            csrfToken = fresh.csrfToken;
+            attempt++;
+            continue;
+          }
+          throw new Error(`Upload failed: ${uploadData.error.info}`);
+        }
+
+        break;
+      }
+
+      if (uploadData?.error) {
+        throw new Error(`Upload failed: ${uploadData.error.info}`);
+      }
 
       if (uploadData.upload?.result === "Success" && wikiUsername) {
         await updateFileUploadActor(uploadData.upload.filename ?? input.filename, wikiUsername);

@@ -8,7 +8,10 @@ import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { resolveWikiPlaceholdersInternal } from "~/server/api/routers/wiki";
 import type { Pool, RowDataPacket, ResultSetHeader } from "mysql2/promise";
 
-export async function getOrCreateWikiActorId(pool: Pool, wikiUsername: string): Promise<number | null> {
+export async function getOrCreateWikiActorId(
+  pool: Pool,
+  wikiUsername: string
+): Promise<number | null> {
   const [actorRows] = await pool.execute<RowDataPacket[]>(
     "SELECT actor_id FROM actor WHERE actor_name = ? LIMIT 1",
     [wikiUsername]
@@ -86,7 +89,10 @@ export async function updateRevisionActor(revid: number, wikiUsername: string): 
   }
 }
 
-export async function updateFileUploadActor(filename: string, wikiUsername: string): Promise<boolean> {
+export async function updateFileUploadActor(
+  filename: string,
+  wikiUsername: string
+): Promise<boolean> {
   const pool = getWikiDbPool() as Pool;
   try {
     const actorId = await getOrCreateWikiActorId(pool, wikiUsername);
@@ -112,7 +118,10 @@ export async function updateFileUploadActor(filename: string, wikiUsername: stri
       const pageId = pageRows[0]!.page_id as number;
       const latestRev = pageRows[0]!.page_latest as number;
 
-      await pool.execute("UPDATE revision SET rev_actor = ? WHERE rev_id = ?", [actorId, latestRev]);
+      await pool.execute("UPDATE revision SET rev_actor = ? WHERE rev_id = ?", [
+        actorId,
+        latestRev,
+      ]);
       await pool.execute(
         "UPDATE recentchanges SET rc_actor = ?, rc_user = ?, rc_user_text = ? WHERE rc_this_oldid = ?",
         [actorId, userId, wikiUsername, latestRev]
@@ -250,48 +259,65 @@ export async function saveToMediaWiki(
   isTemplateSync = false
 ): Promise<{ success: boolean; revisionId: number | null; editConflict?: boolean }> {
   const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-  const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
+  let { cookies, csrfToken } = await getUserSessionAndToken(ctx);
   const { wikiUsername } = getWikiAuth(ctx);
 
-  const editParams = new URLSearchParams({
-    action: "edit",
-    title,
-    text: wikitext,
-    summary: `${summary} (via WikiOS)`,
-    token: csrfToken,
-    format: "json",
-  });
-  if (minor) editParams.set("minor", "1");
-  if (basetimestamp) {
-    editParams.set("basetimestamp", basetimestamp);
-    editParams.set("starttimestamp", new Date().toISOString());
+  let attempt = 0;
+  let editData: any;
+
+  while (attempt < 2) {
+    const editParams = new URLSearchParams({
+      action: "edit",
+      title,
+      text: wikitext,
+      summary: `${summary} (via WikiOS)`,
+      token: csrfToken,
+      format: "json",
+    });
+    if (minor) editParams.set("minor", "1");
+    if (basetimestamp) {
+      editParams.set("basetimestamp", basetimestamp);
+      editParams.set("starttimestamp", new Date().toISOString());
+    }
+
+    const editRes = await fetch(apiBase, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Cookie: cookies.join("; "),
+      },
+      body: editParams.toString(),
+    });
+
+    editData = (await editRes.json()) as {
+      edit?: { result: string; newrevid?: number };
+      error?: { code: string; info: string };
+    };
+
+    if (editData.error) {
+      if (editData.error.code === "editconflict") {
+        return { success: false, revisionId: null, editConflict: true };
+      }
+      if (editData.error.code === "badtoken" && attempt === 0) {
+        console.warn("[WikiWriteService] Bad token received. Invalidating cache and retrying...");
+        invalidateCsrfToken();
+        const fresh = await getUserSessionAndToken(ctx);
+        cookies = fresh.cookies;
+        csrfToken = fresh.csrfToken;
+        attempt++;
+        continue;
+      }
+      throw new Error(`MediaWiki edit failed: ${editData.error.info}`);
+    }
+
+    break;
   }
 
-  const editRes = await fetch(apiBase, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Cookie: cookies.join("; "),
-    },
-    body: editParams.toString(),
-  });
-
-  const editData = (await editRes.json()) as {
-    edit?: { result: string; newrevid?: number };
-    error?: { code: string; info: string };
-  };
-
-  if (editData.error) {
-    if (editData.error.code === "editconflict") {
-      return { success: false, revisionId: null, editConflict: true };
-    }
-    if (editData.error.code === "badtoken") {
-      invalidateCsrfToken();
-    }
+  if (editData?.error) {
     throw new Error(`MediaWiki edit failed: ${editData.error.info}`);
   }
 
-  const revId = editData.edit?.newrevid ?? null;
+  const revId = editData?.edit?.newrevid ?? null;
 
   if (revId && wikiUsername) {
     await updateRevisionActor(revId, wikiUsername);

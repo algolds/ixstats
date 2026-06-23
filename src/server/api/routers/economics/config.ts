@@ -270,6 +270,20 @@ const economicsConfigRouter = createTRPCRouter({
       }
 
       // Transform database data back to builder configuration format
+      let sectorBreakdown: any[] = [];
+      if (country.economicProfile?.sectorBreakdown) {
+        try {
+          const parsed = JSON.parse(country.economicProfile.sectorBreakdown);
+          if (Array.isArray(parsed)) {
+            sectorBreakdown = parsed.filter(
+              (x): x is Record<string, any> => x !== null && typeof x === "object"
+            );
+          }
+        } catch (e) {
+          console.error("[Economics Config] Failed to parse sectorBreakdown:", e);
+        }
+      }
+
       return {
         structure: {
           economicModel: "Mixed Economy",
@@ -281,9 +295,7 @@ const economicsConfigRouter = createTRPCRouter({
           economicTier: country.economicTier || "Developing",
           growthStrategy: "Balanced",
         },
-        sectors: country.economicProfile?.sectorBreakdown
-          ? JSON.parse(country.economicProfile.sectorBreakdown)
-          : [],
+        sectors: sectorBreakdown,
         laborMarket: {
           totalWorkforce: Math.round(
             ((country.currentPopulation || 0) * (country.laborForceParticipationRate || 65)) / 100

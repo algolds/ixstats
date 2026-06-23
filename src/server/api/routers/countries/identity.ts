@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
@@ -32,10 +31,7 @@ export const identityProcedures = {
       });
 
       if (!country) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Country with identifier ${input.id} not found`,
-        });
+        return null;
       }
 
       return {

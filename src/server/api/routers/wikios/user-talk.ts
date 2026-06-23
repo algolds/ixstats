@@ -18,9 +18,7 @@ import {
 } from "~/lib/wiki-bridge";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
 
-import { getUserSessionAndToken } from "~/lib/wiki-os/csrf-cache";
-
-import { db } from "~/server/db";
+import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
 import { updateRevisionActor } from "~/lib/wiki-os/wiki-write-service";
 
 export const wikiosUserTalkRouter = createTRPCRouter({
@@ -165,38 +163,62 @@ export const wikiosUserTalkRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-      const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
+      let { cookies, csrfToken } = await getUserSessionAndToken(ctx);
 
       const talkTitle = input.title.startsWith("Talk:") ? input.title : `Talk:${input.title}`;
       // Sign the content with ~~~~ (MediaWiki auto-replaces with username + timestamp)
       const signedContent = `${input.content}\n\n~~~~`;
 
-      const editParams = new URLSearchParams({
-        action: "edit",
-        title: talkTitle,
-        section: "new",
-        sectiontitle: input.sectionTitle,
-        text: signedContent,
-        summary: `/* ${input.sectionTitle} */ new section (via WikiOS)`,
-        token: csrfToken,
-        format: "json",
-      });
+      let attempt = 0;
+      let editData: any;
 
-      const editRes = await fetch(apiBase, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Cookie: cookies.join("; "),
-        },
-        body: editParams.toString(),
-      });
+      while (attempt < 2) {
+        const editParams = new URLSearchParams({
+          action: "edit",
+          title: talkTitle,
+          section: "new",
+          sectiontitle: input.sectionTitle,
+          text: signedContent,
+          summary: `/* ${input.sectionTitle} */ new section (via WikiOS)`,
+          token: csrfToken,
+          format: "json",
+        });
 
-      const editData = (await editRes.json()) as {
-        edit?: { result: string; newrevid?: number };
-        error?: { code: string; info: string };
-      };
+        const editRes = await fetch(apiBase, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Cookie: cookies.join("; "),
+          },
+          body: editParams.toString(),
+        });
 
-      if (editData.error) throw new Error(`Talk page edit failed: ${editData.error.info}`);
+        editData = (await editRes.json()) as {
+          edit?: { result: string; newrevid?: number };
+          error?: { code: string; info: string };
+        };
+
+        if (editData.error) {
+          if (editData.error.code === "badtoken" && attempt === 0) {
+            console.warn(
+              "[UserTalk Router] Bad token for addTalkSection. Invalidating cache and retrying..."
+            );
+            invalidateCsrfToken();
+            const fresh = await getUserSessionAndToken(ctx);
+            cookies = fresh.cookies;
+            csrfToken = fresh.csrfToken;
+            attempt++;
+            continue;
+          }
+          throw new Error(`Talk page edit failed: ${editData.error.info}`);
+        }
+
+        break;
+      }
+
+      if (editData?.error) {
+        throw new Error(`Talk page edit failed: ${editData.error.info}`);
+      }
 
       const { wikiUsername } = getWikiAuth(ctx);
       const revId = editData.edit?.newrevid ?? null;
@@ -239,36 +261,60 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       if (sectionData.error) throw new Error(`Failed to fetch section: ${sectionData.error.info}`);
       const currentText = sectionData.parse?.wikitext ?? "";
 
-      const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
+      let { cookies, csrfToken } = await getUserSessionAndToken(ctx);
 
       const signedContent = `${input.content}\n\n~~~~`;
       const newText = `${currentText.trimEnd()}\n\n${signedContent}`;
 
-      const editParams = new URLSearchParams({
-        action: "edit",
-        title: talkTitle,
-        section: String(input.sectionIndex),
-        text: newText,
-        summary: `Reply (via WikiOS)`,
-        token: csrfToken,
-        format: "json",
-      });
+      let attempt = 0;
+      let editData: any;
 
-      const editRes = await fetch(apiBase, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Cookie: cookies.join("; "),
-        },
-        body: editParams.toString(),
-      });
+      while (attempt < 2) {
+        const editParams = new URLSearchParams({
+          action: "edit",
+          title: talkTitle,
+          section: String(input.sectionIndex),
+          text: newText,
+          summary: `Reply (via WikiOS)`,
+          token: csrfToken,
+          format: "json",
+        });
 
-      const editData = (await editRes.json()) as {
-        edit?: { result: string; newrevid?: number };
-        error?: { code: string; info: string };
-      };
+        const editRes = await fetch(apiBase, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Cookie: cookies.join("; "),
+          },
+          body: editParams.toString(),
+        });
 
-      if (editData.error) throw new Error(`Reply failed: ${editData.error.info}`);
+        editData = (await editRes.json()) as {
+          edit?: { result: string; newrevid?: number };
+          error?: { code: string; info: string };
+        };
+
+        if (editData.error) {
+          if (editData.error.code === "badtoken" && attempt === 0) {
+            console.warn(
+              "[UserTalk Router] Bad token for replyToTalkSection. Invalidating cache and retrying..."
+            );
+            invalidateCsrfToken();
+            const fresh = await getUserSessionAndToken(ctx);
+            cookies = fresh.cookies;
+            csrfToken = fresh.csrfToken;
+            attempt++;
+            continue;
+          }
+          throw new Error(`Reply failed: ${editData.error.info}`);
+        }
+
+        break;
+      }
+
+      if (editData?.error) {
+        throw new Error(`Reply failed: ${editData.error.info}`);
+      }
 
       const { wikiUsername } = getWikiAuth(ctx);
       const revId = editData.edit?.newrevid ?? null;
