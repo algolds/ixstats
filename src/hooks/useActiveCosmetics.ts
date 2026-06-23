@@ -172,7 +172,31 @@ export function useActiveCosmetics(): ActiveCosmetics {
       }
     }
 
-    setCosmeticsState(computed);
+    // Prevent redundant state updates if the computed state is structurally identical
+    setCosmeticsState((prev) => {
+      const isGlowEqual =
+        prev.avatarGlow.enabled === computed.avatarGlow.enabled &&
+        prev.avatarGlow.color === computed.avatarGlow.color &&
+        prev.avatarGlow.intensity === computed.avatarGlow.intensity &&
+        prev.avatarGlow.style === computed.avatarGlow.style;
+
+      const isBadgeEqual =
+        prev.chatBadge.enabled === computed.chatBadge.enabled &&
+        prev.chatBadge.icon === computed.chatBadge.icon &&
+        prev.chatBadge.color === computed.chatBadge.color;
+
+      const isFrameEqual =
+        prev.neonFrame.enabled === computed.neonFrame.enabled &&
+        prev.neonFrame.color === computed.neonFrame.color &&
+        prev.neonFrame.style === computed.neonFrame.style;
+
+      const isLoadingEqual = prev.isLoading === computed.isLoading;
+
+      if (isGlowEqual && isBadgeEqual && isFrameEqual && isLoadingEqual) {
+        return prev;
+      }
+      return computed;
+    });
   }, [
     ownedData,
     storeItems,
