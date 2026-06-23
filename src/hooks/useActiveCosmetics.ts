@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { getCosmeticEffects } from "~/lib/cosmetics";
+import { useUser } from "~/context/auth-context";
 
 export interface AvatarGlowConfig {
   enabled: boolean;
   color: string;
   intensity: string;
+  style?: string;
 }
 
 export interface ChatBadgeConfig {
@@ -17,7 +19,7 @@ export interface ChatBadgeConfig {
 export interface NeonFrameConfig {
   enabled: boolean;
   color: string;
-  style: string;
+  style?: string;
 }
 
 export interface ActiveCosmetics {
@@ -28,13 +30,22 @@ export interface ActiveCosmetics {
 }
 
 const DEFAULT_COSMETICS: ActiveCosmetics = {
-  avatarGlow: { enabled: false, color: "", intensity: "" },
+  avatarGlow: { enabled: false, color: "", intensity: "", style: "" },
   chatBadge: { enabled: false, icon: "", color: "" },
   neonFrame: { enabled: false, color: "", style: "" },
   isLoading: true,
 };
 
 export function useActiveCosmetics(): ActiveCosmetics {
+  const { user: authUser, isSignedIn, isLoaded } = useUser();
+
+  // Query current user role
+  const { data: currentUserData, isLoading: userLoading } =
+    api.users.getCurrentUserWithRole.useQuery(undefined, {
+      enabled: isLoaded && isSignedIn && !!authUser,
+      staleTime: 60000,
+    });
+
   // Query owned items
   const { data: ownedData, isLoading: ownedLoading } = api.vault.getPurchasedItems.useQuery(
     undefined,
@@ -93,7 +104,7 @@ export function useActiveCosmetics(): ActiveCosmetics {
 
   // Compute final states whenever inputs change
   useEffect(() => {
-    if (ownedLoading || itemsLoading || equippedLoading) {
+    if (ownedLoading || itemsLoading || equippedLoading || (isSignedIn && userLoading)) {
       setCosmeticsState((prev) => ({ ...prev, isLoading: true }));
       return;
     }
@@ -102,21 +113,31 @@ export function useActiveCosmetics(): ActiveCosmetics {
     const items = storeItems || [];
     const serverEquipped = equippedData?.equipped || [];
 
+    const userRoleLevel = currentUserData?.user?.role?.level;
+    const isAdmin = userRoleLevel !== undefined && userRoleLevel <= 10;
+
     const computed: ActiveCosmetics = {
-      avatarGlow: { enabled: false, color: "rgba(245,158,11,0.65)", intensity: "15px" },
+      avatarGlow: isAdmin
+        ? { enabled: true, color: "rgba(234,179,8,0.8)", intensity: "20px", style: "imperial" }
+        : { enabled: false, color: "rgba(245,158,11,0.65)", intensity: "15px" },
       chatBadge: { enabled: false, icon: "Crown", color: "#f59e0b" },
       neonFrame: { enabled: false, color: "#22d3ee", style: "pulse" },
       isLoading: false,
     };
 
+    const previewCosmeticId =
+      typeof window !== "undefined" ? localStorage.getItem("settings:preview-cosmetic") : null;
+
     for (const item of items) {
-      if (!ownedItemIds.includes(item.id)) continue;
+      const isPreview = item.id === previewCosmeticId;
+      if (!ownedItemIds.includes(item.id) && !isPreview) continue;
 
       // Check if item is enabled (server equipped takes priority, fallback to local storage)
       const isEnabled =
-        item.category === "cosmetics"
+        isPreview ||
+        (item.category === "cosmetics"
           ? serverEquipped.includes(item.id) || (localActive.cosmetics[item.id] ?? false)
-          : (localActive.upgrades[item.id] ?? false);
+          : (localActive.upgrades[item.id] ?? false));
 
       if (!isEnabled) continue;
 
@@ -131,6 +152,7 @@ export function useActiveCosmetics(): ActiveCosmetics {
             enabled: true,
             color: custom.avatarGlow.color || computed.avatarGlow.color,
             intensity: custom.avatarGlow.intensity || computed.avatarGlow.intensity,
+            style: custom.avatarGlow.style || computed.avatarGlow.style,
           };
         }
         if (custom.chatBadge?.enabled) {
@@ -159,6 +181,9 @@ export function useActiveCosmetics(): ActiveCosmetics {
     itemsLoading,
     equippedLoading,
     localActive,
+    currentUserData,
+    userLoading,
+    isSignedIn,
   ]);
 
   return cosmeticsState;

@@ -101,6 +101,9 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
       wikiCache: {
         upsert: jest.fn().mockResolvedValue({}),
       },
+      vaultTransaction: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
     };
 
     const createCaller = createCallerFactory(sportsRouter);
@@ -149,6 +152,9 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
         id: "team_123",
         ownerUserId: "test-manager-id",
       });
+      mockPrisma.vaultTransaction.findMany.mockResolvedValue([
+        { metadata: { itemId: "upgrade_myclub_license" } },
+      ]);
 
       await caller.claimTeam({ teamId: "team_123" });
 

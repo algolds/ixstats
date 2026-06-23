@@ -15,6 +15,7 @@ export interface StoreItem {
   glowColor: string;
   quality: string; // "LEGENDARY" | "EPIC" | "RARE" | "COMMON"
   badgeText: string;
+  category?: string;
 }
 
 interface StoreItemCardProps {
@@ -22,9 +23,22 @@ interface StoreItemCardProps {
   onPurchase: (item: StoreItem) => void;
   isPurchasing: boolean;
   isOwned: boolean;
+  purchaseCount?: number;
+  maxPurchases?: number;
+  isPreviewing?: boolean;
+  onPreview?: (item: StoreItem) => void;
 }
 
-export function StoreItemCard({ item, onPurchase, isPurchasing, isOwned }: StoreItemCardProps) {
+export function StoreItemCard({
+  item,
+  onPurchase,
+  isPurchasing,
+  isOwned,
+  purchaseCount = 0,
+  maxPurchases = 1,
+  isPreviewing = false,
+  onPreview,
+}: StoreItemCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const Icon = item.icon;
 
@@ -92,8 +106,9 @@ export function StoreItemCard({ item, onPurchase, isPurchasing, isOwned }: Store
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "glass-surface relative flex h-[280px] w-44 flex-col justify-between rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)]",
-          colors.border
+          "glass-surface relative flex h-auto min-h-[280px] w-44 flex-col justify-between rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)]",
+          colors.border,
+          isPreviewing && "border-cyan-500/60 shadow-[0_0_15px_var(--glow)]"
         )}
         style={
           {
@@ -123,13 +138,22 @@ export function StoreItemCard({ item, onPurchase, isPurchasing, isOwned }: Store
           >
             {item.badgeText}
           </Badge>
-          {isOwned && (
+          {isOwned ? (
             <Badge
               variant="outline"
               className="border-emerald-500/35 bg-emerald-500/20 px-1 py-0 text-[8px] font-bold text-emerald-600 uppercase dark:text-emerald-400"
             >
-              Owned
+              {maxPurchases > 1 ? "Maxed Out" : "Owned"}
             </Badge>
+          ) : (
+            purchaseCount > 0 && (
+              <Badge
+                variant="outline"
+                className="border-amber-500/35 bg-amber-500/20 px-1 py-0 text-[8px] font-bold text-amber-600 uppercase dark:text-emerald-400"
+              >
+                Owned x{purchaseCount}
+              </Badge>
+            )
           )}
         </div>
 
@@ -143,16 +167,31 @@ export function StoreItemCard({ item, onPurchase, isPurchasing, isOwned }: Store
           >
             <Icon className={cn("h-7 w-7", colors.text)} />
           </div>
-          <h4 className="line-clamp-1 text-center text-xs font-black tracking-wide text-slate-900 dark:text-white/95">
+          <h4 className="text-center text-xs font-black tracking-wide text-slate-900 dark:text-white/95">
             {item.name}
           </h4>
-          <p className="text-muted-foreground mt-1 line-clamp-3 text-center text-[9px] leading-tight">
+          <p className="text-muted-foreground mt-1 text-center text-[9px] leading-tight">
             {item.description}
           </p>
         </div>
 
         {/* Card Button / Footer */}
-        <div className="border-border/50 w-full border-t pt-1.5">
+        <div className="border-border/50 flex w-full flex-col gap-1 border-t pt-1.5">
+          {item.category === "cosmetics" && onPreview && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPreview(item)}
+              className={cn(
+                "h-7 w-full border text-[10px] font-bold transition-all duration-200",
+                isPreviewing
+                  ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-600 shadow-[0_0_8px_rgba(6,182,212,0.25)] dark:text-cyan-400"
+                  : "border-border/40 hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {isPreviewing ? "Previewing" : "Preview"}
+            </Button>
+          )}
           <Button
             onClick={() => onPurchase(item)}
             disabled={isPurchasing || isOwned}

@@ -68,8 +68,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "~/components/ui/dialog";
-import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 const PackOpeningSequence = dynamic(
   () =>
@@ -243,93 +243,67 @@ function PackShelfItem({ pack, actionButton }: PackShelfItemProps) {
           } as any
         }
       >
-        <Popover>
-          <PopoverTrigger
+        <Dialog>
+          <DialogTrigger
             onClick={(e) => {
               e.stopPropagation();
             }}
             className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-all hover:border-white/40 hover:bg-black/85 hover:text-white active:scale-95"
-            title="View Rarity Drop Rates"
+            title="View Pack Details"
           >
             <Info className="h-3.5 w-3.5" />
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-3">
-            <div>
-              <h4 className="mb-2 border-b border-cyan-500/20 pb-1 text-[10px] font-black tracking-wider text-cyan-600 uppercase dark:text-cyan-400">
-                Drop Probabilities
-              </h4>
-              <div className="space-y-1.5 font-mono text-[9px]">
-                <div className="text-muted-foreground flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-gray-400" /> Common
-                  </span>
-                  <span>{pack.commonOdds}%</span>
-                </div>
-                <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500" /> Uncommon
-                  </span>
-                  <span>{pack.uncommonOdds}%</span>
-                </div>
-                <div className="text-purple-650 flex items-center justify-between dark:text-purple-400">
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-purple-500" /> Rare
-                  </span>
-                  <span>{pack.rareOdds}%</span>
-                </div>
-                <div className="flex items-center justify-between text-pink-600 dark:text-pink-400">
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-pink-500" /> Ultra Rare
-                  </span>
-                  <span>{pack.ultraRareOdds}%</span>
-                </div>
-                <div className="flex items-center justify-between text-amber-600 dark:text-amber-500">
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Epic
-                  </span>
-                  <span>{pack.epicOdds}%</span>
-                </div>
-                <div className="flex items-center justify-between text-yellow-600 dark:text-yellow-500">
-                  <span className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" /> Legendary
-                  </span>
-                  <span>{pack.legendaryOdds}%</span>
-                </div>
+          </DialogTrigger>
+          <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md dark:bg-slate-900/98">
+            <DialogHeader>
+              <DialogTitle className="text-sm font-black tracking-wider text-cyan-600 uppercase dark:text-cyan-400">
+                {pack.name}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground mt-2 text-xs leading-relaxed">
+                {pack.description || "No detailed description available for this card pack."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="border-border/50 mt-4 space-y-2 border-t pt-3 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Price</span>
+                <span className="font-bold text-amber-500">{pack.priceCredits} Credits</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Cards Included</span>
+                <span className="font-bold">{pack.cardCount} cards</span>
+              </div>
+              {pack.guaranteedRarity && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Guaranteed Rarity</span>
+                  <span className="font-bold text-purple-400">
+                    {pack.guaranteedRarity.replace("_", " ")}
+                  </span>
+                </div>
+              )}
+              {pack.season && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Season</span>
+                  <span className="font-bold">Season {pack.season}</span>
+                </div>
+              )}
+              {pack.cardType && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Card Type</span>
+                  <span className="font-bold text-cyan-400 uppercase">{pack.cardType}</span>
+                </div>
+              )}
             </div>
-            {pack.guaranteedRarity && (
-              <div className="border-border/50 mt-1.5 border-t pt-1.5 text-center dark:border-white/10">
-                <span className="text-amber-650 block text-[8px] font-bold tracking-widest uppercase dark:text-amber-400">
-                  Guaranteed:
-                </span>
-                <span className="text-foreground text-[9px] font-black">
-                  {pack.guaranteedRarity.replace("_", " ")}
-                </span>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
+          </DialogContent>
+        </Dialog>
 
         <div className="relative aspect-[3/4.2] w-full overflow-hidden rounded-xl bg-slate-950">
-          {pack.artwork ? (
-            <div className="relative h-full w-full">
-              <img src={pack.artwork} alt={pack.name} className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
-              <div className="absolute right-3 bottom-3 left-3">
-                <p className="line-clamp-1 text-center text-xs font-black text-white/95 drop-shadow-md">
-                  {pack.name}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <PackHolographicCover
-              packType={pack.packType}
-              guaranteedRarity={pack.guaranteedRarity}
-              packName={pack.name}
-              size="md"
-              className="h-full w-full"
-            />
-          )}
+          <PackHolographicCover
+            packType={pack.packType}
+            guaranteedRarity={pack.guaranteedRarity}
+            packName={pack.name}
+            packArtwork={pack.artwork || undefined}
+            size="md"
+            className="h-full w-full"
+          />
         </div>
 
         <div className="mt-2.5 space-y-2 px-1">
@@ -479,6 +453,33 @@ export function VaultStoreTab() {
     },
   });
 
+  // Cosmetics Preview State
+  const [previewItemId, setPreviewItemId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("settings:preview-cosmetic");
+  });
+
+  const handlePreview = (item: StoreItem) => {
+    if (previewItemId === item.id) {
+      setPreviewItemId(null);
+      localStorage.removeItem("settings:preview-cosmetic");
+      notify.info("Preview Cleared", "Cosmetic preview removed.");
+    } else {
+      setPreviewItemId(item.id);
+      localStorage.setItem("settings:preview-cosmetic", item.id);
+      notify.success("Preview Active", `Previewing ${item.name} effects.`);
+    }
+    window.dispatchEvent(new Event("cosmetics-updated"));
+  };
+
+  // Clean up preview on navigate-away / unmount
+  useEffect(() => {
+    return () => {
+      localStorage.removeItem("settings:preview-cosmetic");
+      window.dispatchEvent(new Event("cosmetics-updated"));
+    };
+  }, []);
+
   // Store items definitions mapped dynamically from database
   const cosmetics: StoreItem[] = (storeItems || [])
     .filter((item: any) => item.category === "cosmetics")
@@ -491,10 +492,18 @@ export function VaultStoreTab() {
       glowColor: item.glowColor || "rgba(245,158,11,0.35)",
       quality: item.quality,
       badgeText: item.badgeText || "Custom",
+      category: item.category,
     }));
 
   const upgrades: StoreItem[] = (storeItems || [])
     .filter((item: any) => item.category === "upgrades")
+    .filter((item: any) => {
+      if (item.id === "upgrade_card_capacity_mega") {
+        const standardCount = (ownedData as any)?.purchaseCounts?.["upgrade_card_capacity"] || 0;
+        return standardCount >= 5;
+      }
+      return true;
+    })
     .map((item: any) => ({
       id: item.id,
       name: item.name,
@@ -504,6 +513,7 @@ export function VaultStoreTab() {
       glowColor: item.glowColor || "rgba(245,158,11,0.35)",
       quality: item.quality,
       badgeText: item.badgeText || "Custom",
+      category: item.category,
     }));
 
   const handleCustomPurchaseConfirm = () => {
@@ -771,6 +781,8 @@ export function VaultStoreTab() {
                         onPurchase={(i) => setActiveCheckoutItem(i)}
                         isPurchasing={purchasingItemId === item.id}
                         isOwned={ownedItemIds.includes(item.id)}
+                        isPreviewing={previewItemId === item.id}
+                        onPreview={handlePreview}
                       />
                     </div>
                   ))}
@@ -779,16 +791,22 @@ export function VaultStoreTab() {
 
               {storeTab === "upgrades" && (
                 <div className="flex flex-wrap justify-center gap-8 py-6">
-                  {upgrades.map((item) => (
-                    <div key={item.id} className="shrink-0">
-                      <StoreItemCard
-                        item={item}
-                        onPurchase={(i) => setActiveCheckoutItem(i)}
-                        isPurchasing={purchasingItemId === item.id}
-                        isOwned={ownedItemIds.includes(item.id)}
-                      />
-                    </div>
-                  ))}
+                  {upgrades.map((item) => {
+                    const count = (ownedData as any)?.purchaseCounts?.[item.id] || 0;
+                    const max = item.id === "upgrade_card_capacity" ? 5 : 1;
+                    return (
+                      <div key={item.id} className="shrink-0">
+                        <StoreItemCard
+                          item={item}
+                          onPurchase={(i) => setActiveCheckoutItem(i)}
+                          isPurchasing={purchasingItemId === item.id}
+                          isOwned={count >= max}
+                          purchaseCount={count}
+                          maxPurchases={max}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </motion.div>

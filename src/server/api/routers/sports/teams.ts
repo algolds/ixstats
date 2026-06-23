@@ -120,7 +120,10 @@ export const sportsTeamsRouter = createTRPCRouter({
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        const team = await ctx.db.sportTeam.findUnique({
+          where: { id: input.teamId },
+          include: { league: true },
+        });
         if (!team) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         }
@@ -130,6 +133,48 @@ export const sportsTeamsRouter = createTRPCRouter({
             code: "BAD_REQUEST",
             message: "Team is already claimed",
           });
+        }
+
+        // Fetch user's SPEND_BOOST transactions to verify purchased store upgrades
+        const userTxs = await ctx.db.vaultTransaction.findMany({
+          where: {
+            vault: { userId: ctx.user.id },
+            type: "SPEND_BOOST",
+          },
+        });
+
+        const checkUpgradeOwned = (upgradeId: string): boolean => {
+          return userTxs.some((tx) => {
+            let meta = tx.metadata;
+            if (typeof meta === "string") {
+              try {
+                meta = JSON.parse(meta);
+              } catch {}
+            }
+            return meta && typeof meta === "object" && (meta as any).itemId === upgradeId;
+          });
+        };
+
+        // 1. Verify MyClub Team License
+        const ownsClubLicense = checkUpgradeOwned("upgrade_myclub_license");
+        if (!ownsClubLicense) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message:
+              "You must purchase the MyClub Team License Token (5,000 Vault Credits) from the Vault Store to claim a team.",
+          });
+        }
+
+        // 2. Verify MyLeague Franchise Pass for canonical leagues
+        if (team.league?.isCanonical) {
+          const ownsFranchisePass = checkUpgradeOwned("upgrade_myleague_franchise");
+          if (!ownsFranchisePass) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message:
+                "You must purchase the MyLeague Franchise Pass (2,500 Vault Credits) from the Vault Store to claim a team in an official canonical league.",
+            });
+          }
         }
 
         await exchangeService.spend(

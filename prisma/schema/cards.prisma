@@ -251,6 +251,7 @@ model CardPack {
   limitedQuantity  Int?
   purchaseLimit    Int?
   expiresAt        DateTime?
+  pdsConfig        Json?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @default(now())
   UserPack         UserPack[]

@@ -50,6 +50,7 @@ import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { GlassLineChart } from "~/components/charts/RechartsIntegration";
 import { api } from "~/trpc/react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 
 /**
  * CardDetailsModal component props
@@ -413,27 +414,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       />
 
                       {/* Neon Frame Overlay */}
-                      {neonFrame.enabled && (
-                        <motion.div
-                          className="pointer-events-none absolute inset-0 z-30 rounded-2xl"
-                          style={{
-                            border: `2px solid ${neonFrame.color}`,
-                            boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
-                          }}
-                          animate={
-                            neonFrame.style === "pulse"
-                              ? {
-                                  opacity: [0.5, 1, 0.5],
-                                }
-                              : undefined
-                          }
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                          }}
-                        />
-                      )}
+                      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-2xl" />
                     </div>
 
                     {/* Market value & ownership */}

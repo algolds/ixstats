@@ -54,6 +54,7 @@ export async function seedCardPacks() {
           limitedQuantity: pack.limitedQuantity,
           purchaseLimit: pack.purchaseLimit,
           expiresAt: pack.expiresAt ? new Date(pack.expiresAt) : null,
+          pdsConfig: pack.pdsConfig || undefined,
         },
       });
       console.log(`✨ Seeded card pack: ${pack.name} (${pack.packType})`);
@@ -68,7 +69,10 @@ export async function seedCardPacks() {
 }
 
 // Run immediately if executed directly
-if (process.argv[1] && (process.argv[1].endsWith("card-packs.ts") || process.argv[1].endsWith("card-packs"))) {
+if (
+  process.argv[1] &&
+  (process.argv[1].endsWith("card-packs.ts") || process.argv[1].endsWith("card-packs"))
+) {
   seedCardPacks()
     .catch((error) => {
       console.error("❌ Direct card pack seeding execution failed:", error);

@@ -35,6 +35,7 @@ describe("VaultService - Upgrades & Perks", () => {
       // Mock store items
       mockDb.vaultStoreItem.findMany.mockResolvedValue([
         {
+          id: "item_cap_50",
           effects: {
             perks: {
               cardCapacity: 50,
@@ -42,6 +43,7 @@ describe("VaultService - Upgrades & Perks", () => {
           },
         },
         {
+          id: "item_cap_100",
           effects: {
             perks: {
               cardCapacity: 100,
@@ -67,6 +69,7 @@ describe("VaultService - Upgrades & Perks", () => {
           isActive: true,
         },
         select: {
+          id: true,
           effects: true,
         },
       });
@@ -86,6 +89,7 @@ describe("VaultService - Upgrades & Perks", () => {
 
       mockDb.vaultStoreItem.findMany.mockResolvedValue([
         {
+          id: "item_cap_50",
           effects: {
             perks: {
               cardCapacity: 50,
@@ -93,6 +97,7 @@ describe("VaultService - Upgrades & Perks", () => {
           },
         },
         {
+          id: "item_cap_100",
           effects: {
             perks: {
               cardCapacity: 100,
@@ -103,6 +108,37 @@ describe("VaultService - Upgrades & Perks", () => {
 
       const boost = await vaultService.getCardCapacityBoost("user_123", mockDb);
       expect(boost).toBe(150);
+    });
+
+    it("should stack multiple purchases of the same item", async () => {
+      mockDb.vaultTransaction.findMany.mockResolvedValue([
+        { metadata: { itemId: "upgrade_card_capacity" } },
+        { metadata: { itemId: "upgrade_card_capacity" } },
+        { metadata: { itemId: "upgrade_card_capacity" } },
+        { metadata: { itemId: "upgrade_card_capacity_mega" } },
+      ]);
+
+      mockDb.vaultStoreItem.findMany.mockResolvedValue([
+        {
+          id: "upgrade_card_capacity",
+          effects: {
+            perks: {
+              cardCapacity: 50,
+            },
+          },
+        },
+        {
+          id: "upgrade_card_capacity_mega",
+          effects: {
+            perks: {
+              cardCapacity: 150,
+            },
+          },
+        },
+      ]);
+
+      const boost = await vaultService.getCardCapacityBoost("user_123", mockDb);
+      expect(boost).toBe(300); // 3 * 50 + 150
     });
   });
 
@@ -115,6 +151,7 @@ describe("VaultService - Upgrades & Perks", () => {
 
       mockDb.vaultStoreItem.findMany.mockResolvedValue([
         {
+          id: "item_yield_5",
           effects: {
             perks: {
               yieldBoost: 0.05,
@@ -122,6 +159,7 @@ describe("VaultService - Upgrades & Perks", () => {
           },
         },
         {
+          id: "item_yield_10",
           effects: {
             perks: {
               yieldBoost: 0.1,
@@ -156,6 +194,7 @@ describe("VaultService - Upgrades & Perks", () => {
 
       mockDb.vaultStoreItem.findMany.mockResolvedValue([
         {
+          id: "item_token_2",
           effects: {
             perks: {
               loreTokens: 2,
@@ -163,6 +202,7 @@ describe("VaultService - Upgrades & Perks", () => {
           },
         },
         {
+          id: "item_token_1",
           effects: {
             perks: {
               loreTokens: 1,

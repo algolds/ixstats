@@ -89,6 +89,7 @@ export const vaultStoreRouter = createTRPCRouter({
       });
 
       const purchasedItemIds = new Set<string>();
+      const purchaseCounts: Record<string, number> = {};
       for (const tx of transactions) {
         let meta = tx.metadata;
         if (typeof meta === "string") {
@@ -100,6 +101,7 @@ export const vaultStoreRouter = createTRPCRouter({
           const metaObj = meta as Record<string, any>;
           if (metaObj.itemId && typeof metaObj.itemId === "string") {
             purchasedItemIds.add(metaObj.itemId);
+            purchaseCounts[metaObj.itemId] = (purchaseCounts[metaObj.itemId] || 0) + 1;
           }
         }
       }
@@ -107,6 +109,7 @@ export const vaultStoreRouter = createTRPCRouter({
       return {
         success: true,
         purchasedItemIds: Array.from(purchasedItemIds),
+        purchaseCounts,
       };
     } catch (error) {
       console.error("[Vault Router] Error getting purchased items:", error);
@@ -144,7 +147,7 @@ export const vaultStoreRouter = createTRPCRouter({
           select: { metadata: true },
         });
 
-        const alreadyOwned = existingPurchases.some((tx) => {
+        const purchaseCount = existingPurchases.filter((tx) => {
           let meta = tx.metadata;
           if (typeof meta === "string") {
             try {
@@ -152,10 +155,39 @@ export const vaultStoreRouter = createTRPCRouter({
             } catch {}
           }
           return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
-        });
+        }).length;
 
-        if (alreadyOwned) {
-          throw new Error("You already own this item");
+        if (input.itemId === "upgrade_card_capacity") {
+          if (purchaseCount >= 5) {
+            throw new Error(
+              "You have reached the maximum purchase limit of 5 for Card Capacity Boost"
+            );
+          }
+        } else if (input.itemId === "upgrade_card_capacity_mega") {
+          const standardCount = existingPurchases.filter((tx) => {
+            let meta = tx.metadata;
+            if (typeof meta === "string") {
+              try {
+                meta = JSON.parse(meta);
+              } catch {}
+            }
+            return (
+              meta && typeof meta === "object" && (meta as any).itemId === "upgrade_card_capacity"
+            );
+          }).length;
+
+          if (standardCount < 5) {
+            throw new Error(
+              "You must purchase 5 standard Card Capacity Boosts to unlock the Mega Boost"
+            );
+          }
+          if (purchaseCount >= 1) {
+            throw new Error("You have already purchased the Mega Card Capacity Boost");
+          }
+        } else {
+          if (purchaseCount >= 1) {
+            throw new Error("You already own this item");
+          }
         }
 
         // 3. Spend credits using vaultService helper

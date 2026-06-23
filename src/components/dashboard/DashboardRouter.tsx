@@ -35,6 +35,8 @@ import { DashboardSidebarLayout } from "./sidebar/DashboardSidebarLayout";
 import { NewVersionNotice } from "./NewVersionNotice";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { AvatarGlow } from "~/components/vault/AvatarGlow";
+import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import * as LucideIcons from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
@@ -865,27 +867,7 @@ function DashboardHero({
   return (
     <div className="glass-surface relative overflow-hidden rounded-xl shadow-sm">
       {/* Neon Frame Overlay */}
-      {neonFrame.enabled && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 z-20 rounded-xl"
-          style={{
-            border: `2px solid ${neonFrame.color}`,
-            boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
-          }}
-          animate={
-            neonFrame.style === "pulse"
-              ? {
-                  opacity: [0.5, 1, 0.5],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      )}
+      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-xl" />
 
       <TextureOverlay texture="paperGrain" opacity={0.09} />
 
@@ -913,20 +895,7 @@ function DashboardHero({
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-2 flex items-start justify-between gap-2.5">
               <div className="flex min-w-0 items-center gap-2.5">
-                <div
-                  className={cn(
-                    "relative flex shrink-0 items-center justify-center rounded-sm shadow-sm",
-                    !avatarGlow.enabled && "border border-white/20"
-                  )}
-                  style={
-                    avatarGlow.enabled
-                      ? {
-                          boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
-                          border: `1px solid ${avatarGlow.color}`,
-                        }
-                      : undefined
-                  }
-                >
+                <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm" className="shadow-sm">
                   <div className="flex items-center justify-center overflow-hidden rounded-sm">
                     <UnifiedCountryFlag
                       showTooltip={false}
@@ -935,7 +904,7 @@ function DashboardHero({
                       className="shrink-0"
                     />
                   </div>
-                </div>
+                </AvatarGlow>
                 <div>
                   <Link
                     href={createUrl(`/countries/${stats.slug}`)}
@@ -970,8 +939,6 @@ function DashboardHero({
             </div>
 
             <div className="min-h-0 flex-1">{renderSectionContent()}</div>
-
-
           </div>
 
           <div className="flex items-center justify-between gap-x-2 gap-y-1.5">

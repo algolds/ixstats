@@ -305,20 +305,13 @@ export function CardPacksAdmin() {
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
-                    {pack.artwork ? (
-                      <img
-                        src={pack.artwork}
-                        alt={pack.name}
-                        className="border-border h-10 w-10 shrink-0 rounded-lg border object-cover"
-                      />
-                    ) : (
-                      <PackHolographicCover
-                        packType={pack.packType}
-                        guaranteedRarity={pack.guaranteedRarity}
-                        size="sm"
-                        className="!h-10 w-10 shrink-0 rounded-lg"
-                      />
-                    )}
+                    <PackHolographicCover
+                      packType={pack.packType}
+                      guaranteedRarity={pack.guaranteedRarity}
+                      packArtwork={pack.artwork || undefined}
+                      size="sm"
+                      className="!h-10 w-10 shrink-0 rounded-lg"
+                    />
                     <div className="min-w-0">
                       <h3 className="text-foreground line-clamp-1 font-semibold">{pack.name}</h3>
                       <Badge className={`${colors.bg} ${colors.text} text-[10px]`}>

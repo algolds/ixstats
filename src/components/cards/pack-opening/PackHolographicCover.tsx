@@ -248,15 +248,15 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
         className={cn(
           "relative w-full overflow-hidden select-none",
           SIZE_CLASSES[size],
-          isInteractive && "[perspective:800px] [contain:layout_style]",
+          isInteractive && "[contain:layout_style] [perspective:800px]",
           className
         )}
       >
         <div
           className={cn(
-            "relative w-full h-full origin-center transition-transform",
+            "relative h-full w-full origin-center transition-transform",
             isInteractive &&
-              "[transform:rotateY(var(--r-x))_rotateX(var(--r-y))] will-change-transform duration-[var(--duration)] ease-[var(--easing)]"
+              "[transform:rotateY(var(--r-x))_rotateX(var(--r-y))] duration-[var(--duration)] ease-[var(--easing)] will-change-transform"
           )}
         >
           {/* Layer 1: Base Artwork or Theme Gradient */}
@@ -271,7 +271,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
 
           {/* Layer 2: Holographic foil sweep */}
           <div
-            className="pack-holo-drift absolute inset-0 pointer-events-none"
+            className="pack-holo-drift pointer-events-none absolute inset-0"
             style={{
               background: holoGradient,
               backgroundSize: "400% 400%",
@@ -285,6 +285,24 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               transition: "opacity 0.3s ease",
             }}
           />
+
+          {/* Layer 7: PDS Custom Foil Overlay */}
+          {packArtwork && packArtwork.endsWith(".svg") && (
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage: `url(${packArtwork.replace(".svg", "_foil.svg")})`,
+                backgroundSize: "cover",
+                mixBlendMode: "color-dodge",
+                opacity: isInteractive ? "calc(var(--opacity) * 0.6 + 0.15)" : 0.25,
+                backgroundPosition: isInteractive
+                  ? "calc(var(--bg-x) * 1.2) calc(var(--bg-y) * 1.2)"
+                  : undefined,
+                animation: isInteractive ? undefined : "holo-drift 10s ease-in-out infinite",
+                transition: "opacity 0.3s ease",
+              }}
+            />
+          )}
 
           {/* Layer 3: Geometric accents */}
           {showGeometry && (
@@ -326,16 +344,29 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
 
           {/* Layer 4: Procedural Foil Noise Overlay */}
           <div
-            className="absolute inset-0 pointer-events-none opacity-[0.06] mix-blend-overlay"
+            className="pointer-events-none absolute inset-0 opacity-[0.06] mix-blend-overlay"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
             }}
           />
 
+          {/* Layer 8: PDS Custom Glow Overlay */}
+          {packArtwork && packArtwork.endsWith(".svg") && (
+            <div
+              className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+              style={{
+                backgroundImage: `url(${packArtwork.replace(".svg", "_glow.svg")})`,
+                backgroundSize: "cover",
+                mixBlendMode: "screen",
+                opacity: isInteractive ? "calc(var(--opacity) * 0.85)" : 0.2,
+              }}
+            />
+          )}
+
           {/* Layer 5: Specular Glare (Highlight) */}
           {isInteractive && (
             <div
-              className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-[var(--opacity)] transition-opacity duration-300"
+              className="pointer-events-none absolute inset-0 opacity-[var(--opacity)] mix-blend-overlay transition-opacity duration-300"
               style={{
                 background: `radial-gradient(farthest-corner circle at var(--m-x) var(--m-y), rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.2) 25%, transparent 70%)`,
               }}

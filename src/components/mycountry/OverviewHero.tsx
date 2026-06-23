@@ -29,6 +29,8 @@ import {
 import * as LucideIcons from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { AvatarGlow } from "~/components/vault/AvatarGlow";
+import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
@@ -677,41 +679,11 @@ export function OverviewHero({
     return (
       <div className="glass-surface glass-refraction bg-card/65 relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-xl border border-white/5 p-3 shadow-sm backdrop-blur-md">
         {/* Neon Frame Overlay */}
-        {neonFrame.enabled && (
-          <motion.div
-            className="pointer-events-none absolute inset-0 z-20 rounded-xl"
-            style={{
-              border: `2px solid ${neonFrame.color}`,
-              boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
-            }}
-            animate={
-              neonFrame.style === "pulse"
-                ? {
-                    opacity: [0.5, 1, 0.5],
-                  }
-                : undefined
-            }
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        )}
+        <NeonFrameOverlay neonFrame={neonFrame} className="rounded-xl" />
         <TextureOverlay texture="paperGrain" opacity={0.09} />
 
         <div className="relative z-10 flex items-center gap-3">
-          <div
-            className="relative flex shrink-0 items-center justify-center rounded-sm"
-            style={
-              avatarGlow.enabled
-                ? {
-                    boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
-                    border: `1px solid ${avatarGlow.color}`,
-                  }
-                : undefined
-            }
-          >
+          <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
             <div className="flex items-center justify-center overflow-hidden rounded-sm">
               <UnifiedCountryFlag
                 showTooltip={false}
@@ -720,7 +692,7 @@ export function OverviewHero({
                 className="shrink-0"
               />
             </div>
-          </div>
+          </AvatarGlow>
           <div>
             <span className="text-foreground text-sm font-bold">
               {stats.countryName.replace(/_/g, " ")}
@@ -778,27 +750,7 @@ export function OverviewHero({
   return (
     <div className="glass-surface glass-refraction bg-card/65 relative overflow-hidden rounded-xl border border-white/5 shadow-sm backdrop-blur-md">
       {/* Neon Frame Overlay */}
-      {neonFrame.enabled && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 z-20 rounded-xl"
-          style={{
-            border: `2px solid ${neonFrame.color}`,
-            boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
-          }}
-          animate={
-            neonFrame.style === "pulse"
-              ? {
-                  opacity: [0.5, 1, 0.5],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      )}
+      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-xl" />
       <TextureOverlay texture="paperGrain" opacity={0.09} />
 
       <button
@@ -875,17 +827,7 @@ export function OverviewHero({
               </div>
 
               <div className="mb-2.5 flex items-center gap-2.5">
-                <div
-                  className="relative flex shrink-0 items-center justify-center rounded-sm"
-                  style={
-                    avatarGlow.enabled
-                      ? {
-                          boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
-                          border: `1px solid ${avatarGlow.color}`,
-                        }
-                      : undefined
-                  }
-                >
+                <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
                   <div className="flex items-center justify-center overflow-hidden rounded-sm">
                     <UnifiedCountryFlag
                       showTooltip={false}
@@ -894,7 +836,7 @@ export function OverviewHero({
                       className="shrink-0"
                     />
                   </div>
-                </div>
+                </AvatarGlow>
                 <div>
                   <Link
                     href={createUrl(`/countries/${stats.slug}`)}
@@ -918,7 +860,7 @@ export function OverviewHero({
                   <Button
                     variant="default"
                     size="sm"
-                    className="w-full h-8 cursor-pointer gap-1.5 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 hover:bg-amber-500/20 active:scale-[0.98] transition-all"
+                    className="h-8 w-full cursor-pointer gap-1.5 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
                   >
                     <Edit3 className="h-3.5 w-3.5" />
                     Edit Country
@@ -928,7 +870,7 @@ export function OverviewHero({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full h-8 cursor-pointer gap-1.5 border-white/10 hover:bg-white/10 hover:text-white text-xs font-bold active:scale-[0.98] transition-all"
+                    className="h-8 w-full cursor-pointer gap-1.5 border-white/10 text-xs font-bold transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     View Profile

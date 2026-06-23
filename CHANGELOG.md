@@ -12,6 +12,16 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+- **Premium Dynamic Particle Cosmetics & Admin Glows**:
+  - **High-Fidelity tsParticles Engine**: Integrated `tsParticles` (via `@tsparticles/react` and `@tsparticles/slim`) as the single lightweight 2D canvas particle engine, preventing WebGL context limits when multiple cards render on the page.
+  - **15 Vector Particle Shapes**: Generated physical SVG shapes (`snowflake`, `leaf`, `diamond`, `ruby`, `emerald`, `sapphire`, `gold-coin`, `crown`, `trophy`, `star`, `shield`, `embassy`, `scroll`, `map-marker`, `imperial-eagle`) under `src/lib/particles/` styled with premium semi-transparent fills and solid border paths.
+  - **Inline Asset Compilation**: Compiled all 15 SVG shapes as inline base64 data URIs in `src/lib/particles/svg-data.ts`, bypassing Next.js production `basePath` prefix resolution issues entirely.
+  - **Performance Optimization Specs**: Optimized CPU usage by capping the rendering loop at **45 FPS** (`fpsLimit: 45`), enabling automatic viewport freezing (`pauseOnOutsideViewport: true`, `pauseOnBlur: true`), lowering active particle counts, and disabling all particle-to-particle physics collisions and hover/click interaction event listeners.
+  - **Provider-Based Dynamic Loader**: Developed the dynamic `<CosmeticParticles>` React component using code-splitting (`ssr: false`) and v4's `<ParticlesProvider>` context architecture.
+  - **Glow & Frame Overlays**: Replaced static style declarations with dynamic particle flows in `NeonFrameOverlay.tsx` (for card frame bounds) and `AvatarGlow.tsx` (for profile avatar backgrounds).
+  - **System Seeder Purge**: Removed the purchasable "Imperial Gold Glow" from `seed-vault-items.ts` and automated its database removal, setting it instead as the default active fallback glow for all administrators and system owners (`role.level <= 10`).
+
+
 - **MyCountry Policy Strategy Rework**:
   - **Predefined Strategy Registry**: Built a code-defined catalog of policy decretals (`universal-basic-income`, `border-tariffs`, `surveillance-oversight`) in `src/lib/policies/registry.ts` with custom template fallback mappers.
   - **Cabinet & Decision Center Transaction Integration**: Modified policy activation to execute inside a single transaction that deducts treasury budget and automatically logs a completed `CabinetMeeting`, a completed `MeetingDecision` with modifiers, and a pending `MeetingActionItem` in the Decision Center assigned to the matching minister role.

@@ -15,6 +15,8 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { AvatarGlow } from "~/components/vault/AvatarGlow";
+import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import * as LucideIcons from "lucide-react";
 import { motion } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -129,27 +131,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
       textureOpacity={0.06}
     >
       {/* Neon Frame Overlay */}
-      {neonFrame.enabled && (
-        <motion.div
-          className="pointer-events-none absolute inset-0 z-30 rounded-xl"
-          style={{
-            border: `2px solid ${neonFrame.color}`,
-            boxShadow: `0 0 12px ${neonFrame.color}, inset 0 0 8px ${neonFrame.color}`,
-          }}
-          animate={
-            neonFrame.style === "pulse"
-              ? {
-                  opacity: [0.5, 1, 0.5],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      )}
+      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-xl" />
       {/* Cutout tab header */}
       <div className="relative flex min-h-[90px] flex-col items-center justify-center overflow-hidden bg-indigo-500/10 px-3 pt-3 pb-6">
         {/* Background flag filling the top */}
@@ -169,19 +151,10 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         )}
 
         {/* Small Avatar/Flag with avatar glow */}
-        <div
-          className={cn(
-            "relative z-20 mb-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-950/60 shadow-md backdrop-blur-sm",
-            !avatarGlow.enabled && "border border-white/20"
-          )}
-          style={
-            avatarGlow.enabled
-              ? {
-                  boxShadow: `0 0 ${avatarGlow.intensity} ${avatarGlow.color}`,
-                  border: `1px solid ${avatarGlow.color}`,
-                }
-              : undefined
-          }
+        <AvatarGlow
+          avatarGlow={avatarGlow}
+          roundedClass="rounded-full"
+          className="relative z-20 mb-1.5 h-8 w-8 bg-indigo-950/60 shadow-md backdrop-blur-sm"
         >
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
             {user?.imageUrl ? (
@@ -198,7 +171,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               />
             ) : null}
           </div>
-        </div>
+        </AvatarGlow>
 
         {/* Country Name Link */}
         <Link

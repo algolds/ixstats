@@ -1067,7 +1067,7 @@ export class VaultService {
         },
       });
 
-      const purchasedItemIds = new Set<string>();
+      const purchasedItemCounts: Record<string, number> = {};
       for (const tx of transactions) {
         let meta = tx.metadata;
         if (typeof meta === "string") {
@@ -1078,30 +1078,39 @@ export class VaultService {
         if (meta && typeof meta === "object") {
           const metaObj = meta as Record<string, any>;
           if (metaObj.itemId && typeof metaObj.itemId === "string") {
-            purchasedItemIds.add(metaObj.itemId);
+            purchasedItemCounts[metaObj.itemId] = (purchasedItemCounts[metaObj.itemId] || 0) + 1;
           }
         }
       }
 
-      if (purchasedItemIds.size === 0) {
+      const uniqueIds = Object.keys(purchasedItemCounts);
+      if (uniqueIds.length === 0) {
         return [];
       }
 
       const storeItems = await db.vaultStoreItem.findMany({
         where: {
-          id: { in: Array.from(purchasedItemIds) },
+          id: { in: uniqueIds },
           isActive: true,
         },
         select: {
+          id: true,
           effects: true,
         },
       });
 
-      return storeItems
-        .map((item: any) => item.effects)
-        .filter(
-          (effects: any): effects is Record<string, any> => !!effects && typeof effects === "object"
-        );
+      const effectsList: Record<string, any>[] = [];
+      for (const item of storeItems) {
+        const effects = item.effects;
+        if (effects && typeof effects === "object") {
+          const count = purchasedItemCounts[item.id] || 0;
+          for (let i = 0; i < count; i++) {
+            effectsList.push(effects as Record<string, any>);
+          }
+        }
+      }
+
+      return effectsList;
     } catch (error) {
       console.error("[Vault Service] Error getting purchased items effects:", error);
       return [];
