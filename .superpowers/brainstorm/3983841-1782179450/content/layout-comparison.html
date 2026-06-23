@@ -1,0 +1,167 @@
+<h2>National Issues Admin Panel Redesign</h2>
+<p class="subtitle">Select the visual layout that best fits your workflow for global engine controls, template CRUD, and active issue monitoring.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Split-Screen Column Layout (Recommended)</h3>
+      <p>Sticky configuration sidebar on the left; inline scrollable template manager on the right. Details & CRUD are handled in drawer sidebars or modals.</p>
+    </div>
+  </div>
+  
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Tabbed Dashboard Layout</h3>
+      <p>A top navigation bar switches between tabs (Templates, Engine Settings, Active Issues). Reduces cognitive load by separating features, but hides information.</p>
+    </div>
+  </div>
+  
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Three-Panel Workspace Layout</h3>
+      <p>Left panel: Engine controls & stats; Middle panel: Scrollable template list; Right panel: Selected template details/editor. Great for heavy CRUD operations.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>Visual Layout Previews</h3>
+  <div class="split">
+    <!-- Option A Wireframe -->
+    <div class="mockup">
+      <div class="mockup-header">Option A: Split-Screen Column Layout</div>
+      <div class="mockup-body" style="background: var(--bg-primary); padding: 1rem;">
+        <div style="display: flex; gap: 0.75rem; height: 200px;">
+          <!-- Left Sidebar -->
+          <div style="width: 35%; border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; background: var(--bg-secondary); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem; color: var(--accent);">Engine & Seeds</div>
+              <div style="height: 12px; background: var(--bg-tertiary); border-radius: 3px; margin-bottom: 0.25rem; width: 85%;"></div>
+              <div style="height: 12px; background: var(--bg-tertiary); border-radius: 3px; margin-bottom: 0.25rem; width: 70%;"></div>
+            </div>
+            <div style="background: var(--selected-bg); border: 1px solid var(--selected-border); border-radius: 4px; padding: 0.25rem; text-align: center; font-size: 0.65rem; color: var(--accent); font-weight: bold;">
+              Trigger Eval
+            </div>
+          </div>
+          <!-- Right Content -->
+          <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-secondary);">
+            <div style="padding: 0.5rem; border-bottom: 1px solid var(--border); display: flex; gap: 0.25rem; align-items: center;">
+              <div style="flex: 1; height: 16px; background: var(--bg-primary); border-radius: 4px; border: 1px solid var(--border);"></div>
+              <div style="width: 40px; height: 16px; background: var(--accent); border-radius: 4px;"></div>
+            </div>
+            <!-- Scrollable templates -->
+            <div style="flex: 1; overflow-y: auto; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
+              <div style="border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 0.65rem; font-weight: bold; color: var(--text-primary);">economic_growth</div>
+                  <div style="height: 6px; background: var(--text-tertiary); border-radius: 2px; width: 60px; margin-top: 0.15rem;"></div>
+                </div>
+                <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
+              </div>
+              <div style="border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 0.65rem; font-weight: bold; color: var(--text-primary);">healthcare_crisis</div>
+                  <div style="height: 6px; background: var(--text-tertiary); border-radius: 2px; width: 80px; margin-top: 0.15rem;"></div>
+                </div>
+                <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option B Wireframe -->
+    <div class="mockup">
+      <div class="mockup-header">Option B: Tabbed Dashboard Layout</div>
+      <div class="mockup-body" style="background: var(--bg-primary); padding: 1rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; height: 200px;">
+          <!-- Tabs -->
+          <div style="display: flex; border-bottom: 1px solid var(--border); font-size: 0.7rem; font-weight: bold; gap: 0.25rem;">
+            <div style="padding: 0.25rem 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border); border-bottom: none; border-top-left-radius: 4px; border-top-right-radius: 4px; color: var(--accent);">Templates</div>
+            <div style="padding: 0.25rem 0.5rem; color: var(--text-secondary);">Engine & Seeds</div>
+            <div style="padding: 0.25rem 0.5rem; color: var(--text-secondary);">Active Issues</div>
+          </div>
+          <!-- Tab content area -->
+          <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; overflow-y: auto;">
+            <div style="font-size: 0.7rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 0.25rem;">Template Manager</div>
+            <div style="border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 0.65rem; font-weight: bold;">military_mobilization</div>
+              <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
+            </div>
+            <div style="border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 0.65rem; font-weight: bold;">political_corruption</div>
+              <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="split">
+    <!-- Option C Wireframe -->
+    <div class="mockup" style="grid-column: span 2;">
+      <div class="mockup-header">Option C: Three-Panel Workspace Layout</div>
+      <div class="mockup-body" style="background: var(--bg-primary); padding: 1rem;">
+        <div style="display: flex; gap: 0.75rem; height: 200px;">
+          <!-- Panel 1: Left Nav / Engine -->
+          <div style="width: 25%; border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; background: var(--bg-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+            <div style="font-size: 0.7rem; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 0.15rem; color: var(--text-secondary);">Controls</div>
+            <div style="font-size: 0.6rem; color: var(--accent); cursor: pointer;">• Seed Default Templates</div>
+            <div style="font-size: 0.6rem; color: var(--accent); cursor: pointer;">• Global Eval Logs</div>
+            <div style="font-size: 0.6rem; color: var(--accent); cursor: pointer;">• System Stats</div>
+          </div>
+          <!-- Panel 2: Center Templates List -->
+          <div style="width: 35%; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-secondary);">
+            <div style="padding: 0.4rem; border-bottom: 1px solid var(--border); font-size: 0.7rem; font-weight: bold; background: var(--bg-tertiary);">Select Template</div>
+            <div style="flex: 1; overflow-y: auto; padding: 0.4rem; display: flex; flex-direction: column; gap: 0.25rem;">
+              <div style="border: 1px solid var(--accent); border-radius: 4px; padding: 0.25rem; font-size: 0.65rem; background: var(--selected-bg); color: var(--accent); font-weight: bold;">economic_growth</div>
+              <div style="border: 1px solid var(--border); border-radius: 4px; padding: 0.25rem; font-size: 0.65rem;">healthcare_crisis</div>
+              <div style="border: 1px solid var(--border); border-radius: 4px; padding: 0.25rem; font-size: 0.65rem;">military_mobilization</div>
+            </div>
+          </div>
+          <!-- Panel 3: Right Details & JSON Editor -->
+          <div style="flex: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem;">
+              <div style="font-size: 0.7rem; font-weight: bold;">Edit: economic_growth</div>
+              <div style="font-size: 0.6rem; background: var(--success); color: white; padding: 0.1rem 0.25rem; border-radius: 2px;">Active</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+              <span style="font-size: 0.6rem; color: var(--text-secondary);">Title</span>
+              <div style="border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem; font-size: 0.65rem; background: var(--bg-primary);">Economic Expansion</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.2rem; flex: 1;">
+              <span style="font-size: 0.6rem; color: var(--text-secondary);">Trigger Conditions (JSON)</span>
+              <div style="border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem; font-size: 0.65rem; font-family: monospace; background: var(--bg-primary); flex: 1; overflow-y: auto;">
+                { "gdp_growth": { "gte": 2.5 } }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top: 1.5rem;">
+  <div class="pros">
+    <h4>Pros & Recommendations</h4>
+    <ul>
+      <li><strong>Option A:</strong> Best balance of space. Keeps controls sticky so administrators can easily trigger manual evaluations or seed defaults while filtering and scanning.</li>
+      <li><strong>Option B:</strong> Simplest UI structure. Great if page space is constrained, but requires switching tabs to review active issues or run stats.</li>
+      <li><strong>Option C:</strong> Ultimate workflow efficiency. Eliminates modals/drawers for CRUD, rendering the editor panel side-by-side with templates, ideal for editing JSON triggers.</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>Cons & Risks</h4>
+    <ul>
+      <li><strong>Option A:</strong> Screen space on smaller tablets might feel tight; requires sidebar to be collapsible on mobile.</li>
+      <li><strong>Option B:</strong> Disconnects templates from diagnostics, requiring duplicate state reload or manual sync.</li>
+      <li><strong>Option C:</strong> Needs at least 1200px width to display all three panels legibly without horizontal overflow.</li>
+    </ul>
+  </div>
+</div>

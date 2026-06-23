@@ -284,13 +284,13 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
         <div className="flex items-center gap-2 text-sm font-bold text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.25)]">
           <Crown className="h-4 w-4 animate-pulse" />
           <PreText className="text-inherit" whiteSpace="nowrap">
-            MyCountry® Command Palette
+            MyCountry® Quick Actions
           </PreText>
         </div>
         <button
           onClick={onClose}
           className="text-muted-foreground hover:text-foreground hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
-          aria-label="Close command palette"
+          aria-label="Close Quick Actions"
         >
           <X className="h-4 w-4" />
         </button>
