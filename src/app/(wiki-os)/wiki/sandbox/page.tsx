@@ -37,26 +37,9 @@ import {
   LineChart,
   Line,
 } from "recharts";
-// Real, unmodified @bettergov/kapwa components — rendered raw for evaluation.
-import { Banner } from "@bettergov/kapwa/banner";
-import { Button as KapwaButton } from "@bettergov/kapwa/button";
-import { Card, CardHeader, CardContent, CardFooter, CardImage } from "@bettergov/kapwa/card";
-import { Input as KapwaInput } from "@bettergov/kapwa/input";
-import { Label as KapwaLabel } from "@bettergov/kapwa/label";
-import { ArticleCard, ArticleContent } from "@bettergov/kapwa/article";
-import { List as KapwaList } from "@bettergov/kapwa/list";
-import { Table as KapwaTable } from "@bettergov/kapwa/table";
-import { OfficialBiography } from "@bettergov/kapwa/official-biography";
-import { CivicTechBanner } from "@bettergov/kapwa/civic-tech-banner";
-import { StripBanner } from "@bettergov/kapwa/strip-banner";
+import { WikiChart, useWikiChartColors } from "~/components/ui/wiki-chart";
 
-type SandboxTab =
-  | "playground"
-  | "recent-changes"
-  | "stashes"
-  | "wiki-examples"
-  | "analytics"
-  | "kapwa-raw";
+type SandboxTab = "playground" | "recent-changes" | "stashes" | "wiki-examples" | "analytics";
 
 interface TemplateRow {
   name: string;
@@ -85,9 +68,9 @@ export default function WikiSandboxPage() {
 
   return (
     <WikiOSLayout title="Kapwa Sandbox">
-      <div className="kapwa-sandbox flex flex-col gap-6 p-4">
+      <div className="flex flex-col gap-6 p-4">
         {/* Experimental Notice styled as Kapwa Alert inside glass card */}
-        <div className="kp-card flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4 text-amber-700 dark:text-amber-500">
+        <div className="wikios-card flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4 text-amber-700 dark:text-amber-500">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
             <h4 className="text-xs font-bold">Kapwa Trial Sandbox (Experimental)</h4>
@@ -108,7 +91,6 @@ export default function WikiSandboxPage() {
               "stashes",
               "wiki-examples",
               "analytics",
-              "kapwa-raw",
             ] as SandboxTab[]
           ).map((tab) => (
             <button
@@ -135,209 +117,8 @@ export default function WikiSandboxPage() {
         {activeTab === "wiki-examples" && <WikiExamplesTab />}
 
         {activeTab === "analytics" && mounted && <AnalyticsTab />}
-
-        {activeTab === "kapwa-raw" && <KapwaRawTab />}
       </div>
     </WikiOSLayout>
-  );
-}
-
-/* ===========================================================================
-   KAPWA RAW TAB — every real @bettergov/kapwa component, unmodified.
-   The page is wrapped in .kapwa-sandbox, so Kapwa's own CSS applies; note that
-   `.kp-card` is still overridden by the Facet glass rules in kapwa-scoped.css.
-   =========================================================================== */
-const KAPWA_PLACEHOLDER_IMG =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='240'><rect width='100%' height='100%' fill='#3b82f6' opacity='0.25'/><text x='50%' y='50%' fill='#94a3b8' font-family='sans-serif' font-size='16' text-anchor='middle' dominant-baseline='middle'>image</text></svg>`
-  );
-
-function RawBlock({ name, children }: { name: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2 rounded border border-[var(--wikios-border)] bg-black/[0.01] p-4 dark:bg-white/[0.01]">
-      <h4 className="font-mono text-[10px] font-bold tracking-wider text-[var(--wikios-accent)] uppercase">
-        {name}
-      </h4>
-      {children}
-    </div>
-  );
-}
-
-function KapwaRawTab() {
-  const noop = () => {};
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="kp-card flex items-start gap-3 border-blue-500/30 bg-blue-500/5 p-4 text-blue-700 dark:text-blue-400">
-        <Info className="mt-0.5 h-5 w-5 shrink-0" />
-        <div>
-          <h4 className="text-xs font-bold">Raw Kapwa Components (unstyled by us)</h4>
-          <p className="mt-1 text-[10px] leading-relaxed opacity-80">
-            These are the actual <code>@bettergov/kapwa</code> React components with sample data —
-            no Facet restyling applied. Use this to judge which (if any) are worth adopting.
-          </p>
-        </div>
-      </div>
-
-      <RawBlock name="Banner (info / warning / error / success)">
-        <div className="flex flex-col gap-3">
-          <Banner type="info" title="Info banner" description="A general informational notice." />
-          <Banner type="warning" title="Warning" description="Something needs your attention." />
-          <Banner type="error" title="Error" description="An action could not be completed." />
-          <Banner
-            type="success"
-            title="Success"
-            description="With a call-to-action button."
-            cta={{ label: "View", onClick: noop }}
-          />
-        </div>
-      </RawBlock>
-
-      <RawBlock name="Button (variants × sizes)">
-        <div className="flex flex-wrap items-center gap-3">
-          <KapwaButton variant="primary">Primary</KapwaButton>
-          <KapwaButton variant="secondary">Secondary</KapwaButton>
-          <KapwaButton variant="outline">Outline</KapwaButton>
-          <KapwaButton variant="ghost">Ghost</KapwaButton>
-          <KapwaButton variant="link">Link</KapwaButton>
-          <KapwaButton variant="primary" isLoading>
-            Loading
-          </KapwaButton>
-          <KapwaButton variant="primary" size="sm">
-            Small
-          </KapwaButton>
-          <KapwaButton variant="primary" size="lg">
-            Large
-          </KapwaButton>
-        </div>
-      </RawBlock>
-
-      <RawBlock name="Card (Header / Image / Content / Footer)">
-        <Card hoverable className="max-w-sm">
-          <CardImage src={KAPWA_PLACEHOLDER_IMG} alt="placeholder" />
-          <CardHeader>Card Title</CardHeader>
-          <CardContent>
-            Body content inside a Kapwa card. This shows the card&apos;s native padding and layout.
-          </CardContent>
-          <CardFooter>
-            <KapwaButton variant="primary" size="sm">
-              Action
-            </KapwaButton>
-          </CardFooter>
-        </Card>
-      </RawBlock>
-
-      <RawBlock name="Input + Label">
-        <div className="flex max-w-sm flex-col gap-1.5">
-          <KapwaLabel htmlFor="kapwa-demo-input">Email address</KapwaLabel>
-          <KapwaInput id="kapwa-demo-input" type="email" placeholder="you@example.com" />
-        </div>
-      </RawBlock>
-
-      <RawBlock name="ArticleCard">
-        <div className="max-w-sm">
-          <ArticleCard
-            article={{
-              id: 1,
-              image: KAPWA_PLACEHOLDER_IMG,
-              imageAlt: "placeholder",
-              category: "Geography",
-              title: "Sample Article Card",
-              description: "A short description rendered by Kapwa's ArticleCard component.",
-            }}
-          />
-        </div>
-      </RawBlock>
-
-      <RawBlock name="ArticleContent (heading/paragraph schema)">
-        <ArticleContent
-          articleContentTitle="Sample Article"
-          articleContent={[
-            { id: 1, type: "heading", level: 2, content: "Section Heading" },
-            { id: 2, type: "paragraph", content: "A paragraph of body text rendered by Kapwa." },
-            { id: 3, type: "heading", level: 3, content: "Subsection" },
-            { id: 4, type: "paragraph", content: "Another paragraph follows the subsection." },
-          ]}
-        />
-      </RawBlock>
-
-      <RawBlock name="List">
-        <KapwaList
-          title="Latest Items"
-          headerTitle="Recent Activity"
-          headerSubtitle="A simple categorized list"
-          externalLinkText="See all"
-          listItems={[
-            { id: 1, title: "First list item", category: "Politics" },
-            { id: 2, title: "Second list item", category: "Economy" },
-            { id: 3, title: "Third list item", category: "Military" },
-          ]}
-        />
-      </RawBlock>
-
-      <RawBlock name="Table (fixed name/email/status schema)">
-        <KapwaTable
-          title="Users"
-          subtitle="Kapwa's demo table is hardcoded to name/email/status"
-          tableData={[
-            { id: 1, name: "Ada Lovelace", email: "ada@example.com", status: "Active" },
-            { id: 2, name: "Alan Turing", email: "alan@example.com", status: "Pending" },
-            { id: 3, name: "Grace Hopper", email: "grace@example.com", status: "Inactive" },
-          ]}
-        />
-      </RawBlock>
-
-      <RawBlock name="OfficialBiography (Philippine-gov shape)">
-        <OfficialBiography
-          profile={{
-            name: "Juan Dela Cruz",
-            position: "Secretary of Example Affairs",
-            servingSince: "2024",
-            profileImage: KAPWA_PLACEHOLDER_IMG,
-            bannerImage: KAPWA_PLACEHOLDER_IMG,
-            contactInfo: {
-              office: "Example Building, Capital City",
-              phone: "+63 2 1234 5678",
-              email: "office@example.gov",
-              website: "https://example.gov",
-            },
-            education: [
-              { degree: "B.A. Public Administration", institution: "State University", year: "2005" },
-            ],
-            biography: ["A sample biography paragraph describing the official's career."],
-            achievements: ["Sample achievement one", "Sample achievement two"],
-          }}
-        />
-      </RawBlock>
-
-      <RawBlock name="CivicTechBanner (bettergov.ph marketing)">
-        <CivicTechBanner
-          fullBannerTitle="Civic Tech"
-          fullBanner={{
-            title: "Build a better",
-            highlightedWord: "government",
-            description: "Sample marketing copy for the civic-tech banner.",
-            highlightedPhrase: "for everyone",
-            primaryButton: { text: "Get Started", href: "#" },
-            secondaryButton: { text: "Learn More", href: "#" },
-          }}
-        />
-      </RawBlock>
-
-      <RawBlock name="StripBanner (marketing strip)">
-        <StripBanner
-          stripBannerTitle="Strip"
-          stripBanner={{
-            id: 1,
-            emoji: "📣",
-            mainText: "Announcement strip banner",
-            subText: "A compact promotional strip from Kapwa.",
-            primaryButton: { text: "Action", href: "#" },
-            secondaryLink: { text: "Details", href: "#" },
-          }}
-        />
-      </RawBlock>
-    </div>
   );
 }
 
@@ -416,7 +197,7 @@ function PlaygroundTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="kp-card flex flex-col gap-4 p-5">
+      <div className="wikios-card flex flex-col gap-4 p-5">
         <div className="mb-1 flex items-center gap-2">
           <Layers className="h-4 w-4 text-[var(--wikios-accent)]" />
           <h3 className="text-sm font-bold text-[var(--wikios-text)]">Component Playground</h3>
@@ -557,7 +338,7 @@ function PlaygroundTab() {
 
               {/* Adjustable Glass Card Result */}
               <div
-                className="kp-card-adjustable flex items-center justify-center border-[var(--wikios-border)] p-5 text-center text-xs"
+                className="wikios-card-adjustable flex items-center justify-center border-[var(--wikios-border)] p-5 text-center text-xs"
                 style={
                   {
                     "--sandbox-card-bg": cardBgStyle,
@@ -736,7 +517,7 @@ function RecentChangesSimulator() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="kp-card flex flex-col gap-2 p-5">
+      <div className="wikios-card flex flex-col gap-2 p-5">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-[var(--wikios-accent)]" />
@@ -833,7 +614,7 @@ function StashesSimulator() {
           ))}
         </div>
       ) : (
-        <div className="kp-card flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <div className="wikios-card flex flex-col items-center justify-center gap-3 p-8 text-center">
           <FolderOpen className="h-10 w-10 text-[var(--wikios-text-dim)] opacity-20" />
           <h4 className="text-xs font-semibold text-[var(--wikios-text)]">No Stashes Found</h4>
           <p className="max-w-xs text-[10px] leading-relaxed text-[var(--wikios-text-muted)]">
@@ -856,7 +637,7 @@ function StashCard({
     <div
       onMouseEnter={increaseDepth}
       onMouseLeave={resetDepth}
-      className="kp-card flex cursor-pointer flex-col gap-3 p-4 transition-transform"
+      className="wikios-card flex cursor-pointer flex-col gap-3 p-4 transition-transform"
       style={{
         transform: depth > 1 ? "translateY(-2px)" : "none",
         borderColor: stash.color ? `${stash.color}33` : "var(--wikios-border)",
@@ -911,7 +692,7 @@ function WikiExamplesTab() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="kp-card flex flex-col gap-4 p-5">
+      <div className="wikios-card flex flex-col gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-[var(--wikios-accent)]" />
@@ -1018,7 +799,7 @@ function MockCountryProfile() {
       </div>
 
       {/* Right aligned Infobox Card */}
-      <div className="kp-card flex flex-col gap-3 self-start border border-[var(--wikios-border)] bg-black/10 p-4 dark:bg-white/[0.01]">
+      <div className="wikios-card flex flex-col gap-3 self-start border border-[var(--wikios-border)] bg-black/10 p-4 dark:bg-white/[0.01]">
         <div className="rounded border border-blue-500/20 bg-blue-500/10 py-1.5 text-center text-xs font-bold tracking-wider text-blue-400 uppercase">
           Kapwa Republic
         </div>
@@ -1107,7 +888,7 @@ function LiveWikiArticleView({
 
   if (error) {
     return (
-      <div className="kp-card flex flex-col items-center justify-center gap-3 border-red-500/20 bg-red-500/5 p-6 text-center text-red-600 dark:text-red-400">
+      <div className="wikios-card flex flex-col items-center justify-center gap-3 border-red-500/20 bg-red-500/5 p-6 text-center text-red-600 dark:text-red-400">
         <AlertTriangle className="h-8 w-8 opacity-60" />
         <h4 className="text-xs font-semibold">Failed to Load Article</h4>
         <p className="max-w-xs text-[10px] opacity-80">
@@ -1147,12 +928,12 @@ function LiveWikiArticleView({
       {liveArticle.infoboxHtml ? (
         <div className="self-start">
           <div
-            className="kp-card w-full overflow-hidden border border-[var(--wikios-border)] p-4 text-[10px]"
+            className="wikios-card w-full overflow-hidden border border-[var(--wikios-border)] p-4 text-[10px]"
             dangerouslySetInnerHTML={{ __html: liveArticle.infoboxHtml }}
           />
         </div>
       ) : (
-        <div className="kp-card flex flex-col items-center justify-center gap-2 border-[var(--wikios-border)] p-4 text-center text-[var(--wikios-text-dim)]">
+        <div className="wikios-card flex flex-col items-center justify-center gap-2 border-[var(--wikios-border)] p-4 text-center text-[var(--wikios-text-dim)]">
           <Info className="h-4 w-4 opacity-40" />
           <span className="text-[10px]">No infobox markup detected</span>
         </div>
@@ -1165,31 +946,13 @@ function LiveWikiArticleView({
    ANALYTICS TAB COMPONENT
    =========================================================================== */
 function AnalyticsTab() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const { accent: accentColor, muted: mutedTextColor, tooltipProps } = useWikiChartColors();
 
   const { data: recentEdits } = api.wikios.getRecentChanges.useQuery(
     { limit: 30 },
     { staleTime: 30_000 }
   );
   const { data: stashes } = api.wikios.getStashes.useQuery();
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const currentTheme =
-        document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-      setTheme(currentTheme);
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
-    setTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
-    return () => observer.disconnect();
-  }, []);
-
-  const accentColor = theme === "light" ? "#2563eb" : "#3b82f6";
-  const mutedTextColor = theme === "light" ? "#52525b" : "#a1a1aa";
-  const borderVarColor = theme === "light" ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.08)";
 
   const mockTimeData = [
     { name: "00:00", Edits: 4 },
@@ -1258,46 +1021,37 @@ function AnalyticsTab() {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Edits Over Time */}
-        <div className="kp-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
+        <div className="wikios-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
           <div className="flex items-center gap-1.5">
             <Activity className="h-4 w-4 text-[var(--wikios-accent)]" />
             <h4 className="text-xs font-bold tracking-wider text-[var(--wikios-text-muted)] uppercase">
               Recent Edits Trend (24h)
             </h4>
           </div>
-          <div className="h-48 w-full text-[10px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={editVolumeData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorEdits" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" stroke={mutedTextColor} tickLine={false} />
-                <YAxis stroke={mutedTextColor} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: theme === "light" ? "#ffffff" : "#16181d",
-                    border: `1px solid ${borderVarColor}`,
-                    borderRadius: "6px",
-                    color: theme === "light" ? "#18181b" : "#e4e4e7",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="Edits"
-                  stroke={accentColor}
-                  fillOpacity={1}
-                  fill="url(#colorEdits)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <WikiChart>
+            <AreaChart data={editVolumeData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorEdits" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" stroke={mutedTextColor} tickLine={false} />
+              <YAxis stroke={mutedTextColor} tickLine={false} />
+              <Tooltip {...tooltipProps} />
+              <Area
+                type="monotone"
+                dataKey="Edits"
+                stroke={accentColor}
+                fillOpacity={1}
+                fill="url(#colorEdits)"
+              />
+            </AreaChart>
+          </WikiChart>
         </div>
 
         {/* Stash Category Pie Chart */}
-        <div className="kp-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
+        <div className="wikios-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
           <h4 className="text-xs font-bold tracking-wider text-[var(--wikios-text-muted)] uppercase">
             Stash Folder Distribution
           </h4>
@@ -1305,14 +1059,7 @@ function AnalyticsTab() {
             <div className="col-span-3 h-full w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Tooltip
-                    contentStyle={{
-                      background: theme === "light" ? "#ffffff" : "#16181d",
-                      border: `1px solid ${borderVarColor}`,
-                      borderRadius: "6px",
-                      color: theme === "light" ? "#18181b" : "#e4e4e7",
-                    }}
-                  />
+                  <Tooltip {...tooltipProps} />
                   <Pie
                     data={stashPieData}
                     cx="50%"
@@ -1350,64 +1097,40 @@ function AnalyticsTab() {
         </div>
 
         {/* Top Contributors */}
-        <div className="kp-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
+        <div className="wikios-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
           <h4 className="text-xs font-bold tracking-wider text-[var(--wikios-text-muted)] uppercase">
             Top Contributors volume
           </h4>
-          <div className="h-48 w-full text-[10px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={contributorData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <XAxis dataKey="name" stroke={mutedTextColor} tickLine={false} />
-                <YAxis stroke={mutedTextColor} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: theme === "light" ? "#ffffff" : "#16181d",
-                    border: `1px solid ${borderVarColor}`,
-                    borderRadius: "6px",
-                    color: theme === "light" ? "#18181b" : "#e4e4e7",
-                  }}
-                />
-                <Bar dataKey="Edits" fill={accentColor} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <WikiChart>
+            <BarChart data={contributorData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+              <XAxis dataKey="name" stroke={mutedTextColor} tickLine={false} />
+              <YAxis stroke={mutedTextColor} tickLine={false} />
+              <Tooltip {...tooltipProps} />
+              <Bar dataKey="Edits" fill={accentColor} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </WikiChart>
         </div>
 
         {/* Byte Change size */}
-        <div className="kp-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
+        <div className="wikios-card flex flex-col gap-3 border-[var(--wikios-border)] p-4">
           <h4 className="text-xs font-bold tracking-wider text-[var(--wikios-text-muted)] uppercase">
             Byte Volume delta (Weekly)
           </h4>
-          <div className="h-48 w-full text-[10px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={byteChangeData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                <XAxis dataKey="time" stroke={mutedTextColor} tickLine={false} />
-                <YAxis stroke={mutedTextColor} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: theme === "light" ? "#ffffff" : "#16181d",
-                    border: `1px solid ${borderVarColor}`,
-                    borderRadius: "6px",
-                    color: theme === "light" ? "#18181b" : "#e4e4e7",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Added"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  dot={{ r: 2 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Removed"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  dot={{ r: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <WikiChart>
+            <LineChart data={byteChangeData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <XAxis dataKey="time" stroke={mutedTextColor} tickLine={false} />
+              <YAxis stroke={mutedTextColor} tickLine={false} />
+              <Tooltip {...tooltipProps} />
+              <Line type="monotone" dataKey="Added" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+              <Line
+                type="monotone"
+                dataKey="Removed"
+                stroke="#ef4444"
+                strokeWidth={2}
+                dot={{ r: 2 }}
+              />
+            </LineChart>
+          </WikiChart>
         </div>
       </div>
     </div>

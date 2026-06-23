@@ -1,0 +1,79 @@
+/* WikiOS glass card — promoted from the former Kapwa sandbox (.kp-card).
+   Usable on any WikiOS page; no parent scope, no Kapwa dependency. */
+
+:root {
+  --wikios-card-bg: rgba(30, 32, 40, 0.45);
+  --wikios-card-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+[data-theme="light"] {
+  --wikios-card-bg: rgba(255, 255, 255, 0.65);
+  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.wikios-card {
+  position: relative;
+  border: 1px solid var(--wikios-border);
+  border-radius: 8px;
+  background: var(--wikios-card-bg);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: var(--wikios-card-shadow);
+}
+
+/* Chamfered edge glare (Facet refraction overlay) */
+.wikios-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+[data-theme="light"] .wikios-card::before {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.01));
+}
+
+/* Sandbox-only: live-adjustable variant driven by inline --sandbox-card-* vars */
+.wikios-card-adjustable {
+  position: relative;
+  border: 1px solid var(--wikios-border);
+  border-radius: 8px;
+  background: var(--sandbox-card-bg, rgba(30, 32, 40, 0.45));
+  backdrop-filter: blur(var(--sandbox-card-blur, 16px)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--sandbox-card-blur, 16px)) saturate(150%);
+  box-shadow: var(--wikios-card-shadow);
+}
+
+.wikios-card-adjustable::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, var(--sandbox-card-glare, 0.08)),
+    rgba(255, 255, 255, calc(var(--sandbox-card-glare, 0.08) * 0.25))
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+[data-theme="light"] .wikios-card-adjustable::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, var(--sandbox-card-glare, 0.04)),
+    rgba(0, 0, 0, calc(var(--sandbox-card-glare, 0.04) * 0.25))
+  );
+}

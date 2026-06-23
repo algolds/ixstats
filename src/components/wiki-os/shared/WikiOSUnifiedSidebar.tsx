@@ -31,6 +31,8 @@ import {
   Shuffle,
   Bookmark,
   Plus,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -341,7 +343,7 @@ export function WikiOSUnifiedSidebar({
     const wrapperClass = cn(
       "flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out group outline-none relative",
       isLocalHoverExpanded
-        ? "w-[12rem] bg-neutral-950/90 border border-white/10 shadow-lg z-50 backdrop-blur-md"
+        ? "w-[12rem] z-50 border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] shadow-lg backdrop-blur-md"
         : "w-full border-transparent bg-transparent hover:bg-white/5",
       isActive ? "bg-white/[0.03]" : ""
     );
@@ -654,17 +656,17 @@ export function WikiOSUnifiedSidebar({
 
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
-        {/* Toggle Lock Button (stays still, only visible when expanded/opening) */}
-        {isExpanded &&
-          renderRow({
-            id: "toggle-more",
-            onClick: handleToggleClick,
-            title: getToggleTitle(),
-            glowClass:
-              "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
-            isActive: false,
-            index: rowIndex++,
-          })}
+        {/* Toggle Lock Button — always visible so the rail can be re-expanded from collapse */}
+        {renderRow({
+          id: "toggle-more",
+          onClick: handleToggleClick,
+          icon: isCollapsedReal ? PanelLeftOpen : PanelLeftClose,
+          title: getToggleTitle(),
+          glowClass:
+            "border-slate-500/20 bg-slate-500/5 text-slate-400 hover:bg-slate-500/15 rail-glow-gray",
+          isActive: false,
+          index: rowIndex++,
+        })}
 
         {/* Extra Items (always visible when expanded/opening on article page) */}
         {isExpanded && isArticlePage && (

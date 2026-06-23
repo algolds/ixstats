@@ -52,7 +52,7 @@ export interface AuctionListing {
   startingPrice: number;
   currentBid: number;
   buyoutPrice: number | null;
-  endTime: number; // IxTime timestamp
+  endTime: number; // realtime epoch ms (Date.now) — auctions run on wall-clock, NOT IxTime
   bidCount: number;
   isExpired: boolean;
   isFeatured: boolean;
@@ -71,7 +71,7 @@ export interface Bid {
   bidderId: string;
   bidderName: string;
   amount: number;
-  timestamp: number; // IxTime
+  timestamp: number; // realtime epoch ms (Date.now), NOT IxTime
   isAutoBid: boolean;
 }
 
@@ -122,7 +122,7 @@ export interface MarketAnalytics {
  * Price history data point
  */
 export interface PriceDataPoint {
-  timestamp: number; // IxTime
+  timestamp: number; // realtime epoch ms (Date.now), NOT IxTime
   cardId: string;
   price: number;
   volume: number;
