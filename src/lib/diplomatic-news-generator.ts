@@ -31,7 +31,10 @@ export type NewsEventType =
   | "pvp_conflict_proposed"
   | "pvp_conflict_accepted"
   | "pvnpc_conflict_resolved"
-  | "security_event_resolved";
+  | "security_event_resolved"
+  | "bill_passed"
+  | "bill_rejected"
+  | "party_support_shift";
 
 interface NewsContext {
   countryName?: string;
@@ -39,6 +42,7 @@ interface NewsContext {
   allianceName?: string;
   operationName?: string;
   partyName?: string;
+  billName?: string;
   actionType?: string;
   eventType?: string;
   severity?: string;
@@ -117,6 +121,18 @@ const NEWS_TEMPLATES: Record<
   security_event_resolved: (ctx) => ({
     content: `${ctx.countryName} has resolved a ${ctx.severity ?? "security"} incident: ${ctx.eventType ?? "security event"}. ${ctx.notes ? `Official statement: "${ctx.notes}"` : "Stability operations concluded successfully."}`,
     hashtags: ["Security", "Stability", "DomesticAffairs"],
+  }),
+  bill_passed: (ctx) => ({
+    content: `BREAKING: The ${ctx.countryName} legislature has passed "${ctx.billName ?? "the bill"}"${ctx.percentage ? ` (${ctx.percentage})` : ""}. ${ctx.notes ?? "The measure now takes effect."}`,
+    hashtags: ["Politics", "Legislature", "DomesticAffairs"],
+  }),
+  bill_rejected: (ctx) => ({
+    content: `The ${ctx.countryName} legislature has rejected "${ctx.billName ?? "the bill"}"${ctx.percentage ? ` (${ctx.percentage})` : ""}. ${ctx.notes ?? "The measure fails to advance."}`,
+    hashtags: ["Politics", "Legislature", "DomesticAffairs"],
+  }),
+  party_support_shift: (ctx) => ({
+    content: `POLLING: Support for ${ctx.partyName ?? "a major party"} in ${ctx.countryName} has ${ctx.actionType ?? "shifted"} to ${ctx.percentage ?? "new levels"} amid changing conditions.`,
+    hashtags: ["Politics", "Polling", "PublicOpinion"],
   }),
 };
 

@@ -12,12 +12,14 @@ interface IssuesInboxProps {
   countryId: string;
   maxVisible?: number;
   variant?: "compact" | "full";
+  /** Scope the inbox to one issue domain, e.g. "political" for the politics tab. */
+  domain?: string;
   onIssueCountChange?: (count: number) => void;
 }
 
 type InboxTab = "active" | "urgent" | "history";
 
-function IssuesInboxInner({ countryId, maxVisible, variant = "full" }: IssuesInboxProps) {
+function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: IssuesInboxProps) {
   const [activeTab, setActiveTab] = useState<InboxTab>("active");
 
   const {
@@ -32,7 +34,7 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full" }: IssuesInb
     respond,
     openIssue,
     closeIssue,
-  } = useNationalIssues(countryId);
+  } = useNationalIssues(countryId, domain);
 
   const urgentIssues = activeIssues.filter((i) => i.deadlineIxTime != null);
 

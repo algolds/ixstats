@@ -13,6 +13,8 @@
  */
 import { db } from "~/server/db";
 import { applyGovernmentComponentEffects } from "./government-component-effects";
+import { isNewsworthySwing } from "./approval";
+import { generateDiplomaticNews } from "./diplomatic-news-generator";
 
 export interface PoliticsDriftResult {
   countriesProcessed: number;
@@ -67,6 +69,17 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
               data: { currentSupport: Math.round(next * 100) / 100 },
             });
             result.partiesUpdated++;
+
+            // Headline only when support *crosses* a meaningful gap from its baseline
+            // this run (so it fires once, not every drift tick).
+            const wasNormal = !isNewsworthySwing(p.baseSupport, p.currentSupport);
+            if (wasNormal && isNewsworthySwing(p.baseSupport, next)) {
+              void generateDiplomaticNews(db, countryId, "party_support_shift", {
+                partyName: p.name,
+                actionType: next > p.baseSupport ? "surged" : "slumped",
+                percentage: `${Math.round(next)}%`,
+              });
+            }
           }
         }
       }

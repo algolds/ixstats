@@ -59,6 +59,7 @@ import { atomicGovernmentRouter } from "./routers/atomicGovernment";
 import { governmentComponentsRouter } from "./routers/governmentComponents";
 import { unifiedAtomicRouter } from "./routers/unifiedAtomic";
 import { policiesRouter } from "./routers/policies";
+import { legislationRouter } from "./routers/legislation";
 import { electionsRouter } from "./routers/elections";
 import { nationalIdentityRouter } from "./routers/nationalIdentity";
 import { customTypesRouter } from "./routers/customTypes";
@@ -189,6 +190,7 @@ export const appRouter = createTRPCRouter({
   governmentComponents: safeRouter("governmentComponents", () => governmentComponentsRouter),
   unifiedAtomic: safeRouter("unifiedAtomic", () => unifiedAtomicRouter),
   policies: safeRouter("policies", () => policiesRouter),
+  legislation: safeRouter("legislation", () => legislationRouter),
   elections: safeRouter("elections", () => electionsRouter),
   nationalIdentity: safeRouter("nationalIdentity", () => nationalIdentityRouter),
   customTypes: safeRouter("customTypes", () => customTypesRouter),

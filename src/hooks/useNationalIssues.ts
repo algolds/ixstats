@@ -6,16 +6,16 @@
 import { api } from "~/trpc/react";
 import { useState, useCallback } from "react";
 
-export function useNationalIssues(countryId: string | undefined) {
+export function useNationalIssues(countryId: string | undefined, domain?: string) {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
 
-  // Fetch active issues
+  // Fetch active issues (optionally scoped to a domain, e.g. "political")
   const {
     data: activeData,
     isLoading: isLoadingActive,
     refetch: refetchActive,
   } = api.nationalIssues.getMyIssues.useQuery(
-    { countryId: countryId!, status: "active" },
+    { countryId: countryId!, status: "active", domain },
     { enabled: !!countryId, refetchInterval: 60000 }
   );
 
@@ -95,7 +95,10 @@ export function useNationalIssues(countryId: string | undefined) {
   return {
     // Data
     activeIssues: activeData?.issues ?? [],
-    historyIssues: historyData?.issues ?? [],
+    // getHistory isn't domain-aware; filter client-side when a domain is requested.
+    historyIssues: domain
+      ? (historyData?.issues ?? []).filter((i: { domain?: string }) => i.domain === domain)
+      : (historyData?.issues ?? []),
     selectedIssue,
     pendingCount: countData?.total ?? 0,
     urgentCount: countData?.urgent ?? 0,

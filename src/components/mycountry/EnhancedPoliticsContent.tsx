@@ -15,6 +15,9 @@ import { PoliticsSidebarWidget } from "./sidebar-widgets/PoliticsSidebarWidget";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
 import { PoliticsWarRoom } from "~/components/executive/politics/PoliticsWarRoom";
 import { CabinetPanel } from "~/components/executive/politics/CabinetPanel";
+import { BillsPanel } from "~/components/executive/politics/BillsPanel";
+import { ApprovalPanel } from "~/components/executive/politics/ApprovalPanel";
+import { IssuesInbox } from "~/components/national-issues/IssuesInbox";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface EnhancedPoliticsContentProps {
@@ -124,6 +127,15 @@ export function EnhancedPoliticsContent({
 
       {/* War Room — 3-panel command center */}
       <PoliticsWarRoom countryId={country.id} />
+
+      {/* Legislative floor + live polling */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <BillsPanel countryId={country.id} />
+        <ApprovalPanel countryId={country.id} />
+      </div>
+
+      {/* Political crises & scandals — reuses the National Issues loop, scoped to politics */}
+      <IssuesInbox countryId={country.id} domain="political" variant="compact" maxVisible={4} />
 
       {/* Cabinet staffing panel */}
       <CabinetPanel countryId={country.id} />
