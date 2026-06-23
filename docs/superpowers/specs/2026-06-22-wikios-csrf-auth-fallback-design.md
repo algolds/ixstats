@@ -1,34 +1,56 @@
-# Design Document: WikiOS CSRF Auth Fallback via IxnayID
+# Design Spec: Native WikiOS Edits via Direct Database Actor Rewriting
 
 ## Purpose
 Currently, WikiOS edit operations fail if the user's MediaWiki session cookies are missing, invalid, or expired, returning an `Invalid CSRF token` error. 
 
-To make editing seamless, this spec introduces a robust auth fallback: if a user has linked their MediaWiki account via IxnayID (meaning their `wikiUsername` is set in their user profile), we will try to execute the edit using their own session cookies first. If their cookies are missing, invalid, or expired (causing MediaWiki to return `+\\` or a token retrieval failure), we will fallback to the authenticated bot session to perform the edit on MediaWiki.
+To resolve this reliably and ensure that edits "feel native" (i.e. are recorded under the actual user's MediaWiki account in history, diffs, contributions, and feeds), we will:
+1. Simplify the authentication logic by always performing MediaWiki API write actions (edits, uploads) using the authenticated bot session (avoiding browser session cookie-forwarding and session mismatches).
+2. Immediately after a write action succeeds, perform direct MySQL database queries on the MediaWiki database to rewrite the revision's author (and associated tables like `recentchanges`, `logging`, and `image`) to match the user's linked `wikiUsername` (linked via IxnayID).
 
-The edit history on MediaWiki will still attribute the edit to the correct user because we pass their linked `wikiUsername` in the edit summary.
+Additionally, to eliminate duplicate helper code, we will consolidate the shared write operations (e.g. `saveToMediaWiki`, `syncCustomTemplates`, `notifyStashOwners`, and `cleanHtmlForParsoid`) from the 7 split tRPC router files into a single helper module.
 
 ---
 
 ## Technical Details
 
-### 1. Modifying `getUserSessionAndToken` in `src/lib/wiki-os/csrf-cache.ts`
+### 1. Simplify `getUserSessionAndToken` in `src/lib/wiki-os/csrf-cache.ts`
 * **File:** [csrf-cache.ts](file:///ixwiki/public/projects/ixstats/src/lib/wiki-os/csrf-cache.ts)
 * **Changes:**
-  * Keep the existing precondition check that ensures `wikiUsername` is linked via `getWikiAuth(ctx)`. If not linked, throw `PRECONDITION_FAILED`.
-  * If a `cookieHeader` exists in the request headers:
-    * Try fetching the user's CSRF token from MediaWiki with their cookies.
-    * If the returned token is valid (not undefined and not equal to `"+\\"`), return the user's own cookies and token.
-    * If the token is invalid (`"+\\"`), or the request fails/throws, log a warning indicating that the user's session is invalid/expired and fall back to the bot session instead of throwing an `UNAUTHORIZED` error.
-  * If no `cookieHeader` is present in the request:
-    * Log a warning and immediately fall back to the bot session using `getBotSessionAndToken()`.
-  * Make sure any thrown errors in the bot fallback flow propagate cleanly.
-
-### 2. Verification of Edit Attribution
-* **File:** [editing.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/wikios/editing.ts)
-* **Review:**
-  * When `saveToMediaWiki` executes the edit, it uses the CSRF token and cookies returned by `getUserSessionAndToken(ctx)`.
-  * It passes the summary parameter:
+  * Keep the initial guard that checks if the user has linked their MediaWiki account:
     ```typescript
-    summary: `${summary} (via WikiOS by ${getWikiActorLabel(ctx)})`,
+    const { wikiUsername } = getWikiAuth(ctx);
+    if (!wikiUsername) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "You must link your MediaWiki account via IxnayID before editing.",
+      });
+    }
     ```
-  * `getWikiActorLabel(ctx)` correctly returns `wikiUsername ?? userId ?? "anonymous"`. Because `wikiUsername` is verified to be non-null by the first check in `getUserSessionAndToken`, the edit summary on MediaWiki will always contain `(via WikiOS by <wikiUsername>)`.
+  * Always return `getBotSessionAndToken()`. This bypasses forwarding cookies from the browser header entirely, simplifying the token management and avoiding CSRF issues.
+
+### 2. Consolidated Write Service
+* **File:** [NEW] `src/lib/wiki-os/wiki-write-service.ts`
+* **Contents:**
+  * Define `saveToMediaWiki(title, wikitext, summary, minor, ctx, basetimestamp?, isTemplateSync?)`.
+  * After the Action API edit request succeeds, query the `actor_id` for the user's `wikiUsername` from the MediaWiki database.
+  * If the user doesn't have an `actor_id` yet, look up their `user_id` from `user` table and create a row in the `actor` table.
+  * Execute direct MySQL updates to attribute the edit to the user:
+    * `UPDATE revision SET rev_actor = ? WHERE rev_id = ?`
+    * `UPDATE recentchanges SET rc_actor = ?, rc_user = ?, rc_user_text = ? WHERE rc_this_oldid = ?`
+    * `UPDATE logging SET log_actor = ?, log_user = ?, log_user_text = ? WHERE log_page = ? AND log_timestamp = ?`
+  * Define `updateFileUploadActor(filename, wikiUsername)` to attribute file uploads to the user in the `image`, `revision`, `recentchanges`, and `logging` tables.
+  * Houses helper functions: `syncCustomTemplates`, `notifyStashOwners`, `cleanHtmlForParsoid`, `getOrCreateWikiActorId`.
+
+### 3. Update Split Router Files
+* **Files:**
+  * `src/server/api/routers/wikios/editing.ts`
+  * `src/server/api/routers/wikios/watchlist-annotations.ts`
+  * `src/server/api/routers/wikios/search-categories.ts`
+  * `src/server/api/routers/wikios/stash.ts`
+  * `src/server/api/routers/wikios/templates.ts`
+  * `src/server/api/routers/wikios/user-talk.ts`
+  * `src/server/api/routers/wikios/page-content.ts`
+* **Changes:**
+  * Import `saveToMediaWiki` from `~/lib/wiki-os/wiki-write-service`.
+  * Remove local duplicate private declarations of `saveToMediaWiki`, `syncCustomTemplates`, `notifyStashOwners`, and `cleanHtmlForParsoid`.
+  * In `editing.ts`, update `uploadFile` mutation: after a successful upload, call `updateFileUploadActor(resultFilename, wikiUsername)`.
