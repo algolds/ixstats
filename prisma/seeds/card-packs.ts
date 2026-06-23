@@ -13,8 +13,7 @@ export async function seedCardPacks() {
   console.log("📦 Seeding card packs...");
 
   if (process.env.NODE_ENV === "production") {
-    console.error("❌ Card pack seeding is disabled in production environment");
-    return;
+    console.log("ℹ️  Running card pack seeding in production mode (non-destructive)...");
   }
 
   try {
@@ -23,38 +22,39 @@ export async function seedCardPacks() {
     const fileContent = fs.readFileSync(jsonPath, "utf8");
     const packsData = JSON.parse(fileContent);
 
-    // 2. Clear existing card packs
-    console.log("🧹 Clearing existing card packs...");
-    const { count } = await prisma.cardPack.deleteMany();
-    console.log(`🗑️  Deleted ${count} existing card packs.`);
-
-    // 3. Create all card packs
+    // 2. Upsert all card packs
     let seededCount = 0;
     for (const pack of packsData) {
-      await prisma.cardPack.create({
-        data: {
+      const packPayload = {
+        name: pack.name,
+        description: pack.description,
+        artwork: pack.artwork,
+        packType: pack.packType,
+        priceCredits: pack.priceCredits,
+        cardCount: pack.cardCount,
+        guaranteedRarity: pack.guaranteedRarity || null,
+        isActive: pack.isActive,
+        commonOdds: pack.commonOdds,
+        uncommonOdds: pack.uncommonOdds,
+        rareOdds: pack.rareOdds,
+        ultraRareOdds: pack.ultraRareOdds,
+        epicOdds: pack.epicOdds,
+        legendaryOdds: pack.legendaryOdds,
+        season: pack.season,
+        cardType: pack.cardType,
+        themeFilter: pack.themeFilter || undefined,
+        limitedQuantity: pack.limitedQuantity,
+        purchaseLimit: pack.purchaseLimit,
+        expiresAt: pack.expiresAt ? new Date(pack.expiresAt) : null,
+        pdsConfig: pack.pdsConfig || undefined,
+      };
+
+      await prisma.cardPack.upsert({
+        where: { id: pack.id },
+        update: packPayload,
+        create: {
           id: pack.id,
-          name: pack.name,
-          description: pack.description,
-          artwork: pack.artwork,
-          packType: pack.packType,
-          priceCredits: pack.priceCredits,
-          cardCount: pack.cardCount,
-          guaranteedRarity: pack.guaranteedRarity || null,
-          isActive: pack.isActive,
-          commonOdds: pack.commonOdds,
-          uncommonOdds: pack.uncommonOdds,
-          rareOdds: pack.rareOdds,
-          ultraRareOdds: pack.ultraRareOdds,
-          epicOdds: pack.epicOdds,
-          legendaryOdds: pack.legendaryOdds,
-          season: pack.season,
-          cardType: pack.cardType,
-          themeFilter: pack.themeFilter || undefined,
-          limitedQuantity: pack.limitedQuantity,
-          purchaseLimit: pack.purchaseLimit,
-          expiresAt: pack.expiresAt ? new Date(pack.expiresAt) : null,
-          pdsConfig: pack.pdsConfig || undefined,
+          ...packPayload,
         },
       });
       console.log(`✨ Seeded card pack: ${pack.name} (${pack.packType})`);
