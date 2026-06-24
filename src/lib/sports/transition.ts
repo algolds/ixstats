@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { getPreset, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";
 import { generateCoach, generateRookieClass } from "./talent";
-import { generateSchedule } from "./scheduler";
+import { generateSchedule, matchIntervalMs, raceIntervalMs } from "./scheduler";
 import type { ArchetypeType } from "./presets";
 import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
@@ -657,7 +657,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
             raceNumber: rRec.raceNumber as number,
             circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
             status: "upcoming",
-            raceIxTime: startIxTime + (rRec.raceNumber as number) * 3 * 86400000,
+            raceIxTime:
+              startIxTime + (rRec.raceNumber as number) * raceIntervalMs(season.league.settings),
           },
         });
       }
@@ -696,7 +697,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
             homeTeamId: teamIds[(mRec.homeTeamIndex as number) ?? 0] ?? teamIds[0],
             awayTeamId: teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
             status: "scheduled",
-            scheduledIxTime: startIxTime + ((mRec.matchDay as number) ?? 1) * 86400000,
+            scheduledIxTime:
+              startIxTime + ((mRec.matchDay as number) ?? 1) * matchIntervalMs(season.league.settings),
           },
         });
       }

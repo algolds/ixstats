@@ -11,6 +11,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { StandingsTable } from "~/components/myleague/StandingsTable";
+import { NextMatchCountdown } from "~/components/myleague/NextMatchCountdown";
 import { ScheduleView } from "~/components/myleague/ScheduleView";
 import { BracketView } from "~/components/myleague/BracketView";
 import { RaceResults } from "~/components/myleague/RaceResults";
@@ -77,6 +78,25 @@ const SPORT_LABELS: Record<string, string> = {
   f1: "Formula 1",
   boxing: "Boxing",
 };
+
+function findNextScheduledIxTime(schedule: any): number | null {
+  if (!schedule) return null;
+  const times: number[] = [];
+  if (schedule.races) {
+    for (const r of schedule.races as Array<{ status: string; raceIxTime?: number }>) {
+      if ((r.status === "upcoming" || r.status === "qualifying_complete") && r.raceIxTime) {
+        times.push(r.raceIxTime);
+      }
+    }
+  }
+  if (schedule.matches) {
+    for (const m of schedule.matches as Array<{ status: string; scheduledIxTime?: number }>) {
+      if (m.status === "scheduled" && m.scheduledIxTime) times.push(m.scheduledIxTime);
+    }
+  }
+  if (times.length === 0) return null;
+  return Math.min(...times);
+}
 
 function findNextScheduledMatchDayFromSchedule(schedule: any): number | null {
   if (!schedule) return null;
@@ -284,6 +304,7 @@ export default function LeagueDetailPage() {
   const archetypeLabel = ARCHETYPE_LABELS[league.archetype] ?? league.archetype;
 
   const nextMatchDay = activeSeason ? findNextScheduledMatchDayFromSchedule(schedule) : null;
+  const nextMatchIxTime = activeSeason ? findNextScheduledIxTime(schedule) : null;
 
   const sidebarExtra = (
     <div className="space-y-3">
@@ -640,6 +661,11 @@ export default function LeagueDetailPage() {
                                 ? `Next: Match Day ${nextMatchDay}`
                                 : "Ready to complete"}
                             </p>
+                            {nextMatchDay && nextMatchIxTime && (
+                              <div className="mt-1">
+                                <NextMatchCountdown targetIxTime={nextMatchIxTime} />
+                              </div>
+                            )}
                           </div>
                           {nextMatchDay && (
                             <Button

@@ -177,7 +177,13 @@ async function main() {
     }
   });
 
-  scheduleCron("Sports season auto-advance", "0 */6 * * *", async () => {
+  // Every 15 min: the advancer self-gates on each match's scheduledIxTime and
+  // no-ops when nothing is due, so a tight tick just trims resolve latency.
+  // The reentrancy guard prevents overlap if a run runs long (it shouldn't).
+  let sportsAdvanceRunning = false;
+  scheduleCron("Sports season auto-advance", "*/15 * * * *", async () => {
+    if (sportsAdvanceRunning) return;
+    sportsAdvanceRunning = true;
     try {
       const { PrismaClient } = await import("@prisma/client");
       const { advanceSportsSeasons } = await import("./src/lib/sports/season-cron.js");
@@ -187,6 +193,8 @@ async function main() {
       await db.$disconnect();
     } catch (error) {
       console.error("[Cron] Sports season advance failed:", error.message);
+    } finally {
+      sportsAdvanceRunning = false;
     }
   });
 

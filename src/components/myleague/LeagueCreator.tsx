@@ -105,6 +105,7 @@ export function LeagueCreator({
   const [divisions, setDivisions] = useState(2);
   const [weightClassesRaw, setWeightClassesRaw] = useState("");
   const [raceCount, setRaceCount] = useState(20);
+  const [matchIntervalDays, setMatchIntervalDays] = useState(1);
 
   // Cover image suggestion states
   const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -248,6 +249,9 @@ export function LeagueCreator({
       settings.raceCount = raceCount;
     }
 
+    // IxTime days between matchdays — drives the background auto-advance cadence.
+    settings.matchIntervalDays = matchIntervalDays;
+
     try {
       const result = await createMutation.mutateAsync({
         name: leagueName.trim(),
@@ -273,6 +277,7 @@ export function LeagueCreator({
     divisions,
     weightClassesRaw,
     raceCount,
+    matchIntervalDays,
     isDivisionConference,
     isBoxing,
     isCircuit,
@@ -441,6 +446,32 @@ export function LeagueCreator({
           }}
         />
       </div>
+
+      {/* Match cadence (table-based archetypes) */}
+      {!isCircuit && !isBoxing && (
+        <div className="space-y-1.5">
+          <Label htmlFor="match-interval">IxDays Between Matchdays</Label>
+          <Input
+            id="match-interval"
+            type="number"
+            min={1}
+            max={30}
+            value={matchIntervalDays}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10);
+              if (!isNaN(val)) setMatchIntervalDays(Math.min(30, Math.max(1, val)));
+              else if (e.target.value === "") setMatchIntervalDays(0);
+            }}
+          />
+          <p className="text-muted-foreground text-[11px]">
+            Matches auto-resolve in the background on the IxTime clock. {matchIntervalDays} IxDay
+            {matchIntervalDays === 1 ? "" : "s"} ≈ {(matchIntervalDays / 2).toLocaleString()}{" "}
+            real-world day
+            {matchIntervalDays === 2 ? "" : "s"} between matchdays. Use 7 for a weekly (in-world)
+            schedule.
+          </p>
+        </div>
+      )}
 
       {/* Divisions (only for division_conference) */}
       {isDivisionConference && (

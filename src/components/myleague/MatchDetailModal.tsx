@@ -15,6 +15,7 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { Loader2, Sparkles } from "lucide-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { MatchPredictionWidget } from "~/components/myleague/MatchPredictionWidget";
 import Link from "next/link";
 
 interface MatchDetailModalProps {
@@ -173,6 +174,16 @@ export default function MatchDetailModal({
                 )}
               </div>
             </div>
+
+            {/* Prediction market — only before kickoff */}
+            {match.status === "scheduled" && (
+              <MatchPredictionWidget
+                matchId={matchId!}
+                homeName={match.homeTeam.name}
+                awayName={match.awayTeam.name}
+                bettingOpen
+              />
+            )}
 
             {/* AI Narration / Match Report Area */}
             <div className="space-y-3">

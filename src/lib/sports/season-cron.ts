@@ -12,6 +12,10 @@ import { IxTime } from "../ixtime";
 import { resolveMatch, resolveRace, createRNG } from "./resolver";
 import type { TeamRatingVector } from "./resolver";
 import { transitionToNextStage } from "./transition";
+import { postMatchDayBulletin } from "./feed-post";
+import { notifyClubMatchResult } from "./club-notify";
+import { resolveMatchPredictions, outcomeFromScores } from "./predictions";
+import type { MatchDayResultLine } from "./feed-bulletins";
 
 type Prisma = PrismaClient;
 
@@ -195,7 +199,11 @@ async function completeSeason(
 
 async function advanceLeagueMatchDay(
   prisma: Prisma,
-  season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } }
+  season: {
+    id: string;
+    leagueId: string;
+    league: { name: string; archetype: string; sportPreset: string };
+  }
 ): Promise<boolean> {
   // Find the earliest match day with scheduled matches
   const scheduledMatches = await prisma.sportMatch.findMany({
@@ -253,6 +261,15 @@ async function advanceLeagueMatchDay(
   }
 
   const gotchas = new Map<string, { wins: number; losses: number; draws: number }>();
+  const resultLines: MatchDayResultLine[] = [];
+  const ownerNotifs: Array<{
+    userId: string;
+    teamName: string;
+    opponentName: string;
+    teamScore: number;
+    opponentScore: number;
+    teamId: string;
+  }> = [];
   for (const m of matches) {
     const homeRatings = ratingMap.get(m.homeTeamId) ?? defaultRatingVector();
     const awayRatings = ratingMap.get(m.awayTeamId) ?? defaultRatingVector();
@@ -329,6 +346,37 @@ async function advanceLeagueMatchDay(
     }
     gotchas.set(m.homeTeamId, homeRec);
     gotchas.set(m.awayTeamId, awayRec);
+
+    resultLines.push({
+      homeName: m.homeTeam.name,
+      awayName: m.awayTeam.name,
+      homeScore: result.homeScore,
+      awayScore: result.awayScore,
+    });
+
+    if (m.homeTeam.ownerUserId) {
+      ownerNotifs.push({
+        userId: m.homeTeam.ownerUserId,
+        teamId: m.homeTeamId,
+        teamName: m.homeTeam.name,
+        opponentName: m.awayTeam.name,
+        teamScore: result.homeScore,
+        opponentScore: result.awayScore,
+      });
+    }
+    if (m.awayTeam.ownerUserId) {
+      ownerNotifs.push({
+        userId: m.awayTeam.ownerUserId,
+        teamId: m.awayTeamId,
+        teamName: m.awayTeam.name,
+        opponentName: m.homeTeam.name,
+        teamScore: result.awayScore,
+        opponentScore: result.homeScore,
+      });
+    }
+
+    // Settle any matchday predictions on this match.
+    await resolveMatchPredictions(prisma, m.id, outcomeFromScores(result.homeScore, result.awayScore));
   }
 
   // Update standings
@@ -365,16 +413,53 @@ async function advanceLeagueMatchDay(
     }
   }
 
-  // Re-rank standings
+  // Re-rank standings, capturing movement for teams that played this matchday.
+  const nameById = new Map<string, string>();
+  for (const m of matches) {
+    nameById.set(m.homeTeamId, m.homeTeam.name);
+    nameById.set(m.awayTeamId, m.awayTeam.name);
+  }
+
   const allStandings = await prisma.sportStanding.findMany({
     where: { seasonId: season.id },
     orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
   });
 
+  const movers: Array<{ name: string; oldRank: number; newRank: number }> = [];
   for (let i = 0; i < allStandings.length; i++) {
-    await prisma.sportStanding.update({
-      where: { id: allStandings[i]!.id },
-      data: { rank: i + 1 },
+    const row = allStandings[i]!;
+    const newRank = i + 1;
+    const oldRank = row.rank ?? 0; // pre-update rank (from the prior matchday)
+    await prisma.sportStanding.update({ where: { id: row.id }, data: { rank: newRank } });
+
+    const name = nameById.get(row.teamId);
+    if (name && oldRank > 0 && oldRank !== newRank) {
+      movers.push({ name, oldRank, newRank });
+    }
+  }
+  movers.sort((a, b) => Math.abs(b.oldRank - b.newRank) - Math.abs(a.oldRank - a.newRank));
+  const topMovers = movers.slice(0, 3);
+
+  // Post the matchday bulletin to the feed (same path as the manual sim).
+  await postMatchDayBulletin(prisma, {
+    leagueName: season.league.name,
+    sportPreset: season.league.sportPreset,
+    matchDay: targetMatchDay,
+    results: resultLines,
+    movers: topMovers,
+  });
+
+  // Notify club owners of their result (in-app bell + durable DM record).
+  for (const n of ownerNotifs) {
+    await notifyClubMatchResult(prisma, {
+      userId: n.userId,
+      leagueName: season.league.name,
+      teamName: n.teamName,
+      opponentName: n.opponentName,
+      teamScore: n.teamScore,
+      opponentScore: n.opponentScore,
+      matchDay: targetMatchDay,
+      teamId: n.teamId,
     });
   }
 
@@ -693,16 +778,17 @@ export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
   let advanced = 0;
 
   const activeSeasons = await prisma.sportSeason.findMany({
-    where: { status: "in_progress" },
+    // Paused leagues freeze in place — commissioner sets league.status = "paused".
+    where: { status: "in_progress", league: { status: { not: "paused" } } },
     include: {
-      league: { select: { id: true, archetype: true, sportPreset: true, settings: true } },
+      league: {
+        select: { id: true, name: true, archetype: true, sportPreset: true, settings: true },
+      },
     },
   });
 
   for (const season of activeSeasons) {
     try {
-      let advancedSeason = false;
-
       let activeArchetype = season.league.archetype;
       const settings = (season as any).settings ?? (season.league as any).settings ?? {};
       const stages = (settings as any).stages;
@@ -713,22 +799,34 @@ export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
         }
       }
 
-      switch (activeArchetype) {
-        case "league":
-        case "division_conference":
-        case "round_robin":
-          advancedSeason = await advanceLeagueMatchDay(prisma, season);
-          break;
-        case "circuit":
-          advancedSeason = await advanceCircuitRace(prisma, season);
-          break;
-        case "bracket":
-        case "golden_box":
-          advancedSeason = await advanceBracketRound(prisma, season);
-          break;
+      // ponytail: bounded catch-up loop — drain every matchday/race/round already
+      // due in IxTime, capped at MAX_STEPS_PER_RUN so a long-idle cron can't
+      // stampede the DB in one tick. Each step re-queries and self-gates on
+      // scheduledIxTime, so it stops as soon as nothing is due. Stage transitions
+      // mid-run are deferred to the next cron tick (rare; keeps this simple).
+      const MAX_STEPS_PER_RUN = 50;
+      let didWork = false;
+      for (let step = 0; step < MAX_STEPS_PER_RUN; step++) {
+        let stepAdvanced = false;
+        switch (activeArchetype) {
+          case "league":
+          case "division_conference":
+          case "round_robin":
+            stepAdvanced = await advanceLeagueMatchDay(prisma, season);
+            break;
+          case "circuit":
+            stepAdvanced = await advanceCircuitRace(prisma, season);
+            break;
+          case "bracket":
+          case "golden_box":
+            stepAdvanced = await advanceBracketRound(prisma, season);
+            break;
+        }
+        if (!stepAdvanced) break;
+        didWork = true;
       }
 
-      if (advancedSeason) {
+      if (didWork) {
         advanced++;
       }
     } catch (error) {

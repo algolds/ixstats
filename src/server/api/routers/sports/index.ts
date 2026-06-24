@@ -19,6 +19,7 @@ import { sportsSeasonsRouter } from "./seasons";
 import { sportsStandingsRouter } from "./standings";
 import { sportsTransfersRouter } from "./transfers";
 import { sportsClubRouter } from "./club";
+import { sportsPredictionsRouter } from "./predictions";
 
 export const sportsRouter = mergeRouters(
   sportsLeaguesRouter,
@@ -26,5 +27,6 @@ export const sportsRouter = mergeRouters(
   sportsSeasonsRouter,
   sportsStandingsRouter,
   sportsTransfersRouter,
-  sportsClubRouter
+  sportsClubRouter,
+  sportsPredictionsRouter
 );

@@ -11,6 +11,8 @@ import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import {
   generateSchedule,
+  matchIntervalMs,
+  raceIntervalMs,
   transitionSeasonAction,
   type ArchetypeType,
 } from "~/lib/sports";
@@ -137,7 +139,8 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
                 raceNumber: rRec.raceNumber as number,
                 circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
                 status: "upcoming",
-                raceIxTime: startIxTime + (rRec.raceNumber as number) * 3 * 86400000,
+                raceIxTime:
+                  startIxTime + (rRec.raceNumber as number) * raceIntervalMs(league.settings),
               },
             });
           }
@@ -180,7 +183,8 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
                 awayTeamId:
                   teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
                 status: "scheduled",
-                scheduledIxTime: startIxTime + ((mRec.matchDay as number) ?? 1) * 86400000,
+                scheduledIxTime:
+                  startIxTime + ((mRec.matchDay as number) ?? 1) * matchIntervalMs(league.settings),
               },
             });
           }

@@ -48,7 +48,7 @@ export function MatchTickerSim({
       if (step) {
         // Update scores if event is goal
         if (step.type === "goal") {
-          if (step.teamId === "home") {
+          if (step.team === "home") {
             setHomeScore((s) => s + 1);
           } else {
             setAwayScore((s) => s + 1);
@@ -128,9 +128,7 @@ export function MatchTickerSim({
                   alertEvent.type === "goal"
                     ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                     : alertEvent.type === "card"
-                      ? alertEvent.cardType === "red"
-                        ? "border-red-500/30 bg-red-500/20 text-red-600 dark:text-red-400"
-                        : "border-yellow-500/30 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                      ? "border-yellow-500/30 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
                       : alertEvent.type === "injury"
                         ? "border-rose-500/30 bg-rose-500/20 text-rose-600 dark:text-rose-400"
                         : "border-blue-500/30 bg-blue-500/20 text-blue-600 dark:text-blue-400"
@@ -145,11 +143,10 @@ export function MatchTickerSim({
                 )}
                 {alertEvent.type === "tactic_shift" && <Users className="h-4 w-4" />}
                 <span>
-                  {alertEvent.type === "goal" && `GOAL! (${alertEvent.minute}')`}
-                  {alertEvent.type === "card" &&
-                    `${alertEvent.cardType === "red" ? "RED" : "YELLOW"} CARD (${alertEvent.minute}')`}
-                  {alertEvent.type === "injury" && `INJURY DETECTED (${alertEvent.minute}')`}
-                  {alertEvent.type === "tactic_shift" && `TACTICAL SHIFT (${alertEvent.minute}')`}
+                  {alertEvent.type === "goal" && `GOAL! (${alertEvent.t}')`}
+                  {alertEvent.type === "card" && `CARD / PENALTY (${alertEvent.t}')`}
+                  {alertEvent.type === "injury" && `INJURY DETECTED (${alertEvent.t}')`}
+                  {alertEvent.type === "tactic_shift" && `TACTICAL SHIFT (${alertEvent.t}')`}
                 </span>
               </motion.div>
             )}
@@ -217,7 +214,7 @@ export function MatchTickerSim({
                   exit={{ opacity: 0, y: -10 }}
                   className="text-muted-foreground text-xs leading-relaxed italic"
                 >
-                  {currentStep.commentary || "Both squads vying for possession."}
+                  {currentStep.description || "Both squads vying for possession."}
                 </motion.p>
               )}
             </AnimatePresence>

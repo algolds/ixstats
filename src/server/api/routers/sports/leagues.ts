@@ -19,6 +19,8 @@ import {
   generateTeamRoster,
   generateCoach,
   generateSchedule,
+  matchIntervalMs,
+  raceIntervalMs,
   teamIndexHash,
   type SportPresetKey,
 } from "~/lib/sports";
@@ -751,7 +753,9 @@ export const sportsLeaguesRouter = createTRPCRouter({
                 raceNumber: rRec.raceNumber as number,
                 circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
                 status: "upcoming",
-                raceIxTime: startIxTime + (rRec.raceNumber as number) * 3 * 86400000,
+                raceIxTime:
+                  startIxTime +
+                  (rRec.raceNumber as number) * raceIntervalMs(season.league.settings),
               },
             });
           }
@@ -791,7 +795,9 @@ export const sportsLeaguesRouter = createTRPCRouter({
                 awayTeamId:
                   teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
                 status: "scheduled",
-                scheduledIxTime: startIxTime + ((mRec.matchDay as number) ?? 1) * 86400000,
+                scheduledIxTime:
+                  startIxTime +
+                  ((mRec.matchDay as number) ?? 1) * matchIntervalMs(season.league.settings),
               },
             });
           }

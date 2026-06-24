@@ -11,6 +11,8 @@ import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/exchange-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { teamWageBill } from "~/lib/sports";
+import { IxTime } from "~/lib/ixtime";
+import type { LiveTraceEvent } from "~/lib/sports/live-match";
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 
@@ -383,6 +385,52 @@ export const sportsTeamsRouter = createTRPCRouter({
   // ═══ History & Records ══════════════════════════════════════════════════════
 
   // ═══ MyClub ══════════════════════════════════════════════════════════════════
+
+  /**
+   * Matches involving the signed-in user's clubs that resolved recently enough to
+   * still be "live broadcasting" in IxTime. Drives the Halo Live Activity. Cheap
+   * (indexed on resolvedIxTime/team), safe to poll every ~30s.
+   */
+  getLiveActivities: protectedProcedure.query(async ({ ctx }) => {
+    // ponytail: window is in IxTime; 10 IxMinutes ≈ 5 real minutes at the 2x clock.
+    const LIVE_WINDOW_IXMS = 10 * 60 * 1000;
+    const now = IxTime.getCurrentIxTime();
+
+    const myTeams = await ctx.db.sportTeam.findMany({
+      where: { ownerUserId: ctx.user.id },
+      select: { id: true },
+    });
+    if (myTeams.length === 0) return [];
+    const teamIds = myTeams.map((t) => t.id);
+
+    const matches = await ctx.db.sportMatch.findMany({
+      where: {
+        status: "completed",
+        resolvedIxTime: { gte: now - LIVE_WINDOW_IXMS, lte: now },
+        OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
+      },
+      include: {
+        homeTeam: { select: { name: true, shortName: true, color: true } },
+        awayTeam: { select: { name: true, shortName: true, color: true } },
+        season: { select: { league: { select: { name: true, sportPreset: true } } } },
+      },
+      orderBy: { resolvedIxTime: "desc" },
+      take: 5,
+    });
+
+    return matches.map((m) => ({
+      matchId: m.id,
+      leagueName: m.season.league.name,
+      sportPreset: m.season.league.sportPreset,
+      resolvedIxTime: m.resolvedIxTime!,
+      windowMs: LIVE_WINDOW_IXMS,
+      homeTeam: m.homeTeam,
+      awayTeam: m.awayTeam,
+      finalHomeScore: m.homeScore ?? 0,
+      finalAwayScore: m.awayScore ?? 0,
+      trace: (((m.matchStats as Record<string, unknown> | null)?.trace ?? []) as LiveTraceEvent[]),
+    }));
+  }),
 
   getMyClubs: protectedProcedure.query(async ({ ctx }) => {
     try {

@@ -25,6 +25,7 @@ import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { DIPluginProvider } from "~/components/DynamicIsland";
+import { SportsLiveDIPlugin } from "~/components/DynamicIsland/plugins/SportsLiveDIPlugin";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 
@@ -74,6 +75,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                   <NotificationBadgeProvider>
                     <GlobalNotificationSystem>
                       <DIPluginProvider>
+                        <SportsLiveDIPlugin />
                         <WikiContextProvider>
                           <WebGLErrorHandler />
                           <MapPrefetcher />

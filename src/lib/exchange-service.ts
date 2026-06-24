@@ -32,7 +32,9 @@ export type ExchangeTxType =
   | "CONTRACT_PAYOUT"
   | "ADMIN_ADJUSTMENT"
   | "TRAINING_FEE"
-  | "TEAM_TRAINING";
+  | "TEAM_TRAINING"
+  | "PREDICTION_STAKE"
+  | "PREDICTION_PAYOUT";
 
 export interface ExchangeMutationResult {
   success: boolean;

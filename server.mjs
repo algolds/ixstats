@@ -284,8 +284,13 @@ app
         }
       });
 
-      // 8. Sports season auto-advance (every 6 hours)
-      scheduleCron("Sports Season Auto-Advance", "0 */6 * * *", async () => {
+      // 8. Sports season auto-advance (every 15 min; self-gates on scheduledIxTime).
+      // ponytail: single-process reentrancy guard. If both this and the standalone
+      // cron-runner run, only run sports advance in one (cron-runner owns it).
+      let sportsAdvanceRunning = false;
+      scheduleCron("Sports Season Auto-Advance", "*/15 * * * *", async () => {
+        if (sportsAdvanceRunning) return;
+        sportsAdvanceRunning = true;
         try {
           const { PrismaClient } = await import("@prisma/client");
           const db = new PrismaClient();
@@ -296,6 +301,8 @@ app
           await db.$disconnect();
         } catch (error) {
           console.error("[Cron] Sports season advance failed:", error.message);
+        } finally {
+          sportsAdvanceRunning = false;
         }
       });
 

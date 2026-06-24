@@ -435,43 +435,41 @@ export default function MyClubTeamDetailPage() {
                       {
                         t: 0,
                         type: "tactic_shift",
-                        commentary: "Kickoff! Both teams set default shapes.",
+                        description: "Kickoff! Both teams set default shapes.",
                       },
                       {
                         t: 14,
                         type: "tactic_shift",
-                        commentary: `${team.name} advances midfielders.`,
+                        description: `${team.name} advances midfielders.`,
                       },
                       {
                         t: 34,
                         type: "goal",
-                        teamId: "home",
-                        minute: 34,
-                        commentary: `WHAT A STRIKE! ${team.name} takes the lead!`,
+                        team: "home",
+                        description: `WHAT A STRIKE! ${team.name} takes the lead!`,
                       },
                       {
                         t: 45,
                         type: "tactic_shift",
-                        commentary: "Half time adjustments underway.",
+                        description: "Half time adjustments underway.",
                       },
                       {
                         t: 62,
                         type: "card",
                         cardType: "yellow",
                         minute: 62,
-                        commentary: "Yellow card issued for late challenge.",
+                        description: "Yellow card issued for late challenge.",
                       },
                       {
                         t: 78,
                         type: "goal",
-                        teamId: "away",
-                        minute: 78,
-                        commentary: "Equalizer! Rival Athletic converts the cross.",
+                        team: "away",
+                        description: "Equalizer! Rival Athletic converts the cross.",
                       },
                       {
                         t: 90,
                         type: "tactic_shift",
-                        commentary: "Full time whistle. Match ends drawn.",
+                        description: "Full time whistle. Match ends drawn.",
                       },
                     ]}
                   />

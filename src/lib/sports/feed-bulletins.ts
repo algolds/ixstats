@@ -9,14 +9,27 @@ export interface MatchDayResultLine {
 /**
  * Format a match day's results into a single bulletin content block.
  */
+export interface StandingMover {
+  name: string;
+  oldRank: number;
+  newRank: number;
+}
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
+}
+
 export function formatMatchDayBulletin(args: {
   leagueName: string;
   sportEmoji: string;
   matchDay: number;
   results: MatchDayResultLine[];
+  movers?: StandingMover[];
   llmSummary?: string;
 }): string {
-  const { leagueName, sportEmoji, matchDay, results, llmSummary } = args;
+  const { leagueName, sportEmoji, matchDay, results, movers, llmSummary } = args;
 
   const header = `${sportEmoji} **${leagueName}** — Matchday ${matchDay}`;
   const separator = "═".repeat(30);
@@ -39,9 +52,21 @@ export function formatMatchDayBulletin(args: {
           .join("\n")
       : "";
 
+  const moversSection =
+    movers && movers.length > 0
+      ? `\n\n📈 **Table Movers**\n` +
+        movers
+          .map((m) => {
+            const up = m.newRank < m.oldRank;
+            const arrow = up ? "▲" : "▼";
+            return `• ${m.name} ${arrow}${Math.abs(m.oldRank - m.newRank)} (${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
+          })
+          .join("\n")
+      : "";
+
   const summarySection = llmSummary ? `\n\n📝 **Matchday Summary**\n${llmSummary}` : "";
 
-  return `${header}\n${separator}\n${matchLines.join("\n")}${upsetSection}${summarySection}`;
+  return `${header}\n${separator}\n${matchLines.join("\n")}${upsetSection}${moversSection}${summarySection}`;
 }
 
 /**
