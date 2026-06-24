@@ -123,9 +123,20 @@ export function useAtomicEconomicBuilder({
   const [categoryFilter, setCategoryFilter] = useState<EconomicCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Sync state if initialSelection changes
+  // Sync state when initialSelection changes by VALUE (not reference). Callers often pass
+  // a fresh array each render (e.g. default `[]` or a recomputed prop); keying the reset on
+  // reference would clobber the user's live selection on every render. Compare as sets so we
+  // only adopt genuinely new async-loaded data and never revert an in-progress edit.
   useEffect(() => {
-    setSelectedComponents(initialSelection);
+    setSelectedComponents((prev) => {
+      if (
+        prev.length === initialSelection.length &&
+        prev.every((c) => initialSelection.includes(c))
+      ) {
+        return prev;
+      }
+      return initialSelection;
+    });
   }, [initialSelection]);
 
   // ============================================================================

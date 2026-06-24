@@ -81,9 +81,19 @@ export function useAtomicGovernmentBuilder({
   const [categoryFilter, setCategoryFilter] = useState<string | null>(defaultCategoryFilter);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Sync state if initialComponents changes
+  // Sync state when initialComponents changes by VALUE (not reference). Callers often pass
+  // a fresh array each render; keying the reset on reference would clobber the user's live
+  // selection every render. Compare as sets so we only adopt genuinely new loaded data.
   useEffect(() => {
-    setSelectedComponents(initialComponents);
+    setSelectedComponents((prev) => {
+      if (
+        prev.length === initialComponents.length &&
+        prev.every((c) => initialComponents.includes(c))
+      ) {
+        return prev;
+      }
+      return initialComponents;
+    });
   }, [initialComponents]);
 
   // Sync category filter if defaultCategoryFilter changes

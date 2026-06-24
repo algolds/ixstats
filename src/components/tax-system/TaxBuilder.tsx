@@ -118,10 +118,12 @@ export function TaxBuilder({
     updateValidation: _updateValidation,
   } = useTaxBuilderState({ initialData, countryId });
 
-  // Auto-sync hook
+  // Auto-sync hook. It observes localBuilderState (passed below) and pushes to the
+  // server — it must NOT own the displayed editing copy, or edits made through the
+  // local handlers never reach the UI.
   const {
-    builderState: autoSyncState,
-    setBuilderState: setAutoSyncState,
+    builderState: _autoSyncState,
+    setBuilderState: _setAutoSyncState,
     syncState,
     triggerSync: _triggerSync,
     clearConflicts,
@@ -135,18 +137,13 @@ export function TaxBuilder({
     },
   });
 
-  // Use auto-sync state if enabled, otherwise use local state
-  const builderState = enableAutoSync && countryId ? autoSyncState : localBuilderState;
-  const setBuilderState = useCallback(
-    (update: React.SetStateAction<TaxBuilderState>) => {
-      if (enableAutoSync && countryId) {
-        setAutoSyncState(update);
-      } else {
-        setLocalBuilderState(update);
-      }
-    },
-    [enableAutoSync, countryId, setAutoSyncState, setLocalBuilderState]
-  );
+  // Single source of truth: the local editing store. The auto-sync hook mirrors this
+  // (it receives localBuilderState as its initialData) and handles server pushes.
+  // ponytail: one store, not two — the dual-store split left the tax form uneditable
+  // whenever a countryId was present (auto-sync on), because edits went to localBuilderState
+  // while the UI rendered the never-updated autoSyncState.
+  const builderState = localBuilderState;
+  const setBuilderState = setLocalBuilderState;
   const selectedAtomicTaxComponents = builderState.selectedAtomicTaxComponents || [];
   const setSelectedAtomicTaxComponents = useCallback(
     (components: string[] | ((prev: string[]) => string[])) => {

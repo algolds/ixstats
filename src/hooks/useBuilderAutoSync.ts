@@ -268,6 +268,12 @@ export function useTaxBuilderAutoSync(
     syncError: null,
   });
 
+  // Track the parent's editing store: useState only captured initialData once, so without
+  // this the hook would push the mount-time snapshot and silently drop every later edit.
+  useEffect(() => {
+    setBuilderState(initialData);
+  }, [initialData]);
+
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const previousStateRef = useRef<TaxBuilderState>(initialData);
 

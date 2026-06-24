@@ -14,7 +14,9 @@
  */
 
 import { db } from "~/server/db";
-import { auctionService } from "./auction-service";
+// auctionService is imported lazily inside processExpiredAuctions: a static top-level
+// import binds it before auction-service.ts finishes evaluating in the cron's module
+// graph (circular import), leaving the binding permanently in TDZ for this process.
 
 /**
  * Process all expired auctions
@@ -57,6 +59,7 @@ export async function processExpiredAuctions() {
     }
 
     // Process each auction
+    const { auctionService } = await import("./auction-service");
     let successCount = 0;
     let failCount = 0;
     const errors: Array<{ auctionId: string; error: string }> = [];
