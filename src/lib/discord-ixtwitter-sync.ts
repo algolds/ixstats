@@ -13,6 +13,7 @@ import { PrismaClient } from "@prisma/client";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 import { DOMParser } from "@xmldom/xmldom";
+import { buildDiscordPollObject } from "~/lib/discord-poll";
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
 // IxTwitter is one-way (Discord → feed only). The dedicated ThinkPages channel handles feed → Discord.
@@ -890,7 +891,7 @@ export function formatThinkPagesEmbed(
 
 export async function postThinkPagesToDiscord(
   db: PrismaClient,
-  post: { id: string; content: string; ixTimeTimestamp?: Date | string },
+  post: { id: string; content: string; ixTimeTimestamp?: Date | string; pollId?: string | null },
   account: {
     displayName: string;
     username: string;
@@ -908,6 +909,19 @@ export async function postThinkPagesToDiscord(
   try {
     const embeds = formatThinkPagesEmbed(post, account, mediaUrls);
 
+    // If the post has an attached poll, render it as a native, votable Discord poll
+    // in the same message (Discord allows embeds + poll together).
+    let poll: ReturnType<typeof buildDiscordPollObject> | undefined;
+    if (post.pollId) {
+      const pollRow = await db.poll.findUnique({
+        where: { id: post.pollId },
+        select: { question: true, multiple: true, endDate: true, options: { select: { label: true } } },
+      });
+      if (pollRow && pollRow.options.length >= 2) {
+        poll = buildDiscordPollObject(pollRow);
+      }
+    }
+
     const res = await fetch(`${DISCORD_API_BASE}/channels/${IXTWITTER_CHANNEL_ID}/messages`, {
       method: "POST",
       headers: {
@@ -915,7 +929,7 @@ export async function postThinkPagesToDiscord(
         "Content-Type": "application/json",
         "User-Agent": "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)",
       },
-      body: JSON.stringify({ embeds }),
+      body: JSON.stringify(poll ? { embeds, poll } : { embeds }),
       signal: AbortSignal.timeout(15000),
     });
 

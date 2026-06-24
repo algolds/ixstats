@@ -1,42 +1,18 @@
 import { discordWebhook } from "~/lib/discord-webhook";
+import { buildDiscordPollObject, type PollForDiscord } from "~/lib/discord-poll";
 
 const TARGET_CHANNEL_ID = "557016199427522561";
 
-// Discord native-poll limits: https://discord.com/developers/docs/resources/poll
-const MAX_QUESTION = 300;
-const MAX_ANSWER = 55;
-const MAX_ANSWERS = 10;
-const MAX_DURATION_HOURS = 768; // 32 days
-
-interface PollLike {
-  question: string;
-  description?: string | null;
-  multiple: boolean;
-  endDate?: Date | null;
-  options: { label: string }[];
-}
+type PollLike = PollForDiscord & { description?: string | null };
 
 /**
- * Build Discord's native poll payload so the message renders as a real,
- * votable Discord poll (not just an embed describing one).
+ * Build the Discord message payload so it renders as a real, votable poll
+ * (not just an embed describing one).
  */
 export function buildPollPayload(poll: PollLike) {
-  // duration is whole hours from now to endDate, clamped to Discord's bounds.
-  let duration = 24;
-  if (poll.endDate) {
-    const hours = Math.ceil((poll.endDate.getTime() - Date.now()) / 3_600_000);
-    duration = Math.min(Math.max(hours, 1), MAX_DURATION_HOURS);
-  }
   return {
     content: poll.description?.slice(0, 2000) || undefined,
-    poll: {
-      question: { text: poll.question.slice(0, MAX_QUESTION) },
-      answers: poll.options.slice(0, MAX_ANSWERS).map((o) => ({
-        poll_media: { text: o.label.slice(0, MAX_ANSWER) },
-      })),
-      duration,
-      allow_multiselect: poll.multiple,
-    },
+    poll: buildDiscordPollObject(poll),
   };
 }
 
