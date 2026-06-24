@@ -120,17 +120,12 @@ export const INFOBOX_FIELD_MAPPING: Record<
   government_type: {
     ixStatsField: "nationalIdentity.governmentType",
     model: "NationalIdentity",
-    transform: (value) => {
-      // Normalize government types to IxStats standard values
-      const normalized = value.toLowerCase();
-      if (normalized.includes("republic")) return "republic";
-      if (normalized.includes("kingdom") || normalized.includes("monarchy")) return "kingdom";
-      if (normalized.includes("federation")) return "federation";
-      if (normalized.includes("empire")) return "empire";
-      if (normalized.includes("sultanate")) return "sultanate";
-      if (normalized.includes("emirate")) return "emirate";
-      return "republic"; // default
-    },
+    // ponytail: infobox government_type is canon — store it VERBATIM. The old
+    // transform collapsed bespoke lore ("Unitary Quaternalist Republic", "Federal
+    // demarchy") into 6 buckets, destroying it (and broke the monarchy achievement
+    // by mapping monarchy→"kingdom"). For a coarse class, derive it ALONGSIDE the
+    // verbatim string with deriveGovCategory() at the call-site — never replace it.
+    // See plans/mycountry-lore-alignment*.md.
   },
 
   // === COUNTRY MODEL FIELDS === //
@@ -281,6 +276,25 @@ export function mapInfoboxToIxStats(wikiData: WikiInfoboxData): IxStatsCountryDa
   }
 
   return result;
+}
+
+/**
+ * Derive a coarse government category from the verbatim government_type string,
+ * for sim/filtering ONLY. Additive — never overwrite the canon string with this.
+ * Returns undefined when nothing matches (don't fabricate "republic").
+ */
+export function deriveGovCategory(
+  governmentType: string | null | undefined,
+): "republic" | "monarchy" | "federation" | "empire" | "sultanate" | "emirate" | undefined {
+  if (!governmentType) return undefined;
+  const s = governmentType.toLowerCase();
+  if (s.includes("empire")) return "empire";
+  if (s.includes("sultanate")) return "sultanate";
+  if (s.includes("emirate")) return "emirate";
+  if (s.includes("kingdom") || s.includes("monarchy")) return "monarchy";
+  if (s.includes("federation")) return "federation";
+  if (s.includes("republic")) return "republic";
+  return undefined;
 }
 
 /**

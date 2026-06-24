@@ -12,9 +12,12 @@ import type { GovernmentTemplate } from "~/types/government";
 // Enhanced Government Templates with Atomic Components
 export const governmentTemplates: GovernmentTemplate[] = [
   {
-    name: "Caphirian Imperial Administration",
-    governmentType: "Constitutional Monarchy",
-    description: "Complex administrative structure with Imperial oversight and provincial autonomy",
+    name: "Imperial Administration",
+    // ponytail: generic archetype, not a canon-nation claim. Was mislabeled "Caphirian
+    // … Constitutional Monarchy" — Caphiria is a unitary constitutional republic with an
+    // Imperator, NOT a monarchy. See plans/mycountry-lore-alignment*.md.
+    governmentType: "Imperial Republic",
+    description: "Complex administrative structure with imperial oversight and provincial autonomy",
     fiscalYear: "Calendar Year",
     departments: [
       {

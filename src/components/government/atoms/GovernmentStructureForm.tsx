@@ -521,24 +521,23 @@ export function GovernmentStructureForm({
                 >
                   Government Type
                 </Label>
-                <Select
+                {/* Free-text combobox: bespoke lore forms (e.g. "Unitary Quaternalist
+                    Republic", "Federal demarchy") must be typeable; the list is only
+                    suggestions. See plans/mycountry-lore-alignment*.md */}
+                <Input
+                  id="governmentType"
+                  list="governmentTypeSuggestions"
                   value={data.governmentType}
-                  onValueChange={(value: string) =>
-                    handleChange("governmentType", value as GovernmentType)
-                  }
+                  onChange={(e) => handleChange("governmentType", e.target.value)}
+                  placeholder="e.g., Unitary Quaternalist Republic"
                   disabled={isReadOnly}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select government type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {governmentTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  className="w-full"
+                />
+                <datalist id="governmentTypeSuggestions">
+                  {governmentTypes.map((type) => (
+                    <option key={type} value={type} />
+                  ))}
+                </datalist>
               </div>
             </div>
           )}

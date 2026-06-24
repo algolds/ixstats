@@ -138,6 +138,11 @@ export type OrganizationalLevel =
   | "Office"
   | "Commission";
 
+// Government type is lore-first free text: the wiki holds bespoke forms (e.g. "Unitary
+// Quaternalist Republic", "Federal demarchy") that must not be forced into a fixed set.
+// The string literals below are autocomplete SUGGESTIONS, not a closed enum — the
+// `(string & {})` keeps arbitrary values valid while preserving editor hints.
+// See plans/mycountry-lore-alignment*.md.
 export type GovernmentType =
   | "Constitutional Monarchy"
   | "Federal Republic"
@@ -149,7 +154,8 @@ export type GovernmentType =
   | "Confederation"
   | "Empire"
   | "City-State"
-  | "Other";
+  | "Other"
+  | (string & {});
 
 export type DepartmentCategory =
   | "Defense"
