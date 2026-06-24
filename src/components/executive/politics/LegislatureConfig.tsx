@@ -17,10 +17,28 @@ import {
 import { Landmark, Save, CheckCircle } from "lucide-react";
 import { api } from "~/trpc/react";
 
+type SelectionMethod =
+  | "elected"
+  | "appointed"
+  | "sortition"
+  | "hereditary"
+  | "ex-officio"
+  | "corporatist";
+
+const SELECTION_METHOD_LABELS: Record<SelectionMethod, string> = {
+  elected: "Elected",
+  appointed: "Appointed",
+  sortition: "Sortition (by lot)",
+  hereditary: "Hereditary",
+  "ex-officio": "Ex-officio",
+  corporatist: "Corporatist (by sector)",
+};
+
 interface ChamberItem {
   name: string;
   seats: number;
   electoralSystem: "proportional" | "fptp" | "mixed";
+  selectionMethod: SelectionMethod;
 }
 
 function parseChambersClient(
@@ -34,11 +52,12 @@ function parseChambersClient(
     if (serialized) {
       const parts = serialized.split(";").filter(Boolean);
       return parts.map((part) => {
-        const [name, seatsStr, system] = part.split(":");
+        const [name, seatsStr, system, selection] = part.split(":");
         return {
           name: name || "Chamber",
           seats: Number(seatsStr) || 100,
           electoralSystem: (system || globalElectoralSystem || "proportional") as any,
+          selectionMethod: (selection || "elected") as SelectionMethod,
         };
       });
     }
@@ -228,7 +247,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     const clampedTotal = Math.max(10, Math.min(10000, computedTotal));
 
     const serializedChambers = clampedChambers
-      .map((c) => `${c.name}:${c.seats}:${c.electoralSystem}`)
+      .map((c) => `${c.name}:${c.seats}:${c.electoralSystem}:${c.selectionMethod || "elected"}`)
       .join(";");
     const fullChamberType = `${formData.chamberType}|${serializedChambers}`;
 
@@ -376,7 +395,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 {chambers.map((chamber, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-1 gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 sm:grid-cols-3"
+                    className="grid grid-cols-1 gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3 sm:grid-cols-2 lg:grid-cols-4"
                   >
                     <div className="space-y-1">
                       <Label className="text-[10px] text-slate-400">Chamber {index + 1} Name</Label>
@@ -412,6 +431,24 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                           <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
                           <SelectItem value="fptp">First Past the Post</SelectItem>
                           <SelectItem value="mixed">Mixed (50/50)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] text-slate-400">Selection Method</Label>
+                      <Select
+                        value={chamber.selectionMethod || "elected"}
+                        onValueChange={(v) => updateChamber(index, "selectionMethod", v)}
+                      >
+                        <SelectTrigger className="h-8 bg-slate-900 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(SELECTION_METHOD_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

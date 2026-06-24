@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notification-api";
-import { discordWebhook } from "~/lib/discord-webhook";
+import { postPollToDiscord } from "./post-to-discord";
 
 const pollTypeSchema = z.enum(["choice", "feature-poll", "feature-voting"]);
 
@@ -92,125 +92,11 @@ export const pollsManagementRouter = createTRPCRouter({
         console.error("[Polls Router] Notification trigger failed:", notifyErr);
       }
 
-      // 4. Send Discord Bot Channel / Webhook Embed
-      const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-      const TARGET_CHANNEL_ID = "557016199427522561";
-
-      if (DISCORD_BOT_TOKEN) {
-        try {
-          const optionsStr = poll.options.map((o: { label: string }) => `• ${o.label}`).join("\n");
-          const embed = {
-            title: `🗳️ New Poll: ${poll.question}`,
-            description: poll.description || "A new poll has been posted on IxStats!",
-            color: 0x0099ff, // Blue
-            fields: [
-              {
-                name: "Type",
-                value:
-                  poll.pollType === "choice"
-                    ? "Choice Poll"
-                    : poll.pollType === "feature-poll"
-                      ? "Feature Poll"
-                      : "Feature Voting",
-                inline: true,
-              },
-              {
-                name: "Selection Mode",
-                value: poll.multiple ? "Multiple Choice" : "Single Choice",
-                inline: true,
-              },
-              {
-                name: "Scope",
-                value: poll.countryId ? "Targeted Country citizens" : "Global (All users)",
-                inline: true,
-              },
-              {
-                name: "Options",
-                value: optionsStr || "No options defined",
-                inline: false,
-              },
-              {
-                name: "Expires",
-                value: poll.endDate ? poll.endDate.toLocaleString() : "Never",
-                inline: true,
-              },
-            ],
-            timestamp: new Date().toISOString(),
-            footer: {
-              text: "IxStats Poll System",
-            },
-          };
-
-          const res = await fetch(
-            `https://discord.com/api/v10/channels/${TARGET_CHANNEL_ID}/messages`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                embeds: [embed],
-              }),
-              signal: AbortSignal.timeout(10000),
-            }
-          );
-
-          if (!res.ok) {
-            console.error(
-              `[Polls Router] Discord Bot API failed to post: ${res.status} ${res.statusText}`
-            );
-          }
-        } catch (discordErr) {
-          console.error("[Polls Router] Discord Bot notification failed:", discordErr);
-        }
-      } else if (discordWebhook.isEnabled()) {
-        try {
-          const optionsStr = poll.options.map((o: { label: string }) => `• ${o.label}`).join("\n");
-          await discordWebhook.sendEmbed({
-            title: `🗳️ New Poll: ${poll.question}`,
-            description: poll.description || "A new poll has been posted on IxStats!",
-            color: 0x0099ff, // Blue
-            fields: [
-              {
-                name: "Type",
-                value:
-                  poll.pollType === "choice"
-                    ? "Choice Poll"
-                    : poll.pollType === "feature-poll"
-                      ? "Feature Poll"
-                      : "Feature Voting",
-                inline: true,
-              },
-              {
-                name: "Selection Mode",
-                value: poll.multiple ? "Multiple Choice" : "Single Choice",
-                inline: true,
-              },
-              {
-                name: "Scope",
-                value: poll.countryId ? "Targeted Country citizens" : "Global (All users)",
-                inline: true,
-              },
-              {
-                name: "Options",
-                value: optionsStr || "No options defined",
-                inline: false,
-              },
-              {
-                name: "Expires",
-                value: poll.endDate ? poll.endDate.toLocaleString() : "Never",
-                inline: true,
-              },
-            ],
-            timestamp: new Date().toISOString(),
-            footer: {
-              text: "IxStats Poll System",
-            },
-          });
-        } catch (discordErr) {
-          console.error("[Polls Router] Discord webhook notification failed:", discordErr);
-        }
+      // 4. Post a native Discord poll (best-effort — don't fail creation on Discord error)
+      try {
+        await postPollToDiscord(poll);
+      } catch (discordErr) {
+        console.error("[Polls Router] Discord poll post failed:", discordErr);
       }
 
       return { success: true, pollId: poll.id };

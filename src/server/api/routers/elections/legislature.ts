@@ -7,10 +7,23 @@ import { notificationAPI } from "~/lib/notification-api";
 // Election System Router - Extension of Government Sub-System
 // ============================================================
 
+// How a chamber's members are chosen. Lore-first: not every legislature is party-elected
+// (Caphiria's Senate is appointed, Drasenia fills seats by lot, Faneria's upper house is
+// ex-officio). Stored as the 4th positional field of the serialized chamberType blob.
+// See plans/mycountry-lore-alignment*.md.
+export type SelectionMethod =
+  | "elected"
+  | "appointed"
+  | "sortition"
+  | "hereditary"
+  | "ex-officio"
+  | "corporatist";
+
 export interface ChamberConfig {
   name: string;
   seats: number;
   electoralSystem: "proportional" | "fptp" | "mixed";
+  selectionMethod: SelectionMethod;
 }
 
 export function parseChambers(
@@ -24,11 +37,12 @@ export function parseChambers(
     if (serialized) {
       const parts = serialized.split(";").filter(Boolean);
       return parts.map((part) => {
-        const [name, seatsStr, system] = part.split(":");
+        const [name, seatsStr, system, selection] = part.split(":");
         return {
           name: name || "Chamber",
           seats: Number(seatsStr) || 100,
           electoralSystem: (system || globalElectoralSystem || "proportional") as any,
+          selectionMethod: (selection || "elected") as SelectionMethod,
         };
       });
     }
@@ -40,13 +54,13 @@ export function parseChambers(
     const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
     const houseSeats = Math.max(10, totalSeats - senateSeats);
     return [
-      { name: "House of Representatives", seats: houseSeats, electoralSystem: system },
-      { name: "Senate", seats: senateSeats, electoralSystem: system },
+      { name: "House of Representatives", seats: houseSeats, electoralSystem: system, selectionMethod: "elected" },
+      { name: "Senate", seats: senateSeats, electoralSystem: system, selectionMethod: "elected" },
     ];
   }
 
   return [
-    { name: legislatureName || "National Assembly", seats: totalSeats, electoralSystem: system },
+    { name: legislatureName || "National Assembly", seats: totalSeats, electoralSystem: system, selectionMethod: "elected" },
   ];
 }
 

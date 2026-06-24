@@ -310,7 +310,9 @@ export function GovernmentTab({
                     <p className="text-muted-foreground/60 text-[9px] font-semibold tracking-wider uppercase">
                       Branches
                     </p>
-                    <p className="text-foreground mt-0.5 text-xs font-semibold">3 Branches</p>
+                    <p className="text-foreground mt-0.5 text-xs font-semibold">
+                      {(governmentStructure?.branches?.length || 3)} Branches
+                    </p>
                     <p className="text-muted-foreground/80 mt-0.5 text-[10px]">
                       Separation of powers
                     </p>
@@ -368,6 +370,24 @@ export function GovernmentTab({
                         color: "cyan",
                         description: governmentStructure?.judicialName || "Supreme Court",
                       },
+                      // Lore-first: append any branches beyond the standard three (e.g.
+                      // Faneria's Audit + Fiscal "Quaternalist" branches) so non-tripartite
+                      // governments show truthfully. See plans/mycountry-lore-alignment*.md
+                      ...((governmentStructure?.branches ?? [])
+                        .filter(
+                          (b: any) =>
+                            !["executive", "legislative", "judicial"].includes(
+                              String(b.branchType),
+                            ),
+                        )
+                        .map((b: any) => ({
+                          id: `branch-${b.id}`,
+                          name: b.name,
+                          value: 0,
+                          percentage: 100,
+                          color: "emerald",
+                          description: b.description || toTitleCase(b.branchType || "Branch"),
+                        }))),
                     ]}
                   />
                 </div>

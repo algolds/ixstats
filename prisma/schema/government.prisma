@@ -72,8 +72,29 @@ model GovernmentStructure {
   officials               GovernmentOfficial[]
   country                 Country                @relation(fields: [countryId], references: [id], onDelete: Cascade)
   revenueSources          RevenueSource[]
+  branches                GovernmentBranch[]
 
   @@index([countryId])
+}
+
+// Lore-first: governments are not always tripartite. Faneria is a four-branch
+// "Quaternalist" republic (adds Audit + Fiscal); Caphiria names its branches "triumirs";
+// Daxia spins out a National Inquisitor's Office. This child table holds N branches with
+// bespoke names, so a structure can mirror its own wiki diagram. The legacy
+// executiveName/legislativeName/judicialName fields on GovernmentStructure are kept and
+// backfilled into the first three branches for back-compat. See plans/mycountry-lore-alignment*.md.
+model GovernmentBranch {
+  id                    String              @id @default(cuid())
+  governmentStructureId String
+  name                  String
+  branchType            String              @default("other") // executive | legislative | judicial | audit | fiscal | other
+  description           String?
+  order                 Int                 @default(0)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+
+  @@index([governmentStructureId])
 }
 
 model GovernmentDepartment {

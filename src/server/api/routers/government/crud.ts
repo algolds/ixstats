@@ -161,6 +161,7 @@ export const governmentCrudRouter = createTRPCRouter({
             orderBy: { revenueAmount: "desc" },
             take: revenueSourcesLimit,
           },
+          branches: { orderBy: { order: "asc" } },
         },
       });
 
@@ -196,6 +197,7 @@ export const governmentCrudRouter = createTRPCRouter({
             where: { isActive: true },
             orderBy: { revenueAmount: "desc" },
           },
+          branches: { orderBy: { order: "asc" } },
         },
       });
 

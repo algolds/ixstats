@@ -131,6 +131,24 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     return activeChamber ? activeChamber.seats : activeChamberSeats.length;
   }, [parliament, chambers, activeChamberTab, activeChamberSeats]);
 
+  // Lore-first: surface a non-default selection method (sortition, appointed, …) for the
+  // active chamber. "elected" is the default and shown as nothing to avoid noise.
+  const activeChamberSelectionLabel = useMemo(() => {
+    const labels: Record<string, string> = {
+      appointed: "Appointed",
+      sortition: "Sortition (by lot)",
+      hereditary: "Hereditary",
+      "ex-officio": "Ex-officio",
+      corporatist: "Corporatist",
+    };
+    const active =
+      chambers.length <= 1
+        ? chambers[0]
+        : chambers.find((c: any) => c.name === activeChamberTab);
+    const method = (active as any)?.selectionMethod;
+    return method && method !== "elected" ? labels[method] ?? null : null;
+  }, [chambers, activeChamberTab]);
+
   const activeChamberPartySummary = useMemo(() => {
     if (!parliament) return [];
     if (chambers.length <= 1) return parliament.partySummary;
@@ -185,6 +203,17 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
                   {activeChamberSeatsCount > 0 && (
                     <Badge variant="outline" className="ml-auto text-[10px]">
                       {activeChamberSeatsCount} seats
+                    </Badge>
+                  )}
+                  {/* Lore-first: show how this chamber's members are chosen when it
+                      isn't the default party-election (sortition, appointed, etc.).
+                      See plans/mycountry-lore-alignment*.md */}
+                  {activeChamberSelectionLabel && (
+                    <Badge
+                      variant="secondary"
+                      className={`text-[10px] ${activeChamberSeatsCount > 0 ? "" : "ml-auto"}`}
+                    >
+                      {activeChamberSelectionLabel}
                     </Badge>
                   )}
                 </div>

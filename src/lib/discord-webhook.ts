@@ -26,11 +26,19 @@ interface DiscordEmbed {
   };
 }
 
+interface DiscordPoll {
+  question: { text: string };
+  answers: Array<{ poll_media: { text: string } }>;
+  duration: number;
+  allow_multiselect: boolean;
+}
+
 interface DiscordWebhookPayload {
   content?: string;
   embeds?: DiscordEmbed[];
   username?: string;
   avatar_url?: string;
+  poll?: DiscordPoll;
 }
 
 class DiscordWebhookService {
