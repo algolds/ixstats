@@ -39,6 +39,8 @@ interface CommandPanelItemProps {
   /** Click handler */
   onClick?: () => void;
   className?: string;
+  /** Optional flag element next to title */
+  flag?: React.ReactNode;
 }
 
 /**
@@ -55,6 +57,7 @@ export const CommandPanelItem = React.memo(function CommandPanelItem({
   pulse,
   onClick,
   className,
+  flag,
 }: CommandPanelItemProps) {
   const dotClass = DOT_COLORS[accentColor] ?? DOT_COLORS.slate;
 
@@ -81,6 +84,9 @@ export const CommandPanelItem = React.memo(function CommandPanelItem({
       <div className="mt-1.5 shrink-0">
         <div className={cn("h-2 w-2 rounded-full", dotClass, pulse && "animate-pulse")} />
       </div>
+
+      {/* Flag */}
+      {flag && <div className="mt-1 shrink-0">{flag}</div>}
 
       {/* Content */}
       <div className="min-w-0 flex-1">

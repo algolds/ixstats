@@ -16,6 +16,8 @@ import {
 } from "~/components/ui/dialog";
 import { CommandPanel } from "~/components/executive/CommandPanel";
 import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 
 const DiplomacyOverview = dynamic(
   () => import("./DiplomacyOverview").then((m) => ({ default: m.DiplomacyOverview })),
@@ -175,6 +177,14 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
               key={embassy.id}
               accentColor="cyan"
               title={embassy.country ?? embassy.name ?? "Embassy"}
+              flag={
+                <UnifiedCountryFlag
+                  countryName={embassy.country ?? ""}
+                  flagUrl={embassy.countryFlag}
+                  size="xs"
+                  showTooltip={false}
+                />
+              }
               subtitle={`${embassy.role === "host" ? "Hosting" : "Guest"} · Level ${embassy.level ?? 1}`}
               onClick={() => setSelectedEmbassyId(embassy.id)}
               badges={[
@@ -193,6 +203,14 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
                 key={embassy.id}
                 accentColor="amber"
                 title={embassy.country ?? embassy.name ?? "Embassy"}
+                flag={
+                  <UnifiedCountryFlag
+                    countryName={embassy.country ?? ""}
+                    flagUrl={embassy.countryFlag}
+                    size="xs"
+                    showTooltip={false}
+                  />
+                }
                 subtitle={embassy.role === "host" ? "Hosting" : "Guest"}
                 onClick={() => setSelectedEmbassyId(embassy.id)}
                 badges={[
@@ -231,11 +249,20 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
             const strength = rel.strength ?? 0;
             const color =
               strength >= 70 ? "green" : strength >= 40 ? "blue" : strength >= 20 ? "amber" : "red";
+            const targetName = rel.targetCountryName ?? rel.targetCountry ?? "Unknown";
             return (
               <CommandPanelItem
                 key={rel.id}
                 accentColor={color}
-                title={rel.targetCountryName ?? rel.targetCountry ?? "Unknown"}
+                title={targetName}
+                flag={
+                  <UnifiedCountryFlag
+                    countryName={targetName}
+                    flagUrl={rel.targetCountryFlag}
+                    size="xs"
+                    showTooltip={false}
+                  />
+                }
                 subtitle={
                   rel.relationship
                     ? (RELATIONSHIP_LABELS[rel.relationship] ?? titleCase(rel.relationship))
@@ -275,7 +302,10 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
               label: fp.actionType?.toUpperCase() ?? "POLICY",
               colorClass: "bg-slate-100 text-slate-700",
             };
-            const targetName = fp.target?.name ?? "Unknown";
+            const isInitiator = fp.initiatorId === countryId;
+            const otherCountry = isInitiator ? fp.target : fp.initiator;
+            const partnerName = otherCountry?.name ?? "Unknown";
+            const partnerFlag = otherCountry?.flag ? normalizeFlagUrl(otherCountry.flag) : null;
             return (
               <CommandPanelItem
                 key={fp.id}
@@ -284,7 +314,15 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
                     ? "green"
                     : "red"
                 }
-                title={targetName}
+                title={partnerName}
+                flag={
+                  <UnifiedCountryFlag
+                    countryName={partnerName}
+                    flagUrl={partnerFlag}
+                    size="xs"
+                    showTooltip={false}
+                  />
+                }
                 subtitle={ACTION_TYPE_LABELS[fp.actionType] ?? titleCase(fp.actionType)}
                 onClick={() => openSheet("foreign-policy", fp.id)}
                 badges={[badge]}
