@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -67,11 +67,24 @@ interface ArticlePreview {
   wikiSource: string;
   artwork?: string;
   hasImage?: boolean;
+  length?: number;
   approved: boolean;
   generating?: boolean;
   generated?: boolean;
   error?: string;
 }
+
+// Rarity order for sorting (rarest first).
+const RARITY_ORDER: Record<string, number> = {
+  LEGENDARY: 6,
+  EPIC: 5,
+  ULTRA_RARE: 4,
+  RARE: 3,
+  UNCOMMON: 2,
+  COMMON: 1,
+};
+
+type SortKey = "quality" | "rarity" | "length" | "title";
 
 export function LoreCardBatchAdmin() {
   const notify = useNotify();
@@ -134,6 +147,14 @@ export function LoreCardBatchAdmin() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [qualityFilter, setQualityFilter] = useState<number>(0);
+  const [sortKey, setSortKey] = useState<SortKey>("quality");
+
+  // Discovery mode: random pool vs. browse a live wiki category
+  const [discoveryMode, setDiscoveryMode] = useState<"random" | "category">("random");
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const categorySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 });
   const [generationResults, setGenerationResults] = useState<{
@@ -187,6 +208,7 @@ export function LoreCardBatchAdmin() {
             approved: true,
             artwork,
             hasImage,
+            length: preview.length,
           });
         }
       }
@@ -208,14 +230,100 @@ export function LoreCardBatchAdmin() {
     }
   };
 
+  // Category source must be a single wiki (category members are per-wiki); "both" -> ixwiki.
+  const categorySource = wikiSource === "both" ? "ixwiki" : wikiSource;
+
+  // Debounced live-category suggestions for the picker.
+  const handleCategoryQueryChange = (value: string) => {
+    setCategoryQuery(value);
+    if (categorySearchTimer.current) clearTimeout(categorySearchTimer.current);
+    if (value.trim().length < 2) {
+      setCategoryOptions([]);
+      return;
+    }
+    categorySearchTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/wiki/categories?source=${categorySource}&prefix=${encodeURIComponent(value.trim())}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setCategoryOptions(data.categories || []);
+      } catch {
+        /* ignore suggestion errors */
+      }
+    }, 300);
+  };
+
+  const handleFetchByCategory = async () => {
+    if (!selectedCategory) {
+      notify.error("No Category", "Pick a category to browse first");
+      return;
+    }
+    setIsFetching(true);
+    setArticles([]);
+    setGenerationResults({ success: 0, failed: 0, skipped: 0 });
+    try {
+      const url = `/api/wiki/category-articles?source=${categorySource}&category=${encodeURIComponent(
+        selectedCategory
+      )}&count=${articleCount}&preferImages=true`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to load category articles");
+      const data = await response.json();
+      const previews: any[] = data.articles || [];
+      const mapped: ArticlePreview[] = previews.map((preview) => {
+        const artwork = preview.artwork || null;
+        return {
+          title: preview.title,
+          excerpt: preview.excerpt || "No excerpt available",
+          qualityScore: preview.qualityScore || 0,
+          estimatedRarity: preview.estimatedRarity || "COMMON",
+          wikiSource: preview.wikiSource || categorySource,
+          approved: true,
+          artwork,
+          hasImage: !!artwork && !artwork.includes("placeholder"),
+          length: preview.length,
+        };
+      });
+      setArticles(mapped);
+      notify.success(
+        "Category Loaded",
+        `Found ${mapped.length} articles in "${selectedCategory}"`
+      );
+    } catch (error) {
+      notify.error("Error", error instanceof Error ? error.message : "Failed to load category");
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   const filteredArticles = useMemo(() => {
-    return articles.filter((article) => {
+    const list = articles.filter((article) => {
       if (searchQuery && !article.title.toLowerCase().includes(searchQuery.toLowerCase()))
         return false;
       if (qualityFilter > 0 && article.qualityScore < qualityFilter) return false;
       return true;
     });
-  }, [articles, searchQuery, qualityFilter]);
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      switch (sortKey) {
+        case "rarity":
+          return (
+            (RARITY_ORDER[b.estimatedRarity] ?? 0) - (RARITY_ORDER[a.estimatedRarity] ?? 0)
+          );
+        case "length":
+          return (b.length ?? 0) - (a.length ?? 0);
+        case "title":
+          return a.title.localeCompare(b.title);
+        default:
+          // images first, then quality
+          if ((b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0))
+            return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
+          return b.qualityScore - a.qualityScore;
+      }
+    });
+    return sorted;
+  }, [articles, searchQuery, qualityFilter, sortKey]);
 
   const handleBulkApprove = () => {
     setArticles((prev) =>
@@ -352,6 +460,70 @@ export function LoreCardBatchAdmin() {
         <div className="space-y-6">
           {/* Controls */}
           <div className="glass-card-child rounded-xl border border-purple-500/20 p-4">
+            {/* Discovery mode toggle */}
+            <div className="mb-4 flex gap-2">
+              <Button
+                size="sm"
+                variant={discoveryMode === "random" ? "default" : "outline"}
+                onClick={() => setDiscoveryMode("random")}
+                disabled={isFetching || isGenerating}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Random
+              </Button>
+              <Button
+                size="sm"
+                variant={discoveryMode === "category" ? "default" : "outline"}
+                onClick={() => setDiscoveryMode("category")}
+                disabled={isFetching || isGenerating}
+              >
+                <BookOpen className="mr-2 h-4 w-4" />
+                By Category
+              </Button>
+            </div>
+
+            {/* Category picker (category mode only) */}
+            {discoveryMode === "category" && (
+              <div className="mb-4">
+                <label className="text-foreground mb-2 block text-sm font-medium">
+                  Wiki Category {wikiSource === "both" && "(uses IxWiki)"}
+                </label>
+                <div className="relative">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                  <Input
+                    placeholder="Type to search categories (e.g. Cities in Burgundie)"
+                    value={categoryQuery}
+                    onChange={(e) => handleCategoryQueryChange(e.target.value)}
+                    disabled={isFetching || isGenerating}
+                    className="pl-10"
+                  />
+                  {categoryOptions.length > 0 && (
+                    <div className="bg-background absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-white/10 shadow-lg">
+                      {categoryOptions.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => {
+                            setSelectedCategory(cat);
+                            setCategoryQuery(cat);
+                            setCategoryOptions([]);
+                          }}
+                          className="hover:bg-muted/50 block w-full px-3 py-2 text-left text-sm"
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selectedCategory && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">Browsing:</span>
+                    <Badge className="bg-purple-500/20 text-purple-400">{selectedCategory}</Badge>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <label className="text-foreground mb-2 block text-sm font-medium">
@@ -391,8 +563,12 @@ export function LoreCardBatchAdmin() {
 
               <div className="flex items-end">
                 <Button
-                  onClick={handleFetchArticles}
-                  disabled={isFetching || isGenerating}
+                  onClick={discoveryMode === "category" ? handleFetchByCategory : handleFetchArticles}
+                  disabled={
+                    isFetching ||
+                    isGenerating ||
+                    (discoveryMode === "category" && !selectedCategory)
+                  }
                   className="w-full bg-purple-500/20 text-purple-500 hover:bg-purple-500/30"
                 >
                   {isFetching ? (
@@ -484,7 +660,7 @@ export function LoreCardBatchAdmin() {
           {/* Filters */}
           {articles.length > 0 && (
             <div className="glass-card-parent rounded-xl border border-purple-500/20 p-4">
-              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
                 <div className="relative">
                   <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
@@ -508,6 +684,19 @@ export function LoreCardBatchAdmin() {
                       <SelectItem value="40">Quality &gt;= 40</SelectItem>
                       <SelectItem value="60">Quality &gt;= 60</SelectItem>
                       <SelectItem value="80">Quality &gt;= 80</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Select value={sortKey} onValueChange={(value) => setSortKey(value as SortKey)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quality">Sort: Images + Quality</SelectItem>
+                      <SelectItem value="rarity">Sort: Rarity</SelectItem>
+                      <SelectItem value="length">Sort: Article Length</SelectItem>
+                      <SelectItem value="title">Sort: Title (A–Z)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

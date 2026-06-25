@@ -1,7 +1,6 @@
-// src/app/api/wiki/random-articles/route.ts
-// API endpoint to fetch random wiki articles for batch lore card generation.
-// Uses lightweight batched metadata (one request per <=50 titles) instead of running a
-// full generateCard per candidate, which previously tripped the wiki's rate limit.
+// src/app/api/wiki/category-articles/route.ts
+// List articles in a live wiki category with lightweight batched preview metadata.
+// Returns the same shape as /api/wiki/random-articles so the admin tool consumes it directly.
 
 import { NextResponse } from "next/server";
 import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
@@ -14,7 +13,8 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const source = searchParams.get("source") as WikiSource | null;
-    const count = parseInt(searchParams.get("count") || "20");
+    const category = searchParams.get("category") || "";
+    const count = Math.min(Math.max(parseInt(searchParams.get("count") || "50"), 1), 200);
     const minQuality = parseInt(searchParams.get("minQuality") || "1");
     const preferImages = searchParams.get("preferImages") !== "false";
 
@@ -24,14 +24,15 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
-
-    if (count < 10 || count > 100) {
-      return NextResponse.json({ error: "Count must be between 10 and 100" }, { status: 400 });
+    if (!category.trim()) {
+      return NextResponse.json({ error: "category is required" }, { status: 400 });
     }
 
-    // Over-fetch random titles to cover pages without images, then preview in batch.
-    const poolSize = Math.min(Math.max(count * 2, 20), 100);
-    const titles = await wikiLoreCardGenerator.fetchRandomArticles(poolSize, source);
+    const titles = await wikiLoreCardGenerator.fetchCategoryMembers(category, source, count);
+    if (titles.length === 0) {
+      return NextResponse.json({ articles: [], count: 0, source, category });
+    }
+
     const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(titles, source);
 
     const articles = previews
@@ -52,12 +53,11 @@ export async function GET(request: Request) {
           return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
         }
         return b.qualityScore - a.qualityScore;
-      })
-      .slice(0, count);
+      });
 
-    return NextResponse.json({ articles, count: articles.length, source });
+    return NextResponse.json({ articles, count: articles.length, source, category });
   } catch (error) {
-    console.error("[Random Articles API] Error:", error);
-    return NextResponse.json({ error: "Failed to fetch random articles" }, { status: 500 });
+    console.error("[Category Articles API] Error:", error);
+    return NextResponse.json({ error: "Failed to fetch category articles" }, { status: 500 });
   }
 }

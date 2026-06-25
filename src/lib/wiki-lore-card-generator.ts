@@ -67,6 +67,25 @@ interface LoreCardCandidate {
 }
 
 /**
+ * Lightweight article metadata for discovery/preview (no full generateCard fetch).
+ */
+export interface ArticleMetadataPreview {
+  title: string;
+  hasImage: boolean;
+  imageUrl: string | null;
+  length: number; // page length in bytes (cheap size proxy from prop=info)
+  extract: string;
+  categoryCount: number;
+  estimatedQuality: number;
+  estimatedRarity: CardRarity;
+}
+
+// Stub floor: an article must have at least this many cleaned-text chars to become a card.
+// Image presence is the primary gate; this just skips near-empty stubs.
+// ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
+const MIN_ARTICLE_LENGTH = 600;
+
+/**
  * Category-based stat weights for lore cards.
  * Each category emphasizes different stats based on thematic relevance.
  */
@@ -125,6 +144,15 @@ export class WikiLoreCardGenerator {
 
       // Calculate quality score
       const quality = this.analyzeArticleQuality(articleData);
+
+      // Minimal floor: skip near-empty stubs (image is the gate, this drops one-liners)
+      if (quality.length < MIN_ARTICLE_LENGTH) {
+        console.log(
+          `[Lore Card Generator] Skipping "${articleTitle}" — too short (${quality.length} chars)`
+        );
+        return null;
+      }
+
       const qualityScore = this.calculateQualityScore(quality);
 
       // Determine rarity based on quality
@@ -293,6 +321,154 @@ export class WikiLoreCardGenerator {
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching article "${title}":`, error);
       return null;
+    }
+  }
+
+  /**
+   * Lightweight batched metadata for many articles — ONE request per <=50 titles.
+   * Used for discovery/preview so we don't run the full generateCard fetch per article
+   * (that per-article storm tripped the wiki's rate limit). estimatedQuality/Rarity reuse
+   * the real scorers with the cheap signals available here; the exact score is recomputed
+   * in generateCard at actual generation time.
+   */
+  async fetchArticleMetadataBatch(
+    titles: string[],
+    wikiSource: WikiSource
+  ): Promise<ArticleMetadataPreview[]> {
+    const apiUrl = getMediaWikiApiUrl(wikiSource);
+    const userAgent = getWikiUserAgent(wikiSource);
+    const out: ArticleMetadataPreview[] = [];
+
+    // MediaWiki caps titles at 50 per query; chunk and run a few chunks at a time.
+    const chunks: string[][] = [];
+    for (let i = 0; i < titles.length; i += 50) chunks.push(titles.slice(i, i + 50));
+
+    const CONCURRENCY = 3;
+    for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+      const results = await Promise.all(
+        chunks.slice(i, i + CONCURRENCY).map(async (chunk) => {
+          const url = new URL(apiUrl);
+          url.searchParams.set("action", "query");
+          url.searchParams.set("format", "json");
+          url.searchParams.set("titles", chunk.join("|"));
+          url.searchParams.set("prop", "pageimages|info|extracts|categories");
+          url.searchParams.set("piprop", "original");
+          url.searchParams.set("exintro", "1");
+          url.searchParams.set("explaintext", "1");
+          url.searchParams.set("exlimit", "max");
+          url.searchParams.set("cllimit", "50");
+          try {
+            const res = await fetch(url.toString(), { headers: { "User-Agent": userAgent } });
+            if (!res.ok) {
+              console.error(`[Lore Card Generator] Metadata batch error: ${res.status}`);
+              return [] as ArticleMetadataPreview[];
+            }
+            const data = await res.json();
+            const pages = Object.values(data.query?.pages ?? {}) as any[];
+            return pages.filter((p) => !p.missing).map((p) => this.toMetadataPreview(p));
+          } catch (e) {
+            console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
+            return [] as ArticleMetadataPreview[];
+          }
+        })
+      );
+      for (const r of results) out.push(...r);
+    }
+    return out;
+  }
+
+  private toMetadataPreview(page: any): ArticleMetadataPreview {
+    const extract: string = page.extract || "";
+    const length: number = page.length ?? extract.length;
+    const categoryCount: number = page.categories?.length ?? 0;
+    // refs/inbound are unknown without the heavy fetch, so this estimate runs low — fine,
+    // the exact score is recomputed at generation.
+    const quality: ArticleQuality = {
+      length,
+      referenceCount: 0,
+      inboundLinks: 0,
+      categoryCount,
+      hasInfobox: length > 4000,
+      isFeatured: false,
+      lastModified: new Date(),
+    };
+    const estimatedQuality = this.calculateQualityScore(quality);
+    return {
+      title: (page.title || "").replace(/_/g, " "),
+      hasImage: !!page.original?.source,
+      imageUrl: page.original?.source ?? null,
+      length,
+      extract,
+      categoryCount,
+      estimatedQuality,
+      estimatedRarity: this.determineRarity(estimatedQuality),
+    };
+  }
+
+  /**
+   * List page titles in a live wiki category (namespace-0 pages only, with paging).
+   */
+  async fetchCategoryMembers(
+    category: string,
+    wikiSource: WikiSource,
+    limit = 200
+  ): Promise<string[]> {
+    const apiUrl = getMediaWikiApiUrl(wikiSource);
+    const userAgent = getWikiUserAgent(wikiSource);
+    const cmtitle = category.startsWith("Category:") ? category : `Category:${category}`;
+    const titles: string[] = [];
+    let cmcontinue: string | undefined;
+
+    do {
+      const url = new URL(apiUrl);
+      url.searchParams.set("action", "query");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("list", "categorymembers");
+      url.searchParams.set("cmtitle", cmtitle);
+      url.searchParams.set("cmtype", "page");
+      url.searchParams.set("cmlimit", "max");
+      if (cmcontinue) url.searchParams.set("cmcontinue", cmcontinue);
+      try {
+        const res = await fetch(url.toString(), { headers: { "User-Agent": userAgent } });
+        if (!res.ok) {
+          console.error(`[Lore Card Generator] categorymembers error: ${res.status}`);
+          break;
+        }
+        const data = await res.json();
+        for (const m of data.query?.categorymembers ?? []) titles.push(m.title as string);
+        cmcontinue = data.continue?.cmcontinue;
+      } catch (e) {
+        console.error(`[Lore Card Generator] categorymembers fetch failed:`, e);
+        break;
+      }
+    } while (cmcontinue && titles.length < limit);
+
+    return titles.slice(0, limit);
+  }
+
+  /**
+   * Search live wiki categories by prefix — feeds the discovery category picker.
+   */
+  async searchCategories(prefix: string, wikiSource: WikiSource, limit = 20): Promise<string[]> {
+    const apiUrl = getMediaWikiApiUrl(wikiSource);
+    const userAgent = getWikiUserAgent(wikiSource);
+    const url = new URL(apiUrl);
+    url.searchParams.set("action", "query");
+    url.searchParams.set("format", "json");
+    url.searchParams.set("list", "allcategories");
+    url.searchParams.set("acprefix", prefix);
+    url.searchParams.set("aclimit", String(Math.min(Math.max(limit, 1), 100)));
+    try {
+      const res = await fetch(url.toString(), { headers: { "User-Agent": userAgent } });
+      if (!res.ok) {
+        console.error(`[Lore Card Generator] allcategories error: ${res.status}`);
+        return [];
+      }
+      const data = await res.json();
+      return (data.query?.allcategories ?? []).map((c: any) => c["*"] as string);
+    } catch (e) {
+      console.error(`[Lore Card Generator] allcategories fetch failed:`, e);
+      return [];
     }
   }
 

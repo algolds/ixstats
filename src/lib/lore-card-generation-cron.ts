@@ -44,10 +44,11 @@ export interface LoreCardGenerationResult {
  */
 const GENERATION_CONFIG = {
   // Target cards per wiki per day
-  targetPerWiki: 10,
+  targetPerWiki: 20,
 
-  // Minimum quality score to generate card (RARE+ articles)
-  minQualityScore: 41,
+  // Minimum quality score to generate a card. Image presence + the stub-length floor
+  // in generateCard are the real gate; quality only drives rarity, so keep this low.
+  minQualityScore: 1,
 
   // Maximum attempts per wiki
   maxAttempts: 30,
