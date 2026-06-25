@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { Badge } from "~/components/ui/badge";
+import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
@@ -10,7 +11,6 @@ import {
   Users,
   TrendingUp,
   MapPin,
-  Activity,
   Globe,
   Camera,
   Check,
@@ -245,7 +245,13 @@ export function CountryHeader({
                           : "border-red-200 bg-red-100 text-red-800 dark:border-red-500/30 dark:bg-red-500/20 dark:text-red-200"
                     )}
                   >
-                    <Activity className="mr-1.5 h-3 w-3" />
+                    <GrowthArrow
+                      value={(country.adjustedGdpGrowth ?? 0) * 100}
+                      size={12}
+                      iconOnly
+                      inheritColor
+                      className="mr-1.5"
+                    />
                     {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}% growth
                   </Badge>
 

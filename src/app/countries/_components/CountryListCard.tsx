@@ -19,6 +19,7 @@ import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import { Button } from "~/components/ui/button";
 import { CardFooter } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { FastAverageColor } from "fast-average-color";
 import { useRef } from "react";
@@ -39,6 +40,7 @@ export interface CountryData {
   landArea?: number | null;
   populationDensity?: number | null;
   gdpDensity?: number | null;
+  adjustedGdpGrowth?: number | null;
   lastCalculated: Date | string;
 }
 
@@ -188,7 +190,11 @@ export function CountryListCard({
             <span>{formatPopulation(country.currentPopulation)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <TrendingUp className="h-3 w-3 text-green-500" />
+            {country.adjustedGdpGrowth != null ? (
+              <GrowthArrow value={country.adjustedGdpGrowth * 100} iconOnly size={12} />
+            ) : (
+              <TrendingUp className="h-3 w-3 text-green-500" />
+            )}
             <span>{formatCurrency(country.currentGdpPerCapita)}</span>
           </div>
           <div className="flex items-center gap-1">

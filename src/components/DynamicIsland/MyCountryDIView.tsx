@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import { Crown, Globe, User, ChevronRight, LogOut, X, Shield } from "lucide-react";
 import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
-import { HealthRing } from "../ui/health-ring";
+import { SmartStack } from "~/components/mycountry/SmartStack";
+import { useMyCountryAgenda } from "~/hooks/useMyCountryAgenda";
+import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { getNationUrl } from "~/lib/slug-utils";
 import {
@@ -17,7 +19,6 @@ import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/standalone-detection";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
-import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
 import { PreText } from "~/components/ui/pretext";
 import { Button } from "~/components/ui/button";
 import { motion } from "motion/react";
@@ -28,20 +29,6 @@ function normalizeGrowth(value: number | null | undefined): number {
   while (Math.abs(v) > 50) v /= 100;
   return Math.min(20, Math.max(-20, v));
 }
-
-const getMetricColor = (val: number) => {
-  if (val < 35) return "#ef4444"; // Red danger/low
-  if (val < 60) return "#f97316"; // Orange bad
-  if (val < 80) return "#eab308"; // Yellow ok
-  return "#10b981"; // Green good
-};
-
-const getMetricLabelClass = (val: number) => {
-  if (val < 35) return "text-red-600 dark:text-red-400";
-  if (val < 60) return "text-orange-600 dark:text-orange-400";
-  if (val < 80) return "text-yellow-600 dark:text-yellow-400";
-  return "text-green-600 dark:text-green-400";
-};
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
@@ -78,9 +65,9 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
     { enabled: !!user?.id }
   );
 
-  const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
-    { countryId: userProfile?.countryId ?? "" },
-    { enabled: !!userProfile?.countryId }
+  const agendaItems = useMyCountryAgenda(
+    userProfile?.countryId ?? undefined,
+    userProfile?.membershipTier === "mycountry_premium"
   );
 
   const setupStatus = (() => {
@@ -276,23 +263,7 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
                                   : Math.round(stats.currentTotalGdp).toLocaleString("en-US")
                               }`}
                             </PreText>
-                            {stats.gdpGrowth !== 0 && (
-                              <span
-                                className={cn(
-                                  "flex shrink-0 items-center gap-0.5 text-[8px] font-semibold",
-                                  stats.gdpGrowth > 0 ? "text-emerald-500" : "text-red-500"
-                                )}
-                              >
-                                {stats.gdpGrowth > 0 ? (
-                                  <ArrowTrendingUpIcon size={8} />
-                                ) : (
-                                  <ArrowTrendingDownIcon size={8} />
-                                )}
-                                <PreText className="text-inherit" whiteSpace="nowrap">
-                                  {`${stats.gdpGrowth > 0 ? "+" : ""}${stats.gdpGrowth.toFixed(1)}%`}
-                                </PreText>
-                              </span>
-                            )}
+                            <GrowthArrow value={stats.gdpGrowth} size={8} className="text-[8px]" />
                           </div>
                         </button>
 
@@ -323,16 +294,8 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
                                   ? `${Math.round(stats.populationDensity).toLocaleString()}/km²`
                                   : "N/A"}
                             </PreText>
-                            {stats.popGrowth !== 0 && metricView.population === "total" && (
-                              <PreText
-                                className={cn(
-                                  "flex shrink-0 items-center gap-0.5 text-[8px] font-semibold",
-                                  stats.popGrowth > 0 ? "text-emerald-500" : "text-red-500"
-                                )}
-                                whiteSpace="nowrap"
-                              >
-                                {`${stats.popGrowth > 0 ? "+" : ""}${stats.popGrowth.toFixed(1)}%`}
-                              </PreText>
+                            {metricView.population === "total" && (
+                              <GrowthArrow value={stats.popGrowth} size={8} className="text-[8px]" />
                             )}
                           </div>
                         </button>
@@ -346,44 +309,17 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
               )}
             </div>
 
-            {/* National Vitality Rings — 2×2 grid */}
-            {activityRingsData && (
-              <div className="mt-3 grid grid-cols-4 gap-2">
-                {[
-                  {
-                    value: activityRingsData.economicVitality || 0,
-                    label: "Economy",
-                  },
-                  {
-                    value: activityRingsData.populationWellbeing || 0,
-                    label: "Pop.",
-                  },
-                  {
-                    value: activityRingsData.diplomaticStanding || 0,
-                    label: "Diplo.",
-                  },
-                  {
-                    value: activityRingsData.governmentalEfficiency || 0,
-                    label: "Gov.",
-                  },
-                ].map((ring) => (
-                  <div key={ring.label} className="flex flex-col items-center gap-0.5">
-                    <HealthRing
-                      value={ring.value}
-                      size={44}
-                      color={getMetricColor(ring.value)}
-                      label={ring.label}
-                    />
-                    <PreText
-                      className={cn("text-[9px] font-medium", getMetricLabelClass(ring.value))}
-                      whiteSpace="nowrap"
-                    >
-                      {ring.label}
-                    </PreText>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Daily Agenda Smart Stack */}
+            <div className="mt-3">
+              <SmartStack
+                items={agendaItems}
+                onResolve={(section) =>
+                  (window.location.href = createAbsoluteUrl(
+                    section === "overview" ? "/mycountry" : `/mycountry/${section}`
+                  ))
+                }
+              />
+            </div>
           </div>
 
           {/* ── Quick Actions ────────────────────────────────── */}

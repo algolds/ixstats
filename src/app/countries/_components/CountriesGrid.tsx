@@ -22,6 +22,7 @@ export interface PageCountryData {
   landArea: number | null;
   populationDensity: number | null;
   gdpDensity: number | null;
+  adjustedGdpGrowth?: number | null;
   lastCalculated: string;
 }
 

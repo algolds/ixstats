@@ -37,6 +37,7 @@ export function GovernmentTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("structure");
+  const [cabinetOpen, setCabinetOpen] = React.useState(false);
   const currency = country?.nationalIdentity?.currency || "USD";
 
   const toggleSection = (sectionId: string) => {
@@ -392,8 +393,40 @@ export function GovernmentTab({
                   />
                 </div>
 
-                {/* Cabinet staffing panel */}
-                <CabinetPanel countryId={country.id} />
+                {/* Cabinet staffing panel (collapsible) */}
+                <div className="border-border/10 rounded-xl border bg-white/10 dark:bg-white/[0.02]">
+                  <button
+                    onClick={() => setCabinetOpen((v) => !v)}
+                    className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 px-3 py-2 text-xs font-bold tracking-wider uppercase transition-colors"
+                  >
+                    <Crown
+                      className={`h-3.5 w-3.5 ${cabinetOpen ? "text-violet-500" : "text-muted-foreground/60"}`}
+                    />
+                    <span>Cabinet</span>
+                    <motion.div
+                      animate={{ rotate: cabinetOpen ? 90 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="ml-1"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </motion.div>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {cabinetOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-3 pt-0">
+                          <CabinetPanel countryId={country.id} />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </motion.div>
           </div>

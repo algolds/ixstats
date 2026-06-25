@@ -52,6 +52,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { EconomicTierBadge, PopulationTierBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { HealthRing } from "~/components/ui/health-ring";
+import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { PreText } from "~/components/ui/pretext";
 
 // eslint-disable-next-line unused-imports/no-unused-imports
@@ -520,30 +521,12 @@ function DashboardHero({
             <div className="text-muted-foreground my-1 space-y-0.5 border-t border-white/10 pt-1">
               {stats.gdpGrowth !== 0 && (
                 <p className="flex items-center gap-1">
-                  GDP Growth:{" "}
-                  <span
-                    className={cn(
-                      "flex items-center gap-0.5 font-bold",
-                      stats.gdpGrowth > 0 ? "text-emerald-400" : "text-red-400"
-                    )}
-                  >
-                    {stats.gdpGrowth > 0 ? "+" : ""}
-                    {stats.gdpGrowth.toFixed(2)}%
-                  </span>
+                  GDP Growth: <GrowthArrow value={stats.gdpGrowth} size={12} />
                 </p>
               )}
               {stats.popGrowth !== 0 && (
                 <p className="flex items-center gap-1">
-                  Pop Growth:{" "}
-                  <span
-                    className={cn(
-                      "font-bold",
-                      stats.popGrowth > 0 ? "text-emerald-400" : "text-red-400"
-                    )}
-                  >
-                    {stats.popGrowth > 0 ? "+" : ""}
-                    {stats.popGrowth.toFixed(2)}%
-                  </span>
+                  Pop Growth: <GrowthArrow value={stats.popGrowth} size={12} />
                 </p>
               )}
             </div>

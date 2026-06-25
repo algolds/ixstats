@@ -63,6 +63,7 @@ export default function ExplorePage() {
     landArea: c.landArea,
     populationDensity: c.populationDensity,
     gdpDensity: c.gdpDensity,
+    adjustedGdpGrowth: c.adjustedGdpGrowth ?? c.realGDPGrowthRate ?? null,
     lastCalculated: c.lastCalculated,
   }));
 

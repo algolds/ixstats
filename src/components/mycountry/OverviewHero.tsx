@@ -3,23 +3,11 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { motion } from "motion/react";
 import {
-  Crown,
-  Users,
-  Brain,
-  Shield,
-  Vote,
   ChevronUp,
   ChevronDown,
-  ChevronRight,
-  Handshake,
   Check,
-  Sword,
-  Target,
   AlertTriangle,
-  Landmark,
-  Mail,
   Layers,
   Briefcase,
   Clock,
@@ -44,6 +32,7 @@ import { useCountryData } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
+import { SmartStack, buildAgendaItems } from "./SmartStack";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 
 const MYCOUNTRY_HELP_STEPS: HeroHelpStep[] = [
@@ -219,8 +208,6 @@ export function OverviewHero({
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
   const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
 
-  const [alertsOpen, setAlertsOpen] = useState(false);
-
   const { country } = useCountryData();
   const hasCountry = !!countryId && countryId.trim() !== "";
 
@@ -241,21 +228,8 @@ export function OverviewHero({
     { countryId },
     { enabled: hasCountry }
   );
-  const { data: relations } = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    { enabled: hasCountry }
-  );
 
   // Politics
-  const { data: parties } = api.elections.getParties.useQuery(
-    { countryId },
-    { enabled: hasCountry }
-  );
-  const { data: legislature } = api.elections.getLegislature.useQuery(
-    { countryId },
-    { enabled: hasCountry }
-  );
-
   const { data: elections } = api.elections.getElections.useQuery(
     { countryId },
     { enabled: hasCountry }
@@ -270,10 +244,6 @@ export function OverviewHero({
 
   // Defense (Premium)
   const { data: securityData } = api.security.getSecurityAssessment.useQuery(
-    { countryId },
-    { enabled: hasCountry && isPremium }
-  );
-  const { data: militaryBranches } = api.security.getMilitaryBranches.useQuery(
     { countryId },
     { enabled: hasCountry && isPremium }
   );
@@ -319,34 +289,17 @@ export function OverviewHero({
   // ── Diplomacy Derived Stats ──
   const activeEmbassies =
     embassies?.filter((e) => e.status === "ACTIVE" || e.status === "active").length ?? 0;
-  const totalRelations = relations?.length ?? 0;
-  const avgStrength =
-    totalRelations > 0
-      ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
-      : 0;
-
-  // ── Politics Derived Stats ──
-  const partyCount = parties?.length ?? 0;
-  const totalSeats = legislature?.totalSeats ?? 0;
 
   // ── Intelligence Derived Stats ──
   const critAlerts = intelligenceOverview?.alerts?.critical ?? 0;
 
   // ── Defense Derived Stats ──
   const threats = securityData?.activeThreatCount ?? 0;
-  const branchCount = militaryBranches?.length ?? 0;
-  const avgReadiness =
-    branchCount > 0
-      ? Math.round(
-          militaryBranches!.reduce((sum, b) => sum + (b.readinessLevel ?? 0), 0) / branchCount
-        )
-      : 0;
   const securityScore = securityData?.overallSecurityScore ?? 50;
 
   // ── Daily Agenda States and Items ──
   const { totalUnread: messageUnreadCount = 0 } = useMessageUnreadCount();
   const [agendaViewMode, setAgendaViewMode] = useState<"widgets" | "stack">("widgets");
-  const [activeStackIndex, setActiveStackIndex] = useState(0);
 
   const pendingElections =
     elections?.filter(
@@ -357,180 +310,36 @@ export function OverviewHero({
         e.status === "in_progress"
     ).length ?? 0;
 
-  const agendaItems = useMemo(() => {
-    const list: {
-      id: string;
-      label: string;
-      text: string;
-      section: MyCountrySection;
-      colorClass: string;
-      bgClass: string;
-      borderClass: string;
-      icon: any;
-      priority: number;
-    }[] = [];
-
-    // 1. Cabinet Issues (Urgent or Pending)
-    if (urgentIssueCount > 0) {
-      list.push({
-        id: "exec-urgent",
-        label: "Urgent Issues",
-        text: `${urgentIssueCount} urgent issue${urgentIssueCount !== 1 ? "s" : ""} require response`,
-        section: "executive",
-        colorClass: "text-red-500",
-        bgClass: "hover:bg-red-500/5",
-        borderClass: "border-red-500/40 text-red-500 bg-red-500/5 dark:bg-red-500/10",
-        icon: Crown,
-        priority: 1,
-      });
-    } else if (issueCount > 0) {
-      list.push({
-        id: "exec-pending",
-        label: "Cabinet Issues",
-        text: `${issueCount} pending issue${issueCount !== 1 ? "s" : ""} in cabinet`,
-        section: "executive",
-        colorClass: "text-amber-500",
-        bgClass: "hover:bg-amber-500/5",
-        borderClass: "border-amber-500/40 text-amber-500 bg-amber-500/5 dark:bg-amber-500/10",
-        icon: Crown,
-        priority: 2,
-      });
-    }
-
-    // 2. Active Policies Setup
-    if (policies && policies.length > 0 && activePolicies < policies.length) {
-      const inactive = policies.length - activePolicies;
-      list.push({
-        id: "exec-policies",
-        label: "Policy Setup",
-        text: `${inactive} draft/inactive polic${inactive !== 1 ? "ies" : "y"} pending`,
-        section: "executive",
-        colorClass: "text-emerald-500",
-        bgClass: "hover:bg-emerald-500/5",
-        borderClass:
-          "border-emerald-500/40 text-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10",
-        icon: Landmark,
-        priority: 3,
-      });
-    }
-
-    // 3. Meeting Action Items
-    if (pActions > 0) {
-      list.push({
-        id: "exec-actions",
-        label: "Meeting Actions",
-        text: `${pActions} action item${pActions !== 1 ? "s" : ""} pending`,
-        section: "executive",
-        colorClass: "text-orange-500",
-        bgClass: "hover:bg-orange-500/5",
-        borderClass: "border-orange-500/40 text-orange-500 bg-orange-500/5 dark:bg-orange-500/10",
-        icon: Layers,
-        priority: 2,
-      });
-    }
-
-    // 4. Unread Messages
-    if (messageUnreadCount > 0) {
-      list.push({
-        id: "diplo-unread-messages",
-        label: "Unread Messages",
-        text: `${messageUnreadCount} unread message${messageUnreadCount !== 1 ? "s" : ""} in inbox`,
-        section: "diplomacy",
-        colorClass: "text-blue-500",
-        bgClass: "hover:bg-blue-500/5",
-        borderClass: "border-blue-500/40 text-blue-500 bg-blue-500/5 dark:bg-blue-500/10",
-        icon: Mail,
-        priority: 2,
-      });
-    }
-
-    // 5. Defense Threats / Assessment
-    if (threats > 0) {
-      list.push({
-        id: "def-threats",
-        label: "Security Threats",
-        text: `${threats} active threat${threats !== 1 ? "s" : ""} detected`,
-        section: "defense",
-        colorClass: "text-red-500",
-        bgClass: "hover:bg-red-500/5",
-        borderClass: "border-red-500/40 text-red-500 bg-red-500/5 dark:bg-red-500/10",
-        icon: Shield,
-        priority: 1,
-      });
-    } else if (securityScore < 60) {
-      list.push({
-        id: "def-low-score",
-        label: "Defense Readiness",
-        text: `Defense Readiness Score is low: ${securityScore}/100`,
-        section: "defense",
-        colorClass: "text-amber-500",
-        bgClass: "hover:bg-amber-500/5",
-        borderClass: "border-amber-500/40 text-amber-500 bg-amber-500/5 dark:bg-amber-500/10",
-        icon: Shield,
-        priority: 2,
-      });
-    }
-
-    // 6. Intelligence Security Alerts
-    if (critAlerts > 0) {
-      list.push({
-        id: "intel-critical",
-        label: "Intel Security",
-        text: `${critAlerts} critical intelligence alert${critAlerts !== 1 ? "s" : ""}`,
-        section: "intelligence",
-        colorClass: "text-red-500",
-        bgClass: "hover:bg-red-500/5",
-        borderClass: "border-red-500/40 text-red-500 bg-red-500/5 dark:bg-red-500/10",
-        icon: Brain,
-        priority: 1,
-      });
-    }
-
-    // 7. Elections
-    if (pendingElections > 0) {
-      list.push({
-        id: "pol-elections",
-        label: "Elections",
-        text: `${pendingElections} active/scheduled election${pendingElections !== 1 ? "s" : ""}`,
-        section: "politics",
-        colorClass: "text-purple-500",
-        bgClass: "hover:bg-purple-500/5",
-        borderClass: "border-purple-500/40 text-purple-500 bg-purple-500/5 dark:bg-purple-500/10",
-        icon: Vote,
-        priority: 3,
-      });
-    }
-
-    // 8. Embassies Setup
-    if (activeEmbassies === 0 && embassies?.length === 0) {
-      list.push({
-        id: "diplo-no-emb",
-        label: "Diplomatic Embassies",
-        text: "Establish your first embassy",
-        section: "diplomacy",
-        colorClass: "text-cyan-500",
-        bgClass: "hover:bg-cyan-500/5",
-        borderClass: "border-cyan-500/40 text-cyan-500 bg-cyan-500/5 dark:bg-cyan-500/10",
-        icon: Handshake,
-        priority: 3,
-      });
-    }
-
-    return list;
-  }, [
-    urgentIssueCount,
-    issueCount,
-    policies,
-    activePolicies,
-    pActions,
-    messageUnreadCount,
-    threats,
-    securityScore,
-    critAlerts,
-    pendingElections,
-    activeEmbassies,
-    embassies,
-  ]);
+  const agendaItems = useMemo(
+    () =>
+      buildAgendaItems({
+        urgentIssueCount,
+        issueCount,
+        policiesTotal: policies?.length ?? 0,
+        activePolicies,
+        pendingActions: pActions,
+        messageUnreadCount,
+        threats,
+        securityScore,
+        critAlerts,
+        pendingElections,
+        noEmbassies: activeEmbassies === 0 && embassies?.length === 0,
+      }),
+    [
+      urgentIssueCount,
+      issueCount,
+      policies,
+      activePolicies,
+      pActions,
+      messageUnreadCount,
+      threats,
+      securityScore,
+      critAlerts,
+      pendingElections,
+      activeEmbassies,
+      embassies,
+    ]
+  );
 
   const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const months = [
@@ -574,123 +383,6 @@ export function OverviewHero({
     if (pActions > 0) return "Action Items";
     return "All Clear";
   }, [upcomingEvents, pendingElections, meetings, pActions]);
-
-  // ── Dynamic Alerts List ──
-  const alertsList = useMemo(() => {
-    const list: {
-      id: string;
-      section: MyCountrySection;
-      type: "critical" | "warning" | "info" | "success";
-      icon: any;
-      text: string;
-    }[] = [];
-
-    // Diplomacy Alerts (Status-only, no agenda duplication)
-    if (totalRelations > 0 && avgStrength < 40) {
-      list.push({
-        id: "diplo-low-strength",
-        section: "diplomacy",
-        type: "warning",
-        icon: Handshake,
-        text: `Low average diplomatic strength (${avgStrength}%)`,
-      });
-    }
-
-    // Politics Alerts (Status-only, no agenda duplication)
-    if (partyCount === 0) {
-      list.push({
-        id: "pol-no-party",
-        section: "politics",
-        type: "warning",
-        icon: Users,
-        text: "No political parties registered",
-      });
-    }
-    if (totalSeats === 0) {
-      list.push({
-        id: "pol-no-seats",
-        section: "politics",
-        type: "warning",
-        icon: Landmark,
-        text: "Legislature seats not configured",
-      });
-    }
-
-    // Intelligence Alerts
-    if (isPremium && critAlerts > 0) {
-      list.push({
-        id: "intel-critical",
-        section: "intelligence",
-        type: "critical",
-        icon: AlertTriangle,
-        text: `${critAlerts} critical security alert${critAlerts !== 1 ? "s" : ""}`,
-      });
-    }
-
-    // Defense Alerts
-    if (isPremium) {
-      if (threats > 0) {
-        list.push({
-          id: "def-threats",
-          section: "defense",
-          type: "critical",
-          icon: Sword,
-          text: `${threats} active border threat${threats !== 1 ? "s" : ""}`,
-        });
-      }
-      if (avgReadiness < 60 && branchCount > 0) {
-        list.push({
-          id: "def-readiness",
-          section: "defense",
-          type: "warning",
-          icon: Target,
-          text: `Military readiness is low (${avgReadiness}%)`,
-        });
-      }
-    }
-
-    // Fallback if everything is clear
-    if (list.length === 0) {
-      list.push({
-        id: "all-clear",
-        section: "overview",
-        type: "success",
-        icon: Check,
-        text: "All national sectors operating normally",
-      });
-    }
-
-    return list;
-  }, [
-    totalRelations,
-    avgStrength,
-    partyCount,
-    totalSeats,
-    isPremium,
-    critAlerts,
-    threats,
-    avgReadiness,
-    branchCount,
-  ]);
-
-  const systemAlerts = useMemo(() => {
-    return alertsList.filter((a) => a.id !== "all-clear");
-  }, [alertsList]);
-
-  const hasRealAlerts = systemAlerts.length > 0;
-
-  const highestSeverity = useMemo(() => {
-    if (systemAlerts.some((a) => a.type === "critical")) return "critical";
-    if (systemAlerts.some((a) => a.type === "warning")) return "warning";
-    return "info";
-  }, [systemAlerts]);
-
-  const triggerColorClass =
-    highestSeverity === "critical"
-      ? "border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-600 dark:text-red-400"
-      : highestSeverity === "warning"
-        ? "border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
-        : "border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400";
 
   if (!country) return null;
 
@@ -960,148 +652,11 @@ export function OverviewHero({
                   </div>
                 ) : (
                   // SMART STACK VIEW
-                  <div className="relative flex h-[105px] w-full items-center justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-2.5 backdrop-blur-md">
-                    {agendaItems.length > 0 ? (
-                      (() => {
-                        const currentStackItem = agendaItems[activeStackIndex] ?? agendaItems[0];
-                        if (!currentStackItem) return null;
-                        const ItemIcon = currentStackItem.icon;
-                        return (
-                          <div className="flex w-full items-center gap-3">
-                            <div
-                              className={cn(
-                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
-                                currentStackItem.borderClass
-                              )}
-                            >
-                              <ItemIcon className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0 flex-1 pr-6">
-                              <span className="text-muted-foreground/60 text-[8px] font-bold tracking-wider uppercase">
-                                {currentStackItem.label}
-                              </span>
-                              <p className="text-foreground mt-0.5 truncate text-[10px] leading-tight font-semibold">
-                                {currentStackItem.text}
-                              </p>
-                              <button
-                                onClick={() => onNavigate?.(currentStackItem.section)}
-                                className="mt-1 flex items-center gap-0.5 text-[8px] font-bold text-amber-500 hover:text-amber-400 hover:underline"
-                              >
-                                Resolve Task <ChevronRight className="h-2.5 w-2.5" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      <div className="flex w-full flex-col items-center justify-center py-2 text-center text-emerald-500">
-                        <Check className="mb-1 h-5 w-5" />
-                        <span className="text-[10px] font-bold">
-                          All sectors operating normally
-                        </span>
-                        <p className="text-muted-foreground/60 mt-0.5 text-[8px]">
-                          Your daily agenda is completely clear.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Pagination for Smart Stack */}
-                    {agendaItems.length > 1 && (
-                      <div className="absolute top-0 right-2 bottom-0 z-20 flex flex-col justify-center gap-1">
-                        <button
-                          onClick={() =>
-                            setActiveStackIndex(
-                              (prev) => (prev - 1 + agendaItems.length) % agendaItems.length
-                            )
-                          }
-                          className="text-muted-foreground/50 hover:text-foreground/80 p-0.5 transition-colors active:scale-90"
-                        >
-                          <ChevronUp className="h-3 w-3" />
-                        </button>
-                        <div className="my-0.5 flex flex-col items-center gap-1">
-                          {agendaItems.map((_, idx) => (
-                            <div
-                              key={idx}
-                              className={cn(
-                                "h-1 w-1 rounded-full transition-all duration-300",
-                                idx === activeStackIndex ? "scale-125 bg-amber-500" : "bg-white/20"
-                              )}
-                            />
-                          ))}
-                        </div>
-                        <button
-                          onClick={() =>
-                            setActiveStackIndex((prev) => (prev + 1) % agendaItems.length)
-                          }
-                          className="text-muted-foreground/50 hover:text-foreground/80 p-0.5 transition-colors active:scale-90"
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <SmartStack
+                    items={agendaItems}
+                    onResolve={(section) => onNavigate?.(section)}
+                  />
                 )}
-              </div>
-
-              {/* Dropdown Alerts Inline */}
-              <div className="relative z-20">
-                {hasRealAlerts ? (
-                  <div className="flex flex-col gap-1">
-                    <button
-                      onClick={() => setAlertsOpen(!alertsOpen)}
-                      className={cn(
-                        "flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all",
-                        triggerColorClass
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 animate-pulse text-amber-500 dark:text-amber-400" />
-                        <span>
-                          {systemAlerts.length} System Alert{systemAlerts.length !== 1 ? "s" : ""}{" "}
-                          Active
-                        </span>
-                      </div>
-                      {alertsOpen ? (
-                        <ChevronUp className="h-3 w-3 shrink-0 opacity-70" />
-                      ) : (
-                        <ChevronDown className="h-3 w-3 shrink-0 opacity-70" />
-                      )}
-                    </button>
-
-                    {alertsOpen && (
-                      <div className="border-border/20 animate-in fade-in slide-in-from-top-1 mt-1 flex max-h-[90px] scrollbar-thin flex-col gap-1 overflow-y-auto rounded-lg border bg-black/5 p-1.5 duration-150 dark:bg-white/[0.02]">
-                        {systemAlerts.map((alert) => {
-                          const Icon = alert.icon;
-                          const severityColor =
-                            alert.type === "critical"
-                              ? "border-red-500/10 bg-red-500/5 hover:bg-red-500/10 text-red-600 dark:text-red-400"
-                              : alert.type === "warning"
-                                ? "border-amber-500/10 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                : "border-blue-500/10 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400";
-                          return (
-                            <button
-                              key={alert.id}
-                              onClick={() => {
-                                setAlertsOpen(false);
-                                if (onNavigate) {
-                                  onNavigate(alert.section);
-                                }
-                              }}
-                              className={cn(
-                                "flex w-full cursor-pointer items-center gap-2 rounded-md border p-1.5 text-left text-[10px] transition-all",
-                                severityColor
-                              )}
-                            >
-                              <Icon className="h-3 w-3 shrink-0" />
-                              <span className="flex-1 truncate font-medium">{alert.text}</span>
-                              <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
               </div>
 
               {/* Civil Service Capacity + Rollout Queue */}
