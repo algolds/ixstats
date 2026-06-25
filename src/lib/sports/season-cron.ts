@@ -354,7 +354,7 @@ async function advanceLeagueMatchDay(
       awayScore: result.awayScore,
     });
 
-    if (m.homeTeam.ownerUserId) {
+    if (m.homeTeam.ownerUserId && m.homeTeam.notifyResults !== false) {
       ownerNotifs.push({
         userId: m.homeTeam.ownerUserId,
         teamId: m.homeTeamId,
@@ -364,7 +364,7 @@ async function advanceLeagueMatchDay(
         opponentScore: result.awayScore,
       });
     }
-    if (m.awayTeam.ownerUserId) {
+    if (m.awayTeam.ownerUserId && m.awayTeam.notifyResults !== false) {
       ownerNotifs.push({
         userId: m.awayTeam.ownerUserId,
         teamId: m.awayTeamId,

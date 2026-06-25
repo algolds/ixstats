@@ -85,6 +85,24 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
+  setClubNotifications: protectedProcedure
+    .input(z.object({ teamId: z.string(), enabled: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const team = await ctx.db.sportTeam.findUnique({
+        where: { id: input.teamId },
+        select: { ownerUserId: true },
+      });
+      if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+      if (team.ownerUserId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
+      }
+      return ctx.db.sportTeam.update({
+        where: { id: input.teamId },
+        data: { notifyResults: input.enabled },
+        select: { id: true, notifyResults: true },
+      });
+    }),
+
   invokePatronSaint: protectedProcedure
     .input(z.object({ teamId: z.string(), saintName: z.string() }))
     .mutation(async ({ ctx, input }) => {

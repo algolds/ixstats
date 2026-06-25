@@ -34,6 +34,8 @@ import Scoreboard from "~/components/sports/scoreboards/Scoreboard1";
 import PlayerMatchup1 from "~/components/sports/player-matchups/PlayerMatchup1";
 import { SponsorWalletDeck } from "~/components/myclub/SponsorWalletDeck";
 import { MatchTickerSim } from "~/components/myleague/MatchTickerSim";
+import { ClubResultsCard } from "~/components/myclub/ClubResultsCard";
+import { Switch } from "~/components/ui/switch";
 import { PlayerTrainingButton } from "~/components/myclub/PlayerTrainingButton";
 import { LineupBuilder } from "~/components/myclub/LineupBuilder";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
@@ -178,6 +180,19 @@ export default function MyClubTeamDetailPage() {
     onSuccess: () => {
       utils.sports.getMyClubOverview.invalidate({ teamId });
       utils.sports.getTeam.invalidate({ id: teamId });
+    },
+  });
+
+  // Live match (if any) for this club drives the live ticker; otherwise the
+  // overview shows a results card.
+  const { data: liveActivities } = api.sports.getLiveActivities.useQuery(undefined, {
+    enabled: !!teamId,
+    refetchInterval: 30_000,
+  });
+
+  const setClubNotifications = api.sports.setClubNotifications.useMutation({
+    onSuccess: () => {
+      utils.sports.getMyClubOverview.invalidate({ teamId });
     },
   });
 
@@ -415,6 +430,8 @@ export default function MyClubTeamDetailPage() {
 
   const { team, activeSeason, currentStandings, upcomingMatches, seasonsCount, championships } =
     overview;
+  const liveMatch =
+    liveActivities?.find((m) => m.homeTeamId === teamId || m.awayTeamId === teamId) ?? null;
   const emoji = SPORT_EMOJIS[team.league?.sportPreset ?? ""] ?? "\uD83C\uDFC6";
   const sportPresetAttrs =
     SPORT_PRESETS.find((p) => p.key === team.league?.sportPreset)?.ratingVector ?? [];
@@ -428,51 +445,42 @@ export default function MyClubTeamDetailPage() {
             <div className="space-y-6 lg:col-span-2">
               {activeSeason ? (
                 <>
-                  <MatchTickerSim
-                    homeTeam={{ name: team.name, color: team.color }}
-                    awayTeam={{ name: "Rival Athletic", color: "#e11d48" }}
-                    trace={[
-                      {
-                        t: 0,
-                        type: "tactic_shift",
-                        description: "Kickoff! Both teams set default shapes.",
-                      },
-                      {
-                        t: 14,
-                        type: "tactic_shift",
-                        description: `${team.name} advances midfielders.`,
-                      },
-                      {
-                        t: 34,
-                        type: "goal",
-                        team: "home",
-                        description: `WHAT A STRIKE! ${team.name} takes the lead!`,
-                      },
-                      {
-                        t: 45,
-                        type: "tactic_shift",
-                        description: "Half time adjustments underway.",
-                      },
-                      {
-                        t: 62,
-                        type: "card",
-                        cardType: "yellow",
-                        minute: 62,
-                        description: "Yellow card issued for late challenge.",
-                      },
-                      {
-                        t: 78,
-                        type: "goal",
-                        team: "away",
-                        description: "Equalizer! Rival Athletic converts the cross.",
-                      },
-                      {
-                        t: 90,
-                        type: "tactic_shift",
-                        description: "Full time whistle. Match ends drawn.",
-                      },
-                    ]}
-                  />
+                  {liveMatch ? (
+                    <MatchTickerSim
+                      homeTeam={{
+                        name: liveMatch.homeTeam.name,
+                        color: liveMatch.homeTeam.color,
+                        shortName: liveMatch.homeTeam.shortName,
+                      }}
+                      awayTeam={{
+                        name: liveMatch.awayTeam.name,
+                        color: liveMatch.awayTeam.color,
+                        shortName: liveMatch.awayTeam.shortName,
+                      }}
+                      trace={liveMatch.trace}
+                      homeScoreFinal={liveMatch.finalHomeScore}
+                      awayScoreFinal={liveMatch.finalAwayScore}
+                    />
+                  ) : (
+                    <ClubResultsCard teamId={teamId} />
+                  )}
+
+                  {/* Match notifications toggle */}
+                  <div className="border-border flex items-center justify-between rounded-2xl border p-4">
+                    <div className="min-w-0 pr-4">
+                      <p className="text-sm font-semibold">Match Notifications</p>
+                      <p className="text-muted-foreground text-xs">
+                        Notify me when {team.name} plays a match.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={team.notifyResults ?? true}
+                      disabled={setClubNotifications.isPending}
+                      onCheckedChange={(enabled) =>
+                        setClubNotifications.mutate({ teamId, enabled })
+                      }
+                    />
+                  </div>
 
                   {/* Record widgets */}
                   {currentStandings && (

@@ -424,6 +424,8 @@ export const sportsTeamsRouter = createTRPCRouter({
       sportPreset: m.season.league.sportPreset,
       resolvedIxTime: m.resolvedIxTime!,
       windowMs: LIVE_WINDOW_IXMS,
+      homeTeamId: m.homeTeamId,
+      awayTeamId: m.awayTeamId,
       homeTeam: m.homeTeam,
       awayTeam: m.awayTeam,
       finalHomeScore: m.homeScore ?? 0,
@@ -431,6 +433,86 @@ export const sportsTeamsRouter = createTRPCRouter({
       trace: (((m.matchStats as Record<string, unknown> | null)?.trace ?? []) as LiveTraceEvent[]),
     }));
   }),
+
+  /**
+   * Recent results + a head-to-head overview for the latest match. Powers the
+   * MyClub "Match Overview / Last 5 Results" card (shown when no game is live).
+   */
+  getClubResultsOverview: publicProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const recentMatches = await ctx.db.sportMatch.findMany({
+        where: {
+          status: "completed",
+          OR: [{ homeTeamId: input.teamId }, { awayTeamId: input.teamId }],
+        },
+        include: {
+          homeTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, city: true } },
+          awayTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, city: true } },
+          season: { select: { id: true, league: { select: { name: true } } } },
+        },
+        orderBy: [{ resolvedIxTime: "desc" }, { matchDay: "desc" }],
+        take: 5,
+      });
+
+      const recent = recentMatches.map((m) => {
+        const isHome = m.homeTeamId === input.teamId;
+        const opp = isHome ? m.awayTeam : m.homeTeam;
+        const teamScore = (isHome ? m.homeScore : m.awayScore) ?? 0;
+        const oppScore = (isHome ? m.awayScore : m.homeScore) ?? 0;
+        return {
+          id: m.id,
+          resolvedIxTime: m.resolvedIxTime,
+          isHome,
+          opponent: { name: opp.name, shortName: opp.shortName, color: opp.color, logo: opp.logo },
+          teamScore,
+          oppScore,
+          result: teamScore > oppScore ? "W" : teamScore < oppScore ? "L" : "D",
+          leagueName: m.season.league.name,
+        };
+      });
+
+      const latest = recentMatches[0];
+      let lastMatch = null;
+      let comparison = null;
+      if (latest) {
+        lastMatch = {
+          home: {
+            name: latest.homeTeam.name,
+            city: latest.homeTeam.city,
+            color: latest.homeTeam.color,
+            logo: latest.homeTeam.logo,
+          },
+          away: {
+            name: latest.awayTeam.name,
+            city: latest.awayTeam.city,
+            color: latest.awayTeam.color,
+            logo: latest.awayTeam.logo,
+          },
+          homeScore: latest.homeScore ?? 0,
+          awayScore: latest.awayScore ?? 0,
+          leagueName: latest.season.league.name,
+          resolvedIxTime: latest.resolvedIxTime,
+        };
+
+        // Both teams' standing in the latest match's season → comparison bars.
+        const standings = await ctx.db.sportStanding.findMany({
+          where: {
+            seasonId: latest.season.id,
+            teamId: { in: [latest.homeTeamId, latest.awayTeamId] },
+          },
+          select: { teamId: true, wins: true, losses: true, points: true },
+        });
+        const stat = (id: string) =>
+          standings.find((s) => s.teamId === id) ?? { wins: 0, losses: 0, points: 0 };
+        comparison = {
+          home: stat(latest.homeTeamId),
+          away: stat(latest.awayTeamId),
+        };
+      }
+
+      return { lastMatch, comparison, recent };
+    }),
 
   getMyClubs: protectedProcedure.query(async ({ ctx }) => {
     try {
