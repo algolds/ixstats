@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
 import { GlassCard } from "~/components/ui/enhanced-card";
-import { GlassButton } from "~/components/ui/enhanced-button";
+import { Button } from "~/components/ui/button";
 
 interface LiveGameBannerProps {
   onRefresh: () => void;
@@ -219,16 +219,15 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
             </div>
             {/* Refresh Button with glass effect */}
             <div className="flex items-center gap-4">
-              <GlassButton
+              <Button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                glass
                 size="sm"
-                className="border-white/30 text-white"
+                className="glass-button transition-all duration-250 border-white/30 text-white"
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                 Refresh All
-              </GlassButton>
+              </Button>
             </div>
           </GlassCard>
           {/* Aurora/animated background effect (optional, subtle) */}

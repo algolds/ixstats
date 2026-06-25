@@ -45,7 +45,6 @@ import { builderDraftRouter } from "./routers/builderDraft";
 
 // ─── Economy ─────────────────────────────────────────────────────────────────
 import { economicsRouter } from "./routers/economics";
-import { enhancedEconomicsRouter } from "./routers/enhanced-economics";
 import { atomicEconomicRouter } from "./routers/atomicEconomic";
 import { economicComponentsRouter } from "./routers/economicComponents";
 import { economicArchetypesRouter } from "./routers/economicArchetypes";
@@ -176,7 +175,6 @@ export const appRouter = createTRPCRouter({
 
   // ─── Economy ───────────────────────────────────────────────────────────────
   economics: safeRouter("economics", () => economicsRouter),
-  enhancedEconomics: safeRouter("enhancedEconomics", () => enhancedEconomicsRouter),
   atomicEconomic: safeRouter("atomicEconomic", () => atomicEconomicRouter),
   economicComponents: safeRouter("economicComponents", () => economicComponentsRouter),
   economicArchetypes: safeRouter("economicArchetypes", () => economicArchetypesRouter),

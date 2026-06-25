@@ -306,7 +306,6 @@ export const systemValidationRouter = createTRPCRouter({
       "archetypes",
       "economicArchetypes",
       "activities",
-      "enhancedEconomics",
       "government",
       "atomicGovernment",
       "atomicEconomic",

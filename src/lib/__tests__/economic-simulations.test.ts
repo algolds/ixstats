@@ -1,6 +1,5 @@
 import { IxStatsCalculator, EconomicTier, PopulationTier } from "../calculations";
 import { IxTime } from "../ixtime";
-import { EnhancedEconomicCalculator } from "../enhanced-economic-calculations";
 import { EconomicCalculationGroups } from "../economic-calculation-groups";
 import {
   calculateModelHealth,
@@ -383,34 +382,6 @@ describe("Active Economic Simulation Engine (calculations.ts)", () => {
       expect(result.newStats.currentGdpPerCapita).toBeLessThan(90000 * 1.0041284);
       expect(result.newStats.currentGdpPerCapita).toBeCloseTo(90223.7, 0);
     });
-  });
-});
-
-describe("Enhanced Economic Calculation Framework (enhanced-economic-calculations.ts)", () => {
-  let calculator: EnhancedEconomicCalculator;
-
-  beforeEach(() => {
-    calculator = new EnhancedEconomicCalculator(mockConfig);
-  });
-
-  it("should calculate Economic Resilience Index (ERI) correctly from components", () => {
-    const stats = calculator.initializeCountryStats(mockBaseCountry);
-    const metrics = calculator.calculateEconomicResilience(stats, mockEconomyData);
-
-    expect(metrics.overallScore).toBeGreaterThanOrEqual(0);
-    expect(metrics.overallScore).toBeLessThanOrEqual(100);
-    expect(metrics.components.fiscalStability).toBe(95); // base 50 + debt (25) + deficit (10) + tax (10)
-    expect(metrics.components.monetaryStability).toBe(85); // base 50 + inflation (25) + currency placeholder (10)
-    expect(metrics.components.structuralBalance).toBe(80); // base 50 + tier Developed (10) + pop TIER_2 (5) + unemployment (15)
-    expect(metrics.components.socialCohesion).toBe(85); // base 50 + gini (15) + mobility (10) + literacy (10)
-  });
-
-  it("should calculate Productivity & Innovation Index (PII) correctly", () => {
-    const stats = calculator.initializeCountryStats(mockBaseCountry);
-    const metrics = calculator.calculateProductivityInnovation(stats, mockEconomyData);
-
-    expect(metrics.overallScore).toBeGreaterThanOrEqual(0);
-    expect(metrics.overallScore).toBeLessThanOrEqual(100);
   });
 });
 
