@@ -47,6 +47,7 @@ export async function GET(request: Request) {
         hasImage: p.hasImage,
         length: p.length,
         categoryCount: p.categoryCount,
+        estimatedValue: p.estimatedValue,
       }))
       .sort((a, b) => {
         if (preferImages && (b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0)) {

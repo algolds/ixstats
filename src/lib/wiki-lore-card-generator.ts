@@ -23,6 +23,7 @@ import { getCurrentIxCardSeason } from "~/lib/ixcard-season";
 import type { WikiSource } from "~/lib/mediawiki-config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/mediawiki-config";
 import { LORE_CATEGORIES } from "./lore-card-constants";
+import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./card-valuation";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
@@ -78,6 +79,7 @@ export interface ArticleMetadataPreview {
   categoryCount: number;
   estimatedQuality: number;
   estimatedRarity: CardRarity;
+  estimatedValue: number; // catalog value in IxCredits at the estimated rarity (LORE card)
 }
 
 // Stub floor: an article must have at least this many cleaned-text chars to become a card.
@@ -338,6 +340,9 @@ export class WikiLoreCardGenerator {
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const out: ArticleMetadataPreview[] = [];
+    // Pull the (cached, DM-tunable) valuation config once so each preview can show an
+    // estimated catalog value — same source of truth as real card valuation.
+    const valuationCfg = await getValuationConfig(db);
 
     // MediaWiki caps titles at 50 per query; chunk and run a few chunks at a time.
     const chunks: string[][] = [];
@@ -365,7 +370,7 @@ export class WikiLoreCardGenerator {
             }
             const data = await res.json();
             const pages = Object.values(data.query?.pages ?? {}) as any[];
-            return pages.filter((p) => !p.missing).map((p) => this.toMetadataPreview(p));
+            return pages.filter((p) => !p.missing).map((p) => this.toMetadataPreview(p, valuationCfg));
           } catch (e) {
             console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
             return [] as ArticleMetadataPreview[];
@@ -377,7 +382,7 @@ export class WikiLoreCardGenerator {
     return out;
   }
 
-  private toMetadataPreview(page: any): ArticleMetadataPreview {
+  private toMetadataPreview(page: any, cfg: CardValuationConfig): ArticleMetadataPreview {
     const extract: string = page.extract || "";
     const length: number = page.length ?? extract.length;
     const categoryCount: number = page.categories?.length ?? 0;
@@ -393,6 +398,7 @@ export class WikiLoreCardGenerator {
       lastModified: new Date(),
     };
     const estimatedQuality = this.calculateQualityScore(quality);
+    const estimatedRarity = this.determineRarity(estimatedQuality);
     return {
       title: (page.title || "").replace(/_/g, " "),
       hasImage: !!page.original?.source,
@@ -401,7 +407,8 @@ export class WikiLoreCardGenerator {
       extract,
       categoryCount,
       estimatedQuality,
-      estimatedRarity: this.determineRarity(estimatedQuality),
+      estimatedRarity,
+      estimatedValue: computeCardValue({ rarity: estimatedRarity, cardType: "LORE" }, cfg),
     };
   }
 

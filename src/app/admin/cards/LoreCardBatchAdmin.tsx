@@ -40,6 +40,8 @@ import {
   XCircle,
   Clock,
   TrendingUp,
+  Coins,
+  ImageIcon,
 } from "lucide-react";
 
 // Wiki sources
@@ -68,6 +70,7 @@ interface ArticlePreview {
   artwork?: string;
   hasImage?: boolean;
   length?: number;
+  estimatedValue?: number;
   approved: boolean;
   generating?: boolean;
   generated?: boolean;
@@ -163,9 +166,11 @@ export function LoreCardBatchAdmin() {
     skipped: number;
   }>({ success: 0, failed: 0, skipped: 0 });
 
-  // Fetch articles (concurrent previews, prefer images, enforce min quality)
+  // Fetch articles (batched previews, image-first). Preview quality estimates run
+  // conservative (refs/inbound aren't fetched at preview time), so keep the floor low —
+  // the image-first sort + the Min Quality filter below let the admin curate.
   const handleFetchArticles = async () => {
-    const MIN_QUALITY = 20; // enforce minimum quality when finding lore cards
+    const MIN_QUALITY = 1;
 
     if (articleCount < 10 || articleCount > 100) {
       notify.error("Invalid Count", "Please enter a number between 10 and 100");
@@ -209,6 +214,7 @@ export function LoreCardBatchAdmin() {
             artwork,
             hasImage,
             length: preview.length,
+            estimatedValue: preview.estimatedValue,
           });
         }
       }
@@ -283,6 +289,7 @@ export function LoreCardBatchAdmin() {
           artwork,
           hasImage: !!artwork && !artwork.includes("placeholder"),
           length: preview.length,
+          estimatedValue: preview.estimatedValue,
         };
       });
       setArticles(mapped);
@@ -367,6 +374,9 @@ export function LoreCardBatchAdmin() {
     setGenerationProgress({ current: 0, total: approvedArticles.length });
     setGenerationResults({ success: 0, failed: 0, skipped: 0 });
 
+    // Track totals locally — reading generationResults state after the loop is a stale closure.
+    const tally = { success: 0, failed: 0, skipped: 0 };
+
     for (let i = 0; i < approvedArticles.length; i++) {
       const article = approvedArticles[i]!;
       setArticles((prev) =>
@@ -386,6 +396,7 @@ export function LoreCardBatchAdmin() {
               a.title === article.title ? { ...a, generating: false, generated: true } : a
             )
           );
+          tally.success++;
           setGenerationResults((prev) => ({ ...prev, success: prev.success + 1 }));
         } else {
           const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
@@ -396,6 +407,8 @@ export function LoreCardBatchAdmin() {
                 : a
             )
           );
+          if (errorData.message?.includes("already exists")) tally.skipped++;
+          else tally.failed++;
           setGenerationResults((prev) =>
             errorData.message?.includes("already exists")
               ? { ...prev, skipped: prev.skipped + 1 }
@@ -414,6 +427,7 @@ export function LoreCardBatchAdmin() {
               : a
           )
         );
+        tally.failed++;
         setGenerationResults((prev) => ({ ...prev, failed: prev.failed + 1 }));
       }
 
@@ -423,7 +437,7 @@ export function LoreCardBatchAdmin() {
     setIsGenerating(false);
     notify.success(
       "Generation Complete",
-      `Success: ${generationResults.success}, Failed: ${generationResults.failed}, Skipped: ${generationResults.skipped}`
+      `Generated ${tally.success} card${tally.success === 1 ? "" : "s"} · ${tally.failed} failed · ${tally.skipped} skipped`
     );
   };
 
@@ -1069,51 +1083,96 @@ function ArticlePreviewCard({
   const rarityColor = RARITY_COLORS[article.estimatedRarity] || RARITY_COLORS.COMMON!;
 
   return (
-    <Card
-      className={`glass-card-child p-4 transition-all ${
-        article.approved ? "ring-2 ring-green-500" : ""
-      } ${article.generated ? "opacity-50" : ""}`}
+    <div
+      className={`glass-card-child glass-interactive group relative overflow-hidden rounded-xl transition-all ${
+        article.approved ? "ring-2 ring-green-500/70" : ""
+      } ${article.generated ? "opacity-60" : ""}`}
     >
-      <div className="mb-3 flex items-start justify-between">
-        <Checkbox
-          checked={article.approved}
-          onCheckedChange={onToggleApproval}
-          disabled={disabled || article.generated}
-        />
-        <div className="ml-3 flex-1">
+      {/* Image header */}
+      <div className="bg-muted/30 relative h-32 w-full overflow-hidden">
+        {article.artwork ? (
+          // External wiki image URLs — raw <img> avoids next/image domain config.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={article.artwork}
+            alt={article.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        ) : (
+          <div className="text-muted-foreground flex h-full items-center justify-center">
+            <ImageIcon className="h-8 w-8 opacity-40" />
+          </div>
+        )}
+        <div className="from-background/80 pointer-events-none absolute inset-0 bg-gradient-to-t to-transparent" />
+        <div className="absolute top-2 left-2">
+          <Badge className={rarityColor}>{article.estimatedRarity}</Badge>
+        </div>
+        <div className="absolute top-2 right-2">
+          <Checkbox
+            checked={article.approved}
+            onCheckedChange={onToggleApproval}
+            disabled={disabled || article.generated}
+            className="bg-background/70 backdrop-blur"
+          />
+        </div>
+        {article.estimatedValue != null && (
+          <div className="absolute bottom-2 left-2">
+            <Badge className="bg-yellow-500/20 text-yellow-300">
+              <Coins className="mr-1 h-3 w-3" />
+              {Math.round(article.estimatedValue).toLocaleString()} IxC
+            </Badge>
+          </div>
+        )}
+        {!article.hasImage && (
+          <div className="absolute right-2 bottom-2">
+            <Badge variant="outline" className="bg-background/60 text-xs backdrop-blur">
+              No image
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="space-y-3 p-4">
+        <div>
           <h3 className="text-foreground mb-1 line-clamp-2 text-sm font-semibold">
             {article.title}
           </h3>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className={rarityColor}>{article.estimatedRarity}</Badge>
             <Badge variant="outline" className="text-xs">
               {article.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
             </Badge>
+            {article.length != null && (
+              <Badge variant="outline" className="text-muted-foreground text-xs">
+                {(article.length / 1000).toFixed(1)}k chars
+              </Badge>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="mb-3">
         <p className="text-muted-foreground line-clamp-3 text-xs">{article.excerpt}</p>
-      </div>
 
-      <div className="mb-3 space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Quality Score:</span>
-          <div className="flex items-center gap-2">
-            <span className="text-foreground font-medium">{article.qualityScore.toFixed(1)}</span>
-            <TrendingUp className="h-3 w-3 text-green-400" />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Est. Quality</span>
+            <div className="flex items-center gap-2">
+              <span className="text-foreground font-medium">
+                {article.qualityScore.toFixed(1)}
+              </span>
+              <TrendingUp className="h-3 w-3 text-green-400" />
+            </div>
+          </div>
+          <div className="bg-muted/50 h-1.5 w-full overflow-hidden rounded-full">
+            <div
+              className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
+              style={{ width: `${Math.min(article.qualityScore, 100)}%` }}
+            />
           </div>
         </div>
-        <div className="bg-muted/50 h-1.5 w-full overflow-hidden rounded-full">
-          <div
-            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
-            style={{ width: `${article.qualityScore}%` }}
-          />
-        </div>
-      </div>
 
-      <div className="border-border border-t pt-3">
+        <div className="border-border/60 border-t pt-3">
         {article.generating && (
           <div className="flex items-center gap-2 text-xs text-blue-400">
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -1138,7 +1197,8 @@ function ArticlePreviewCard({
             <span>{article.approved ? "Ready to generate" : "Pending approval"}</span>
           </div>
         )}
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }
