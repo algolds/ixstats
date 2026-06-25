@@ -19,8 +19,14 @@ export function useMyCountryAgenda(
   const { total: issueCount, urgent: urgentIssueCount } = useIssueCount(countryId);
   const { totalUnread: messageUnreadCount = 0 } = useMessageUnreadCount();
 
-  const { data: policies } = api.policies.getPolicies.useQuery({ countryId: countryId! }, { enabled });
-  const { data: meetings } = api.meetings.getMeetings.useQuery({ countryId: countryId! }, { enabled });
+  const { data: policies } = api.policies.getPolicies.useQuery(
+    { countryId: countryId! },
+    { enabled }
+  );
+  const { data: meetings } = api.meetings.getMeetings.useQuery(
+    { countryId: countryId! },
+    { enabled }
+  );
   const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(
     { countryId: countryId! },
     { enabled }

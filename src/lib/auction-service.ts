@@ -399,7 +399,7 @@ export class AuctionService {
 
       // 8. Broadcast bid event via WebSocket
       {
-        const ws = (await getMarketWs());
+        const ws = await getMarketWs();
         if (ws) {
           const bidder = await db.user.findUnique({
             where: { id: params.userId },

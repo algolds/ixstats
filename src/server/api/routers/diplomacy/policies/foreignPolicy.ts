@@ -572,7 +572,11 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       if (cooperative) return { ...created, pendingConsent: true };
 
       // Hostile → enact immediately.
-      const enacted = await enactForeignPolicyEffects(ctx.db as PrismaClient, created.id, ctx.user.id);
+      const enacted = await enactForeignPolicyEffects(
+        ctx.db as PrismaClient,
+        created.id,
+        ctx.user.id
+      );
       return enacted ?? created;
     }),
 
@@ -612,7 +616,11 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       }
 
       // Accept → enact the stored effects (initiator is the actor of record).
-      const enacted = await enactForeignPolicyEffects(ctx.db as PrismaClient, action.id, ctx.user.id);
+      const enacted = await enactForeignPolicyEffects(
+        ctx.db as PrismaClient,
+        action.id,
+        ctx.user.id
+      );
       return { status: "active" as const, action: enacted };
     }),
 

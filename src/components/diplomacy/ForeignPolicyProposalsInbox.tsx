@@ -58,9 +58,7 @@ export function ForeignPolicyProposalsInbox({
               <p className="truncate text-xs font-medium">
                 {ACTION_LABEL[p.actionType] ?? p.actionType}
               </p>
-              <p className="text-muted-foreground truncate text-[10px]">
-                from {p.initiator.name}
-              </p>
+              <p className="text-muted-foreground truncate text-[10px]">from {p.initiator.name}</p>
             </div>
             <Button
               size="sm"

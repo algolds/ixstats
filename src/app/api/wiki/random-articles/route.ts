@@ -25,12 +25,10 @@ export async function GET(request: Request) {
       );
     }
 
-    if (count < 10 || count > 100) {
-      return NextResponse.json({ error: "Count must be between 10 and 100" }, { status: 400 });
-    }
+    const validatedCount = Math.min(Math.max(count, 10), 300);
 
     // Over-fetch random titles to cover pages without images, then preview in batch.
-    const poolSize = Math.min(Math.max(count * 2, 20), 100);
+    const poolSize = Math.min(Math.max(validatedCount * 2, 20), 500);
     const titles = await wikiLoreCardGenerator.fetchRandomArticles(poolSize, source);
     const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(titles, source);
 
@@ -54,7 +52,7 @@ export async function GET(request: Request) {
         }
         return b.qualityScore - a.qualityScore;
       })
-      .slice(0, count);
+      .slice(0, validatedCount);
 
     return NextResponse.json({ articles, count: articles.length, source });
   } catch (error) {

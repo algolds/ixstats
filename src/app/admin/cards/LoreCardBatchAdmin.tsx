@@ -43,6 +43,7 @@ import {
   Coins,
   ImageIcon,
 } from "lucide-react";
+import { proxyCardArtwork } from "~/lib/ns-image-proxy";
 
 // Wiki sources
 const WIKI_SOURCES = [
@@ -293,10 +294,7 @@ export function LoreCardBatchAdmin() {
         };
       });
       setArticles(mapped);
-      notify.success(
-        "Category Loaded",
-        `Found ${mapped.length} articles in "${selectedCategory}"`
-      );
+      notify.success("Category Loaded", `Found ${mapped.length} articles in "${selectedCategory}"`);
     } catch (error) {
       notify.error("Error", error instanceof Error ? error.message : "Failed to load category");
     } finally {
@@ -315,9 +313,7 @@ export function LoreCardBatchAdmin() {
     sorted.sort((a, b) => {
       switch (sortKey) {
         case "rarity":
-          return (
-            (RARITY_ORDER[b.estimatedRarity] ?? 0) - (RARITY_ORDER[a.estimatedRarity] ?? 0)
-          );
+          return (RARITY_ORDER[b.estimatedRarity] ?? 0) - (RARITY_ORDER[a.estimatedRarity] ?? 0);
         case "length":
           return (b.length ?? 0) - (a.length ?? 0);
         case "title":
@@ -577,7 +573,9 @@ export function LoreCardBatchAdmin() {
 
               <div className="flex items-end">
                 <Button
-                  onClick={discoveryMode === "category" ? handleFetchByCategory : handleFetchArticles}
+                  onClick={
+                    discoveryMode === "category" ? handleFetchByCategory : handleFetchArticles
+                  }
                   disabled={
                     isFetching ||
                     isGenerating ||
@@ -1094,7 +1092,7 @@ function ArticlePreviewCard({
           // External wiki image URLs — raw <img> avoids next/image domain config.
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={article.artwork}
+            src={proxyCardArtwork(article.artwork)}
             alt={article.title}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -1158,9 +1156,7 @@ function ArticlePreviewCard({
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Est. Quality</span>
             <div className="flex items-center gap-2">
-              <span className="text-foreground font-medium">
-                {article.qualityScore.toFixed(1)}
-              </span>
+              <span className="text-foreground font-medium">{article.qualityScore.toFixed(1)}</span>
               <TrendingUp className="h-3 w-3 text-green-400" />
             </div>
           </div>
@@ -1173,30 +1169,30 @@ function ArticlePreviewCard({
         </div>
 
         <div className="border-border/60 border-t pt-3">
-        {article.generating && (
-          <div className="flex items-center gap-2 text-xs text-blue-400">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Generating...</span>
-          </div>
-        )}
-        {article.generated && (
-          <div className="flex items-center gap-2 text-xs text-green-400">
-            <CheckCircle2 className="h-3 w-3" />
-            <span>Generated successfully</span>
-          </div>
-        )}
-        {article.error && (
-          <div className="flex items-center gap-2 text-xs text-red-400">
-            <XCircle className="h-3 w-3" />
-            <span className="line-clamp-1">{article.error}</span>
-          </div>
-        )}
-        {!article.generating && !article.generated && !article.error && (
-          <div className="text-muted-foreground flex items-center gap-2 text-xs">
-            <Clock className="h-3 w-3" />
-            <span>{article.approved ? "Ready to generate" : "Pending approval"}</span>
-          </div>
-        )}
+          {article.generating && (
+            <div className="flex items-center gap-2 text-xs text-blue-400">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Generating...</span>
+            </div>
+          )}
+          {article.generated && (
+            <div className="flex items-center gap-2 text-xs text-green-400">
+              <CheckCircle2 className="h-3 w-3" />
+              <span>Generated successfully</span>
+            </div>
+          )}
+          {article.error && (
+            <div className="flex items-center gap-2 text-xs text-red-400">
+              <XCircle className="h-3 w-3" />
+              <span className="line-clamp-1">{article.error}</span>
+            </div>
+          )}
+          {!article.generating && !article.generated && !article.error && (
+            <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <Clock className="h-3 w-3" />
+              <span>{article.approved ? "Ready to generate" : "Pending approval"}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

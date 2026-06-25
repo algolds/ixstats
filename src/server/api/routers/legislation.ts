@@ -171,7 +171,8 @@ export const legislationRouter = createTRPCRouter({
       if (blocs.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "No seated legislature — hold an election (and seat parties) before voting on bills",
+          message:
+            "No seated legislature — hold an election (and seat parties) before voting on bills",
         });
       }
 

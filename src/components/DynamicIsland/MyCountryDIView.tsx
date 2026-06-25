@@ -295,7 +295,11 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
                                   : "N/A"}
                             </PreText>
                             {metricView.population === "total" && (
-                              <GrowthArrow value={stats.popGrowth} size={8} className="text-[8px]" />
+                              <GrowthArrow
+                                value={stats.popGrowth}
+                                size={8}
+                                className="text-[8px]"
+                              />
                             )}
                           </div>
                         </button>

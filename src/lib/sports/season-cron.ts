@@ -378,7 +378,11 @@ async function advanceLeagueMatchDay(
     }
 
     // Settle any matchday predictions on this match.
-    await resolveMatchPredictions(prisma, m.id, outcomeFromScores(result.homeScore, result.awayScore));
+    await resolveMatchPredictions(
+      prisma,
+      m.id,
+      outcomeFromScores(result.homeScore, result.awayScore)
+    );
   }
 
   // Update standings

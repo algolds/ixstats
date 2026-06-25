@@ -370,7 +370,9 @@ export class WikiLoreCardGenerator {
             }
             const data = await res.json();
             const pages = Object.values(data.query?.pages ?? {}) as any[];
-            return pages.filter((p) => !p.missing).map((p) => this.toMetadataPreview(p, valuationCfg));
+            return pages
+              .filter((p) => !p.missing)
+              .map((p) => this.toMetadataPreview(p, valuationCfg));
           } catch (e) {
             console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
             return [] as ArticleMetadataPreview[];

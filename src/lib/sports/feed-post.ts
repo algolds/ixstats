@@ -41,7 +41,10 @@ export async function postMatchDayBulletin(
         llmSummary,
       };
       // Structured marker (for the rich feed card) + markdown body (Discord/fallback).
-      return encodeSportsBulletin(buildMatchDayBulletinData(common), formatMatchDayBulletin(common));
+      return encodeSportsBulletin(
+        buildMatchDayBulletinData(common),
+        formatMatchDayBulletin(common)
+      );
     };
 
     const post = await prisma.thinkpagesPost.create({
@@ -75,9 +78,8 @@ export async function postMatchDayBulletin(
         console.error("[postMatchDayBulletin] narration failed:", narrateErr);
       } finally {
         try {
-          const { mirrorThinkPagesPostToDiscordFeed } = await import(
-            "~/lib/thinkpages-discord-feed"
-          );
+          const { mirrorThinkPagesPostToDiscordFeed } =
+            await import("~/lib/thinkpages-discord-feed");
           await mirrorThinkPagesPostToDiscordFeed(prisma as never, post.id);
         } catch (mirrorErr) {
           console.error("[postMatchDayBulletin] Discord mirror failed:", mirrorErr);

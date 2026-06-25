@@ -374,9 +374,8 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
         });
 
         // Settle matchday predictions on every match resolved this day.
-        const { resolveMatchPredictions, outcomeFromScores } = await import(
-          "~/lib/sports/predictions"
-        );
+        const { resolveMatchPredictions, outcomeFromScores } =
+          await import("~/lib/sports/predictions");
         for (let i = 0; i < matches.length; i++) {
           const res = results[i] as { matchId: string; homeScore: number; awayScore: number };
           await resolveMatchPredictions(

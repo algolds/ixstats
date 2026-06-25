@@ -66,7 +66,7 @@ function decide(distance: number): Vote {
 export function tallyVote(
   billTarget: number,
   blocs: VotingBloc[],
-  governmentBacking?: number,
+  governmentBacking?: number
 ): VoteResult {
   const breakdown: PartyVote[] = blocs.map((b) => {
     const distance = Math.abs(billTarget - IDEOLOGY_AXIS[b.ideology]);

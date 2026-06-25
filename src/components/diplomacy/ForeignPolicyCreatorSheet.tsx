@@ -316,11 +316,27 @@ export function ForeignPolicyCreatorSheet({
                   <Eye className="h-3.5 w-3.5 text-amber-500" />
                   Intelligence on {intel.targetName}
                 </h4>
-                <p className="text-muted-foreground mb-2 text-[11px] italic">{intel.reach.reason}</p>
+                <p className="text-muted-foreground mb-2 text-[11px] italic">
+                  {intel.reach.reason}
+                </p>
                 <div className="grid grid-cols-3 gap-2 text-xs">
-                  <IntelStat label="GDP/capita" value={intel.stats.gdpPerCapita} level={intel.reach.level} prefix="$" />
-                  <IntelStat label="Population" value={intel.stats.population} level={intel.reach.level} />
-                  <IntelStat label="Total GDP" value={intel.stats.totalGdp} level={intel.reach.level} prefix="$" />
+                  <IntelStat
+                    label="GDP/capita"
+                    value={intel.stats.gdpPerCapita}
+                    level={intel.reach.level}
+                    prefix="$"
+                  />
+                  <IntelStat
+                    label="Population"
+                    value={intel.stats.population}
+                    level={intel.reach.level}
+                  />
+                  <IntelStat
+                    label="Total GDP"
+                    value={intel.stats.totalGdp}
+                    level={intel.reach.level}
+                    prefix="$"
+                  />
                 </div>
               </div>
             </>

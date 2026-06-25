@@ -653,10 +653,7 @@ export function OverviewHero({
                   </div>
                 ) : (
                   // SMART STACK VIEW
-                  <SmartStack
-                    items={agendaItems}
-                    onResolve={(section) => onNavigate?.(section)}
-                  />
+                  <SmartStack items={agendaItems} onResolve={(section) => onNavigate?.(section)} />
                 )}
               </div>
 
