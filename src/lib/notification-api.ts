@@ -21,7 +21,7 @@
  */
 
 import { db } from "~/server/db";
-import { emitNotificationEvent } from "~/server/api/routers/notifications";
+import { emitNotificationEvent } from "~/lib/notification-emitter";
 import { withBasePath } from "./base-path";
 import { isNotificationEventEnabled } from "./notification-event-guard";
 

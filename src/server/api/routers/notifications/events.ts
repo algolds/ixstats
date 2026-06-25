@@ -3,11 +3,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { EventEmitter } from "events";
 import { NOTIFICATION_EVENTS } from "~/lib/notification-events-registry";
-
-// Event emitter for real-time notifications
-const notificationEmitter = new EventEmitter();
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([
@@ -264,8 +260,3 @@ export const notificationsEventsRouter = createTRPCRouter({
 
   // Delete an alert threshold
 });
-
-// Helper function to emit notification events (to be called when creating notifications)
-export function emitNotificationEvent(notification: any) {
-  notificationEmitter.emit("notification", notification);
-}

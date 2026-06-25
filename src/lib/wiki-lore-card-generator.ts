@@ -766,16 +766,42 @@ export class WikiLoreCardGenerator {
    * Fetches extra candidates to account for articles without images.
    */
   async fetchRandomArticlesWithImages(count: number, wikiSource: WikiSource): Promise<string[]> {
-    const candidates = await this.fetchRandomArticles(count * 3, wikiSource);
-    const withImages: string[] = [];
+    // One request: `generator=random` returns random pages and `prop=pageimages` tells
+    // us which have an image — no per-article checkArticleHasImage loop. That loop made
+    // 1 + 3N sequential calls and tripped the wiki's rate limit (429). Over-fetch via
+    // grnlimit to cover pages without an image.
+    try {
+      const apiUrl = getMediaWikiApiUrl(wikiSource);
+      const userAgent = getWikiUserAgent(wikiSource);
 
-    for (const title of candidates) {
-      if (withImages.length >= count) break;
-      const hasImage = await this.checkArticleHasImage(title, wikiSource);
-      if (hasImage) withImages.push(title);
+      const url = new URL(apiUrl);
+      url.searchParams.set("action", "query");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("generator", "random");
+      url.searchParams.set("grnnamespace", "0");
+      url.searchParams.set("grnlimit", String(Math.min(count * 3, 50)));
+      url.searchParams.set("prop", "pageimages");
+      url.searchParams.set("piprop", "original");
+      url.searchParams.set("pilimit", "max");
+
+      const response = await fetch(url.toString(), {
+        headers: { "User-Agent": userAgent },
+      });
+      if (!response.ok) {
+        console.error(`[Lore Card Generator] Random+images fetch error: ${response.status}`);
+        return [];
+      }
+
+      const data = await response.json();
+      const pages = Object.values(data.query?.pages ?? {}) as any[];
+      return pages
+        .filter((p) => p?.original?.source)
+        .map((p) => p.title as string)
+        .slice(0, count);
+    } catch (error) {
+      console.error(`[Lore Card Generator] Error fetching random articles with images:`, error);
+      return [];
     }
-
-    return withImages;
   }
 
   /**

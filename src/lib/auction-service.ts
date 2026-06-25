@@ -17,10 +17,25 @@
 import { vaultService, getVaultConfig } from "./vault-service";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
-import { getMarketWebSocketServer } from "~/lib/market-websocket-server";
 import { notificationAPI } from "~/lib/notification-api";
 import { grantCardXp } from "~/lib/card-xp-utils";
 import { SYSTEM_OWNER_IDS } from "~/lib/system-owner-constants";
+
+// market-websocket-server is marked `server-only`; importing it in a pure backend
+// process (the cron under plain Bun) throws. Load it lazily + best-effort so auction
+// completion still runs there — the WS broadcast is just skipped when it can't load.
+// ponytail: best-effort WS; cron skips broadcasts, web server still gets them.
+let _marketWs: { getMarketWebSocketServer: () => any } | null | undefined;
+async function getMarketWs() {
+  if (_marketWs === undefined) {
+    try {
+      _marketWs = await import("~/lib/market-websocket-server");
+    } catch {
+      _marketWs = null;
+    }
+  }
+  return _marketWs?.getMarketWebSocketServer() ?? null;
+}
 
 export class AuctionService {
   /**
@@ -159,7 +174,7 @@ export class AuctionService {
         `[Auction Service] Created auction ${auction.id} for card ${params.cardId} by user ${params.userId}`
       );
 
-      getMarketWebSocketServer()?.broadcastAuctionCreated(auction);
+      (await getMarketWs())?.broadcastAuctionCreated(auction);
 
       // Trigger watchlist price alerts (fire-and-forget)
       try {
@@ -384,7 +399,7 @@ export class AuctionService {
 
       // 8. Broadcast bid event via WebSocket
       {
-        const ws = getMarketWebSocketServer();
+        const ws = (await getMarketWs());
         if (ws) {
           const bidder = await db.user.findUnique({
             where: { id: params.userId },
@@ -666,7 +681,7 @@ export class AuctionService {
         `[Auction Service] User ${params.userId} bought card instance ${auction.cardInstanceId} via buyout for ${buyoutPrice} IxC`
       );
 
-      getMarketWebSocketServer()?.broadcastAuctionComplete({
+      (await getMarketWs())?.broadcastAuctionComplete({
         auctionId: params.auctionId,
         winnerId: params.userId,
         finalPrice: buyoutPrice,
@@ -852,7 +867,7 @@ export class AuctionService {
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
           );
 
-          getMarketWebSocketServer()?.broadcastAuctionComplete({
+          (await getMarketWs())?.broadcastAuctionComplete({
             auctionId,
             winnerId: auction.currentBidderId,
             finalPrice,
@@ -920,7 +935,7 @@ export class AuctionService {
           );
 
           // No bids expired — treat as complete/cancelled for WS
-          getMarketWebSocketServer()?.broadcastAuctionComplete({
+          (await getMarketWs())?.broadcastAuctionComplete({
             auctionId,
             winnerId: auction.sellerId,
             finalPrice: 0,
@@ -1040,7 +1055,7 @@ export class AuctionService {
 
       console.log(`[Auction Service] User ${params.userId} cancelled auction ${params.auctionId}`);
 
-      getMarketWebSocketServer()?.broadcastAuctionComplete({
+      (await getMarketWs())?.broadcastAuctionComplete({
         auctionId: params.auctionId,
         winnerId: params.userId,
         finalPrice: 0,

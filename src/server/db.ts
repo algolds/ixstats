@@ -82,6 +82,7 @@ const createPrismaClient = () => {
     "NSVerification",
     "CardTrade",
     "CardTradeOffer",
+    "TradeOffer",
     "CardAuction",
     "CardBid",
     "CardCollection",

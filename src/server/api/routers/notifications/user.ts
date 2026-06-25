@@ -10,10 +10,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { observable } from "@trpc/server/observable";
-import { EventEmitter } from "events";
-
-// Event emitter for real-time notifications
-const notificationEmitter = new EventEmitter();
+import { notificationEmitter, emitNotificationEvent } from "~/lib/notification-emitter";
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([
@@ -524,7 +521,5 @@ export const notificationsUserRouter = createTRPCRouter({
   // Delete an alert threshold
 });
 
-// Helper function to emit notification events (to be called when creating notifications)
-export function emitNotificationEvent(notification: any) {
-  notificationEmitter.emit("notification", notification);
-}
+// Re-exported so the notifications barrel (index.ts) keeps exposing it unchanged.
+export { emitNotificationEvent };

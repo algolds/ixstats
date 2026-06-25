@@ -10,10 +10,6 @@ import {
   lightMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { EventEmitter } from "events";
-
-// Event emitter for real-time notifications
-const notificationEmitter = new EventEmitter();
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([
@@ -421,8 +417,3 @@ export const notificationsPreferencesRouter = createTRPCRouter({
       return { success: true };
     }),
 });
-
-// Helper function to emit notification events (to be called when creating notifications)
-export function emitNotificationEvent(notification: any) {
-  notificationEmitter.emit("notification", notification);
-}
