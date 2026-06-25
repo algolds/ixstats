@@ -33,7 +33,35 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Loader2,
+  Eye,
 } from "lucide-react";
+
+// Statecraft S2.B: one fogged intel stat. null → "—" (unknown), questioned → "~" estimate.
+function IntelStat({
+  label,
+  value,
+  level,
+  prefix = "",
+}: {
+  label: string;
+  value: number | null;
+  level: string;
+  prefix?: string;
+}) {
+  const display =
+    value == null
+      ? "—"
+      : `${prefix}${Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value)}`;
+  return (
+    <div className={value == null ? "opacity-50" : ""}>
+      <p className="text-muted-foreground text-[10px] uppercase">{label}</p>
+      <p className="font-semibold tabular-nums">
+        {display}
+        {level === "questioned" && value != null ? " ~" : ""}
+      </p>
+    </div>
+  );
+}
 
 interface ForeignPolicyCreatorSheetProps {
   countryId: string;
@@ -112,6 +140,12 @@ export function ForeignPolicyCreatorSheet({
       { enabled: !!targetId && open }
     );
 
+  // S2.B: fogged intel on the target, gated by your reach into it.
+  const { data: intel } = api.diplomaticPolicies.getForeignIntel.useQuery(
+    { targetId },
+    { enabled: !!targetId && open }
+  );
+
   const selectedAction = ACTION_OPTIONS.find((a) => a.value === actionType);
 
   const targetCountries = relationships
@@ -133,13 +167,21 @@ export function ForeignPolicyCreatorSheet({
   };
 
   const proposeAction = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       const targetName =
         targetCountries.find((c) => c.id === targetId)?.name ?? "the target nation";
-      notify.success(
-        "Foreign policy enacted",
-        `${selectedAction?.label ?? "Policy"} toward ${targetName} is now in effect.`
-      );
+      // Cooperative actions await the target's consent (S2.C); hostile ones take effect now.
+      if ((data as { pendingConsent?: boolean })?.pendingConsent) {
+        notify.success(
+          "Proposal sent",
+          `Your ${selectedAction?.label ?? "proposal"} toward ${targetName} awaits their consent.`
+        );
+      } else {
+        notify.success(
+          "Foreign policy enacted",
+          `${selectedAction?.label ?? "Policy"} toward ${targetName} is now in effect.`
+        );
+      }
       onOpenChange(false);
       resetForm();
       onCreated?.();
@@ -264,6 +306,25 @@ export function ForeignPolicyCreatorSheet({
               rows={2}
             />
           </div>
+
+          {/* Intelligence (S2.B): what you can see of the target, fogged by your reach */}
+          {targetId && intel && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold">
+                  <Eye className="h-3.5 w-3.5 text-amber-500" />
+                  Intelligence on {intel.targetName}
+                </h4>
+                <p className="text-muted-foreground mb-2 text-[11px] italic">{intel.reach.reason}</p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <IntelStat label="GDP/capita" value={intel.stats.gdpPerCapita} level={intel.reach.level} prefix="$" />
+                  <IntelStat label="Population" value={intel.stats.population} level={intel.reach.level} />
+                  <IntelStat label="Total GDP" value={intel.stats.totalGdp} level={intel.reach.level} prefix="$" />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Impact Preview */}
           {targetId && (

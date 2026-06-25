@@ -58,8 +58,16 @@ function decide(distance: number): Vote {
 /**
  * Tally a floor vote. `billTarget` is the bill's position on IDEOLOGY_AXIS (-3…3).
  * A bill passes on a simple majority of votes cast (yes > no); abstentions don't count.
+ *
+ * `governmentBacking` (0…1, Statecraft S3.B = the government's Mandate/approval) is an
+ * optional, deterministic whip: a popular government persuades a fraction of *abstaining*
+ * seats to vote yes. Omitted → pure ideology (original behavior, unchanged).
  */
-export function tallyVote(billTarget: number, blocs: VotingBloc[]): VoteResult {
+export function tallyVote(
+  billTarget: number,
+  blocs: VotingBloc[],
+  governmentBacking?: number,
+): VoteResult {
   const breakdown: PartyVote[] = blocs.map((b) => {
     const distance = Math.abs(billTarget - IDEOLOGY_AXIS[b.ideology]);
     return { ...b, distance, vote: decide(distance) };
@@ -72,6 +80,14 @@ export function tallyVote(billTarget: number, blocs: VotingBloc[]): VoteResult {
     if (pv.vote === "yes") yesSeats += pv.seats;
     else if (pv.vote === "no") noSeats += pv.seats;
     else abstainSeats += pv.seats;
+  }
+
+  // Mandate whip: backing in (0,1] swings up to half the abstaining seats to yes.
+  if (governmentBacking != null) {
+    const backing = Math.max(0, Math.min(1, governmentBacking));
+    const whipped = Math.round(abstainSeats * backing * 0.5);
+    yesSeats += whipped;
+    abstainSeats -= whipped;
   }
 
   return {

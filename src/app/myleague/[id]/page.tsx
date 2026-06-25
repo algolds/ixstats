@@ -652,7 +652,7 @@ export default function LeagueDetailPage() {
                     {activeSeason ? (
                       <>
                         <div className="flex items-center justify-between gap-4">
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <p className="text-foreground text-sm font-extrabold">
                               Season {activeSeason.seasonNumber}
                             </p>

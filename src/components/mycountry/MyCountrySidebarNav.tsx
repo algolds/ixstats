@@ -85,14 +85,6 @@ export const NAV_ITEMS: {
     activeGlow: "shadow-cyan-500/20",
   },
   {
-    id: "intelligence",
-    href: "/mycountry/intelligence",
-    icon: Brain,
-    title: "Intelligence",
-    gradient: "from-blue-500 to-blue-600",
-    activeGlow: "shadow-blue-500/20",
-  },
-  {
     id: "defense",
     href: "/mycountry/defense",
     icon: Shield,

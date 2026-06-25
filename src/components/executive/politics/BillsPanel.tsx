@@ -50,6 +50,38 @@ const VOTE_ICON = {
   abstain: <Minus className="h-3 w-3 text-muted-foreground" />,
 } as const;
 
+// S3.A: a fogged vote projection before calling the floor. Precision gated by standing.
+function WhipCount({ billId }: { billId: string }) {
+  const { data } = api.legislation.previewBillVote.useQuery({ billId }, { staleTime: 30_000 });
+  if (!data) return null;
+  if (!data.available) {
+    return <p className="text-muted-foreground/60 text-[11px] italic">{data.reason}</p>;
+  }
+  const w = data.whip;
+  const color =
+    w.level === "greyed"
+      ? "text-muted-foreground/60"
+      : w.verdict === "pass" || w.verdict === "leaning_pass"
+        ? "text-emerald-500"
+        : w.verdict === "too_close"
+          ? "text-amber-500"
+          : "text-red-500";
+  return (
+    <div className="rounded-md border border-amber-500/15 bg-amber-500/[0.03] p-2">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold">
+        <Gavel className="h-3 w-3 text-amber-500" /> Whip Count
+        <span className="text-muted-foreground/50 ml-auto font-normal">
+          standing {data.standing}%
+        </span>
+      </p>
+      <p className={`mt-1 text-[11px] ${color}`}>
+        {w.caption}
+        {w.yesSeats != null ? ` (${w.yesSeats}–${w.noSeats})` : ""}
+      </p>
+    </div>
+  );
+}
+
 export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -242,6 +274,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                               Projected Growth Effect: {bill.gdpEffect > 0 ? "+" : ""}{bill.gdpEffect}% GDP
                             </p>
                           )}
+                          {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
                             <div className="bg-muted/40 border border-border/20 rounded-lg p-2.5 space-y-1">
                               <p className="font-medium text-foreground mb-1 text-[11px]">Floor Vote Breakdown</p>

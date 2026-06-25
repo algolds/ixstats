@@ -7,6 +7,7 @@ import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { ActivePoliciesList } from "./foreign-policy/ActivePoliciesList";
 import { TradeImpactChart } from "./foreign-policy/TradeImpactChart";
 import { ForeignPolicyCreatorSheet } from "./ForeignPolicyCreatorSheet";
+import { ForeignPolicyProposalsInbox } from "./ForeignPolicyProposalsInbox";
 import { api } from "~/trpc/react";
 
 interface ForeignPolicyPanelProps {
@@ -89,6 +90,9 @@ export function ForeignPolicyPanel({ countryId, focusId }: ForeignPolicyPanelPro
           Propose Policy
         </Button>
       </div>
+
+      {/* Incoming cooperative proposals awaiting your consent (S2.C) */}
+      <ForeignPolicyProposalsInbox countryId={countryId} onResponded={handlePolicyCreated} />
 
       {/* Active policies */}
       <ActivePoliciesList countryId={countryId} focusId={focusId} />

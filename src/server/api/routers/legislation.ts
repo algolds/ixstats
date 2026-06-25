@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notification-api";
@@ -11,6 +12,8 @@ import {
   type VotingBloc,
   type VoteResult,
 } from "~/lib/legislative-vote";
+import { computeApproval } from "~/lib/approval";
+import { fogVoteProjection } from "~/lib/statecraft-whip";
 
 /**
  * Legislation — bills go to the floor and parties vote them up or down.
@@ -48,6 +51,48 @@ function parseMeta(reviewNotes: string | null): BillMeta | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Voting blocs from a legislature's seats, grouped by party. Each LegislativeSeat is one
+ * seat (counts += 1) — fixes a latent bug where the old inline code read a non-existent
+ * `seat.seats` field (→ NaN tallies).
+ */
+async function loadBlocs(db: PrismaClient, countryId: string): Promise<VotingBloc[]> {
+  const legislature = await db.legislature.findUnique({
+    where: { countryId },
+    include: { seats: { include: { party: true } } },
+  });
+  if (!legislature) return [];
+
+  const blocMap = new Map<string, VotingBloc>();
+  for (const seat of legislature.seats) {
+    if (!seat.party) continue;
+    const existing = blocMap.get(seat.party.id);
+    if (existing) existing.seats += 1;
+    else
+      blocMap.set(seat.party.id, {
+        partyId: seat.party.id,
+        partyName: seat.party.name,
+        ideology: seat.party.ideology as Ideology,
+        seats: 1,
+      });
+  }
+  return [...blocMap.values()];
+}
+
+/** Government standing (0-100) = approval from party support + political stability. */
+async function getGovernmentBacking(db: PrismaClient, countryId: string): Promise<number> {
+  const parties = await db.politicalParty.findMany({
+    where: { countryId, isActive: true },
+    select: { id: true, currentSupport: true },
+  });
+  if (parties.length === 0) return 50;
+  const structure = await db.governmentStructure.findUnique({
+    where: { countryId },
+    select: { politicalStability: true },
+  });
+  return computeApproval(parties, structure?.politicalStability ?? null);
 }
 
 export const legislationRouter = createTRPCRouter({
@@ -122,39 +167,17 @@ export const legislationRouter = createTRPCRouter({
       }
 
       // Build voting blocs from the legislature's seat distribution.
-      const legislature = await ctx.db.legislature.findUnique({
-        where: { countryId: bill.countryId },
-        include: { seats: { include: { party: true } } },
-      });
-      if (!legislature || legislature.seats.length === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "No seated legislature — hold an election before voting on bills",
-        });
-      }
-
-      const blocMap = new Map<string, VotingBloc>();
-      for (const seat of legislature.seats) {
-        if (!seat.party) continue;
-        const existing = blocMap.get(seat.party.id);
-        if (existing) existing.seats += seat.seats;
-        else
-          blocMap.set(seat.party.id, {
-            partyId: seat.party.id,
-            partyName: seat.party.name,
-            ideology: seat.party.ideology as Ideology,
-            seats: seat.seats,
-          });
-      }
-      const blocs = [...blocMap.values()];
+      const blocs = await loadBlocs(ctx.db as PrismaClient, bill.countryId);
       if (blocs.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Legislature seats are not assigned to parties",
+          message: "No seated legislature — hold an election (and seat parties) before voting on bills",
         });
       }
 
-      const result = tallyVote(meta.ideologyTarget, blocs);
+      // Mandate whip: a popular government sways fence-sitters (S3.B).
+      const standing = await getGovernmentBacking(ctx.db as PrismaClient, bill.countryId);
+      const result = tallyVote(meta.ideologyTarget, blocs, standing / 100);
       const pct = `${result.yesSeats}–${result.noSeats}${result.abstainSeats ? `, ${result.abstainSeats} abstain` : ""}`;
 
       await ctx.db.policy.update({
@@ -203,5 +226,27 @@ export const legislationRouter = createTRPCRouter({
       }
 
       return result;
+    }),
+
+  // S3.A: whip count — a fogged projection of the floor before you call the vote.
+  // The projection is the real tally; its precision is gated by your standing.
+  previewBillVote: protectedProcedure
+    .input(z.object({ billId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const bill = await ctx.db.policy.findUnique({ where: { id: input.billId } });
+      if (!bill || bill.policyType !== "legislative_bill") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Bill not found" });
+      }
+      const meta = parseMeta(bill.reviewNotes);
+      if (!meta) return { available: false as const, reason: "Bill is missing vote metadata." };
+
+      const blocs = await loadBlocs(ctx.db as PrismaClient, bill.countryId);
+      if (blocs.length === 0) {
+        return { available: false as const, reason: "No seated legislature to whip." };
+      }
+
+      const standing = await getGovernmentBacking(ctx.db as PrismaClient, bill.countryId);
+      const result = tallyVote(meta.ideologyTarget, blocs, standing / 100);
+      return { available: true as const, standing, whip: fogVoteProjection(result, standing) };
     }),
 });
