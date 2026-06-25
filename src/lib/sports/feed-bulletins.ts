@@ -6,8 +6,6 @@ export interface MatchDayResultLine {
   homeScore: number;
   awayScore: number;
   isUpset?: boolean;
-  homeId?: string;
-  awayId?: string;
 }
 
 /**
@@ -18,51 +16,12 @@ export interface StandingMover {
   id?: string;
   oldRank: number;
   newRank: number;
-  id?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Structured payload — lets the feed render a rich card with deep links while
 // the markdown body (below) stays intact for Discord mirroring + fallback.
 // ---------------------------------------------------------------------------
-
-export const SPORTS_BULLETIN_PREFIX = "[sportsbulletin]";
-
-export interface SportsBulletinData {
-  league: { name: string; id?: string };
-  sportEmoji: string;
-  matchDay: number;
-  results: Array<{
-    home: { name: string; id?: string };
-    away: { name: string; id?: string };
-    homeScore: number;
-    awayScore: number;
-    isUpset?: boolean;
-  }>;
-  movers?: Array<{ name: string; id?: string; oldRank: number; newRank: number }>;
-  llmSummary?: string;
-}
-
-/** Prepend a one-line JSON marker so the feed can render a structured card. */
-export function encodeSportsBulletin(data: SportsBulletinData, markdown: string): string {
-  return `${SPORTS_BULLETIN_PREFIX}${JSON.stringify(data)}\n\n${markdown}`;
-}
-
-/** Parse the marker back out; returns null for ordinary posts. */
-export function parseSportsBulletin(
-  content: string | null | undefined
-): { data: SportsBulletinData; body: string } | null {
-  if (!content?.startsWith(SPORTS_BULLETIN_PREFIX)) return null;
-  const rest = content.slice(SPORTS_BULLETIN_PREFIX.length);
-  const nl = rest.indexOf("\n");
-  if (nl === -1) return null;
-  try {
-    const data = JSON.parse(rest.slice(0, nl)) as SportsBulletinData;
-    return { data, body: rest.slice(nl).replace(/^\n+/, "") };
-  } catch {
-    return null; // ponytail: malformed marker → fall back to plain text
-  }
-}
 
 export interface SportsBulletinData {
   league: { id?: string; name: string };
@@ -83,7 +42,10 @@ export function encodeSportsBulletin(data: SportsBulletinData, markdown: string)
   return `<!-- sports-bulletin:${JSON.stringify(data)} -->\n${markdown}`;
 }
 
-export function parseSportsBulletin(content: string): SportsBulletinData | null {
+export function parseSportsBulletin(
+  content: string | null | undefined
+): SportsBulletinData | null {
+  if (!content) return null;
   const match = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
   if (!match) return null;
   try {

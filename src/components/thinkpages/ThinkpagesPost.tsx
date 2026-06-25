@@ -778,7 +778,7 @@ const ThinkpagesPostComponent = ({
 
         {/* Content body */}
         {sportsBulletin ? (
-          <SportsBulletinCard data={sportsBulletin.data} />
+          <SportsBulletinCard data={sportsBulletin} />
         ) : (
           <div className="mt-2 text-[20px] leading-relaxed font-normal whitespace-pre-wrap text-slate-100 select-text">
             <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanPostContent)} />
