@@ -127,21 +127,54 @@ export function DebtAnalysisModal({
 
   const getDebtRiskLevel = (
     debtToGdp: number
-  ): { label: string; color: string; bg: string; border: string; variant: "default" | "secondary" | "destructive" } => {
+  ): {
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+    variant: "default" | "secondary" | "destructive";
+  } => {
     if (debtToGdp < 40)
-      return { label: "Low Risk", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", variant: "default" };
+      return {
+        label: "Low Risk",
+        color: "text-green-400",
+        bg: "bg-green-500/10",
+        border: "border-green-500/20",
+        variant: "default",
+      };
     if (debtToGdp < 60)
-      return { label: "Moderate", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", variant: "secondary" };
+      return {
+        label: "Moderate",
+        color: "text-amber-400",
+        bg: "bg-amber-500/10",
+        border: "border-amber-500/20",
+        variant: "secondary",
+      };
     if (debtToGdp < 100)
-      return { label: "Elevated", color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", variant: "secondary" };
-    return { label: "High Risk", color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20", variant: "destructive" };
+      return {
+        label: "Elevated",
+        color: "text-orange-400",
+        bg: "bg-orange-500/10",
+        border: "border-orange-500/20",
+        variant: "secondary",
+      };
+    return {
+      label: "High Risk",
+      color: "text-rose-400",
+      bg: "bg-rose-500/10",
+      border: "border-rose-500/20",
+      variant: "destructive",
+    };
   };
 
-  const defaultProcessedData = useMemo(() => processHistoricalData("1y"), [historicalData, economyData]);
+  const defaultProcessedData = useMemo(
+    () => processHistoricalData("1y"),
+    [historicalData, economyData]
+  );
   const debtStats = useMemo(() => {
     if (!defaultProcessedData || defaultProcessedData.length === 0) return null;
-    const ratios = defaultProcessedData.map(p => p.debtToGdp);
-    const debts = defaultProcessedData.map(p => p.publicDebt);
+    const ratios = defaultProcessedData.map((p) => p.debtToGdp);
+    const debts = defaultProcessedData.map((p) => p.publicDebt);
 
     return {
       maxRatio: Math.max(...ratios),
@@ -192,23 +225,25 @@ export function DebtAnalysisModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 flex-1 p-6 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Scale className="h-5 w-5 text-amber-500" />
                 Fiscal Position
               </CardTitle>
               <CardDescription>Debt sustainability and interest burden indicators.</CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col justify-center">
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-amber-400">
                     ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Annual Interest</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Annual Interest
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-cyan-400">
                     {(
                       ((fiscal?.debtServiceCosts || 0) / (countryData?.currentTotalGdp || 1)) *
@@ -216,9 +251,11 @@ export function DebtAnalysisModal({
                     ).toFixed(2)}
                     %
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Interest/GDP</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Interest/GDP
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-green-400">
                     {(
                       ((fiscal?.debtServiceCosts || 0) / (fiscal?.governmentRevenueTotal || 1)) *
@@ -226,18 +263,25 @@ export function DebtAnalysisModal({
                     ).toFixed(1)}
                     %
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Interest/Rev</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Interest/Rev
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-purple-400">{riskLevel.label}</div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Assessment</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Assessment
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 p-4 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs text-muted-foreground flex gap-3 items-start">
-                <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-muted-foreground mt-6 flex items-start gap-3 rounded-lg border border-amber-500/10 bg-amber-500/5 p-4 text-xs">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                 <p className="leading-relaxed">
-                  National public debt indicates cumulative fiscal deficits. Highly elevated Debt-to-GDP ratios place pressure on currency stability and crowd out private investment through interest service fees, while low debt reserves can limit stimulus capability during crises.
+                  National public debt indicates cumulative fiscal deficits. Highly elevated
+                  Debt-to-GDP ratios place pressure on currency stability and crowd out private
+                  investment through interest service fees, while low debt reserves can limit
+                  stimulus capability during crises.
                 </p>
               </div>
             </CardContent>
@@ -271,9 +315,11 @@ export function DebtAnalysisModal({
             variant="economy"
           />
 
-          <div className={`facet-refraction p-4 rounded-xl border relative overflow-hidden flex flex-col justify-between flex-1 min-h-[100px] ${riskLevel.bg} ${riskLevel.border}`}>
+          <div
+            className={`facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border p-4 ${riskLevel.bg} ${riskLevel.border}`}
+          >
             <div>
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
+              <span className="text-muted-foreground block text-[10px] font-medium tracking-wider uppercase">
                 Risk Classification
               </span>
               <div className="mt-2 flex items-baseline gap-2">
@@ -282,7 +328,7 @@ export function DebtAnalysisModal({
                 </span>
               </div>
             </div>
-            <p className="text-[10.5px] text-muted-foreground mt-4 leading-relaxed flex items-center gap-1.5">
+            <p className="text-muted-foreground mt-4 flex items-center gap-1.5 text-[10.5px] leading-relaxed">
               <AlertTriangle className="h-3 w-3 shrink-0" />
               Calculated rating based on macroeconomic capacity parameters.
             </p>
@@ -326,7 +372,7 @@ export function DebtAnalysisModal({
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
           <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="p-0 mb-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle>Debt Trends</CardTitle>
               <CardDescription>Historical public debt and debt-to-GDP ratio</CardDescription>
             </CardHeader>
@@ -345,9 +391,7 @@ export function DebtAnalysisModal({
                     <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
                     <ChartTooltip
                       content={
-                        <ChartTooltipContent
-                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
-                        />
+                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
                       }
                     />
                     {chartType === "area" ? (
@@ -361,7 +405,12 @@ export function DebtAnalysisModal({
                         name="Debt-to-GDP %"
                       />
                     ) : chartType === "bar" ? (
-                      <Bar dataKey="publicDebt" fill="#fbbf24" name="Public Debt (T)" radius={[4, 4, 0, 0]} />
+                      <Bar
+                        dataKey="publicDebt"
+                        fill="#fbbf24"
+                        name="Public Debt (T)"
+                        radius={[4, 4, 0, 0]}
+                      />
                     ) : (
                       <>
                         <Line
@@ -390,25 +439,25 @@ export function DebtAnalysisModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 flex-1">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Peak Debt-to-GDP
               </span>
               <span className="text-xl font-bold text-amber-500">
                 {debtStats?.maxRatio ? `${debtStats.maxRatio.toFixed(1)}%` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Minimum Public Debt
               </span>
               <span className="text-xl font-bold text-green-400">
                 {debtStats?.minDebt ? `$${debtStats.minDebt.toFixed(3)} T` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points
               </span>
               <span className="text-xl font-bold text-purple-400">
@@ -451,8 +500,8 @@ export function DebtAnalysisModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6 flex-1">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex-1 border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5 text-amber-500" />
                 Global Fiscal Benchmark
@@ -477,7 +526,11 @@ export function DebtAnalysisModal({
                       }}
                     />
                     <Bar dataKey="Your Country" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Global Average" fill="rgba(255, 255, 255, 0.15)" radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="Global Average"
+                      fill="rgba(255, 255, 255, 0.15)"
+                      radius={[4, 4, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -486,23 +539,23 @@ export function DebtAnalysisModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 h-full justify-between">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex h-full flex-col justify-between gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 vs Global Average
               </span>
               <span className="text-xl font-bold text-amber-500">
                 {debtToGdp < globalAvgDebt ? "Below Average" : "Above Average"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Ratio: {debtToGdp.toFixed(1)}% vs {globalAvgDebt}% global avg
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Estimated Rating
               </span>
-              <span className="text-xl font-bold text-green-400 flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 text-xl font-bold text-green-400">
                 <CreditCard className="h-4 w-4" />
                 {debtToGdp < 40
                   ? "AAA"
@@ -514,18 +567,18 @@ export function DebtAnalysisModal({
                         ? "BBB"
                         : "BB"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Creditworthiness index estimate
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Sustainability Status
               </span>
               <span className="text-xl font-bold text-purple-400">
                 {debtToGdp < 60 ? "Sustainable" : debtToGdp < 100 ? "Manageable" : "Critical"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Risk assessment index status
               </span>
             </div>
@@ -559,34 +612,41 @@ export function DebtAnalysisModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle>Debt Composition</CardTitle>
               <CardDescription>Breakdown of public debt by category</CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1">
+            <CardContent className="flex-1 p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
-                  <div className="text-lg font-semibold text-blue-400">{domesticShare.toFixed(0)}%</div>
-                  <div className="text-muted-foreground text-xs mt-1">Domestic Debt</div>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                  <div className="text-lg font-semibold text-blue-400">
+                    {domesticShare.toFixed(0)}%
+                  </div>
+                  <div className="text-muted-foreground mt-1 text-xs">Domestic Debt</div>
                 </div>
-                <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
-                  <div className="text-lg font-semibold text-purple-400">{externalShare.toFixed(0)}%</div>
-                  <div className="text-muted-foreground text-xs mt-1">External Debt</div>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                  <div className="text-lg font-semibold text-purple-400">
+                    {externalShare.toFixed(0)}%
+                  </div>
+                  <div className="text-muted-foreground mt-1 text-xs">External Debt</div>
                 </div>
-                <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-semibold text-green-400">25%</div>
-                  <div className="text-muted-foreground text-xs mt-1">Short-Term</div>
+                  <div className="text-muted-foreground mt-1 text-xs">Short-Term</div>
                 </div>
-                <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-semibold text-amber-400">75%</div>
-                  <div className="text-muted-foreground text-xs mt-1">Long-Term</div>
+                  <div className="text-muted-foreground mt-1 text-xs">Long-Term</div>
                 </div>
               </div>
 
-              <div className="mt-6 p-4 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs text-muted-foreground">
+              <div className="text-muted-foreground mt-6 rounded-lg border border-amber-500/10 bg-amber-500/5 p-4 text-xs">
                 <p className="leading-relaxed">
-                  Domestic debt is typically denominated in national currency and held by local institutions, presenting lower external default risk. External debt relies on global capital markets and exposes the nation to foreign exchange and trade vulnerability.
+                  Domestic debt is typically denominated in national currency and held by local
+                  institutions, presenting lower external default risk. External debt relies on
+                  global capital markets and exposes the nation to foreign exchange and trade
+                  vulnerability.
                 </p>
               </div>
             </CardContent>
@@ -594,29 +654,37 @@ export function DebtAnalysisModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction border-white/5 p-4 flex-1 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="text-sm font-semibold">Debt Servicing</CardTitle>
-              <CardDescription className="text-[10px]">Annual interest costs and durations</CardDescription>
+              <CardDescription className="text-[10px]">
+                Annual interest costs and durations
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 space-y-4">
-              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">Annual Interest</span>
-                <div className="text-lg font-bold text-rose-400 mt-1">
+            <CardContent className="space-y-4 p-0">
+              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  Annual Interest
+                </span>
+                <div className="mt-1 text-lg font-bold text-rose-400">
                   ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">Average Interest Rate</span>
-                <div className="text-lg font-bold text-amber-450 mt-1">
+              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  Average Interest Rate
+                </span>
+                <div className="text-amber-450 mt-1 text-lg font-bold">
                   {(fiscal?.interestRates || 3.5).toFixed(2)}%
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">Average Maturity</span>
-                <div className="text-lg font-bold text-purple-400 mt-1 font-semibold">
+              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  Average Maturity
+                </span>
+                <div className="mt-1 text-lg font-bold font-semibold text-purple-400">
                   8.5 Years
                 </div>
               </div>

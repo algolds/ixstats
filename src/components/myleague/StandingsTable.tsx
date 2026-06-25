@@ -3,13 +3,7 @@
 import * as React from "react";
 import { useMemo, useState } from "react";
 import { cn } from "~/lib/utils";
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { EnhancedTooltip } from "~/components/ui/enhanced-tooltip";
 import {
   useReactTable,

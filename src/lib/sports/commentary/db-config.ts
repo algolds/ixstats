@@ -34,8 +34,7 @@ export async function getGlobalLLMConfig(prisma: any) {
       apiUrl: apiUrl || undefined,
       modelName: modelName || undefined,
       temperature: tempVal ? parseFloat(tempVal) : undefined,
-      reasoning:
-        configs.find((c: any) => c.key === "sports:llm:reasoning")?.value === "true",
+      reasoning: configs.find((c: any) => c.key === "sports:llm:reasoning")?.value === "true",
     };
   } catch (e) {
     console.error("[sports-narrator] Failed to load global LLM config from db:", e);

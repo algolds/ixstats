@@ -280,7 +280,12 @@ function CommandPaletteContent({
     if (activePlugin?.id === "builder") {
       if (
         prevModeRef.current === "plugin:builder" &&
-        (mode === "compact" || mode === "search" || mode === "settings" || mode === "notifications" || mode === "mycountry" || mode === "almanac")
+        (mode === "compact" ||
+          mode === "search" ||
+          mode === "settings" ||
+          mode === "notifications" ||
+          mode === "mycountry" ||
+          mode === "almanac")
       ) {
         wasManuallyClosedRef.current = true;
       }

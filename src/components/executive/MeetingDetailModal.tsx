@@ -153,14 +153,20 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                         </p>
                       )}
                       {(item.linkedIssueId || item.linkedPolicyId) && (
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {item.linkedIssueId && (
-                            <Badge variant="outline" className="px-1.5 py-0 text-[10px] bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                            <Badge
+                              variant="outline"
+                              className="border-yellow-500/20 bg-yellow-500/10 px-1.5 py-0 text-[10px] text-yellow-400"
+                            >
                               Linked Issue
                             </Badge>
                           )}
                           {item.linkedPolicyId && (
-                            <Badge variant="outline" className="px-1.5 py-0 text-[10px] bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+                            <Badge
+                              variant="outline"
+                              className="border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0 text-[10px] text-indigo-400"
+                            >
                               Linked Policy
                             </Badge>
                           )}

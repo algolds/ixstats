@@ -20,10 +20,10 @@ export default function NationalIssuesArticle() {
       <ContentCard>
         <Section title="What Are National Issues?">
           <p>
-            National Issues are events that grow out of what&apos;s actually happening in your nation.
-            If you&apos;ve answered issues on NationStates, you&apos;ll recognize the spirit &mdash;
-            but here your choices ripple straight into your economy, society, diplomacy, and defense.
-            Up to three fresh issues turn up at a time.
+            National Issues are events that grow out of what&apos;s actually happening in your
+            nation. If you&apos;ve answered issues on NationStates, you&apos;ll recognize the spirit
+            &mdash; but here your choices ripple straight into your economy, society, diplomacy, and
+            defense. Up to three fresh issues turn up at a time.
           </p>
           <p className="mt-3">
             You&apos;ll find them in your{" "}
@@ -40,17 +40,21 @@ export default function NationalIssuesArticle() {
         <Section title="Where Issues Come From">
           <InfoBox title="Always about your nation, right now">
             <p>
-              <Cog className="inline h-4 w-4" /> Issues are never random. When you open your inbox, the
-              game takes a fresh look at your nation and surfaces the situations that fit:
+              <Cog className="inline h-4 w-4" /> Issues are never random. When you open your inbox,
+              the game takes a fresh look at your nation and surfaces the situations that fit:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
-              <li>It reads your nation as it stands — your economy, politics, and relationships.</li>
+              <li>
+                It reads your nation as it stands — your economy, politics, and relationships.
+              </li>
               <li>It finds the events that genuinely make sense for where you are right now.</li>
               <li>
-                The leaders of other nations — and their personalities — shape which ones land on your
-                desk.
+                The leaders of other nations — and their personalities — shape which ones land on
+                your desk.
               </li>
-              <li>You get the few that matter most, written with your own nation&apos;s details.</li>
+              <li>
+                You get the few that matter most, written with your own nation&apos;s details.
+              </li>
             </ul>
           </InfoBox>
         </Section>

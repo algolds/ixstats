@@ -14,7 +14,11 @@ const FIELDS: { key: string; label: string; hint: string }[] = [
   { key: "floorUltraRare", label: "Ultra-Rare floor", hint: "" },
   { key: "floorEpic", label: "Epic floor", hint: "" },
   { key: "floorLegendary", label: "Legendary floor", hint: "" },
-  { key: "nsPremium", label: "NS import premium ×", hint: "Multiplier on NS bank value (≥1 retains value)" },
+  {
+    key: "nsPremium",
+    label: "NS import premium ×",
+    hint: "Multiplier on NS bank value (≥1 retains value)",
+  },
   { key: "multSpecial", label: "Special type ×", hint: "Multiplier on floor for SPECIAL cards" },
   { key: "multNation", label: "Nation type ×", hint: "Multiplier on floor for NATION cards" },
   { key: "junkRate", label: "Junk payout rate", hint: "Fraction of floor paid when junking" },

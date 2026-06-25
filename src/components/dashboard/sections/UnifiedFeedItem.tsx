@@ -22,7 +22,11 @@ import {
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
-import { WikiLinkPreview, ForumLinkPreview, WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import {
+  WikiLinkPreview,
+  ForumLinkPreview,
+  WikiHtmlContent,
+} from "~/components/wiki/WikiLinkPreview";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";

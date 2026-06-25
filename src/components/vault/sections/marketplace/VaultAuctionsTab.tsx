@@ -16,6 +16,7 @@ import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
+import { proxyCardArtwork } from "~/lib/ns-image-proxy";
 import type { CardInstance } from "~/types/cards-display";
 import { vaultNotify } from "~/lib/vault-notifications";
 import {
@@ -313,7 +314,7 @@ function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                           />
                           {card.artwork && (
                             <img
-                              src={card.artwork}
+                              src={proxyCardArtwork(card.artwork)}
                               alt={card.title}
                               className="absolute inset-0 h-full w-full object-cover"
                               onError={(e) => {

@@ -66,10 +66,10 @@ export function ParadoxFlavorCard({
   // User preference: disabled. Render an option to re-enable
   if (!isEnabled) {
     return (
-      <div className="flex justify-end pr-1 mt-1">
+      <div className="mt-1 flex justify-end pr-1">
         <button
           onClick={handleToggle}
-          className="text-muted-foreground hover:text-amber-400 flex items-center gap-1 text-[10px] transition-colors focus:outline-none"
+          className="text-muted-foreground flex items-center gap-1 text-[10px] transition-colors hover:text-amber-400 focus:outline-none"
           title="Enable Paradox Interactive-style AI flavor cards"
         >
           <Sparkles className="h-3 w-3" />
@@ -82,16 +82,16 @@ export function ParadoxFlavorCard({
   // Shimmering loading state
   if (isLoading) {
     return (
-      <div className="relative overflow-hidden rounded-lg border border-amber-500/15 bg-amber-500/5 p-4 animate-pulse my-2">
+      <div className="relative my-2 animate-pulse overflow-hidden rounded-lg border border-amber-500/15 bg-amber-500/5 p-4">
         <div className="absolute top-0 left-0 h-full w-[3px] bg-amber-500/35" />
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-amber-500/60 font-semibold tracking-wider uppercase">
+        <div className="mb-1.5 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-amber-500/60 uppercase">
             <ScrollText className="h-3.5 w-3.5" />
             <span>The Chronicle</span>
           </div>
           <Loader2 className="h-3 w-3 animate-spin text-amber-500/40" />
         </div>
-        <span className="font-serif italic text-sm text-slate-500 leading-relaxed block">
+        <span className="block font-serif text-sm leading-relaxed text-slate-500 italic">
           Drafting Chronicle...
         </span>
       </div>
@@ -104,19 +104,19 @@ export function ParadoxFlavorCard({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-amber-500/25 bg-amber-500/5 p-4 shadow-[0_0_15px_rgba(245,158,11,0.05)] my-2">
+    <div className="relative my-2 overflow-hidden rounded-lg border border-amber-500/25 bg-amber-500/5 p-4 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
       {/* Paradox gold trim bar */}
       <div className="absolute top-0 left-0 h-full w-[3px] bg-amber-500/70" />
-      
+
       {/* Title & Hide button */}
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="flex items-center gap-1.5 text-xs text-amber-500/80 font-semibold tracking-wider uppercase">
+      <div className="mb-1.5 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-amber-500/80 uppercase">
           <ScrollText className="h-3.5 w-3.5 animate-pulse" />
           <span>The Chronicle</span>
         </div>
         <button
           onClick={handleToggle}
-          className="text-muted-foreground/30 hover:text-red-400 p-0.5 transition-colors focus:outline-none"
+          className="text-muted-foreground/30 p-0.5 transition-colors hover:text-red-400 focus:outline-none"
           title="Hide AI flavor cards"
         >
           <EyeOff className="h-3 w-3" />
@@ -124,7 +124,7 @@ export function ParadoxFlavorCard({
       </div>
 
       {/* Flavor Narrative text */}
-      <span className="font-serif italic text-sm text-slate-200 leading-relaxed block">
+      <span className="block font-serif text-sm leading-relaxed text-slate-200 italic">
         {data.flavorText}
       </span>
     </div>

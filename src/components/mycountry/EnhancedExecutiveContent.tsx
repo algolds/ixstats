@@ -45,9 +45,7 @@ export function EnhancedExecutiveContent({
   return (
     <SectionShell
       section="executive"
-      contextWidget={
-        <NewsFeedWidget countryId={country.id} />
-      }
+      contextWidget={<NewsFeedWidget countryId={country.id} />}
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}

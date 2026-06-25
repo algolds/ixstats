@@ -116,7 +116,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
         totalGdp: point.totalGdp / 1e12,
         gdpPerCapita: point.gdpPerCapita,
         gdpGrowth: (() => {
-          const rate = point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : (point.gdpGrowth || 0);
+          const rate =
+            point.gdpGrowthRate !== undefined ? point.gdpGrowthRate : point.gdpGrowth || 0;
           const abs = Math.abs(rate);
           if (abs < 0.01) {
             return rate * 2500;
@@ -152,12 +153,15 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     const compoundGrowthFactor = processedData.reduce((acc, p, i) => {
       if (i === 0) return 1;
       const prev = processedData[i - 1];
-      const dt = (new Date(p.timestamp).getTime() - new Date(prev.timestamp).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+      const dt =
+        (new Date(p.timestamp).getTime() - new Date(prev.timestamp).getTime()) /
+        (365.25 * 24 * 60 * 60 * 1000);
       return acc * Math.pow(1 + prev.gdpGrowth / 100, dt);
     }, 1);
 
     const totalGrowth = (compoundGrowthFactor - 1) * 100;
-    const avgGrowth = yearsElapsed > 0.05 ? (Math.pow(compoundGrowthFactor, 1 / yearsElapsed) - 1) * 100 : growth;
+    const avgGrowth =
+      yearsElapsed > 0.05 ? (Math.pow(compoundGrowthFactor, 1 / yearsElapsed) - 1) * 100 : growth;
 
     const values = processedData.map((p) => p.totalGdp);
     const maxGdp = Math.max(...values);
@@ -270,39 +274,39 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 flex-1 p-6 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-amber-500" />
                 GDP Performance Summary
               </CardTitle>
-              <CardDescription>Key performance indicators and historical volatility metrics.</CardDescription>
+              <CardDescription>
+                Key performance indicators and historical volatility metrics.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col justify-center">
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-amber-500">
                     {gdpStats?.avgGrowth ? `${gdpStats.avgGrowth.toFixed(2)}%` : "N/A"}
                   </div>
-                  <div className="text-muted-foreground text-xs mt-1">Avg Annual Growth</div>
+                  <div className="text-muted-foreground mt-1 text-xs">Avg Annual Growth</div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-purple-400">
                     {gdpStats?.volatility ? `${gdpStats.volatility.toFixed(2)}%` : "N/A"}
                   </div>
-                  <div className="text-muted-foreground text-xs mt-1">GDP Volatility</div>
+                  <div className="text-muted-foreground mt-1 text-xs">GDP Volatility</div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-emerald-400">
                     {formatCurrency((gdpStats?.maxGdp || 0) * 1e12)}
                   </div>
-                  <div className="text-muted-foreground text-xs mt-1">Peak GDP</div>
+                  <div className="text-muted-foreground mt-1 text-xs">Peak GDP</div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
-                  <div className="text-lg font-bold text-blue-400">
-                    {gdpStats?.dataPoints || 0}
-                  </div>
-                  <div className="text-muted-foreground text-xs mt-1">Data Points</div>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                  <div className="text-lg font-bold text-blue-400">{gdpStats?.dataPoints || 0}</div>
+                  <div className="text-muted-foreground mt-1 text-xs">Data Points</div>
                 </div>
               </div>
             </CardContent>
@@ -337,9 +341,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
             variant="economy"
           />
 
-          <div className="facet-refraction p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5 relative overflow-hidden flex flex-col justify-between flex-1 min-h-[100px]">
+          <div className="facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
             <div>
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                 Economic Tier
               </span>
               <div className="mt-2">
@@ -348,7 +352,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 </Badge>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
+            <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
               Determines national economic classification, simulation capacities, and growth caps.
             </p>
           </div>
@@ -391,7 +395,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
           <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="p-0 mb-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle>GDP Historical Trends</CardTitle>
               <CardDescription>
                 GDP development over time with {processedData.length} data points
@@ -406,9 +410,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     <YAxis stroke="rgba(255, 255, 255, 0.3)" />
                     <ChartTooltip
                       content={
-                        <ChartTooltipContent
-                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
-                        />
+                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
                       }
                     />
                     <Line
@@ -435,9 +437,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     <YAxis stroke="rgba(255, 255, 255, 0.3)" />
                     <ChartTooltip
                       content={
-                        <ChartTooltipContent
-                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
-                        />
+                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
                       }
                     />
                     <Area
@@ -458,9 +458,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     <YAxis stroke="rgba(255, 255, 255, 0.3)" />
                     <ChartTooltip
                       content={
-                        <ChartTooltipContent
-                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
-                        />
+                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
                       }
                     />
                     <Bar
@@ -485,9 +483,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     <YAxis yAxisId="right" orientation="right" stroke="rgba(255, 255, 255, 0.3)" />
                     <ChartTooltip
                       content={
-                        <ChartTooltipContent
-                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
-                        />
+                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
                       }
                     />
                     <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
@@ -524,25 +520,25 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 flex-1">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Avg Growth
               </span>
               <span className="text-xl font-bold text-amber-500">
                 {gdpStats?.avgGrowth ? `${gdpStats.avgGrowth.toFixed(2)}%` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Peak GDP
               </span>
               <span className="text-xl font-bold text-emerald-400">
                 {formatCurrency((gdpStats?.maxGdp || 0) * 1e12)}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Volatility Factor
               </span>
               <span className="text-xl font-bold text-purple-400">
@@ -573,7 +569,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
           <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="p-0 mb-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Info className="h-5 w-5 text-amber-500" />
                 Economic Tier Analysis
@@ -585,10 +581,10 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
             <CardContent className="p-0">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-sm">Current Economic Tier</h4>
-                  <div className="rounded-xl border border-white/5 p-4 bg-white/5">
+                  <h4 className="text-sm font-semibold">Current Economic Tier</h4>
+                  <div className="rounded-xl border border-white/5 bg-white/5 p-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="font-semibold text-base">{countryData?.economicTier}</span>
+                      <span className="text-base font-semibold">{countryData?.economicTier}</span>
                       <Badge className={tierInfo?.currentTier?.color}>
                         {tierInfo?.currentTier?.name}
                       </Badge>
@@ -596,7 +592,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     <p className="text-muted-foreground text-xs">
                       GDP per Capita: {formatCurrency(countryData?.currentGdpPerCapita || 0)}
                     </p>
-                    <p className="text-muted-foreground text-xs mt-1">
+                    <p className="text-muted-foreground mt-1 text-xs">
                       Range:{" "}
                       {tierInfo?.currentTier
                         ? `${formatCurrency(tierInfo.currentTier.min)} - ${
@@ -609,8 +605,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-sm">Next Tier Target</h4>
-                  <div className="rounded-xl border border-white/5 p-4 bg-white/5 min-h-[106px] flex flex-col justify-center">
+                  <h4 className="text-sm font-semibold">Next Tier Target</h4>
+                  <div className="flex min-h-[106px] flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
                     {tierInfo?.currentTier && tierInfo.allTiers
                       ? (() => {
                           const currentIndex = tierInfo.allTiers.findIndex(
@@ -623,15 +619,18 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                             return (
                               <>
                                 <div className="mb-2 flex items-center justify-between">
-                                  <span className="font-semibold text-base">{nextTier.name}</span>
-                                  <Badge variant="outline" className="border-yellow-500/30 text-yellow-500 bg-yellow-500/5">
+                                  <span className="text-base font-semibold">{nextTier.name}</span>
+                                  <Badge
+                                    variant="outline"
+                                    className="border-yellow-500/30 bg-yellow-500/5 text-yellow-500"
+                                  >
                                     Next Level
                                   </Badge>
                                 </div>
                                 <p className="text-muted-foreground text-xs">
                                   Minimum: {formatCurrency(nextTier.min)}
                                 </p>
-                                <p className="text-muted-foreground text-xs mt-1">
+                                <p className="text-muted-foreground mt-1 text-xs">
                                   Need:{" "}
                                   {needed > 0
                                     ? formatCurrency(needed) + " more"
@@ -643,7 +642,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                             return (
                               <div className="text-center text-green-500">
                                 <p className="font-semibold">Maximum Tier Achieved!</p>
-                                <p className="text-xs mt-1 text-muted-foreground">
+                                <p className="text-muted-foreground mt-1 text-xs">
                                   Your economy has reached the highest classification
                                 </p>
                               </div>
@@ -660,9 +659,9 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
         <MetricModalLayout.Sidebar>
           {globalStats && (
-            <div className="flex flex-col gap-4 h-full justify-between">
-              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-                <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="flex h-full flex-col justify-between gap-4">
+              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+                <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                   vs Global Avg GDP/Capita
                 </span>
                 <span className="text-xl font-bold text-cyan-400">
@@ -674,12 +673,12 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     ? `${((countryData.currentGdpPerCapita / (globalStats as any).averageGdpPerCapita - 1) * 100).toFixed(1)}%`
                     : "N/A"}
                 </span>
-                <span className="text-muted-foreground text-[10px] mt-1">
+                <span className="text-muted-foreground mt-1 text-[10px]">
                   Avg: {formatCurrency((globalStats as any).averageGdpPerCapita)}
                 </span>
               </div>
-              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-                <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+                <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                   Economic Tier Rank
                 </span>
                 <span className="text-xl font-bold text-amber-500">
@@ -690,8 +689,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   /7
                 </span>
               </div>
-              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-                <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+                <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                   Global GDP Share
                 </span>
                 <span className="text-xl font-bold text-purple-400">
@@ -703,7 +702,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     ? `${((countryData.currentTotalGdp / (globalStats as any).totalGdp) * 100).toFixed(3)}%`
                     : "N/A"}
                 </span>
-                <span className="text-muted-foreground text-[10px] mt-1">
+                <span className="text-muted-foreground mt-1 text-[10px]">
                   Global: {formatCurrency((globalStats as any).totalGdp / 1e12)}T
                 </span>
               </div>
@@ -733,7 +732,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
         <MetricModalLayout.MainArea>
           <div className="space-y-6">
             <Card className="facet-refraction border-white/5 p-6">
-              <CardHeader className="p-0 mb-4">
+              <CardHeader className="mb-4 p-0">
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-amber-500" />
                   GDP Projections
@@ -741,23 +740,23 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 <CardDescription>Economic forecasting and growth scenarios</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <Alert className="bg-amber-500/5 border-amber-500/20 text-amber-500">
+                <Alert className="border-amber-500/20 bg-amber-500/5 text-amber-500">
                   <TrendingUp className="h-4 w-4" />
-                  <AlertDescription className="text-xs text-muted-foreground leading-relaxed">
-                    Advanced GDP projection models are available through the Predictive Models feature
-                    in the premium analytics suite. These include multi-scenario forecasting with
-                    confidence intervals based on historical patterns and economic indicators.
+                  <AlertDescription className="text-muted-foreground text-xs leading-relaxed">
+                    Advanced GDP projection models are available through the Predictive Models
+                    feature in the premium analytics suite. These include multi-scenario forecasting
+                    with confidence intervals based on historical patterns and economic indicators.
                   </AlertDescription>
                 </Alert>
               </CardContent>
             </Card>
 
-            <Alert className="bg-white/5 border-white/5">
+            <Alert className="border-white/5 bg-white/5">
               <Info className="h-4 w-4" />
-              <AlertDescription className="text-xs text-muted-foreground leading-relaxed">
-                Economic tier classifications are based on GDP per capita and determine growth rate caps
-                in the IxStats system. Higher tiers indicate more mature economies with typically lower
-                but more stable growth rates.
+              <AlertDescription className="text-muted-foreground text-xs leading-relaxed">
+                Economic tier classifications are based on GDP per capita and determine growth rate
+                caps in the IxStats system. Higher tiers indicate more mature economies with
+                typically lower but more stable growth rates.
               </AlertDescription>
             </Alert>
           </div>
@@ -765,13 +764,13 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
         <MetricModalLayout.Sidebar>
           {gdpStats && (
-            <div className="flex flex-col gap-4 h-full justify-between">
-              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+            <div className="flex h-full flex-col justify-between gap-4">
+              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
                 <span className="text-2xl font-bold text-amber-500">
                   {gdpStats.volatility.toFixed(2)}%
                 </span>
-                <span className="text-sm font-medium mt-1">GDP Volatility</span>
-                <span className="text-muted-foreground text-[10px] mt-0.5">
+                <span className="mt-1 text-sm font-medium">GDP Volatility</span>
+                <span className="text-muted-foreground mt-0.5 text-[10px]">
                   {gdpStats.volatility < 5
                     ? "Very Stable"
                     : gdpStats.volatility < 10
@@ -781,19 +780,21 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                         : "High Volatility"}
                 </span>
               </div>
-              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
                 <span className="text-2xl font-bold text-emerald-400">
                   {gdpStats.totalGrowth.toFixed(1)}%
                 </span>
-                <span className="text-sm font-medium mt-1">Total Growth</span>
-                <span className="text-muted-foreground text-[10px] mt-0.5">Over selected period</span>
+                <span className="mt-1 text-sm font-medium">Total Growth</span>
+                <span className="text-muted-foreground mt-0.5 text-[10px]">
+                  Over selected period
+                </span>
               </div>
-              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
+              <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
                 <span className="text-2xl font-bold text-purple-400">
                   {(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%
                 </span>
-                <span className="text-sm font-medium mt-1">Peak-to-Trough</span>
-                <span className="text-muted-foreground text-[10px] mt-0.5">Maximum variance</span>
+                <span className="mt-1 text-sm font-medium">Peak-to-Trough</span>
+                <span className="text-muted-foreground mt-0.5 text-[10px]">Maximum variance</span>
               </div>
             </div>
           )}

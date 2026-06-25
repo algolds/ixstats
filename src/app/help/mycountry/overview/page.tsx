@@ -28,8 +28,8 @@ export default function MyCountryOverviewArticle() {
               into one number.
             </li>
             <li>
-              <strong>Society</strong> — how your people are doing: population, education, health, and
-              everyday satisfaction.
+              <strong>Society</strong> — how your people are doing: population, education, health,
+              and everyday satisfaction.
             </li>
             <li>
               <strong>Diplomacy</strong> — your standing in the world: embassies, relationships, and
@@ -53,7 +53,8 @@ export default function MyCountryOverviewArticle() {
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
-                <strong>Overview</strong> — where the number stands now, and what&rsquo;s driving it.
+                <strong>Overview</strong> — where the number stands now, and what&rsquo;s driving
+                it.
               </li>
               <li>
                 <strong>Trends</strong> — how it&rsquo;s moved over time.
@@ -82,9 +83,8 @@ export default function MyCountryOverviewArticle() {
         <Section title="Handy on the Side">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <Activity className="inline h-4 w-4 text-amber-500" />{" "}
-              <strong>Issues waiting</strong> — a heads-up when decisions are piling up. Tap through to
-              the{" "}
+              <Activity className="inline h-4 w-4 text-amber-500" /> <strong>Issues waiting</strong>{" "}
+              — a heads-up when decisions are piling up. Tap through to the{" "}
               <Link
                 href="/help/mycountry/executive"
                 className="text-blue-600 hover:underline dark:text-blue-400"

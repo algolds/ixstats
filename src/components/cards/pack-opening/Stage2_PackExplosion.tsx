@@ -10,6 +10,7 @@ import type { CardRarity } from "@prisma/client";
 import { getPackOpeningService } from "~/lib/pack-opening-service";
 import { getParticleConfig } from "~/lib/holographic-effects";
 import { CardHolographicCover } from "../display/CardHolographicCover";
+import { proxyCardArtwork } from "~/lib/ns-image-proxy";
 
 interface Stage2_PackExplosionProps {
   cards: CardInstance[];
@@ -251,7 +252,7 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
                     <div
                       className="absolute inset-0 rounded-lg bg-cover bg-center opacity-60"
                       style={{
-                        backgroundImage: `url(${card.artwork})`,
+                        backgroundImage: `url(${proxyCardArtwork(card.artwork)})`,
                       }}
                     />
                   </div>

@@ -377,7 +377,8 @@ export function OverviewHero({
 
   const nextEventText = useMemo(() => {
     const next = upcomingEvents[0];
-    if (next) return `${next.label} ${formatRelativeIxDays(next.ixTime, IxTime.getCurrentIxTime())}`;
+    if (next)
+      return `${next.label} ${formatRelativeIxDays(next.ixTime, IxTime.getCurrentIxTime())}`;
     if (pendingElections > 0) return "Election Pending";
     if (meetings?.some((m) => m.status?.toLowerCase() === "scheduled")) return "Cabinet Meet";
     if (pActions > 0) return "Action Items";

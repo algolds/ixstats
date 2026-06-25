@@ -333,7 +333,7 @@ export function GdpPerCapitaDetailsModal({
                 </h3>
                 <div className="flex items-center gap-4">
                   <Select value={timeRange} onValueChange={setTimeRange}>
-                    <SelectTrigger className="w-32 h-8 text-xs">
+                    <SelectTrigger className="h-8 w-32 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -345,7 +345,12 @@ export function GdpPerCapitaDetailsModal({
                       <SelectItem value="all">All Time</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" size="sm" onClick={() => void refetch()} className="h-8">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void refetch()}
+                    className="h-8"
+                  >
                     <RefreshCw className="mr-2 h-3.5 w-3.5" />
                     Refresh
                   </Button>
@@ -410,7 +415,10 @@ export function GdpPerCapitaDetailsModal({
                 <h3 className="flex items-center gap-2 text-base font-semibold">
                   <TrendingUp className="h-5 w-5 text-amber-500" />
                   10-Year GDP per Capita Projections
-                  <Badge variant="outline" className="ml-2 border-yellow-500/20 bg-yellow-500/5 text-yellow-500">
+                  <Badge
+                    variant="outline"
+                    className="ml-2 border-yellow-500/20 bg-yellow-500/5 text-yellow-500"
+                  >
                     {economicData &&
                     typeof economicData === "object" &&
                     economicData !== null &&
@@ -459,7 +467,7 @@ export function GdpPerCapitaDetailsModal({
                   </ResponsiveContainer>
                 </div>
 
-                <div className="text-muted-foreground text-[10px] space-y-0.5">
+                <div className="text-muted-foreground space-y-0.5 text-[10px]">
                   <p>* Projections assume constant growth rates and current economic policies</p>
                   <p>* Economic tier advancements may affect actual growth rates</p>
                 </div>
@@ -482,8 +490,17 @@ export function GdpPerCapitaDetailsModal({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={comparisonData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                      <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} stroke="rgba(255, 255, 255, 0.3)" />
-                      <YAxis dataKey="name" type="category" width={80} stroke="rgba(255, 255, 255, 0.3)" />
+                      <XAxis
+                        type="number"
+                        tickFormatter={(value) => formatCurrency(value)}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        width={80}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
                       <Tooltip
                         contentStyle={{
                           background: "rgba(18, 20, 24, 0.8)",
@@ -491,10 +508,7 @@ export function GdpPerCapitaDetailsModal({
                           borderColor: "rgba(255, 255, 255, 0.1)",
                           borderRadius: "8px",
                         }}
-                        formatter={(value: any) => [
-                          formatCurrency(value),
-                          "GDP per Capita",
-                        ]}
+                        formatter={(value: any) => [formatCurrency(value), "GDP per Capita"]}
                         labelFormatter={(label, payload) => {
                           const item = payload?.[0]?.payload;
                           return item?.fullName || label;
@@ -569,9 +583,11 @@ export function GdpPerCapitaDetailsModal({
             )}
 
             {economicTierInfo && (
-              <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Economic Tier System</h4>
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              <div className="facet-refraction space-y-3 rounded-xl border border-white/5 bg-white/5 p-4">
+                <h4 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                  Economic Tier System
+                </h4>
+                <div className="max-h-[300px] space-y-2 overflow-y-auto pr-1">
                   {economicTierInfo.allTiers.map((tier, index) => (
                     <div
                       key={tier.name}
@@ -585,11 +601,15 @@ export function GdpPerCapitaDetailsModal({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 font-medium">
                           <span>{tier.icon}</span>
-                          <span className={cn(index === economicTierInfo.currentIndex && "text-yellow-500")}>
+                          <span
+                            className={cn(
+                              index === economicTierInfo.currentIndex && "text-yellow-500"
+                            )}
+                          >
                             {tier.name}
                           </span>
                           {index === economicTierInfo.currentIndex && (
-                            <Badge className="text-[9px] px-1 py-0 bg-yellow-500/20 text-yellow-500 border-none scale-90">
+                            <Badge className="scale-90 border-none bg-yellow-500/20 px-1 py-0 text-[9px] text-yellow-500">
                               Current
                             </Badge>
                           )}
@@ -601,12 +621,16 @@ export function GdpPerCapitaDetailsModal({
                       </div>
 
                       {index === economicTierInfo.currentIndex && economicData && (
-                        <div className="mt-1 text-[10px] text-muted-foreground border-t border-white/5 pt-1">
-                          Current:{" "}
-                          {formatCurrency((economicData as any).currentGdpPerCapita)}
+                        <div className="text-muted-foreground mt-1 border-t border-white/5 pt-1 text-[10px]">
+                          Current: {formatCurrency((economicData as any).currentGdpPerCapita)}
                           {economicTierInfo.nextTier && (
-                            <span className="block text-[9px] mt-0.5 text-yellow-500/80">
-                              (Need {formatCurrency(economicTierInfo.nextTier.min - (economicData as any).currentGdpPerCapita)} for {economicTierInfo.nextTier.name})
+                            <span className="mt-0.5 block text-[9px] text-yellow-500/80">
+                              (Need{" "}
+                              {formatCurrency(
+                                economicTierInfo.nextTier.min -
+                                  (economicData as any).currentGdpPerCapita
+                              )}{" "}
+                              for {economicTierInfo.nextTier.name})
                             </span>
                           )}
                         </div>

@@ -17,6 +17,8 @@ describe("buildPollPayload", () => {
   });
 
   it("defaults duration to 24h when no endDate", () => {
-    expect(buildPollPayload({ question: "Q", multiple: false, options: [] }).poll.duration).toBe(24);
+    expect(buildPollPayload({ question: "Q", multiple: false, options: [] }).poll.duration).toBe(
+      24
+    );
   });
 });

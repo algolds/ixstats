@@ -29,9 +29,9 @@ export default function ExecutiveArticle() {
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 Your inbox of events — situations that come up because of how your nation is doing.
-                Each one offers a few ways to respond, and your choice has real consequences for your
-                economy, your people, your standing abroad, and your security. Handling them earns
-                IxCredits, and the riskier calls pay a little more.
+                Each one offers a few ways to respond, and your choice has real consequences for
+                your economy, your people, your standing abroad, and your security. Handling them
+                earns IxCredits, and the riskier calls pay a little more.
               </p>
             </div>
 
@@ -42,8 +42,8 @@ export default function ExecutiveArticle() {
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 Call cabinet meetings, set the agenda, and record what gets decided. Turn decisions
-                into action items with owners and deadlines so nothing falls through the cracks — and
-                so your nation&rsquo;s history has a paper trail.
+                into action items with owners and deadlines so nothing falls through the cracks —
+                and so your nation&rsquo;s history has a paper trail.
               </p>
             </div>
 
@@ -54,8 +54,8 @@ export default function ExecutiveArticle() {
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 Draft and enact policies across every part of government. Keep them organized by
-                area, set priorities, and track each one from idea to law. For the long game, lay out
-                strategic plans with milestones you can watch progress against.
+                area, set priorities, and track each one from idea to law. For the long game, lay
+                out strategic plans with milestones you can watch progress against.
               </p>
             </div>
 
@@ -66,8 +66,8 @@ export default function ExecutiveArticle() {
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 When you&rsquo;re ready to make a real move, nine national actions are at your
-                command: a <strong>stimulus package</strong>, <strong>population incentives</strong>,{" "}
-                <strong>tax changes</strong>, a <strong>diplomatic mission</strong>, an{" "}
+                command: a <strong>stimulus package</strong>, <strong>population incentives</strong>
+                , <strong>tax changes</strong>, a <strong>diplomatic mission</strong>, an{" "}
                 <strong>emergency response</strong>, <strong>budget reallocation</strong>, an{" "}
                 <strong>infrastructure project</strong>, <strong>education reform</strong>, and{" "}
                 <strong>healthcare investment</strong>.
@@ -106,7 +106,8 @@ export default function ExecutiveArticle() {
           <p>The Executive desk pulls from the rest of your nation:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>Intelligence</strong> — the insights and findings that should inform your calls.
+              <strong>Intelligence</strong> — the insights and findings that should inform your
+              calls.
             </li>
             <li>
               <strong>Diplomacy</strong> — foreign-policy decisions tie back to your relationships
@@ -116,8 +117,8 @@ export default function ExecutiveArticle() {
               <strong>Defense</strong> — your readiness and security shape your options in a crisis.
             </li>
             <li>
-              <strong>Overview</strong> — see the effect of your choices on your nation&rsquo;s vital
-              signs.
+              <strong>Overview</strong> — see the effect of your choices on your nation&rsquo;s
+              vital signs.
             </li>
           </ul>
         </Section>

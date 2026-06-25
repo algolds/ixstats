@@ -1,6 +1,8 @@
 export interface MatchDayResultLine {
   homeName: string;
+  homeId?: string;
   awayName: string;
+  awayId?: string;
   homeScore: number;
   awayScore: number;
   isUpset?: boolean;
@@ -13,6 +15,7 @@ export interface MatchDayResultLine {
  */
 export interface StandingMover {
   name: string;
+  id?: string;
   oldRank: number;
   newRank: number;
   id?: string;
@@ -58,6 +61,35 @@ export function parseSportsBulletin(
     return { data, body: rest.slice(nl).replace(/^\n+/, "") };
   } catch {
     return null; // ponytail: malformed marker → fall back to plain text
+  }
+}
+
+export interface SportsBulletinData {
+  league: { id?: string; name: string };
+  sportEmoji: string;
+  matchDay: number;
+  results: {
+    home: { name: string; id?: string };
+    away: { name: string; id?: string };
+    homeScore: number;
+    awayScore: number;
+    isUpset?: boolean;
+  }[];
+  movers?: { name: string; id?: string; oldRank: number; newRank: number }[];
+  llmSummary?: string;
+}
+
+export function encodeSportsBulletin(data: SportsBulletinData, markdown: string): string {
+  return `<!-- sports-bulletin:${JSON.stringify(data)} -->\n${markdown}`;
+}
+
+export function parseSportsBulletin(content: string): SportsBulletinData | null {
+  const match = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[1]!) as SportsBulletinData;
+  } catch {
+    return null;
   }
 }
 

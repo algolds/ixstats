@@ -27,9 +27,7 @@ export interface Settlement {
  */
 export function computeParimutuel(entries: PoolEntry[], outcome: PredictionOutcome): Settlement[] {
   const totalPool = entries.reduce((s, e) => s + e.stake, 0);
-  const winningPool = entries
-    .filter((e) => e.outcome === outcome)
-    .reduce((s, e) => s + e.stake, 0);
+  const winningPool = entries.filter((e) => e.outcome === outcome).reduce((s, e) => s + e.stake, 0);
 
   return entries.map((e) => {
     if (winningPool === 0) return { id: e.id, status: "void", payout: e.stake };

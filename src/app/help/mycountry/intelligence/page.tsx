@@ -14,15 +14,16 @@ export default function MyCountryIntelligenceArticle() {
       <ContentCard>
         <Section title="Your Nation, Made Sense Of">
           <p>
-            Intelligence is where the raw numbers become a story you can act on. There&rsquo;s nothing
-            to manage here — it&rsquo;s pure insight, laid out in three views:
+            Intelligence is where the raw numbers become a story you can act on. There&rsquo;s
+            nothing to manage here — it&rsquo;s pure insight, laid out in three views:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
               <strong>Dashboard</strong> — the headline read on how your nation is doing.
             </li>
             <li>
-              <strong>Analysis</strong> — deeper dives into your economy, relationships, and policies.
+              <strong>Analysis</strong> — deeper dives into your economy, relationships, and
+              policies.
             </li>
             <li>
               <strong>Reports</strong> — the findings worth knowing, sorted by what matters most.
@@ -74,9 +75,9 @@ export default function MyCountryIntelligenceArticle() {
         <Section title="The Findings That Matter">
           <p>
             The Reports view surfaces the things worth knowing — each with how serious it is, what
-            it touches, and what you might do about it. They&rsquo;re drawn straight from real shifts
-            in your economy, your relationships, and your security, so they&rsquo;re always about your
-            nation right now.
+            it touches, and what you might do about it. They&rsquo;re drawn straight from real
+            shifts in your economy, your relationships, and your security, so they&rsquo;re always
+            about your nation right now.
           </p>
         </Section>
 

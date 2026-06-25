@@ -14,11 +14,7 @@ import {
   setValuationConfig,
   type CardValuationConfig,
 } from "~/lib/card-valuation";
-import {
-  getBonusConfig,
-  setBonusConfig,
-  type VaultBonusConfig,
-} from "~/lib/vault-bonus";
+import { getBonusConfig, setBonusConfig, type VaultBonusConfig } from "~/lib/vault-bonus";
 
 /**
  * Cards router for IxCards system

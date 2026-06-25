@@ -80,10 +80,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return await ctx.db.cabinetMeeting.findMany({
         where: {
-          OR: [
-            { countryId: input.countryId },
-            { targetCountryId: input.countryId },
-          ],
+          OR: [{ countryId: input.countryId }, { targetCountryId: input.countryId }],
         },
         orderBy: { scheduledDate: "desc" },
         include: {

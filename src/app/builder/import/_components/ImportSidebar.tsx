@@ -136,11 +136,9 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                 Safe & Secure Import
               </span>
             </div>
-            <p
-              className="text-[10px] leading-relaxed"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              This tool only reads public wiki infobox data to calculate starting statistics. No account data, private details, or passwords are accessed, stored, or copied.
+            <p className="text-[10px] leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
+              This tool only reads public wiki infobox data to calculate starting statistics. No
+              account data, private details, or passwords are accessed, stored, or copied.
             </p>
           </div>
 

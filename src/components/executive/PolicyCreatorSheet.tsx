@@ -25,7 +25,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { FileText, Settings2, ChevronDown, ChevronRight, Sliders, Sparkles, AlertCircle, X, Plus } from "lucide-react";
+import {
+  FileText,
+  Settings2,
+  ChevronDown,
+  ChevronRight,
+  Sliders,
+  Sparkles,
+  AlertCircle,
+  X,
+  Plus,
+} from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
 
@@ -156,15 +166,22 @@ export function PolicyCreatorSheet({
   const { user } = useUser();
 
   // Queries
-  const { data: catalog = [] } = api.policies.getPolicyCatalog.useQuery(undefined, { enabled: open });
-  const { data: country } = api.countries.getCountry?.useQuery({ id: countryId }, { enabled: !!countryId && open }) || { data: null };
+  const { data: catalog = [] } = api.policies.getPolicyCatalog.useQuery(undefined, {
+    enabled: open,
+  });
+  const { data: country } = api.countries.getCountry?.useQuery(
+    { id: countryId },
+    { enabled: !!countryId && open }
+  ) || { data: null };
 
   // Form state
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>("custom");
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formCategory, setFormCategory] = useState("fiscal");
-  const [formPriority, setFormPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const [formPriority, setFormPriority] = useState<"low" | "medium" | "high" | "critical">(
+    "medium"
+  );
   const [formType, setFormType] = useState("economic");
   const [formObjectives, setFormObjectives] = useState("");
   const [formImplCost, setFormImplCost] = useState("");
@@ -172,7 +189,9 @@ export function PolicyCreatorSheet({
   const [formTargetMetrics, setFormTargetMetrics] = useState("");
 
   // Target metrics structured state
-  const [targetMetrics, setTargetMetrics] = useState<{ metric: string; value: number; timeline: string }[]>([]);
+  const [targetMetrics, setTargetMetrics] = useState<
+    { metric: string; value: number; timeline: string }[]
+  >([]);
   const [newMetricKey, setNewMetricKey] = useState("gdpGrowth");
   const [newMetricValue, setNewMetricValue] = useState("");
   const [newMetricTimeline, setNewMetricTimeline] = useState("1 year");
@@ -258,7 +277,7 @@ export function PolicyCreatorSheet({
         employmentEffect: val * 0.1,
         inflationEffect: val * 0.15,
         taxRevenueEffect: val * 0.3,
-        stabilityEffect: val * 0.5
+        stabilityEffect: val * 0.5,
       };
       setCalculatedEffects(results);
       setFormImplCost(String(results.implementationCost));
@@ -309,9 +328,12 @@ export function PolicyCreatorSheet({
         policyType: formType as any,
         category: formCategory,
         priority: formPriority,
-        targetMetrics: selectedTemplateKey === "custom"
-          ? (targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined)
-          : (formTargetMetrics || undefined),
+        targetMetrics:
+          selectedTemplateKey === "custom"
+            ? targetMetrics.length > 0
+              ? JSON.stringify(targetMetrics)
+              : undefined
+            : formTargetMetrics || undefined,
         implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
         maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
         decretalKey: selectedTemplateKey !== "custom" ? selectedTemplateKey : undefined,
@@ -353,9 +375,12 @@ export function PolicyCreatorSheet({
         policyType: formType as any,
         category: formCategory,
         priority: formPriority,
-        targetMetrics: selectedTemplateKey === "custom"
-          ? (targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined)
-          : (formTargetMetrics || undefined),
+        targetMetrics:
+          selectedTemplateKey === "custom"
+            ? targetMetrics.length > 0
+              ? JSON.stringify(targetMetrics)
+              : undefined
+            : formTargetMetrics || undefined,
         implementationCost: formImplCost ? parseFloat(formImplCost) : undefined,
         maintenanceCost: formMaintCost ? parseFloat(formMaintCost) : undefined,
         decretalKey: selectedTemplateKey !== "custom" ? selectedTemplateKey : undefined,
@@ -531,15 +556,17 @@ export function PolicyCreatorSheet({
 
             {/* Template Sliders */}
             {selectedTemplateKey !== "custom" && currentTemplate && (
-              <div className="bg-indigo-500/5 border-indigo-500/20 space-y-4 rounded-lg border p-4">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+              <div className="space-y-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
+                <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-indigo-400 uppercase">
                   <Sliders className="h-3.5 w-3.5" />
                   Policy Strategy Configurations
                 </h4>
 
                 {currentTemplate.sliders.map((slider: any) => (
                   <div key={slider.key} className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">{slider.label}</Label>
+                    <Label className="text-muted-foreground text-xs font-medium">
+                      {slider.label}
+                    </Label>
                     <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                       {slider.options.map((opt: any) => {
                         const isSelected = sliderSettings[slider.key] === opt.value;
@@ -555,7 +582,7 @@ export function PolicyCreatorSheet({
                             }
                             className={`flex flex-col items-center justify-center rounded-md border p-2 text-center transition-all ${
                               isSelected
-                                ? "bg-indigo-600 border-indigo-500 text-white font-medium shadow-sm shadow-indigo-600/20"
+                                ? "border-indigo-500 bg-indigo-600 font-medium text-white shadow-sm shadow-indigo-600/20"
                                 : "bg-muted/40 border-border/40 hover:bg-muted/80 text-muted-foreground text-xs"
                             }`}
                           >
@@ -571,42 +598,56 @@ export function PolicyCreatorSheet({
 
             {/* Live Effects/Calculations for Templates */}
             {selectedTemplateKey !== "custom" && calculatedEffects && (
-              <div className="bg-emerald-500/5 border-emerald-500/20 space-y-3 rounded-lg border p-4">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+              <div className="space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-emerald-400 uppercase">
                   <Sparkles className="h-3.5 w-3.5" />
                   Calculated Simulation Projections
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex justify-between border-b border-border/30 pb-1">
+                  <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Setup Cost:</span>
-                    <span className="font-semibold">{formatCurrency(calculatedEffects.implementationCost)}</span>
+                    <span className="font-semibold">
+                      {formatCurrency(calculatedEffects.implementationCost)}
+                    </span>
                   </div>
-                  <div className="flex justify-between border-b border-border/30 pb-1">
+                  <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Annual Maint:</span>
-                    <span className="font-semibold">{formatCurrency(calculatedEffects.maintenanceCost)}</span>
+                    <span className="font-semibold">
+                      {formatCurrency(calculatedEffects.maintenanceCost)}
+                    </span>
                   </div>
-                  <div className="flex justify-between border-b border-border/30 pb-1">
+                  <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">GDP growth:</span>
-                    <span className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                      {calculatedEffects.gdpEffect >= 0 ? "+" : ""}{calculatedEffects.gdpEffect.toFixed(2)}%
+                    <span
+                      className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                    >
+                      {calculatedEffects.gdpEffect >= 0 ? "+" : ""}
+                      {calculatedEffects.gdpEffect.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between border-b border-border/30 pb-1">
+                  <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Employment:</span>
-                    <span className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                      {calculatedEffects.employmentEffect >= 0 ? "+" : ""}{calculatedEffects.employmentEffect.toFixed(2)}%
+                    <span
+                      className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                    >
+                      {calculatedEffects.employmentEffect >= 0 ? "+" : ""}
+                      {calculatedEffects.employmentEffect.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between border-b border-border/30 pb-1">
+                  <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Inflation:</span>
-                    <span className={`font-semibold ${calculatedEffects.inflationEffect <= 2 ? "text-emerald-500" : "text-amber-500"}`}>
-                      {calculatedEffects.inflationEffect >= 0 ? "+" : ""}{calculatedEffects.inflationEffect.toFixed(2)}%
+                    <span
+                      className={`font-semibold ${calculatedEffects.inflationEffect <= 2 ? "text-emerald-500" : "text-amber-500"}`}
+                    >
+                      {calculatedEffects.inflationEffect >= 0 ? "+" : ""}
+                      {calculatedEffects.inflationEffect.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="flex justify-between border-b border-border/30 pb-1">
+                  <div className="border-border/30 flex justify-between border-b pb-1">
                     <span className="text-muted-foreground">Tax Revenue:</span>
                     <span className="font-semibold text-indigo-400">
-                      {calculatedEffects.taxRevenueEffect >= 0 ? "+" : ""}{calculatedEffects.taxRevenueEffect.toFixed(2)}%
+                      {calculatedEffects.taxRevenueEffect >= 0 ? "+" : ""}
+                      {calculatedEffects.taxRevenueEffect.toFixed(2)}%
                     </span>
                   </div>
                 </div>
@@ -616,47 +657,50 @@ export function PolicyCreatorSheet({
             {/* Custom Decree: Cost Projections & Target Metrics Builder */}
             {selectedTemplateKey === "custom" && (
               <>
-                <div className="bg-indigo-500/5 border-indigo-500/20 rounded-lg border p-3.5 space-y-2">
+                <div className="space-y-2 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3.5">
                   <p className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">
                     Estimated Cost Projections
                   </p>
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-muted-foreground">Setup Cost (Implementation):</span>
-                      <span className="font-semibold text-white text-sm">
+                      <span className="text-sm font-semibold text-white">
                         {formatCurrency(parseFloat(formImplCost) || 0)}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <span className="text-muted-foreground">Annual Maintenance:</span>
-                      <span className="font-semibold text-white text-sm">
+                      <span className="text-sm font-semibold text-white">
                         {formatCurrency(parseFloat(formMaintCost) || 0)}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3 border-t border-border/40 pt-3">
+                <div className="border-border/40 space-y-3 border-t pt-3">
                   <Label className="text-xs font-semibold">Target Simulation Metrics</Label>
 
                   {/* Added Metrics List */}
                   {targetMetrics.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-2">
+                    <div className="mb-2 flex flex-wrap gap-1.5">
                       {targetMetrics.map((item, index) => {
                         const option = METRIC_OPTIONS.find((o) => o.value === item.metric);
                         return (
                           <Badge
                             key={index}
                             variant="secondary"
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                            className="flex items-center gap-1 border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-1 text-xs text-indigo-300"
                           >
                             <span>
-                              {option?.label}: {item.value}{option?.unit} ({item.timeline})
+                              {option?.label}: {item.value}
+                              {option?.unit} ({item.timeline})
                             </span>
                             <button
                               type="button"
-                              onClick={() => setTargetMetrics((prev) => prev.filter((_, i) => i !== index))}
-                              className="ml-1 rounded-full p-0.5 hover:bg-indigo-500/25 cursor-pointer"
+                              onClick={() =>
+                                setTargetMetrics((prev) => prev.filter((_, i) => i !== index))
+                              }
+                              className="ml-1 cursor-pointer rounded-full p-0.5 hover:bg-indigo-500/25"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -667,9 +711,9 @@ export function PolicyCreatorSheet({
                   )}
 
                   {/* Metric Creator Form */}
-                  <div className="flex flex-wrap gap-2 items-end bg-muted/20 border border-border/40 rounded-lg p-3">
-                    <div className="flex-1 min-w-[120px]">
-                      <Label className="text-[10px] text-muted-foreground">Metric</Label>
+                  <div className="bg-muted/20 border-border/40 flex flex-wrap items-end gap-2 rounded-lg border p-3">
+                    <div className="min-w-[120px] flex-1">
+                      <Label className="text-muted-foreground text-[10px]">Metric</Label>
                       <Select value={newMetricKey} onValueChange={setNewMetricKey}>
                         <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
@@ -685,7 +729,7 @@ export function PolicyCreatorSheet({
                     </div>
 
                     <div className="w-[80px]">
-                      <Label className="text-[10px] text-muted-foreground">Value</Label>
+                      <Label className="text-muted-foreground text-[10px]">Value</Label>
                       <div className="relative">
                         <Input
                           type="number"
@@ -693,16 +737,16 @@ export function PolicyCreatorSheet({
                           value={newMetricValue}
                           onChange={(e) => setNewMetricValue(e.target.value)}
                           placeholder="0"
-                          className="h-8 text-xs pr-4"
+                          className="h-8 pr-4 text-xs"
                         />
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                        <span className="text-muted-foreground absolute top-1/2 right-1.5 -translate-y-1/2 text-[10px]">
                           {METRIC_OPTIONS.find((o) => o.value === newMetricKey)?.unit}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex-1 min-w-[100px]">
-                      <Label className="text-[10px] text-muted-foreground">Timeline</Label>
+                    <div className="min-w-[100px] flex-1">
+                      <Label className="text-muted-foreground text-[10px]">Timeline</Label>
                       <Select value={newMetricTimeline} onValueChange={setNewMetricTimeline}>
                         <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
@@ -730,7 +774,7 @@ export function PolicyCreatorSheet({
                         ]);
                         setNewMetricValue("");
                       }}
-                      className="h-8 border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/10 text-xs px-2.5"
+                      className="h-8 border-indigo-500/20 px-2.5 text-xs text-indigo-300 hover:bg-indigo-500/10"
                     >
                       Add Metric
                     </Button>

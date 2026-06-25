@@ -2,7 +2,20 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, ChevronRight, ChevronLeft, Plus, Globe, User, Building, Clock, ShieldAlert, Sparkles, FileText, Landmark } from "lucide-react";
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Plus,
+  Globe,
+  User,
+  Building,
+  Clock,
+  ShieldAlert,
+  Sparkles,
+  FileText,
+  Landmark,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -12,7 +25,15 @@ interface CreatePageModalProps {
   onClose: () => void;
 }
 
-type PageType = "blank" | "person" | "company" | "history" | "country" | "conflict" | "politics" | "tech";
+type PageType =
+  | "blank"
+  | "person"
+  | "company"
+  | "history"
+  | "country"
+  | "conflict"
+  | "politics"
+  | "tech";
 
 export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   const router = useRouter();
@@ -23,12 +44,42 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   const [existsWarning, setExistsWarning] = useState(false);
 
   // Form Fields
-  const [personFields, setPersonFields] = useState({ birthDate: "", birthPlace: "", nationality: "", occupation: "" });
-  const [companyFields, setCompanyFields] = useState({ type: "", industry: "", founder: "", headquarters: "" });
-  const [historyFields, setHistoryFields] = useState({ date: "", location: "", participants: "", result: "" });
-  const [countryFields, setCountryFields] = useState({ capital: "", governmentType: "", leaderName: "", currency: "" });
-  const [conflictFields, setConflictFields] = useState({ date: "", place: "", combatant1: "", combatant2: "" });
-  const [politicsFields, setPoliticsFields] = useState({ leader: "", founder: "", ideology: "", colors: "" });
+  const [personFields, setPersonFields] = useState({
+    birthDate: "",
+    birthPlace: "",
+    nationality: "",
+    occupation: "",
+  });
+  const [companyFields, setCompanyFields] = useState({
+    type: "",
+    industry: "",
+    founder: "",
+    headquarters: "",
+  });
+  const [historyFields, setHistoryFields] = useState({
+    date: "",
+    location: "",
+    participants: "",
+    result: "",
+  });
+  const [countryFields, setCountryFields] = useState({
+    capital: "",
+    governmentType: "",
+    leaderName: "",
+    currency: "",
+  });
+  const [conflictFields, setConflictFields] = useState({
+    date: "",
+    place: "",
+    combatant1: "",
+    combatant2: "",
+  });
+  const [politicsFields, setPoliticsFields] = useState({
+    leader: "",
+    founder: "",
+    ideology: "",
+    colors: "",
+  });
   const [techFields, setTechFields] = useState({ inventor: "", year: "", application: "" });
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -293,7 +344,10 @@ Write impact details here...
             <Sparkles className="h-5 w-5 text-emerald-400" />
             <h3 className="text-base font-semibold tracking-wide text-white">Create Wiki Page</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-white/5 hover:text-white transition-colors">
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+          >
             <X size={18} />
           </button>
         </div>
@@ -302,7 +356,9 @@ Write impact details here...
         {step === 1 && (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Page Title</label>
+              <label className="text-xs font-medium tracking-wider text-zinc-400 uppercase">
+                Page Title
+              </label>
               <input
                 ref={inputRef}
                 type="text"
@@ -312,19 +368,23 @@ Write impact details here...
                   setExistsWarning(false);
                 }}
                 placeholder="Enter article title..."
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-500 transition-all outline-none focus:border-emerald-500/50 focus:bg-white/10"
               />
               {existsWarning && (
                 <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2.5 text-xs text-red-400">
-                  <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                  <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <span className="font-semibold">Page already exists!</span> You can{" "}
                     <button
                       onClick={() => {
                         onClose();
-                        router.push(withBasePath(`/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}`));
+                        router.push(
+                          withBasePath(
+                            `/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}`
+                          )
+                        );
                       }}
-                      className="underline font-medium text-white hover:text-emerald-400"
+                      className="font-medium text-white underline hover:text-emerald-400"
                     >
                       view
                     </button>{" "}
@@ -332,9 +392,13 @@ Write impact details here...
                     <button
                       onClick={() => {
                         onClose();
-                        router.push(withBasePath(`/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}/edit`));
+                        router.push(
+                          withBasePath(
+                            `/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}/edit`
+                          )
+                        );
                       }}
-                      className="underline font-medium text-white hover:text-emerald-400"
+                      className="font-medium text-white underline hover:text-emerald-400"
                     >
                       edit
                     </button>{" "}
@@ -345,7 +409,9 @@ Write impact details here...
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">Preferred Editor</label>
+              <label className="block text-xs font-medium tracking-wider text-zinc-400 uppercase">
+                Preferred Editor
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -358,7 +424,9 @@ Write impact details here...
                   )}
                 >
                   <span className="text-xs font-semibold text-white">Visual Editor</span>
-                  <span className="text-[10px] text-zinc-500 mt-0.5">Edit rich layout directly</span>
+                  <span className="mt-0.5 text-[10px] text-zinc-500">
+                    Edit rich layout directly
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -371,7 +439,9 @@ Write impact details here...
                   )}
                 >
                   <span className="text-xs font-semibold text-white">Source Editor</span>
-                  <span className="text-[10px] text-zinc-500 mt-0.5">Wikitext markup / CodeMirror</span>
+                  <span className="mt-0.5 text-[10px] text-zinc-500">
+                    Wikitext markup / CodeMirror
+                  </span>
                 </button>
               </div>
             </div>
@@ -380,17 +450,59 @@ Write impact details here...
 
         {step === 2 && (
           <div className="space-y-3">
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">Select Page Type</label>
-            <div className="grid grid-cols-2 gap-2 max-h-[45vh] overflow-y-auto pr-1 scrollbar-thin">
+            <label className="block text-xs font-medium tracking-wider text-zinc-400 uppercase">
+              Select Page Type
+            </label>
+            <div className="grid max-h-[45vh] scrollbar-thin grid-cols-2 gap-2 overflow-y-auto pr-1">
               {[
-                { id: "blank", label: "Blank Page", icon: FileText, desc: "Plain start without preset templates" },
-                { id: "person", label: "Person", icon: User, desc: "Biography, career info & infobox" },
-                { id: "company", label: "Company", icon: Building, desc: "Organization details, founder, revenue" },
-                { id: "history", label: "History / Event", icon: Clock, desc: "Historic event timeline and results" },
-                { id: "country", label: "Country", icon: Globe, desc: "Capital, government, currency & flag" },
-                { id: "conflict", label: "Military Conflict", icon: ShieldAlert, desc: "Battles, combatants, commanders" },
-                { id: "politics", label: "Political Party", icon: Landmark, desc: "Ideology, leaders, voter stats" },
-                { id: "tech", label: "Technology", icon: Sparkles, desc: "Inventions, specifications, developer" },
+                {
+                  id: "blank",
+                  label: "Blank Page",
+                  icon: FileText,
+                  desc: "Plain start without preset templates",
+                },
+                {
+                  id: "person",
+                  label: "Person",
+                  icon: User,
+                  desc: "Biography, career info & infobox",
+                },
+                {
+                  id: "company",
+                  label: "Company",
+                  icon: Building,
+                  desc: "Organization details, founder, revenue",
+                },
+                {
+                  id: "history",
+                  label: "History / Event",
+                  icon: Clock,
+                  desc: "Historic event timeline and results",
+                },
+                {
+                  id: "country",
+                  label: "Country",
+                  icon: Globe,
+                  desc: "Capital, government, currency & flag",
+                },
+                {
+                  id: "conflict",
+                  label: "Military Conflict",
+                  icon: ShieldAlert,
+                  desc: "Battles, combatants, commanders",
+                },
+                {
+                  id: "politics",
+                  label: "Political Party",
+                  icon: Landmark,
+                  desc: "Ideology, leaders, voter stats",
+                },
+                {
+                  id: "tech",
+                  label: "Technology",
+                  icon: Sparkles,
+                  desc: "Inventions, specifications, developer",
+                },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
@@ -405,10 +517,17 @@ Write impact details here...
                         : "border-white/5 bg-white/5 text-zinc-400 hover:bg-white/10"
                     )}
                   >
-                    <Icon className={cn("h-4 w-4 mt-0.5", pageType === item.id ? "text-emerald-400" : "text-zinc-500")} />
+                    <Icon
+                      className={cn(
+                        "mt-0.5 h-4 w-4",
+                        pageType === item.id ? "text-emerald-400" : "text-zinc-500"
+                      )}
+                    />
                     <div>
                       <div className="text-xs font-semibold text-white">{item.label}</div>
-                      <div className="text-[9px] text-zinc-500 mt-0.5 leading-tight">{item.desc}</div>
+                      <div className="mt-0.5 text-[9px] leading-tight text-zinc-500">
+                        {item.desc}
+                      </div>
                     </div>
                   </button>
                 );
@@ -420,11 +539,13 @@ Write impact details here...
         {step === 3 && (
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider block">Template Metadata</label>
+              <label className="block text-xs font-medium tracking-wider text-zinc-400 uppercase">
+                Template Metadata
+              </label>
               <span className="text-[10px] text-zinc-500 italic">Optional - Skip to create</span>
             </div>
 
-            <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
+            <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
               {pageType === "person" && (
                 <>
                   <div className="space-y-1">
@@ -433,7 +554,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. 15 October 1985"
                       value={personFields.birthDate}
-                      onChange={(e) => setPersonFields({ ...personFields, birthDate: e.target.value })}
+                      onChange={(e) =>
+                        setPersonFields({ ...personFields, birthDate: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -443,7 +566,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. London, United Kingdom"
                       value={personFields.birthPlace}
-                      onChange={(e) => setPersonFields({ ...personFields, birthPlace: e.target.value })}
+                      onChange={(e) =>
+                        setPersonFields({ ...personFields, birthPlace: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -453,7 +578,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. British"
                       value={personFields.nationality}
-                      onChange={(e) => setPersonFields({ ...personFields, nationality: e.target.value })}
+                      onChange={(e) =>
+                        setPersonFields({ ...personFields, nationality: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -463,7 +590,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Economist"
                       value={personFields.occupation}
-                      onChange={(e) => setPersonFields({ ...personFields, occupation: e.target.value })}
+                      onChange={(e) =>
+                        setPersonFields({ ...personFields, occupation: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -488,7 +617,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Aerospace, Finance"
                       value={companyFields.industry}
-                      onChange={(e) => setCompanyFields({ ...companyFields, industry: e.target.value })}
+                      onChange={(e) =>
+                        setCompanyFields({ ...companyFields, industry: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -498,7 +629,9 @@ Write impact details here...
                       type="text"
                       placeholder="Founder names..."
                       value={companyFields.founder}
-                      onChange={(e) => setCompanyFields({ ...companyFields, founder: e.target.value })}
+                      onChange={(e) =>
+                        setCompanyFields({ ...companyFields, founder: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -508,7 +641,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Geneva, Switzerland"
                       value={companyFields.headquarters}
-                      onChange={(e) => setCompanyFields({ ...companyFields, headquarters: e.target.value })}
+                      onChange={(e) =>
+                        setCompanyFields({ ...companyFields, headquarters: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -533,7 +668,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Brussels, Belgium"
                       value={historyFields.location}
-                      onChange={(e) => setHistoryFields({ ...historyFields, location: e.target.value })}
+                      onChange={(e) =>
+                        setHistoryFields({ ...historyFields, location: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -543,7 +680,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Allies, Axis"
                       value={historyFields.participants}
-                      onChange={(e) => setHistoryFields({ ...historyFields, participants: e.target.value })}
+                      onChange={(e) =>
+                        setHistoryFields({ ...historyFields, participants: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -553,7 +692,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Treaty signed"
                       value={historyFields.result}
-                      onChange={(e) => setHistoryFields({ ...historyFields, result: e.target.value })}
+                      onChange={(e) =>
+                        setHistoryFields({ ...historyFields, result: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -568,7 +709,9 @@ Write impact details here...
                       type="text"
                       placeholder="Capital city..."
                       value={countryFields.capital}
-                      onChange={(e) => setCountryFields({ ...countryFields, capital: e.target.value })}
+                      onChange={(e) =>
+                        setCountryFields({ ...countryFields, capital: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -578,7 +721,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Parliamentary Republic"
                       value={countryFields.governmentType}
-                      onChange={(e) => setCountryFields({ ...countryFields, governmentType: e.target.value })}
+                      onChange={(e) =>
+                        setCountryFields({ ...countryFields, governmentType: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -588,7 +733,9 @@ Write impact details here...
                       type="text"
                       placeholder="Current leader..."
                       value={countryFields.leaderName}
-                      onChange={(e) => setCountryFields({ ...countryFields, leaderName: e.target.value })}
+                      onChange={(e) =>
+                        setCountryFields({ ...countryFields, leaderName: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -598,7 +745,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Credits"
                       value={countryFields.currency}
-                      onChange={(e) => setCountryFields({ ...countryFields, currency: e.target.value })}
+                      onChange={(e) =>
+                        setCountryFields({ ...countryFields, currency: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -613,7 +762,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. 1939 - 1945"
                       value={conflictFields.date}
-                      onChange={(e) => setConflictFields({ ...conflictFields, date: e.target.value })}
+                      onChange={(e) =>
+                        setConflictFields({ ...conflictFields, date: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -623,7 +774,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Global"
                       value={conflictFields.place}
-                      onChange={(e) => setConflictFields({ ...conflictFields, place: e.target.value })}
+                      onChange={(e) =>
+                        setConflictFields({ ...conflictFields, place: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -633,7 +786,9 @@ Write impact details here...
                       type="text"
                       placeholder="Combatant group 1..."
                       value={conflictFields.combatant1}
-                      onChange={(e) => setConflictFields({ ...conflictFields, combatant1: e.target.value })}
+                      onChange={(e) =>
+                        setConflictFields({ ...conflictFields, combatant1: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -643,7 +798,9 @@ Write impact details here...
                       type="text"
                       placeholder="Combatant group 2..."
                       value={conflictFields.combatant2}
-                      onChange={(e) => setConflictFields({ ...conflictFields, combatant2: e.target.value })}
+                      onChange={(e) =>
+                        setConflictFields({ ...conflictFields, combatant2: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -658,7 +815,9 @@ Write impact details here...
                       type="text"
                       placeholder="Leader name..."
                       value={politicsFields.leader}
-                      onChange={(e) => setPoliticsFields({ ...politicsFields, leader: e.target.value })}
+                      onChange={(e) =>
+                        setPoliticsFields({ ...politicsFields, leader: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -668,7 +827,9 @@ Write impact details here...
                       type="text"
                       placeholder="Founder name..."
                       value={politicsFields.founder}
-                      onChange={(e) => setPoliticsFields({ ...politicsFields, founder: e.target.value })}
+                      onChange={(e) =>
+                        setPoliticsFields({ ...politicsFields, founder: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -678,7 +839,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Social Democracy"
                       value={politicsFields.ideology}
-                      onChange={(e) => setPoliticsFields({ ...politicsFields, ideology: e.target.value })}
+                      onChange={(e) =>
+                        setPoliticsFields({ ...politicsFields, ideology: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -688,7 +851,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Red and White"
                       value={politicsFields.colors}
-                      onChange={(e) => setPoliticsFields({ ...politicsFields, colors: e.target.value })}
+                      onChange={(e) =>
+                        setPoliticsFields({ ...politicsFields, colors: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -723,7 +888,9 @@ Write impact details here...
                       type="text"
                       placeholder="e.g. Computation"
                       value={techFields.application}
-                      onChange={(e) => setTechFields({ ...techFields, application: e.target.value })}
+                      onChange={(e) =>
+                        setTechFields({ ...techFields, application: e.target.value })
+                      }
                       className="w-full rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/30"
                     />
                   </div>
@@ -740,7 +907,7 @@ Write impact details here...
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs text-zinc-400 transition-colors hover:text-white"
               >
                 <ChevronLeft size={14} />
                 <span>Back</span>
@@ -752,15 +919,17 @@ Write impact details here...
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-white/5 px-4 py-2 text-xs font-medium text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
+              className="rounded-xl bg-white/5 px-4 py-2 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/10 hover:text-white"
             >
               Cancel
             </button>
             <button
               type="button"
-              onClick={step === 3 || (step === 2 && pageType === "blank") ? handleCreate : handleNext}
+              onClick={
+                step === 3 || (step === 2 && pageType === "blank") ? handleCreate : handleNext
+              }
               disabled={!title.trim() || checkExists.isFetching}
-              className="flex items-center gap-1 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+              className="flex items-center gap-1 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-emerald-500 active:scale-95 disabled:scale-100 disabled:opacity-50"
             >
               {checkExists.isFetching ? (
                 <span>Checking...</span>

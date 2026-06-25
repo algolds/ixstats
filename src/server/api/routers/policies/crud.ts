@@ -51,10 +51,10 @@ export const policiesCrudRouter = createTRPCRouter({
         if (decretal) {
           const country = await ctx.db.country.findUnique({
             where: { id: input.countryId },
-            select: { currentPopulation: true }
+            select: { currentPopulation: true },
           });
           const metrics = {
-            currentPopulation: country?.currentPopulation ?? 1000000
+            currentPopulation: country?.currentPopulation ?? 1000000,
           };
           const calcSettings = settings ?? {};
           const results = decretal.calculate(calcSettings, metrics);
@@ -69,7 +69,7 @@ export const policiesCrudRouter = createTRPCRouter({
           calculatedEffectsJson = JSON.stringify({
             decretalKey,
             settings: calcSettings,
-            stabilityEffect: results.stabilityEffect
+            stabilityEffect: results.stabilityEffect,
           });
         }
       }
@@ -270,7 +270,7 @@ export const policiesCrudRouter = createTRPCRouter({
             completedAt: new Date(),
             status: "completed",
             duration: 45,
-          }
+          },
         });
 
         const decision = await tx.meetingDecision.create({
@@ -281,7 +281,7 @@ export const policiesCrudRouter = createTRPCRouter({
             decisionType: "policy_approval",
             implementationStatus: "implemented",
             relatedPolicyId: policy.id,
-          }
+          },
         });
 
         const categoryToRole: Record<string, string> = {
@@ -305,12 +305,13 @@ export const policiesCrudRouter = createTRPCRouter({
             title: `Oversee rollout of ${policy.name}`,
             description: `Oversee implementation and ensure operational stability of the newly active policy: ${policy.name}.`,
             status: "pending",
-            priority: policy.priority === "critical" || policy.priority === "high" ? "high" : "normal",
+            priority:
+              policy.priority === "critical" || policy.priority === "high" ? "high" : "normal",
             assignedTo: assignedRole,
             dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000),
             dueIxTime: currentIxTime + 7 * 24 * 3600,
             category: policy.category,
-          }
+          },
         });
 
         const updatedPolicy = await tx.policy.update({

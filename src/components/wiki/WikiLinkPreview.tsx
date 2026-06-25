@@ -153,8 +153,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
   if (tagName === "a" && element.getAttribute("href")?.startsWith("/hashtags/")) {
     const href = element.getAttribute("href") || "";
     const className =
-      element.className ||
-      "text-blue-500 hover:underline cursor-pointer font-medium";
+      element.className || "text-blue-500 hover:underline cursor-pointer font-medium";
 
     return (
       <Link key={index} href={withBasePath(href)} className={className}>

@@ -15,10 +15,13 @@ export interface PolicyDecretal {
   key: string;
   name: string;
   description: string;
-  category: string;     // e.g. "fiscal", "trade", "labor", "healthcare", "defense", "infrastructure"
-  policyType: string;   // e.g. "economic", "social", "diplomatic", "governance"
+  category: string; // e.g. "fiscal", "trade", "labor", "healthcare", "defense", "infrastructure"
+  policyType: string; // e.g. "economic", "social", "diplomatic", "governance"
   sliders: DecretalSlider[];
-  calculate: (settings: Record<string, number>, countryMetrics: any) => {
+  calculate: (
+    settings: Record<string, number>,
+    countryMetrics: any
+  ) => {
     implementationCost: number;
     maintenanceCost: number;
     gdpEffect: number;
@@ -33,7 +36,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
   "universal-basic-income": {
     key: "universal-basic-income",
     name: "Universal Basic Income Act",
-    description: "Provide a regular, unconditional cash transfer to all citizens to eradicate poverty and support consumer demand.",
+    description:
+      "Provide a regular, unconditional cash transfer to all citizens to eradicate poverty and support consumer demand.",
     category: "fiscal",
     policyType: "economic",
     sliders: [
@@ -45,7 +49,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
           { label: "Low ($200/yr)", value: 1 },
           { label: "Moderate ($800/yr)", value: 2 },
           { label: "Generous ($2500/yr)", value: 3 },
-        ]
+        ],
       },
       {
         key: "funding",
@@ -54,8 +58,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
           { label: "Income Tax Surpass", value: 0 },
           { label: "Value-Added Tax (VAT)", value: 1 },
           { label: "Deficit Spending (Debt)", value: 2 },
-        ]
-      }
+        ],
+      },
     ],
     calculate: (settings, countryMetrics) => {
       const stipendVal = settings.stipend ?? 0;
@@ -76,7 +80,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
           employmentEffect: 0,
           inflationEffect: 0,
           taxRevenueEffect: 0,
-          stabilityEffect: 0
+          stabilityEffect: 0,
         };
       }
 
@@ -86,15 +90,18 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       let stabilityEffect = stipendVal * 2.5;
       let taxRevenueEffect = 0;
 
-      if (fundingVal === 0) { // Income Tax
+      if (fundingVal === 0) {
+        // Income Tax
         gdpEffect -= stipendVal * 0.3;
         taxRevenueEffect += stipendVal * 3;
         employmentEffect -= 0.2;
-      } else if (fundingVal === 1) { // VAT
+      } else if (fundingVal === 1) {
+        // VAT
         gdpEffect -= stipendVal * 0.2;
         taxRevenueEffect += stipendVal * 2.5;
         inflationEffect += stipendVal * 0.5;
-      } else { // Debt
+      } else {
+        // Debt
         gdpEffect += stipendVal * 0.2;
         taxRevenueEffect -= stipendVal * 1.5;
         stabilityEffect -= stipendVal * 0.5;
@@ -107,14 +114,15 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         employmentEffect,
         inflationEffect,
         taxRevenueEffect,
-        stabilityEffect
+        stabilityEffect,
       };
-    }
+    },
   },
   "border-tariffs": {
     key: "border-tariffs",
     name: "Border Tariffs Act",
-    description: "Levy import duties on foreign products to protect domestic manufacturing and raise customs revenue.",
+    description:
+      "Levy import duties on foreign products to protect domestic manufacturing and raise customs revenue.",
     category: "trade",
     policyType: "economic",
     sliders: [
@@ -127,7 +135,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
           { label: "Moderate (15%)", value: 2 },
           { label: "High (30%)", value: 3 },
           { label: "Maximum (50%)", value: 4 },
-        ]
+        ],
       },
       {
         key: "exceptions",
@@ -136,8 +144,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
           { label: "None", value: 0 },
           { label: "Allied Nations Only", value: 1 },
           { label: "Developing Nations Only", value: 2 },
-        ]
-      }
+        ],
+      },
     ],
     calculate: (settings, countryMetrics) => {
       const rate = settings.tariffRate ?? 0;
@@ -152,7 +160,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       let taxRevenueEffect = 0;
       let stabilityEffect = 0;
 
-      if (rate === 0) { // Free Trade
+      if (rate === 0) {
+        // Free Trade
         gdpEffect = 1.5;
         employmentEffect = 0.5;
         inflationEffect = -0.5;
@@ -165,10 +174,12 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         taxRevenueEffect = rate * 2.0;
         stabilityEffect = -rate * 0.5;
 
-        if (exceptions === 1) { // Allied Exceptions
+        if (exceptions === 1) {
+          // Allied Exceptions
           gdpEffect += rate * 0.2;
           taxRevenueEffect -= rate * 0.3;
-        } else if (exceptions === 2) { // Developing Exceptions
+        } else if (exceptions === 2) {
+          // Developing Exceptions
           gdpEffect += rate * 0.1;
           taxRevenueEffect -= rate * 0.2;
         }
@@ -181,14 +192,15 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         employmentEffect,
         inflationEffect,
         taxRevenueEffect,
-        stabilityEffect
+        stabilityEffect,
       };
-    }
+    },
   },
   "surveillance-oversight": {
     key: "surveillance-oversight",
     name: "Surveillance Oversight Act",
-    description: "Authorize broad telecommunication monitoring to counter internal security threats and espionage.",
+    description:
+      "Authorize broad telecommunication monitoring to counter internal security threats and espionage.",
     category: "defense",
     policyType: "social",
     sliders: [
@@ -200,8 +212,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
           { label: "Targeted monitoring", value: 1 },
           { label: "Broad metadata tracking", value: 2 },
           { label: "Maximum deep-packet inspection", value: 3 },
-        ]
-      }
+        ],
+      },
     ],
     calculate: (settings, countryMetrics) => {
       const level = settings.surveillance ?? 0;
@@ -230,10 +242,10 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         employmentEffect,
         inflationEffect,
         taxRevenueEffect,
-        stabilityEffect
+        stabilityEffect,
       };
-    }
-  }
+    },
+  },
 };
 
 export async function getPolicyDecretals(db: any): Promise<Record<string, PolicyDecretal>> {
@@ -241,7 +253,7 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
 
   try {
     const dbTemplates = await db.quickActionTemplate.findMany({
-      where: { actionType: "policy", isActive: true }
+      where: { actionType: "policy", isActive: true },
     });
 
     for (const template of dbTemplates) {
@@ -272,8 +284,8 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
               { label: "Standard", value: 2 },
               { label: "High", value: 3 },
               { label: "Extreme", value: 4 },
-            ]
-          }
+            ],
+          },
         ],
         calculate: (settings) => {
           const val = settings.funding ?? 2;
@@ -284,9 +296,9 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
             employmentEffect: val * 0.1 * effectMult,
             inflationEffect: val * 0.15 * effectMult,
             taxRevenueEffect: val * 0.3 * effectMult,
-            stabilityEffect: val * 0.5 * effectMult
+            stabilityEffect: val * 0.5 * effectMult,
           };
-        }
+        },
       };
     }
   } catch (err) {

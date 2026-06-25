@@ -3,13 +3,10 @@
  *
  * Provides endpoints for WikiOS article rendering, editing, history, search,
  * template registry, watchlist, advanced search, and category tree.
- */import { z } from "zod/v4";
+ */ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import {
-  getArticleHtml,
-  getArticleHtmlViaParsoid,
-} from "~/lib/wiki-os/parsoid-client";
+import { getArticleHtml, getArticleHtmlViaParsoid } from "~/lib/wiki-os/parsoid-client";
 import {
   getArticleWikitext,
   getPageSections,

@@ -99,9 +99,7 @@ export async function buildCanonContext(
       .map((r) => {
         const otherId = r.country1 === countryId ? r.country2 : r.country1;
         const otherName = nameById.get(otherId);
-        return otherName
-          ? { otherName, relationship: r.relationship, strength: r.strength }
-          : null;
+        return otherName ? { otherName, relationship: r.relationship, strength: r.strength } : null;
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
   } catch (e) {
@@ -141,11 +139,14 @@ export function formatCanonContext(ctx: CanonContext): string {
   lines.push(`Nation: ${n.name}`);
   if (n.leader) lines.push(`Leader: ${n.leader}`);
   if (n.governmentType) lines.push(`Government: ${n.governmentType}`);
-  if (n.region || n.continent) lines.push(`Located in: ${[n.region, n.continent].filter(Boolean).join(", ")}`);
+  if (n.region || n.continent)
+    lines.push(`Located in: ${[n.region, n.continent].filter(Boolean).join(", ")}`);
   if (n.religion) lines.push(`Predominant religion: ${n.religion}`);
   if (n.economicTier) lines.push(`Economic tier: ${n.economicTier}`);
-  if (typeof n.population === "number") lines.push(`Population: ${Math.round(n.population).toLocaleString()}`);
-  if (typeof n.gdpPerCapita === "number") lines.push(`GDP per capita: ${Math.round(n.gdpPerCapita).toLocaleString()}`);
+  if (typeof n.population === "number")
+    lines.push(`Population: ${Math.round(n.population).toLocaleString()}`);
+  if (typeof n.gdpPerCapita === "number")
+    lines.push(`GDP per capita: ${Math.round(n.gdpPerCapita).toLocaleString()}`);
   lines.push(`Public approval: ${Math.round(ctx.state.approval)}%`);
   lines.push(`Political stability: ${Math.round(ctx.state.stability)}%`);
 
@@ -155,7 +156,9 @@ export function formatCanonContext(ctx: CanonContext): string {
   }
 
   if (ctx.history.length) {
-    lines.push("Recent history (most recent first — narrate continuity from these, do not contradict them):");
+    lines.push(
+      "Recent history (most recent first — narrate continuity from these, do not contradict them):"
+    );
     for (const h of ctx.history) lines.push(`  - ${h.description}`);
   }
 

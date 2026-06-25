@@ -165,7 +165,15 @@ test("history read-through falls back to MySQL when no local revisions", async (
 
 test("recentchanges sync skips a page whose latest mwRevId is already recorded", async () => {
   mockGetRecentChanges.mockResolvedValue([
-    { title: "Foo", user: "carol", comment: "c", timestamp: "t", type: "edit", oldLen: 0, newLen: 1 },
+    {
+      title: "Foo",
+      user: "carol",
+      comment: "c",
+      timestamp: "t",
+      type: "edit",
+      oldLen: 0,
+      newLen: 1,
+    },
   ]);
   mockGetCurrentRevMeta.mockResolvedValue({ revid: 500, timestamp: "t" });
   mockDb.wikiRevision.findFirst.mockResolvedValue({ id: "existing" }); // already known
@@ -179,7 +187,15 @@ test("recentchanges sync skips a page whose latest mwRevId is already recorded",
 
 test("recentchanges sync records a page with a new mwRevId", async () => {
   mockGetRecentChanges.mockResolvedValue([
-    { title: "Bar", user: "dave", comment: "d", timestamp: "t", type: "edit", oldLen: 0, newLen: 1 },
+    {
+      title: "Bar",
+      user: "dave",
+      comment: "d",
+      timestamp: "t",
+      type: "edit",
+      oldLen: 0,
+      newLen: 1,
+    },
   ]);
   mockGetCurrentRevMeta.mockResolvedValue({ revid: 600, timestamp: "t" });
   mockDb.wikiRevision.findFirst.mockResolvedValue(null); // not yet known

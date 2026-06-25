@@ -19,8 +19,16 @@ describe("computeParimutuel", () => {
     const s = computeParimutuel(pool, "home");
     const total = 240;
     // a and b share total in ratio 100:50
-    expect(s.find((x) => x.id === "a")).toEqual({ id: "a", status: "won", payout: (100 * total) / 150 });
-    expect(s.find((x) => x.id === "b")).toEqual({ id: "b", status: "won", payout: (50 * total) / 150 });
+    expect(s.find((x) => x.id === "a")).toEqual({
+      id: "a",
+      status: "won",
+      payout: (100 * total) / 150,
+    });
+    expect(s.find((x) => x.id === "b")).toEqual({
+      id: "b",
+      status: "won",
+      payout: (50 * total) / 150,
+    });
     expect(s.find((x) => x.id === "c")).toEqual({ id: "c", status: "lost", payout: 0 });
     // pool is conserved
     expect(s.reduce((acc, x) => acc + x.payout, 0)).toBeCloseTo(total);

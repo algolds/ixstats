@@ -155,9 +155,9 @@ export default function AtomicGovernmentArticle() {
           </ul>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
             Every component you add or remove updates your nation&apos;s real numbers &mdash; GDP,
-            population growth, political stability, and more &mdash; based on its kind, its strength,
-            and how it plays with your other choices. Each change is recorded, so you can trace how a
-            single governance decision shaped your country over time.
+            population growth, political stability, and more &mdash; based on its kind, its
+            strength, and how it plays with your other choices. Each change is recorded, so you can
+            trace how a single governance decision shaped your country over time.
           </p>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
             You can view your effectiveness score and a breakdown of these factors on your{" "}

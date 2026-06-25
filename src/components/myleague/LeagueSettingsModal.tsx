@@ -2,15 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import {
-  Settings,
-  Upload,
-  Loader2,
-  Trash2,
-  ImageIcon,
-  Download,
-  RefreshCw,
-} from "lucide-react";
+import { Settings, Upload, Loader2, Trash2, ImageIcon, Download, RefreshCw } from "lucide-react";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),

@@ -26,8 +26,7 @@ export async function notifyClubMatchResult(
 ): Promise<void> {
   try {
     const { userId, leagueName, teamName, opponentName, teamScore, opponentScore, matchDay } = args;
-    const outcome =
-      teamScore > opponentScore ? "won" : teamScore < opponentScore ? "lost" : "drew";
+    const outcome = teamScore > opponentScore ? "won" : teamScore < opponentScore ? "lost" : "drew";
     const emoji = outcome === "won" ? "✅" : outcome === "lost" ? "❌" : "➖";
     const title = `${emoji} ${teamName} ${teamScore}–${opponentScore} ${opponentName}`;
     const body = `Matchday ${matchDay} · ${leagueName}: ${teamName} ${outcome} ${teamScore}–${opponentScore} vs ${opponentName}.`;

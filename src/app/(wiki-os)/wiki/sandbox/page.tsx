@@ -1121,7 +1121,13 @@ function AnalyticsTab() {
               <XAxis dataKey="time" stroke={mutedTextColor} tickLine={false} />
               <YAxis stroke={mutedTextColor} tickLine={false} />
               <Tooltip {...tooltipProps} />
-              <Line type="monotone" dataKey="Added" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+              <Line
+                type="monotone"
+                dataKey="Added"
+                stroke="#10b981"
+                strokeWidth={2}
+                dot={{ r: 2 }}
+              />
               <Line
                 type="monotone"
                 dataKey="Removed"

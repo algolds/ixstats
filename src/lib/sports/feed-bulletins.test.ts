@@ -2,6 +2,8 @@ import {
   formatMatchDayBulletin,
   formatSeasonChampionBulletin,
   formatPlayoffBulletin,
+  encodeSportsBulletin,
+  parseSportsBulletin,
 } from "./feed-bulletins";
 
 describe("formatMatchDayBulletin", () => {
@@ -120,5 +122,38 @@ describe("formatPlayoffBulletin", () => {
     expect(content).toBe(
       "🏒 **Stanley Cup Playoffs Playoff Semifinals Results**\n══════════════════════════════\n🏆 **Rangers** 4 – 3 Devils"
     );
+  });
+});
+
+describe("encode and parse sports bulletin", () => {
+  test("encodes and parses correctly", () => {
+    const data = {
+      league: { id: "league-123", name: "La Liga" },
+      sportEmoji: "⚽",
+      matchDay: 5,
+      results: [
+        {
+          home: { name: "United", id: "team-home" },
+          away: { name: "City", id: "team-away" },
+          homeScore: 2,
+          awayScore: 1,
+          isUpset: true,
+        },
+      ],
+      movers: [{ name: "United", id: "team-home", oldRank: 5, newRank: 3 }],
+      llmSummary: "An unexpected turn of events.",
+    };
+    const markdown =
+      "⚽ **La Liga** — Matchday 5\n══════════════════════════════\n🏆 **United** 2 – 1 City";
+    const encoded = encodeSportsBulletin(data, markdown);
+    expect(encoded).toContain("<!-- sports-bulletin:");
+    expect(encoded).toContain(markdown);
+
+    const parsed = parseSportsBulletin(encoded);
+    expect(parsed).toEqual(data);
+  });
+
+  test("returns null for content without sports bulletin comments", () => {
+    expect(parseSportsBulletin("some other content")).toBeNull();
   });
 });

@@ -213,9 +213,7 @@ export function LeaderboardTab({ leaderboard }: LeaderboardTabProps) {
               ))}
             </div>
           ) : (
-            <div className="text-muted-foreground py-12 text-center text-sm">
-              No data available
-            </div>
+            <div className="text-muted-foreground py-12 text-center text-sm">No data available</div>
           )}
         </TextureCardContent>
       </TextureCard>

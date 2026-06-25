@@ -54,13 +54,23 @@ export function parseChambers(
     const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
     const houseSeats = Math.max(10, totalSeats - senateSeats);
     return [
-      { name: "House of Representatives", seats: houseSeats, electoralSystem: system, selectionMethod: "elected" },
+      {
+        name: "House of Representatives",
+        seats: houseSeats,
+        electoralSystem: system,
+        selectionMethod: "elected",
+      },
       { name: "Senate", seats: senateSeats, electoralSystem: system, selectionMethod: "elected" },
     ];
   }
 
   return [
-    { name: legislatureName || "National Assembly", seats: totalSeats, electoralSystem: system, selectionMethod: "elected" },
+    {
+      name: legislatureName || "National Assembly",
+      seats: totalSeats,
+      electoralSystem: system,
+      selectionMethod: "elected",
+    },
   ];
 }
 

@@ -142,9 +142,9 @@ export default function AtomicComponentCatalogArticle() {
           </ul>
           <p className="mt-3 text-slate-700 dark:text-slate-300">
             Adding or removing a component isn&apos;t cosmetic &mdash; it moves real numbers: your
-            GDP, population, political stability, and more. Components that suit each other give each
-            other a boost; ones that clash hold each other back. You can preview exactly how a setup
-            would land before you commit to it.
+            GDP, population, political stability, and more. Components that suit each other give
+            each other a boost; ones that clash hold each other back. You can preview exactly how a
+            setup would land before you commit to it.
           </p>
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
             To learn more about how components combine into a complete government system, see the{" "}

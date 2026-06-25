@@ -177,8 +177,12 @@ export function MeetingScheduler({
   const [newAgendaTags, setNewAgendaTags] = useState<string[]>([]);
   const [newAgendaPresenter, setNewAgendaPresenter] = useState("");
   const [tagInput, setTagInput] = useState("");
-  const [newAgendaLinkedIssueId, setNewAgendaLinkedIssueId] = useState<string | undefined>(undefined);
-  const [newAgendaLinkedPolicyId, setNewAgendaLinkedPolicyId] = useState<string | undefined>(undefined);
+  const [newAgendaLinkedIssueId, setNewAgendaLinkedIssueId] = useState<string | undefined>(
+    undefined
+  );
+  const [newAgendaLinkedPolicyId, setNewAgendaLinkedPolicyId] = useState<string | undefined>(
+    undefined
+  );
 
   // Get simple list of countries for Bilateral meetings selection
   const { data: selectCountries } = api.countries.getSelectList.useQuery(
@@ -476,7 +480,7 @@ export function MeetingScheduler({
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
             {/* Meeting Type Selection */}
-            <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+            <div className="bg-muted grid grid-cols-2 gap-2 rounded-lg p-1">
               <button
                 type="button"
                 onClick={() => setMeetingType("cabinet")}
@@ -524,7 +528,11 @@ export function MeetingScheduler({
                         <SelectItem key={c.id} value={c.id}>
                           <span className="flex items-center gap-2">
                             {c.flagUrl && (
-                              <img src={c.flagUrl} alt="" className="h-3 w-4 rounded object-cover" />
+                              <img
+                                src={c.flagUrl}
+                                alt=""
+                                className="h-3 w-4 rounded object-cover"
+                              />
                             )}
                             {c.name}
                           </span>
@@ -546,7 +554,9 @@ export function MeetingScheduler({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={
-                    meetingType === "bilateral" ? "e.g., Bilateral Trade Summit" : "e.g., Weekly Cabinet Meeting"
+                    meetingType === "bilateral"
+                      ? "e.g., Bilateral Trade Summit"
+                      : "e.g., Weekly Cabinet Meeting"
                   }
                   required
                 />
@@ -619,7 +629,7 @@ export function MeetingScheduler({
                       <div className="flex items-center justify-between gap-1">
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium">{official.name}</p>
-                          <p className="text-muted-foreground truncate text-[10px] flex items-center gap-1">
+                          <p className="text-muted-foreground flex items-center gap-1 truncate text-[10px]">
                             <span>{official.title}</span>
                             <span className="text-[9px] opacity-60">· {official.countryLabel}</span>
                           </p>
@@ -672,16 +682,22 @@ export function MeetingScheduler({
                             <Badge variant="outline" className="shrink-0 px-1 py-0 text-[0.6rem]">
                               {item.duration}m
                             </Badge>
-                             {item.linkedIssueId && (
-                               <Badge variant="outline" className="px-1 py-0 text-[0.55rem] bg-yellow-500/10 text-yellow-400 border-yellow-500/20 shrink-0">
-                                 Issue
-                               </Badge>
-                             )}
-                             {item.linkedPolicyId && (
-                               <Badge variant="outline" className="px-1 py-0 text-[0.55rem] bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shrink-0">
-                                 Policy
-                               </Badge>
-                             )}
+                            {item.linkedIssueId && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 border-yellow-500/20 bg-yellow-500/10 px-1 py-0 text-[0.55rem] text-yellow-400"
+                              >
+                                Issue
+                              </Badge>
+                            )}
+                            {item.linkedPolicyId && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 border-indigo-500/20 bg-indigo-500/10 px-1 py-0 text-[0.55rem] text-indigo-400"
+                              >
+                                Policy
+                              </Badge>
+                            )}
                             {item.tags.length > 0 && (
                               <div className="hidden gap-0.5 sm:flex">
                                 {item.tags.slice(0, 2).map((tag) => (
@@ -797,8 +813,15 @@ export function MeetingScheduler({
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <Label className="text-[10px] text-muted-foreground">Link National Issue</Label>
-                          <Select value={newAgendaLinkedIssueId || "none"} onValueChange={(v) => setNewAgendaLinkedIssueId(v === "none" ? undefined : v)}>
+                          <Label className="text-muted-foreground text-[10px]">
+                            Link National Issue
+                          </Label>
+                          <Select
+                            value={newAgendaLinkedIssueId || "none"}
+                            onValueChange={(v) =>
+                              setNewAgendaLinkedIssueId(v === "none" ? undefined : v)
+                            }
+                          >
                             <SelectTrigger className="h-8 text-xs">
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
@@ -813,8 +836,15 @@ export function MeetingScheduler({
                           </Select>
                         </div>
                         <div>
-                          <Label className="text-[10px] text-muted-foreground">Link Policy Proposal</Label>
-                          <Select value={newAgendaLinkedPolicyId || "none"} onValueChange={(v) => setNewAgendaLinkedPolicyId(v === "none" ? undefined : v)}>
+                          <Label className="text-muted-foreground text-[10px]">
+                            Link Policy Proposal
+                          </Label>
+                          <Select
+                            value={newAgendaLinkedPolicyId || "none"}
+                            onValueChange={(v) =>
+                              setNewAgendaLinkedPolicyId(v === "none" ? undefined : v)
+                            }
+                          >
                             <SelectTrigger className="h-8 text-xs">
                               <SelectValue placeholder="None" />
                             </SelectTrigger>

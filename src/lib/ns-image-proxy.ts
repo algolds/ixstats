@@ -1,9 +1,48 @@
+import { withBasePath } from "./base-path";
+
 /**
- * NationStates Image Proxy Utilities
- *
- * Converts direct NationStates image URLs to proxied URLs
- * to bypass hotlinking restrictions (403 errors).
+ * Converts a card artwork URL to use our proxy endpoint if needed.
+ * Supports:
+ * 1. NationStates images (proxied via /api/proxy-ns-image)
+ * 2. Wiki images (ixwiki, iiwiki, althistory proxied via their respective mediawiki proxies)
+ * 3. Relative URLs (returns as-is, prepended with basePath)
  */
+export function proxyCardArtwork(artworkUrl: string | null | undefined): string {
+  // Return placeholder if no URL provided
+  if (!artworkUrl) {
+    return "/images/cards/lore-placeholder.svg";
+  }
+
+  // If relative URL, return prepended with basePath
+  if (artworkUrl.startsWith("/")) {
+    return withBasePath(artworkUrl);
+  }
+
+  // Handle Wiki URLs
+  const ixwikiMatch = artworkUrl.match(/^https?:\/\/(?:www\.)?ixwiki\.com\/(.+)$/i);
+  if (ixwikiMatch) {
+    return withBasePath(`/api/mediawiki/ixwiki/${ixwikiMatch[1]}`);
+  }
+
+  const iiwikiMatch = artworkUrl.match(/^https?:\/\/(?:www\.)?iiwiki\.(?:com|org|us|net)\/(.+)$/i);
+  if (iiwikiMatch) {
+    return withBasePath(`/api/mediawiki/iiwiki/${iiwikiMatch[1]}`);
+  }
+
+  const althistoryMatch = artworkUrl.match(/^https?:\/\/(?:www\.)?althistory\.fandom\.com\/(.+)$/i);
+  if (althistoryMatch) {
+    return withBasePath(`/api/mediawiki/althistory/${althistoryMatch[1]}`);
+  }
+
+  // Handle NationStates URLs
+  if (artworkUrl.includes("nationstates.net")) {
+    const encodedUrl = encodeURIComponent(artworkUrl);
+    return withBasePath(`/api/proxy-ns-image?url=${encodedUrl}`);
+  }
+
+  // Return other external URLs as is
+  return artworkUrl;
+}
 
 /**
  * Converts a NationStates image URL to use our proxy endpoint
@@ -18,19 +57,7 @@
  * ```
  */
 export function proxyNSImage(nsImageUrl: string | null | undefined): string {
-  // Return placeholder if no URL provided
-  if (!nsImageUrl) {
-    return "/images/cards/lore-placeholder.svg";
-  }
-
-  // If already a relative URL or not from NS, return as-is
-  if (nsImageUrl.startsWith("/") || !nsImageUrl.includes("nationstates.net")) {
-    return nsImageUrl;
-  }
-
-  // Encode the NS URL and route through our proxy
-  const encodedUrl = encodeURIComponent(nsImageUrl);
-  return `/api/proxy-ns-image?url=${encodedUrl}`;
+  return proxyCardArtwork(nsImageUrl);
 }
 
 /**

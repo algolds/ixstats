@@ -201,7 +201,8 @@ export function useGovernmentBuilderAutoSync(
         }
 
         debounceTimerRef.current = setTimeout(() => {
-          const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
+          const hasChanges =
+            JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
           if (hasChanges) {
             void handleAutoSync();
           } else {
@@ -412,7 +413,8 @@ export function useTaxBuilderAutoSync(
         }
 
         debounceTimerRef.current = setTimeout(() => {
-          const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
+          const hasChanges =
+            JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
           if (hasChanges) {
             void handleAutoSync();
           } else {

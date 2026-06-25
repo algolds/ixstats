@@ -346,15 +346,18 @@ export function EnhancedMapEditorContent({ onNavigate }: EnhancedMapEditorConten
     return { regions, cities, pois, stories, labels };
   }, [editor.allFeatures]);
 
-  const handleToggleVisibility = useCallback((id: string) => {
-    if (id === "altitude" || id === "rivers" || id === "lakes") {
-      toggleLayer(id === "altitude" ? "altitudes" : id);
-    }
-    setLayerStates((s) => ({
-      ...s,
-      [id]: { ...s[id]!, visible: !s[id]?.visible },
-    }));
-  }, [toggleLayer]);
+  const handleToggleVisibility = useCallback(
+    (id: string) => {
+      if (id === "altitude" || id === "rivers" || id === "lakes") {
+        toggleLayer(id === "altitude" ? "altitudes" : id);
+      }
+      setLayerStates((s) => ({
+        ...s,
+        [id]: { ...s[id]!, visible: !s[id]?.visible },
+      }));
+    },
+    [toggleLayer]
+  );
 
   const handleOpacityChange = useCallback((id: string, opacity: number) => {
     setLayerStates((s) => ({

@@ -19,8 +19,8 @@ export default function EconomicTiersArticle() {
         <Section title="What Tiers Are">
           <p className="mb-4 text-slate-700 dark:text-slate-300">
             Every nation sits in an economic tier — a simple way of saying how wealthy and developed
-            it is. Your tier shapes what you can unlock, who you&rsquo;re ranked against, and how fast
-            your economy can grow. Think of it as your nation&rsquo;s weight class.
+            it is. Your tier shapes what you can unlock, who you&rsquo;re ranked against, and how
+            fast your economy can grow. Think of it as your nation&rsquo;s weight class.
           </p>
           <p className="text-slate-700 dark:text-slate-300">
             There are seven, measured by your <strong>GDP per person</strong>, from humblest to
@@ -32,44 +32,43 @@ export default function EconomicTiersArticle() {
               most room to grow.
             </li>
             <li>
-              <strong>Developing</strong> ($10k–$25k) — the foundations of a modern economy are going
-              in.
+              <strong>Developing</strong> ($10k–$25k) — the foundations of a modern economy are
+              going in.
             </li>
             <li>
-              <strong>Developed</strong> ($25k–$35k) — a growing middle class and real industry; trade
-              starts to matter.
+              <strong>Developed</strong> ($25k–$35k) — a growing middle class and real industry;
+              trade starts to matter.
             </li>
             <li>
-              <strong>Healthy</strong> ($35k–$45k) — stable and varied, with a comfortable standard of
-              living.
+              <strong>Healthy</strong> ($35k–$45k) — stable and varied, with a comfortable standard
+              of living.
             </li>
             <li>
-              <strong>Strong</strong> ($45k–$55k) — a regional power with well-funded public services.
+              <strong>Strong</strong> ($45k–$55k) — a regional power with well-funded public
+              services.
             </li>
             <li>
               <strong>Very Strong</strong> ($55k–$65k) — among the wealthiest nations, with real
               global pull.
             </li>
             <li>
-              <strong>Extravagant</strong> ($65k+) — the summit. Only the most successful nations get
-              here.
+              <strong>Extravagant</strong> ($65k+) — the summit. Only the most successful nations
+              get here.
             </li>
           </ol>
         </Section>
 
         <Section title="How Your Tier Is Decided">
-          <p className="mb-4 text-slate-700 dark:text-slate-300">
-            Two things set your tier:
-          </p>
+          <p className="mb-4 text-slate-700 dark:text-slate-300">Two things set your tier:</p>
           <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
             <li>
-              <strong>GDP per person</strong> — your total output shared across your population. This
-              is the main driver: the higher it climbs, the higher your tier.
+              <strong>GDP per person</strong> — your total output shared across your population.
+              This is the main driver: the higher it climbs, the higher your tier.
             </li>
             <li>
               <strong>Population</strong> — big nations have a harder time keeping per-person output
-              high, so size is taken into account. A tiny city-state and a sprawling empire are judged
-              fairly.
+              high, so size is taken into account. A tiny city-state and a sprawling empire are
+              judged fairly.
             </li>
           </ul>
           <p className="mt-4 text-slate-700 dark:text-slate-300">
@@ -89,8 +88,8 @@ export default function EconomicTiersArticle() {
           </p>
           <ul className="list-disc space-y-2 pl-6 text-slate-700 dark:text-slate-300">
             <li>
-              <strong>Grow your economy</strong> — invest in productive sectors, set smart taxes, and
-              trade. Test ideas first with the{" "}
+              <strong>Grow your economy</strong> — invest in productive sectors, set smart taxes,
+              and trade. Test ideas first with the{" "}
               <Link href="/help/economy/modeling" className={linkClass}>
                 planning tools
               </Link>
@@ -101,8 +100,8 @@ export default function EconomicTiersArticle() {
               wealth. Balance growth with prosperity.
             </li>
             <li>
-              <strong>Spend wisely</strong> — money put into education, infrastructure, and technology
-              pays off down the road.
+              <strong>Spend wisely</strong> — money put into education, infrastructure, and
+              technology pays off down the road.
             </li>
             <li>
               <strong>Keep things stable</strong> — political turmoil and low approval drag your
@@ -166,12 +165,12 @@ export default function EconomicTiersArticle() {
         <InfoBox title="Quick Tips">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <BarChart3 className="inline h-4 w-4" /> Check Intelligence now and then to catch trends
-              before they become problems.
+              <BarChart3 className="inline h-4 w-4" /> Check Intelligence now and then to catch
+              trends before they become problems.
             </li>
             <li>
-              <Gauge className="inline h-4 w-4" /> If your tier slips, revisit your spending and taxes
-              — small tweaks add up fast.
+              <Gauge className="inline h-4 w-4" /> If your tier slips, revisit your spending and
+              taxes — small tweaks add up fast.
             </li>
           </ul>
         </InfoBox>

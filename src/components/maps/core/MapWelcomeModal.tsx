@@ -79,7 +79,12 @@ const SHORTCUTS = [
   { keys: ["Esc"], action: "Close panels" },
 ];
 
-export function MapWelcomeModal({ isMapReady, onStartTour, isOpen, onClose }: MapWelcomeModalProps) {
+export function MapWelcomeModal({
+  isMapReady,
+  onStartTour,
+  isOpen,
+  onClose,
+}: MapWelcomeModalProps) {
   const [show, setShow] = useState(false);
 
   // Sync parent isOpen control

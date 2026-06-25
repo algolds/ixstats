@@ -26,7 +26,11 @@ export function ApprovalPanel({ countryId }: ApprovalPanelProps) {
     [parties]
   );
   const approval = useMemo(
-    () => computeApproval(sorted.map((p) => ({ id: p.id, currentSupport: p.currentSupport })), null),
+    () =>
+      computeApproval(
+        sorted.map((p) => ({ id: p.id, currentSupport: p.currentSupport })),
+        null
+      ),
     [sorted]
   );
 

@@ -322,7 +322,9 @@ export function MapContainer({
         capitals={capitalsGeoJson}
         overlayFeatures={overlayFeatures ?? undefined}
         overlayVisibility={overlayVisibility}
-        onCountryClick={disableCountrySelect || tourState !== "idle" ? undefined : handleCountryClick}
+        onCountryClick={
+          disableCountrySelect || tourState !== "idle" ? undefined : handleCountryClick
+        }
         onCountryHover={tourState !== "idle" ? undefined : handleCountryHover}
         onMapClick={handleMapClickWithLayers}
         onFeatureClick={tourState !== "idle" ? undefined : handleFeatureClick}
@@ -499,7 +501,9 @@ export function MapContainer({
       )}
 
       {/* Historical timeline scrubber (read-only) */}
-      {showControls && tourState === "idle" && <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />}
+      {showControls && tourState === "idle" && (
+        <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />
+      )}
 
       {/* WebGL/Loading Error Fallback Overlay */}
       {(webglError || mapLoadTimeout) && (

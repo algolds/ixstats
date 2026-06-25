@@ -284,7 +284,7 @@ export function mapInfoboxToIxStats(wikiData: WikiInfoboxData): IxStatsCountryDa
  * Returns undefined when nothing matches (don't fabricate "republic").
  */
 export function deriveGovCategory(
-  governmentType: string | null | undefined,
+  governmentType: string | null | undefined
 ): "republic" | "monarchy" | "federation" | "empire" | "sultanate" | "emirate" | undefined {
   if (!governmentType) return undefined;
   const s = governmentType.toLowerCase();

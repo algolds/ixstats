@@ -10,6 +10,7 @@ import { getPackOpeningService } from "~/lib/pack-opening-service";
 import { GlassSplashEffect } from "./GlassSplashEffect";
 import { getParticleConfig } from "~/lib/holographic-effects";
 import { CardHolographicCover } from "../display/CardHolographicCover";
+import { proxyCardArtwork } from "~/lib/ns-image-proxy";
 
 interface Stage3_CardRevealProps {
   cards: CardInstance[];
@@ -382,7 +383,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{
-                    backgroundImage: `url(${card.artwork})`,
+                    backgroundImage: `url(${proxyCardArtwork(card.artwork)})`,
                   }}
                 >
                   {/* Gradient overlay */}

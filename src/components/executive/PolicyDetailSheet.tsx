@@ -320,11 +320,11 @@ export function PolicyDetailSheet({
 
               {decretalKey && settings && (
                 <div className="space-y-2">
-                  <h4 className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+                  <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-indigo-400 uppercase">
                     <Sliders className="h-3.5 w-3.5" />
                     Active Strategy Configurations
                   </h4>
-                  <div className="bg-indigo-500/5 border-indigo-500/10 rounded-md border p-3 space-y-2">
+                  <div className="space-y-2 rounded-md border border-indigo-500/10 bg-indigo-500/5 p-3">
                     {getActiveSettingsDisplay(decretalKey, settings)?.map((item, idx) => (
                       <div key={idx} className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{item.label}:</span>
@@ -332,10 +332,13 @@ export function PolicyDetailSheet({
                       </div>
                     ))}
                     {stabilityEffect !== undefined && stabilityEffect !== 0 && (
-                      <div className="flex justify-between text-xs border-t border-indigo-500/10 pt-1.5 mt-1.5">
+                      <div className="mt-1.5 flex justify-between border-t border-indigo-500/10 pt-1.5 text-xs">
                         <span className="text-muted-foreground">Stability Impact:</span>
-                        <span className={`font-semibold ${stabilityEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                          {stabilityEffect >= 0 ? "+" : ""}{stabilityEffect.toFixed(2)}%
+                        <span
+                          className={`font-semibold ${stabilityEffect >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                        >
+                          {stabilityEffect >= 0 ? "+" : ""}
+                          {stabilityEffect.toFixed(2)}%
                         </span>
                       </div>
                     )}
@@ -407,7 +410,7 @@ export function PolicyDetailSheet({
                   <InfoRow
                     label="Target Metrics"
                     value={
-                      <div className="flex flex-wrap gap-1.5 justify-end">
+                      <div className="flex flex-wrap justify-end gap-1.5">
                         {(() => {
                           try {
                             const parsed = JSON.parse(policy.targetMetrics);
@@ -415,8 +418,13 @@ export function PolicyDetailSheet({
                               return parsed.map((item: any, i: number) => {
                                 const option = METRIC_OPTIONS.find((o) => o.value === item.metric);
                                 return (
-                                  <Badge key={i} variant="outline" className="px-2 py-0.5 text-xs text-indigo-300 border-indigo-500/20 bg-indigo-500/5">
-                                    {option?.label ?? item.metric}: {item.value}{option?.unit ?? ""} ({item.timeline})
+                                  <Badge
+                                    key={i}
+                                    variant="outline"
+                                    className="border-indigo-500/20 bg-indigo-500/5 px-2 py-0.5 text-xs text-indigo-300"
+                                  >
+                                    {option?.label ?? item.metric}: {item.value}
+                                    {option?.unit ?? ""} ({item.timeline})
                                   </Badge>
                                 );
                               });

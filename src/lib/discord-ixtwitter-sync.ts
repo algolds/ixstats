@@ -915,7 +915,12 @@ export async function postThinkPagesToDiscord(
     if (post.pollId) {
       const pollRow = await db.poll.findUnique({
         where: { id: post.pollId },
-        select: { question: true, multiple: true, endDate: true, options: { select: { label: true } } },
+        select: {
+          question: true,
+          multiple: true,
+          endDate: true,
+          options: { select: { label: true } },
+        },
       });
       if (pollRow && pollRow.options.length >= 2) {
         poll = buildDiscordPollObject(pollRow);
@@ -1090,7 +1095,23 @@ export function decodeHtmlEntities(str: string): string {
 }
 
 export function autoCloseHtmlTags(html: string): string {
-  const tags = ["strong", "b", "em", "i", "u", "s", "del", "strike", "code", "pre", "p", "a", "ul", "ol", "li"];
+  const tags = [
+    "strong",
+    "b",
+    "em",
+    "i",
+    "u",
+    "s",
+    "del",
+    "strike",
+    "code",
+    "pre",
+    "p",
+    "a",
+    "ul",
+    "ol",
+    "li",
+  ];
   let closedHtml = html;
 
   for (const tag of tags) {
@@ -1273,4 +1294,3 @@ function fallbackHtmlToMarkdown(html: string): string {
 
   return text.trim();
 }
-

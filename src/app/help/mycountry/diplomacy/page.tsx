@@ -66,16 +66,16 @@ export default function MyCountryDiplomacyArticle() {
       <ContentCard>
         <Section title="Talking to Other Nations">
           <p>
-            <MessageSquare className="inline h-4 w-4 text-cyan-500" /> Send messages straight to other
-            nations — float proposals, answer theirs, and keep the lines open with allies and rivals
-            alike.
+            <MessageSquare className="inline h-4 w-4 text-cyan-500" /> Send messages straight to
+            other nations — float proposals, answer theirs, and keep the lines open with allies and
+            rivals alike.
           </p>
         </Section>
 
         <Section title="Foreign Policy">
           <p>
-            <FileText className="inline h-4 w-4 text-indigo-500" /> Set the stances that shape how the
-            world sees you:
+            <FileText className="inline h-4 w-4 text-indigo-500" /> Set the stances that shape how
+            the world sees you:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
@@ -100,13 +100,13 @@ export default function MyCountryDiplomacyArticle() {
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <strong>Incidents</strong> — a bold or careless move can spark anything from a minor
-              snub to a full-blown international dispute. These land in your issues feed and may need
-              your attention right away.
+              snub to a full-blown international dispute. These land in your issues feed and may
+              need your attention right away.
             </li>
             <li>
-              <strong>Different leaders, different reactions</strong> — every nation has a character of
-              its own. A proud, militaristic neighbor will take your policy very differently than a
-              friendly trading partner. Get to know who you&rsquo;re dealing with.
+              <strong>Different leaders, different reactions</strong> — every nation has a character
+              of its own. A proud, militaristic neighbor will take your policy very differently than
+              a friendly trading partner. Get to know who you&rsquo;re dealing with.
             </li>
             <li>
               <strong>One running story</strong> — diplomatic moments show up in your news feed

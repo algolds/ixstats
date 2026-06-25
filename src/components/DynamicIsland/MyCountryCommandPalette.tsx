@@ -312,7 +312,7 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className="flex flex-col p-4 w-full text-left"
+      className="flex w-full flex-col p-4 text-left"
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
@@ -341,22 +341,22 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="bg-accent/10 text-foreground placeholder:text-muted-foreground/40 focus:bg-accent/15 w-full rounded-lg border border-transparent py-2.5 pr-4 pl-10 text-sm transition-all focus:border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-500/20"
+          className="bg-accent/10 text-foreground placeholder:text-muted-foreground/40 focus:bg-accent/15 w-full rounded-lg border border-transparent py-2.5 pr-4 pl-10 text-sm transition-all focus:border-amber-500/30 focus:ring-1 focus:ring-amber-500/20 focus:outline-none"
         />
       </div>
 
       {/* Commands / Navigation Options List */}
       <div
         ref={listContainerRef}
-        className="min-h-[220px] max-h-[300px] overflow-y-auto space-y-1.5 scrollbar-thin pr-1"
+        className="max-h-[300px] min-h-[220px] scrollbar-thin space-y-1.5 overflow-y-auto pr-1"
         style={{ scrollbarWidth: "thin" }}
       >
         {isLoading && filteredItems.length === 0 ? (
           /* Loading shimmers */
           <div className="space-y-2 py-4">
-            <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
-            <div className="h-12 bg-white/5 rounded-lg animate-pulse" />
-            <div className="h-12 bg-white/5 rounded-lg animate-pulse" />
+            <div className="h-4 w-24 animate-pulse rounded bg-white/5" />
+            <div className="h-12 animate-pulse rounded-lg bg-white/5" />
+            <div className="h-12 animate-pulse rounded-lg bg-white/5" />
           </div>
         ) : filteredItems.length > 0 ? (
           (() => {
@@ -370,7 +370,7 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
               return (
                 <div key={item.id} className="space-y-1">
                   {showCategoryHeader && (
-                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground/60 uppercase pt-2 pb-1 pl-2">
+                    <div className="text-muted-foreground/60 pt-2 pb-1 pl-2 text-[10px] font-bold tracking-wider uppercase">
                       <PreText whiteSpace="nowrap">{item.category}</PreText>
                     </div>
                   )}
@@ -380,15 +380,15 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
                     onClick={item.action}
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all duration-150 relative overflow-hidden group",
+                      "group relative flex w-full items-center gap-3 overflow-hidden rounded-lg border px-3 py-2 text-left transition-all duration-150",
                       isSelected
-                        ? "bg-amber-500/10 border-amber-500/25 shadow-[0_0_12px_rgba(245,158,11,0.08)]"
-                        : "bg-transparent border-transparent hover:bg-white/[0.03]"
+                        ? "border-amber-500/25 bg-amber-500/10 shadow-[0_0_12px_rgba(245,158,11,0.08)]"
+                        : "border-transparent bg-transparent hover:bg-white/[0.03]"
                     )}
                   >
                     {/* Glassy reflection card border */}
                     {isSelected && (
-                      <div className="absolute inset-0 pointer-events-none border border-white/5 rounded-lg" />
+                      <div className="pointer-events-none absolute inset-0 rounded-lg border border-white/5" />
                     )}
 
                     {/* Icon container */}
@@ -397,7 +397,7 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors",
                         isSelected
                           ? "bg-amber-500/20 text-amber-400"
-                          : "bg-white/[0.03] text-muted-foreground/75 group-hover:bg-white/[0.06]"
+                          : "text-muted-foreground/75 bg-white/[0.03] group-hover:bg-white/[0.06]"
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -408,7 +408,7 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
                       <div className="flex items-center gap-2">
                         <PreText
                           className={cn(
-                            "text-sm font-semibold truncate",
+                            "truncate text-sm font-semibold",
                             isSelected ? "text-amber-400" : "text-foreground/90"
                           )}
                           whiteSpace="nowrap"
@@ -418,14 +418,14 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
 
                         {/* Status Priority badge */}
                         {item.priority === "high" && (
-                          <span className="shrink-0 rounded bg-red-500/15 border border-red-500/20 px-1 py-0.5 text-[8px] font-bold text-red-400 uppercase tracking-wider">
+                          <span className="shrink-0 rounded border border-red-500/20 bg-red-500/15 px-1 py-0.5 text-[8px] font-bold tracking-wider text-red-400 uppercase">
                             Urgent
                           </span>
                         )}
                       </div>
                       <PreText
                         className={cn(
-                          "text-xs truncate block",
+                          "block truncate text-xs",
                           isSelected ? "text-amber-300/70" : "text-muted-foreground/80"
                         )}
                         whiteSpace="nowrap"
@@ -439,7 +439,7 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
                       className={cn(
                         "h-4 w-4 shrink-0 transition-all",
                         isSelected
-                          ? "text-amber-400 translate-x-0.5"
+                          ? "translate-x-0.5 text-amber-400"
                           : "text-muted-foreground/30 group-hover:text-muted-foreground/60"
                       )}
                     />
@@ -463,16 +463,18 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
       </div>
 
       {/* Keyboard guide footer */}
-      <div className="border-t border-white/5 mt-3 pt-2.5 flex items-center justify-between text-[10px] text-muted-foreground/60 pl-1">
+      <div className="text-muted-foreground/60 mt-3 flex items-center justify-between border-t border-white/5 pt-2.5 pl-1 text-[10px]">
         <div className="flex items-center gap-1.5">
-          <kbd className="bg-white/5 rounded px-1.5 py-0.5 border border-white/5 font-mono">↑↓</kbd>
+          <kbd className="rounded border border-white/5 bg-white/5 px-1.5 py-0.5 font-mono">↑↓</kbd>
           <span>navigate</span>
           <span className="text-muted-foreground/30">·</span>
-          <kbd className="bg-white/5 rounded px-1.5 py-0.5 border border-white/5 font-mono">↵</kbd>
+          <kbd className="rounded border border-white/5 bg-white/5 px-1.5 py-0.5 font-mono">↵</kbd>
           <span>select</span>
         </div>
         <div className="flex items-center gap-1">
-          <kbd className="bg-white/5 rounded px-1.5 py-0.5 border border-white/5 font-mono">Esc</kbd>
+          <kbd className="rounded border border-white/5 bg-white/5 px-1.5 py-0.5 font-mono">
+            Esc
+          </kbd>
           <span>close</span>
         </div>
       </div>

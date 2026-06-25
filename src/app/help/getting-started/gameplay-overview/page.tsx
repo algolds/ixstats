@@ -21,8 +21,8 @@ export default function GameplayOverviewArticle() {
           </p>
           <ol className="mt-2 list-decimal space-y-2 pl-6">
             <li>
-              <Rocket className="inline h-4 w-4 text-blue-500" /> <strong>Create</strong> your nation
-              in the{" "}
+              <Rocket className="inline h-4 w-4 text-blue-500" /> <strong>Create</strong> your
+              nation in the{" "}
               <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
                 builder
               </Link>{" "}
@@ -57,8 +57,8 @@ export default function GameplayOverviewArticle() {
               story.
             </li>
             <li>
-              <TrendingUp className="inline h-4 w-4 text-emerald-500" /> <strong>Grow</strong> — watch
-              your economy climb{" "}
+              <TrendingUp className="inline h-4 w-4 text-emerald-500" /> <strong>Grow</strong> —
+              watch your economy climb{" "}
               <Link
                 href="/help/economy/tiers"
                 className="text-blue-600 hover:underline dark:text-blue-400"

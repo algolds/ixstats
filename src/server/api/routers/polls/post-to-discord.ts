@@ -26,18 +26,15 @@ export async function postPollToDiscord(poll: PollLike): Promise<void> {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
   if (DISCORD_BOT_TOKEN) {
-    const res = await fetch(
-      `https://discord.com/api/v10/channels/${TARGET_CHANNEL_ID}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000),
-      }
-    );
+    const res = await fetch(`https://discord.com/api/v10/channels/${TARGET_CHANNEL_ID}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000),
+    });
     if (!res.ok) {
       throw new Error(`Discord API returned ${res.status} ${res.statusText}`);
     }

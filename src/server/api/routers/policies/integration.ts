@@ -7,25 +7,24 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { getPolicyDecretals } from "~/lib/policies/registry";
 
 export const policiesIntegrationRouter = createTRPCRouter({
-  getPolicyCatalog: publicProcedure
-    .query(async ({ ctx }) => {
-      const catalog = await getPolicyDecretals(ctx.db);
-      return Object.values(catalog).map((c) => ({
-        key: c.key,
-        name: c.name,
-        description: c.description,
-        category: c.category,
-        policyType: c.policyType,
-        sliders: c.sliders.map((s) => ({
-          key: s.key,
-          label: s.label,
-          options: s.options.map((o) => ({
-            label: o.label,
-            value: o.value,
-          })),
+  getPolicyCatalog: publicProcedure.query(async ({ ctx }) => {
+    const catalog = await getPolicyDecretals(ctx.db);
+    return Object.values(catalog).map((c) => ({
+      key: c.key,
+      name: c.name,
+      description: c.description,
+      category: c.category,
+      policyType: c.policyType,
+      sliders: c.sliders.map((s) => ({
+        key: s.key,
+        label: s.label,
+        options: s.options.map((o) => ({
+          label: o.label,
+          value: o.value,
         })),
-      }));
-    }),
+      })),
+    }));
+  }),
   // ==================== POLICY CRUD ====================
 
   // ==================== POLICY EFFECT LOGS ====================

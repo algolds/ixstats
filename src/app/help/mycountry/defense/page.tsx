@@ -58,8 +58,8 @@ export default function MyCountryDefenseArticle() {
                 armory.
               </li>
               <li>
-                <strong>Make-up</strong> — balance active troops, reserves, and the support that keeps
-                them going.
+                <strong>Make-up</strong> — balance active troops, reserves, and the support that
+                keeps them going.
               </li>
               <li>
                 <strong>At a glance</strong> — branch count, average readiness, and your overall
@@ -75,12 +75,12 @@ export default function MyCountryDefenseArticle() {
           <p>Plan and follow what your forces are doing:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <Settings className="inline h-4 w-4 text-blue-500" /> <strong>What&rsquo;s active</strong>{" "}
-              — keep tabs on every deployment in progress.
+              <Settings className="inline h-4 w-4 text-blue-500" />{" "}
+              <strong>What&rsquo;s active</strong> — keep tabs on every deployment in progress.
             </li>
             <li>
-              <strong>Plan a deployment</strong> — a step-by-step walk-through for setting objectives,
-              committing forces, and timing your move.
+              <strong>Plan a deployment</strong> — a step-by-step walk-through for setting
+              objectives, committing forces, and timing your move.
             </li>
             <li>
               <strong>Conflicts</strong> — manage and resolve standoffs with other nations.

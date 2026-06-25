@@ -146,11 +146,14 @@ export function GovernmentSpendingModal({
   };
 
   // Derive stats for Sidebar
-  const defaultProcessedData = useMemo(() => processHistoricalData("1y"), [historicalData, economyData]);
+  const defaultProcessedData = useMemo(
+    () => processHistoricalData("1y"),
+    [historicalData, economyData]
+  );
   const spendStats = useMemo(() => {
     if (!defaultProcessedData || defaultProcessedData.length === 0) return null;
-    const spends = defaultProcessedData.map(p => p.totalSpending);
-    const balances = defaultProcessedData.map(p => p.budgetBalance);
+    const spends = defaultProcessedData.map((p) => p.totalSpending);
+    const balances = defaultProcessedData.map((p) => p.budgetBalance);
 
     return {
       maxSpending: Math.max(...spends),
@@ -201,29 +204,33 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 flex-1 p-6 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Landmark className="h-5 w-5 text-amber-500" />
                 Budget Summary
               </CardTitle>
               <CardDescription>Government fiscal allocation and spending summary.</CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col justify-center">
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-blue-400">
                     ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Tax Revenue</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Tax Revenue
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-green-400">
                     {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Revenue % GDP</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Revenue % GDP
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-purple-400">
                     $
                     {(
@@ -233,20 +240,26 @@ export function GovernmentSpendingModal({
                     ).toFixed(1)}
                     B
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Public Debt</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Public Debt
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
-                  <div className="text-lg font-bold text-rose-450">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                  <div className="text-rose-450 text-lg font-bold">
                     {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase font-semibold mt-1">Debt to GDP</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                    Debt to GDP
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 p-4 rounded-lg bg-amber-500/5 border border-amber-500/10 text-xs text-muted-foreground flex gap-3 items-start">
-                <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-muted-foreground mt-6 flex items-start gap-3 rounded-lg border border-amber-500/10 bg-amber-500/5 p-4 text-xs">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                 <p className="leading-relaxed">
-                  Budget dynamics balance societal infrastructure investments with revenue collections. Stable surpluses build cash reserves, while persistent deficits expand public debt limits and require careful interest rate servicing.
+                  Budget dynamics balance societal infrastructure investments with revenue
+                  collections. Stable surpluses build cash reserves, while persistent deficits
+                  expand public debt limits and require careful interest rate servicing.
                 </p>
               </div>
             </CardContent>
@@ -327,7 +340,7 @@ export function GovernmentSpendingModal({
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
           <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="p-0 mb-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle>Government Spending Trends</CardTitle>
               <CardDescription>Historical budget and spending metrics</CardDescription>
             </CardHeader>
@@ -346,9 +359,7 @@ export function GovernmentSpendingModal({
                     <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
                     <ChartTooltip
                       content={
-                        <ChartTooltipContent
-                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
-                        />
+                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
                       }
                     />
                     {chartType === "area" ? (
@@ -362,7 +373,12 @@ export function GovernmentSpendingModal({
                         name="Total Spending (B)"
                       />
                     ) : chartType === "bar" ? (
-                      <Bar dataKey="totalSpending" fill="#fbbf24" name="Total Spending (B)" radius={[4, 4, 0, 0]} />
+                      <Bar
+                        dataKey="totalSpending"
+                        fill="#fbbf24"
+                        name="Total Spending (B)"
+                        radius={[4, 4, 0, 0]}
+                      />
                     ) : (
                       <>
                         <Line
@@ -391,25 +407,25 @@ export function GovernmentSpendingModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 flex-1">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Peak Spending (B)
               </span>
               <span className="text-xl font-bold text-amber-500">
                 {spendStats?.maxSpending ? `$${spendStats.maxSpending.toFixed(1)}B` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Avg Budget Balance
               </span>
               <span className="text-xl font-bold text-green-400">
                 {spendStats?.avgBalance ? `$${spendStats.avgBalance.toFixed(1)}B` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points
               </span>
               <span className="text-xl font-bold text-purple-400">
@@ -463,15 +479,13 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6 flex-1">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex-1 border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5 text-amber-500" />
                 Fiscal Health Benchmarks
               </CardTitle>
-              <CardDescription>
-                Compare spending ratios against global baselines.
-              </CardDescription>
+              <CardDescription>Compare spending ratios against global baselines.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="h-64 w-full">
@@ -489,7 +503,11 @@ export function GovernmentSpendingModal({
                       }}
                     />
                     <Bar dataKey="Your Country" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Global Avg" fill="rgba(255, 255, 255, 0.15)" radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="Global Avg"
+                      fill="rgba(255, 255, 255, 0.15)"
+                      radius={[4, 4, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -498,37 +516,37 @@ export function GovernmentSpendingModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 h-full justify-between">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex h-full flex-col justify-between gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Global Allocation
               </span>
               <span className="text-xl font-bold text-amber-500">
                 {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Spending: {spendingGdpPercent.toFixed(1)}% vs {globalAvgSpending}% global avg
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Fiscal Stability
               </span>
               <span className="text-xl font-bold text-green-400">
                 {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Public Debt: {debtToGdp.toFixed(1)}% of GDP
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Budget Status
               </span>
               <span className="text-xl font-bold text-purple-400">
                 {budgetBalance >= 0 ? "Surplus" : "Deficit"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Annual Balance: {(budgetBalance / 1e9).toFixed(1)}B
               </span>
             </div>
@@ -588,14 +606,14 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle>Spending by Category</CardTitle>
               <CardDescription>Budget allocation across government sectors</CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col md:flex-row gap-6 items-center">
+            <CardContent className="flex flex-1 flex-col items-center gap-6 p-0 md:flex-row">
               {/* Pie Chart */}
-              <div className="h-44 w-44 shrink-0 flex items-center justify-center">
+              <div className="flex h-44 w-44 shrink-0 items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
                     <Pie
@@ -624,15 +642,18 @@ export function GovernmentSpendingModal({
               </div>
 
               {/* Category List */}
-              <div className="space-y-2 flex-1 w-full max-h-[220px] overflow-y-auto pr-1">
+              <div className="max-h-[220px] w-full flex-1 space-y-2 overflow-y-auto pr-1">
                 {categories.map((category: any) => (
-                  <div key={category.name} className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-lg text-xs">
+                  <div
+                    key={category.name}
+                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-2 text-xs"
+                  >
                     <div className="flex items-center gap-2">
                       <div
-                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: category.color }}
                       />
-                      <span className="font-medium text-muted-foreground">{category.name}</span>
+                      <span className="text-muted-foreground font-medium">{category.name}</span>
                     </div>
                     <span className="font-semibold text-white">{category.value.toFixed(1)}%</span>
                   </div>
@@ -643,19 +664,26 @@ export function GovernmentSpendingModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction border-white/5 p-4 flex-1 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="text-sm font-semibold">Priority Spending</CardTitle>
-              <CardDescription className="text-[10px]">Key budget policies and priorities</CardDescription>
+              <CardDescription className="text-[10px]">
+                Key budget policies and priorities
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1">
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+            <CardContent className="flex-1 p-0">
+              <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
                 {governmentData?.priorityPolicies?.length > 0 ? (
-                  governmentData.priorityPolicies.slice(0, 6).map((policy: string, index: number) => (
-                    <div key={index} className="bg-white/5 border border-white/5 rounded-xl p-2 text-center text-xs font-semibold text-amber-400">
-                      {policy}
-                    </div>
-                  ))
+                  governmentData.priorityPolicies
+                    .slice(0, 6)
+                    .map((policy: string, index: number) => (
+                      <div
+                        key={index}
+                        className="rounded-xl border border-white/5 bg-white/5 p-2 text-center text-xs font-semibold text-amber-400"
+                      >
+                        {policy}
+                      </div>
+                    ))
                 ) : (
                   <div className="py-8 text-center">
                     <p className="text-muted-foreground text-xs">No priority policies defined</p>

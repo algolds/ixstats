@@ -392,7 +392,7 @@ export class NationalIssuesEngine {
       }),
       (db as any).policy.findMany({
         where: { countryId, status: "active" },
-        select: { id: true, name: true, calculatedEffects: true }
+        select: { id: true, name: true, calculatedEffects: true },
       }),
     ]);
 
@@ -590,10 +590,7 @@ export class NationalIssuesEngine {
   /**
    * Get a field value from the snapshot by key name. Supports nested dot notation.
    */
-  private static getSnapshotField(
-    snapshot: CountrySnapshot,
-    field: string
-  ): any {
+  private static getSnapshotField(snapshot: CountrySnapshot, field: string): any {
     if (field.includes(".")) {
       const parts = field.split(".");
       let current: any = snapshot;

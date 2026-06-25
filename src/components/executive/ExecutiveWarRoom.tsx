@@ -456,9 +456,9 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
               {
                 metric: issue.domain === "economic" ? "gdpGrowth" : "stability",
                 value: issue.domain === "economic" ? 2.5 : 75,
-                timeline: "1 year"
-              }
-            ]
+                timeline: "1 year",
+              },
+            ],
           });
           closeIssue();
           setPolicyCreatorOpen(true);
@@ -471,8 +471,8 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
               title: `Crisis Review: ${issue.title}`,
               description: issue.description,
               category: issue.domain === "political" ? "governance" : "economic",
-              linkedIssueId: issue.id
-            }
+              linkedIssueId: issue.id,
+            },
           });
           closeIssue();
           setMeetingSchedulerOpen(true);

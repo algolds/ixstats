@@ -8,9 +8,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId } from "~/lib/wiki-os/auth";
-import {
-  getRevisionWikitext as getRevisionWikitextMySQL,
-} from "~/lib/wiki-bridge";
+import { getRevisionWikitext as getRevisionWikitextMySQL } from "~/lib/wiki-bridge";
 
 import { db } from "~/server/db";
 import { saveToMediaWiki } from "~/lib/wiki-os/wiki-write-service";

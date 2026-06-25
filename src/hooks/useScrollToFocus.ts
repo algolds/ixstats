@@ -18,7 +18,13 @@ export function useScrollToFocus(focusId: string | null | undefined, deps: unkno
       const el = document.querySelector<HTMLElement>(`[data-focus-id="${escape(focusId)}"]`);
       if (!el) return;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      const ring = ["ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "rounded-lg"];
+      const ring = [
+        "ring-2",
+        "ring-primary",
+        "ring-offset-2",
+        "ring-offset-background",
+        "rounded-lg",
+      ];
       el.classList.add(...ring);
       clearTimer = setTimeout(() => el.classList.remove(...ring), 2200);
     }, 180); // let the dialog mount + rows render first

@@ -13,9 +13,13 @@ interface MetricModalLayoutProps {
   children: React.ReactNode;
 }
 
-export function MetricModalLayout({ variant = "default", className, children }: MetricModalLayoutProps) {
+export function MetricModalLayout({
+  variant = "default",
+  className,
+  children,
+}: MetricModalLayoutProps) {
   return (
-    <div className={cn("grid grid-cols-1 lg:grid-cols-3 gap-6 w-full mt-4", className)}>
+    <div className={cn("mt-4 grid w-full grid-cols-1 gap-6 lg:grid-cols-3", className)}>
       {children}
     </div>
   );
@@ -65,7 +69,7 @@ MetricModalLayout.MainArea = function MetricModalMainArea({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("lg:col-span-2 space-y-6 flex flex-col justify-between", className)}>
+    <div className={cn("flex flex-col justify-between space-y-6 lg:col-span-2", className)}>
       {children}
     </div>
   );
@@ -79,11 +83,7 @@ MetricModalLayout.Sidebar = function MetricModalSidebar({
   className?: string;
   children: React.ReactNode;
 }) {
-  return (
-    <div className={cn("lg:col-span-1 space-y-6 flex flex-col", className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn("flex flex-col space-y-6 lg:col-span-1", className)}>{children}</div>;
 };
 
 // 3. Stat Card Component
@@ -116,13 +116,13 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
   return (
     <div
       className={cn(
-        "facet-refraction p-4 rounded-xl border relative overflow-hidden",
+        "facet-refraction relative overflow-hidden rounded-xl border p-4",
         theme.cardClass,
         className
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {label}
         </span>
         <Icon className={cn("h-4 w-4", theme.textHighlight)} />
@@ -136,7 +136,7 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
         {trend !== undefined && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-md",
+              "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold",
               isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
             )}
           >

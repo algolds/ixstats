@@ -115,7 +115,11 @@ export const narratorRouter = createTRPCRouter({
           await ctx.db.systemConfig.upsert({
             where: { key: item.key },
             update: { value: item.value },
-            create: { key: item.key, value: item.value, description: "AI Narrator configuration key" },
+            create: {
+              key: item.key,
+              value: item.value,
+              description: "AI Narrator configuration key",
+            },
           });
         }
 
@@ -152,7 +156,11 @@ export const narratorRouter = createTRPCRouter({
             orderBy: { effectiveDate: "desc" },
             take: 50,
           });
-          return policies.map((x) => ({ id: x.id, title: x.name, description: x.description || "" }));
+          return policies.map((x) => ({
+            id: x.id,
+            title: x.name,
+            description: x.description || "",
+          }));
         } else {
           // decision type
           const decisions = await ctx.db.meetingDecision.findMany({

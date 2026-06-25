@@ -620,10 +620,7 @@ export async function getCardMarketValue(db: PrismaClient, cardId: string): Prom
     // Unified valuation: max(rarityFloor × typeMult, nsValue × premium). See card-valuation.ts.
     const cfg = await getValuationConfig(db);
     const nsMarketValue = parseFloat(String((card.stats as any)?.marketValue ?? "")) || null;
-    return computeCardValue(
-      { rarity: card.rarity, cardType: card.cardType, nsMarketValue },
-      cfg
-    );
+    return computeCardValue({ rarity: card.rarity, cardType: card.cardType, nsMarketValue }, cfg);
   } catch (error) {
     if (error instanceof TRPCError) {
       throw error;

@@ -142,11 +142,9 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       corporatist: "Corporatist",
     };
     const active =
-      chambers.length <= 1
-        ? chambers[0]
-        : chambers.find((c: any) => c.name === activeChamberTab);
+      chambers.length <= 1 ? chambers[0] : chambers.find((c: any) => c.name === activeChamberTab);
     const method = (active as any)?.selectionMethod;
-    return method && method !== "elected" ? labels[method] ?? null : null;
+    return method && method !== "elected" ? (labels[method] ?? null) : null;
   }, [chambers, activeChamberTab]);
 
   const activeChamberPartySummary = useMemo(() => {

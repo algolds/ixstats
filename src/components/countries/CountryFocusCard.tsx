@@ -76,8 +76,6 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     const usersIconRef = useRef<any>(null);
     const trendingIconRef = useRef<any>(null);
 
-
-
     const handleCardClick = () => {
       if (isExpanded) {
         setExpanded(null);

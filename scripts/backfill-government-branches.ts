@@ -19,7 +19,11 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const APPLY = process.argv.includes("--apply");
 
-const LEGACY: Array<{ field: "executiveName" | "legislatureName" | "judicialName"; type: string; fallback: string }> = [
+const LEGACY: Array<{
+  field: "executiveName" | "legislatureName" | "judicialName";
+  type: string;
+  fallback: string;
+}> = [
   { field: "executiveName", type: "executive", fallback: "Executive" },
   { field: "legislatureName", type: "legislative", fallback: "Legislature" },
   { field: "judicialName", type: "judicial", fallback: "Judiciary" },
@@ -53,11 +57,13 @@ async function main() {
       name: ((s as any)[l.field] as string | null)?.trim() || l.fallback,
       branchType: l.type,
       order,
-    })).filter((_, i) => anyNamed ? !!((s as any)[LEGACY[i]!.field]) : true);
+    })).filter((_, i) => (anyNamed ? !!(s as any)[LEGACY[i]!.field] : true));
 
     if (rows.length === 0) continue;
 
-    console.log(`structure ${s.id} (country ${s.countryId}): +${rows.length} branches → ${rows.map((r) => r.name).join(", ")}`);
+    console.log(
+      `structure ${s.id} (country ${s.countryId}): +${rows.length} branches → ${rows.map((r) => r.name).join(", ")}`
+    );
     if (APPLY) {
       await prisma.governmentBranch.createMany({ data: rows });
     }
@@ -65,7 +71,7 @@ async function main() {
   }
 
   console.log(
-    `\n${APPLY ? "APPLIED" : "DRY RUN"} — ${structures.length} structures, ${skipped} already had branches, ${created} branch rows ${APPLY ? "created" : "planned"}.`,
+    `\n${APPLY ? "APPLIED" : "DRY RUN"} — ${structures.length} structures, ${skipped} already had branches, ${created} branch rows ${APPLY ? "created" : "planned"}.`
   );
   if (!APPLY) console.log("Re-run with --apply to write.");
 }

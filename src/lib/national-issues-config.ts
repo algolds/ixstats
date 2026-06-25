@@ -26,8 +26,14 @@ export function getNationalIssuesConfig(): NationalIssuesConfig {
     const data = fs.readFileSync(CONFIG_PATH, "utf-8");
     const parsed = JSON.parse(data);
     return {
-      maxIssuesPerSession: typeof parsed.maxIssuesPerSession === "number" ? parsed.maxIssuesPerSession : DEFAULT_CONFIG.maxIssuesPerSession,
-      maxIssuesPerWeek: typeof parsed.maxIssuesPerWeek === "number" ? parsed.maxIssuesPerWeek : DEFAULT_CONFIG.maxIssuesPerWeek,
+      maxIssuesPerSession:
+        typeof parsed.maxIssuesPerSession === "number"
+          ? parsed.maxIssuesPerSession
+          : DEFAULT_CONFIG.maxIssuesPerSession,
+      maxIssuesPerWeek:
+        typeof parsed.maxIssuesPerWeek === "number"
+          ? parsed.maxIssuesPerWeek
+          : DEFAULT_CONFIG.maxIssuesPerWeek,
     };
   } catch (err) {
     console.error("[NationalIssuesConfig] Failed to read config, returning default:", err);

@@ -478,7 +478,11 @@ export function ElectionSimulator({ countryId, focusId }: ElectionSimulatorProps
                 const winner = sortedResults[0];
 
                 return (
-                  <div key={election.id} data-focus-id={election.id} className="rounded-lg border p-3">
+                  <div
+                    key={election.id}
+                    data-focus-id={election.id}
+                    className="rounded-lg border p-3"
+                  >
                     <button
                       className="flex w-full items-center justify-between text-left"
                       onClick={() => setExpandedElection(isExpanded ? null : election.id)}

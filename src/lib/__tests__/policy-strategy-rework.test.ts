@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 
 // Mock env and dependencies
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
-jest.mock("~/server/db", () => ({ db: { systemLog: { create: jest.fn(() => Promise.resolve()) } } }));
+jest.mock("~/server/db", () => ({
+  db: { systemLog: { create: jest.fn(() => Promise.resolve()) } },
+}));
 jest.mock("~/lib/notification-api", () => ({
   notificationAPI: { create: jest.fn(() => Promise.resolve("note_1")) },
 }));

@@ -15,8 +15,8 @@ export default function VaultOverviewArticle() {
         <Section title="What the Vault Is">
           <p>
             The Vault is your home for collecting — your trading cards, your IxCredits, and the
-            progress you make as you play. You&rsquo;ll find it in the main menu, organized into five
-            simple areas:
+            progress you make as you play. You&rsquo;ll find it in the main menu, organized into
+            five simple areas:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
@@ -69,12 +69,12 @@ export default function VaultOverviewArticle() {
                 <strong>Rare</strong> — a glowing border.
               </li>
               <li>
-                <Star className="inline h-4 w-4 text-purple-500" /> <strong>Epic</strong> — holographic,
-                with motion.
+                <Star className="inline h-4 w-4 text-purple-500" /> <strong>Epic</strong> —
+                holographic, with motion.
               </li>
               <li>
-                <Star className="inline h-4 w-4 text-amber-500" /> <strong>Legendary</strong> — the full
-                dazzling treatment.
+                <Star className="inline h-4 w-4 text-amber-500" /> <strong>Legendary</strong> — the
+                full dazzling treatment.
               </li>
             </ul>
           </InfoBox>
@@ -84,9 +84,9 @@ export default function VaultOverviewArticle() {
       <ContentCard>
         <Section title="Your Dashboard">
           <p>
-            Open the Vault and the dashboard greets you with your IxCredits, your level and how close
-            you are to the next one, your daily login streak, and one-tap buttons to open a pack,
-            browse the marketplace, or start a trade.
+            Open the Vault and the dashboard greets you with your IxCredits, your level and how
+            close you are to the next one, your daily login streak, and one-tap buttons to open a
+            pack, browse the marketplace, or start a trade.
           </p>
         </Section>
 

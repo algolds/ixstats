@@ -57,10 +57,13 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
   return (
     <span className="flex items-center gap-1.5">
       <Radio className={`h-3 w-3 shrink-0 text-red-500 ${state.isFinal ? "" : "animate-pulse"}`} />
-      <PreText className="text-foreground/90 text-xs font-semibold tabular-nums" whiteSpace="nowrap">
+      <PreText
+        className="text-foreground/90 text-xs font-semibold tabular-nums"
+        whiteSpace="nowrap"
+      >
         {shortFor(match.homeTeam)} {state.homeScore}–{state.awayScore} {shortFor(match.awayTeam)}
       </PreText>
-      <PreText className="text-muted-foreground text-[10px] font-mono" whiteSpace="nowrap">
+      <PreText className="text-muted-foreground font-mono text-[10px]" whiteSpace="nowrap">
         {state.isFinal ? "FT" : `${state.minute}'`}
       </PreText>
     </span>

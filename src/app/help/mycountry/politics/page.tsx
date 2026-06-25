@@ -25,8 +25,8 @@ export default function MyCountryPoliticsArticle() {
               <strong>Overview</strong> — the health of your political scene at a glance.
             </li>
             <li>
-              <strong>Legislature</strong> — how your parliament is set up and what it&rsquo;s working
-              on.
+              <strong>Legislature</strong> — how your parliament is set up and what it&rsquo;s
+              working on.
             </li>
             <li>
               <strong>Parties</strong> — the political movements you create and shape.
@@ -61,9 +61,9 @@ export default function MyCountryPoliticsArticle() {
             <ul className="list-disc space-y-1 pl-6">
               <li>
                 <Scale className="inline h-4 w-4" /> <strong>Voting system</strong> — choose{" "}
-                <strong>proportional representation</strong> (D&apos;Hondt — seats roughly match each
-                party&rsquo;s share of the vote) or <strong>first-past-the-post</strong> (the winner
-                in each seat takes it). The choice shapes your whole political character.
+                <strong>proportional representation</strong> (D&apos;Hondt — seats roughly match
+                each party&rsquo;s share of the vote) or <strong>first-past-the-post</strong> (the
+                winner in each seat takes it). The choice shapes your whole political character.
               </li>
               <li>
                 <strong>Size</strong> — set how many seats your legislature has.
@@ -95,8 +95,8 @@ export default function MyCountryPoliticsArticle() {
 
         <Section title="Elections">
           <p>
-            <BarChart3 className="inline h-4 w-4 text-blue-500" /> Run an election and watch the seats
-            fall:
+            <BarChart3 className="inline h-4 w-4 text-blue-500" /> Run an election and watch the
+            seats fall:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>

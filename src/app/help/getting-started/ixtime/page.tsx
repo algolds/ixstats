@@ -16,7 +16,10 @@ export default function IxTimeArticle() {
       title="The World Clock (IxTime)"
       description="Time here moves at twice real speed. Here's what that means for your nation."
       icon={Clock}
-      prevLink={{ href: "/help/getting-started/gameplay-overview", label: "How It All Fits Together" }}
+      prevLink={{
+        href: "/help/getting-started/gameplay-overview",
+        label: "How It All Fits Together",
+      }}
       nextLink={{ href: "/help/getting-started/navigation", label: "Finding Your Way Around" }}
     >
       <ContentCard>
@@ -24,8 +27,8 @@ export default function IxTimeArticle() {
           <p className="mb-4 text-slate-700 dark:text-slate-300">
             IxStats keeps its own time, called <strong>IxTime</strong>, and it runs at{" "}
             <strong>twice the speed of real life</strong> — one real hour is two hours in the world.
-            That faster pace is what keeps the world feeling alive: history piles up, economies move,
-            and events arrive at a steady, satisfying clip.
+            That faster pace is what keeps the world feeling alive: history piles up, economies
+            move, and events arrive at a steady, satisfying clip.
           </p>
           <ul className="list-disc space-y-2 pl-6">
             <li>
@@ -33,8 +36,8 @@ export default function IxTimeArticle() {
               local clock.
             </li>
             <li>
-              The whole community shares the same clock, so everyone&rsquo;s nations move through the
-              same moment in history together.
+              The whole community shares the same clock, so everyone&rsquo;s nations move through
+              the same moment in history together.
             </li>
             <li>
               You can always see the current date and time at the top of the screen and on your{" "}
@@ -87,8 +90,8 @@ export default function IxTimeArticle() {
               >
                 scenarios
               </Link>{" "}
-              resolve on the world clock. A mission that says &ldquo;one day&rdquo; finishes in about
-              twelve real-world hours.
+              resolve on the world clock. A mission that says &ldquo;one day&rdquo; finishes in
+              about twelve real-world hours.
             </li>
             <li>
               <strong>Crises feel urgent</strong> —{" "}
@@ -136,13 +139,13 @@ export default function IxTimeArticle() {
         <WarningBox title="Good to Know">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <Activity className="inline h-4 w-4" /> Because time moves at 2&times; speed, deadlines
-              sneak up faster than you expect. Check in regularly so you don&rsquo;t miss a decision
-              or let an event expire.
+              <Activity className="inline h-4 w-4" /> Because time moves at 2&times; speed,
+              deadlines sneak up faster than you expect. Check in regularly so you don&rsquo;t miss
+              a decision or let an event expire.
             </li>
             <li>
-              <RefreshCw className="inline h-4 w-4" /> If the clock ever looks out of step with other
-              players, just refresh the page — it&rsquo;ll catch right back up.
+              <RefreshCw className="inline h-4 w-4" /> If the clock ever looks out of step with
+              other players, just refresh the page — it&rsquo;ll catch right back up.
             </li>
           </ul>
         </WarningBox>

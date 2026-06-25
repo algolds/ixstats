@@ -21,16 +21,17 @@ export default function WelcomeArticle() {
             reacting on its own.
           </p>
           <p className="mt-3">
-            You&rsquo;re not filling out a profile. You&rsquo;re running a nation, telling its story,
-            and watching the numbers and the map respond to your choices.
+            You&rsquo;re not filling out a profile. You&rsquo;re running a nation, telling its
+            story, and watching the numbers and the map respond to your choices.
           </p>
         </Section>
 
         <Section title="Coming from NationStates?">
           <InfoBox title="You'll feel at home — with a lot more under your hands">
             <p className="mb-2">
-              If you&rsquo;ve built nations on NationStates, the instinct is exactly the same: create
-              a country, give it character, tell its story. Here&rsquo;s what&rsquo;s different:
+              If you&rsquo;ve built nations on NationStates, the instinct is exactly the same:
+              create a country, give it character, tell its story. Here&rsquo;s what&rsquo;s
+              different:
             </p>
             <ul className="list-disc space-y-1 pl-6">
               <li>
@@ -76,10 +77,14 @@ export default function WelcomeArticle() {
               <strong>Give it an identity</strong> — name, flag, motto, and the feel of the place.
             </li>
             <li>
-              <strong>Visit{" "}
-              <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
-                MyCountry
-              </Link>
+              <strong>
+                Visit{" "}
+                <Link
+                  href="/mycountry"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  MyCountry
+                </Link>
               </strong>{" "}
               — your nation&rsquo;s home base — and watch it come to life.
             </li>
@@ -97,11 +102,14 @@ export default function WelcomeArticle() {
           <InfoBox title="The places you'll come back to">
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/mycountry"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   <strong>MyCountry</strong>
                 </Link>{" "}
-                — your nation&rsquo;s home base. Economy, cabinet, military, and diplomacy, all in one
-                place.
+                — your nation&rsquo;s home base. Economy, cabinet, military, and diplomacy, all in
+                one place.
               </li>
               <li>
                 <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
@@ -116,7 +124,10 @@ export default function WelcomeArticle() {
                 — the shared world every nation lives on.
               </li>
               <li>
-                <Link href="/thinkpages" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/thinkpages"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   <strong>Community</strong>
                 </Link>{" "}
                 — meet the worldbuilders behind the other nations.

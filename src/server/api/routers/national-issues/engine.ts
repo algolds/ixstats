@@ -143,12 +143,10 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
   /**
    * Update the national issues engine configuration limits.
    */
-  updateEngineConfig: adminProcedure
-    .input(ConfigUpdateSchema)
-    .mutation(async ({ input }) => {
-      saveNationalIssuesConfig(input);
-      return { success: true };
-    }),
+  updateEngineConfig: adminProcedure.input(ConfigUpdateSchema).mutation(async ({ input }) => {
+    saveNationalIssuesConfig(input);
+    return { success: true };
+  }),
 
   /**
    * Force generate an issue from a template for testing.
@@ -460,7 +458,8 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
    * Seed default templates from the seed file.
    */
   seedDefaultTemplates: adminProcedure.mutation(async ({ ctx }) => {
-    const { NATIONAL_ISSUE_TEMPLATES } = await import("../../../../../prisma/seeds/national-issue-templates");
+    const { NATIONAL_ISSUE_TEMPLATES } =
+      await import("../../../../../prisma/seeds/national-issue-templates");
 
     let created = 0;
     let updated = 0;

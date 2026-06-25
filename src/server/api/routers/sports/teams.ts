@@ -430,7 +430,7 @@ export const sportsTeamsRouter = createTRPCRouter({
       awayTeam: m.awayTeam,
       finalHomeScore: m.homeScore ?? 0,
       finalAwayScore: m.awayScore ?? 0,
-      trace: (((m.matchStats as Record<string, unknown> | null)?.trace ?? []) as LiveTraceEvent[]),
+      trace: ((m.matchStats as Record<string, unknown> | null)?.trace ?? []) as LiveTraceEvent[],
     }));
   }),
 
@@ -447,8 +447,12 @@ export const sportsTeamsRouter = createTRPCRouter({
           OR: [{ homeTeamId: input.teamId }, { awayTeamId: input.teamId }],
         },
         include: {
-          homeTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, city: true } },
-          awayTeam: { select: { id: true, name: true, shortName: true, color: true, logo: true, city: true } },
+          homeTeam: {
+            select: { id: true, name: true, shortName: true, color: true, logo: true, city: true },
+          },
+          awayTeam: {
+            select: { id: true, name: true, shortName: true, color: true, logo: true, city: true },
+          },
           season: { select: { id: true, league: { select: { name: true } } } },
         },
         orderBy: [{ resolvedIxTime: "desc" }, { matchDay: "desc" }],

@@ -81,8 +81,32 @@ export function formatValue(value: number): string {
 
 export function resolveArtworkUrl(artwork: string | null, basePath = ""): string {
   if (!artwork) return `${basePath}/placeholder-card.png`;
+
+  const normalizedBasePath = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+
+  // Handle Wiki URLs
+  const ixwikiMatch = artwork.match(/^https?:\/\/(?:www\.)?ixwiki\.com\/(.+)$/i);
+  if (ixwikiMatch) {
+    return `${normalizedBasePath}/api/mediawiki/ixwiki/${ixwikiMatch[1]}`;
+  }
+
+  const iiwikiMatch = artwork.match(/^https?:\/\/(?:www\.)?iiwiki\.(?:com|org|us|net)\/(.+)$/i);
+  if (iiwikiMatch) {
+    return `${normalizedBasePath}/api/mediawiki/iiwiki/${iiwikiMatch[1]}`;
+  }
+
+  const althistoryMatch = artwork.match(/^https?:\/\/(?:www\.)?althistory\.fandom\.com\/(.+)$/i);
+  if (althistoryMatch) {
+    return `${normalizedBasePath}/api/mediawiki/althistory/${althistoryMatch[1]}`;
+  }
+
+  // Handle NationStates URLs
+  if (artwork.includes("nationstates.net")) {
+    return `${normalizedBasePath}/api/proxy-ns-image?url=${encodeURIComponent(artwork)}`;
+  }
+
   if (artwork.startsWith("http")) return artwork;
-  return `${basePath}${artwork}`;
+  return `${normalizedBasePath}${artwork.startsWith("/") ? artwork : `/${artwork}`}`;
 }
 
 export function computeRarityCounts(cards: Array<{ rarity: string }>): Record<string, number> {

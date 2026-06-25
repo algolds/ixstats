@@ -388,12 +388,24 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
       });
       const awards: Array<{ recordType: string; holderId: string; value: string }> = [];
       if (topScorer) {
-        awards.push({ recordType: "top_scorer", holderId: topScorer[0], value: String(topScorer[1].goals) });
+        awards.push({
+          recordType: "top_scorer",
+          holderId: topScorer[0],
+          value: String(topScorer[1].goals),
+        });
         // MVP heuristic: leading scorer (goals + assists tiebreak handled by goals order).
-        awards.push({ recordType: "mvp", holderId: topScorer[0], value: String(topScorer[1].goals + topScorer[1].assists) });
+        awards.push({
+          recordType: "mvp",
+          holderId: topScorer[0],
+          value: String(topScorer[1].goals + topScorer[1].assists),
+        });
       }
       if (topAssister) {
-        awards.push({ recordType: "most_assists", holderId: topAssister[0], value: String(topAssister[1].assists) });
+        awards.push({
+          recordType: "most_assists",
+          holderId: topAssister[0],
+          value: String(topAssister[1].assists),
+        });
       }
       if (awards.length > 0) {
         await tx.sportSeasonRecord.createMany({
@@ -698,7 +710,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
             awayTeamId: teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
             status: "scheduled",
             scheduledIxTime:
-              startIxTime + ((mRec.matchDay as number) ?? 1) * matchIntervalMs(season.league.settings),
+              startIxTime +
+              ((mRec.matchDay as number) ?? 1) * matchIntervalMs(season.league.settings),
           },
         });
       }

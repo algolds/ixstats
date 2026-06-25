@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useCountryData,
-  SectionShell,
-  InlineWiki,
-} from "./primitives";
+import { useCountryData, SectionShell, InlineWiki } from "./primitives";
 import { api } from "~/trpc/react";
 import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { PoliticsSidebarWidget } from "./sidebar-widgets/PoliticsSidebarWidget";

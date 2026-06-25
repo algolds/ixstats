@@ -157,5 +157,10 @@ export async function grantBonus(
     db,
     opts.metadata
   );
-  return { granted: res.success, amount: res.success ? amount : 0, newBalance: res.newBalance, reason: res.message };
+  return {
+    granted: res.success,
+    amount: res.success ? amount : 0,
+    newBalance: res.newBalance,
+    reason: res.message,
+  };
 }

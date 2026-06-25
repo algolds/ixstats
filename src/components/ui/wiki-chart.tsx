@@ -29,13 +29,7 @@ export function useWikiChartColors() {
 }
 
 /** Sized, responsive wrapper for a single recharts chart. */
-export function WikiChart({
-  height = 192,
-  children,
-}: {
-  height?: number;
-  children: ReactElement;
-}) {
+export function WikiChart({ height = 192, children }: { height?: number; children: ReactElement }) {
   return (
     <div className="w-full text-[10px]" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">

@@ -91,8 +91,10 @@ export function classifyDomain(targetField: string): ReconDomain {
   const f = targetField.toLowerCase();
   if (/(approval|popular|support|legitim|mandate)/.test(f)) return "approval";
   if (/(diplomat|relation|reputation|influence|foreign|alliance)/.test(f)) return "diplomatic";
-  if (/(stability|crime|unrest|cohesion|riot|protest|trust|conflict|security)/.test(f)) return "stability";
-  if (/(health|educat|literacy|welfare|poverty|housing|environment|emission)/.test(f)) return "social";
+  if (/(stability|crime|unrest|cohesion|riot|protest|trust|conflict|security)/.test(f))
+    return "stability";
+  if (/(health|educat|literacy|welfare|poverty|housing|environment|emission)/.test(f))
+    return "social";
   // economic is the default bucket (gdp/growth/tax/budget/income/trade/wage/…)
   return "economic";
 }
@@ -112,7 +114,7 @@ function hasCapability(domain: ReconDomain, input: ReconInput): boolean {
  */
 export function revealConsequences(
   consequences: { targetField: string }[],
-  input: ReconInput,
+  input: ReconInput
 ): ReconReveal[] {
   return consequences.map((c) => {
     const domain = classifyDomain(c.targetField);

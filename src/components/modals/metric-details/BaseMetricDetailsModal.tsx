@@ -172,17 +172,21 @@ export function BaseMetricDetailsModal({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4 w-full flex-1 flex flex-col">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="mt-4 flex w-full flex-1 flex-col"
+        >
           {/* Tab List with Controls */}
-          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4">
-            <TabsList className="facet-refraction p-1 bg-black/20 rounded-xl border border-white/5 flex gap-1 w-full sm:w-auto">
+          <div className="mb-4 flex flex-col gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList className="facet-refraction flex w-full gap-1 rounded-xl border border-white/5 bg-black/20 p-1 sm:w-auto">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
                   className={cn(
-                    "flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex-1 sm:flex-none",
-                    "data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-inner text-muted-foreground hover:text-foreground"
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all sm:flex-none sm:text-sm",
+                    "data-[state=active]:text-foreground text-muted-foreground hover:text-foreground data-[state=active]:bg-white/10 data-[state=active]:shadow-inner"
                   )}
                 >
                   <tab.icon className="h-3.5 w-3.5" />

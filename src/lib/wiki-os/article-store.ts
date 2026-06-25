@@ -103,7 +103,13 @@ export async function getArticleWikitextShadow(
       return null;
     }
 
-    await shadowPut(source, norm, article.wikitext, revMeta?.revid ?? null, revMeta?.timestamp ?? null);
+    await shadowPut(
+      source,
+      norm,
+      article.wikitext,
+      revMeta?.revid ?? null,
+      revMeta?.timestamp ?? null
+    );
 
     return {
       wikitext: article.wikitext,
@@ -189,7 +195,10 @@ export async function recordArticleRevision(input: RecordRevisionInput): Promise
 }
 
 /** True if a revision with this MediaWiki rev id is already recorded locally. */
-export async function hasRevision(mwRevId: number, source: WikiSource = "ixwiki"): Promise<boolean> {
+export async function hasRevision(
+  mwRevId: number,
+  source: WikiSource = "ixwiki"
+): Promise<boolean> {
   try {
     const existing = await db.wikiRevision.findFirst({
       where: { source, mwRevId },

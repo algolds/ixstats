@@ -307,7 +307,7 @@ export function PopulationDetailsModal({
 
     const currentPop = economicData.currentPopulation;
     const growthRate = economicData.populationGrowthRate;
-    const density = economicData.populationDensity || (currentPop / (economicData?.landArea || 1));
+    const density = economicData.populationDensity || currentPop / (economicData?.landArea || 1);
 
     let growth = growthRate * 100;
     let globalComparison = 0;
@@ -382,18 +382,18 @@ export function PopulationDetailsModal({
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
           {performanceMetrics && globalStats && (
-            <Card className="facet-refraction border-white/5 flex-1 p-6 flex flex-col justify-between">
-              <CardHeader className="p-0 mb-4">
+            <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+              <CardHeader className="mb-4 p-0">
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-cyan-500" />
                   Demographics Performance Summary
                 </CardTitle>
                 <CardDescription>Key growth metrics and global ranking statistics.</CardDescription>
               </CardHeader>
-              <CardContent className="p-0 flex-1 flex flex-col justify-center">
+              <CardContent className="flex flex-1 flex-col justify-center p-0">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col justify-center">
-                    <div className="mb-1 flex items-center justify-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  <div className="flex flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                    <div className="text-muted-foreground mb-1 flex items-center justify-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
                       {performanceMetrics.growth > 0 ? (
                         <ArrowUp className="h-4 w-4 text-green-500" />
                       ) : performanceMetrics.growth < 0 ? (
@@ -417,8 +417,8 @@ export function PopulationDetailsModal({
                     </span>
                   </div>
 
-                  <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col justify-center">
-                    <div className="mb-1 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  <div className="flex flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                    <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
                       vs Global Average
                     </div>
                     <span
@@ -429,19 +429,19 @@ export function PopulationDetailsModal({
                       {performanceMetrics.globalComparison > 0 ? "+" : ""}
                       {performanceMetrics.globalComparison.toFixed(1)}%
                     </span>
-                    <span className="text-muted-foreground text-[10px] mt-0.5">
+                    <span className="text-muted-foreground mt-0.5 text-[10px]">
                       Avg: {formatPopulation(performanceMetrics.globalAverage)}
                     </span>
                   </div>
 
-                  <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col justify-center">
-                    <div className="mb-1 text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  <div className="flex flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4 text-center">
+                    <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
                       World Ranking
                     </div>
                     <span className="text-xl font-bold text-purple-400">
                       #{performanceMetrics.rank}
                     </span>
-                    <span className="text-muted-foreground text-[10px] mt-0.5">
+                    <span className="text-muted-foreground mt-0.5 text-[10px]">
                       of {performanceMetrics.totalCountries} countries
                     </span>
                   </div>
@@ -478,19 +478,20 @@ export function PopulationDetailsModal({
             variant="social"
           />
 
-          <div className="facet-refraction p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 relative overflow-hidden flex flex-col justify-between flex-1 min-h-[100px]">
+          <div className="facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
             <div>
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                 Demographics Classification
               </span>
               <div className="mt-2">
-                <Badge className="text-sm font-semibold border-none bg-cyan-500/20 text-cyan-400">
+                <Badge className="border-none bg-cyan-500/20 text-sm font-semibold text-cyan-400">
                   {populationTierInfo?.currentTier?.name || "Unknown"}
                 </Badge>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
-              Influences national worker recruitment capacity, taxable demographic brackets, and structural demands.
+            <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
+              Influences national worker recruitment capacity, taxable demographic brackets, and
+              structural demands.
             </p>
           </div>
         </MetricModalLayout.Sidebar>
@@ -529,7 +530,7 @@ export function PopulationDetailsModal({
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
           <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="p-0 mb-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-cyan-500" />
                 Population Growth Trends
@@ -586,7 +587,9 @@ export function PopulationDetailsModal({
                         }
                         return [value, name];
                       }}
-                      labelFormatter={(label) => `Year ${IxTime.getCurrentGameYear(label as number)}`}
+                      labelFormatter={(label) =>
+                        `Year ${IxTime.getCurrentGameYear(label as number)}`
+                      }
                     />
                     <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
                     <Area
@@ -615,9 +618,9 @@ export function PopulationDetailsModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 flex-1">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Peak Population
               </span>
               <span className="text-xl font-bold text-cyan-400">
@@ -626,8 +629,8 @@ export function PopulationDetailsModal({
                   : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Recent Growth
               </span>
               <span className="text-xl font-bold text-emerald-400">
@@ -644,14 +647,14 @@ export function PopulationDetailsModal({
     return (
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5 text-cyan-500" />
                 Global Population Rankings
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col justify-center">
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               {isTopCountriesLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : comparisonData.length > 0 ? (
@@ -659,8 +662,17 @@ export function PopulationDetailsModal({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={comparisonData.slice(0, 10)} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                      <XAxis type="number" tickFormatter={(value) => formatPopulation(value)} stroke="rgba(255, 255, 255, 0.3)" />
-                      <YAxis dataKey="name" type="category" width={80} stroke="rgba(255, 255, 255, 0.3)" />
+                      <XAxis
+                        type="number"
+                        tickFormatter={(value) => formatPopulation(value)}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        width={80}
+                        stroke="rgba(255, 255, 255, 0.3)"
+                      />
                       <Tooltip
                         contentStyle={{
                           background: "rgba(18, 20, 24, 0.8)",
@@ -688,12 +700,12 @@ export function PopulationDetailsModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction border-white/5 p-4 flex-1 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-3">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
+            <CardHeader className="mb-3 p-0">
               <CardTitle className="text-sm font-semibold">Demographics Breakdown</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 space-y-3">
-              <div className="h-44 w-full flex items-center justify-center">
+            <CardContent className="space-y-3 p-0">
+              <div className="flex h-44 w-full items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -723,16 +735,18 @@ export function PopulationDetailsModal({
                 </ResponsiveContainer>
               </div>
 
-              <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+              <div className="max-h-[160px] space-y-1.5 overflow-y-auto pr-1">
                 {demographicBreakdown.map((segment) => (
                   <div
                     key={segment.name}
-                    className="bg-white/5 rounded-lg p-2 flex items-center justify-between border border-white/5 text-[11px]"
+                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-2 text-[11px]"
                   >
-                    <span className="font-medium text-muted-foreground">{segment.name}</span>
+                    <span className="text-muted-foreground font-medium">{segment.name}</span>
                     <div className="text-right">
                       <div className="font-bold text-white">{formatPopulation(segment.value)}</div>
-                      <div className="text-[9px] text-cyan-400">{segment.percentage.toFixed(1)}%</div>
+                      <div className="text-[9px] text-cyan-400">
+                        {segment.percentage.toFixed(1)}%
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -749,18 +763,23 @@ export function PopulationDetailsModal({
       <MetricModalLayout variant="social">
         <MetricModalLayout.MainArea>
           {economicData && (
-            <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col justify-between">
-              <CardHeader className="p-0 mb-4">
+            <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+              <CardHeader className="mb-4 p-0">
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-cyan-500" />
                   20-Year Population Projections
-                  <Badge variant="outline" className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-cyan-400">
+                  <Badge
+                    variant="outline"
+                    className="ml-2 border-cyan-500/20 bg-cyan-500/5 text-cyan-400"
+                  >
                     {(economicData.populationGrowthRate * 100).toFixed(3)}% growth
                   </Badge>
                 </CardTitle>
-                <CardDescription>Projected population assuming constant growth rates</CardDescription>
+                <CardDescription>
+                  Projected population assuming constant growth rates
+                </CardDescription>
               </CardHeader>
-              <CardContent className="p-0 flex-1 flex flex-col justify-center">
+              <CardContent className="flex flex-1 flex-col justify-center p-0">
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={projectionData}>
@@ -798,9 +817,12 @@ export function PopulationDetailsModal({
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="text-muted-foreground text-[10px] mt-4 space-y-0.5">
+                <div className="text-muted-foreground mt-4 space-y-0.5 text-[10px]">
                   <p>* Projections assume constant growth rates and no major demographic changes</p>
-                  <p>* Actual results may vary based on economic development, migration, and policy changes</p>
+                  <p>
+                    * Actual results may vary based on economic development, migration, and policy
+                    changes
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -809,10 +831,12 @@ export function PopulationDetailsModal({
 
         <MetricModalLayout.Sidebar>
           {populationTierInfo && (
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 space-y-3 flex-1 flex flex-col justify-between">
+            <div className="facet-refraction flex flex-1 flex-col justify-between space-y-3 rounded-xl border border-white/5 bg-white/5 p-4">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Population Tier System</h4>
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+                  Population Tier System
+                </h4>
+                <div className="max-h-[300px] space-y-2 overflow-y-auto pr-1">
                   {populationTierInfo.allTiers.map((tier, index) => (
                     <div
                       key={tier.name}
@@ -824,18 +848,24 @@ export function PopulationDetailsModal({
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="font-semibold text-[11px] text-white">
-                          <span className={cn(index === populationTierInfo.currentIndex && "text-cyan-400")}>
+                        <div className="text-[11px] font-semibold text-white">
+                          <span
+                            className={cn(
+                              index === populationTierInfo.currentIndex && "text-cyan-400"
+                            )}
+                          >
                             {tier.name}
                           </span>
                           {index === populationTierInfo.currentIndex && (
-                            <Badge className="text-[8px] px-1 py-0 bg-cyan-500/20 text-cyan-400 border-none scale-90 ml-1.5">
+                            <Badge className="ml-1.5 scale-90 border-none bg-cyan-500/20 px-1 py-0 text-[8px] text-cyan-400">
                               Current
                             </Badge>
                           )}
                         </div>
                       </div>
-                      <p className="text-muted-foreground text-[10px] mt-1 leading-relaxed">{tier.description}</p>
+                      <p className="text-muted-foreground mt-1 text-[10px] leading-relaxed">
+                        {tier.description}
+                      </p>
                     </div>
                   ))}
                 </div>

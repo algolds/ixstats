@@ -250,8 +250,8 @@ export function CountryChangeLogTimeline({
           No entries found in the national ledger yet.
         </div>
       ) : (
-        <div className="relative max-h-[500px] overflow-y-auto overflow-x-hidden pl-8 pr-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          <div className="relative border-l border-white/15 pl-6 space-y-8">
+        <div className="relative max-h-[500px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-x-hidden overflow-y-auto pr-3 pl-8">
+          <div className="relative space-y-8 border-l border-white/15 pl-6">
             {groupedEvents.map((event) => {
               const { eventName } = parseEventDetails(event);
               return (
@@ -275,7 +275,9 @@ export function CountryChangeLogTimeline({
                           {event.sourceType}
                         </span>
                       </div>
-                      <h3 className="text-foreground text-sm font-semibold tracking-wide">{eventName}</h3>
+                      <h3 className="text-foreground text-sm font-semibold tracking-wide">
+                        {eventName}
+                      </h3>
                       <p className="text-muted-foreground max-w-xl text-xs">{event.description}</p>
                     </div>
 

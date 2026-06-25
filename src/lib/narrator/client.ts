@@ -58,8 +58,7 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
         apiUrl: apiUrl || undefined,
         modelName: modelName || undefined,
         temperature: tempVal ? parseFloat(tempVal) : undefined,
-        reasoning:
-          configs.find((c) => c.key === "narrator:llm:reasoning")?.value === "true",
+        reasoning: configs.find((c) => c.key === "narrator:llm:reasoning")?.value === "true",
       };
     }
   } catch (e) {
@@ -67,23 +66,14 @@ export async function getLLMConfig(): Promise<LLMConfig | null> {
   }
 
   // Fallback to environment variables
-  const apiKey =
-    process.env.NARRATOR_LLM_API_KEY ||
-    process.env.SPORTS_LLM_API_KEY;
+  const apiKey = process.env.NARRATOR_LLM_API_KEY || process.env.SPORTS_LLM_API_KEY;
 
   if (apiKey) {
     return {
-      provider:
-        process.env.NARRATOR_LLM_PROVIDER ||
-        process.env.SPORTS_LLM_PROVIDER ||
-        "nvidia",
+      provider: process.env.NARRATOR_LLM_PROVIDER || process.env.SPORTS_LLM_PROVIDER || "nvidia",
       apiKey,
-      apiUrl:
-        process.env.NARRATOR_LLM_API_URL ||
-        process.env.SPORTS_LLM_API_URL,
-      modelName:
-        process.env.NARRATOR_LLM_MODEL ||
-        process.env.SPORTS_LLM_MODEL,
+      apiUrl: process.env.NARRATOR_LLM_API_URL || process.env.SPORTS_LLM_API_URL,
+      modelName: process.env.NARRATOR_LLM_MODEL || process.env.SPORTS_LLM_MODEL,
       reasoning: process.env.NARRATOR_LLM_REASONING === "true",
     };
   }
@@ -151,7 +141,8 @@ export async function queryLLM(
         temperature: options?.temperature ?? config.temperature ?? 0.7,
         // ponytail: flavor text is short; 16k tokens only made the slow path slower
         max_tokens: reasoning ? 16384 : options?.jsonMode ? 2048 : 1024,
-        ...(options?.jsonMode && provider !== "nvidia" && { response_format: { type: "json_object" } }),
+        ...(options?.jsonMode &&
+          provider !== "nvidia" && { response_format: { type: "json_object" } }),
         ...(reasoning &&
           provider === "nvidia" && {
             top_p: 0.95,

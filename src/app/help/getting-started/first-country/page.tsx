@@ -11,7 +11,10 @@ export default function FirstCountryArticle() {
       description="From a blank page to a living country in a few minutes. Here's the whole journey."
       icon={Globe}
       prevLink={{ href: "/help/getting-started/welcome", label: "Welcome to IxStats" }}
-      nextLink={{ href: "/help/getting-started/gameplay-overview", label: "How It All Fits Together" }}
+      nextLink={{
+        href: "/help/getting-started/gameplay-overview",
+        label: "How It All Fits Together",
+      }}
     >
       <ContentCard>
         <Section title="Two Ways to Begin">
@@ -24,8 +27,8 @@ export default function FirstCountryArticle() {
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <strong>From scratch</strong> — shape every part of your nation exactly how you picture
-              it.
+              <strong>From scratch</strong> — shape every part of your nation exactly how you
+              picture it.
             </li>
             <li>
               <strong>Import from IxWiki</strong> — already written factbooks? Pull your existing
@@ -73,17 +76,17 @@ export default function FirstCountryArticle() {
               >
                 taxes
               </Link>{" "}
-              and spending priorities. This is where you decide what kind of country you can afford to
-              be.
+              and spending priorities. This is where you decide what kind of country you can afford
+              to be.
             </li>
           </ol>
         </Section>
 
         <Section title="Review, Then Make It Live">
           <p>
-            Before you publish, you&rsquo;ll see a full summary of your nation. Take a minute to read
-            it over and adjust anything that doesn&rsquo;t feel right. The builder also suggests
-            policies based on your choices — handy starting points you can fine-tune later.
+            Before you publish, you&rsquo;ll see a full summary of your nation. Take a minute to
+            read it over and adjust anything that doesn&rsquo;t feel right. The builder also
+            suggests policies based on your choices — handy starting points you can fine-tune later.
           </p>
         </Section>
       </ContentCard>
@@ -139,7 +142,8 @@ export default function FirstCountryArticle() {
               alongside everyone else&rsquo;s.
             </li>
             <li>
-              From here on, the world keeps moving — and your nation grows with the choices you make.
+              From here on, the world keeps moving — and your nation grows with the choices you
+              make.
             </li>
           </ul>
         </Section>

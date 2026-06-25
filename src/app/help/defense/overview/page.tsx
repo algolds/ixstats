@@ -36,8 +36,12 @@ export default function DefenseOverviewArticle() {
       <ContentCard>
         <Section title="Keeping Things Up to Date">
           <ul className="list-disc space-y-2 pl-6">
-            <li>Use quick actions to put forces on alert, respond to threats, or escalate an incident.</li>
-            <li>Write up what happened on ThinkPages to keep a record for your nation&apos;s history.</li>
+            <li>
+              Use quick actions to put forces on alert, respond to threats, or escalate an incident.
+            </li>
+            <li>
+              Write up what happened on ThinkPages to keep a record for your nation&apos;s history.
+            </li>
             <li>Keep an eye on live alerts so you can act the moment something changes.</li>
           </ul>
         </Section>

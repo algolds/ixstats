@@ -187,9 +187,7 @@ export default function ReferenceDataArticle() {
               </Link>{" "}
               -- Admin system architecture and capabilities.
             </li>
-            <li>
-              A rich, interconnected data model sits behind every content type you manage.
-            </li>
+            <li>A rich, interconnected data model sits behind every content type you manage.</li>
           </ul>
         </InfoBox>
       </ContentCard>

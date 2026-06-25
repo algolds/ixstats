@@ -47,7 +47,10 @@ export const sportsPredictionsRouter = createTRPCRouter({
           ctx.db as never
         );
         if (!spend.success) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: spend.message ?? "Insufficient balance" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: spend.message ?? "Insufficient balance",
+          });
         }
 
         return ctx.db.sportPrediction.create({
@@ -63,7 +66,10 @@ export const sportsPredictionsRouter = createTRPCRouter({
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to place prediction" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to place prediction",
+        });
       }
     }),
 
@@ -81,7 +87,7 @@ export const sportsPredictionsRouter = createTRPCRouter({
       }
       const total = pool.home + pool.away + pool.draw;
       const uid = ctx.user?.id;
-      const myPick = uid ? open.find((p) => p.userId === uid)?.outcome ?? null : null;
+      const myPick = uid ? (open.find((p) => p.userId === uid)?.outcome ?? null) : null;
       return { pool, total, count: open.length, myPick };
     }),
 

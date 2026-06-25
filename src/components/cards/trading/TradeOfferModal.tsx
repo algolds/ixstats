@@ -22,6 +22,7 @@ import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault-notifications";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { proxyCardArtwork } from "~/lib/ns-image-proxy";
 
 export interface TradeOfferModalProps {
   open: boolean;
@@ -428,7 +429,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               </div>
                               <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
                                 <Image
-                                  src={card.artwork}
+                                  src={proxyCardArtwork(card.artwork)}
                                   alt=""
                                   width={20}
                                   height={28}
@@ -504,7 +505,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                 </div>
                                 <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
                                   <Image
-                                    src={card.artwork}
+                                    src={proxyCardArtwork(card.artwork)}
                                     alt=""
                                     width={20}
                                     height={28}

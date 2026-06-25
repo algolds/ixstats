@@ -17,8 +17,8 @@ export default function TaxSystemArticle() {
         <Section title="How Your Tax System Works">
           <p>
             Your tax system is built from dozens of tax pieces you choose and tune. The Tax Builder
-            walks you through it step by step, helping you craft a tax policy that fits the nation you
-            want to be.
+            walks you through it step by step, helping you craft a tax policy that fits the nation
+            you want to be.
           </p>
         </Section>
 

@@ -415,7 +415,10 @@ export function EconomyBuilderPage({
           ...defaults.laborMarket.sectorDistribution,
           ...p.laborMarket?.sectorDistribution,
         },
-        employmentType: { ...defaults.laborMarket.employmentType, ...p.laborMarket?.employmentType },
+        employmentType: {
+          ...defaults.laborMarket.employmentType,
+          ...p.laborMarket?.employmentType,
+        },
         workerProtections: {
           ...defaults.laborMarket.workerProtections,
           ...p.laborMarket?.workerProtections,

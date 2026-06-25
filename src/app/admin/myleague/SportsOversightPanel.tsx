@@ -853,8 +853,7 @@ export default function SportsOversightPanel() {
 
   const { data: globalStats, refetch: refetchStats } = api.sports.getAdminGlobalStats.useQuery();
 
-  const { data: featuredId, refetch: refetchFeatured } =
-    api.sports.getFeaturedLeagueId.useQuery();
+  const { data: featuredId, refetch: refetchFeatured } = api.sports.getFeaturedLeagueId.useQuery();
 
   // Mutations
   const deleteMutation = api.sports.deleteLeague.useMutation({
@@ -1158,7 +1157,8 @@ export default function SportsOversightPanel() {
                     : "Set as Featured League"}
                 </Button>
                 <p className="text-muted-foreground mt-1.5 text-[11px]">
-                  The featured league is shown as the hero on the MyLeague lobby. Only one at a time.
+                  The featured league is shown as the hero on the MyLeague lobby. Only one at a
+                  time.
                 </p>
               </div>
             </div>

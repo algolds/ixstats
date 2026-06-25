@@ -17,8 +17,8 @@ export default function NavigationArticle() {
         <Section title="The Top Menu">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>The top bar</strong> is your home row. Once you&rsquo;re signed in, it gets you
-              to{" "}
+              <strong>The top bar</strong> is your home row. Once you&rsquo;re signed in, it gets
+              you to{" "}
               <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
                 MyCountry
               </Link>
@@ -123,9 +123,7 @@ export default function NavigationArticle() {
       <ContentCard>
         <Section title="Light & Dark">
           <ul className="list-disc space-y-2 pl-6">
-            <li>
-              Switch between light and dark from your profile menu in the top-right corner.
-            </li>
+            <li>Switch between light and dark from your profile menu in the top-right corner.</li>
             <li>Your choice is remembered, so it stays the way you like it every visit.</li>
             <li>
               Different areas have their own signature colors — gold for{" "}

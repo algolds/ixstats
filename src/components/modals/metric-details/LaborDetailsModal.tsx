@@ -138,12 +138,15 @@ export function LaborDetailsModal({
   };
 
   // Derive labor stats
-  const defaultProcessedData = useMemo(() => processHistoricalData("1y"), [historicalData, economyData]);
+  const defaultProcessedData = useMemo(
+    () => processHistoricalData("1y"),
+    [historicalData, economyData]
+  );
   const laborStats = useMemo(() => {
     if (!defaultProcessedData || defaultProcessedData.length === 0) return null;
-    const rates = defaultProcessedData.map(p => p.employmentRate);
-    const unemp = defaultProcessedData.map(p => p.unemploymentRate);
-    const part = defaultProcessedData.map(p => p.participationRate);
+    const rates = defaultProcessedData.map((p) => p.employmentRate);
+    const unemp = defaultProcessedData.map((p) => p.unemploymentRate);
+    const part = defaultProcessedData.map((p) => p.participationRate);
 
     return {
       maxEmployment: Math.max(...rates),
@@ -190,17 +193,19 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 flex-1 p-6 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-blue-500" />
                 Labor Force Composition
               </CardTitle>
-              <CardDescription>Workforce composition and national employment statistics.</CardDescription>
+              <CardDescription>
+                Workforce composition and national employment statistics.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col justify-center">
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-blue-400">
                     {(
                       ((labor?.totalWorkforce || 0) / (countryData?.currentPopulation || 1)) *
@@ -208,38 +213,49 @@ export function LaborDetailsModal({
                     ).toFixed(1)}
                     %
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold mt-1">Of Population</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                    Of Population
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-green-400">
                     {(
                       ((labor?.employmentRate || 0) * (labor?.totalWorkforce || 0)) /
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold mt-1">Employed</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                    Employed
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-red-400">
                     {(
                       ((labor?.unemploymentRate || 0) * (labor?.totalWorkforce || 0)) /
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold mt-1">Unemployed</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                    Unemployed
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
                   <div className="text-lg font-bold text-purple-400">
                     ${(labor?.averageAnnualIncome || 0).toLocaleString()}
                   </div>
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold mt-1">Avg. Income</div>
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
+                    Avg. Income
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 p-4 rounded-lg bg-blue-500/5 border border-blue-500/10 text-xs text-muted-foreground flex gap-3 items-start">
-                <Info className="h-4 w-4 text-blue-450 shrink-0 mt-0.5" />
+              <div className="text-muted-foreground mt-6 flex items-start gap-3 rounded-lg border border-blue-500/10 bg-blue-500/5 p-4 text-xs">
+                <Info className="text-blue-450 mt-0.5 h-4 w-4 shrink-0" />
                 <p className="leading-relaxed">
-                  Workforce dynamics play a critical role in determining overall production efficiency and industrial stability. High employment rates support higher consumer demand and stability, while the average income influences domestic market velocity.
+                  Workforce dynamics play a critical role in determining overall production
+                  efficiency and industrial stability. High employment rates support higher consumer
+                  demand and stability, while the average income influences domestic market
+                  velocity.
                 </p>
               </div>
             </CardContent>
@@ -317,7 +333,7 @@ export function LaborDetailsModal({
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
           <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="p-0 mb-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle>Labor Force Trends</CardTitle>
               <CardDescription>Historical employment and participation metrics</CardDescription>
             </CardHeader>
@@ -340,9 +356,7 @@ export function LaborDetailsModal({
                     <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
                     <ChartTooltip
                       content={
-                        <ChartTooltipContent
-                          className="facet-floating facet-refraction border border-white/10 rounded-xl bg-black/80"
-                        />
+                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
                       }
                     />
                     {chartType === "area" ? (
@@ -368,8 +382,18 @@ export function LaborDetailsModal({
                       </>
                     ) : chartType === "bar" ? (
                       <>
-                        <Bar dataKey="employmentRate" fill="#10b981" name="Employment Rate" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="unemploymentRate" fill="#ef4444" name="Unemployment Rate" radius={[4, 4, 0, 0]} />
+                        <Bar
+                          dataKey="employmentRate"
+                          fill="#10b981"
+                          name="Employment Rate"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="unemploymentRate"
+                          fill="#ef4444"
+                          name="Unemployment Rate"
+                          radius={[4, 4, 0, 0]}
+                        />
                       </>
                     ) : (
                       <>
@@ -407,38 +431,38 @@ export function LaborDetailsModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 flex-1">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Max Employment Rate
               </span>
               <span className="text-xl font-bold text-green-400">
                 {laborStats?.maxEmployment ? `${laborStats.maxEmployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Min Unemployment Rate
               </span>
               <span className="text-xl font-bold text-red-400">
                 {laborStats?.minUnemployment ? `${laborStats.minUnemployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Avg Participation
               </span>
               <span className="text-xl font-bold text-purple-400">
-                {laborStats?.avgParticipation ? `${laborStats.avgParticipation.toFixed(1)}%` : "N/A"}
+                {laborStats?.avgParticipation
+                  ? `${laborStats.avgParticipation.toFixed(1)}%`
+                  : "N/A"}
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Data Points Analyzed
               </span>
-              <span className="text-xl font-bold text-blue-400">
-                {laborStats?.dataPoints || 0}
-              </span>
+              <span className="text-xl font-bold text-blue-400">{laborStats?.dataPoints || 0}</span>
             </div>
           </div>
         </MetricModalLayout.Sidebar>
@@ -485,8 +509,8 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6 flex-1">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex-1 border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5 text-blue-500" />
                 Benchmark Analysis
@@ -511,7 +535,11 @@ export function LaborDetailsModal({
                       }}
                     />
                     <Bar dataKey="Your Country" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Global Avg" fill="rgba(255, 255, 255, 0.15)" radius={[4, 4, 0, 0]} />
+                    <Bar
+                      dataKey="Global Avg"
+                      fill="rgba(255, 255, 255, 0.15)"
+                      radius={[4, 4, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -520,31 +548,31 @@ export function LaborDetailsModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <div className="flex flex-col gap-4 h-full justify-between">
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+          <div className="flex h-full flex-col justify-between gap-4">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Global Comparison
               </span>
               <span className="text-xl font-bold text-blue-400">
                 {employmentRate >= globalAvgEmployment ? "Above Average" : "Below Average"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Employment: {employmentRate.toFixed(1)}% vs {globalAvgEmployment}% Avg
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Workforce Activity
               </span>
               <span className="text-xl font-bold text-green-400">
                 {(labor?.laborForceParticipationRate || 0) >= 60 ? "Strong" : "Low"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Active Participation Rate: {(labor?.laborForceParticipationRate || 0).toFixed(1)}%
               </span>
             </div>
-            <div className="facet-refraction p-4 rounded-xl border border-white/5 bg-white/5 flex-1 flex flex-col justify-center">
-              <span className="text-muted-foreground text-xs uppercase tracking-wider font-semibold block mb-1">
+            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
+              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
                 Job Market Health
               </span>
               <span className="text-xl font-bold text-purple-400">
@@ -554,7 +582,7 @@ export function LaborDetailsModal({
                     ? "Moderate"
                     : "Struggling"}
               </span>
-              <span className="text-muted-foreground text-[10px] mt-1">
+              <span className="text-muted-foreground mt-1 text-[10px]">
                 Unemployment Rate: {(labor?.unemploymentRate || 0).toFixed(1)}%
               </span>
             </div>
@@ -584,7 +612,7 @@ export function LaborDetailsModal({
     const sectorData = Object.entries(sectors)
       .slice(0, 8)
       .map(([name, value]: [string, any]) => ({
-        name: name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+        name: name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
         value: typeof value === "number" ? parseFloat(value.toFixed(1)) : parseFloat(value),
       }))
       .sort((a, b) => b.value - a.value);
@@ -592,19 +620,28 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6 flex-1 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
+            <CardHeader className="mb-4 p-0">
               <CardTitle>Employment by Sector</CardTitle>
-              <CardDescription>Workforce distribution across key industrial sectors</CardDescription>
+              <CardDescription>
+                Workforce distribution across key industrial sectors
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1">
+            <CardContent className="flex-1 p-0">
               {sectorData.length > 0 ? (
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={sectorData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
                       <XAxis type="number" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                      <YAxis dataKey="name" type="category" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} width={100} tick={{ fontSize: 9 }} />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        stroke="rgba(255, 255, 255, 0.3)"
+                        tickLine={false}
+                        width={100}
+                        tick={{ fontSize: 9 }}
+                      />
                       <Tooltip
                         contentStyle={{
                           background: "rgba(18, 20, 24, 0.8)",
@@ -613,7 +650,12 @@ export function LaborDetailsModal({
                           borderRadius: "8px",
                         }}
                       />
-                      <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} name="Percentage %" />
+                      <Bar
+                        dataKey="value"
+                        fill="#3b82f6"
+                        radius={[0, 4, 4, 0]}
+                        name="Percentage %"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -628,15 +670,19 @@ export function LaborDetailsModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction border-white/5 p-4 flex-1 flex flex-col justify-between">
-            <CardHeader className="p-0 mb-4">
+          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
+            <CardHeader className="mb-4 p-0">
               <CardTitle className="text-sm font-semibold">Productivity Metrics</CardTitle>
-              <CardDescription className="text-[10px]">Workforce efficiency and output</CardDescription>
+              <CardDescription className="text-[10px]">
+                Workforce efficiency and output
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 space-y-4">
-              <div className="bg-white/5 rounded-xl border border-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">GDP per Worker</span>
-                <div className="text-lg font-bold text-blue-400 mt-1">
+            <CardContent className="space-y-4 p-0">
+              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  GDP per Worker
+                </span>
+                <div className="mt-1 text-lg font-bold text-blue-400">
                   $
                   {(
                     (countryData?.currentTotalGdp || 0) / (labor?.totalWorkforce || 1)
@@ -644,16 +690,20 @@ export function LaborDetailsModal({
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-xl border border-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">Productivity Index</span>
-                <div className="text-lg font-bold text-green-400 mt-1">
+              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  Productivity Index
+                </span>
+                <div className="mt-1 text-lg font-bold text-green-400">
                   {labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) || "1.00"}
                 </div>
               </div>
 
-              <div className="bg-white/5 rounded-xl border border-white/5 p-3">
-                <span className="text-muted-foreground text-[10px] uppercase font-semibold">Avg. Education</span>
-                <div className="text-lg font-bold text-purple-400 mt-1">
+              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                <span className="text-muted-foreground text-[10px] font-semibold uppercase">
+                  Avg. Education
+                </span>
+                <div className="mt-1 text-lg font-bold text-purple-400">
                   {labor?.skillsAndProductivity?.averageEducationYears?.toFixed(1) || "12.0"} Years
                 </div>
               </div>

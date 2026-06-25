@@ -7,7 +7,9 @@ import {
 
 describe("card-valuation", () => {
   test("NS junk common is lifted to the rarity floor, not stuck at NS bank value 1", () => {
-    expect(computeCardValue({ rarity: "COMMON", cardType: "NS_IMPORT", nsMarketValue: 1 }, C)).toBe(10);
+    expect(computeCardValue({ rarity: "COMMON", cardType: "NS_IMPORT", nsMarketValue: 1 }, C)).toBe(
+      10
+    );
   });
 
   test("valuable NS legendary floats above the floor via the premium", () => {

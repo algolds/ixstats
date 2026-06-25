@@ -55,14 +55,13 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
     db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
   ]);
 
-  const effectiveness =
-    structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
+  const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
   const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
   // Stage 1 approximation: gov-component staff only (econ/tax omitted) + recon reserve.
   const govStaff = calculateTotalConsumedStaff(
     components.map((c) => c.componentType as any),
     [],
-    [],
+    []
   );
   const used = govStaff + pendingRecon * RECON_CAPACITY_COST;
 
@@ -334,7 +333,10 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     .input(z.object({ issueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       if (!GAMEPLAY_FLAGS.statecraftSpine) {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Statecraft recon is not enabled." });
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Statecraft recon is not enabled.",
+        });
       }
       const issue = await ctx.db.nationalIssue.findUnique({
         where: { id: input.issueId },
@@ -345,13 +347,17 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your country's issue." });
       }
       if (issue.reconReadyIxTime != null) {
-        throw new TRPCError({ code: "CONFLICT", message: "Research already commissioned for this issue." });
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Research already commissioned for this issue.",
+        });
       }
       const cx = await loadReconContext(ctx.db as PrismaClient, issue.countryId);
       if (cx.available < RECON_CAPACITY_COST) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "Civil service is over capacity — free up administrative capacity before commissioning more research.",
+          message:
+            "Civil service is over capacity — free up administrative capacity before commissioning more research.",
         });
       }
       const readyIxTime = IxTime.getCurrentIxTime() + RECON_DELAY_MS;
@@ -401,7 +407,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         const cons = o.consequences ?? [];
         const reveals = revealConsequences(
           cons.map((c) => ({ targetField: c.targetField })),
-          reconInput,
+          reconInput
         ).map((r, idx) => ({
           ...r,
           // Never fabricate: greyed effects carry no value.
@@ -426,7 +432,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({
         where: { id: input.issueId },
-        select: { countryId: true, responseOptions: true }
+        select: { countryId: true, responseOptions: true },
       });
 
       if (!issue) {
@@ -449,9 +455,11 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
             status: "active",
             OR: [
               { calculatedEffects: { contains: option.requiredPolicyKey } },
-              { name: { mode: "insensitive", equals: option.requiredPolicyKey.replace(/-/g, " ") } }
-            ]
-          }
+              {
+                name: { mode: "insensitive", equals: option.requiredPolicyKey.replace(/-/g, " ") },
+              },
+            ],
+          },
         });
 
         if (!activePolicy) {

@@ -135,7 +135,11 @@ export function computeCardValue(
 ): number {
   const floor = rarityFloor(cfg, input.rarity);
   const typeMult =
-    input.cardType === "SPECIAL" ? cfg.multSpecial : input.cardType === "NATION" ? cfg.multNation : 1;
+    input.cardType === "SPECIAL"
+      ? cfg.multSpecial
+      : input.cardType === "NATION"
+        ? cfg.multNation
+        : 1;
   const base = floor * typeMult;
   const ns = Math.max(0, input.nsMarketValue ?? 0) * cfg.nsPremium;
   return Math.round(Math.max(base, ns) * 100) / 100;
@@ -146,9 +150,7 @@ export function computeCardValue(
  * grouped by rarity (handles 56k+ NS cards in 6 statements, not 56k round-trips).
  * NS source value is read from stats->>'marketValue' so re-running is idempotent.
  */
-export async function recomputeAllCardValues(
-  db: PrismaClient
-): Promise<{ updated: number }> {
+export async function recomputeAllCardValues(db: PrismaClient): Promise<{ updated: number }> {
   const cfg = await getValuationConfig(db);
   const rarities: Array<[string, number]> = [
     ["COMMON", cfg.floorCommon],

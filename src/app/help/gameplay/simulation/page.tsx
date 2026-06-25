@@ -45,7 +45,10 @@ export default function SimulationArticle() {
               , from Impoverished to Extravagant — and that tier sets the pace of your growth.
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
-              <li>Up-and-coming nations grow fast; mature ones grow slower but in bigger absolute terms.</li>
+              <li>
+                Up-and-coming nations grow fast; mature ones grow slower but in bigger absolute
+                terms.
+              </li>
               <li>Cross a wealth threshold and you move up a tier automatically.</li>
               <li>Your taxes, spending, and debt all feed into how quickly you grow.</li>
               <li>Good governance and smart choices nudge your growth upward over time.</li>
@@ -86,8 +89,8 @@ export default function SimulationArticle() {
               >
                 <strong>Diplomatic scenarios</strong>
               </Link>{" "}
-              — trade, culture, and security situations with other nations, shaped by who you&rsquo;re
-              dealing with.
+              — trade, culture, and security situations with other nations, shaped by who
+              you&rsquo;re dealing with.
             </li>
           </ul>
         </Section>

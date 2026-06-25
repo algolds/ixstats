@@ -38,6 +38,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import NumberFlow from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
+import { proxyCardArtwork } from "~/lib/ns-image-proxy";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -798,7 +799,7 @@ function ImportDeckTab() {
                                 {card.artwork &&
                                   card.artwork !== "/images/cards/placeholder-nation.png" && (
                                     <img
-                                      src={card.artwork}
+                                      src={proxyCardArtwork(card.artwork)}
                                       alt={card.title}
                                       className="absolute inset-0 h-full w-full object-cover"
                                       onError={(e) => {

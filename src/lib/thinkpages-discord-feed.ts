@@ -65,9 +65,12 @@ export function parseJsonStringArray(raw: string | null | undefined): string[] {
   }
 }
 
-/** Strip the IxTwitter sync's `[DiscordMsg:123]` marker so it never leaks into the embed. */
+/** Strip the IxTwitter sync's `[DiscordMsg:123]` marker and any sports bulletin JSON comments so they never leak into the embed. */
 export function cleanPostContent(content: string): string {
-  return content.replace(/\n*\[DiscordMsg:\d+\]\s*$/i, "").trim();
+  return content
+    .replace(/<!-- sports-bulletin:[\s\S]*?-->\n*/gi, "")
+    .replace(/\n*\[DiscordMsg:\d+\]\s*$/i, "")
+    .trim();
 }
 
 /** Map a raw DB config row into the parsed filter config. */

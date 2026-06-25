@@ -76,7 +76,7 @@ export default function NationalIssuesAdminPage() {
   const [activeTab, setActiveTab] = useState<"templates" | "issues">("templates");
   const [domainFilter, setDomainFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
-  
+
   // Modals & Side Sheets
   const [editorSheet, setEditorSheet] = useState<{ isOpen: boolean; templateId: string | null }>({
     isOpen: false,
@@ -93,7 +93,9 @@ export default function NationalIssuesAdminPage() {
   const [forceGenCountryId, setForceGenCountryId] = useState("");
   const [forceGenTemplateId, setForceGenTemplateId] = useState("");
   const [injectTemplateId, setInjectTemplateId] = useState("");
-  const [injectScope, setInjectScope] = useState<"country" | "region" | "continent" | "all">("country");
+  const [injectScope, setInjectScope] = useState<"country" | "region" | "continent" | "all">(
+    "country"
+  );
   const [injectTarget, setInjectTarget] = useState("");
   const [injectLabel, setInjectLabel] = useState("");
 
@@ -109,7 +111,11 @@ export default function NationalIssuesAdminPage() {
   const [bulkImportResult, setBulkImportResult] = useState<string | null>(null);
 
   // Seeding feedback
-  const [seedResult, setSeedResult] = useState<{ created: number; updated: number; errors: number } | null>(null);
+  const [seedResult, setSeedResult] = useState<{
+    created: number;
+    updated: number;
+    errors: number;
+  } | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
 
   // Active Issues Filtering
@@ -131,12 +137,13 @@ export default function NationalIssuesAdminPage() {
   const { data: countries } = api.countries.getSelectList.useQuery({ limit: 250 });
 
   // Fetch stats
-  const { data: stats, refetch: refetchStats } = api.nationalIssues.getGenerationStats.useQuery(
-    { days: 7 }
-  );
+  const { data: stats, refetch: refetchStats } = api.nationalIssues.getGenerationStats.useQuery({
+    days: 7,
+  });
 
   // Fetch engine config
-  const { data: engineConfig, refetch: refetchEngineConfig } = api.nationalIssues.getEngineConfig.useQuery();
+  const { data: engineConfig, refetch: refetchEngineConfig } =
+    api.nationalIssues.getEngineConfig.useQuery();
 
   const updateEngineConfig = api.nationalIssues.updateEngineConfig.useMutation({
     onSuccess: () => {
@@ -153,12 +160,15 @@ export default function NationalIssuesAdminPage() {
   }, [engineConfig]);
 
   // Fetch active/recent issues
-  const { data: activeIssuesData, isLoading: isIssuesLoading, refetch: refetchActiveIssues } =
-    api.nationalIssues.getActiveIssues.useQuery({
-      status: activeStatusFilter !== "all" ? activeStatusFilter : undefined,
-      countryId: activeCountryFilter !== "all" ? activeCountryFilter : undefined,
-      limit: 100,
-    });
+  const {
+    data: activeIssuesData,
+    isLoading: isIssuesLoading,
+    refetch: refetchActiveIssues,
+  } = api.nationalIssues.getActiveIssues.useQuery({
+    status: activeStatusFilter !== "all" ? activeStatusFilter : undefined,
+    countryId: activeCountryFilter !== "all" ? activeCountryFilter : undefined,
+    limit: 100,
+  });
 
   // Preview template
   const { data: previewData, isLoading: isPreviewLoading } =
@@ -242,7 +252,7 @@ export default function NationalIssuesAdminPage() {
     try {
       const parsed = JSON.parse(bulkImportText);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
-      
+
       const res = await bulkImportMutation.mutateAsync({ templates: arr });
       setBulkImportResult(`Processed: ${res.total} templates. Check logs if any failed.`);
       setBulkImportText("");
@@ -268,13 +278,18 @@ export default function NationalIssuesAdminPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">National Issues System Controls</h1>
-              <p className="text-slate-400 text-xs mt-0.5">
+              <p className="mt-0.5 text-xs text-slate-400">
                 Configure event templates, evaluate simulation criteria, and monitor live issues
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleGlobalRefresh} className="bg-white/5 border-white/10 text-xs h-8">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGlobalRefresh}
+              className="h-8 border-white/10 bg-white/5 text-xs"
+            >
               <RefreshCw className="mr-1 h-3.5 w-3.5" />
               Refresh All
             </Button>
@@ -283,15 +298,13 @@ export default function NationalIssuesAdminPage() {
 
         {/* Layout Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          
           {/* LEFT COLUMN: Fixed Sticky Panel */}
-          <div className="lg:col-span-1 space-y-4">
-            
+          <div className="space-y-4 lg:col-span-1">
             {/* Stats Summary Panel */}
             {stats && (
               <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+                  <h3 className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
                     <BarChart3 className="h-4 w-4" />
                     Engine Statistics (7d)
                   </h3>
@@ -306,39 +319,43 @@ export default function NationalIssuesAdminPage() {
             )}
 
             {/* Engine Limits Panel */}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 border-b border-white/10 pb-2 flex items-center gap-1.5">
+            <div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <h3 className="flex items-center gap-1.5 border-b border-white/10 pb-2 text-xs font-bold tracking-wider text-amber-400 uppercase">
                 <Sliders className="h-4 w-4" />
                 Engine Generation Limits
               </h3>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Max Per Session</label>
+                    <label className="block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Max Per Session
+                    </label>
                     <Input
                       type="number"
                       min={1}
                       max={10}
                       value={maxIssuesPerSession}
                       onChange={(e) => setMaxIssuesPerSession(parseInt(e.target.value) || 1)}
-                      className="bg-white/5 border-white/10 text-xs h-8 text-white"
+                      className="h-8 border-white/10 bg-white/5 text-xs text-white"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Max Per Week (7d)</label>
+                    <label className="block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Max Per Week (7d)
+                    </label>
                     <Input
                       type="number"
                       min={1}
                       max={50}
                       value={maxIssuesPerWeek}
                       onChange={(e) => setMaxIssuesPerWeek(parseInt(e.target.value) || 1)}
-                      className="bg-white/5 border-white/10 text-xs h-8 text-white"
+                      className="h-8 border-white/10 bg-white/5 text-xs text-white"
                     />
                   </div>
                 </div>
                 <Button
                   size="sm"
-                  className="w-full h-8 text-xs bg-amber-500 text-black hover:bg-amber-400 font-semibold"
+                  className="h-8 w-full bg-amber-500 text-xs font-semibold text-black hover:bg-amber-400"
                   disabled={updateEngineConfig.isPending}
                   onClick={() =>
                     updateEngineConfig.mutate({
@@ -350,32 +367,41 @@ export default function NationalIssuesAdminPage() {
                   {updateEngineConfig.isPending ? "Saving..." : "Save Config"}
                 </Button>
                 {updateEngineConfig.isSuccess && (
-                  <p className="text-[10px] text-green-400">
-                    Configuration saved successfully.
-                  </p>
+                  <p className="text-[10px] text-green-400">Configuration saved successfully.</p>
                 )}
               </div>
             </div>
 
             {/* Engine & Seeding Control Panel */}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 border-b border-white/10 pb-2 flex items-center gap-1.5">
+            <div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <h3 className="flex items-center gap-1.5 border-b border-white/10 pb-2 text-xs font-bold tracking-wider text-amber-400 uppercase">
                 <Database className="h-4 w-4" />
                 Global Engine Operations
               </h3>
 
               {/* Evaluate Engine Trigger */}
               <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Evaluate Simulation Criteria</label>
+                <label className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Evaluate Simulation Criteria
+                </label>
                 <div className="flex gap-2">
                   <Select value={evalCountryId} onValueChange={setEvalCountryId}>
-                    <SelectTrigger className="h-8 text-xs bg-white/5 border-white/10 text-white">
+                    <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
                       <SelectValue placeholder="Select country..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                      <SelectItem value="all" className="text-xs focus:bg-white/10 focus:text-white">All Countries</SelectItem>
+                    <SelectContent className="border-white/10 bg-slate-900 text-white">
+                      <SelectItem
+                        value="all"
+                        className="text-xs focus:bg-white/10 focus:text-white"
+                      >
+                        All Countries
+                      </SelectItem>
                       {countries?.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id} className="text-xs focus:bg-white/10 focus:text-white">
+                        <SelectItem
+                          key={c.id}
+                          value={c.id}
+                          className="text-xs focus:bg-white/10 focus:text-white"
+                        >
                           {c.name}
                         </SelectItem>
                       ))}
@@ -384,7 +410,7 @@ export default function NationalIssuesAdminPage() {
 
                   <Button
                     size="sm"
-                    className="h-8 text-xs bg-amber-500 text-black hover:bg-amber-400 font-semibold"
+                    className="h-8 bg-amber-500 text-xs font-semibold text-black hover:bg-amber-400"
                     disabled={!evalCountryId || triggerEvaluation.isPending}
                     onClick={() =>
                       triggerEvaluation.mutate({
@@ -397,102 +423,123 @@ export default function NationalIssuesAdminPage() {
                     {triggerEvaluation.isPending ? "..." : "Evaluate"}
                   </Button>
                 </div>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="mt-2 flex items-center gap-2">
                   <Checkbox
                     id="bypass-limits"
                     checked={bypassLimits}
                     onCheckedChange={(checked) => setBypassLimits(!!checked)}
                   />
-                  <label htmlFor="bypass-limits" className="text-[10px] text-slate-400 font-medium select-none cursor-pointer">
+                  <label
+                    htmlFor="bypass-limits"
+                    className="cursor-pointer text-[10px] font-medium text-slate-400 select-none"
+                  >
                     Override limits / Bypass weekly cap
                   </label>
                 </div>
                 {triggerEvaluation.data && (
-                  <p className="text-[10px] text-green-400">
-                    Criteria check finished.
-                  </p>
+                  <p className="text-[10px] text-green-400">Criteria check finished.</p>
                 )}
               </div>
 
               {/* Seeding & Imports */}
-              <div className="border-t border-white/10 pt-3 space-y-2">
-                <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Template Seeding</label>
+              <div className="space-y-2 border-t border-white/10 pt-3">
+                <label className="block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Template Seeding
+                </label>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-xs border-white/10 bg-white/5 hover:bg-white/10"
+                    className="h-8 border-white/10 bg-white/5 text-xs hover:bg-white/10"
                     disabled={isSeeding}
                     onClick={handleSeedDefaults}
                   >
                     Seed System Templates
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-xs border-white/10 bg-white/5 hover:bg-white/10"
+                    className="h-8 border-white/10 bg-white/5 text-xs hover:bg-white/10"
                     onClick={() => setBulkImportOpen(!bulkImportOpen)}
                   >
-                    <Upload className="h-3.5 w-3.5 mr-1" />
+                    <Upload className="mr-1 h-3.5 w-3.5" />
                     JSON Import
                   </Button>
                 </div>
 
                 {seedResult && (
-                  <div className="rounded bg-green-500/10 border border-green-500/20 p-2 text-[10px] text-green-400">
-                    Default Seeding completed. Created: {seedResult.created}, Updated: {seedResult.updated}, Errors: {seedResult.errors}.
+                  <div className="rounded border border-green-500/20 bg-green-500/10 p-2 text-[10px] text-green-400">
+                    Default Seeding completed. Created: {seedResult.created}, Updated:{" "}
+                    {seedResult.updated}, Errors: {seedResult.errors}.
                   </div>
                 )}
 
                 {/* Bulk Import Box */}
                 {bulkImportOpen && (
-                  <div className="bg-white/5 border border-white/10 rounded p-2.5 space-y-2 mt-2">
-                    <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider block">Paste JSON Template array</label>
+                  <div className="mt-2 space-y-2 rounded border border-white/10 bg-white/5 p-2.5">
+                    <label className="block text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Paste JSON Template array
+                    </label>
                     <Textarea
                       placeholder="[ { 'slug': 'test_issue', ... } ]"
                       value={bulkImportText}
                       onChange={(e) => setBulkImportText(e.target.value)}
                       rows={4}
-                      className="bg-black/30 border-white/10 text-[10px] font-mono"
+                      className="border-white/10 bg-black/30 font-mono text-[10px]"
                     />
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <Button
                         size="sm"
                         disabled={!bulkImportText || bulkImportMutation.isPending}
                         onClick={handleBulkImport}
-                        className="h-6 text-[10px] bg-amber-500 text-black hover:bg-amber-400 font-semibold"
+                        className="h-6 bg-amber-500 text-[10px] font-semibold text-black hover:bg-amber-400"
                       >
                         {bulkImportMutation.isPending ? "Importing..." : "Submit Import"}
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setBulkImportOpen(false)} className="h-6 text-[10px] hover:bg-white/5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setBulkImportOpen(false)}
+                        className="h-6 text-[10px] hover:bg-white/5"
+                      >
                         Cancel
                       </Button>
                     </div>
-                    {bulkImportError && <p className="text-[9px] text-red-400">{bulkImportError}</p>}
-                    {bulkImportResult && <p className="text-[9px] text-green-400">{bulkImportResult}</p>}
+                    {bulkImportError && (
+                      <p className="text-[9px] text-red-400">{bulkImportError}</p>
+                    )}
+                    {bulkImportResult && (
+                      <p className="text-[9px] text-green-400">{bulkImportResult}</p>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Force Generate Panel */}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 border-b border-white/10 pb-2 flex items-center gap-1.5">
+            <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <h3 className="flex items-center gap-1.5 border-b border-white/10 pb-2 text-xs font-bold tracking-wider text-amber-400 uppercase">
                 <Sliders className="h-4 w-4" />
                 Force Generate Issue
               </h3>
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Country</label>
+                    <label className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Country
+                    </label>
                     <Select value={forceGenCountryId} onValueChange={setForceGenCountryId}>
-                      <SelectTrigger className="h-8 text-xs bg-white/5 border-white/10 text-white">
+                      <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-white/10 text-white">
+                      <SelectContent className="border-white/10 bg-slate-900 text-white">
                         {countries?.map((c: any) => (
-                          <SelectItem key={c.id} value={c.id} className="text-xs focus:bg-white/10 focus:text-white">
+                          <SelectItem
+                            key={c.id}
+                            value={c.id}
+                            className="text-xs focus:bg-white/10 focus:text-white"
+                          >
                             {c.name}
                           </SelectItem>
                         ))}
@@ -500,14 +547,20 @@ export default function NationalIssuesAdminPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Template</label>
+                    <label className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Template
+                    </label>
                     <Select value={forceGenTemplateId} onValueChange={setForceGenTemplateId}>
-                      <SelectTrigger className="h-8 text-xs bg-white/5 border-white/10 text-white">
+                      <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-white/10 text-white">
+                      <SelectContent className="border-white/10 bg-slate-900 text-white">
                         {templates.map((t) => (
-                          <SelectItem key={t.id} value={t.id} className="text-xs focus:bg-white/10 focus:text-white">
+                          <SelectItem
+                            key={t.id}
+                            value={t.id}
+                            className="text-xs focus:bg-white/10 focus:text-white"
+                          >
                             {t.slug}
                           </SelectItem>
                         ))}
@@ -517,7 +570,7 @@ export default function NationalIssuesAdminPage() {
                 </div>
                 <Button
                   size="sm"
-                  className="w-full h-8 text-xs bg-amber-500 text-black hover:bg-amber-400 font-semibold"
+                  className="h-8 w-full bg-amber-500 text-xs font-semibold text-black hover:bg-amber-400"
                   disabled={!forceGenCountryId || !forceGenTemplateId || forceGenerate.isPending}
                   onClick={() =>
                     forceGenerate.mutate({
@@ -538,21 +591,27 @@ export default function NationalIssuesAdminPage() {
             </div>
 
             {/* Inject DM Event Panel */}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 border-b border-white/10 pb-2 flex items-center gap-1.5">
+            <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <h3 className="flex items-center gap-1.5 border-b border-white/10 pb-2 text-xs font-bold tracking-wider text-amber-400 uppercase">
                 <Send className="h-4 w-4" />
                 Inject Narrative Event
               </h3>
               <div className="space-y-2">
                 <div>
-                  <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Template</label>
+                  <label className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                    Template
+                  </label>
                   <Select value={injectTemplateId} onValueChange={setInjectTemplateId}>
-                    <SelectTrigger className="h-8 text-xs bg-white/5 border-white/10 text-white">
+                    <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
                       <SelectValue placeholder="Select template..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    <SelectContent className="border-white/10 bg-slate-900 text-white">
                       {templates.map((t) => (
-                        <SelectItem key={t.id} value={t.id} className="text-xs focus:bg-white/10 focus:text-white">
+                        <SelectItem
+                          key={t.id}
+                          value={t.id}
+                          className="text-xs focus:bg-white/10 focus:text-white"
+                        >
                           {t.slug}
                         </SelectItem>
                       ))}
@@ -561,7 +620,9 @@ export default function NationalIssuesAdminPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Scope</label>
+                    <label className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Scope
+                    </label>
                     <Select
                       value={injectScope}
                       onValueChange={(v) => {
@@ -569,27 +630,53 @@ export default function NationalIssuesAdminPage() {
                         setInjectTarget("");
                       }}
                     >
-                      <SelectTrigger className="h-8 text-xs bg-white/5 border-white/10 text-white">
+                      <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-white/10 text-white">
-                        <SelectItem value="country" className="text-xs focus:bg-white/10 focus:text-white">Country</SelectItem>
-                        <SelectItem value="region" className="text-xs focus:bg-white/10 focus:text-white">Region</SelectItem>
-                        <SelectItem value="continent" className="text-xs focus:bg-white/10 focus:text-white">Continent</SelectItem>
-                        <SelectItem value="all" className="text-xs focus:bg-white/10 focus:text-white">All</SelectItem>
+                      <SelectContent className="border-white/10 bg-slate-900 text-white">
+                        <SelectItem
+                          value="country"
+                          className="text-xs focus:bg-white/10 focus:text-white"
+                        >
+                          Country
+                        </SelectItem>
+                        <SelectItem
+                          value="region"
+                          className="text-xs focus:bg-white/10 focus:text-white"
+                        >
+                          Region
+                        </SelectItem>
+                        <SelectItem
+                          value="continent"
+                          className="text-xs focus:bg-white/10 focus:text-white"
+                        >
+                          Continent
+                        </SelectItem>
+                        <SelectItem
+                          value="all"
+                          className="text-xs focus:bg-white/10 focus:text-white"
+                        >
+                          All
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   {injectScope === "country" ? (
                     <div>
-                      <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Target</label>
+                      <label className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                        Target
+                      </label>
                       <Select value={injectTarget} onValueChange={setInjectTarget}>
-                        <SelectTrigger className="h-8 text-xs bg-white/5 border-white/10 text-white">
+                        <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
                           <SelectValue placeholder="Country..." />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
+                        <SelectContent className="border-white/10 bg-slate-900 text-white">
                           {countries?.map((c: any) => (
-                            <SelectItem key={c.id} value={c.id} className="text-xs focus:bg-white/10 focus:text-white">
+                            <SelectItem
+                              key={c.id}
+                              value={c.id}
+                              className="text-xs focus:bg-white/10 focus:text-white"
+                            >
                               {c.name}
                             </SelectItem>
                           ))}
@@ -598,12 +685,14 @@ export default function NationalIssuesAdminPage() {
                     </div>
                   ) : injectScope !== "all" ? (
                     <div>
-                      <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Target Name</label>
+                      <label className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                        Target Name
+                      </label>
                       <Input
                         value={injectTarget}
                         onChange={(e) => setInjectTarget(e.target.value)}
                         placeholder={injectScope === "region" ? "e.g. Europe" : "e.g. Asia"}
-                        className="bg-white/5 border-white/10 text-xs h-8 text-white"
+                        className="h-8 border-white/10 bg-white/5 text-xs text-white"
                       />
                     </div>
                   ) : (
@@ -611,17 +700,19 @@ export default function NationalIssuesAdminPage() {
                   )}
                 </div>
                 <div>
-                  <label className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Label (optional)</label>
+                  <label className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                    Label (optional)
+                  </label>
                   <Input
                     value={injectLabel}
                     onChange={(e) => setInjectLabel(e.target.value)}
                     placeholder="e.g. Summer arc event"
-                    className="bg-white/5 border-white/10 text-xs h-8 text-white"
+                    className="h-8 border-white/10 bg-white/5 text-xs text-white"
                   />
                 </div>
                 <Button
                   size="sm"
-                  className="w-full h-8 text-xs bg-amber-500 text-black hover:bg-amber-400 font-semibold"
+                  className="h-8 w-full bg-amber-500 text-xs font-semibold text-black hover:bg-amber-400"
                   disabled={
                     !injectTemplateId ||
                     (injectScope !== "all" && !injectTarget) ||
@@ -656,52 +747,59 @@ export default function NationalIssuesAdminPage() {
                 )}
               </div>
             </div>
-
           </div>
 
           {/* RIGHT COLUMN: Workspace List Panel */}
-          <div className="lg:col-span-2 space-y-4">
-            
+          <div className="space-y-4 lg:col-span-2">
             {/* Navigation Tabs and Quick Search Filter */}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3 flex flex-wrap gap-4 items-center justify-between backdrop-blur-md">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-md">
               <div className="flex gap-2">
                 <Button
                   variant={activeTab === "templates" ? "default" : "ghost"}
                   onClick={() => setActiveTab("templates")}
-                  className={`text-xs h-8 ${activeTab === "templates" ? "bg-amber-500 text-black hover:bg-amber-400 font-semibold" : "hover:bg-white/5 text-slate-300"}`}
+                  className={`h-8 text-xs ${activeTab === "templates" ? "bg-amber-500 font-semibold text-black hover:bg-amber-400" : "text-slate-300 hover:bg-white/5"}`}
                 >
-                  <BookOpen className="h-4 w-4 mr-1" />
+                  <BookOpen className="mr-1 h-4 w-4" />
                   Templates Manager
                 </Button>
                 <Button
                   variant={activeTab === "issues" ? "default" : "ghost"}
                   onClick={() => setActiveTab("issues")}
-                  className={`text-xs h-8 ${activeTab === "issues" ? "bg-amber-500 text-black hover:bg-amber-400 font-semibold" : "hover:bg-white/5 text-slate-300"}`}
+                  className={`h-8 text-xs ${activeTab === "issues" ? "bg-amber-500 font-semibold text-black hover:bg-amber-400" : "text-slate-300 hover:bg-white/5"}`}
                 >
-                  <Calendar className="h-4 w-4 mr-1" />
+                  <Calendar className="mr-1 h-4 w-4" />
                   Active Issues Monitor
                 </Button>
               </div>
 
               {activeTab === "templates" && (
-                <div className="flex gap-2 flex-1 max-w-md justify-end">
+                <div className="flex max-w-md flex-1 justify-end gap-2">
                   <div className="relative flex-1">
-                    <Search className="text-slate-400 absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+                    <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     <Input
                       placeholder="Search slug/title..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="h-8 pl-8 text-xs bg-black/20 border-white/10 text-white"
+                      className="h-8 border-white/10 bg-black/20 pl-8 text-xs text-white"
                     />
                   </div>
                   <Select value={domainFilter} onValueChange={setDomainFilter}>
-                    <SelectTrigger className="h-8 w-32 text-xs bg-black/20 border-white/10 text-white">
+                    <SelectTrigger className="h-8 w-32 border-white/10 bg-black/20 text-xs text-white">
                       <SelectValue placeholder="All domains" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                      <SelectItem value="all" className="text-xs focus:bg-white/10 focus:text-white">All domains</SelectItem>
+                    <SelectContent className="border-white/10 bg-slate-900 text-white">
+                      <SelectItem
+                        value="all"
+                        className="text-xs focus:bg-white/10 focus:text-white"
+                      >
+                        All domains
+                      </SelectItem>
                       {DOMAINS.map((d) => (
-                        <SelectItem key={d} value={d} className="text-xs focus:bg-white/10 focus:text-white">
+                        <SelectItem
+                          key={d}
+                          value={d}
+                          className="text-xs focus:bg-white/10 focus:text-white"
+                        >
                           {d} ({domainCounts[d] ?? 0})
                         </SelectItem>
                       ))}
@@ -710,9 +808,9 @@ export default function NationalIssuesAdminPage() {
                   <Button
                     size="sm"
                     onClick={() => setEditorSheet({ isOpen: true, templateId: null })}
-                    className="h-8 text-xs bg-green-600 text-white hover:bg-green-500 font-semibold shrink-0"
+                    className="h-8 shrink-0 bg-green-600 text-xs font-semibold text-white hover:bg-green-500"
                   >
-                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    <Plus className="mr-1 h-3.5 w-3.5" />
                     Create
                   </Button>
                 </div>
@@ -721,18 +819,21 @@ export default function NationalIssuesAdminPage() {
 
             {/* Templates Workspace */}
             {activeTab === "templates" ? (
-              <div className="max-h-[calc(100vh-220px)] overflow-y-auto pr-1 space-y-2 scrollbar-thin">
+              <div className="max-h-[calc(100vh-220px)] scrollbar-thin space-y-2 overflow-y-auto pr-1">
                 {isTemplatesLoading ? (
-                  <div className="text-slate-400 py-8 text-center text-xs">Loading templates...</div>
+                  <div className="py-8 text-center text-xs text-slate-400">
+                    Loading templates...
+                  </div>
                 ) : templates.length === 0 ? (
-                  <div className="text-slate-400 py-8 text-center text-xs border border-dashed border-white/10 rounded-xl bg-white/5">
-                    No templates found matching your filters. Seed the defaults or create a new template.
+                  <div className="rounded-xl border border-dashed border-white/10 bg-white/5 py-8 text-center text-xs text-slate-400">
+                    No templates found matching your filters. Seed the defaults or create a new
+                    template.
                   </div>
                 ) : (
                   templates.map((template) => (
                     <div
                       key={template.id}
-                      className={`rounded-xl border p-3.5 transition-all bg-white/5 ${
+                      className={`rounded-xl border bg-white/5 p-3.5 transition-all ${
                         template.isActive
                           ? "border-white/10 hover:border-white/20"
                           : "border-white/5 opacity-50"
@@ -741,32 +842,37 @@ export default function NationalIssuesAdminPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                            <span className="text-slate-300 font-mono text-[10px] bg-black/40 px-1.5 py-0.5 rounded border border-white/5">
+                            <span className="rounded border border-white/5 bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">
                               {template.slug}
                             </span>
                             <Badge
                               variant="outline"
-                              className={`text-[9px] font-semibold py-0 px-1.5 uppercase ${DOMAIN_COLORS[template.domain] ?? ""}`}
+                              className={`px-1.5 py-0 text-[9px] font-semibold uppercase ${DOMAIN_COLORS[template.domain] ?? ""}`}
                             >
                               {template.domain}
                             </Badge>
                             <Badge
                               variant="outline"
-                              className={`text-[9px] font-semibold py-0 px-1.5 uppercase ${SEVERITY_COLORS[template.baseSeverity as string] ?? ""}`}
+                              className={`px-1.5 py-0 text-[9px] font-semibold uppercase ${SEVERITY_COLORS[template.baseSeverity as string] ?? ""}`}
                             >
-                              {(template.baseSeverity as string)}
+                              {template.baseSeverity as string}
                             </Badge>
                             {template.deadlineDaysBase && (
-                              <Badge variant="outline" className="bg-red-500/10 text-[9px] text-red-400 border-red-500/15">
+                              <Badge
+                                variant="outline"
+                                className="border-red-500/15 bg-red-500/10 text-[9px] text-red-400"
+                              >
                                 {template.deadlineDaysBase}d deadline
                               </Badge>
                             )}
-                            <span className="text-slate-400 text-[10px] ml-1">
+                            <span className="ml-1 text-[10px] text-slate-400">
                               {(template as any)._count?.instances ?? 0} instances
                             </span>
                           </div>
-                          <h4 className="text-xs font-semibold text-white mt-1">{template.title}</h4>
-                          <p className="text-slate-400 mt-1 line-clamp-2 text-[11px] leading-relaxed">
+                          <h4 className="mt-1 text-xs font-semibold text-white">
+                            {template.title}
+                          </h4>
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-slate-400">
                             {template.description}
                           </p>
                         </div>
@@ -817,7 +923,7 @@ export default function NationalIssuesAdminPage() {
                             {template.isActive ? (
                               <ToggleRight className="h-4.5 w-4.5 text-green-400" />
                             ) : (
-                              <ToggleLeft className="text-slate-500 h-4.5 w-4.5" />
+                              <ToggleLeft className="h-4.5 w-4.5 text-slate-500" />
                             )}
                           </Button>
                           <Button
@@ -826,7 +932,9 @@ export default function NationalIssuesAdminPage() {
                             className="h-7 w-7 p-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                             title="Delete template"
                             onClick={() => {
-                              if (confirm(`Delete template "${template.slug}"? This is destructive.`)) {
+                              if (
+                                confirm(`Delete template "${template.slug}"? This is destructive.`)
+                              ) {
                                 deleteTemplate.mutate({ id: template.id });
                               }
                             }}
@@ -840,40 +948,62 @@ export default function NationalIssuesAdminPage() {
                 )}
               </div>
             ) : (
-              
               /* Active Issues Monitor View */
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md space-y-4">
-                
+              <div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
                 {/* Active Issues filters */}
-                <div className="flex gap-2 items-center">
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mr-2">Audit Filters</span>
-                  <Select value={activeStatusFilter} onValueChange={(val) => {
-                    setActiveStatusFilter(val);
-                    void refetchActiveIssues();
-                  }}>
-                    <SelectTrigger className="h-8 w-36 text-xs bg-black/20 border-white/10 text-white">
+                <div className="flex items-center gap-2">
+                  <span className="mr-2 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                    Audit Filters
+                  </span>
+                  <Select
+                    value={activeStatusFilter}
+                    onValueChange={(val) => {
+                      setActiveStatusFilter(val);
+                      void refetchActiveIssues();
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-36 border-white/10 bg-black/20 text-xs text-white">
                       <SelectValue placeholder="Status..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                      <SelectItem value="all" className="text-xs">All statuses</SelectItem>
-                      <SelectItem value="pending" className="text-xs">Pending</SelectItem>
-                      <SelectItem value="viewed" className="text-xs">Viewed</SelectItem>
-                      <SelectItem value="responded" className="text-xs">Responded</SelectItem>
-                      <SelectItem value="auto_resolved" className="text-xs">Auto Resolved</SelectItem>
-                      <SelectItem value="expired" className="text-xs">Expired</SelectItem>
-                      <SelectItem value="dismissed" className="text-xs">Dismissed</SelectItem>
+                    <SelectContent className="border-white/10 bg-slate-900 text-white">
+                      <SelectItem value="all" className="text-xs">
+                        All statuses
+                      </SelectItem>
+                      <SelectItem value="pending" className="text-xs">
+                        Pending
+                      </SelectItem>
+                      <SelectItem value="viewed" className="text-xs">
+                        Viewed
+                      </SelectItem>
+                      <SelectItem value="responded" className="text-xs">
+                        Responded
+                      </SelectItem>
+                      <SelectItem value="auto_resolved" className="text-xs">
+                        Auto Resolved
+                      </SelectItem>
+                      <SelectItem value="expired" className="text-xs">
+                        Expired
+                      </SelectItem>
+                      <SelectItem value="dismissed" className="text-xs">
+                        Dismissed
+                      </SelectItem>
                     </SelectContent>
                   </Select>
 
-                  <Select value={activeCountryFilter} onValueChange={(val) => {
-                    setActiveCountryFilter(val);
-                    void refetchActiveIssues();
-                  }}>
-                    <SelectTrigger className="h-8 w-44 text-xs bg-black/20 border-white/10 text-white">
+                  <Select
+                    value={activeCountryFilter}
+                    onValueChange={(val) => {
+                      setActiveCountryFilter(val);
+                      void refetchActiveIssues();
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-44 border-white/10 bg-black/20 text-xs text-white">
                       <SelectValue placeholder="Country..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                      <SelectItem value="all" className="text-xs">All Countries</SelectItem>
+                    <SelectContent className="border-white/10 bg-slate-900 text-white">
+                      <SelectItem value="all" className="text-xs">
+                        All Countries
+                      </SelectItem>
                       {countries?.map((c: any) => (
                         <SelectItem key={c.id} value={c.id} className="text-xs">
                           {c.name}
@@ -882,61 +1012,84 @@ export default function NationalIssuesAdminPage() {
                     </SelectContent>
                   </Select>
 
-                  <Button variant="ghost" size="sm" onClick={() => void refetchActiveIssues()} className="h-8 hover:bg-white/5 text-slate-300">
-                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void refetchActiveIssues()}
+                    className="h-8 text-slate-300 hover:bg-white/5"
+                  >
+                    <RefreshCw className="mr-1 h-3.5 w-3.5" />
                     Refresh Feed
                   </Button>
                 </div>
 
                 {/* Issues List Container */}
-                <div className="max-h-[calc(100vh-280px)] overflow-y-auto pr-1 space-y-2 scrollbar-thin">
+                <div className="max-h-[calc(100vh-280px)] scrollbar-thin space-y-2 overflow-y-auto pr-1">
                   {isIssuesLoading ? (
-                    <div className="text-slate-400 py-8 text-center text-xs">Loading active issues...</div>
+                    <div className="py-8 text-center text-xs text-slate-400">
+                      Loading active issues...
+                    </div>
                   ) : activeIssues.length === 0 ? (
-                    <div className="text-slate-400 py-8 text-center text-xs border border-dashed border-white/10 rounded-xl bg-white/5">
+                    <div className="rounded-xl border border-dashed border-white/10 bg-white/5 py-8 text-center text-xs text-slate-400">
                       No active issues match the selected filters.
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-xs text-left text-slate-300">
-                        <thead className="text-[10px] text-slate-400 uppercase tracking-wider bg-black/40 border-b border-white/10">
+                      <table className="w-full text-left text-xs text-slate-300">
+                        <thead className="border-b border-white/10 bg-black/40 text-[10px] tracking-wider text-slate-400 uppercase">
                           <tr>
-                            <th className="py-2 px-3">Country</th>
-                            <th className="py-2 px-3">Issue Title</th>
-                            <th className="py-2 px-3">Severity</th>
-                            <th className="py-2 px-3">Urgency</th>
-                            <th className="py-2 px-3">Status</th>
-                            <th className="py-2 px-3">Resolution Choice</th>
-                            <th className="py-2 px-3 text-right">Created At</th>
+                            <th className="px-3 py-2">Country</th>
+                            <th className="px-3 py-2">Issue Title</th>
+                            <th className="px-3 py-2">Severity</th>
+                            <th className="px-3 py-2">Urgency</th>
+                            <th className="px-3 py-2">Status</th>
+                            <th className="px-3 py-2">Resolution Choice</th>
+                            <th className="px-3 py-2 text-right">Created At</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                           {activeIssues.map((issue) => (
                             <tr key={issue.id} className="hover:bg-white/5">
-                              <td className="py-2.5 px-3 font-semibold text-white">{issue.country.name}</td>
-                              <td className="py-2.5 px-3 truncate max-w-[200px]" title={issue.title}>{issue.title}</td>
-                              <td className="py-2.5 px-3">
-                                <Badge variant="outline" className={`text-[9px] py-0 px-1 uppercase ${SEVERITY_COLORS[issue.severity] ?? ""}`}>
+                              <td className="px-3 py-2.5 font-semibold text-white">
+                                {issue.country.name}
+                              </td>
+                              <td
+                                className="max-w-[200px] truncate px-3 py-2.5"
+                                title={issue.title}
+                              >
+                                {issue.title}
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <Badge
+                                  variant="outline"
+                                  className={`px-1 py-0 text-[9px] uppercase ${SEVERITY_COLORS[issue.severity] ?? ""}`}
+                                >
                                   {issue.severity}
                                 </Badge>
                               </td>
-                              <td className="py-2.5 px-3 font-mono">{issue.urgency}%</td>
-                              <td className="py-2.5 px-3">
-                                <Badge variant="outline" className={`text-[9px] py-0 px-1 uppercase ${STATUS_COLORS[issue.status] ?? ""}`}>
+                              <td className="px-3 py-2.5 font-mono">{issue.urgency}%</td>
+                              <td className="px-3 py-2.5">
+                                <Badge
+                                  variant="outline"
+                                  className={`px-1 py-0 text-[9px] uppercase ${STATUS_COLORS[issue.status] ?? ""}`}
+                                >
                                   {issue.status}
                                 </Badge>
                               </td>
-                              <td className="py-2.5 px-3 truncate max-w-[150px]" title={issue.chosenOptionLabel ?? ""}>
+                              <td
+                                className="max-w-[150px] truncate px-3 py-2.5"
+                                title={issue.chosenOptionLabel ?? ""}
+                              >
                                 {issue.chosenOptionLabel ? (
-                                  <span className="text-green-400 flex items-center gap-1">
-                                    <CheckCircle className="h-3 w-3 inline shrink-0" />
+                                  <span className="flex items-center gap-1 text-green-400">
+                                    <CheckCircle className="inline h-3 w-3 shrink-0" />
                                     {issue.chosenOptionLabel}
                                   </span>
                                 ) : (
                                   <span className="text-slate-500">Unresolved</span>
                                 )}
                               </td>
-                              <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[10px]">
+                              <td className="px-3 py-2.5 text-right font-mono text-[10px] text-slate-400">
                                 {new Date(issue.createdAt).toLocaleString()}
                               </td>
                             </tr>
@@ -953,12 +1106,14 @@ export default function NationalIssuesAdminPage() {
 
         {/* Preview Dialog */}
         <Dialog open={!!previewModal} onOpenChange={(open) => !open && setPreviewModal(null)}>
-          <DialogContent className="max-w-xl bg-slate-900 border-white/10 text-white">
+          <DialogContent className="max-w-xl border-white/10 bg-slate-900 text-white">
             <DialogHeader>
-              <DialogTitle className="text-white text-md">Issue Template Execution Preview</DialogTitle>
+              <DialogTitle className="text-md text-white">
+                Issue Template Execution Preview
+              </DialogTitle>
             </DialogHeader>
             {isPreviewLoading ? (
-              <div className="text-slate-400 py-4 text-center text-xs">Evaluating triggers...</div>
+              <div className="py-4 text-center text-xs text-slate-400">Evaluating triggers...</div>
             ) : previewData ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -966,20 +1121,23 @@ export default function NationalIssuesAdminPage() {
                     variant={previewData.triggersPassed ? "default" : "outline"}
                     className={
                       previewData.triggersPassed
-                        ? "bg-green-500/20 text-green-400 border-green-500/20 text-xs"
-                        : "bg-red-500/20 text-red-400 border-red-500/20 text-xs"
+                        ? "border-green-500/20 bg-green-500/20 text-xs text-green-400"
+                        : "border-red-500/20 bg-red-500/20 text-xs text-red-400"
                     }
                   >
-                    Criteria Check: {previewData.triggersPassed ? "CRITERIA PASSED" : "CRITERIA FAILED"}
+                    Criteria Check:{" "}
+                    {previewData.triggersPassed ? "CRITERIA PASSED" : "CRITERIA FAILED"}
                   </Badge>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-white/5 p-3.5">
-                  <h4 className="mb-1 text-xs font-bold text-amber-400">{previewData.rendered.title}</h4>
-                  <p className="text-slate-300 text-xs leading-relaxed">
+                  <h4 className="mb-1 text-xs font-bold text-amber-400">
+                    {previewData.rendered.title}
+                  </h4>
+                  <p className="text-xs leading-relaxed text-slate-300">
                     {previewData.rendered.description}
                   </p>
                   {previewData.rendered.longDescription && (
-                    <p className="text-slate-400 mt-2.5 border-l-2 border-white/15 pl-2.5 text-xs whitespace-pre-line leading-relaxed">
+                    <p className="mt-2.5 border-l-2 border-white/15 pl-2.5 text-xs leading-relaxed whitespace-pre-line text-slate-400">
                       {previewData.rendered.longDescription}
                     </p>
                   )}
@@ -990,13 +1148,15 @@ export default function NationalIssuesAdminPage() {
                     {previewData.rendered.responseOptions.map((opt: any, i: number) => (
                       <div key={i} className="rounded-lg border border-white/10 bg-black/20 p-2.5">
                         <span className="text-xs font-semibold text-white">{opt.label}</span>
-                        <p className="text-slate-400 text-[10px] mt-0.5">{opt.description}</p>
+                        <p className="mt-0.5 text-[10px] text-slate-400">{opt.description}</p>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="text-slate-500 text-[10px] border-t border-white/5 pt-2.5">
-                  Tested Against Country: {previewData.snapshot.name} | GDP: ${previewData.snapshot.gdp?.toLocaleString()} | Public Approval: {previewData.snapshot.approval}%
+                <div className="border-t border-white/5 pt-2.5 text-[10px] text-slate-500">
+                  Tested Against Country: {previewData.snapshot.name} | GDP: $
+                  {previewData.snapshot.gdp?.toLocaleString()} | Public Approval:{" "}
+                  {previewData.snapshot.approval}%
                 </div>
               </div>
             ) : null}
@@ -1006,11 +1166,12 @@ export default function NationalIssuesAdminPage() {
         {/* Template CRUD Editor Side Sheet */}
         <TemplateEditorSheet
           isOpen={editorSheet.isOpen}
-          onOpenChange={(open) => setEditorSheet({ isOpen: open, templateId: editorSheet.templateId })}
+          onOpenChange={(open) =>
+            setEditorSheet({ isOpen: open, templateId: editorSheet.templateId })
+          }
           templateId={editorSheet.templateId}
           onSuccess={handleGlobalRefresh}
         />
-
       </div>
     </div>
   );
@@ -1018,9 +1179,11 @@ export default function NationalIssuesAdminPage() {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col justify-between">
-      <div className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">{label}</div>
-      <div className="text-lg font-bold mt-1 text-white">{value}</div>
+    <div className="flex flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-3">
+      <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+        {label}
+      </div>
+      <div className="mt-1 text-lg font-bold text-white">{value}</div>
     </div>
   );
 }

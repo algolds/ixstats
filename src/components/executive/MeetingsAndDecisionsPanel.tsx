@@ -225,10 +225,10 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                     ]}
                     children={
                       isInvitee && (
-                        <div className="mt-3 flex items-center gap-2 border-t border-border/40 pt-2.5">
+                        <div className="border-border/40 mt-3 flex items-center gap-2 border-t pt-2.5">
                           <Button
                             size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-7 px-3"
+                            className="h-7 bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-700"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleAccept(meeting.id);
@@ -236,14 +236,14 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                             disabled={acceptMutation.isPending || declineMutation.isPending}
                           >
                             {acceptMutation.isPending && activeMeetingId === meeting.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                             ) : null}
                             Accept Invite
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-red-200 hover:bg-red-50 hover:text-red-700 text-red-600 dark:border-red-950 dark:hover:bg-red-950/20 text-xs h-7 px-3"
+                            className="h-7 border-red-200 px-3 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-950 dark:hover:bg-red-950/20"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDecline(meeting.id);
@@ -251,7 +251,7 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                             disabled={acceptMutation.isPending || declineMutation.isPending}
                           >
                             {declineMutation.isPending && activeMeetingId === meeting.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                             ) : null}
                             Decline
                           </Button>

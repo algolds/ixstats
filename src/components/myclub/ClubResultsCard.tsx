@@ -66,11 +66,7 @@ function CompareRow({
 }
 
 function resultClasses(r: string) {
-  return r === "W"
-    ? "text-emerald-500"
-    : r === "L"
-      ? "text-rose-500"
-      : "text-muted-foreground";
+  return r === "W" ? "text-emerald-500" : r === "L" ? "text-rose-500" : "text-muted-foreground";
 }
 
 export function ClubResultsCard({ teamId }: { teamId: string }) {

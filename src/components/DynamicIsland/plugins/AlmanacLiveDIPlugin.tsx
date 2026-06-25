@@ -17,11 +17,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { PreText } from "~/components/ui/pretext";
-import {
-  getUpcomingEvents,
-  formatIxCountdown,
-  type AlmanacEvent,
-} from "~/lib/statecraft-almanac";
+import { getUpcomingEvents, formatIxCountdown, type AlmanacEvent } from "~/lib/statecraft-almanac";
 import { AlmanacView } from "~/components/DynamicIsland/AlmanacView";
 
 const ACCENT = "#3b82f6"; // almanac blue

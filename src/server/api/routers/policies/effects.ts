@@ -108,7 +108,11 @@ export const policiesEffectsRouter = createTRPCRouter({
             const target = targetMetrics.find((t: any) => t.metric === e.metricName);
             if (!target) return false;
             // Lower is better for unemployment/inflation
-            if (e.metricName === "unemployment" || e.metricName === "unemploymentRate" || e.metricName === "inflation") {
+            if (
+              e.metricName === "unemployment" ||
+              e.metricName === "unemploymentRate" ||
+              e.metricName === "inflation"
+            ) {
               return e.newValue <= target.value;
             }
             return e.newValue >= target.value;
@@ -117,7 +121,11 @@ export const policiesEffectsRouter = createTRPCRouter({
           targetMet = recentEffects.some((e: any) => {
             const targetVal = targetMetrics[e.metricName];
             if (targetVal === undefined) return false;
-            if (e.metricName === "unemployment" || e.metricName === "unemploymentRate" || e.metricName === "inflation") {
+            if (
+              e.metricName === "unemployment" ||
+              e.metricName === "unemploymentRate" ||
+              e.metricName === "inflation"
+            ) {
               return e.newValue <= targetVal;
             }
             return e.newValue >= targetVal;

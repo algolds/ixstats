@@ -50,21 +50,24 @@ const helpSections: HelpSection[] = [
       {
         id: "welcome",
         title: "Welcome to IxStats",
-        description: "What this place is, and what you'll build here — especially if you're coming from NationStates.",
+        description:
+          "What this place is, and what you'll build here — especially if you're coming from NationStates.",
         path: "/help/getting-started/welcome",
         tags: ["basics", "intro", "nationstates", "worldbuilding"],
       },
       {
         id: "first-country",
         title: "Create Your First Nation",
-        description: "From a blank page to a living country in a few minutes. We'll walk you through it.",
+        description:
+          "From a blank page to a living country in a few minutes. We'll walk you through it.",
         path: "/help/getting-started/first-country",
         tags: ["country", "builder", "tutorial", "first steps"],
       },
       {
         id: "gameplay-overview",
         title: "How It All Fits Together",
-        description: "Economy, government, diplomacy, the map — a quick tour of how your nation comes alive.",
+        description:
+          "Economy, government, diplomacy, the map — a quick tour of how your nation comes alive.",
         path: "/help/getting-started/gameplay-overview",
         tags: ["basics", "overview", "worldbuilding"],
       },
@@ -94,35 +97,40 @@ const helpSections: HelpSection[] = [
       {
         id: "simulation",
         title: "How Your Nation Comes Alive",
-        description: "Your economy and the wider world keep moving even when you're away. Here's the rhythm of it.",
+        description:
+          "Your economy and the wider world keep moving even when you're away. Here's the rhythm of it.",
         path: "/help/gameplay/simulation",
         tags: ["gameplay", "simulation", "world", "economy"],
       },
       {
         id: "country-building",
         title: "Shaping Your Nation",
-        description: "Going deeper with the builder — identity, government, economy, and the story you're telling.",
+        description:
+          "Going deeper with the builder — identity, government, economy, and the story you're telling.",
         path: "/help/gameplay/country-building",
         tags: ["gameplay", "builder", "country", "worldbuilding"],
       },
       {
         id: "national-issues",
         title: "National Issues & Decisions",
-        description: "Events that land on your desk and ask: what kind of leader are you? Your choices stick.",
+        description:
+          "Events that land on your desk and ask: what kind of leader are you? Your choices stick.",
         path: "/help/gameplay/national-issues",
         tags: ["gameplay", "issues", "events", "decisions"],
       },
       {
         id: "achievements",
         title: "Achievements & Rewards",
-        description: "Milestones to chase, rarity tiers to unlock, and IxCredits to earn along the way.",
+        description:
+          "Milestones to chase, rarity tiers to unlock, and IxCredits to earn along the way.",
         path: "/help/gameplay/achievements",
         tags: ["gameplay", "achievements", "progression", "rewards"],
       },
       {
         id: "leaderboards",
         title: "Leaderboards & Rankings",
-        description: "See how your nation measures up — by economy, population, influence, and more.",
+        description:
+          "See how your nation measures up — by economy, population, influence, and more.",
         path: "/help/gameplay/leaderboards",
         tags: ["gameplay", "leaderboards", "rankings"],
       },
@@ -145,7 +153,8 @@ const helpSections: HelpSection[] = [
       {
         id: "executive",
         title: "The Executive Desk",
-        description: "Hold cabinet meetings, set national policy, and make the big calls that move your nation.",
+        description:
+          "Hold cabinet meetings, set national policy, and make the big calls that move your nation.",
         path: "/help/mycountry/executive",
         tags: ["mycountry", "executive", "policies", "meetings"],
       },
@@ -159,7 +168,8 @@ const helpSections: HelpSection[] = [
       {
         id: "intelligence",
         title: "Reading the Room",
-        description: "Analytics and insights that turn your nation's numbers into clear next moves.",
+        description:
+          "Analytics and insights that turn your nation's numbers into clear next moves.",
         path: "/help/mycountry/intelligence",
         tags: ["mycountry", "intelligence", "analytics"],
       },
@@ -173,7 +183,8 @@ const helpSections: HelpSection[] = [
       {
         id: "politics",
         title: "Politics & Elections",
-        description: "Your legislature, political parties, and the elections that decide who holds power.",
+        description:
+          "Your legislature, political parties, and the elections that decide who holds power.",
         path: "/help/mycountry/politics",
         tags: ["mycountry", "politics", "elections", "parties"],
       },
@@ -189,14 +200,16 @@ const helpSections: HelpSection[] = [
       {
         id: "economic-tiers",
         title: "Economic Tiers",
-        description: "Seven stages from Impoverished to Extravagant — and how nations climb the ladder.",
+        description:
+          "Seven stages from Impoverished to Extravagant — and how nations climb the ladder.",
         path: "/help/economy/tiers",
         tags: ["economy", "tiers", "growth"],
       },
       {
         id: "calculations",
         title: "How Your Economy Is Measured",
-        description: "What GDP, growth, and the other numbers mean for your nation — in plain language.",
+        description:
+          "What GDP, growth, and the other numbers mean for your nation — in plain language.",
         path: "/help/economy/calculations",
         tags: ["economy", "gdp", "indicators"],
       },
@@ -210,14 +223,16 @@ const helpSections: HelpSection[] = [
       {
         id: "trade",
         title: "Trade & Commerce",
-        description: "Trade with the world, balance imports and exports, and grow through commerce.",
+        description:
+          "Trade with the world, balance imports and exports, and grow through commerce.",
         path: "/help/economy/trade",
         tags: ["economy", "trade", "international"],
       },
       {
         id: "tax-system",
         title: "Taxes & Revenue",
-        description: "Set tax rates, brackets, and exemptions — and fund the nation you want to build.",
+        description:
+          "Set tax rates, brackets, and exemptions — and fund the nation you want to build.",
         path: "/help/economy/tax-system",
         tags: ["economy", "tax", "revenue", "fiscal"],
       },
@@ -240,7 +255,8 @@ const helpSections: HelpSection[] = [
       {
         id: "atomic",
         title: "The Deep Way: Atomic Components",
-        description: "Build a government piece by piece and unlock bonuses when the right parts work together.",
+        description:
+          "Build a government piece by piece and unlock bonuses when the right parts work together.",
         path: "/help/government/atomic",
         tags: ["government", "atomic", "advanced"],
       },
@@ -254,7 +270,8 @@ const helpSections: HelpSection[] = [
       {
         id: "synergy",
         title: "Synergies & Conflicts",
-        description: "Some choices amplify each other; others clash. Here's how to find the sweet spots.",
+        description:
+          "Some choices amplify each other; others clash. Here's how to find the sweet spots.",
         path: "/help/government/synergy",
         tags: ["government", "synergy", "interactions"],
       },
@@ -291,7 +308,8 @@ const helpSections: HelpSection[] = [
       {
         id: "crisis-events",
         title: "Handling Crises",
-        description: "Disasters, unrest, and emergencies — and how you steer your nation through them.",
+        description:
+          "Disasters, unrest, and emergencies — and how you steer your nation through them.",
         path: "/help/defense/crisis-events",
         tags: ["defense", "crisis", "events"],
       },
@@ -393,7 +411,8 @@ const helpSections: HelpSection[] = [
       {
         id: "npc-personalities",
         title: "Meeting Other Leaders",
-        description: "The world's leaders have personalities of their own — and they remember how you treat them.",
+        description:
+          "The world's leaders have personalities of their own — and they remember how you treat them.",
         path: "/help/diplomacy/npc-personalities",
         tags: ["diplomacy", "leaders", "personality"],
       },
@@ -407,7 +426,8 @@ const helpSections: HelpSection[] = [
       {
         id: "cultural",
         title: "Cultural Exchanges",
-        description: "Soft power in action — share your culture and warm relations with other nations.",
+        description:
+          "Soft power in action — share your culture and warm relations with other nations.",
         path: "/help/diplomacy/cultural",
         tags: ["diplomacy", "culture", "exchanges"],
       },
@@ -481,7 +501,8 @@ const helpSections: HelpSection[] = [
       {
         id: "thinktanks",
         title: "ThinkTanks",
-        description: "Form groups with other worldbuilders to plan, collaborate, and tell shared stories.",
+        description:
+          "Form groups with other worldbuilders to plan, collaborate, and tell shared stories.",
         path: "/help/social/thinktanks",
         tags: ["social", "thinktanks", "groups"],
       },
