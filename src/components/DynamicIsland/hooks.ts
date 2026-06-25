@@ -201,6 +201,7 @@ export function useDynamicIslandState() {
         newMode === "notifications" ||
         newMode === "settings" ||
         newMode === "mycountry" ||
+        newMode === "almanac" ||
         newMode.startsWith("plugin:");
 
       if (isExpandedMode) {
