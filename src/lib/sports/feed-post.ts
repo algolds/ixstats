@@ -13,6 +13,7 @@ export async function postMatchDayBulletin(
   prisma: PrismaClient,
   args: {
     leagueName: string;
+    leagueId?: string;
     sportPreset: string;
     matchDay: number;
     results: MatchDayResultLine[];
@@ -26,17 +27,22 @@ export async function postMatchDayBulletin(
     if (!acct) return;
 
     const { getSportEmoji } = await import("./presets");
-    const { formatMatchDayBulletin } = await import("./feed-bulletins");
+    const { formatMatchDayBulletin, buildMatchDayBulletinData, encodeSportsBulletin } =
+      await import("./feed-bulletins");
 
-    const render = (llmSummary?: string) =>
-      formatMatchDayBulletin({
+    const render = (llmSummary?: string) => {
+      const common = {
         leagueName: args.leagueName,
+        leagueId: args.leagueId,
         sportEmoji: getSportEmoji(args.sportPreset),
         matchDay: args.matchDay,
         results: args.results,
         movers: args.movers,
         llmSummary,
-      });
+      };
+      // Structured marker (for the rich feed card) + markdown body (Discord/fallback).
+      return encodeSportsBulletin(buildMatchDayBulletinData(common), formatMatchDayBulletin(common));
+    };
 
     const post = await prisma.thinkpagesPost.create({
       data: {

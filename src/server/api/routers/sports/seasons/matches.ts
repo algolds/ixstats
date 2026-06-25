@@ -357,6 +357,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
         const { postMatchDayBulletin } = await import("~/lib/sports/feed-post");
         await postMatchDayBulletin(ctx.db, {
           leagueName: season.league.name,
+          leagueId: season.leagueId,
           sportPreset: season.league.sportPreset,
           matchDay: input.matchDay,
           results: matches.map((match, index) => {
@@ -366,6 +367,8 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
               awayName: match.awayTeam.name as string,
               homeScore: res.homeScore,
               awayScore: res.awayScore,
+              homeId: match.homeTeamId as string,
+              awayId: match.awayTeamId as string,
             };
           }),
         });

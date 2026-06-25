@@ -352,6 +352,8 @@ async function advanceLeagueMatchDay(
       awayName: m.awayTeam.name,
       homeScore: result.homeScore,
       awayScore: result.awayScore,
+      homeId: m.homeTeamId,
+      awayId: m.awayTeamId,
     });
 
     if (m.homeTeam.ownerUserId && m.homeTeam.notifyResults !== false) {
@@ -425,7 +427,7 @@ async function advanceLeagueMatchDay(
     orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
   });
 
-  const movers: Array<{ name: string; oldRank: number; newRank: number }> = [];
+  const movers: Array<{ name: string; id: string; oldRank: number; newRank: number }> = [];
   for (let i = 0; i < allStandings.length; i++) {
     const row = allStandings[i]!;
     const newRank = i + 1;
@@ -434,7 +436,7 @@ async function advanceLeagueMatchDay(
 
     const name = nameById.get(row.teamId);
     if (name && oldRank > 0 && oldRank !== newRank) {
-      movers.push({ name, oldRank, newRank });
+      movers.push({ name, id: row.teamId, oldRank, newRank });
     }
   }
   movers.sort((a, b) => Math.abs(b.oldRank - b.newRank) - Math.abs(a.oldRank - a.newRank));
@@ -443,6 +445,7 @@ async function advanceLeagueMatchDay(
   // Post the matchday bulletin to the feed (same path as the manual sim).
   await postMatchDayBulletin(prisma, {
     leagueName: season.league.name,
+    leagueId: season.leagueId,
     sportPreset: season.league.sportPreset,
     matchDay: targetMatchDay,
     results: resultLines,

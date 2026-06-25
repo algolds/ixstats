@@ -4,6 +4,8 @@ export interface MatchDayResultLine {
   homeScore: number;
   awayScore: number;
   isUpset?: boolean;
+  homeId?: string;
+  awayId?: string;
 }
 
 /**
@@ -13,6 +15,50 @@ export interface StandingMover {
   name: string;
   oldRank: number;
   newRank: number;
+  id?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Structured payload — lets the feed render a rich card with deep links while
+// the markdown body (below) stays intact for Discord mirroring + fallback.
+// ---------------------------------------------------------------------------
+
+export const SPORTS_BULLETIN_PREFIX = "[sportsbulletin]";
+
+export interface SportsBulletinData {
+  league: { name: string; id?: string };
+  sportEmoji: string;
+  matchDay: number;
+  results: Array<{
+    home: { name: string; id?: string };
+    away: { name: string; id?: string };
+    homeScore: number;
+    awayScore: number;
+    isUpset?: boolean;
+  }>;
+  movers?: Array<{ name: string; id?: string; oldRank: number; newRank: number }>;
+  llmSummary?: string;
+}
+
+/** Prepend a one-line JSON marker so the feed can render a structured card. */
+export function encodeSportsBulletin(data: SportsBulletinData, markdown: string): string {
+  return `${SPORTS_BULLETIN_PREFIX}${JSON.stringify(data)}\n\n${markdown}`;
+}
+
+/** Parse the marker back out; returns null for ordinary posts. */
+export function parseSportsBulletin(
+  content: string | null | undefined
+): { data: SportsBulletinData; body: string } | null {
+  if (!content?.startsWith(SPORTS_BULLETIN_PREFIX)) return null;
+  const rest = content.slice(SPORTS_BULLETIN_PREFIX.length);
+  const nl = rest.indexOf("\n");
+  if (nl === -1) return null;
+  try {
+    const data = JSON.parse(rest.slice(0, nl)) as SportsBulletinData;
+    return { data, body: rest.slice(nl).replace(/^\n+/, "") };
+  } catch {
+    return null; // ponytail: malformed marker → fall back to plain text
+  }
 }
 
 function ordinal(n: number): string {
@@ -67,6 +113,37 @@ export function formatMatchDayBulletin(args: {
   const summarySection = llmSummary ? `\n\n📝 **Matchday Summary**\n${llmSummary}` : "";
 
   return `${header}\n${separator}\n${matchLines.join("\n")}${upsetSection}${moversSection}${summarySection}`;
+}
+
+/** Build the structured payload that backs the rich feed card. */
+export function buildMatchDayBulletinData(args: {
+  leagueName: string;
+  leagueId?: string;
+  sportEmoji: string;
+  matchDay: number;
+  results: MatchDayResultLine[];
+  movers?: StandingMover[];
+  llmSummary?: string;
+}): SportsBulletinData {
+  return {
+    league: { name: args.leagueName, id: args.leagueId },
+    sportEmoji: args.sportEmoji,
+    matchDay: args.matchDay,
+    results: args.results.map((r) => ({
+      home: { name: r.homeName, id: r.homeId },
+      away: { name: r.awayName, id: r.awayId },
+      homeScore: r.homeScore,
+      awayScore: r.awayScore,
+      isUpset: r.isUpset,
+    })),
+    movers: args.movers?.map((m) => ({
+      name: m.name,
+      id: m.id,
+      oldRank: m.oldRank,
+      newRank: m.newRank,
+    })),
+    llmSummary: args.llmSummary,
+  };
 }
 
 /**

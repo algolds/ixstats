@@ -77,6 +77,8 @@ import {
   extractMentions,
 } from "~/lib/text-formatter";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
+import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 import { getSportEmoji } from "~/lib/sports/presets";
 
@@ -262,6 +264,7 @@ const ThinkpagesPostComponent = ({
   const notify = useNotify();
   const utils = api.useUtils();
   const blurbMeta = parseBlurbMeta(post);
+  const sportsBulletin = React.useMemo(() => parseSportsBulletin(post.content), [post.content]);
 
   const { user: currentUserData } = usePermissions();
   const currentUserRoleLevel = currentUserData?.role?.level ?? 100;
@@ -774,9 +777,13 @@ const ThinkpagesPostComponent = ({
         </div>
 
         {/* Content body */}
-        <div className="mt-2 text-[20px] leading-relaxed font-normal whitespace-pre-wrap text-slate-100 select-text">
-          <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanPostContent)} />
-        </div>
+        {sportsBulletin ? (
+          <SportsBulletinCard data={sportsBulletin.data} />
+        ) : (
+          <div className="mt-2 text-[20px] leading-relaxed font-normal whitespace-pre-wrap text-slate-100 select-text">
+            <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanPostContent)} />
+          </div>
+        )}
 
         {/* Media attachments */}
         {mediaAttachments && mediaAttachments.length > 0 && (
