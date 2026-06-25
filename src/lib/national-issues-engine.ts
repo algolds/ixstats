@@ -1045,8 +1045,11 @@ export class NationalIssuesEngine {
     if (!lastLog) return true;
 
     const currentIxTime = IxTime.getCurrentIxTime();
-    const fiveIxMinutesMs = 5 * 60 * 1000;
-    return currentIxTime - lastLog.ixTimeAtEvaluation > fiveIxMinutesMs;
+    // Statecraft spine wants a weekly trickle, not a burst: space evaluations ~2 IxDays
+    // apart so a country's weekly allotment arrives over the week, not all at once.
+    // (The maxIssuesPerWeek cap above still bounds the total.) See plans/statecraft-stage1.md.
+    const debounceMs = GAMEPLAY_FLAGS.statecraftSpine ? 2 * 24 * 60 * 60 * 1000 : 5 * 60 * 1000;
+    return currentIxTime - lastLog.ixTimeAtEvaluation > debounceMs;
   }
 
   /**

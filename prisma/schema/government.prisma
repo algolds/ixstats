@@ -696,6 +696,11 @@ model NationalIssue {
   aiConfidence        Float?    @default(75)
   parentIssueId       String?
   childIssueIds       String?   // JSON array
+  // Statecraft recon (S1.D): when a cabinet research Meeting was commissioned, the
+  // IxTime its findings land. null = no recon; future = in progress; past = ready
+  // (the hard consequences are revealed with fog). One field encodes the whole state.
+  // See plans/statecraft-stage1.md.
+  reconReadyIxTime    Float?
   createdIxTime       Float
   ixCreditsAwarded    Int       @default(0)
   createdAt           DateTime  @default(now())

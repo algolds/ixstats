@@ -60,48 +60,10 @@ function DialogContent({
           className
         )}
         {...props}
-        onPointerDownOutside={(e) => {
-          const target = e.target as HTMLElement;
-          if (
-            target &&
-            (target.closest("[data-radix-select-content]") ||
-              target.closest("[data-radix-dropdown-menu-content]") ||
-              target.closest("[data-radix-popover-content]") ||
-              target.closest('[role="listbox"]') ||
-              target.closest('[data-slot="popover-content"]') ||
-              target.closest('[data-slot="popover-positioner"]') ||
-              target.closest('[data-slot="popover-portal"]') ||
-              target.closest(".bg-popover") ||
-              target.closest('[role="slider"]') ||
-              target.closest("input") ||
-              target.closest(".nested-media-modal") ||
-              target.closest('[data-dialog-nested="true"]') ||
-              target.closest('[data-slot="select-content"]'))
-          ) {
-            e.preventDefault();
-          }
-        }}
-        onFocusOutside={(e) => {
-          const target = e.target as HTMLElement;
-          if (
-            target &&
-            (target.closest("[data-radix-select-content]") ||
-              target.closest("[data-radix-dropdown-menu-content]") ||
-              target.closest("[data-radix-popover-content]") ||
-              target.closest('[role="listbox"]') ||
-              target.closest('[data-slot="popover-content"]') ||
-              target.closest('[data-slot="popover-positioner"]') ||
-              target.closest('[data-slot="popover-portal"]') ||
-              target.closest(".bg-popover") ||
-              target.closest('[role="slider"]') ||
-              target.closest("input") ||
-              target.closest(".nested-media-modal") ||
-              target.closest('[data-dialog-nested="true"]') ||
-              target.closest('[data-slot="select-content"]'))
-          ) {
-            e.preventDefault();
-          }
-        }}
+        // ponytail: never close on outside click — only the X button or Escape closes.
+        // Prevents accidental dismissal; was previously a whitelist of nested popovers.
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
       >
         {children}
         {showCloseButton && (

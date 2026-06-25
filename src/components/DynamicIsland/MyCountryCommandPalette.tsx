@@ -18,6 +18,8 @@ import {
   Gavel,
 } from "lucide-react";
 import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
+import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-almanac";
 import { useUser } from "~/context/auth-context";
 import { withBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl } from "~/lib/url-utils";
@@ -28,7 +30,7 @@ import type { DIViewProps } from "./types";
 
 interface CommandItem {
   id: string;
-  category: "Navigation" | "Executive Actions" | "Issues & Recommendations";
+  category: "Upcoming" | "Navigation" | "Executive Actions" | "Issues & Recommendations";
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -193,6 +195,39 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
     [navigateToSection, onClose, router]
   );
 
+  // Statecraft Almanac in the Halo: the upcoming dated events, same pure feed as the
+  // MyCountry hero calendar. See plans/statecraft-stage1.md (S1.A.3).
+  const { data: electionsData } = api.elections.getElections.useQuery(
+    { countryId: countryId ?? "" },
+    { enabled: !!countryId, staleTime: 60_000 }
+  );
+  const almanacItems = useMemo<CommandItem[]>(() => {
+    if (!countryId) return [];
+    const now = IxTime.getCurrentIxTime();
+    const events = getUpcomingEvents({
+      nowIxTime: now,
+      elections: (electionsData ?? []).map((e) => ({
+        id: e.id,
+        name: e.name,
+        scheduledIxTime: e.scheduledIxTime,
+        status: e.status,
+      })),
+      issueDeadlines: (issuesData?.issues ?? []).map((i) => ({
+        id: i.id,
+        title: i.title,
+        deadlineIxTime: (i as { deadlineIxTime?: number | null }).deadlineIxTime,
+      })),
+    });
+    return events.slice(0, 5).map((ev) => ({
+      id: `almanac-${ev.id}`,
+      category: "Upcoming" as const,
+      title: ev.label,
+      description: formatRelativeIxDays(ev.ixTime, now),
+      icon: Calendar,
+      action: () => navigateToSection(ev.section),
+    }));
+  }, [countryId, electionsData, issuesData, navigateToSection]);
+
   // 3. Dynamic active issues
   const activeIssues = useMemo<CommandItem[]>(() => {
     return (issuesData?.issues || []).map((issue) => ({
@@ -220,8 +255,8 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
 
   // Combined command list
   const allItems = useMemo<CommandItem[]>(() => {
-    return [...activeIssues, ...policyRecs, ...navItems, ...actionItems];
-  }, [activeIssues, policyRecs, navItems, actionItems]);
+    return [...almanacItems, ...activeIssues, ...policyRecs, ...navItems, ...actionItems];
+  }, [almanacItems, activeIssues, policyRecs, navItems, actionItems]);
 
   // Filter commands by search text
   const filteredItems = useMemo<CommandItem[]>(() => {

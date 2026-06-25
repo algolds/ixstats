@@ -35,6 +35,7 @@ import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
 import { IxTime } from "~/lib/ixtime";
+import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-almanac";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
@@ -549,12 +550,30 @@ export function OverviewHero({
   // Calendar reflects in-game IxTime, not real-world time
   const today = useMemo(() => new Date(IxTime.getCurrentIxTime()), []);
 
+  // Statecraft Almanac feed — the upcoming dated events (shared with the Halo clock,
+  // see plans/statecraft-stage1.md). Fed from data the hero already loads; no new query.
+  const upcomingEvents = useMemo(
+    () =>
+      getUpcomingEvents({
+        nowIxTime: IxTime.getCurrentIxTime(),
+        elections: elections?.map((e) => ({
+          id: e.id,
+          name: e.name,
+          scheduledIxTime: e.scheduledIxTime,
+          status: e.status,
+        })),
+      }),
+    [elections]
+  );
+
   const nextEventText = useMemo(() => {
+    const next = upcomingEvents[0];
+    if (next) return `${next.label} ${formatRelativeIxDays(next.ixTime, IxTime.getCurrentIxTime())}`;
     if (pendingElections > 0) return "Election Pending";
     if (meetings?.some((m) => m.status?.toLowerCase() === "scheduled")) return "Cabinet Meet";
     if (pActions > 0) return "Action Items";
     return "All Clear";
-  }, [pendingElections, meetings, pActions]);
+  }, [upcomingEvents, pendingElections, meetings, pActions]);
 
   // ── Dynamic Alerts List ──
   const alertsList = useMemo(() => {

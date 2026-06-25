@@ -106,6 +106,20 @@ function IssueDetailModalInner({
   const [localOutcome, setLocalOutcome] = useState<string | null>(null);
   const notify = useNotify();
 
+  // Statecraft recon (S1.D): cabinet research that reveals the hard numbers with fog.
+  const reconQuery = api.nationalIssues.getReconReveal.useQuery(
+    { issueId: issue?.id ?? "" },
+    { enabled: !!issue?.id && isOpen, refetchInterval: 30000 }
+  );
+  const commissionRecon = api.nationalIssues.commissionRecon.useMutation({
+    onSuccess: () => {
+      void reconQuery.refetch();
+      notify.success("Cabinet research commissioned — findings will land shortly.");
+    },
+    onError: (e: { message: string }) =>
+      notify.error("Could not commission research", e.message),
+  });
+
   const { data: activePolicies = [] } = api.policies.getPolicies.useQuery(
     { countryId: countryId!, status: "active" },
     { enabled: !!countryId && isOpen }
@@ -289,6 +303,87 @@ function IssueDetailModalInner({
                 </Button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Statecraft: Cabinet Research (recon) — reveals the hard numbers with fog */}
+        {!isResolved && !showOutcome && reconQuery.data && reconQuery.data.status !== "disabled" && (
+          <div className="mt-4 space-y-2 rounded-lg border border-sky-500/20 bg-sky-500/[0.03] p-3">
+            <h3 className="flex items-center gap-2 text-sm font-medium">
+              <Sliders className="h-4 w-4 text-sky-400" />
+              Cabinet Research
+            </h3>
+            {reconQuery.data.status === "none" && (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-muted-foreground text-xs">
+                  Commission a meeting to reveal the hard projected effects behind each option.
+                  Costs administrative Capacity.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={commissionRecon.isPending}
+                  onClick={() => issue && commissionRecon.mutate({ issueId: issue.id })}
+                >
+                  Commission
+                </Button>
+              </div>
+            )}
+            {reconQuery.data.status === "pending" && (
+              <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                <Clock className="h-3.5 w-3.5 animate-pulse text-sky-400" />
+                Your team is researching — findings land in{" "}
+                {Math.max(
+                  1,
+                  Math.ceil(((reconQuery.data.readyIxTime ?? 0) - currentIxTime) / (24 * 60 * 60 * 1000))
+                )}{" "}
+                day(s).
+              </p>
+            )}
+            {reconQuery.data.status === "ready" && (
+              <div className="space-y-2">
+                {reconQuery.data.options.map((o) => (
+                  <div key={o.optionId} className="rounded border border-white/5 bg-white/[0.02] p-2">
+                    <p className="text-foreground/90 mb-1 text-xs font-semibold">{o.label}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {o.reveals.length === 0 && (
+                        <span className="text-muted-foreground/60 text-[10px]">No measurable effects.</span>
+                      )}
+                      {o.reveals.map((r, i) => {
+                        const field = r.targetField.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+                        const val =
+                          r.value == null
+                            ? "—"
+                            : r.operation === "multiply"
+                              ? `×${r.value}`
+                              : r.operation === "set"
+                                ? `=${r.value}`
+                                : `${r.operation === "subtract" ? "-" : "+"}${Math.abs(r.value)}`;
+                        const cls =
+                          r.state === "greyed"
+                            ? "text-muted-foreground/50"
+                            : r.state === "questioned"
+                              ? "text-amber-400/90"
+                              : "text-emerald-400/90";
+                        return (
+                          <span
+                            key={i}
+                            title={r.reason ?? undefined}
+                            className={`rounded bg-white/[0.04] px-1.5 py-0.5 text-[10px] ${cls}`}
+                          >
+                            {field}: {val}
+                            {r.state === "questioned" ? " ?" : ""}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-muted-foreground/50 text-[9px]">
+                  Greyed = your government can&apos;t assess it · &ldquo;?&rdquo; = may be inaccurate.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

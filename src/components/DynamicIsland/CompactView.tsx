@@ -333,15 +333,8 @@ function CompactViewComponent({
                     {/* Time — hidden when plugin is active */}
                     {!activePlugin && (
                       <button
-                        onClick={() => {
-                          setTimeDisplayMode(
-                            timeDisplayMode === "time"
-                              ? "date"
-                              : timeDisplayMode === "date"
-                                ? "both"
-                                : "time"
-                          );
-                        }}
+                        onClick={() => onSwitchMode("almanac")}
+                        title="Open Almanac"
                         className="hover:bg-accent/50 flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 transition-colors"
                       >
                         {timeDisplayMode === "time" && (

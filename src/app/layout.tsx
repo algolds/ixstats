@@ -26,6 +26,7 @@ import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { DIPluginProvider } from "~/components/DynamicIsland";
 import { SportsLiveDIPlugin } from "~/components/DynamicIsland/plugins/SportsLiveDIPlugin";
+import { AlmanacLiveDIPlugin } from "~/components/DynamicIsland/plugins/AlmanacLiveDIPlugin";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 
@@ -76,6 +77,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                     <GlobalNotificationSystem>
                       <DIPluginProvider>
                         <SportsLiveDIPlugin />
+                        <AlmanacLiveDIPlugin />
                         <WikiContextProvider>
                           <WebGLErrorHandler />
                           <MapPrefetcher />

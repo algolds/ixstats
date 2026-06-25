@@ -35,6 +35,7 @@ export type ViewMode =
   | "notifications"
   | "settings"
   | "mycountry"
+  | "almanac"
   | "cycling"
   | `plugin:${string}`;
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";

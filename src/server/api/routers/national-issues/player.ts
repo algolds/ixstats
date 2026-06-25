@@ -12,11 +12,70 @@ import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues-engine";
+import type { ResponseOptionTemplate } from "~/lib/national-issues-engine";
 import { NationalIssuesConsequences } from "~/lib/national-issues-consequences";
 import { notificationAPI } from "~/lib/notification-api";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
+import { IxTime } from "~/lib/ixtime";
+import { revealConsequences } from "~/lib/statecraft-recon";
+import {
+  calculateCivilServiceCapacity,
+  calculateTotalConsumedStaff,
+} from "~/lib/atomic-government-utils";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
+
+// Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
+const RECON_CAPACITY_COST = 20; // Capacity reserved per in-progress recon Meeting
+const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT across gov quality (penalty = fog, not time)
+
+/**
+ * Recon context for a country: its atomic build (for the fog) + Capacity state.
+ * `used` includes in-progress recon Meetings, so over-committing recon over-extends
+ * the civil service and clouds results (the Capacity lever biting).
+ */
+async function loadReconContext(db: PrismaClient, countryId: string) {
+  const now = IxTime.getCurrentIxTime();
+  const [country, structure, components, pendingRecon] = await Promise.all([
+    db.country.findUnique({
+      where: { id: countryId },
+      select: { currentPopulation: true, governmentalEfficiency: true },
+    }),
+    db.governmentStructure.findUnique({
+      where: { countryId },
+      select: {
+        governmentEffectiveness: true,
+        departments: { where: { isActive: true }, select: { category: true } },
+      },
+    }),
+    db.governmentComponent.findMany({
+      where: { countryId, isActive: true },
+      select: { componentType: true },
+    }),
+    db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
+  ]);
+
+  const effectiveness =
+    structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
+  const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
+  // Stage 1 approximation: gov-component staff only (econ/tax omitted) + recon reserve.
+  const govStaff = calculateTotalConsumedStaff(
+    components.map((c) => c.componentType as any),
+    [],
+    [],
+  );
+  const used = govStaff + pendingRecon * RECON_CAPACITY_COST;
+
+  return {
+    componentTypes: components.map((c) => String(c.componentType)),
+    departmentCategories: (structure?.departments ?? []).map((d) => d.category),
+    capacity,
+    used,
+    available: Math.max(0, capacity - used),
+    overCapacity: used > capacity,
+    lowEfficiency: effectiveness < 40,
+  };
+}
 
 /** Ensures ~18 nations each have one force-generated showcase issue for the guest splash (idempotent per country). */
 async function seedSplashShowcaseIssues(db: PrismaClient): Promise<void> {
@@ -264,6 +323,94 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       }
 
       return { success: true };
+    }),
+
+  /**
+   * Statecraft SEE step: commission a cabinet research Meeting on an issue. Reserves
+   * Capacity and sets a constant delay; findings land at reconReadyIxTime, revealing
+   * the hard consequences with fog (getReconReveal). See plans/statecraft-stage1.md.
+   */
+  commissionRecon: protectedProcedure
+    .input(z.object({ issueId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!GAMEPLAY_FLAGS.statecraftSpine) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Statecraft recon is not enabled." });
+      }
+      const issue = await ctx.db.nationalIssue.findUnique({
+        where: { id: input.issueId },
+        select: { countryId: true, reconReadyIxTime: true },
+      });
+      if (!issue) throw new TRPCError({ code: "NOT_FOUND", message: "Issue not found" });
+      if (ctx.user?.countryId !== issue.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your country's issue." });
+      }
+      if (issue.reconReadyIxTime != null) {
+        throw new TRPCError({ code: "CONFLICT", message: "Research already commissioned for this issue." });
+      }
+      const cx = await loadReconContext(ctx.db as PrismaClient, issue.countryId);
+      if (cx.available < RECON_CAPACITY_COST) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Civil service is over capacity — free up administrative capacity before commissioning more research.",
+        });
+      }
+      const readyIxTime = IxTime.getCurrentIxTime() + RECON_DELAY_MS;
+      await ctx.db.nationalIssue.update({
+        where: { id: input.issueId },
+        data: { reconReadyIxTime: readyIxTime },
+      });
+      return { readyIxTime };
+    }),
+
+  /**
+   * Read recon findings for an issue. Never fabricates: each option's consequences come
+   * back revealed / greyed (no relevant component-dept) / questioned (over-capacity or
+   * low efficiency). Returns a status the UI gates on.
+   */
+  getReconReveal: protectedProcedure
+    .input(z.object({ issueId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (!GAMEPLAY_FLAGS.statecraftSpine) return { status: "disabled" as const };
+      const issue = await ctx.db.nationalIssue.findUnique({
+        where: { id: input.issueId },
+        select: { countryId: true, reconReadyIxTime: true, responseOptions: true },
+      });
+      if (!issue) throw new TRPCError({ code: "NOT_FOUND", message: "Issue not found" });
+      if (ctx.user?.countryId !== issue.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your country's issue." });
+      }
+      const now = IxTime.getCurrentIxTime();
+      if (issue.reconReadyIxTime == null) return { status: "none" as const };
+      if (issue.reconReadyIxTime > now) {
+        return { status: "pending" as const, readyIxTime: issue.reconReadyIxTime };
+      }
+
+      const cx = await loadReconContext(ctx.db as PrismaClient, issue.countryId);
+      let options: ResponseOptionTemplate[] = [];
+      try {
+        options = JSON.parse(issue.responseOptions);
+      } catch {}
+
+      const reconInput = {
+        componentTypes: cx.componentTypes,
+        departmentCategories: cx.departmentCategories,
+        overCapacity: cx.overCapacity,
+        lowEfficiency: cx.lowEfficiency,
+      };
+      const optionsOut = options.map((o) => {
+        const cons = o.consequences ?? [];
+        const reveals = revealConsequences(
+          cons.map((c) => ({ targetField: c.targetField })),
+          reconInput,
+        ).map((r, idx) => ({
+          ...r,
+          // Never fabricate: greyed effects carry no value.
+          value: r.state === "greyed" ? null : (cons[idx]?.value ?? null),
+          operation: cons[idx]?.operation ?? null,
+        }));
+        return { optionId: o.id, label: o.label, reveals };
+      });
+      return { status: "ready" as const, readyIxTime: issue.reconReadyIxTime, options: optionsOut };
     }),
 
   /**
