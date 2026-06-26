@@ -4,18 +4,19 @@
 // Onoma Lab — Overview & Quick Generator Section (Facet Rebuild)
 
 import { useState, useEffect, useRef } from "react";
-import { 
-  Compass, 
-  Wand2, 
-  SlidersHorizontal, 
-  Copy, 
-  Check, 
-  Bookmark, 
-  Plus, 
-  Loader2, 
+import {
+  Compass,
+  Wand2,
+  SlidersHorizontal,
+  Copy,
+  Check,
+  Bookmark,
+  Plus,
+  Loader2,
   Dna,
   BookOpen,
-  Info
+  Info,
+  Volume2,
 } from "lucide-react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
@@ -28,7 +29,37 @@ import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
 
 export function OverviewSection() {
   const bank = useNameBank();
-  
+
+  // Smart SpeechSynthesis handler for "Onoma" pronunciation
+  const playPronunciation = () => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance();
+    const voices = window.speechSynthesis.getVoices();
+
+    const greekVoice = voices.find((v) => v.lang.startsWith("el-") || v.lang.includes("Greek"));
+
+    if (greekVoice) {
+      utterance.voice = greekVoice;
+      utterance.text = "Όνομα";
+      utterance.lang = "el-GR";
+    } else {
+      utterance.text = "OH-nuh-muh";
+      utterance.lang = "en-US";
+      const englishVoice = voices.find(
+        (v) => v.lang.startsWith("en-") || v.lang.includes("English")
+      );
+      if (englishVoice) {
+        utterance.voice = englishVoice;
+      }
+    }
+
+    utterance.rate = 0.82;
+    utterance.pitch = 1.0;
+    window.speechSynthesis.speak(utterance);
+  };
+
   // Public dictionaries
   const publicDicts = bank.publicDictionaries || [];
 
@@ -37,7 +68,7 @@ export function OverviewSection() {
   const [batchCount, setBatchCount] = useState<number>(30);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [order, setOrder] = useState<number>(3);
-  
+
   // Markov Generation Options
   const [options, setOptions] = useState<GenerateOptions>({
     minLength: 4,
@@ -67,9 +98,7 @@ export function OverviewSection() {
   // Auto-select "Iron Age States" dictionary when loaded
   useEffect(() => {
     if (publicDicts.length > 0 && !selectedDictId) {
-      const ironAgeDict = publicDicts.find(
-        (d) => d.title.toLowerCase() === "iron age states"
-      );
+      const ironAgeDict = publicDicts.find((d) => d.title.toLowerCase() === "iron age states");
       setSelectedDictId(ironAgeDict ? ironAgeDict.id : publicDicts[0].id);
     }
   }, [publicDicts, selectedDictId]);
@@ -185,16 +214,25 @@ export function OverviewSection() {
         <div className="relative z-10 max-w-xl space-y-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0091ff]/10 px-3 py-1 text-xs font-semibold text-[#0091ff]">
             <Compass className="h-3 w-3" />
-            Onoma (/ˈɒnəmə/ • Greek for “name,” root of onomastics)
+            Onoma (
+            <button
+              onClick={playPronunciation}
+              className="inline-flex cursor-pointer items-center gap-0.5 font-mono underline decoration-[#0091ff]/40 decoration-dotted transition-all select-none hover:text-[#0091ff] hover:decoration-[#0091ff] focus:outline-none"
+              title="Listen to pronunciation"
+            >
+              /ˈɒnəmə/
+              <Volume2 className="h-3.5 w-3.5 shrink-0 opacity-70 transition-all duration-200 hover:scale-110 hover:opacity-100" />
+            </button>
+            • Greek for “name,” root of onomastics)
           </span>
-          <h1 className="text-2xl font-extrabold tracking-wide text-foreground sm:text-3xl">
+          <h1 className="text-foreground text-2xl font-extrabold tracking-wide sm:text-3xl">
             Project Onoma
           </h1>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             A{" "}
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="underline decoration-dotted decoration-[#0091ff]/60 underline-offset-4 cursor-help hover:text-[#0091ff] transition-colors">
+                <span className="cursor-help underline decoration-[#0091ff]/60 decoration-dotted underline-offset-4 transition-colors hover:text-[#0091ff]">
                   Markov-based
                 </span>
               </TooltipTrigger>
@@ -202,43 +240,46 @@ export function OverviewSection() {
                 A Markov chain is a procedural algorithm used to make coherent chains of values.
               </TooltipContent>
             </Tooltip>{" "}
-            name generator for worldbuilding. Instantly create names from public name banks, or create your own set of data to generate any kind of name.
+            name generator for worldbuilding. Instantly create names from public name banks, or
+            create your own set of data to generate any kind of name.
           </p>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 select-none pt-1">
-            <Info className="h-3.5 w-3.5 text-[#0091ff]/50 shrink-0" />
-            <span>Disclaimer: Onoma is a mathematical procedural generator, not a generative AI / LLM model.</span>
+          <div className="text-muted-foreground/60 flex items-center gap-1.5 pt-1 text-[11px] select-none">
+            <Info className="h-3.5 w-3.5 shrink-0 text-[#0091ff]/50" />
+            <span>
+              Disclaimer: Onoma is a mathematical procedural generator, not a generative AI / LLM
+              model.
+            </span>
           </div>
         </div>
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 dark:opacity-5 pointer-events-none">
+        <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-1/3 opacity-10 dark:opacity-5">
           <Dna className="h-full w-full stroke-1 text-[#0091ff]" />
         </div>
       </div>
 
       {/* Quick Generator Workspace */}
-      <div className="grid gap-6 lg:grid-cols-12 items-start">
-        
+      <div className="grid items-start gap-6 lg:grid-cols-12">
         {/* Left Column (5/12): Configuration Panel */}
-        <div className="lg:col-span-5 space-y-4">
-          <FacetCard className="space-y-4 p-4 border border-border/40 bg-secondary/5">
-            <div className="border-b border-border/40 pb-2 flex items-center justify-between">
-              <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+        <div className="space-y-4 lg:col-span-5">
+          <FacetCard className="border-border/40 bg-secondary/5 space-y-4 border p-4">
+            <div className="border-border/40 flex items-center justify-between border-b pb-2">
+              <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Quick Generator Controls
               </h3>
-              <span className="text-[10px] text-muted-foreground font-semibold">
+              <span className="text-muted-foreground text-[10px] font-semibold">
                 Select Dictionary Profile
               </span>
             </div>
 
             {/* Dictionary Select Dropdown */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+              <label className="text-muted-foreground flex items-center gap-1 text-xs font-bold">
                 <BookOpen className="h-3.5 w-3.5 text-[#0091ff]" />
-                 Dictionary Profile
+                Dictionary Profile
               </label>
               <select
                 value={selectedDictId}
                 onChange={(e) => setSelectedDictId(e.target.value)}
-                className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground focus:border-[#0091ff]/50 focus:outline-none focus:ring-1 focus:ring-[#0091ff]/50"
+                className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
               >
                 {publicDicts.map((dict) => (
                   <option key={dict.id} value={dict.id}>
@@ -250,11 +291,13 @@ export function OverviewSection() {
 
             {/* Batch Count Select */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Generated Batch Size</label>
+              <label className="text-muted-foreground text-xs font-bold">
+                Generated Batch Size
+              </label>
               <select
                 value={batchCount}
                 onChange={(e) => setBatchCount(parseInt(e.target.value))}
-                className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground focus:border-[#0091ff]/50 focus:outline-none focus:ring-1 focus:ring-[#0091ff]/50"
+                className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
               >
                 <option value={10}>10 names</option>
                 <option value={30}>30 names</option>
@@ -266,22 +309,26 @@ export function OverviewSection() {
             </div>
 
             {/* Advanced Settings Accordion */}
-            <div className="border-t border-border/40 pt-3">
+            <div className="border-border/40 border-t pt-3">
               <button
                 type="button"
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-1.5 text-xs font-bold text-[#0091ff] hover:opacity-85 transition-opacity"
+                className="flex items-center gap-1.5 text-xs font-bold text-[#0091ff] transition-opacity hover:opacity-85"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span>{showAdvanced ? "Hide Advanced Constraints" : "Show Advanced Constraints"}</span>
+                <span>
+                  {showAdvanced ? "Hide Advanced Constraints" : "Show Advanced Constraints"}
+                </span>
               </button>
 
               {showAdvanced && (
-                <div className="space-y-3.5 mt-3.5 animate-in fade-in duration-200">
+                <div className="animate-in fade-in mt-3.5 space-y-3.5 duration-200">
                   {/* Min / Max Length */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Min Length</label>
+                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Min Length
+                      </label>
                       <input
                         type="number"
                         min={1}
@@ -290,11 +337,13 @@ export function OverviewSection() {
                         onChange={(e) =>
                           setOptions({ ...options, minLength: parseInt(e.target.value) || 0 })
                         }
-                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none"
+                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Max Length</label>
+                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Max Length
+                      </label>
                       <input
                         type="number"
                         min={1}
@@ -303,7 +352,7 @@ export function OverviewSection() {
                         onChange={(e) =>
                           setOptions({ ...options, maxLength: parseInt(e.target.value) || 0 })
                         }
-                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none"
+                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
                       />
                     </div>
                   </div>
@@ -311,23 +360,27 @@ export function OverviewSection() {
                   {/* Starts / Ends With */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Starts With</label>
+                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Starts With
+                      </label>
                       <input
                         type="text"
                         placeholder="Prefix"
                         value={options.startsWith || ""}
                         onChange={(e) => setOptions({ ...options, startsWith: e.target.value })}
-                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Ends With</label>
+                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Ends With
+                      </label>
                       <input
                         type="text"
                         placeholder="Suffix"
                         value={options.endsWith || ""}
                         onChange={(e) => setOptions({ ...options, endsWith: e.target.value })}
-                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                       />
                     </div>
                   </div>
@@ -335,23 +388,27 @@ export function OverviewSection() {
                   {/* Contains / Excludes */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Contains</label>
+                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Contains
+                      </label>
                       <input
                         type="text"
                         placeholder="Substring"
                         value={options.contains || ""}
                         onChange={(e) => setOptions({ ...options, contains: e.target.value })}
-                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Excludes</label>
+                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Excludes
+                      </label>
                       <input
                         type="text"
                         placeholder="Substring"
                         value={options.excludes || ""}
                         onChange={(e) => setOptions({ ...options, excludes: e.target.value })}
-                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                       />
                     </div>
                   </div>
@@ -359,8 +416,10 @@ export function OverviewSection() {
                   {/* Markov Order */}
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Markov Order</label>
-                      <span className="text-[10px] text-[#0091ff] font-bold">{order} char</span>
+                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Markov Order
+                      </label>
+                      <span className="text-[10px] font-bold text-[#0091ff]">{order} char</span>
                     </div>
                     <input
                       type="range"
@@ -369,18 +428,22 @@ export function OverviewSection() {
                       step={1}
                       value={order}
                       onChange={(e) => setOrder(parseInt(e.target.value))}
-                      className="w-full h-1.5 rounded-lg bg-secondary/80 accent-[#0091ff] cursor-pointer"
+                      className="bg-secondary/80 h-1.5 w-full cursor-pointer rounded-lg accent-[#0091ff]"
                     />
                   </div>
 
                   {/* Allow duplicates */}
-                  <div className="flex items-center justify-between border-t border-border/40 pt-3">
-                    <label className="text-xs font-semibold text-muted-foreground">Allow Dictionary Duplicates</label>
+                  <div className="border-border/40 flex items-center justify-between border-t pt-3">
+                    <label className="text-muted-foreground text-xs font-semibold">
+                      Allow Dictionary Duplicates
+                    </label>
                     <input
                       type="checkbox"
                       checked={options.allowDuplicates}
-                      onChange={(e) => setOptions({ ...options, allowDuplicates: e.target.checked })}
-                      className="rounded border-border/60 text-[#0091ff] focus:ring-[#0091ff]/50 h-4 w-4"
+                      onChange={(e) =>
+                        setOptions({ ...options, allowDuplicates: e.target.checked })
+                      }
+                      className="border-border/60 h-4 w-4 rounded text-[#0091ff] focus:ring-[#0091ff]/50"
                     />
                   </div>
                 </div>
@@ -391,7 +454,7 @@ export function OverviewSection() {
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !selectedDictId}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#0091ff] hover:bg-[#33a7ff] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 active:scale-[0.98] transition-all disabled:opacity-50 mt-4"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] active:scale-[0.98] disabled:opacity-50"
             >
               {isGenerating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -404,15 +467,15 @@ export function OverviewSection() {
         </div>
 
         {/* Right Column (7/12): Results Card */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="space-y-4 lg:col-span-7">
           {generatedNames.length > 0 ? (
-            <FacetCard className="p-4 border border-border/40 bg-secondary/5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3">
+            <FacetCard className="border-border/40 bg-secondary/5 space-y-4 border p-4">
+              <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
                 <div>
-                  <h3 className="text-sm font-bold tracking-tight text-foreground">
+                  <h3 className="text-foreground text-sm font-bold tracking-tight">
                     Assembled Candidates
                   </h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-muted-foreground mt-0.5 text-[11px]">
                     Click name cards to copy, save, or deploy them in game.
                   </p>
                 </div>
@@ -421,15 +484,19 @@ export function OverviewSection() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopyBatch}
-                    className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-all"
+                    className="border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-secondary/40 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-all"
                   >
-                    {copiedBatch ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedBatch ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
                     <span>{copiedBatch ? "Copied" : "Copy Batch"}</span>
                   </button>
 
                   <button
                     onClick={() => setShowSaveDictForm(!showSaveDictForm)}
-                    className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-all"
+                    className="border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-secondary/40 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-all"
                   >
                     <Bookmark className="h-3.5 w-3.5" />
                     <span>Save Dictionary</span>
@@ -441,7 +508,7 @@ export function OverviewSection() {
               {showSaveDictForm && (
                 <form
                   onSubmit={handleSaveBatchAsDictionary}
-                  className="flex items-center gap-2 rounded-xl border border-[#0091ff]/20 bg-[#0091ff]/5 p-3 animate-in slide-in-from-top-2 duration-300"
+                  className="animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-[#0091ff]/20 bg-[#0091ff]/5 p-3 duration-300"
                 >
                   <input
                     type="text"
@@ -449,12 +516,12 @@ export function OverviewSection() {
                     required
                     value={dictionaryTitle}
                     onChange={(e) => setDictionaryTitle(e.target.value)}
-                    className="flex-1 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none"
+                    className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-3 py-1.5 text-xs focus:outline-none"
                   />
                   <button
                     type="submit"
                     disabled={isSavingDict}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#33a7ff] disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-1.5 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#33a7ff] disabled:opacity-50"
                   >
                     {isSavingDict ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -467,7 +534,7 @@ export function OverviewSection() {
               )}
 
               {/* Results Grid */}
-              <div className="grid gap-3 sm:grid-cols-2 max-h-[500px] overflow-y-auto pr-1">
+              <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
                 {generatedNames.map((name, idx) => (
                   <NameResultCard
                     key={idx}
@@ -479,16 +546,16 @@ export function OverviewSection() {
               </div>
             </FacetCard>
           ) : (
-            <FacetCard className="p-8 border border-border/40 border-dashed bg-secondary/5 text-center text-sm text-muted-foreground">
-              <Wand2 className="h-8 w-8 mx-auto text-[#0091ff]/40 mb-3 animate-pulse" />
+            <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground border border-dashed p-8 text-center text-sm">
+              <Wand2 className="mx-auto mb-3 h-8 w-8 animate-pulse text-[#0091ff]/40" />
               <p className="font-semibold">Assemble names to start</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Configure your dictionary and generation constraints, then click Assemble to generate names.
+              <p className="text-muted-foreground mt-1 text-xs">
+                Configure your dictionary and generation constraints, then click Assemble to
+                generate names.
               </p>
             </FacetCard>
           )}
         </div>
-
       </div>
 
       {/* Redirect Modal for deployment */}

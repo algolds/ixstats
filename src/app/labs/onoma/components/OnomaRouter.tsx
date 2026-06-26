@@ -10,16 +10,16 @@ import type { OnomaSection } from "~/lib/onoma/types";
 import { getSectionFromPathname } from "~/lib/onoma/types";
 import { FacetTabs } from "~/components/facet-ui";
 import { FacetMaterial } from "~/components/facet-ui";
-import { 
-  Compass, 
-  MapPin, 
-  Users, 
-  Shield, 
-  Building2, 
-  Globe, 
-  Wrench, 
+import {
+  Compass,
+  MapPin,
+  Users,
+  Shield,
+  Building2,
+  Globe,
+  Wrench,
   Bookmark,
-  HelpCircle
+  HelpCircle,
 } from "lucide-react";
 
 // Import sections
@@ -62,9 +62,10 @@ const ONOMA_TABS = [
     icon: Compass,
     themeColor: "#0091ff",
     glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
-    activeIndicatorClassName: "bg-[#0091ff]/5 border-[#0091ff]/20 text-[#0091ff] dark:text-[#33a7ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]",
+    activeIndicatorClassName:
+      "bg-[#0091ff]/5 border-[#0091ff]/20 text-[#0091ff] dark:text-[#33a7ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]",
     activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]"
+    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
   },
   {
     id: "places",
@@ -72,9 +73,10 @@ const ONOMA_TABS = [
     icon: MapPin,
     themeColor: "#10b981",
     glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
-    activeIndicatorClassName: "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
+    activeIndicatorClassName:
+      "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
     activeTextClassName: "text-emerald-600 dark:text-emerald-400",
-    activeIconClassName: "text-emerald-500 dark:text-emerald-400"
+    activeIconClassName: "text-emerald-500 dark:text-emerald-400",
   },
   {
     id: "people",
@@ -82,9 +84,10 @@ const ONOMA_TABS = [
     icon: Users,
     themeColor: "#a855f7",
     glowClassName: "bg-purple-500/20 dark:bg-purple-500/10",
-    activeIndicatorClassName: "bg-purple-500/5 border-purple-500/20 text-purple-600 dark:text-purple-400 shadow-[inset_0_1px_0_rgba(168,85,247,0.15)]",
+    activeIndicatorClassName:
+      "bg-purple-500/5 border-purple-500/20 text-purple-600 dark:text-purple-400 shadow-[inset_0_1px_0_rgba(168,85,247,0.15)]",
     activeTextClassName: "text-purple-600 dark:text-purple-400",
-    activeIconClassName: "text-purple-500 dark:text-purple-400"
+    activeIconClassName: "text-purple-500 dark:text-purple-400",
   },
   {
     id: "military",
@@ -92,9 +95,10 @@ const ONOMA_TABS = [
     icon: Shield,
     themeColor: "#ef4444",
     glowClassName: "bg-red-500/20 dark:bg-red-500/10",
-    activeIndicatorClassName: "bg-red-500/5 border-red-500/20 text-red-600 dark:text-red-400 shadow-[inset_0_1px_0_rgba(239,68,68,0.15)]",
+    activeIndicatorClassName:
+      "bg-red-500/5 border-red-500/20 text-red-600 dark:text-red-400 shadow-[inset_0_1px_0_rgba(239,68,68,0.15)]",
     activeTextClassName: "text-red-600 dark:text-red-400",
-    activeIconClassName: "text-red-500 dark:text-red-400"
+    activeIconClassName: "text-red-500 dark:text-red-400",
   },
   {
     id: "organizations",
@@ -102,9 +106,10 @@ const ONOMA_TABS = [
     icon: Building2,
     themeColor: "#f59e0b",
     glowClassName: "bg-amber-500/20 dark:bg-amber-500/10",
-    activeIndicatorClassName: "bg-amber-500/5 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]",
+    activeIndicatorClassName:
+      "bg-amber-500/5 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]",
     activeTextClassName: "text-amber-600 dark:text-amber-400",
-    activeIconClassName: "text-amber-500 dark:text-amber-400"
+    activeIconClassName: "text-amber-500 dark:text-amber-400",
   },
   {
     id: "culture",
@@ -112,10 +117,11 @@ const ONOMA_TABS = [
     icon: Globe,
     themeColor: "#06b6d4",
     glowClassName: "bg-cyan-500/20 dark:bg-cyan-500/10",
-    activeIndicatorClassName: "bg-cyan-500/5 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 shadow-[inset_0_1px_0_rgba(6,182,212,0.15)]",
+    activeIndicatorClassName:
+      "bg-cyan-500/5 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 shadow-[inset_0_1px_0_rgba(6,182,212,0.15)]",
     activeTextClassName: "text-cyan-600 dark:text-cyan-400",
-    activeIconClassName: "text-cyan-500 dark:text-cyan-400"
-  }
+    activeIconClassName: "text-cyan-500 dark:text-cyan-400",
+  },
 ];
 
 export function OnomaRouter() {
@@ -125,6 +131,12 @@ export function OnomaRouter() {
   const [activeSection, setActiveSection] = useState<OnomaSection>(() =>
     getSectionFromPathname(pathname)
   );
+
+  // Track the last standard tab visited (default to overview)
+  const [lastActiveTab, setLastActiveTab] = useState<OnomaSection>(() => {
+    const initial = getSectionFromPathname(pathname);
+    return initial === "bank" || initial === "studio" ? "overview" : initial;
+  });
 
   const [showHelpModal, setShowHelpModal] = useState(false);
 
@@ -144,10 +156,22 @@ export function OnomaRouter() {
   // Handle SPA navigation
   const handleNavigate = useCallback(
     (section: OnomaSection) => {
-      if (section === activeSection) return;
+      if (section === activeSection) {
+        // If unclicking stash or custom studio, return to the last standard tab
+        if (section === "bank" || section === "studio") {
+          handleNavigate(lastActiveTab);
+        }
+        return;
+      }
+
+      // Track the last standard tab visited
+      if (section !== "bank" && section !== "studio") {
+        setLastActiveTab(section);
+      }
+
       setActiveSection(section);
 
-      // Sync URL without triggering full Next.js page reloads
+      // Sync URL without triggering Next.js route transitions
       const href = section === "overview" ? "/labs/onoma" : `/labs/onoma/${section}`;
       window.history.pushState(null, "", withBasePath(href));
 
@@ -157,7 +181,7 @@ export function OnomaRouter() {
       // Scroll to top
       window.scrollTo({ top: 0, behavior: "instant" });
     },
-    [activeSection]
+    [activeSection, lastActiveTab]
   );
 
   // Handle browser back/forward navigation
@@ -165,6 +189,9 @@ export function OnomaRouter() {
     const onPopState = () => {
       const newSection = getSectionFromPathname(window.location.pathname);
       setActiveSection(newSection);
+      if (newSection !== "bank" && newSection !== "studio") {
+        setLastActiveTab(newSection);
+      }
       window.scrollTo({ top: 0, behavior: "instant" });
     };
     window.addEventListener("popstate", onPopState);
@@ -176,6 +203,9 @@ export function OnomaRouter() {
     const routeSection = getSectionFromPathname(pathname);
     if (routeSection !== activeSection) {
       setActiveSection(routeSection);
+      if (routeSection !== "bank" && routeSection !== "studio") {
+        setLastActiveTab(routeSection);
+      }
     }
   }, [pathname, activeSection]);
 
@@ -223,24 +253,23 @@ export function OnomaRouter() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased p-4 sm:p-6 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        <div className="flex justify-end border-b border-border/40 pb-4">
+    <div className="bg-background text-foreground min-h-screen p-4 antialiased transition-colors duration-300 sm:p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="border-border/40 flex justify-end border-b pb-4">
           <div className="flex gap-2">
             <button
               onClick={() => setShowHelpModal(true)}
               title="Open Walkthrough Guide"
-              className="flex items-center justify-center rounded-lg border border-border/40 bg-secondary/20 hover:bg-[#0091ff]/10 hover:text-[#0091ff] hover:border-[#0091ff]/30 text-muted-foreground h-9 w-9 transition-all active:scale-95 cursor-pointer"
+              className="border-border/40 bg-secondary/20 text-muted-foreground flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border transition-all hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-95"
             >
               <HelpCircle className="h-4 w-4" />
             </button>
             <button
               onClick={() => handleNavigate("bank")}
-              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
                 activeSection === "bank"
-                  ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.15)]"
-                  : "border-border/40 bg-secondary/20 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-500/30 text-muted-foreground"
+                  ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 shadow-[0_0_10px_rgba(99,102,241,0.15)] dark:text-indigo-400"
+                  : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
               }`}
             >
               <Bookmark className="h-3.5 w-3.5" />
@@ -248,10 +277,10 @@ export function OnomaRouter() {
             </button>
             <button
               onClick={() => handleNavigate("studio")}
-              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
                 activeSection === "studio"
-                  ? "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/30 shadow-[0_0_10px_rgba(236,72,153,0.15)]"
-                  : "border-border/40 bg-secondary/20 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-500/30 text-muted-foreground"
+                  ? "border-pink-500/30 bg-pink-500/10 text-pink-600 shadow-[0_0_10px_rgba(236,72,153,0.15)] dark:text-pink-400"
+                  : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400"
               }`}
             >
               <Wrench className="h-3.5 w-3.5" />
@@ -261,7 +290,7 @@ export function OnomaRouter() {
         </div>
 
         {/* Sliding Navigation Tabs */}
-        <div className="rounded-xl overflow-hidden shadow-sm border border-border/30">
+        <div className="border-border/30 overflow-hidden rounded-xl border shadow-sm">
           <FacetTabs
             tabs={ONOMA_TABS}
             activeTab={activeSection}
@@ -274,7 +303,7 @@ export function OnomaRouter() {
         {/* Workspace Canvas (Frosted glass with dynamic themed borders & shadow transitions) */}
         <FacetMaterial
           material="satin"
-          className="border transition-all duration-500 p-5 sm:p-6 shadow-xl"
+          className="border p-5 shadow-xl transition-all duration-500 sm:p-6"
           style={{
             borderColor: `${SECTION_COLORS[activeSection]}20`,
             boxShadow: `0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px 0px ${SECTION_COLORS[activeSection]}08`,
@@ -282,7 +311,6 @@ export function OnomaRouter() {
         >
           {renderActiveSection()}
         </FacetMaterial>
-
       </div>
 
       {/* Help Walkthrough Guide Modal */}

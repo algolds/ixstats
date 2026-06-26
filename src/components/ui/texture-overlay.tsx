@@ -19,6 +19,7 @@ export type TextureType =
   | "brick"
   | "herringbone"
   | "shimmer"
+  | "diamonds"
   | "none";
 
 interface TextureOverlayProps {
@@ -46,6 +47,7 @@ const texturePatterns: Record<TextureType, string> = {
   brick: "facet-texture-brick",
   herringbone: "facet-texture-herringbone",
   shimmer: "facet-texture-shimmer",
+  diamonds: "facet-texture-diamonds",
   none: "",
 };
 
@@ -68,6 +70,7 @@ const defaultOpacities: Record<TextureType, number> = {
   brick: 1,
   herringbone: 1,
   shimmer: 0.6,
+  diamonds: 1,
   none: 0,
 };
 

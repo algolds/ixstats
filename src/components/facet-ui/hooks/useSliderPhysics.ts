@@ -95,9 +95,13 @@ export function useSliderPhysics({
 
   // Keep target X & Width in sync with active changes when not dragging
   useEffect(() => {
-    if (activeBounds && !isDragging.current) {
-      rawX.set(activeBounds.left);
-      rawWidth.set(activeBounds.width);
+    if (!isDragging.current) {
+      if (activeBounds) {
+        rawX.set(activeBounds.left);
+        rawWidth.set(activeBounds.width);
+      } else {
+        rawWidth.set(0);
+      }
     }
   }, [activeId, bounds, activeBounds, rawX, rawWidth]);
 

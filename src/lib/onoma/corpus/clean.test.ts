@@ -35,6 +35,27 @@ describe("cleanName", () => {
     expect(cleanName("Isle of Man", "city")).toBe("Isle of Man");
   });
 
+  test("rejects colons and structural filler words", () => {
+    expect(cleanName("Category:Stub pages", "city")).toBeNull();
+    expect(cleanName("Draft:Nasastan", "city")).toBeNull();
+    expect(cleanName("Timeline of Fanerian Monarchs", "city")).toBeNull();
+    expect(cleanName("List of countries", "city")).toBeNull();
+    expect(cleanName("A and B", "city")).toBeNull();
+    expect(cleanName("The Empire", "city")).toBeNull();
+  });
+
+  test("rejects administrative conworld suffixes", () => {
+    expect(cleanName("Nasastan Football Association", "organization")).toBeNull();
+    expect(cleanName("Socialist Party", "organization")).toBeNull();
+    expect(cleanName("Workers Union", "organization")).toBeNull();
+  });
+
+  test("person: strips title prefixes", () => {
+    expect(cleanName("King David", "person")).toBe("David");
+    expect(cleanName("Queen Elizabeth II", "person")).toBe("Elizabeth");
+    expect(cleanName("Sir General John", "person")).toBe("John");
+  });
+
   test("rejects junk", () => {
     expect(cleanName("1607-1860", "country")).toBeNull();
     expect(cleanName("", "city")).toBeNull();

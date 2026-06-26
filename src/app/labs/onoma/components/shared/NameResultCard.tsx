@@ -4,9 +4,18 @@
 // Onoma Lab — Card component to display individual generated names
 
 import { useState, useRef, useEffect } from "react";
-import { Copy, Check, Bookmark, ArrowUpRight, Loader2, FolderPlus } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Bookmark,
+  ArrowUpRight,
+  Loader2,
+  FolderPlus,
+  FolderCheck,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { api } from "~/trpc/react";
 
 interface NameResultCardProps {
@@ -19,6 +28,13 @@ interface NameResultCardProps {
 export function NameResultCard({ name, isSaved = false, onSave, onUse }: NameResultCardProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [hasStashed, setHasStashed] = useState(false);
+  const [localSaved, setLocalSaved] = useState(isSaved);
+
+  // Sync prop changes to local state
+  useEffect(() => {
+    setLocalSaved(isSaved);
+  }, [isSaved]);
 
   // WikiOS/system stash popover state
   const [showStashPopover, setShowStashPopover] = useState(false);
@@ -54,10 +70,11 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse }: NameRes
   };
 
   const handleSave = async () => {
-    if (!onSave || isSaved || saving) return;
+    if (!onSave || localSaved || saving) return;
     setSaving(true);
     try {
       await onSave(name);
+      setLocalSaved(true);
     } catch (err) {
       console.error("Failed to save name:", err);
     } finally {
@@ -70,6 +87,7 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse }: NameRes
     setStashingFolderId(stashId);
     try {
       await onSave(name, stashId);
+      setHasStashed(true);
       setStashFeedback(`Stashed in ${stashName}!`);
       setTimeout(() => {
         setStashFeedback(null);
@@ -85,40 +103,62 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse }: NameRes
   };
 
   return (
-    <FacetCard className="group relative flex items-center justify-between px-4 py-3.5 border border-border/40">
+    <FacetCard
+      depth={showStashPopover ? 3 : 1}
+      className={cn(
+        "group border-border/40 relative flex items-center justify-between overflow-hidden border px-4 py-3.5 transition-all duration-300",
+        showStashPopover
+          ? "z-40 border-indigo-500/30 bg-indigo-500/[0.02] shadow-lg ring-1 shadow-indigo-500/5 ring-indigo-500/10"
+          : "z-10 hover:border-[#0091ff]/45 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:border-[#0091ff]/35 dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
+      )}
+    >
+      {/* Texture Overlay */}
+      <div className="pointer-events-none absolute -inset-2 opacity-[0.08] transition-all duration-500 ease-out group-hover:translate-x-1 group-hover:translate-y-1 group-hover:opacity-20 group-hover:blur-[1px] dark:opacity-45 dark:group-hover:opacity-85">
+        <TextureOverlay texture="diamonds" className="mix-blend-overlay" />
+      </div>
+
       {/* Name Display */}
-      <span className="font-semibold tracking-wide text-foreground group-hover:text-[#0091ff] transition-colors duration-300 sm:text-base text-sm">
+      <span className="text-foreground relative z-10 text-sm font-semibold tracking-wide transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base">
         {name}
       </span>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+      <div
+        className={cn(
+          "relative z-10 flex items-center gap-1.5 transition-opacity duration-300",
+          showStashPopover ? "opacity-100" : "opacity-60 group-hover:opacity-100"
+        )}
+      >
         {/* Copy Button */}
         <button
           onClick={handleCopy}
           title="Copy name to clipboard"
-          className="rounded-md p-1.5 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 active:scale-90 transition-all duration-200"
+          className="text-muted-foreground rounded-md p-1.5 transition-all duration-200 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-90 dark:hover:text-emerald-400"
         >
-          {copied ? <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-4 w-4" />}
+          {copied ? (
+            <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
         </button>
 
         {/* Save/Bookmark Button (Onoma Local Stash) */}
         {onSave && (
           <button
             onClick={handleSave}
-            disabled={isSaved || saving}
-            title={isSaved ? "Saved to Local Stash" : "Save to Local Stash"}
+            disabled={localSaved || saving}
+            title={localSaved ? "Saved to Local Stash" : "Save to Local Stash"}
             className={cn(
               "rounded-md p-1.5 transition-all duration-200 active:scale-90 disabled:opacity-50",
-              isSaved
-                ? "text-[#0091ff] bg-[#0091ff]/10"
+              localSaved
+                ? "scale-105 bg-[#0091ff]/20 text-[#0091ff] shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1 ring-[#0091ff]/30"
                 : "text-muted-foreground hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
             )}
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Bookmark className={cn("h-4 w-4", isSaved && "fill-[#0091ff] text-[#0091ff]")} />
+              <Bookmark className={cn("h-4 w-4", localSaved && "fill-[#0091ff] text-[#0091ff]")} />
             )}
           </button>
         )}
@@ -127,54 +167,63 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse }: NameRes
         <div className="relative" ref={popoverRef}>
           <button
             onClick={() => setShowStashPopover(!showStashPopover)}
-            title="Export to global Stash folder"
+            title={hasStashed ? "Stashed to Global Stash" : "Export to global Stash folder"}
             className={cn(
               "rounded-md p-1.5 transition-all duration-200 active:scale-90",
-              showStashPopover
+              showStashPopover || hasStashed
                 ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
                 : "text-muted-foreground hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
             )}
           >
-            <FolderPlus className="h-4 w-4" />
+            {hasStashed ? (
+              <FolderCheck className="h-4 w-4 scale-110 text-emerald-500 transition-all duration-300 dark:text-emerald-400" />
+            ) : (
+              <FolderPlus className="h-4 w-4" />
+            )}
           </button>
 
           {showStashPopover && (
-            <div className="absolute right-0 mt-1.5 z-30 w-52 rounded-xl border border-white/10 dark:border-white/5 bg-popover/85 backdrop-blur-lg p-1.5 shadow-xl shadow-black/20 animate-in fade-in duration-100">
-              <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase border-b border-border/40 mb-1 flex items-center justify-between">
+            <div className="bg-popover/85 animate-in fade-in absolute right-0 z-30 mt-1.5 w-52 rounded-xl border border-white/10 p-1.5 shadow-xl shadow-black/20 backdrop-blur-lg duration-100 dark:border-white/5">
+              <div className="text-muted-foreground border-border/40 mb-1 flex items-center justify-between border-b px-2 py-1.5 text-[10px] font-bold uppercase">
                 <span>Stash Folders</span>
-                <span className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 px-1 bg-indigo-500/10 rounded">Global</span>
+                <span className="rounded bg-indigo-500/10 px-1 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+                  Global
+                </span>
               </div>
               {stashesQuery.isLoading && (
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1.5 px-2 py-1.5 text-xs">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   <span>Loading stashes...</span>
                 </div>
               )}
               {stashesQuery.data && stashesQuery.data.length === 0 && (
-                <div className="px-2 py-1.5 text-xs text-muted-foreground italic">
+                <div className="text-muted-foreground px-2 py-1.5 text-xs italic">
                   No stash folders found.
                 </div>
               )}
-              <div className="max-h-36 overflow-y-auto space-y-0.5">
+              <div className="max-h-36 space-y-0.5 overflow-y-auto">
                 {stashesQuery.data?.map((s) => (
                   <button
                     key={s.id}
                     disabled={stashingFolderId !== null}
                     onClick={() => handleStashToFolder(s.id, s.name)}
-                    className="w-full flex items-center justify-between text-left px-2 py-1.5 rounded-md text-xs text-foreground hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-50"
+                    className="text-foreground flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 disabled:opacity-50 dark:hover:text-indigo-400"
                   >
                     <span className="flex items-center gap-1.5 truncate">
-                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: s.color }}
+                      />
                       <span className="truncate">{s.name}</span>
                     </span>
                     {stashingFolderId === s.id && (
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
                     )}
                   </button>
                 ))}
               </div>
               {stashFeedback && (
-                <div className="mt-1.5 px-2 py-1 text-[10px] font-bold text-center bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded">
+                <div className="mt-1.5 rounded bg-indigo-500/10 px-2 py-1 text-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
                   {stashFeedback}
                 </div>
               )}
@@ -187,7 +236,7 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse }: NameRes
           <button
             onClick={() => onUse(name)}
             title="Deploy name in game"
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500 active:scale-90 transition-all duration-200"
+            className="text-muted-foreground rounded-md p-1.5 transition-all duration-200 hover:bg-amber-500/10 hover:text-amber-500 active:scale-90"
           >
             <ArrowUpRight className="h-4 w-4" />
           </button>

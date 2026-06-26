@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { CULTURAL_PROFILES } from "~/lib/onoma/cultural-profiles";
-import { generateFantasySyllableName } from "~/lib/onoma/name-generator";
+import { generateFantasySyllableName, generateNobleSurname } from "~/lib/onoma/name-generator";
 import {
   generateGoblinName,
   generateOrcName,
@@ -26,6 +26,9 @@ import {
   generateMysticOrderName,
   generateMilitaryUnitName,
   generateCovertOrgName,
+  generateBusinessCompanyName,
+  generateAcademicInstitutionName,
+  generateMercenaryBandName,
 } from "~/lib/onoma/group-generator";
 import { generateTavernName } from "~/lib/onoma/tavern-generator";
 import { NameCategory, CulturalProfile, TrainingMode, GenerateOptions, Gender } from "~/lib/onoma/types";
@@ -60,10 +63,9 @@ function mapCategoryForCorpus(cat: NameCategory): CorpusCat {
 }
 
 export function useOnomaGenerator() {
-  const [trainingMode, setTrainingMode] = useState<TrainingMode>("corpus");
-  const [corpusBucket, setCorpusBucket] = useState<string>("any");
+  const [culture, setCulture] = useState<string>("any");
+  const [includeWorldData, setIncludeWorldData] = useState<boolean>(false);
   const [corpusDict, setCorpusDict] = useState<Record<string, string[]> | null>(null);
-  const [culturalProfile, setCulturalProfile] = useState<CulturalProfile>("latin");
   const [category, setCategory] = useState<NameCategory>("city");
   const [gender, setGender] = useState<Gender>("neutral");
   const [subType, setSubType] = useState<string>("generic"); // e.g. "dwarf", "elf", "tavern", "military-unit"
@@ -74,6 +76,12 @@ export function useOnomaGenerator() {
     allowDuplicates: false,
   });
 
+  // Prefix and Suffix configuration
+  const [selectedPrefix, setSelectedPrefix] = useState<string>("");
+  const [customPrefix, setCustomPrefix] = useState<string>("");
+  const [selectedSuffix, setSelectedSuffix] = useState<string>("");
+  const [customSuffix, setCustomSuffix] = useState<string>("");
+
   // Track generation logs
   const [generatedNames, setGeneratedNames] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -82,7 +90,7 @@ export function useOnomaGenerator() {
   const trainingCategory = mapCategoryForTraining(category);
   const { data: dbTrainingNames, refetch: refetchTraining } = api.onoma.getTrainingData.useQuery(
     { category: trainingCategory },
-    { enabled: trainingMode === "ixworld", staleTime: 600000 }
+    { enabled: includeWorldData, staleTime: 600000 }
   );
 
   // tRPC mutation to log activity when names are generated
@@ -91,7 +99,6 @@ export function useOnomaGenerator() {
   // Lazy-load the prebuilt corpus dictionary for the active category.
   const corpusCat = mapCategoryForCorpus(category);
   useEffect(() => {
-    if (trainingMode !== "corpus") return;
     let cancelled = false;
     setCorpusDict(null);
     CORPUS_LOADERS[corpusCat]().then((m) => {
@@ -100,37 +107,51 @@ export function useOnomaGenerator() {
     return () => {
       cancelled = true;
     };
-  }, [trainingMode, corpusCat]);
+  }, [corpusCat]);
 
-  // Instantiate client-side Markov Chain engine
-  const chain = useMemo(() => new MarkovChain(order), [order]);
+  // Instantiate client-side Markov Chain engines (both character-based and syllable-based)
+  const characterChain = useMemo(() => new MarkovChain(order, "character"), [order]);
+  const syllableChain = useMemo(() => new MarkovChain(Math.min(2, Math.max(1, order - 1)), "syllable"), [order]);
 
-  // Train the Markov chain when parameters change
+  // Train the Markov chains when parameters change
   useEffect(() => {
-    chain.reset();
-    chain.setOrder(order);
+    characterChain.reset();
+    characterChain.setOrder(order);
 
-    if (trainingMode === "preset") {
-      const seeds = CULTURAL_PROFILES[culturalProfile]?.[category] || [];
-      if (seeds.length > 0) {
-        chain.addWords(seeds);
-      }
-    } else if (trainingMode === "ixworld" && dbTrainingNames && dbTrainingNames.length > 0) {
-      chain.addWords(dbTrainingNames);
-    } else if (trainingMode === "corpus" && corpusDict) {
-      const names =
-        corpusBucket === "any"
-          ? Object.values(corpusDict).flat()
-          : corpusDict[corpusBucket] || [];
-      if (names.length > 0) chain.addWords(names);
+    syllableChain.reset();
+    syllableChain.setOrder(Math.min(2, Math.max(1, order - 1)));
+
+    const presetSeeds: string[] = [];
+    if (culture === "any") {
+      Object.values(CULTURAL_PROFILES).forEach((profile) => {
+        const seeds = profile[category] || [];
+        presetSeeds.push(...seeds);
+      });
+    } else {
+      const seeds = CULTURAL_PROFILES[culture as CulturalProfile]?.[category] || [];
+      presetSeeds.push(...seeds);
     }
-  }, [trainingMode, culturalProfile, category, dbTrainingNames, corpusDict, corpusBucket, order, chain]);
 
-  // Bucket options for the corpus culture facet (singles + compounds present in this dict).
-  const corpusBuckets = useMemo(
-    () => (corpusDict ? Object.keys(corpusDict).sort() : []),
-    [corpusDict]
-  );
+    const corpusSeeds: string[] = [];
+    if (corpusDict) {
+      if (culture === "any") {
+        corpusSeeds.push(...Object.values(corpusDict).flat());
+      } else if (culture !== "constructed" && corpusDict[culture]) {
+        corpusSeeds.push(...(corpusDict[culture] || []));
+      }
+    }
+
+    const worldSeeds: string[] = [];
+    if (includeWorldData && dbTrainingNames && dbTrainingNames.length > 0) {
+      worldSeeds.push(...dbTrainingNames);
+    }
+
+    const allSeeds = [...presetSeeds, ...corpusSeeds, ...worldSeeds];
+    if (allSeeds.length > 0) {
+      characterChain.addWords(allSeeds);
+      syllableChain.addWords(allSeeds);
+    }
+  }, [culture, category, dbTrainingNames, corpusDict, includeWorldData, order, characterChain, syllableChain]);
 
   /**
    * Generates a batch of names based on current configuration and rule-based presets.
@@ -162,17 +183,38 @@ export function useOnomaGenerator() {
         else if (subType === "demon") name = generateDemonName();
         else if (subType === "angel") name = generateAngelName(gender);
       } else if (category === "organization" && subType !== "generic") {
-        if (subType === "mystic-order") name = generateMysticOrderName();
-        else if (subType === "military-unit") name = generateMilitaryUnitName();
-        else if (subType === "covert-org") name = generateCovertOrgName();
+        if (subType === "mystic-order") name = generateMysticOrderName(characterChain, options);
+        else if (subType === "military-unit") name = generateMilitaryUnitName(characterChain, options);
+        else if (subType === "covert-org") name = generateCovertOrgName(characterChain, options);
         else if (subType === "tavern") name = generateTavernName(options);
-      } else if (category === "dynasty" && subType === "fantasy-syllable") {
-        name = generateFantasySyllableName();
+        else if (subType === "business-company") name = generateBusinessCompanyName(characterChain, options);
+        else if (subType === "academic-institution") name = generateAcademicInstitutionName(characterChain, options);
+      } else if (category === "military" && subType !== "generic") {
+        if (subType === "military-unit") name = generateMilitaryUnitName(characterChain, options);
+        else if (subType === "mercenary-band") name = generateMercenaryBandName(characterChain, options);
+      } else if (category === "dynasty" && subType !== "generic") {
+        if (subType === "fantasy-syllable") name = generateFantasySyllableName();
+        else if (subType === "noble-surname") name = generateNobleSurname(culture, characterChain, options);
+      } else if (category === "city" && subType === "settlement-colony") {
+        const base = characterChain.generate(options) || syllableChain.generate(options) || generateFantasySyllableName();
+        const d3 = Math.floor(Math.random() * 3);
+        const capitalized = MarkovChain.capitalize(base);
+        if (d3 === 0) name = `New ${capitalized}`;
+        else if (d3 === 1) name = `Port ${capitalized}`;
+        else name = `${capitalized} Colony`;
+      } else if (category === "geography" && subType === "natural-landmark") {
+        const base = characterChain.generate(options) || syllableChain.generate(options) || generateFantasySyllableName();
+        const suffixes = ["River", "Valley", "Mount", "Bay", "Lake", "Ridge", "Coast", "Canyon", "Forest", "Peak", "Hills"];
+        const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+        name = `${MarkovChain.capitalize(base)} ${suffix}`;
       }
 
       // 2. Fallback to Markov chain generation
       if (!name) {
-        name = chain.generate(options);
+        name = characterChain.generate(options);
+      }
+      if (!name) {
+        name = syllableChain.generate(options);
       }
 
       // 3. Fallback to generic syllable concatenation if Markov chain is empty or fails
@@ -181,7 +223,25 @@ export function useOnomaGenerator() {
       }
 
       if (name) {
-        results.push(name);
+        let prefixStr = "";
+        if (category === "person") {
+          if (selectedPrefix === "custom") {
+            prefixStr = customPrefix.trim() ? customPrefix.trim() + " " : "";
+          } else if (selectedPrefix) {
+            prefixStr = selectedPrefix + " ";
+          }
+        }
+
+        let suffixStr = "";
+        if (category === "organization" || category === "country" || category === "province") {
+          if (selectedSuffix === "custom") {
+            suffixStr = customSuffix.trim() ? " " + customSuffix.trim() : "";
+          } else if (selectedSuffix) {
+            suffixStr = " " + selectedSuffix;
+          }
+        }
+
+        results.push(prefixStr + name + suffixStr);
       }
     }
 
@@ -200,13 +260,18 @@ export function useOnomaGenerator() {
   };
 
   return {
-    trainingMode,
-    setTrainingMode,
-    culturalProfile,
-    setCulturalProfile,
-    corpusBucket,
-    setCorpusBucket,
-    corpusBuckets,
+    culture,
+    setCulture,
+    includeWorldData,
+    setIncludeWorldData,
+    selectedPrefix,
+    setSelectedPrefix,
+    customPrefix,
+    setCustomPrefix,
+    selectedSuffix,
+    setSelectedSuffix,
+    customSuffix,
+    setCustomSuffix,
     category,
     setCategory,
     gender,

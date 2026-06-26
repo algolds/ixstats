@@ -11,6 +11,7 @@ import { useOnomaGenerator } from "~/hooks/useOnomaGenerator";
 import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 import { FacetCard } from "~/components/ui/facet-container";
+import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
 
 // "celtic+germanic" → "Celtic + Germanic", "mixed" → "Mixed / Other", "latin" → "Latin"
 function formatBucket(bucket: string): string {
@@ -59,13 +60,14 @@ export function GeneratorPanel({
     setShowSaveDictForm(false);
   };
 
-  const handleSaveName = async (name: string) => {
+  const handleSaveName = async (name: string, stashId?: string) => {
     await bank.saveEntry({
       type: "saved-name",
       title: name,
       values: [name],
       category,
-      culturalProfile: gen.trainingMode === "preset" ? gen.culturalProfile : null,
+      culturalProfile: gen.culture !== "any" ? (gen.culture as CulturalProfile) : null,
+      stashId,
     });
   };
 
@@ -79,7 +81,7 @@ export function GeneratorPanel({
         title: dictionaryTitle.trim(),
         values: gen.generatedNames,
         category,
-        culturalProfile: gen.trainingMode === "preset" ? gen.culturalProfile : null,
+        culturalProfile: gen.culture !== "any" ? (gen.culture as CulturalProfile) : null,
         isPublic: false,
       });
       setDictionaryTitle("");
@@ -161,75 +163,28 @@ export function GeneratorPanel({
               </div>
             )}
 
-            {/* Training Mode Selector (Corpus vs Preset vs IxWorld) */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Markov Source Data</label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  ["corpus", "IxWiki Corpus"],
-                  ["preset", "Cultural Presets"],
-                  ["ixworld", "Live IxWorld DB"],
-                ] as const).map(([mode, label]) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => gen.setTrainingMode(mode)}
-                    className={`rounded-lg border py-2 text-[11px] font-bold uppercase tracking-wide transition-all duration-200 ${
-                      gen.trainingMode === mode
-                        ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff] font-bold"
-                        : "border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+            {/* Unified Culture Selector */}
+            <div className="space-y-1.5 animate-in fade-in duration-200">
+              <label className="text-xs font-bold text-muted-foreground">Culture / Linguistic Family</label>
+              <select
+                value={gen.culture}
+                onChange={(e) => gen.setCulture(e.target.value)}
+                className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground focus:border-[#0091ff]/50 focus:outline-none"
+              >
+                <option value="any">Any / Mixed Culture</option>
+                <option value="latin">Latin / Romance</option>
+                <option value="germanic">Germanic / Norse</option>
+                <option value="celtic">Celtic / Gaelic</option>
+                <option value="slavic">Slavic / Eastern European</option>
+                <option value="arabic">Arabic / Semitic</option>
+                <option value="east-asian">East Asian / Romanized</option>
+                <option value="austronesian">Austronesian / Polynesian</option>
+                <option value="constructed">Constructed / Fantasy (Tolkien)</option>
+              </select>
+              <p className="text-[10px] text-muted-foreground">
+                Markov chains are trained on both curated linguistic presets and classified wiki corpora.
+              </p>
             </div>
-
-            {/* Culture facet (active in IxWiki Corpus mode) */}
-            {gen.trainingMode === "corpus" && (
-              <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                <label className="text-xs font-bold text-muted-foreground">Culture Bucket</label>
-                <select
-                  value={gen.corpusBucket}
-                  onChange={(e) => gen.setCorpusBucket(e.target.value)}
-                  className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground focus:border-[#0091ff]/50 focus:outline-none"
-                >
-                  <option value="any">Any Culture</option>
-                  {gen.corpusBuckets
-                    .filter((b) => b !== "any")
-                    .map((b) => (
-                      <option key={b} value={b}>
-                        {formatBucket(b)}
-                      </option>
-                    ))}
-                </select>
-                <p className="text-[10px] text-muted-foreground">
-                  Trained on {gen.corpusBuckets.length} culture groups mined from IxWiki, iiwiki & althistory.
-                </p>
-              </div>
-            )}
-
-            {/* Cultural Profile Dropdown (active in Preset mode) */}
-            {gen.trainingMode === "preset" && (
-              <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                <label className="text-xs font-bold text-muted-foreground">Cultural & Linguistic Family</label>
-                <select
-                  value={gen.culturalProfile}
-                  onChange={(e) => gen.setCulturalProfile(e.target.value as CulturalProfile)}
-                  className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground focus:border-[#0091ff]/50 focus:outline-none"
-                >
-                  <option value="latin">Latin / Romance</option>
-                  <option value="germanic">Germanic / Norse</option>
-                  <option value="celtic">Celtic / Gaelic</option>
-                  <option value="slavic">Slavic / Eastern European</option>
-                  <option value="arabic">Arabic / Semitic</option>
-                  <option value="east-asian">East Asian / Romanized</option>
-                  <option value="austronesian">Austronesian / Polynesian</option>
-                  <option value="constructed">Constructed / Fantasy (Tolkien)</option>
-                </select>
-              </div>
-            )}
 
             {/* Advanced option toggler */}
             <div className="border-t border-border/40 pt-3">
@@ -244,7 +199,92 @@ export function GeneratorPanel({
 
               {showAdvanced && (
                 <div className="space-y-3.5 mt-3.5 animate-in fade-in duration-200">
-                  {/* Length Limits */}
+                  {/* Include Live World Data Toggle */}
+                  <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                    <div className="space-y-0.5 pr-2">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Include Live World Data</label>
+                      <p className="text-[9px] text-muted-foreground leading-normal">
+                        Blend live database records (cities, leaders) into training seeds.
+                      </p>
+                    </div>
+                    <AppleSwitch
+                      checked={gen.includeWorldData}
+                      onCheckedChange={gen.setIncludeWorldData}
+                      size="sm"
+                    />
+                  </div>
+
+                  {/* Category-aware Prefix Title Select (Person Category only) */}
+                  {category === "person" && (
+                    <div className="space-y-1.5 border-b border-border/40 pb-3">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Title Prefix</label>
+                      <select
+                        value={gen.selectedPrefix}
+                        onChange={(e) => gen.setSelectedPrefix(e.target.value)}
+                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none"
+                      >
+                        <option value="">None</option>
+                        <option value="King">King</option>
+                        <option value="Queen">Queen</option>
+                        <option value="Prince">Prince</option>
+                        <option value="Princess">Princess</option>
+                        <option value="Lord">Lord</option>
+                        <option value="Lady">Lady</option>
+                        <option value="Sir">Sir</option>
+                        <option value="General">General</option>
+                        <option value="President">President</option>
+                        <option value="Governor">Governor</option>
+                        <option value="Minister">Minister</option>
+                        <option value="Dr.">Dr.</option>
+                        <option value="custom">Custom Prefix...</option>
+                      </select>
+
+                      {gen.selectedPrefix === "custom" && (
+                        <input
+                          type="text"
+                          placeholder="e.g. Grand Duke"
+                          value={gen.customPrefix}
+                          onChange={(e) => gen.setCustomPrefix(e.target.value)}
+                          className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none mt-1 animate-in slide-in-from-top-1 duration-150"
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Category-aware Suffix Select (Organization, Country, Province categories only) */}
+                  {(category === "organization" || category === "country" || category === "province") && (
+                    <div className="space-y-1.5 border-b border-border/40 pb-3">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Name Suffix</label>
+                      <select
+                        value={gen.selectedSuffix}
+                        onChange={(e) => gen.setSelectedSuffix(e.target.value)}
+                        className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none"
+                      >
+                        <option value="">None</option>
+                        <option value="Association">Association</option>
+                        <option value="Committee">Committee</option>
+                        <option value="Society">Society</option>
+                        <option value="Alliance">Alliance</option>
+                        <option value="Union">Union</option>
+                        <option value="Club">Club</option>
+                        <option value="Company">Company</option>
+                        <option value="Party">Party</option>
+                        <option value="Organization">Organization</option>
+                        <option value="custom">Custom Suffix...</option>
+                      </select>
+
+                      {gen.selectedSuffix === "custom" && (
+                        <input
+                          type="text"
+                          placeholder="e.g. Guild"
+                          value={gen.customSuffix}
+                          onChange={(e) => gen.setCustomSuffix(e.target.value)}
+                          className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none mt-1 animate-in slide-in-from-top-1 duration-150"
+                        />
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground uppercase">Min Length</label>

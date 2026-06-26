@@ -27,6 +27,7 @@ export function MilitarySection() {
   const militarySubTypes = [
     { value: "generic", label: "Markov Military Name (Default)" },
     { value: "military-unit", label: "Template-Generated Military Unit" },
+    { value: "mercenary-band", label: "Mercenary Company / Band" },
   ];
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;

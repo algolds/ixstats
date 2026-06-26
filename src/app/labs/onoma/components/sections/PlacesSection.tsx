@@ -34,6 +34,22 @@ export function PlacesSection() {
     },
   ];
 
+  const citySubTypes = [
+    { value: "generic", label: "Markov City Name (Default)" },
+    { value: "settlement-colony", label: "Settlement / Colony" },
+  ];
+
+  const geographySubTypes = [
+    { value: "generic", label: "Markov Landmark Name (Default)" },
+    { value: "natural-landmark", label: "Natural Landmark" },
+  ];
+
+  const getSubTypes = () => {
+    if (activeTab === "city") return citySubTypes;
+    if (activeTab === "geography") return geographySubTypes;
+    return [];
+  };
+
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
   return (
@@ -52,7 +68,8 @@ export function PlacesSection() {
         category={activeTab}
         title={currentTab.label}
         description={currentTab.desc}
-        subTypes={[]}
+        subTypes={getSubTypes()}
+        defaultSubType="generic"
       />
     </div>
   );

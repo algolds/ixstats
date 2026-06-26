@@ -353,11 +353,12 @@ export function StudioSection({ initialWords, initialTitle, onClearInitial }: St
                   <NameResultCard
                     key={idx}
                     name={name}
-                    onSave={async (n) => {
+                    onSave={async (n, stashId) => {
                       await bank.saveEntry({
                         type: "saved-name",
                         title: n,
                         values: [n],
+                        stashId,
                       });
                     }}
                   />

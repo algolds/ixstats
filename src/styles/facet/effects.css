@@ -10,16 +10,16 @@
   backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   background: linear-gradient(
-    to bottom, 
-    var(--glass-refraction-bg-start, rgba(30, 32, 40, 0.75)), 
+    to bottom,
+    var(--glass-refraction-bg-start, rgba(30, 32, 40, 0.75)),
     var(--glass-refraction-bg-end, rgba(18, 20, 24, 0.85))
   ) !important;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 0 var(--glass-refraction-shadow-inset, rgba(255, 255, 255, 0.08)),
     0 8px 32px var(--glass-refraction-shadow-ambient-1, rgba(0, 0, 0, 0.3)),
     0 4px 16px var(--glass-refraction-shadow-ambient-2, rgba(0, 0, 0, 0.2)) !important;
   border-color: var(--glass-refraction-border, rgba(255, 255, 255, 0.08)) !important;
-  
+
   --refraction-opacity: var(--refraction-opacity-base, 0.08);
 }
 
@@ -53,7 +53,7 @@
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   pointer-events: none;
-  
+
   opacity: var(--refraction-opacity);
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -76,7 +76,7 @@
   );
   border-radius: inherit;
   pointer-events: none;
-  
+
   opacity: var(--refraction-opacity);
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -228,7 +228,11 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 .facet-texture-dots {
-  background-image: radial-gradient(circle at 1px 1px, var(--facet-texture-color) 1px, transparent 0);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    var(--facet-texture-color) 1px,
+    transparent 0
+  );
   background-size: 8px 8px;
 }
 
@@ -240,18 +244,40 @@
 }
 
 .facet-texture-noise {
-  background-image: radial-gradient(circle at 2px 2px, var(--facet-texture-color) 1px, transparent 0);
+  background-image: radial-gradient(
+    circle at 2px 2px,
+    var(--facet-texture-color) 1px,
+    transparent 0
+  );
   background-size: 6px 6px;
 }
 
 .facet-texture-crosshatch {
   background-image:
-    repeating-linear-gradient(45deg, transparent, transparent 2px, var(--facet-texture-color) 2px, var(--facet-texture-color) 4px),
-    repeating-linear-gradient(-45deg, transparent, transparent 2px, var(--facet-texture-color) 2px, var(--facet-texture-color) 4px);
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      var(--facet-texture-color) 2px,
+      var(--facet-texture-color) 4px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 2px,
+      var(--facet-texture-color) 2px,
+      var(--facet-texture-color) 4px
+    );
 }
 
 .facet-texture-diagonal {
-  background-image: repeating-linear-gradient(-45deg, var(--facet-texture-color), var(--facet-texture-color) 1px, transparent 1px, transparent 6px);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--facet-texture-color),
+    var(--facet-texture-color) 1px,
+    transparent 1px,
+    transparent 6px
+  );
 }
 
 .facet-texture-scattered-dots {
@@ -265,34 +291,82 @@
 .facet-texture-halftone {
   background-image: radial-gradient(circle, var(--facet-texture-color) 25%, transparent 25%);
   background-size: 10px 10px;
-  background-position: 0 0, 5px 5px;
+  background-position:
+    0 0,
+    5px 5px;
 }
 
 .facet-texture-triangular {
-  background-image: conic-gradient(from 0deg at 50% 50%, var(--facet-texture-color) 0deg 120deg, transparent 120deg 240deg, var(--facet-texture-color) 240deg 360deg);
+  background-image: conic-gradient(
+    from 0deg at 50% 50%,
+    var(--facet-texture-color) 0deg 120deg,
+    transparent 120deg 240deg,
+    var(--facet-texture-color) 240deg 360deg
+  );
   background-size: 8px 8px;
-  background-position: 0 0, 4px 4px;
+  background-position:
+    0 0,
+    4px 4px;
 }
 
 .facet-texture-chevron {
   background-image:
-    repeating-linear-gradient(45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 2px, transparent 2px, transparent 8px),
-    repeating-linear-gradient(-45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 2px, transparent 2px, transparent 8px);
+    repeating-linear-gradient(
+      45deg,
+      var(--facet-texture-color) 0px,
+      var(--facet-texture-color) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      var(--facet-texture-color) 0px,
+      var(--facet-texture-color) 2px,
+      transparent 2px,
+      transparent 8px
+    );
 }
 
 .facet-texture-paper-grain {
   background-image:
-    repeating-linear-gradient(0deg, var(--facet-texture-color) 0px, transparent 1px, transparent 3px),
-    repeating-linear-gradient(90deg, var(--facet-texture-color) 0px, transparent 1px, transparent 4px),
-    repeating-linear-gradient(45deg, var(--facet-texture-color) 0px, transparent 1px, transparent 5px);
+    repeating-linear-gradient(
+      0deg,
+      var(--facet-texture-color) 0px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      var(--facet-texture-color) 0px,
+      transparent 1px,
+      transparent 4px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      var(--facet-texture-color) 0px,
+      transparent 1px,
+      transparent 5px
+    );
 }
 
 .facet-texture-horizontal-lines {
-  background-image: repeating-linear-gradient(0deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 4px);
+  background-image: repeating-linear-gradient(
+    0deg,
+    var(--facet-texture-color) 0px,
+    var(--facet-texture-color) 1px,
+    transparent 1px,
+    transparent 4px
+  );
 }
 
 .facet-texture-vertical-lines {
-  background-image: repeating-linear-gradient(90deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 4px);
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--facet-texture-color) 0px,
+    var(--facet-texture-color) 1px,
+    transparent 1px,
+    transparent 4px
+  );
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -300,43 +374,120 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 .facet-texture-waves {
-  background-image: repeating-radial-gradient(circle at 0 50%, transparent 0, var(--facet-texture-color) 2px, transparent 3px);
+  background-image: repeating-radial-gradient(
+    circle at 0 50%,
+    transparent 0,
+    var(--facet-texture-color) 2px,
+    transparent 3px
+  );
   background-size: 16px 16px;
 }
 
 .facet-texture-zigzag {
-  background-image: repeating-linear-gradient(45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 6px),
-                    repeating-linear-gradient(-45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 6px);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      var(--facet-texture-color) 0px,
+      var(--facet-texture-color) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      var(--facet-texture-color) 0px,
+      var(--facet-texture-color) 1px,
+      transparent 1px,
+      transparent 6px
+    );
   background-size: 12px 12px;
 }
 
 .facet-texture-woven {
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, var(--facet-texture-color) 3px, var(--facet-texture-color) 4px),
-                    repeating-linear-gradient(90deg, transparent, transparent 3px, var(--facet-texture-color) 3px, var(--facet-texture-color) 4px);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      var(--facet-texture-color) 3px,
+      var(--facet-texture-color) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      var(--facet-texture-color) 3px,
+      var(--facet-texture-color) 4px
+    );
   background-size: 8px 8px;
 }
 
 .facet-texture-brick {
-  background-image: linear-gradient(90deg, var(--facet-texture-color) 1px, transparent 1px),
-                    linear-gradient(0deg, var(--facet-texture-color) 1px, transparent 1px);
+  background-image:
+    linear-gradient(90deg, var(--facet-texture-color) 1px, transparent 1px),
+    linear-gradient(0deg, var(--facet-texture-color) 1px, transparent 1px);
   background-size: 20px 10px;
 }
 
 .facet-texture-herringbone {
-  background-image: repeating-linear-gradient(45deg, var(--facet-texture-color) 0px, var(--facet-texture-color) 1px, transparent 1px, transparent 8px),
-                    repeating-linear-gradient(-45deg, transparent 0px, transparent 4px, var(--facet-texture-color) 4px, var(--facet-texture-color) 5px, transparent 5px, transparent 8px);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      var(--facet-texture-color) 0px,
+      var(--facet-texture-color) 1px,
+      transparent 1px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0px,
+      transparent 4px,
+      var(--facet-texture-color) 4px,
+      var(--facet-texture-color) 5px,
+      transparent 5px,
+      transparent 8px
+    );
   background-size: 12px 12px;
 }
 
+.facet-texture-diamonds {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      var(--facet-texture-color) 0px,
+      var(--facet-texture-color) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      var(--facet-texture-color) 0px,
+      var(--facet-texture-color) 1px,
+      transparent 1px,
+      transparent 12px
+    );
+}
+
 .facet-texture-shimmer {
-  background: linear-gradient(135deg, transparent 0%, var(--facet-texture-color) 25%, transparent 50%, var(--facet-texture-color) 75%, transparent 100%);
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    var(--facet-texture-color) 25%,
+    transparent 50%,
+    var(--facet-texture-color) 75%,
+    transparent 100%
+  );
   background-size: 400% 400%;
   animation: facet-shimmer 6s ease-in-out infinite;
 }
 
 @keyframes facet-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -344,21 +495,21 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --facet-shadow-cutout: 
-    0px 1px 2px -1px color-mix(in oklab, var(--foreground) 8%, transparent), 
-    0px 4px 8px -2px color-mix(in oklab, var(--foreground) 6%, transparent), 
+  --facet-shadow-cutout:
+    0px 1px 2px -1px color-mix(in oklab, var(--foreground) 8%, transparent),
+    0px 4px 8px -2px color-mix(in oklab, var(--foreground) 6%, transparent),
     0px 8px 16px -4px color-mix(in oklab, var(--foreground) 5%, transparent);
-  --facet-shadow-cutout-hover: 
-    0px 2px 4px -1px color-mix(in oklab, var(--foreground) 10%, transparent), 
-    0px 8px 16px -4px color-mix(in oklab, var(--foreground) 8%, transparent), 
+  --facet-shadow-cutout-hover:
+    0px 2px 4px -1px color-mix(in oklab, var(--foreground) 10%, transparent),
+    0px 8px 16px -4px color-mix(in oklab, var(--foreground) 8%, transparent),
     0px 16px 32px -8px color-mix(in oklab, var(--foreground) 6%, transparent);
 }
 
 .facet-cutout-card {
   border: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
   box-shadow: var(--facet-shadow-cutout);
-  transition: 
-    box-shadow 0.5s cubic-bezier(0.23, 1, 0.32, 1), 
+  transition:
+    box-shadow 0.5s cubic-bezier(0.23, 1, 0.32, 1),
     border-color 0.5s cubic-bezier(0.23, 1, 0.32, 1),
     backdrop-filter 0.5s cubic-bezier(0.23, 1, 0.32, 1),
     background-color 0.5s cubic-bezier(0.23, 1, 0.32, 1);
@@ -445,7 +596,7 @@
 
 .dark .facet-refraction-none,
 .dark .glass-refraction-none {
-  box-shadow: 
+  box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 8px 32px rgba(0, 0, 0, 0.3),
     0 4px 16px rgba(0, 0, 0, 0.2) !important;
@@ -456,7 +607,7 @@
 [data-theme="light"] .glass-refraction-none,
 html:not([data-theme="dark"]) .facet-refraction-none,
 html:not([data-theme="dark"]) .glass-refraction-none {
-  box-shadow: 
+  box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     0 8px 32px rgba(0, 0, 0, 0.04),
     0 4px 16px rgba(0, 0, 0, 0.02) !important;
@@ -508,13 +659,16 @@ select.glass-refraction-none::after,
 /* 3D Magnetic Tilt Profile */
 .facet-magnetic-3d {
   position: relative;
-  transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+  transition:
+    transform 0.15s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.3s ease;
   transform-style: preserve-3d;
   will-change: transform;
 }
 
 .facet-magnetic-3d:hover {
-  transform: perspective(1000px) rotateX(calc(var(--pointer-offset-y) * -1.5deg)) rotateY(calc(var(--pointer-offset-x) * 1.5deg)) translateZ(10px);
+  transform: perspective(1000px) rotateX(calc(var(--pointer-offset-y) * -1.5deg))
+    rotateY(calc(var(--pointer-offset-x) * 1.5deg)) translateZ(10px);
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.25),
     0 10px 20px rgba(0, 0, 0, 0.15),
@@ -544,7 +698,8 @@ select.glass-refraction-none::after,
   transform: translateY(-2px);
   border-color: var(--facet-lab-accent, hsl(var(--primary))) !important;
   box-shadow:
-    0 0 20px calc(var(--facet-lab-glow, 0.5) * 12px) var(--facet-lab-accent, rgba(99, 102, 241, 0.35)),
+    0 0 20px calc(var(--facet-lab-glow, 0.5) * 12px)
+      var(--facet-lab-accent, rgba(99, 102, 241, 0.35)),
     0 4px 12px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
@@ -552,7 +707,8 @@ select.glass-refraction-none::after,
 .dark .facet-glow-accent:hover,
 [data-theme="dark"] .facet-glow-accent:hover {
   box-shadow:
-    0 0 25px calc(var(--facet-lab-glow, 0.5) * 16px) var(--facet-lab-accent, rgba(99, 102, 241, 0.5)),
+    0 0 25px calc(var(--facet-lab-glow, 0.5) * 16px)
+      var(--facet-lab-accent, rgba(99, 102, 241, 0.5)),
     0 8px 24px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
@@ -560,12 +716,7 @@ select.glass-refraction-none::after,
 .facet-glow-accent:active {
   transform: translateY(0);
   box-shadow:
-    0 0 10px calc(var(--facet-lab-glow, 0.5) * 6px) var(--facet-lab-accent, rgba(99, 102, 241, 0.25)),
+    0 0 10px calc(var(--facet-lab-glow, 0.5) * 6px)
+      var(--facet-lab-accent, rgba(99, 102, 241, 0.25)),
     0 2px 6px rgba(0, 0, 0, 0.1);
 }
-
-
-
-
-
-

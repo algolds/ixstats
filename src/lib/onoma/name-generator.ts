@@ -3,7 +3,7 @@
 
 import { FANTASY_SYLLABLES } from "./data/fantasy-names-data";
 import { MarkovChain } from "./markov-chain";
-import { GenerateOptions } from "./types";
+import { type GenerateOptions } from "./types";
 
 /**
  * Generates a name by concatenating syllables from the original Onoma database
@@ -67,3 +67,33 @@ export function generateMarkovName(
   chain.addWords(trainingNames);
   return chain.generate(options);
 }
+
+/**
+ * Generates a noble/clan surname formatted according to the rules of the selected culture.
+ */
+export function generateNobleSurname(
+  culture: string,
+  chain?: MarkovChain,
+  options?: GenerateOptions
+): string {
+  const baseName = chain?.generate(options) || generateFantasySyllableName();
+  const name = MarkovChain.capitalize(baseName);
+  const cult = culture.toLowerCase();
+
+  if (cult === "latin") {
+    return Math.random() < 0.5 ? `de ${name}` : `di ${name}`;
+  } else if (cult === "germanic") {
+    return Math.random() < 0.5 ? `von ${name}` : `zu ${name}`;
+  } else if (cult === "celtic") {
+    return Math.random() < 0.5 ? `O'${name}` : `Mac${name}`;
+  } else if (cult === "slavic") {
+    // Trim ending vowel if present to make suffix sound more natural
+    const base = name.replace(/[aeiou]$/i, "");
+    return Math.random() < 0.5 ? `${base}ovich` : `${base}ic`;
+  } else if (cult === "arabic") {
+    return Math.random() < 0.5 ? `Al-${name}` : `ibn ${name}`;
+  } else {
+    return Math.random() < 0.5 ? `de ${name}` : name;
+  }
+}
+

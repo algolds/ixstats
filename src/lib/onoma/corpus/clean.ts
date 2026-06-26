@@ -6,6 +6,15 @@ export type CorpusName = { name: string; category: string; sourceWiki: string };
 
 const ROMAN = /^[IVXLCDM]+$/; // standalone regnal numeral (I, II, XIV…)
 
+// Meta names, colons (namespaces), and structural English filler words
+const REJECT_JUNK = /(?::|\b(?:and|the|in|or|for|with|list|timeline|index)\b)/i;
+
+// Conworld administrative/institutional suffixes
+const REJECT_ADMIN = /\b(?:Association|Committee|Society|Alliance|Union|Club|Company|Party|Organization)\b/i;
+
+// Generic title prefixes for people
+const TITLE_PREFIX = /^(?:President|King|Lord|General|Minister|Governor|Prince|Princess|Queen|Emperor|Empress|Sir|Lady|Dr\.?)\s+/i;
+
 // Governmental descriptors that prefix a country's proper name on the wiki
 // ("Republic of Nasastan" → "Nasastan"). Longest-first so multi-word wins.
 const GOV_PREFIX =
@@ -27,6 +36,9 @@ export function cleanName(raw: string, category: string): string | null {
   s = s.replace(/(^|\s)['‘’]+|['‘’]+(\s|$)/g, "$1$2").replace(/\s+/g, " ").trim();
   if (!s) return null;
 
+  if (REJECT_JUNK.test(s)) return null;
+  if (REJECT_ADMIN.test(s)) return null;
+
   if (category === "country") {
     s = s.replace(GOV_PREFIX, "").trim();
   }
@@ -34,6 +46,12 @@ export function cleanName(raw: string, category: string): string | null {
   if (category === "person") {
     s = s.replace(/\s+of\s+.+$/i, "").trim();                       // "Rhys I of Faneria" → "Rhys I"
     s = s.split(" ").filter((w) => !ROMAN.test(w)).join(" ").trim(); // drop regnal numerals
+
+    let prev = "";
+    while (s !== prev) {
+      prev = s;
+      s = s.replace(TITLE_PREFIX, "").trim();
+    }
   }
 
   if (s.length < 2) return null;

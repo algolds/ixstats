@@ -11,6 +11,8 @@ export function OrganizationsSection() {
     { value: "mystic-order", label: "Mystic & Academic Order" },
     { value: "covert-org", label: "Covert & Thieves Guild" },
     { value: "tavern", label: "Tavern & Brew House Establishment" },
+    { value: "business-company", label: "Business / Company" },
+    { value: "academic-institution", label: "Academic Institution" },
   ];
 
   return (

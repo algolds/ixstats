@@ -48,6 +48,7 @@ export function PeopleSection() {
   const dynastySubTypes = [
     { value: "generic", label: "Markov Dynasty Name (Default)" },
     { value: "fantasy-syllable", label: "Syllable-Concatenated Surname" },
+    { value: "noble-surname", label: "Noble / Clan Surname" },
   ];
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;

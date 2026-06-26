@@ -2,29 +2,61 @@
 // Onoma Lab — Markov Chain Engine
 // Ported from original markovChainGenerator.js, rewritten in TypeScript.
 
-import { GenerateOptions } from "./types";
+import { type GenerateOptions } from "./types";
+
+// Accented/diacritic vowel class for multi-cultural support
+const VOWELS_CLASS = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
+
+/**
+ * Splits a word into syllables using a fast rule-based regex tokenizer.
+ */
+export function tokenizeIntoSyllables(word: string): string[] {
+  const regex = new RegExp(`[^${VOWELS_CLASS}]*[${VOWELS_CLASS}]+(?:[^${VOWELS_CLASS}]+(?![${VOWELS_CLASS}]))?|[^${VOWELS_CLASS}]+`, "gi");
+  return word.match(regex) || [word];
+}
 
 export class MarkovNode {
-  character: string;
+  token: string;
   neighbors: (MarkovNode | null)[];
 
-  constructor(char: string) {
-    this.character = char;
+  constructor(token: string) {
+    this.token = token;
     this.neighbors = [];
+  }
+
+  // Backwards compatibility alias
+  get character(): string {
+    return this.token;
   }
 }
 
 export class MarkovChain {
   private order = 3;
-  // Exact training words (lowercased) for dedup. A Set is O(1) and O(n) memory;
-  // the old suffix-trie rejected any substring of any training word, which both
-  // exploded memory on large corpora and over-rejected plausible names.
+  private mode: "character" | "syllable" = "character";
   private words = new Set<string>();
-  private start = new MarkovNode("");
-  private map: Record<string, MarkovNode> = {};
+  
+  // Storing starts and maps per order (for backoff support)
+  private starts: Record<number, MarkovNode> = {};
+  private maps: Record<number, Record<string, MarkovNode>> = {};
 
-  constructor(order = 3) {
+  constructor(order = 3, mode: "character" | "syllable" = "character") {
     this.order = order;
+    this.mode = mode;
+  }
+
+  // Backwards compatibility getters
+  get start(): MarkovNode {
+    if (!this.starts[this.order]) {
+      this.starts[this.order] = new MarkovNode("");
+    }
+    return this.starts[this.order];
+  }
+
+  get map(): Record<string, MarkovNode> {
+    if (!this.maps[this.order]) {
+      this.maps[this.order] = {};
+    }
+    return this.maps[this.order];
   }
 
   /**
@@ -57,8 +89,8 @@ export class MarkovChain {
    */
   public reset(): void {
     this.words = new Set<string>();
-    this.start = new MarkovNode("");
-    this.map = {};
+    this.starts = {};
+    this.maps = {};
   }
 
   /**
@@ -83,31 +115,51 @@ export class MarkovChain {
    * Add a single word to train the Markov chain.
    */
   public addWord(word: string): void {
-    const lowercaseWord = word.toLowerCase();
+    if (!word || !word.trim()) return;
+    const lowercaseWord = word.trim().toLowerCase();
     this.words.add(lowercaseWord);
 
-    let previous = this.start;
-    let key = "";
-
-    for (let i = 0; i < word.length; i++) {
-      const char = word[i];
-      key += char;
-      if (key.length > this.order) {
-        key = key.substring(1);
+    // Train for all orders from 1 to this.order
+    for (let o = 1; o <= this.order; o++) {
+      if (!this.starts[o]) {
+        this.starts[o] = new MarkovNode("");
+      }
+      if (!this.maps[o]) {
+        this.maps[o] = {};
       }
 
-      let newNode = this.map[key];
-      if (!newNode) {
-        newNode = new MarkovNode(char);
-        this.map[key] = newNode;
+      let previous = this.starts[o];
+      let tokens: string[] = [];
+
+      if (this.mode === "character") {
+        tokens = lowercaseWord.split("");
+      } else {
+        tokens = tokenizeIntoSyllables(lowercaseWord);
       }
 
-      previous.neighbors.push(newNode);
-      previous = newNode;
+      const keyTokens: string[] = [];
+
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        keyTokens.push(token);
+        if (keyTokens.length > o) {
+          keyTokens.shift();
+        }
+        const key = keyTokens.join("|");
+
+        let newNode = this.maps[o][key];
+        if (!newNode) {
+          newNode = new MarkovNode(token);
+          this.maps[o][key] = newNode;
+        }
+
+        previous.neighbors.push(newNode);
+        previous = newNode;
+      }
+
+      // Terminate sequence
+      previous.neighbors.push(null);
     }
-
-    // Terminate sequence
-    previous.neighbors.push(null);
   }
 
   /**
@@ -118,9 +170,29 @@ export class MarkovChain {
   }
 
   /**
-   * Generate a single word using the trained Markov chain.
+   * Generate a single word using the trained Markov chain, applying Backoff if needed.
    */
   public generate(options: GenerateOptions = {}): string | null {
+    // Try generating with the configured order first.
+    // If it fails (returns null), back off to lower orders sequentially down to 1.
+    for (let o = this.order; o >= 1; o--) {
+      const result = this.generateAtOrder(o, options);
+      if (result) {
+        return result;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Generates a candidate name at a specific look-back order.
+   */
+  private generateAtOrder(o: number, options: GenerateOptions = {}): string | null {
+    const startNode = this.starts[o];
+    if (!startNode || startNode.neighbors.length === 0) {
+      return null;
+    }
+
     const startWith = options.startsWith || "";
     const endWith = options.endsWith || "";
     const minLength = Math.max(
@@ -134,45 +206,64 @@ export class MarkovChain {
     const contains = options.contains || "";
     const excludes = options.excludes || "";
 
-    let word = "";
+    const startWithLower = startWith.toLowerCase();
+    const endWithLower = endWith.toLowerCase();
+    const containsLower = contains.toLowerCase();
+    const excludesLower = excludes.toLowerCase();
+
     let attempts = 0;
 
-    // Return null if start.neighbors is empty (no words loaded)
-    if (this.start.neighbors.length === 0) {
-      return null;
-    }
-
-    while (!word.length) {
+    while (attempts < maxAttempts) {
       attempts++;
-      if (attempts >= maxAttempts) {
-        return null;
-      }
 
-      // Pick a random neighbor of start node
-      const nextNodeIndex = Math.floor(Math.random() * this.start.neighbors.length);
-      let currentNode = this.start.neighbors[nextNodeIndex];
-      word = "";
+      const nextNodeIndex = Math.floor(Math.random() * startNode.neighbors.length);
+      let currentNode = startNode.neighbors[nextNodeIndex];
+      const wordTokens: string[] = [];
 
-      while (currentNode && (maxLength < 0 || word.length <= maxLength)) {
-        word += currentNode.character;
+      while (currentNode && (maxLength < 0 || wordTokens.join("").length <= maxLength)) {
+        wordTokens.push(currentNode.token);
         const nextIndex = Math.floor(Math.random() * currentNode.neighbors.length);
         currentNode = currentNode.neighbors[nextIndex];
       }
 
+      const candidate = wordTokens.join("");
+
+      // Phonotactic Safeguards Check
+      if (candidate.length > 0) {
+        // 1. Triple identical letters (e.g. "aaa", "sss")
+        if (/(.)\1\1/i.test(candidate)) continue;
+
+        // 2. Double punctuation (e.g. "--", "''")
+        if (/[-\']{2,}/.test(candidate)) continue;
+
+        // 3. Leading/trailing hyphens/apostrophes
+        if (/^[-']|[-']$/.test(candidate)) continue;
+
+        // 4. Excessive consecutive consonant clusters (4+) and vowel clusters (4+)
+        const vowelsPattern = new RegExp(`[${VOWELS_CLASS}]{4,}`, "i");
+        const consonantsPattern = new RegExp(`[^${VOWELS_CLASS}]{4,}`, "i");
+        if (vowelsPattern.test(candidate) || consonantsPattern.test(candidate)) {
+          continue;
+        }
+      }
+
       // Validation checks
       if (
-        word.substring(0, startWith.length) !== startWith ||
-        word.substring(word.length - endWith.length) !== endWith ||
-        (contains && word.indexOf(contains) === -1) ||
-        (excludes && word.indexOf(excludes) > -1) ||
-        (maxLength >= 0 && word.length > maxLength) ||
-        word.length < minLength ||
-        (!allowDuplicates && this.isDuplicate(word))
+        candidate.substring(0, startWithLower.length) !== startWithLower ||
+        candidate.substring(candidate.length - endWithLower.length) !== endWithLower ||
+        (containsLower && candidate.indexOf(containsLower) === -1) ||
+        (excludesLower && candidate.indexOf(excludesLower) > -1) ||
+        (maxLength >= 0 && candidate.length > maxLength) ||
+        candidate.length < minLength ||
+        (!allowDuplicates && this.isDuplicate(candidate))
       ) {
-        word = "";
+        continue;
       }
+
+      // Return capitalized result
+      return MarkovChain.capitalize(candidate);
     }
 
-    return MarkovChain.capitalize(word);
+    return null;
   }
 }
