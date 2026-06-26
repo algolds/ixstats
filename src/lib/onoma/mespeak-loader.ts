@@ -5,9 +5,9 @@
 // and are cached. Any failure falls back to native Web Speech.
 
 import { ipaToEspeak, voiceForCulture, getSpeechConfig } from "./speech";
+import { withBasePath } from "~/lib/base-path";
 
-const basePath = () => (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_PATH) || "";
-const assetUrl = (p: string) => `${basePath()}/onoma/mespeak/${p}`;
+const assetUrl = (p: string) => withBasePath(`/onoma/mespeak/${p}`);
 
 let enginePromise: Promise<any> | null = null;
 const loadedVoices = new Set<string>();
