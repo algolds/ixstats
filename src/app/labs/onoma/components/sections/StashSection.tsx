@@ -447,7 +447,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                           <button
                             onClick={() => onLoadToStudio(dict.values, dict.title)}
                             className="flex items-center gap-0.5 rounded bg-[#0091ff]/10 px-2 py-1 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20"
-                            title="Load into Custom Studio Workshop"
+                            title="Load into Studio Workshop"
                           >
                             <Wrench className="h-3 w-3" />
                             <span>Load Studio</span>

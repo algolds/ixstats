@@ -120,4 +120,74 @@ describe("MarkovChain", () => {
       expect(name).not.toContain("bbbbb");
     }
   });
+
+  describe("getTransitions", () => {
+    test("should retrieve transitions for empty prefix (starts) in character mode", () => {
+      const charChain = new MarkovChain(2, "character");
+      charChain.addWords(["Ab", "Ac"]);
+
+      const transitions = charChain.getTransitions("");
+      // "ab" and "ac" are lowercase.
+      // Starts should transition to "a" with 100% probability (count 2)
+      expect(transitions).toHaveLength(1);
+      expect(transitions[0]).toEqual({
+        token: "a",
+        count: 2,
+        probability: 1.0,
+      });
+    });
+
+    test("should retrieve correct transition probabilities in character mode", () => {
+      const charChain = new MarkovChain(2, "character");
+      charChain.addWords(["Ab", "Ac", "Ad"]); // "a" -> "b", "c", "d"
+
+      const transitions = charChain.getTransitions("a");
+      // "a" should transition to "b", "c", "d" with 1/3 probability each
+      expect(transitions).toHaveLength(3);
+      expect(transitions).toContainEqual({ token: "b", count: 1, probability: 1/3 });
+      expect(transitions).toContainEqual({ token: "c", count: 1, probability: 1/3 });
+      expect(transitions).toContainEqual({ token: "d", count: 1, probability: 1/3 });
+    });
+
+    test("should retrieve transitions in syllable mode", () => {
+      const syllableChain = new MarkovChain(2, "syllable");
+      // "Uppsala" splits to ["Upp", "sa", "la"]
+      // "Constantia" splits to ["Cons", "tan", "tia"]
+      syllableChain.addWords(["Uppsala", "Constantia"]);
+
+      const starts = syllableChain.getTransitions("");
+      expect(starts).toHaveLength(2);
+      expect(starts.map(t => t.token)).toContain("upp");
+      expect(starts.map(t => t.token)).toContain("cons");
+
+      const transitions = syllableChain.getTransitions("upp");
+      expect(transitions).toHaveLength(1);
+      expect(transitions[0]).toEqual({
+        token: "sa",
+        count: 1,
+        probability: 1.0,
+      });
+    });
+
+    test("should return empty array for unknown prefix", () => {
+      const charChain = new MarkovChain(2, "character");
+      charChain.addWord("abc");
+
+      const transitions = charChain.getTransitions("x");
+      expect(transitions).toEqual([]);
+    });
+
+    test("should handle end transitions (token is null)", () => {
+      const charChain = new MarkovChain(2, "character");
+      charChain.addWord("a"); // "a" -> null
+
+      const transitions = charChain.getTransitions("a");
+      expect(transitions).toHaveLength(1);
+      expect(transitions[0]).toEqual({
+        token: null,
+        count: 1,
+        probability: 1.0,
+      });
+    });
+  });
 });

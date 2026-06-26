@@ -4,12 +4,13 @@
 // Onoma Lab — Custom Markov Chain Studio Workshop (Facet Rebuild)
 
 import { useState, useMemo, useEffect } from "react";
-import { Wand2, SlidersHorizontal, Plus, Bookmark, Loader2, Info, Upload } from "lucide-react";
+import { Wand2, SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucide-react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { NameResultCard } from "../shared/NameResultCard";
 import { useNameBank } from "~/hooks/useNameBank";
 import { type GenerateOptions } from "~/lib/onoma/types";
 import { FacetCard } from "~/components/ui/facet-container";
+import { MarkovVisualizer } from "./MarkovVisualizer";
 
 interface StudioSectionProps {
   initialWords?: string[];
@@ -39,6 +40,9 @@ export function StudioSection({ initialWords, initialTitle, onClearInitial }: St
   const [dictTitle, setDictTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Visualizer Path Workshop State
+  const [visualizerPrefix, setVisualizerPrefix] = useState<string>("");
 
   useEffect(() => {
     if (initialWords && initialWords.length > 0) {
@@ -106,6 +110,29 @@ export function StudioSection({ initialWords, initialTitle, onClearInitial }: St
       .map((w) => w.trim())
       .filter((w) => w.length > 0);
   }, [inputText]);
+
+  // MarkovChain instance for the visualizer
+  const visualizerChain = useMemo(() => {
+    if (trainingWords.length === 0) return null;
+    const chain = new MarkovChain(order);
+    chain.addWords(trainingWords);
+    return chain;
+  }, [trainingWords, order]);
+
+  // Prepend completed name to the candidates list and speak it
+  const handleCompleteName = (completedName: string) => {
+    setGeneratedNames((prev) => {
+      if (prev.includes(completedName)) return prev;
+      return [completedName, ...prev];
+    });
+
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(completedName);
+      utterance.rate = 0.88;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   // Handle generation
   const handleGenerate = () => {
@@ -377,6 +404,27 @@ export function StudioSection({ initialWords, initialTitle, onClearInitial }: St
         </div>
 
       </div>
+
+      {/* Interactive Markov Path Visualizer Panel */}
+      {visualizerChain && (
+        <div className="mt-4 space-y-3 border-t border-border/40 pt-6">
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold tracking-tight text-[#0091ff]">
+              Interactive Path Workshop
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Explore the Markov transition tree step-by-step. Click green tokens to grow the path and click red [End] to finalize name compilation.
+            </p>
+          </div>
+          <MarkovVisualizer
+            chain={visualizerChain}
+            activePrefix={visualizerPrefix}
+            onChangePrefix={setVisualizerPrefix}
+            onCompleteName={handleCompleteName}
+          />
+        </div>
+      )}
+
     </div>
   );
 }

@@ -40,7 +40,7 @@ const SECTION_TITLES: Record<OnomaSection, string> = {
   military: "Military",
   organizations: "Organizations",
   culture: "Culture",
-  studio: "Custom Studio",
+  studio: "Studio",
   bank: "Stash",
 };
 
@@ -149,7 +149,7 @@ export function OnomaRouter() {
     }
   }, []);
 
-  // States to pass data to Custom Studio from Name Bank
+  // States to pass data to Studio from Name Bank
   const [studioInitialWords, setStudioInitialWords] = useState<string[] | undefined>(undefined);
   const [studioInitialTitle, setStudioInitialTitle] = useState<string | undefined>(undefined);
 
@@ -157,7 +157,7 @@ export function OnomaRouter() {
   const handleNavigate = useCallback(
     (section: OnomaSection) => {
       if (section === activeSection) {
-        // If unclicking stash or custom studio, return to the last standard tab
+        // If unclicking stash or studio, return to the last standard tab
         if (section === "bank" || section === "studio") {
           handleNavigate(lastActiveTab);
         }
@@ -277,14 +277,14 @@ export function OnomaRouter() {
             </button>
             <button
               onClick={() => handleNavigate("studio")}
-              className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
                 activeSection === "studio"
-                  ? "border-pink-500/30 bg-pink-500/10 text-pink-600 shadow-[0_0_10px_rgba(236,72,153,0.15)] dark:text-pink-400"
-                  : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400"
+                  ? "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/30 shadow-[0_0_10px_rgba(236,72,153,0.15)]"
+                  : "border-border/40 bg-secondary/20 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-500/30 text-muted-foreground"
               }`}
             >
               <Wrench className="h-3.5 w-3.5" />
-              <span>Custom Studio</span>
+              <span>Studio</span>
             </button>
           </div>
         </div>

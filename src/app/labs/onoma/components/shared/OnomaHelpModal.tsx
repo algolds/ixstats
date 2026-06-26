@@ -47,7 +47,7 @@ const STEPS = [
   },
   {
     icon: Wrench,
-    title: "Custom Studio",
+    title: "Studio",
     description: "Assemble custom linguistic profiles. Paste your own training seed words, adjust look-back orders, and constrain outputs to craft custom generators.",
     features: [
       "Paste any seed list separated by commas or newlines",

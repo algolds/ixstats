@@ -5,13 +5,17 @@
 import { type GenerateOptions } from "./types";
 
 // Accented/diacritic vowel class for multi-cultural support
-const VOWELS_CLASS = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
+const VOWELS_CLASS =
+  "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
 
 /**
  * Splits a word into syllables using a fast rule-based regex tokenizer.
  */
 export function tokenizeIntoSyllables(word: string): string[] {
-  const regex = new RegExp(`[^${VOWELS_CLASS}]*[${VOWELS_CLASS}]+(?:[^${VOWELS_CLASS}]+(?![${VOWELS_CLASS}]))?|[^${VOWELS_CLASS}]+`, "gi");
+  const regex = new RegExp(
+    `[^${VOWELS_CLASS}]*[${VOWELS_CLASS}]+(?:[^${VOWELS_CLASS}]+(?![${VOWELS_CLASS}]))?|[^${VOWELS_CLASS}]+`,
+    "gi"
+  );
   return word.match(regex) || [word];
 }
 
@@ -34,7 +38,7 @@ export class MarkovChain {
   private order = 3;
   private mode: "character" | "syllable" = "character";
   private words = new Set<string>();
-  
+
   // Storing starts and maps per order (for backoff support)
   private starts: Record<number, MarkovNode> = {};
   private maps: Record<number, Record<string, MarkovNode>> = {};
@@ -73,12 +77,13 @@ export class MarkovChain {
     // (like space, hyphens, apostrophes)
     for (let i = 1; i < capitalized.length; i++) {
       const prevChar = capitalized.charAt(i - 1);
-      const isWordChar = /[a-zÆÐƎƏƐƔĲŊŒẞÞǷȜæðǝəɛɣĳŋœĸſßþƿȝĄƁÇĐƊĘĦĮƘŁØƠŞȘŢȚŦŲƯY̨Ƴąɓçđɗęħįƙłøơşșţțŧųưy̨ƴÁÀÂÄǍĂĀÃÅǺĄÆǼǢƁĆĊĈČÇĎḌĐƊÐÉÈĖÊËĚĔĒĘẸƎƏƐĠĜǦĞĢƔáàâäǎăāãåǻąæǽǣɓćċĉčçďḍđɗðéèėêëěĕēęẹǝəɛġĝǧğģɣĤḤĦIÍÌİÎÏǏĬĪĨĮỊĲĴĶƘĹĻŁĽĿʼNŃN̈ŇÑŅŊÓÒÔÖǑŎŌÕŐỌØǾƠŒĥḥħıíìiîïǐĭīĩįịĳĵķƙĸĺļłľŀŉńn̈ňñņŋóòôöǒŏōõőọøǿơœŔŘŖŚŜŠŞȘṢẞŤŢṬŦÞÚÙÛÜǓŬŪŨŰŮŲỤƯẂẀŴẄǷÝỲŶŸȲỸƳŹŻŽẒŕřŗſśŝšşșṣßťţṭŧþúùûüǔŭūũűůųụưẃẁŵẅƿýỳŷÿȳỹƴźżžẓ]/i.test(prevChar);
+      const isWordChar =
+        /[a-zÆÐƎƏƐƔĲŊŒẞÞǷȜæðǝəɛɣĳŋœĸſßþƿȝĄƁÇĐƊĘĦĮƘŁØƠŞȘŢȚŦŲƯY̨Ƴąɓçđɗęħįƙłøơşșţțŧųưy̨ƴÁÀÂÄǍĂĀÃÅǺĄÆǼǢƁĆĊĈČÇĎḌĐƊÐÉÈĖÊËĚĔĒĘẸƎƏƐĠĜǦĞĢƔáàâäǎăāãåǻąæǽǣɓćċĉčçďḍđɗðéèėêëěĕēęẹǝəɛġĝǧğģɣĤḤĦIÍÌİÎÏǏĬĪĨĮỊĲĴĶƘĹĻŁĽĿʼNŃN̈ŇÑŅŊÓÒÔÖǑŎŌÕŐỌØǾƠŒĥḥħıíìiîïǐĭīĩįịĳĵķƙĸĺļłľŀŉńn̈ňñņŋóòôöǒŏōõőọøǿơœŔŘŖŚŜŠŞȘṢẞŤŢṬŦÞÚÙÛÜǓŬŪŨŰŮŲỤƯẂẀŴẄǷÝỲŶŸȲỸƳŹŻŽẒŕřŗſśŝšşșṣßťţṭŧþúùûüǔŭūũűůųụưẃẁŵẅƿýỳŷÿȳỹƴźżžẓ]/i.test(
+          prevChar
+        );
       if (!isWordChar && capitalized.length > i) {
         capitalized =
-          capitalized.slice(0, i) +
-          capitalized.charAt(i).toUpperCase() +
-          capitalized.slice(i + 1);
+          capitalized.slice(0, i) + capitalized.charAt(i).toUpperCase() + capitalized.slice(i + 1);
       }
     }
     return capitalized;
@@ -195,11 +200,7 @@ export class MarkovChain {
 
     const startWith = options.startsWith || "";
     const endWith = options.endsWith || "";
-    const minLength = Math.max(
-      options.minLength || 0,
-      startWith.length,
-      endWith.length
-    );
+    const minLength = Math.max(options.minLength || 0, startWith.length, endWith.length);
     const maxLength = options.maxLength || -1;
     const allowDuplicates = options.allowDuplicates ?? false;
     const maxAttempts = options.maxAttempts ?? 100;
@@ -265,5 +266,48 @@ export class MarkovChain {
     }
 
     return null;
+  }
+
+  /**
+   * Retrieve the transition statistics for a given prefix.
+   */
+  public getTransitions(
+    prefix: string,
+    o = this.order
+  ): { token: string | null; count: number; probability: number }[] {
+    const lowercase = prefix.trim().toLowerCase();
+    let tokens: string[] = [];
+
+    if (this.mode === "character") {
+      tokens = lowercase.split("");
+    } else {
+      tokens = tokenizeIntoSyllables(lowercase);
+    }
+
+    // Slice to the trailing 'o' tokens
+    if (tokens.length > o) {
+      tokens = tokens.slice(tokens.length - o);
+    }
+
+    const key = tokens.join("|");
+    const node = key ? this.maps[o]?.[key] : this.starts[o];
+    if (!node || !node.neighbors || node.neighbors.length === 0) {
+      return [];
+    }
+
+    const counts = new Map<string | null, number>();
+    for (const neighbor of node.neighbors) {
+      const t = neighbor ? neighbor.token : null;
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+
+    const total = node.neighbors.length;
+    return Array.from(counts.entries())
+      .map(([token, count]) => ({
+        token,
+        count,
+        probability: count / total,
+      }))
+      .sort((a, b) => b.count - a.count);
   }
 }

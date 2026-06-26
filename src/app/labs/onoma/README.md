@@ -23,7 +23,7 @@ Single-Page Router pattern.
   | Military | `MilitarySection` | `military` |
   | Organizations | `OrganizationsSection` | `organization` (taverns, orders, units) |
   | Culture | `CultureSection` | `dynasty`, `culture` |
-  | Studio | `StudioSection` | Custom Studio — paste/upload your own training list |
+  | Studio | `StudioSection` | Studio — paste/upload your own training list |
   | Name Bank | `StashSection` (`"bank"`) | saved names + seed dictionaries |
 
 - **`components/shared/`**
