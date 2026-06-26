@@ -12,11 +12,9 @@ import {
   Settings,
   Trophy,
 } from "lucide-react";
-import { FaLanguage, FaWikipediaW } from "react-icons/fa";
-import { GiCardRandom, GiFamilyTree } from "react-icons/gi";
+import { FaWikipediaW } from "react-icons/fa";
+import { GiCardRandom } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";
-import { GiVibratingShield } from "react-icons/gi";
-import { FaTreeCity } from "react-icons/fa6";
 import type { NavigationItem } from "~/lib/navigation-config";
 
 export interface UseNavigationItemsParams {
@@ -117,6 +115,8 @@ export function useNavigationItems({
         icon: GiSoapExperiment,
         requiresAuth: true,
         isDropdown: true,
+        // Only labs with live routes. Vexel/Strata/Dynas/Nomora are not built yet
+        // (no page routes) — listing them caused prefetch 404s. Re-add when shipped.
         dropdownItems: [
           {
             name: "MyLeague",
@@ -125,34 +125,10 @@ export function useNavigationItems({
             description: "Sports management",
           },
           {
-            name: "Vexel",
-            href: "/labs/vexel",
-            icon: GiVibratingShield,
-            description: "Heraldry generator",
-          },
-          {
             name: "Onoma",
             href: "/labs/onoma",
             icon: Database,
             description: "Markov name generator",
-          },
-          {
-            name: "Strata",
-            href: "/labs/strata",
-            icon: FaTreeCity,
-            description: "City/roadmap generator",
-          },
-          {
-            name: "Dynas",
-            href: "/labs/dynas",
-            icon: GiFamilyTree,
-            description: "Family/Dynasty Generator",
-          },
-          {
-            name: "Nomora",
-            href: "/labs/nomora",
-            icon: FaLanguage,
-            description: "Conlang Generator",
           },
         ],
       },

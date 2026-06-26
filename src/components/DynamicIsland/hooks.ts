@@ -908,36 +908,12 @@ export const commands = [
     description: "Storyteller administrative dashboard",
   },
 
-  // Labs & Generators
-  {
-    name: "Vexel Lab",
-    path: "/labs/vexel",
-    icon: Target,
-    description: "Heraldry and coat of arms generator",
-  },
+  // Labs & Generators (only built routes; others 404)
   {
     name: "Onoma Lab",
     path: "/labs/onoma",
     icon: Activity,
     description: "Markov-based name generator",
-  },
-  {
-    name: "Strata Lab",
-    path: "/labs/strata",
-    icon: Plus,
-    description: "City and roadmap generator",
-  },
-  {
-    name: "Dynas Lab",
-    path: "/labs/dynas",
-    icon: Crown,
-    description: "Family and dynasty generator",
-  },
-  {
-    name: "Nomora Lab",
-    path: "/labs/nomora",
-    icon: Globe,
-    description: "Constructed language generator",
   },
 ];
 
@@ -1086,36 +1062,12 @@ export const features = [
     description: "Country trading card collection and management",
   },
 
-  // Creative Labs & Generators
-  {
-    name: "Heraldry Design",
-    path: "/labs/vexel",
-    icon: Target,
-    description: "Create custom coats of arms and flags",
-  },
+  // Creative Labs & Generators (only built routes; others 404)
   {
     name: "Name Generation",
     path: "/labs/onoma",
     icon: Activity,
     description: "Generate names using Markov chains",
-  },
-  {
-    name: "City Planning",
-    path: "/labs/strata",
-    icon: Plus,
-    description: "Design cities and infrastructure layouts",
-  },
-  {
-    name: "Dynasty Building",
-    path: "/labs/dynas",
-    icon: Crown,
-    description: "Create family trees and royal lineages",
-  },
-  {
-    name: "Language Creation",
-    path: "/labs/nomora",
-    icon: Globe,
-    description: "Construct artificial languages and linguistics",
   },
 
   // Administrative & System Tools

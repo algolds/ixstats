@@ -19,7 +19,7 @@ import { useUser } from "~/context/auth-context";
 const EXTERNAL_LINKS = [
   {
     label: "Getting Started",
-    href: "/help/getting-started",
+    href: "/help/getting-started/welcome",
     icon: BookOpen,
     color: "text-amber-600 dark:text-amber-500",
   },

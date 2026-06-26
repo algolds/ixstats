@@ -71,7 +71,7 @@ const PRIMARY_NAV: NavTrayItem[] = [
 
 const SECONDARY_NAV: { name: string; href: string }[] = [
   { name: "Cards", href: "/vault" },
-  { name: "Labs", href: "/labs/vexel" },
+  { name: "Labs", href: "/labs/onoma" },
   { name: "Help", href: "/help" },
 ];
 
