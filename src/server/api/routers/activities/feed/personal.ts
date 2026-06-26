@@ -220,7 +220,7 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
               user: country
                 ? {
                     id: `country-${country.id}`,
-                    name: country.leader || `Leader of ${country.name}`,
+                    name: country.name,
                     countryName: country.name,
                     countryId: country.id,
                     countryFlag: country.flag ?? null,

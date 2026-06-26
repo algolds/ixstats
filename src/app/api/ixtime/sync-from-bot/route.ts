@@ -7,10 +7,22 @@ export async function POST(request: Request) {
     // Bot-to-server sync: Verify request is from trusted bot via shared secret
     const authHeader = request.headers.get("authorization");
     const botSecret = process.env.IXTIME_BOT_SECRET;
+    const isProduction = process.env.NODE_ENV === "production";
 
-    // If bot secret is configured, require it for bot-to-server sync
-    if (botSecret && authHeader !== `Bearer ${botSecret}`) {
-      return NextResponse.json({ error: "Invalid bot authentication" }, { status: 401 });
+    // In production, IXTIME_BOT_SECRET is mandatory
+    if (isProduction && !botSecret) {
+      console.error("[SECURITY] IXTIME_BOT_SECRET not configured in production - bot sync disabled");
+      return NextResponse.json({ error: "Sync endpoint not configured" }, { status: 503 });
+    }
+
+    // Require valid Bearer token if secret is configured, or if in production
+    if (botSecret || isProduction) {
+      if (!authHeader || authHeader !== `Bearer ${botSecret}`) {
+        console.warn(
+          `[SECURITY] Unauthorized bot sync access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
+        );
+        return NextResponse.json({ error: "Invalid bot authentication" }, { status: 401 });
+      }
     }
 
     let botData;
