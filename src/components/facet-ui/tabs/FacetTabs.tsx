@@ -44,6 +44,136 @@ function blendColors(c1: string, c2: string, progress: number): string {
   }
 }
 
+interface FacetTabTriggerProps {
+  tab: any;
+  isActive: boolean;
+  useThemeColor: boolean;
+  springX: any;
+  springWidth: any;
+  bounds: any;
+  metrics: any;
+  tone: string;
+  handlers: any;
+  handleTabClick: any;
+  updateSheenFromEvent: any;
+}
+
+function FacetTabTrigger({
+  tab,
+  isActive,
+  useThemeColor,
+  springX,
+  springWidth,
+  bounds,
+  metrics,
+  tone,
+  handlers,
+  handleTabClick,
+  updateSheenFromEvent,
+}: FacetTabTriggerProps) {
+  const tabColor = useTransform([springX, springWidth], ([x, width]) => {
+    if (!tab.themeColor) return "rgba(100, 116, 139, 0.65)";
+
+    const center = (x as number) + (width as number) / 2;
+    const tabBound = bounds[tab.id];
+    if (!tabBound) return "rgba(100, 116, 139, 0.65)";
+
+    const tabCenter = tabBound.left + tabBound.width / 2;
+    const distance = Math.abs(center - tabCenter);
+    const maxDistance = tabBound.width * 1.1;
+    const progress = Math.max(0, Math.min(1, 1 - distance / maxDistance));
+
+    return blendColors("#64748b", tab.themeColor!, progress);
+  });
+
+  const Icon = tab.icon;
+
+  return (
+    <button
+      data-tab-id={tab.id}
+      onClick={(e) => handleTabClick(tab.id, e)}
+      onPointerDown={(e) => {
+        handlers.onPointerDown(e);
+        updateSheenFromEvent(e);
+      }}
+      onPointerMove={(e) => {
+        handlers.onPointerMove(e);
+        updateSheenFromEvent(e);
+      }}
+      onPointerUp={(e) => {
+        handlers.onPointerUp(e);
+        updateSheenFromEvent(e);
+      }}
+      onPointerCancel={(e) => {
+        handlers.onPointerCancel(e);
+        updateSheenFromEvent(e);
+      }}
+      className={cn(
+        "relative z-30 flex flex-1 cursor-pointer items-center justify-center outline-none select-none",
+        useThemeColor ? "" : "transition-colors duration-200",
+        "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
+        metrics.item,
+        isActive ? "font-semibold" : ""
+      )}
+      style={{
+        touchAction: "pan-y",
+      }}
+    >
+      {Icon && (
+        <motion.div
+          style={{
+            color: useThemeColor ? tabColor : undefined,
+          }}
+          className={cn(
+            metrics.icon,
+            "flex items-center justify-center mr-1.5",
+            useThemeColor ? "" : "transition-colors duration-200",
+            !useThemeColor && (isActive
+              ? tab.activeIconClassName ||
+                  (tone === "neutral"
+                    ? "text-slate-950 dark:text-white"
+                    : tone === "accent"
+                      ? "text-indigo-500 dark:text-indigo-400"
+                      : tone === "mycountry"
+                        ? "text-amber-500 dark:text-amber-400"
+                        : tone === "forum"
+                          ? "text-orange-500 dark:text-orange-400"
+                          : "text-red-500 dark:text-red-400")
+              : "text-slate-400 dark:text-slate-500")
+          )}
+        >
+          <Icon className="h-full w-full" />
+        </motion.div>
+      )}
+
+      <motion.span
+        style={{
+          color: useThemeColor ? tabColor : undefined,
+        }}
+        className={cn(
+          useThemeColor ? "" : "transition-colors duration-200",
+          !useThemeColor && (isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground")
+        )}
+      >
+        {tab.label}
+      </motion.span>
+
+      {tab.badge !== undefined && (
+        <span
+          className={cn(
+            "ml-1.5 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] leading-none font-bold",
+            isActive
+              ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
+              : "bg-black/10 text-slate-600 dark:bg-white/10 dark:text-slate-400"
+          )}
+        >
+          {tab.badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function FacetTabs({
   tabs,
   activeTab,
@@ -153,23 +283,7 @@ export function FacetTabs({
   const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.08));
   const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.22));
 
-  // Dynamic tab colors (proximity-based blending)
-  const tabColors = tabs.map((tab) => {
-    if (!tab.themeColor) return null;
 
-    return useTransform([springX, springWidth], ([x, width]) => {
-      const center = (x as number) + (width as number) / 2;
-      const tabBound = bounds[tab.id];
-      if (!tabBound) return "rgba(100, 116, 139, 0.65)";
-
-      const tabCenter = tabBound.left + tabBound.width / 2;
-      const distance = Math.abs(center - tabCenter);
-      const maxDistance = tabBound.width * 1.1;
-      const progress = Math.max(0, Math.min(1, 1 - distance / maxDistance));
-
-      return blendColors("#64748b", tab.themeColor!, progress);
-    });
-  });
 
   // Track relative pointer coordinates for the frosted satin sheen highlight
   const [sheenPos, setSheenPos] = React.useState({ x: "50%", y: "50%", active: false });
@@ -293,96 +407,22 @@ export function FacetTabs({
       )}
 
       {/* 5. Tab Triggers (Z-30) */}
-      {tabs.map((tab, idx) => {
-        const Icon = tab.icon;
-        const isActive = tab.id === activeTab;
-
-        return (
-          <button
-            key={tab.id}
-            data-tab-id={tab.id}
-            onClick={(e) => handleTabClick(tab.id, e)}
-            onPointerDown={(e) => {
-              handlers.onPointerDown(e);
-              updateSheenFromEvent(e);
-            }}
-            onPointerMove={(e) => {
-              handlers.onPointerMove(e);
-              updateSheenFromEvent(e);
-            }}
-            onPointerUp={(e) => {
-              handlers.onPointerUp(e);
-              updateSheenFromEvent(e);
-            }}
-            onPointerCancel={(e) => {
-              handlers.onPointerCancel(e);
-              updateSheenFromEvent(e);
-            }}
-            className={cn(
-              "relative z-30 flex flex-1 cursor-pointer items-center justify-center outline-none select-none",
-              useThemeColor ? "" : "transition-colors duration-200",
-              "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
-              metrics.item,
-              isActive ? "font-semibold" : ""
-            )}
-            style={{
-              touchAction: "pan-y",
-            }}
-          >
-            {Icon && (
-              <motion.div
-                style={{
-                  color: useThemeColor && tabColors[idx] ? tabColors[idx] : undefined,
-                }}
-                className={cn(
-                  metrics.icon,
-                  "flex items-center justify-center mr-1.5",
-                  useThemeColor ? "" : "transition-colors duration-200",
-                  !useThemeColor && (isActive
-                    ? tab.activeIconClassName ||
-                        (tone === "neutral"
-                          ? "text-slate-950 dark:text-white"
-                          : tone === "accent"
-                            ? "text-indigo-500 dark:text-indigo-400"
-                            : tone === "mycountry"
-                              ? "text-amber-500 dark:text-amber-400"
-                              : tone === "forum"
-                                ? "text-orange-500 dark:text-orange-400"
-                                : "text-red-500 dark:text-red-400")
-                    : "text-slate-400 dark:text-slate-500")
-                )}
-              >
-                <Icon className="h-full w-full" />
-              </motion.div>
-            )}
-
-            <motion.span
-              style={{
-                color: useThemeColor && tabColors[idx] ? tabColors[idx] : undefined,
-              }}
-              className={cn(
-                useThemeColor ? "" : "transition-colors duration-200",
-                !useThemeColor && (isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground")
-              )}
-            >
-              {tab.label}
-            </motion.span>
-
-            {tab.badge !== undefined && (
-              <span
-                className={cn(
-                  "ml-1.5 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] leading-none font-bold",
-                  isActive
-                    ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
-                    : "bg-black/10 text-slate-600 dark:bg-white/10 dark:text-slate-400"
-                )}
-              >
-                {tab.badge}
-              </span>
-            )}
-          </button>
-        );
-      })}
+      {tabs.map((tab) => (
+        <FacetTabTrigger
+          key={tab.id}
+          tab={tab}
+          isActive={tab.id === activeTab}
+          useThemeColor={useThemeColor}
+          springX={springX}
+          springWidth={springWidth}
+          bounds={bounds}
+          metrics={metrics}
+          tone={tone}
+          handlers={handlers}
+          handleTabClick={handleTabClick}
+          updateSheenFromEvent={updateSheenFromEvent}
+        />
+      ))}
     </div>
   );
 }

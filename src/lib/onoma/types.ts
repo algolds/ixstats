@@ -33,7 +33,7 @@ export type CulturalProfile =
 /**
  * Training mode for name generation.
  */
-export type TrainingMode = "ixworld" | "preset" | "corpus";
+export type TrainingMode = "ixworld" | "preset" | "lexicon";
 
 /**
  * Options for Markov chain name generation.
@@ -55,6 +55,14 @@ export interface GenerateOptions {
   allowDuplicates?: boolean;
   /** Maximum generation attempts before giving up */
   maxAttempts?: number;
+  /** Vowel harmony constraint: none, front, or back */
+  vowelHarmony?: "none" | "front" | "back";
+  /** Maximum consecutive consonant cluster size allowed */
+  maxConsonantCluster?: number;
+  /** Maximum consecutive vowel cluster size allowed */
+  maxVowelCluster?: number;
+  /** Disallow consecutive identical letters (e.g., "aa", "ss") */
+  allowDoubleLetters?: boolean;
 }
 
 /**
@@ -195,9 +203,9 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
   },
   {
     id: "studio",
-    label: "Custom Studio",
+    label: "Studio",
     icon: "Wrench",
-    description: "Full Markov chain workshop",
+    description: "Markov chain workshop",
     path: "/labs/onoma/studio",
   },
   {
@@ -214,8 +222,18 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
  */
 export function getSectionFromPathname(pathname: string): OnomaSection {
   const segment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
+  const baseSegment = segment.split("/")[0];
   const match = ONOMA_NAV_ITEMS.find(
-    (item) => item.path === `/labs/onoma${segment ? `/${segment}` : ""}`,
+    (item) => item.path === `/labs/onoma${baseSegment ? `/${baseSegment}` : ""}`,
   );
   return match?.id ?? "overview";
+}
+
+/**
+ * Helper to get studio sub-tab from a pathname.
+ */
+export function getStudioSubTabFromPathname(pathname: string): "workshop" | "lexicon" {
+  const segment = pathname.split("/labs/onoma/studio")[1]?.replace(/^\//, "") || "";
+  const subsegment = segment.split("/")[0];
+  return subsegment === "lexicon" ? "lexicon" : "workshop";
 }

@@ -1,12 +1,12 @@
-// scripts/onoma/extract-corpus.ts
-// Onoma corpus extraction (Phase 1 of plans/051-onoma-corpus-bolster.md).
+// scripts/onoma/extract-lexicon.ts
+// Onoma lexicon extraction.
 //
 // Pulls raw {name, category, sourceWiki} rows from:
 //   - IxWiki: direct MariaDB SQL, typed by which Infobox_* a page transcludes.
 //   - External MediaWiki sites: generic action-API allpages fetch (cached).
 //
-// Output: scripts/onoma/raw/corpus-raw.json  (gitignored throwaway; Phase 2 cleans it).
-// Run:    bunx tsx scripts/onoma/extract-corpus.ts [--ixwiki-only]
+// Output: scripts/onoma/raw/lexicon-raw.json  (gitignored throwaway; Phase 2 cleans it).
+// Run:    bunx tsx scripts/onoma/extract-lexicon.ts [--ixwiki-only]
 //
 // ponytail: shells out to the `mysql` CLI (no driver dep) and plain `fetch` (no API client).
 
@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCALSETTINGS = "/ixwiki/config/LocalSettings.php";
 const OUT_DIR = path.join(__dirname, "raw");
-const OUT_FILE = path.join(OUT_DIR, "corpus-raw.json");
+const OUT_FILE = path.join(OUT_DIR, "lexicon-raw.json");
 const CACHE_DIR = path.join(OUT_DIR, "cache");
 
 export type RawName = { name: string; category: NameCat; sourceWiki: string };

@@ -11,26 +11,28 @@ A single-page app (no Next route transitions between sections), following the pr
 Single-Page Router pattern.
 
 - **`page.tsx`** → renders `OnomaRouter`. `layout.tsx` wraps the labs chrome.
-- **`components/OnomaRouter.tsx`** — top-level `FacetTabs`; holds the active-section state,
-  syncs the URL with `history.pushState`, and dispatches to a section component.
+- **`components/OnomaRouter.tsx`** — top-level `FacetTabs`; orchestrates the active-section and active-sub-tab state, handles history synchronisation with `history.pushState` under `/labs/onoma/studio/*` sub-routes, and morphs the tab headers dynamically when entering the Custom Studio.
 - **`components/sections/`** — one component per tab:
 
   | Tab | Section | Category fed to the generator |
   |-----|---------|-------------------------------|
-  | Overview | `OverviewSection` | landing / quick generate |
+  | Overview | `OverviewSection` | landing / quick generate + Apple-style glassmorphic animated DNA helix |
   | Places | `PlacesSection` | `country`, `city`, `province`, `geography` |
   | People | `PeopleSection` | `person` (+ species/gender subtypes) |
   | Military | `MilitarySection` | `military` |
   | Organizations | `OrganizationsSection` | `organization` (taverns, orders, units) |
   | Culture | `CultureSection` | `dynasty`, `culture` |
-  | Studio | `StudioSection` | Studio — paste/upload your own training list |
+  | Studio | `StudioSection` | Custom Studio (delegates to Workshop or Lexicon views) |
   | Name Bank | `StashSection` (`"bank"`) | saved names + seed dictionaries |
 
+- **`components/sections/studio/`** — modular Custom Studio sub-panels:
+  - **`StudioWorkshop.tsx`** — the Markov training input workspace, parameter controls, circular React Flow probability path visualizer, and Lexicon Explorer health panel.
+  - **`StudioLexicon.tsx`** — split-screen interactive conlang lexicon viewer and case-declension definition manager.
+- **`hooks/`** — local state managers:
+  - **`useStudioState.ts`** — unified hook housing all Custom Studio state, analytics calculations (entropy, letter frequencies), dictionary loader triggers, and deletion cascades.
 - **`components/shared/`**
-  - **`GeneratorPanel.tsx`** — the reusable generator UI every section mounts. Left column:
-    constraints (subtype, gender, **Markov source**, **culture bucket**, advanced
-    length/affix/order). Right column: results grid with copy / save-name / save-dictionary.
-  - `NameResultCard.tsx` — a single result with save/use actions.
+  - **`GeneratorPanel.tsx`** — the reusable generator UI every section mounts. Left column: constraints (subtype, gender, **Markov source**, **culture family**, advanced length/affix/order). Right column: results grid with copy / save-name / save-dictionary.
+  - **`NameResultCard.tsx`** — name results featuring inline detail morphs. Toggling details expands the card to `col-span-2` in the grid and renders case-declension case tables, script badges, and dictionary definition edit forms in-situ.
   - `UseNameDialog.tsx` — "use this name" → routes into a builder/wiki flow.
   - `OnomaHelpModal.tsx` — in-app explainer.
 

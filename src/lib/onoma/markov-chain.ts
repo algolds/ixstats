@@ -207,6 +207,11 @@ export class MarkovChain {
     const contains = options.contains || "";
     const excludes = options.excludes || "";
 
+    const vowelHarmony = options.vowelHarmony || "none";
+    const maxConsonantCluster = options.maxConsonantCluster ?? 3;
+    const maxVowelCluster = options.maxVowelCluster ?? 3;
+    const allowDoubleLetters = options.allowDoubleLetters ?? true;
+
     const startWithLower = startWith.toLowerCase();
     const endWithLower = endWith.toLowerCase();
     const containsLower = contains.toLowerCase();
@@ -240,11 +245,48 @@ export class MarkovChain {
         // 3. Leading/trailing hyphens/apostrophes
         if (/^[-']|[-']$/.test(candidate)) continue;
 
-        // 4. Excessive consecutive consonant clusters (4+) and vowel clusters (4+)
-        const vowelsPattern = new RegExp(`[${VOWELS_CLASS}]{4,}`, "i");
-        const consonantsPattern = new RegExp(`[^${VOWELS_CLASS}]{4,}`, "i");
-        if (vowelsPattern.test(candidate) || consonantsPattern.test(candidate)) {
-          continue;
+        // 4. Double identical letters check (if allowDoubleLetters is false)
+        if (!allowDoubleLetters && /(.)\1/i.test(candidate)) continue;
+
+        // 5. Consonant/Vowel cluster limits (using loop-count for precision and safety)
+        let consecutiveVowels = 0;
+        let consecutiveConsonants = 0;
+        let invalidCluster = false;
+        
+        for (const char of candidate.toLowerCase()) {
+          if (VOWELS_CLASS.includes(char)) {
+            consecutiveVowels++;
+            consecutiveConsonants = 0;
+          } else if (char >= "a" && char <= "z") {
+            consecutiveConsonants++;
+            consecutiveVowels = 0;
+          } else {
+            consecutiveVowels = 0;
+            consecutiveConsonants = 0;
+          }
+          
+          if (consecutiveVowels > maxVowelCluster || consecutiveConsonants > maxConsonantCluster) {
+            invalidCluster = true;
+            break;
+          }
+        }
+        if (invalidCluster) continue;
+
+        // 6. Vowel Harmony check
+        if (vowelHarmony !== "none") {
+          const frontVowels = "eiyäöüéèêëěēę";
+          const backVowels = "aouáàâǎăāãåąóòôǒŏōõúùûǔŭūũ";
+          
+          let hasFront = false;
+          let hasBack = false;
+          
+          for (const char of candidate.toLowerCase()) {
+            if (frontVowels.includes(char)) hasFront = true;
+            if (backVowels.includes(char)) hasBack = true;
+          }
+          
+          if (vowelHarmony === "front" && hasBack) continue;
+          if (vowelHarmony === "back" && hasFront) continue;
         }
       }
 

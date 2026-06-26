@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/sections/OverviewSection.tsx
 // Onoma Lab — Overview & Quick Generator Section (Facet Rebuild)
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Compass,
   Wand2,
@@ -13,7 +13,6 @@ import {
   Bookmark,
   Plus,
   Loader2,
-  Dna,
   BookOpen,
   Info,
   Volume2,
@@ -26,6 +25,8 @@ import { NameResultCard } from "../shared/NameResultCard";
 import { UseNameDialog } from "../shared/UseNameDialog";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { OnomaDoubleHelixIcon } from "../shared/OnomaDoubleHelixIcon";
 
 export function OverviewSection() {
   const bank = useNameBank();
@@ -61,7 +62,7 @@ export function OverviewSection() {
   };
 
   // Public dictionaries
-  const publicDicts = bank.publicDictionaries || [];
+  const publicDicts = useMemo(() => bank.publicDictionaries || [], [bank.publicDictionaries]);
 
   // Local UI State
   const [selectedDictId, setSelectedDictId] = useState<string>("");
@@ -92,6 +93,9 @@ export function OverviewSection() {
 
   // Deploying name modal
   const [useName, setUseName] = useState<string | null>(null);
+
+  // Hover state for hero branding animation
+  const [isHeroHovered, setIsHeroHovered] = useState<boolean>(false);
 
   const hasGeneratedOnLoad = useRef(false);
 
@@ -210,8 +214,17 @@ export function OverviewSection() {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-xl border border-[#0091ff]/20 bg-[#0091ff]/5 p-6">
-        <div className="relative z-10 max-w-xl space-y-2">
+      <div
+        onMouseEnter={() => setIsHeroHovered(true)}
+        onMouseLeave={() => setIsHeroHovered(false)}
+        className="group relative overflow-hidden rounded-xl border border-[#0091ff]/20 hover:border-[#0091ff]/35 bg-gradient-to-br from-[#0091ff]/[0.06] via-[#0091ff]/[0.02] to-indigo-500/[0.04] dark:from-[#0091ff]/[0.08] dark:via-[#0091ff]/[0.02] dark:to-indigo-500/[0.06] backdrop-blur-md p-6 transition-all duration-500 shadow-md shadow-[#0091ff]/2 hover:shadow-[0_0_20px_rgba(0,145,255,0.06)] dark:hover:shadow-[0_0_24px_rgba(0,145,255,0.12)]"
+      >
+        {/* Texture Overlay */}
+        <div className="pointer-events-none absolute -inset-2 opacity-[0.02] transition-all duration-500 ease-out group-hover:translate-x-1 group-hover:translate-y-1 group-hover:opacity-[0.08] group-hover:blur-[0.5px] dark:opacity-[0.12] dark:group-hover:opacity-[0.25]">
+          <TextureOverlay texture="grid" className="mix-blend-overlay" />
+        </div>
+
+        <div className="relative z-10 max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl space-y-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0091ff]/10 px-3 py-1 text-xs font-semibold text-[#0091ff]">
             <Compass className="h-3 w-3" />
             Onoma (
@@ -251,8 +264,14 @@ export function OverviewSection() {
             </span>
           </div>
         </div>
-        <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-1/3 opacity-10 dark:opacity-5">
-          <Dna className="h-full w-full stroke-1 text-[#0091ff]" />
+        
+        {/* Apple-style Glassmorphic App Icon Widget Container */}
+        <div className="hidden sm:flex absolute right-6 top-1/2 -translate-y-1/2 items-center justify-center z-20 pointer-events-none">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[22%] backdrop-blur-xl bg-white/40 dark:bg-neutral-900/60 border border-white/50 dark:border-neutral-800/80 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.3)] flex items-center justify-center overflow-hidden transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_12px_48px_rgba(0,145,255,0.15)] dark:group-hover:shadow-[0_16px_56px_rgba(0,145,255,0.25)]">
+            {/* Ambient background glow inside the squircle */}
+            <div className="absolute -inset-4 bg-gradient-to-tr from-[#0091ff]/10 to-indigo-500/10 dark:from-[#0091ff]/15 dark:to-indigo-500/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+            <OnomaDoubleHelixIcon className="h-4/5 w-4/5 relative z-10" isHovered={isHeroHovered} />
+          </div>
         </div>
       </div>
 

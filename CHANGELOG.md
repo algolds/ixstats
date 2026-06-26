@@ -16,6 +16,22 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Changed
 
+## [1.1.3 Ogma (Alpha)] - 2026-06-26
+
+### Added
+- **Project Onoma — Linguistic Synthesis Lab & Custom Studio Rebuild (Onoma System v1)**:
+  - **Apple-Style Glassmorphic Redesign (Phase 20)**: Replaced the tall vertical watermark in [OverviewSection.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/OverviewSection.tsx) with a floating `28x28` Apple-style glass squircle (`rounded-[22%]`, `backdrop-blur-xl`, border edge highlights) containing the rotating DNA double helix.
+  - **Symmetric Squircle Key Badges (Phase 20)**: Redesigned the [OnomaDoubleHelixIcon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/OnomaDoubleHelixIcon.tsx) to a `200x200` square aspect ratio with thicker backbone curves (`4.5px`/`4.0px`) and 5 rungs, embedding symbols inside solid, elevated squircle keycaps (`26x26px`, `rx=7`, `key-shadow` drop shadow) for perfect visibility.
+  - **High-Performance Rotating DNA Helix Animation (Phase 19)**: Implemented a smooth direct-DOM `requestAnimationFrame` mutation phase-shifting loop that runs at 60 FPS with 0% React re-render overhead, smoothly speed-lerping (`1.2 rad/s` to `2.8 rad/s`) on banner hover.
+  - **Studio Dynamic Navigation & Hooks Fix (Phase 18)**: Replaced local sub-tabs with top-level morphing tabs in [OnomaRouter.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/OnomaRouter.tsx) synced to URL routes. Isolated dynamic triggers in `FacetTabs` to avoid hook order violations.
+  - **Interactive Markov Path Visualizer (Phase 9)**: Created a radial-layout graph canvas in [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) using `@xyflow/react` for step-by-step name compilation, center-node panning, and weighted random walk paths.
+  - **Lexicon Explorer & Health Diagnostics (Phase 10)**: Added [LexiconExplorer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/LexiconExplorer.tsx) computing Shannon entropy, letter densities, n-gram frequencies, and a health score audit report with automatic local storage session caching.
+  - **Grapheme-to-IPA Phonetic Parser (Phase 11)**: Built [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts) converting graphemes to IPA transcriptions according to culture-specific sound mappings, placing primary stress (`ˈ`) via consonant-onset stress heuristics.
+  - **Morphology Declension Simulator (Phase 13)**: Added [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts) detecting genders and declaring singular/plural tables for five core cases (Nominative, Genitive, Accusative, Dative, Ablative).
+  - **Orthography Script Mapping (Phase 13)**: Created [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts) transcribing IPA sounds to Greek, Cyrillic, and Arabic (RTL) scripts.
+  - **Inline Morphing Details & Card Overlays (Phases 6, 15, 16)**: Modified [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) to expand to span 2 columns with inline declension case tables and definition editors, applying a premium 3D diamond mesh texture overlay and removing bloated global lore-stash exports.
+  - **Markov Chain Engine Hardening (Phases 1-5, 12)**: Implemented syllable tokenization, multi-order graph training, Markov Backoff fallback chains, phonotactic constraint filters (vowel harmony, cluster limits, double letter filters), and category-aware title prefixes and suffixes.
+
 ## [1.1.2 Ogma (Alpha)] - 2026-06-26
 
 ### Added

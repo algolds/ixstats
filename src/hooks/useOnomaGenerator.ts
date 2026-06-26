@@ -44,17 +44,17 @@ function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "provin
   return "country";
 }
 
-// Prebuilt wiki corpus dictionaries (one chunk per category, lazy code-split).
-type CorpusCat = "country" | "city" | "province" | "person" | "organization";
-const CORPUS_LOADERS: Record<CorpusCat, () => Promise<{ default: Record<string, string[]> }>> = {
-  country: () => import("~/lib/onoma/data/corpus/country.json"),
-  city: () => import("~/lib/onoma/data/corpus/city.json"),
-  province: () => import("~/lib/onoma/data/corpus/province.json"),
-  person: () => import("~/lib/onoma/data/corpus/person.json"),
-  organization: () => import("~/lib/onoma/data/corpus/organization.json"),
+// Prebuilt wiki lexicon dictionaries (one chunk per category, lazy code-split).
+type LexiconCat = "country" | "city" | "province" | "person" | "organization";
+const LEXICON_LOADERS: Record<LexiconCat, () => Promise<{ default: Record<string, string[]> }>> = {
+  country: () => import("~/lib/onoma/data/lexicon/country.json"),
+  city: () => import("~/lib/onoma/data/lexicon/city.json"),
+  province: () => import("~/lib/onoma/data/lexicon/province.json"),
+  person: () => import("~/lib/onoma/data/lexicon/person.json"),
+  organization: () => import("~/lib/onoma/data/lexicon/organization.json"),
 };
 
-function mapCategoryForCorpus(cat: NameCategory): CorpusCat {
+function mapCategoryForLexicon(cat: NameCategory): LexiconCat {
   if (cat === "city" || cat === "geography") return "city";
   if (cat === "province") return "province";
   if (cat === "person" || cat === "dynasty") return "person";
@@ -65,7 +65,7 @@ function mapCategoryForCorpus(cat: NameCategory): CorpusCat {
 export function useOnomaGenerator() {
   const [culture, setCulture] = useState<string>("any");
   const [includeWorldData, setIncludeWorldData] = useState<boolean>(false);
-  const [corpusDict, setCorpusDict] = useState<Record<string, string[]> | null>(null);
+  const [lexiconDict, setLexiconDict] = useState<Record<string, string[]> | null>(null);
   const [category, setCategory] = useState<NameCategory>("city");
   const [gender, setGender] = useState<Gender>("neutral");
   const [subType, setSubType] = useState<string>("generic"); // e.g. "dwarf", "elf", "tavern", "military-unit"
@@ -96,18 +96,18 @@ export function useOnomaGenerator() {
   // tRPC mutation to log activity when names are generated
   const logActivityMutation = api.onoma.logGeneration.useMutation();
 
-  // Lazy-load the prebuilt corpus dictionary for the active category.
-  const corpusCat = mapCategoryForCorpus(category);
+  // Lazy-load the prebuilt lexicon dictionary for the active category.
+  const lexiconCat = mapCategoryForLexicon(category);
   useEffect(() => {
     let cancelled = false;
-    setCorpusDict(null);
-    CORPUS_LOADERS[corpusCat]().then((m) => {
-      if (!cancelled) setCorpusDict(m.default ?? (m as unknown as Record<string, string[]>));
+    setLexiconDict(null);
+    LEXICON_LOADERS[lexiconCat]().then((m) => {
+      if (!cancelled) setLexiconDict(m.default ?? (m as unknown as Record<string, string[]>));
     });
     return () => {
       cancelled = true;
     };
-  }, [corpusCat]);
+  }, [lexiconCat]);
 
   // Instantiate client-side Markov Chain engines (both character-based and syllable-based)
   const characterChain = useMemo(() => new MarkovChain(order, "character"), [order]);
@@ -132,12 +132,12 @@ export function useOnomaGenerator() {
       presetSeeds.push(...seeds);
     }
 
-    const corpusSeeds: string[] = [];
-    if (corpusDict) {
+    const lexiconSeeds: string[] = [];
+    if (lexiconDict) {
       if (culture === "any") {
-        corpusSeeds.push(...Object.values(corpusDict).flat());
-      } else if (culture !== "constructed" && corpusDict[culture]) {
-        corpusSeeds.push(...(corpusDict[culture] || []));
+        lexiconSeeds.push(...Object.values(lexiconDict).flat());
+      } else if (culture !== "constructed" && lexiconDict[culture]) {
+        lexiconSeeds.push(...(lexiconDict[culture] || []));
       }
     }
 
@@ -146,12 +146,12 @@ export function useOnomaGenerator() {
       worldSeeds.push(...dbTrainingNames);
     }
 
-    const allSeeds = [...presetSeeds, ...corpusSeeds, ...worldSeeds];
+    const allSeeds = [...presetSeeds, ...lexiconSeeds, ...worldSeeds];
     if (allSeeds.length > 0) {
       characterChain.addWords(allSeeds);
       syllableChain.addWords(allSeeds);
     }
-  }, [culture, category, dbTrainingNames, corpusDict, includeWorldData, order, characterChain, syllableChain]);
+  }, [culture, category, dbTrainingNames, lexiconDict, includeWorldData, order, characterChain, syllableChain]);
 
   /**
    * Generates a batch of names based on current configuration and rule-based presets.

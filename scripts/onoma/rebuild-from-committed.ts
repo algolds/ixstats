@@ -2,14 +2,14 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { cleanName } from "../../src/lib/onoma/corpus/clean";
+import { cleanName } from "../../src/lib/onoma/lexicon/clean";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CORPUS_DIR = path.join(__dirname, "..", "..", "src", "lib", "onoma", "data", "corpus");
+const LEXICON_DIR = path.join(__dirname, "..", "..", "src", "lib", "onoma", "data", "lexicon");
 const CATEGORIES = ["country", "city", "province", "person", "organization"];
 
 function rebuild() {
-  const manifestPath = path.join(CORPUS_DIR, "manifest.json");
+  const manifestPath = path.join(LEXICON_DIR, "manifest.json");
   if (!fs.existsSync(manifestPath)) {
     console.error("manifest.json not found at " + manifestPath);
     return;
@@ -19,7 +19,7 @@ function rebuild() {
   let grandTotal = 0;
   
   for (const cat of CATEGORIES) {
-    const filePath = path.join(CORPUS_DIR, `${cat}.json`);
+    const filePath = path.join(LEXICON_DIR, `${cat}.json`);
     if (!fs.existsSync(filePath)) {
       console.warn(`File not found: ${filePath}`);
       continue;

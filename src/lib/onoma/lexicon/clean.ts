@@ -1,8 +1,8 @@
-// src/lib/onoma/corpus/clean.ts
-// Onoma corpus cleaning (Phase 2 of plans/051). Pure logic — no IO — so it's
+// src/lib/onoma/lexicon/clean.ts
+// Onoma lexicon cleaning (Phase 2 of plans/051). Pure logic — no IO — so it's
 // fully jest-testable. Turns raw wiki page titles into trainable names.
 
-export type CorpusName = { name: string; category: string; sourceWiki: string };
+export type LexiconName = { name: string; category: string; sourceWiki: string };
 
 const ROMAN = /^[IVXLCDM]+$/; // standalone regnal numeral (I, II, XIV…)
 
@@ -61,10 +61,10 @@ export function cleanName(raw: string, category: string): string | null {
   return s;
 }
 
-/** Clean + dedup a raw corpus (case-insensitive within each category). */
-export function cleanCorpus(rows: CorpusName[]): CorpusName[] {
+/** Clean + dedup a raw lexicon (case-insensitive within each category). */
+export function cleanLexicon(rows: LexiconName[]): LexiconName[] {
   const seen = new Set<string>();
-  const out: CorpusName[] = [];
+  const out: LexiconName[] = [];
   for (const r of rows) {
     const name = cleanName(r.name, r.category);
     if (!name) continue;

@@ -121,6 +121,49 @@ describe("MarkovChain", () => {
     }
   });
 
+  test("should enforce vowel harmony and custom cluster constraints", () => {
+    const harmonyChain = new MarkovChain(1);
+    // Mix front-vowel and back-vowel words
+    harmonyChain.addWords(["Kivi", "Koti", "Kala"]);
+
+    // Test front harmony (only front vowels like i, e, y...)
+    const frontName = harmonyChain.generate({
+      vowelHarmony: "front",
+      allowDuplicates: true,
+      maxAttempts: 100,
+    });
+    if (frontName) {
+      // Should not contain "o" or "a"
+      const lower = frontName.toLowerCase();
+      expect(lower.includes("o") || lower.includes("a")).toBe(false);
+    }
+
+    // Test back harmony (only back vowels like o, a, u...)
+    const backName = harmonyChain.generate({
+      vowelHarmony: "back",
+      allowDuplicates: true,
+      maxAttempts: 100,
+    });
+    if (backName) {
+      // Should not contain "i" or "e"
+      const lower = backName.toLowerCase();
+      expect(lower.includes("i") || lower.includes("e")).toBe(false);
+    }
+
+    // Test consonant cluster limit
+    const clusterChain = new MarkovChain(1);
+    clusterChain.addWords(["Abst", "Arst"]);
+    const cleanClusterName = clusterChain.generate({
+      maxConsonantCluster: 2,
+      allowDuplicates: true,
+      maxAttempts: 100,
+    });
+    if (cleanClusterName) {
+      // Should not have more than 2 consecutive consonants
+      expect(/[^aeiouyáàâäéèêëíìîïóòôöúùûüýỳŷÿ]{3,}/i.test(cleanClusterName)).toBe(false);
+    }
+  });
+
   describe("getTransitions", () => {
     test("should retrieve transitions for empty prefix (starts) in character mode", () => {
       const charChain = new MarkovChain(2, "character");

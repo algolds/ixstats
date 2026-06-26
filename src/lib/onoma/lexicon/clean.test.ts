@@ -1,4 +1,4 @@
-import { cleanName, cleanCorpus } from "./clean";
+import { cleanName, cleanLexicon } from "./clean";
 
 describe("cleanName", () => {
   test("strips parenthetical disambiguation", () => {
@@ -64,9 +64,9 @@ describe("cleanName", () => {
   });
 });
 
-describe("cleanCorpus", () => {
+describe("cleanLexicon", () => {
   test("dedups case-insensitively within a category, keeps cross-category", () => {
-    const out = cleanCorpus([
+    const out = cleanLexicon([
       { name: "Roma", category: "city", sourceWiki: "ixwiki" },
       { name: "roma", category: "city", sourceWiki: "iiwiki" },
       { name: "Roma", category: "person", sourceWiki: "ixwiki" },

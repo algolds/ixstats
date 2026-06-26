@@ -26,14 +26,18 @@ The generator can train its Markov chain from three sources (`TrainingMode`), ch
 
 ```
 src/lib/onoma/
-  markov-chain.ts        Markov engine (exact-match Set dedup) + capitalize()
+  markov-chain.ts        Markov engine (multi-order lookback & backoff, cluster limits, harmony)
   name-generator.ts      Markov wrapper + fantasy-syllable assembler
+  phonology.ts           Grapheme-to-IPA parser and consonant-onset stress heuristics
+  morphology.ts          Grammatical gender detection & noun case declensions table
+  orthography.ts         Script transcribers for Greek, Cyrillic, and Arabic (RTL)
+  lexicon-analytics.ts   Shannon entropy, bigram/trigram frequencies, health audit report
   species/group/tavern   Rule-based assemblers (port)
   cultural-profiles.ts   7 culture word lists (preset mode + classifier training)
   data/                  Generated, COMMITTED:
     fantasy/species/group/tavern-data.ts   syllable/template data (from the original repo)
-    corpus/<category>.json + manifest.json compact wiki dictionaries (Phase 4 output)
-  corpus/                Corpus pipeline logic (pure, jest-tested):
+    lexicon/<category>.json + manifest.json compact wiki dictionaries (Phase 4 output)
+  lexicon/               Lexicon pipeline logic (pure, jest-tested):
     clean.ts             title → trainable name
     culture-classifier.ts  n-gram Naive-Bayes → single culture or "A+B" compound
     bucket.ts            final bucket assignment + top-compound ranking

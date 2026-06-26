@@ -3,13 +3,14 @@
 // src/app/labs/onoma/components/OnomaRouter.tsx
 // Onoma Lab — Unified Workspace & Router (Facet Rebuild)
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import type { OnomaSection } from "~/lib/onoma/types";
-import { getSectionFromPathname } from "~/lib/onoma/types";
+import { getSectionFromPathname, getStudioSubTabFromPathname } from "~/lib/onoma/types";
 import { FacetTabs } from "~/components/facet-ui";
 import { FacetMaterial } from "~/components/facet-ui";
+import { useNameBank } from "~/hooks/useNameBank";
 import {
   Compass,
   MapPin,
@@ -20,6 +21,9 @@ import {
   Wrench,
   Bookmark,
   HelpCircle,
+  ArrowLeft,
+  SlidersHorizontal,
+  BookOpen,
 } from "lucide-react";
 
 // Import sections
@@ -132,11 +136,76 @@ export function OnomaRouter() {
     getSectionFromPathname(pathname)
   );
 
+  // Active sub-tab state for Markov Studio
+  const [activeSubTab, setActiveSubTab] = useState<"workshop" | "lexicon">(() =>
+    getStudioSubTabFromPathname(pathname)
+  );
+
   // Track the last standard tab visited (default to overview)
   const [lastActiveTab, setLastActiveTab] = useState<OnomaSection>(() => {
     const initial = getSectionFromPathname(pathname);
     return initial === "bank" || initial === "studio" ? "overview" : initial;
   });
+
+  const bank = useNameBank();
+
+  // Dynamic lexicon terms count computation
+  const lexiconCount = useMemo(() => {
+    if (!bank.nameBank) return 0;
+    const stashedNames = bank.nameBank
+      .filter((entry) => entry.type === "saved-name")
+      .map((entry) => entry.title);
+
+    if (typeof window !== "undefined") {
+      const defsJson = localStorage.getItem("onoma-lexicon-definitions");
+      if (defsJson) {
+        try {
+          const defs = JSON.parse(defsJson);
+          const termsSet = new Set<string>([...stashedNames, ...Object.keys(defs)]);
+          return termsSet.size;
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return new Set(stashedNames).size;
+  }, [bank.nameBank]);
+
+  // Dynamic Studio Navigation Tabs
+  const studioTabs = useMemo(() => [
+    {
+      id: "exit-studio",
+      label: "Exit Studio",
+      icon: ArrowLeft,
+      themeColor: "#ec4899",
+      glowClassName: "bg-pink-500/10 dark:bg-pink-500/5",
+      activeIndicatorClassName: "bg-pink-500/5 border-pink-500/20 text-pink-600 dark:text-pink-400",
+      activeTextClassName: "text-pink-600 dark:text-pink-400",
+      activeIconClassName: "text-pink-500 dark:text-pink-400",
+    },
+    {
+      id: "workshop",
+      label: "Model Workshop",
+      icon: SlidersHorizontal,
+      themeColor: "#0091ff",
+      glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+      activeIndicatorClassName:
+        "bg-[#0091ff]/5 border-[#0091ff]/20 text-[#0091ff] dark:text-[#33a7ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]",
+      activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+    },
+    {
+      id: "lexicon",
+      label: lexiconCount > 0 ? `Lexicon Dictionary (${lexiconCount})` : "Lexicon Dictionary",
+      icon: BookOpen,
+      themeColor: "#10b981",
+      glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
+      activeIndicatorClassName:
+        "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
+      activeTextClassName: "text-emerald-600 dark:text-emerald-400",
+      activeIconClassName: "text-emerald-500 dark:text-emerald-400",
+    },
+  ], [lexiconCount]);
 
   const [showHelpModal, setShowHelpModal] = useState(false);
 
@@ -152,6 +221,18 @@ export function OnomaRouter() {
   // States to pass data to Studio from Name Bank
   const [studioInitialWords, setStudioInitialWords] = useState<string[] | undefined>(undefined);
   const [studioInitialTitle, setStudioInitialTitle] = useState<string | undefined>(undefined);
+
+  // Handle Studio-specific subtab navigation
+  const handleNavigateStudio = useCallback(
+    (tab: "workshop" | "lexicon") => {
+      setActiveSubTab(tab);
+      const href = `/labs/onoma/studio/${tab}`;
+      window.history.pushState(null, "", withBasePath(href));
+      document.title = `Onoma Lab - Studio: ${tab === "workshop" ? "Model Workshop" : "Lexicon Dictionary"} - IxStats`;
+      window.scrollTo({ top: 0, behavior: "instant" });
+    },
+    []
+  );
 
   // Handle SPA navigation
   const handleNavigate = useCallback(
@@ -172,16 +253,24 @@ export function OnomaRouter() {
       setActiveSection(section);
 
       // Sync URL without triggering Next.js route transitions
-      const href = section === "overview" ? "/labs/onoma" : `/labs/onoma/${section}`;
+      const href =
+        section === "overview"
+          ? "/labs/onoma"
+          : section === "studio"
+          ? `/labs/onoma/studio/${activeSubTab}`
+          : `/labs/onoma/${section}`;
       window.history.pushState(null, "", withBasePath(href));
 
       // Update document title
-      document.title = `Onoma Lab - ${SECTION_TITLES[section]} - IxStats`;
+      document.title =
+        section === "studio"
+          ? `Onoma Lab - Studio: ${activeSubTab === "workshop" ? "Model Workshop" : "Lexicon Dictionary"} - IxStats`
+          : `Onoma Lab - ${SECTION_TITLES[section]} - IxStats`;
 
       // Scroll to top
       window.scrollTo({ top: 0, behavior: "instant" });
     },
-    [activeSection, lastActiveTab]
+    [activeSection, lastActiveTab, activeSubTab]
   );
 
   // Handle browser back/forward navigation
@@ -189,6 +278,9 @@ export function OnomaRouter() {
     const onPopState = () => {
       const newSection = getSectionFromPathname(window.location.pathname);
       setActiveSection(newSection);
+      if (newSection === "studio") {
+        setActiveSubTab(getStudioSubTabFromPathname(window.location.pathname));
+      }
       if (newSection !== "bank" && newSection !== "studio") {
         setLastActiveTab(newSection);
       }
@@ -207,12 +299,19 @@ export function OnomaRouter() {
         setLastActiveTab(routeSection);
       }
     }
+    if (routeSection === "studio") {
+      setActiveSubTab(getStudioSubTabFromPathname(pathname));
+    }
   }, [pathname, activeSection]);
 
   // Set document title on load/change
   useEffect(() => {
-    document.title = `Onoma Lab - ${SECTION_TITLES[activeSection]} - IxStats`;
-  }, [activeSection]);
+    if (activeSection === "studio") {
+      document.title = `Onoma Lab - Studio: ${activeSubTab === "workshop" ? "Model Workshop" : "Lexicon Dictionary"} - IxStats`;
+    } else {
+      document.title = `Onoma Lab - ${SECTION_TITLES[activeSection]} - IxStats`;
+    }
+  }, [activeSection, activeSubTab]);
 
   const handleLoadToStudio = (words: string[], title: string) => {
     setStudioInitialWords(words);
@@ -237,6 +336,8 @@ export function OnomaRouter() {
       case "studio":
         return (
           <StudioSection
+            activeSubTab={activeSubTab}
+            setActiveSubTab={setActiveSubTab}
             initialWords={studioInitialWords}
             initialTitle={studioInitialTitle}
             onClearInitial={() => {
@@ -292,9 +393,19 @@ export function OnomaRouter() {
         {/* Sliding Navigation Tabs */}
         <div className="border-border/30 overflow-hidden rounded-xl border shadow-sm">
           <FacetTabs
-            tabs={ONOMA_TABS}
-            activeTab={activeSection}
-            onChange={(id) => handleNavigate(id as OnomaSection)}
+            tabs={activeSection === "studio" ? studioTabs : ONOMA_TABS}
+            activeTab={activeSection === "studio" ? activeSubTab : activeSection}
+            onChange={(id) => {
+              if (activeSection === "studio") {
+                if (id === "exit-studio") {
+                  handleNavigate(lastActiveTab);
+                } else {
+                  handleNavigateStudio(id as "workshop" | "lexicon");
+                }
+              } else {
+                handleNavigate(id as OnomaSection);
+              }
+            }}
             tone="accent"
             size="md"
           />

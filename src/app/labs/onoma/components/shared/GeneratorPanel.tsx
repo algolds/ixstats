@@ -461,6 +461,7 @@ export function GeneratorPanel({
                     name={name}
                     onSave={handleSaveName}
                     onUse={(n) => setUseName(n)}
+                    culture={gen.culture}
                   />
                 ))}
               </div>

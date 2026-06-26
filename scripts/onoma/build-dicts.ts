@@ -1,23 +1,23 @@
 // scripts/onoma/build-dicts.ts — Phase 4 runner.
-// Turns raw/corpus-clean.json into the compact, committed dictionaries the
-// browser loads: src/lib/onoma/data/corpus/<category>.json (grouped by culture
+// Turns raw/lexicon-clean.json into the compact, committed dictionaries the
+// browser loads: src/lib/onoma/data/lexicon/<category>.json (grouped by culture
 // bucket) + manifest.json.
-// Run with bun (tsx ESM mishandles cultural-profiles' type-only import):
+// Run with bun:
 //   bun scripts/onoma/build-dicts.ts
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { CorpusName } from "../../src/lib/onoma/corpus/clean";
-import { assignBucket, topCompounds } from "../../src/lib/onoma/corpus/bucket";
+import type { LexiconName } from "../../src/lib/onoma/lexicon/clean";
+import { assignBucket, topCompounds } from "../../src/lib/onoma/lexicon/bucket";
 
 const TOP_N_COMPOUNDS = 6;
 const CAP_PER_BUCKET = 300; // plenty for a Markov chain; keeps files small
 const MIN_BUCKET = 12;      // drop buckets too small to train on
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const RAW = path.join(here, "raw", "corpus-clean.json");
-const OUT = path.join(here, "..", "..", "src", "lib", "onoma", "data", "corpus");
+const RAW = path.join(here, "raw", "lexicon-clean.json");
+const OUT = path.join(here, "..", "..", "src", "lib", "onoma", "data", "lexicon");
 
 /** Deterministic stride sample of up to `cap` items (avoids source-order bias). */
 function sample<T>(arr: T[], cap: number): T[] {
@@ -28,11 +28,11 @@ function sample<T>(arr: T[], cap: number): T[] {
   return out;
 }
 
-const corpus: CorpusName[] = JSON.parse(fs.readFileSync(RAW, "utf8"));
-const keptCompounds = new Set(topCompounds(corpus.map((r) => r.name), TOP_N_COMPOUNDS));
+const lexicon: LexiconName[] = JSON.parse(fs.readFileSync(RAW, "utf8"));
+const keptCompounds = new Set(topCompounds(lexicon.map((r) => r.name), TOP_N_COMPOUNDS));
 
 const byCategory = new Map<string, Map<string, string[]>>();
-for (const { name, category } of corpus) {
+for (const { name, category } of lexicon) {
   const bucket = assignBucket(name, keptCompounds);
   if (!byCategory.has(category)) byCategory.set(category, new Map());
   const buckets = byCategory.get(category)!;
