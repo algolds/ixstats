@@ -179,3 +179,10 @@ Current release: **IxStates 1.1.1 "Ogma"** (channel: Alpha). Version source of t
 - **Production port**: 3550 (`start-production.sh`), base path `/projects/ixstates`
 - **IxWorld standalone**: port 3002 (`ecosystem.ixworld.config.cjs`), empty base path, maps.ixwiki.com
 - **If Prisma errors like `database system is in recovery mode`**: check disk space on `/dev/vda2` first — a full root disk stalls Postgres WAL writes and triggers this. `df -h /` is the first diagnostic.
+
+## External Wiki Access
+
+- **Allowlisted UA**: all outbound calls to community wikis use `User-Agent: IxStats-Builder`. iiwiki sits behind a **Cloudflare JS challenge** — a normal browser UA does *not* pass, but `IxStats-Builder` is allowlisted and clears it. Used by every `src/app/api/mediawiki/*` proxy route and `scripts/onoma/extract-corpus.ts`.
+- **API endpoints**: iiwiki = `https://iiwiki.com/api.php` (NOT `/mediawiki/api.php` — that 404s), althistory = `https://althistory.fandom.com/api.php`, ixwiki = local MariaDB (db `ixwiki`, no table prefix) or `https://ixwiki.com/api.php`.
+- **MW 1.43–1.45 schema**: `categorylinks`/`templatelinks` are normalized — the title lives in `linktarget` (`lt_id`/`lt_title`); join via `*_target_id`. There is no `cl_to`/`tl_title`.
+- **Typed name extraction**: to get pages of a given type, list pages transcluding the relevant `Infobox_*` template — SQL `templatelinks→linktarget` locally, or API `list=embeddedin&eititle=Template:Infobox_country` remotely.

@@ -14,10 +14,10 @@ describe("MarkovChain", () => {
     expect(MarkovChain.capitalize("o'connor")).toBe("O'Connor");
   });
 
-  test("should detect duplicates (suffix trie matches substrings)", () => {
+  test("should detect duplicates (exact match against training words)", () => {
     chain.addWord("Roma");
-    expect(chain.isDuplicate("roma")).toBe(true);
-    expect(chain.isDuplicate("rom")).toBe(true); // 'rom' is a substring of 'Roma'
+    expect(chain.isDuplicate("roma")).toBe(true); // case-insensitive exact match
+    expect(chain.isDuplicate("rom")).toBe(false); // substrings are not duplicates
     expect(chain.isDuplicate("xyz")).toBe(false);
   });
 

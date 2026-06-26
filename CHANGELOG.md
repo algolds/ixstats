@@ -34,6 +34,15 @@ capability integer. Each release entry below lists which components advanced and
   - Created a PostGIS-backed data mapping layer in `prisma/schema/onoma.prisma` and related tRPC routers for saving names and custom dictionaries.
   - Fixed a runtime `TypeError` in `useOnomaGenerator.ts` by using `mutateAsync` for logging generation activity instead of `mutate` to allow chaining a `.catch()` block.
 
+- **Project Onoma — Wiki Corpus Training** (Onoma System): trained the generator on the live worldbuilding canon so it produces in-universe-plausible names, while keeping the engine fully client-side.
+  - Offline extraction pipeline ([scripts/onoma/extract-corpus.ts](file:///ixwiki/public/projects/ixstats/scripts/onoma/extract-corpus.ts)) pulling **infobox-typed** names from IxWiki (direct MariaDB SQL via `templatelinks→linktarget`) and from iiwiki + althistory (MediaWiki `list=embeddedin`). **34,373 raw names** harvested.
+  - Documented the allowlisted `User-Agent: IxStats-Builder` (clears iiwiki's Cloudflare challenge) and the MW 1.43–1.45 normalized `categorylinks`/`templatelinks` schema in `CLAUDE.md` → "External Wiki Access".
+  - Cleaning ([src/lib/onoma/corpus/clean.ts](file:///ixwiki/public/projects/ixstats/src/lib/onoma/corpus/clean.ts)): strips disambiguation/quotes/gov-descriptor/regnal forms, preserves intra-word apostrophes, dedups → **28,424 clean names**.
+  - Culture classifier ([src/lib/onoma/corpus/culture-classifier.ts](file:///ixwiki/public/projects/ixstats/src/lib/onoma/corpus/culture-classifier.ts)): a char n-gram Naive-Bayes model (no ML dependency) trained at load from `CULTURAL_PROFILES`. Resolves each name to a single culture or a **compound `A+B` blend** (e.g. `celtic+germanic`), eliminating the old catch-all "mixed".
+  - Compact dictionaries ([src/lib/onoma/data/corpus/](file:///ixwiki/public/projects/ixstats/src/lib/onoma/data/corpus/)): **13,101 names in 227 KB**, grouped by category × culture bucket (7 singles + top-6 compounds), built by [scripts/onoma/build-dicts.ts](file:///ixwiki/public/projects/ixstats/scripts/onoma/build-dicts.ts). Lazy code-split per category so only the active chunk loads.
+  - New **"IxWiki Corpus"** Markov source (now the default) with a **Culture Bucket** facet in `GeneratorPanel`, wired through `useOnomaGenerator` (`TrainingMode` += `"corpus"`).
+  - Restored the generator's missing `src/lib/onoma/data/*` syllable/species/group/tavern data files (silently excluded by a blanket `data/` `.gitignore` rule) so the lab builds.
+
 - **MyLeague Background Automation, Halo Live Activities & Matchday Prediction Market**:
   - **IxTime auto-advance hardening**: Replaced the one-matchday-per-run drip in [season-cron.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/season-cron.ts) `advanceSportsSeasons` with a bounded catch-up loop (`MAX_STEPS_PER_RUN = 50`) so seasons that fall behind the clock (e.g. after cron downtime) resolve every due matchday in a single pass instead of drifting. Tightened the cron tick from every 6h to `*/15` with a per-process reentrancy guard in both [cron-runner.mjs](file:///ixwiki/public/projects/ixstats/cron-runner.mjs) and [server.mjs](file:///ixwiki/public/projects/ixstats/server.mjs).
   - **Per-league match cadence**: Added `matchIntervalMs`/`raceIntervalMs` helpers in [scheduler.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/scheduler.ts) reading `league.settings.matchIntervalDays` (default 1 IxDay, e.g. 7 for an in-world weekly schedule), applied at all six schedule-write sites (lifecycle / leagues / transition, matches + races). Exposed an "IxDays Between Matchdays" control in [LeagueCreator.tsx](file:///ixwiki/public/projects/ixstats/src/components/myleague/LeagueCreator.tsx).
@@ -262,6 +271,11 @@ capability integer. Each release entry below lists which components advanced and
   - Moved Countries search modal into the Dynamic Island HUD and cleaned up header navigation inputs (Plan 083).
 
 ### Fixed
+
+- **Onoma generator engine audit**:
+  - Build-breaking: the generator's `src/lib/onoma/data/*` modules (fantasy/species/group/tavern) were generated files excluded by a blanket `data/` `.gitignore` rule and never committed, so every route importing the lab failed to compile. Restored the data and added a `!src/lib/onoma/data/` negation.
+  - `MarkovChain` deduplication used a suffix trie that rejected any substring of any training word (and grew O(L²) per word — fatal for large corpora). Replaced with an exact-match `Set` — correct semantics, O(1) lookup, the key scaling fix for the wiki corpus.
+  - Fixed two `useOnomaGenerator` ↔ router mismatches: `api.onoma.logActivity` → `logGeneration`, and a `getTrainingData` category enum that rejected `geography`/`military` selections.
 
 - **Map Editor Initialization & Rendering ReferenceErrors**:
   - Resolved `ReferenceError: Cannot access 'allFeatures' before initialization` inside `useMapEditor.ts` by re-ordering callbacks so that `applyEyedropper`, `applyMagicWand`, and `pathfinderOperation` are declared after the `allFeatures` memoized state.

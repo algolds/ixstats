@@ -12,6 +12,15 @@ import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 import { FacetCard } from "~/components/ui/facet-container";
 
+// "celtic+germanic" → "Celtic + Germanic", "mixed" → "Mixed / Other", "latin" → "Latin"
+function formatBucket(bucket: string): string {
+  if (bucket === "mixed") return "Mixed / Other";
+  return bucket
+    .split("+")
+    .map((c) => c.charAt(0).toUpperCase() + c.slice(1))
+    .join(" + ");
+}
+
 interface GeneratorPanelProps {
   category: NameCategory;
   title: string;
@@ -152,34 +161,54 @@ export function GeneratorPanel({
               </div>
             )}
 
-            {/* Training Mode Selector (Preset vs IxWorld) */}
+            {/* Training Mode Selector (Corpus vs Preset vs IxWorld) */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-muted-foreground">Markov Source Data</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => gen.setTrainingMode("preset")}
-                  className={`flex-1 rounded-lg border py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-                    gen.trainingMode === "preset"
-                      ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff] font-bold"
-                      : "border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-                  }`}
-                >
-                  Cultural Presets
-                </button>
-                <button
-                  type="button"
-                  onClick={() => gen.setTrainingMode("ixworld")}
-                  className={`flex-1 rounded-lg border py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-                    gen.trainingMode === "ixworld"
-                      ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff] font-bold"
-                      : "border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-                  }`}
-                >
-                  Live IxWorld DB
-                </button>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  ["corpus", "IxWiki Corpus"],
+                  ["preset", "Cultural Presets"],
+                  ["ixworld", "Live IxWorld DB"],
+                ] as const).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => gen.setTrainingMode(mode)}
+                    className={`rounded-lg border py-2 text-[11px] font-bold uppercase tracking-wide transition-all duration-200 ${
+                      gen.trainingMode === mode
+                        ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff] font-bold"
+                        : "border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
+
+            {/* Culture facet (active in IxWiki Corpus mode) */}
+            {gen.trainingMode === "corpus" && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <label className="text-xs font-bold text-muted-foreground">Culture Bucket</label>
+                <select
+                  value={gen.corpusBucket}
+                  onChange={(e) => gen.setCorpusBucket(e.target.value)}
+                  className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground focus:border-[#0091ff]/50 focus:outline-none"
+                >
+                  <option value="any">Any Culture</option>
+                  {gen.corpusBuckets
+                    .filter((b) => b !== "any")
+                    .map((b) => (
+                      <option key={b} value={b}>
+                        {formatBucket(b)}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-[10px] text-muted-foreground">
+                  Trained on {gen.corpusBuckets.length} culture groups mined from IxWiki, iiwiki & althistory.
+                </p>
+              </div>
+            )}
 
             {/* Cultural Profile Dropdown (active in Preset mode) */}
             {gen.trainingMode === "preset" && (

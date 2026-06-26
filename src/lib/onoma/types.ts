@@ -33,7 +33,7 @@ export type CulturalProfile =
 /**
  * Training mode for name generation.
  */
-export type TrainingMode = "ixworld" | "preset";
+export type TrainingMode = "ixworld" | "preset" | "corpus";
 
 /**
  * Options for Markov chain name generation.

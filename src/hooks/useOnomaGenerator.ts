@@ -33,16 +33,36 @@ import { NameCategory, CulturalProfile, TrainingMode, GenerateOptions, Gender } 
 /**
  * Maps NameCategory to training data types fetched from backend.
  */
-function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "province" | "geography" | "military" {
-  if (cat === "city") return "city";
+// Must return one of the categories the onoma.getTrainingData router accepts.
+function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "province" | "person" {
+  if (cat === "city" || cat === "geography") return "city";
   if (cat === "province") return "province";
-  if (cat === "geography") return "geography";
-  if (cat === "military" || cat === "organization" || cat === "person" || cat === "dynasty") return "military";
+  if (cat === "military" || cat === "organization" || cat === "person" || cat === "dynasty") return "person";
+  return "country";
+}
+
+// Prebuilt wiki corpus dictionaries (one chunk per category, lazy code-split).
+type CorpusCat = "country" | "city" | "province" | "person" | "organization";
+const CORPUS_LOADERS: Record<CorpusCat, () => Promise<{ default: Record<string, string[]> }>> = {
+  country: () => import("~/lib/onoma/data/corpus/country.json"),
+  city: () => import("~/lib/onoma/data/corpus/city.json"),
+  province: () => import("~/lib/onoma/data/corpus/province.json"),
+  person: () => import("~/lib/onoma/data/corpus/person.json"),
+  organization: () => import("~/lib/onoma/data/corpus/organization.json"),
+};
+
+function mapCategoryForCorpus(cat: NameCategory): CorpusCat {
+  if (cat === "city" || cat === "geography") return "city";
+  if (cat === "province") return "province";
+  if (cat === "person" || cat === "dynasty") return "person";
+  if (cat === "organization" || cat === "military") return "organization";
   return "country";
 }
 
 export function useOnomaGenerator() {
-  const [trainingMode, setTrainingMode] = useState<TrainingMode>("preset");
+  const [trainingMode, setTrainingMode] = useState<TrainingMode>("corpus");
+  const [corpusBucket, setCorpusBucket] = useState<string>("any");
+  const [corpusDict, setCorpusDict] = useState<Record<string, string[]> | null>(null);
   const [culturalProfile, setCulturalProfile] = useState<CulturalProfile>("latin");
   const [category, setCategory] = useState<NameCategory>("city");
   const [gender, setGender] = useState<Gender>("neutral");
@@ -66,7 +86,21 @@ export function useOnomaGenerator() {
   );
 
   // tRPC mutation to log activity when names are generated
-  const logActivityMutation = api.onoma.logActivity.useMutation();
+  const logActivityMutation = api.onoma.logGeneration.useMutation();
+
+  // Lazy-load the prebuilt corpus dictionary for the active category.
+  const corpusCat = mapCategoryForCorpus(category);
+  useEffect(() => {
+    if (trainingMode !== "corpus") return;
+    let cancelled = false;
+    setCorpusDict(null);
+    CORPUS_LOADERS[corpusCat]().then((m) => {
+      if (!cancelled) setCorpusDict(m.default ?? (m as unknown as Record<string, string[]>));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [trainingMode, corpusCat]);
 
   // Instantiate client-side Markov Chain engine
   const chain = useMemo(() => new MarkovChain(order), [order]);
@@ -83,8 +117,20 @@ export function useOnomaGenerator() {
       }
     } else if (trainingMode === "ixworld" && dbTrainingNames && dbTrainingNames.length > 0) {
       chain.addWords(dbTrainingNames);
+    } else if (trainingMode === "corpus" && corpusDict) {
+      const names =
+        corpusBucket === "any"
+          ? Object.values(corpusDict).flat()
+          : corpusDict[corpusBucket] || [];
+      if (names.length > 0) chain.addWords(names);
     }
-  }, [trainingMode, culturalProfile, category, dbTrainingNames, order, chain]);
+  }, [trainingMode, culturalProfile, category, dbTrainingNames, corpusDict, corpusBucket, order, chain]);
+
+  // Bucket options for the corpus culture facet (singles + compounds present in this dict).
+  const corpusBuckets = useMemo(
+    () => (corpusDict ? Object.keys(corpusDict).sort() : []),
+    [corpusDict]
+  );
 
   /**
    * Generates a batch of names based on current configuration and rule-based presets.
@@ -158,6 +204,9 @@ export function useOnomaGenerator() {
     setTrainingMode,
     culturalProfile,
     setCulturalProfile,
+    corpusBucket,
+    setCorpusBucket,
+    corpusBuckets,
     category,
     setCategory,
     gender,

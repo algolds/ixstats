@@ -1,0 +1,90 @@
+{
+  "keptCompounds": [
+    "celtic+germanic",
+    "celtic+latin",
+    "latin+slavic",
+    "germanic+slavic",
+    "arabic+austronesian",
+    "germanic+latin"
+  ],
+  "categories": {
+    "province": {
+      "total": 30,
+      "buckets": {
+        "mixed": 30
+      }
+    },
+    "organization": {
+      "total": 3424,
+      "buckets": {
+        "germanic": 300,
+        "celtic": 300,
+        "slavic": 300,
+        "latin+slavic": 273,
+        "germanic+latin": 176,
+        "celtic+germanic": 300,
+        "east-asian": 300,
+        "arabic+austronesian": 119,
+        "celtic+latin": 300,
+        "austronesian": 300,
+        "latin": 300,
+        "germanic+slavic": 156,
+        "arabic": 300
+      }
+    },
+    "country": {
+      "total": 3455,
+      "buckets": {
+        "latin": 300,
+        "slavic": 300,
+        "germanic": 300,
+        "east-asian": 300,
+        "arabic": 300,
+        "austronesian": 300,
+        "celtic": 300,
+        "celtic+germanic": 300,
+        "germanic+slavic": 175,
+        "latin+slavic": 237,
+        "germanic+latin": 200,
+        "celtic+latin": 270,
+        "arabic+austronesian": 173
+      }
+    },
+    "person": {
+      "total": 3545,
+      "buckets": {
+        "arabic": 300,
+        "germanic+latin": 188,
+        "germanic": 300,
+        "latin": 300,
+        "celtic": 300,
+        "austronesian": 300,
+        "slavic": 300,
+        "east-asian": 300,
+        "celtic+germanic": 300,
+        "germanic+slavic": 300,
+        "celtic+latin": 215,
+        "arabic+austronesian": 275,
+        "latin+slavic": 167
+      }
+    },
+    "city": {
+      "total": 2647,
+      "buckets": {
+        "germanic": 300,
+        "slavic": 300,
+        "arabic": 300,
+        "celtic+latin": 82,
+        "celtic+germanic": 182,
+        "latin": 300,
+        "germanic+slavic": 95,
+        "celtic": 300,
+        "latin+slavic": 63,
+        "austronesian": 300,
+        "arabic+austronesian": 89,
+        "germanic+latin": 36,
+        "east-asian": 300
+      }
+    }
+  }
+}

@@ -14,13 +14,12 @@ export class MarkovNode {
   }
 }
 
-export class TrieNode {
-  children: Record<string, TrieNode> = {};
-}
-
 export class MarkovChain {
   private order = 3;
-  private duplicates = new TrieNode();
+  // Exact training words (lowercased) for dedup. A Set is O(1) and O(n) memory;
+  // the old suffix-trie rejected any substring of any training word, which both
+  // exploded memory on large corpora and over-rejected plausible names.
+  private words = new Set<string>();
   private start = new MarkovNode("");
   private map: Record<string, MarkovNode> = {};
 
@@ -57,7 +56,7 @@ export class MarkovChain {
    * Reset the Markov transition graph and duplicates trie.
    */
   public reset(): void {
-    this.duplicates = new TrieNode();
+    this.words = new Set<string>();
     this.start = new MarkovNode("");
     this.map = {};
   }
@@ -85,7 +84,7 @@ export class MarkovChain {
    */
   public addWord(word: string): void {
     const lowercaseWord = word.toLowerCase();
-    this.addToDuplicatesTrie(lowercaseWord, this.duplicates);
+    this.words.add(lowercaseWord);
 
     let previous = this.start;
     let key = "";
@@ -112,22 +111,10 @@ export class MarkovChain {
   }
 
   /**
-   * Check if a word exists in the training duplicates trie.
+   * Check if a generated word exactly matches one of the training words.
    */
   public isDuplicate(word: string): boolean {
-    const lowercaseWord = word.toLowerCase();
-    let currentNode = this.duplicates;
-
-    for (let i = 0; i < lowercaseWord.length; i++) {
-      const char = lowercaseWord[i];
-      const childNode = currentNode.children[char];
-      if (!childNode) {
-        return false;
-      }
-      currentNode = childNode;
-    }
-
-    return true;
+    return this.words.has(word.toLowerCase());
   }
 
   /**
@@ -187,22 +174,5 @@ export class MarkovChain {
     }
 
     return MarkovChain.capitalize(word);
-  }
-
-  private addToDuplicatesTrie(word: string, trieNode: TrieNode): void {
-    if (word.length > 1) {
-      this.addToDuplicatesTrie(word.substring(1), trieNode);
-    }
-
-    let currentNode = trieNode;
-    for (let i = 0; i < word.length; i++) {
-      const char = word[i];
-      let childNode = currentNode.children[char];
-      if (!childNode) {
-        childNode = new TrieNode();
-        currentNode.children[char] = childNode;
-      }
-      currentNode = childNode;
-    }
   }
 }
