@@ -149,7 +149,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
 
     // Verify fetch call parameters
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://kokoro-service/api/v1/audio/speech",
+      "http://kokoro-service/v1/audio/speech",
       expect.objectContaining({
         method: "POST",
         headers: {
@@ -241,7 +241,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
     const response = await POST(request);
     expect(response.status).toBe(200);
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:3000/api/v1/audio/speech",
+      "http://localhost:3000/v1/audio/speech",
       expect.any(Object)
     );
   });

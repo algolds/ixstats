@@ -5,7 +5,6 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { trainLM, naturalnessScore, type NgramLM } from "~/lib/onoma/perplexity";
-import { setSpeechConfig } from "~/lib/onoma/speech";
 import { CULTURAL_PROFILES } from "~/lib/onoma/cultural-profiles";
 import { generateFantasySyllableName, generateNobleSurname } from "~/lib/onoma/name-generator";
 import {
@@ -95,14 +94,6 @@ export function useOnomaGenerator() {
     { category: trainingCategory },
     { enabled: includeWorldData, staleTime: 600000 }
   );
-
-  // Apply admin-tuned pronunciation config (meSpeak params + voices) to the speech engine.
-  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
-    staleTime: 600000,
-  });
-  useEffect(() => {
-    if (speechConfig) setSpeechConfig(speechConfig);
-  }, [speechConfig]);
 
   // tRPC mutation to log activity when names are generated
   const logActivityMutation = api.onoma.logGeneration.useMutation();

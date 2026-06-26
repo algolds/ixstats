@@ -60,6 +60,7 @@ async function handleTts(request: NextRequest) {
 
     // Extract input parameters
     let text = "";
+    let ipa = ""; // Onoma's canonical IPA — drives phoneme synthesis when present
     let voice = defaultVoice;
     let speed = defaultSpeed;
     let model = defaultModel;
@@ -68,6 +69,7 @@ async function handleTts(request: NextRequest) {
       try {
         const body = await request.json();
         text = body.text || "";
+        if (body.ipa) ipa = body.ipa;
         if (body.voice) voice = body.voice;
         if (body.speed != null) speed = Number(body.speed);
         if (body.model) model = body.model;
@@ -86,6 +88,7 @@ async function handleTts(request: NextRequest) {
       // GET request
       const { searchParams } = new URL(request.url);
       text = searchParams.get("text") || "";
+      ipa = searchParams.get("ipa") || "";
       if (searchParams.get("voice")) voice = searchParams.get("voice")!;
       if (searchParams.get("speed")) speed = Number(searchParams.get("speed"));
       if (searchParams.get("model")) model = searchParams.get("model")!;
@@ -110,7 +113,14 @@ async function handleTts(request: NextRequest) {
     // Cache Lookup
     const cacheKey =
       "onoma:tts:" +
-      crypto.createHash("sha1").update(`${text}|${voice}|${speed}|${model}`).digest("hex");
+      crypto.createHash("sha1").update(`${text}|${ipa}|${voice}|${speed}|${model}`).digest("hex");
+
+    // Phoneme mode: when Onoma supplies IPA, synthesize from phonemes directly
+    // (kokoro-fastapi /dev/generate_from_phonemes) so pronunciation comes from the
+    // language's own rules, not English G2P. Otherwise fall back to text→speech.
+    const phonemes = ipa.replace(/[/[\]]/g, "").trim();
+    const phonemeMode = phonemes.length > 0;
+    const contentType = phonemeMode ? "audio/wav" : "audio/mpeg";
 
     // Only skip cache if we are testing overrides explicitly
     const isTestingOverrides =
@@ -126,14 +136,14 @@ async function handleTts(request: NextRequest) {
         return new NextResponse(audioBuffer, {
           status: 200,
           headers: {
-            "Content-Type": "audio/mpeg",
+            "Content-Type": contentType,
             "Content-Length": String(audioBuffer.length),
           },
         });
       }
     }
 
-    // Miss: Fetch from Kokoro API
+    // Miss: Fetch from the Kokoro (kokoro-fastapi) server
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -141,24 +151,18 @@ async function handleTts(request: NextRequest) {
       headers["Authorization"] = `Bearer ${apiKey}`;
     }
 
-    // Normalize endpoint URL nicely
     const cleanBaseUrl = normalizedBaseUrl.replace(/\/$/, "");
-    const ttsUrl = cleanBaseUrl.endsWith("/api")
-      ? `${cleanBaseUrl}/v1/audio/speech`
-      : cleanBaseUrl.endsWith("/api/v1")
-        ? `${cleanBaseUrl}/audio/speech`
-        : `${cleanBaseUrl}/api/v1/audio/speech`;
+    const ttsUrl = phonemeMode
+      ? `${cleanBaseUrl}/dev/generate_from_phonemes`
+      : `${cleanBaseUrl}/v1/audio/speech`;
+    const reqBody = phonemeMode
+      ? { phonemes, voice }
+      : { model, voice, input: text, response_format: "mp3", speed };
 
     const response = await fetch(ttsUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        model,
-        voice,
-        input: text,
-        response_format: "mp3",
-        speed,
-      }),
+      body: JSON.stringify(reqBody),
       signal: AbortSignal.timeout(15000), // 15s timeout
     });
 
@@ -188,7 +192,7 @@ async function handleTts(request: NextRequest) {
     return new NextResponse(audioBuffer, {
       status: 200,
       headers: {
-        "Content-Type": "audio/mpeg",
+        "Content-Type": contentType,
         "Content-Length": String(audioBuffer.length),
       },
     });

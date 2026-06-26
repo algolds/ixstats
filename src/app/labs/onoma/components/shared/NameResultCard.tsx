@@ -136,10 +136,8 @@ export function NameResultCard({
     try {
       await speakBrowserNative(name, ipa, culture ?? null);
     } catch (err) {
-      console.warn("Browser SpeechSynthesis failed, falling back to robotic meSpeak:", err);
-      void import("~/lib/onoma/mespeak-loader").then((m) =>
-        m.speakName(name, ipa, culture ?? null)
-      );
+      console.error("Browser SpeechSynthesis failed:", err);
+      notify.error("Your browser couldn't speak this name. Try the natural voice instead.");
     }
   };
 
@@ -152,16 +150,16 @@ export function NameResultCard({
       try {
         await speakBrowserNative(name, ipa, culture ?? null);
       } catch (err) {
-        console.error("Browser speech failed, falling back to meSpeak:", err);
-        void import("~/lib/onoma/mespeak-loader").then((m) =>
-          m.speakName(name, ipa, culture ?? null)
-        );
+        console.error("Browser speech failed:", err);
+        notify.error("Could not play this name.");
       }
     };
 
     if (speechConfig?.kokoro?.enabled) {
       try {
-        const res = await fetch(`/api/onoma/tts?text=${encodeURIComponent(name)}`);
+        const res = await fetch(
+          `/api/onoma/tts?text=${encodeURIComponent(name)}&ipa=${encodeURIComponent(ipa)}`
+        );
         if (!res.ok) {
           const errJson = await res.json().catch(() => ({}));
           throw new Error(errJson.error || errJson.details || `HTTP error ${res.status}`);
@@ -236,29 +234,19 @@ export function NameResultCard({
             {name}
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            {/* IPA reference (clickable to play phonetic pronunciation) */}
+            {/* IPA badge — click to hear the phonetic (browser) pronunciation */}
             {ipa && (
               <button
                 type="button"
                 onClick={handlePlayPronunciation}
-                title="Click to play phonetic pronunciation"
-                className="text-muted-foreground border-border/40 bg-secondary/5 cursor-pointer rounded-full border px-2 py-0.5 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+                title="Click to hear the phonetic pronunciation"
+                className="text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
               >
+                <Volume2 className="h-2.5 w-2.5" />
                 {ipa}
               </button>
             )}
-            {/* Two audio modes: phonetic pronunciation now, natural AI voice later.
-                "Read Naturally" is the future immersive voice (Fish Speech / Kokoro /
-                Chatterbox); disabled until that engine is wired. */}
-            <button
-              type="button"
-              onClick={handlePlayPronunciation}
-              title="Pronounce — phonetic articulation from IPA. Teaches how it's said."
-              className="text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
-            >
-              <Volume2 className="h-2.5 w-2.5" />
-              <span>Pronounce</span>
-            </button>
+            {/* Natural AI voice (Kokoro container), falls back to browser speech */}
             <button
               type="button"
               onClick={handlePlayNatural}

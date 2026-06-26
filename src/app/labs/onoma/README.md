@@ -63,8 +63,7 @@ show IPA, declension tables, and script transcriptions (the linguistics engine).
 ## Speech Synthesis & Natural Voices
 
 Onoma supports two audio modes:
-- **🔊 Pronunciation (IPA Badge)**: articular guide reading the generated IPA string. Driven by the browser's native `SpeechSynthesis` Web Speech API using BCP-47 culture mapped accents (falls back to client-side `meSpeak` (eSpeak asm.js) if browser synthesis fails).
-  - *Note*: meSpeak configuration and voice definitions load as static assets using `withBasePath` to support subpath deployments.
-- **🎙 Read Naturally (Natural Voice)**: immersive natural voice generation. Queries the self-hosted **Kokoro TTS container** proxy `/api/onoma/tts`. Falls back to the browser-native synthesis player if the Kokoro server is unreachable or disabled, and finally falls back to meSpeak.
+- **🔊 Pronunciation (IPA Badge)**: the IPA badge carries an inline speaker icon; clicking it reads the generated IPA via the browser's native `SpeechSynthesis` Web Speech API using BCP-47 culture-mapped accents. Surfaces a toast if browser synthesis is unavailable.
+- **🎙 Read Naturally (Natural Voice)**: immersive natural voice. Sends Onoma's canonical IPA to the self-hosted **kokoro-fastapi** phoneme endpoint via `/api/onoma/tts`, so the model pronounces the name from its real phonemes. Falls back to the browser-native player if the server is unreachable or disabled.
   - *Troubleshooting 502 errors*: Ensure the Kokoro Docker container is running (`docker compose up -d kokoro`) on port 3004 and the `onoma.kokoro.*` settings are configured in the admin dashboard.
 

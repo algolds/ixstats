@@ -10,10 +10,6 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { ActivityGenerator } from "~/lib/activity-generator";
-import { CULTURE_VOICE, DEFAULT_SPEECH_CONFIG } from "~/lib/onoma/speech";
-
-// SystemConfig keys for Onoma pronunciation settings (admin-tunable).
-const SPEECH_KEYS = ["speed", "pitch", "amplitude", "wordgap", "variant"] as const;
 
 export const onomaRouter = createTRPCRouter({
   /**
@@ -523,22 +519,14 @@ export const onomaRouter = createTRPCRouter({
     }),
 
   /**
-   * Read the admin-tuned pronunciation config (meSpeak params + per-culture voices).
-   * Public so the client speech engine can apply it. Falls back to defaults.
+   * Read the public speech config (Kokoro natural-voice + branding settings).
+   * Public so the naming lab can gate the Read Naturally button and apply branding.
    */
   getSpeechConfig: publicProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma." } },
     });
     const map = new Map(rows.map((r) => [r.key, r.value]));
-    const num = (k: string, d: number) => {
-      const v = map.get(`onoma.speech.${k}`);
-      return v != null && v !== "" ? Number(v) : d;
-    };
-    const voices: Record<string, string> = {};
-    for (const culture of Object.keys(CULTURE_VOICE)) {
-      voices[culture] = map.get(`onoma.voice.${culture}`) || CULTURE_VOICE[culture];
-    }
     const kokoroEnabled = map.get("onoma.kokoro.enabled") === "true";
     const kokoroVoice = map.get("onoma.kokoro.voice") || "af_heart";
     const kokoroModel = map.get("onoma.kokoro.model") || "model_q8f16";
@@ -552,12 +540,6 @@ export const onomaRouter = createTRPCRouter({
     const brandFontFamily = map.get("onoma.brand.fontFamily") || "Inter";
 
     return {
-      speed: num("speed", DEFAULT_SPEECH_CONFIG.speed),
-      pitch: num("pitch", DEFAULT_SPEECH_CONFIG.pitch),
-      amplitude: num("amplitude", DEFAULT_SPEECH_CONFIG.amplitude),
-      wordgap: num("wordgap", DEFAULT_SPEECH_CONFIG.wordgap),
-      variant: map.get("onoma.speech.variant") ?? DEFAULT_SPEECH_CONFIG.variant,
-      voices,
       kokoro: {
         enabled: kokoroEnabled,
         voice: kokoroVoice,
@@ -572,38 +554,6 @@ export const onomaRouter = createTRPCRouter({
       },
     };
   }),
-
-  /** Admin: persist the pronunciation config. */
-  updateSpeechConfig: adminProcedure
-    .input(
-      z.object({
-        speed: z.number().min(80).max(450),
-        pitch: z.number().min(0).max(99),
-        amplitude: z.number().min(0).max(200),
-        wordgap: z.number().min(0).max(50),
-        variant: z.string().max(8),
-        voices: z.record(z.string(), z.string()),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const entries: Array<{ key: string; value: string }> = [
-        ...SPEECH_KEYS.map((k) => ({ key: `onoma.speech.${k}`, value: String(input[k]) })),
-        ...Object.entries(input.voices).map(([culture, voice]) => ({
-          key: `onoma.voice.${culture}`,
-          value: voice,
-        })),
-      ];
-      await ctx.db.$transaction(
-        entries.map((e) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: e.key },
-            update: { value: e.value, updatedAt: new Date() },
-            create: { key: e.key, value: e.value, description: `Onoma pronunciation: ${e.key}` },
-          })
-        )
-      );
-      return { success: true };
-    }),
 
   /** Admin: get the Kokoro natural voice config including secrets. */
   getKokoroAdminConfig: adminProcedure.query(async ({ ctx }) => {

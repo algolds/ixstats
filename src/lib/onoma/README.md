@@ -48,8 +48,6 @@ src/lib/onoma/
   morphology.ts          Grammatical gender detection & 5-case noun declension tables
   orthography.ts         Script transcribers for Cyrillic, Greek, and Arabic (RTL)
   perplexity.ts          Char n-gram LM → name "naturalness" 0–100 (Phase 5)
-  speech.ts              IPA→eSpeak phoneme converter + culture→voice map (Phase 7, pure)
-  mespeak-loader.ts      Lazy meSpeak (asm.js eSpeak) loader; speaks names from IPA (browser)
   browser-speech.ts      Browser-native SpeechSynthesis player mapping naming cultures to language tags
   branding-utils.ts      Linguistic flanking styles, Google Fonts registry, and IPA-to-Speech-Spelling converter
   lexicon-analytics.ts   Shannon entropy, letter/bigram/trigram freqs, 0–100 health audit
@@ -114,10 +112,8 @@ Applied per generated name (in `NameResultCard`), all pure-TS and deterministic:
 
 Two distinct modes (two buttons in `NameResultCard`), not one speaker:
 
-- **🔊 Pronounce** (done) — the *pronunciation engine*. Uses the browser's native Web Speech API `window.speechSynthesis` (mapping conworld naming cultures to BCP-47 language tags) and translates IPA to phonetic spelled syllable chunks (`branding-utils.ts` -> `ipaToSpeechSpelling`). Falls back to client-side **meSpeak** (eSpeak asm.js, lazy-loaded in `mespeak-loader.ts` reading IPA from eSpeak phoneme definitions) if the browser engine fails or is unsupported.
-  > [!NOTE]
-  > **meSpeak Asset Resolution**: meSpeak config and voice JSONs are served as static files under `/onoma/mespeak/...`. To prevent `404 Not Found` errors in production environments where the app is served from a subpath (e.g., `/projects/ixstates`), all meSpeak paths are wrapped using the `withBasePath` utility.
-- **🎙 Read Naturally** (done) — immersive natural neural voice. Proxies requests to a self-hosted **Kokoro TTS service** Docker container running in the production stack via Next.js `/api/onoma/tts`. Caches synthesized name audio files inside Redis (for fast playback and minimal API calls). Falls back automatically to the browser-native synthesis voice, and finally falls back to meSpeak on complete failure.
+- **🔊 IPA badge (Pronounce)** (done) — the *pronunciation engine*. The IPA badge has an inline speaker icon; clicking it speaks the name via the browser's native Web Speech API `window.speechSynthesis` (mapping conworld naming cultures to BCP-47 language tags). If the browser engine is unavailable, it surfaces a toast (no eSpeak fallback).
+- **🎙 Read Naturally** (done) — immersive natural neural voice. Proxies to a self-hosted **kokoro-fastapi** Docker container via Next.js `/api/onoma/tts`. Onoma sends the canonical IPA from `translateToIPA` straight to the model's `/dev/generate_from_phonemes` endpoint, so pronunciation comes from the language's own rules rather than English G2P. Caches synthesized audio in Redis. Falls back to the browser-native voice if the container is unreachable.
   > [!TIP]
   > **502 Bad Gateway Troubleshooting**: If natural voice playback fails with a `502 Bad Gateway` or `502 (Bad Gateway)` network error, it indicates that the Next.js API route cannot communicate with the self-hosted Kokoro container. This usually happens if the server restarts and the container isn't running. Spin it up by running:
   > ```bash
