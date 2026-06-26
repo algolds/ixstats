@@ -1,5 +1,5 @@
 /**
- * Statecraft Almanac — the upcoming-events feed.
+ * Statecraft Calendar — the upcoming-events feed.
  *
  * One pure function, fed by data the caller already has (elections, issue
  * deadlines, the legislative term). The MyCountry hero calendar and the Halo
@@ -10,17 +10,17 @@
  * That keeps it testable and reusable from both a client component and a server query.
  */
 
-export type AlmanacKind = "election" | "issue" | "term";
+export type CalendarKind = "election" | "issue" | "term";
 
-export interface AlmanacEvent {
+export interface CalendarEvent {
   id: string;
   label: string;
   ixTime: number; // IxTime ms timestamp the event falls on
   section: string; // MyCountrySection value, e.g. "politics" | "executive"
-  kind: AlmanacKind;
+  kind: CalendarKind;
 }
 
-export interface AlmanacInputs {
+export interface CalendarInputs {
   nowIxTime: number;
   elections?: { id: string; name: string; scheduledIxTime: number; status?: string }[];
   issueDeadlines?: { id: string; title: string; deadlineIxTime: number | null | undefined }[];
@@ -29,9 +29,9 @@ export interface AlmanacInputs {
 }
 
 /** Future Statecraft events, soonest first. Past/undated entries are dropped. */
-export function getUpcomingEvents(inp: AlmanacInputs): AlmanacEvent[] {
+export function getUpcomingEvents(inp: CalendarInputs): CalendarEvent[] {
   const now = inp.nowIxTime;
-  const events: AlmanacEvent[] = [];
+  const events: CalendarEvent[] = [];
 
   for (const e of inp.elections ?? []) {
     // "completed"/"cancelled" elections are history, not upcoming.

@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * AlmanacLiveDIPlugin — a Halo "Live Activity" for the Statecraft Almanac.
+ * CalendarLiveDIPlugin — a Halo "Live Activity" for the Statecraft Calendar.
  *
  * Mounted globally. When the signed-in user's soonest upcoming event (election / issue
  * deadline / term end) falls inside the imminent window, it registers a high-priority DI
  * plugin that takes over the pill with a live, ticking countdown — recomputed once per
- * second off the shared IxTime clock. Tapping expands the full Almanac. Mirrors
+ * second off the shared IxTime clock. Tapping expands the full Calendar. Mirrors
  * SportsLiveDIPlugin. See plans/statecraft-stage1.md (S1.A.3, live activity).
  */
 
@@ -17,10 +17,10 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { PreText } from "~/components/ui/pretext";
-import { getUpcomingEvents, formatIxCountdown, type AlmanacEvent } from "~/lib/statecraft-almanac";
-import { AlmanacView } from "~/components/DynamicIsland/AlmanacView";
+import { getUpcomingEvents, formatIxCountdown, type CalendarEvent } from "~/lib/statecraft-calendar";
+import { CalendarView } from "~/components/DynamicIsland/CalendarView";
 
-const ACCENT = "#3b82f6"; // almanac blue
+const ACCENT = "#3b82f6"; // calendar blue
 const IMMINENT_MS = 2 * 24 * 60 * 60 * 1000; // within ~2 IxDays → goes "live"
 
 /** Re-render once per second so the countdown ticks off the shared IxTime clock. */
@@ -33,7 +33,7 @@ function useTickedCountdown(targetIxTime: number): string {
   return formatIxCountdown(targetIxTime, IxTime.getCurrentIxTime());
 }
 
-function CountdownPill({ event }: { event: AlmanacEvent }) {
+function CountdownPill({ event }: { event: CalendarEvent }) {
   const countdown = useTickedCountdown(event.ixTime);
   return (
     <span className="flex items-center gap-1.5">
@@ -52,13 +52,13 @@ function CountdownPill({ event }: { event: AlmanacEvent }) {
 }
 
 /** Registers the plugin for as long as it's mounted (i.e. while an event is imminent). */
-function ActiveAlmanacLivePlugin({ event }: { event: AlmanacEvent }) {
+function ActiveCalendarLivePlugin({ event }: { event: CalendarEvent }) {
   const plugin = useMemo(
     () => ({
-      id: "almanac-live",
+      id: "calendar-live",
       priority: 90, // below sports-live (100) so a live match still wins the island
       center: <CountdownPill event={event} />,
-      expandedViews: { almanac: AlmanacView },
+      expandedViews: { calendar: CalendarView },
       accentColor: ACCENT,
       stickyLabel: "Upcoming",
       badge: { color: ACCENT, pulse: true },
@@ -69,7 +69,7 @@ function ActiveAlmanacLivePlugin({ event }: { event: AlmanacEvent }) {
   return null;
 }
 
-export function AlmanacLiveDIPlugin() {
+export function CalendarLiveDIPlugin() {
   const { isSignedIn } = useUser();
   const { data: profile } = api.users.getProfile.useQuery(undefined, {
     enabled: isSignedIn,
@@ -109,5 +109,5 @@ export function AlmanacLiveDIPlugin() {
 
   // No imminent event → render nothing, register nothing (no takeover).
   if (!imminent) return null;
-  return <ActiveAlmanacLivePlugin event={imminent} />;
+  return <ActiveCalendarLivePlugin event={imminent} />;
 }

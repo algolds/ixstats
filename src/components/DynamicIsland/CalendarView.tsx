@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * AlmanacView — the Statecraft Almanac as a global Halo (Dynamic Island) view.
+ * CalendarView — the Statecraft Calendar as a global Halo (Dynamic Island) view.
  *
- * Opened by clicking the IxTime clock anywhere. A live, ticking clock (StandBy /
+ * Opened by clicking the date display anywhere. A live, ticking clock (StandBy /
  * Lock Screen inspired, Facet glass) on top of the upcoming-events feed
  * (`getUpcomingEvents`, the same feed as the MyCountry hero calendar) with IxTime
  * countdowns. The clock ticks off the shared IxTime store (per-second), so digits
@@ -15,7 +15,7 @@ import { useMemo } from "react";
 import { Clock, ChevronRight, Zap, Pause, Sun, CalendarDays } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useIxTime } from "~/contexts/IxTimeContext";
-import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-almanac";
+import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-calendar";
 import { withBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import type { DIViewProps } from "./types";
@@ -42,7 +42,7 @@ function dayOfYear(d: Date): number {
   return Math.floor((d.getTime() - start) / 86_400_000);
 }
 
-export function AlmanacView({ onClose }: DIViewProps) {
+export function CalendarView({ onClose }: DIViewProps) {
   const { ixTimeTimestamp: now, multiplier, isPaused, gameYear } = useIxTime();
 
   const { data: profile } = api.users.getProfile.useQuery(undefined, { staleTime: 60_000 });
@@ -92,7 +92,7 @@ export function AlmanacView({ onClose }: DIViewProps) {
   );
 
   const go = (section: string) => {
-    onClose();
+    if (onClose) onClose();
     const href = section === "overview" ? "/mycountry" : `/mycountry/${section}`;
     if (typeof window !== "undefined" && window.location.pathname.includes("/mycountry")) {
       window.history.pushState(null, "", withBasePath(href));
@@ -202,12 +202,12 @@ function Complication({
   value: string;
 }) {
   return (
-    <div className="glass-hierarchy-child flex flex-col gap-0.5 rounded-xl px-2.5 py-2">
-      <div className="text-muted-foreground/70 flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide">
-        {icon}
-        <span className="truncate">{label}</span>
+    <div className="glass-hierarchy-child flex flex-col items-center justify-center rounded-xl p-2.5 text-center">
+      <div className="text-muted-foreground/80 flex items-center justify-center">{icon}</div>
+      <div className="text-muted-foreground mt-1 text-[9px] font-medium uppercase tracking-wider">
+        {label}
       </div>
-      <div className="text-foreground text-sm font-semibold tabular-nums">{value}</div>
+      <div className="text-foreground mt-0.5 text-[11px] font-semibold tracking-tight">{value}</div>
     </div>
   );
 }
