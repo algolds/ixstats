@@ -93,7 +93,7 @@ bun install --frozen-lockfile
 
 # Run environment verification (ensures DB, Redis, and Kokoro config are valid)
 log "Verifying deployment environment..."
-if ! bun run verify:environment; then
+if ! NODE_ENV=production bun run verify:environment; then
     log "ERROR: Environment verification failed! Fix environment issues before deploying."
     exit 1
 fi

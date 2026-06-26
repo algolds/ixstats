@@ -148,7 +148,7 @@
     "validate:migrations": "tsx scripts/audit/validate-migration-safety.ts",
     "validate:schemas": "tsx scripts/audit/validate-schema-alignment.ts",
     "validate:servers": "./scripts/validate-server-config.sh",
-    "verify:environment": "tsx scripts/deployment/verify-environment.ts",
+    "verify:environment": "bun scripts/deployment/verify-environment.ts",
     "verify:production": "bun run test:critical && bun run validate:schemas && bun run lint",
     "websocket:dev": "tsx watch src/lib/websocket-server.ts",
     "websocket:server": "tsx src/lib/websocket-server.ts"
