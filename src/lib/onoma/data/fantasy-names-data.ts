@@ -1103,7 +1103,7 @@ export const FANTASY_SYLLABLES: string[][] = [
     "Zusque",
     "Zwerl",
     "Zynx",
-    "Zyx"
+    "Zyx",
   ],
   [
     "Aahdret",
@@ -5694,7 +5694,7 @@ export const FANTASY_SYLLABLES: string[][] = [
     "Zyrel",
     "Zyrelx",
     "Zytan",
-    "Zyxim"
+    "Zyxim",
   ],
   [
     "Aathoklaa",
@@ -8649,7 +8649,7 @@ export const FANTASY_SYLLABLES: string[][] = [
     "Zydaraf",
     "Zylarthen",
     "Zyramythe",
-    "Zytavirk"
+    "Zytavirk",
   ],
   [
     "Abadapnyr",
@@ -9265,6 +9265,6 @@ export const FANTASY_SYLLABLES: string[][] = [
     "Zuzusilmar",
     "Zwimolio",
     "Zwyäclemon",
-    "Zyrissalantisar"
-  ]
+    "Zyrissalantisar",
+  ],
 ];

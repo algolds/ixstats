@@ -27,9 +27,16 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { OnomaDoubleHelixIcon } from "../shared/OnomaDoubleHelixIcon";
+import { api } from "~/trpc/react";
+import { applyFlanking } from "~/lib/onoma/branding-utils";
 
 export function OverviewSection() {
   const bank = useNameBank();
+
+  // Load public speech config (including branding settings)
+  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
+    staleTime: 600000,
+  });
 
   // Smart SpeechSynthesis handler for "Onoma" pronunciation
   const playPronunciation = () => {
@@ -217,14 +224,14 @@ export function OverviewSection() {
       <div
         onMouseEnter={() => setIsHeroHovered(true)}
         onMouseLeave={() => setIsHeroHovered(false)}
-        className="group relative overflow-hidden rounded-xl border border-[#0091ff]/20 hover:border-[#0091ff]/35 bg-gradient-to-br from-[#0091ff]/[0.06] via-[#0091ff]/[0.02] to-indigo-500/[0.04] dark:from-[#0091ff]/[0.08] dark:via-[#0091ff]/[0.02] dark:to-indigo-500/[0.06] backdrop-blur-md p-6 transition-all duration-500 shadow-md shadow-[#0091ff]/2 hover:shadow-[0_0_20px_rgba(0,145,255,0.06)] dark:hover:shadow-[0_0_24px_rgba(0,145,255,0.12)]"
+        className="group relative overflow-hidden rounded-xl border border-[#0091ff]/20 bg-gradient-to-br from-[#0091ff]/[0.06] via-[#0091ff]/[0.02] to-indigo-500/[0.04] p-6 shadow-md shadow-[#0091ff]/2 backdrop-blur-md transition-all duration-500 hover:border-[#0091ff]/35 hover:shadow-[0_0_20px_rgba(0,145,255,0.06)] dark:from-[#0091ff]/[0.08] dark:via-[#0091ff]/[0.02] dark:to-indigo-500/[0.06] dark:hover:shadow-[0_0_24px_rgba(0,145,255,0.12)]"
       >
         {/* Texture Overlay */}
         <div className="pointer-events-none absolute -inset-2 opacity-[0.02] transition-all duration-500 ease-out group-hover:translate-x-1 group-hover:translate-y-1 group-hover:opacity-[0.08] group-hover:blur-[0.5px] dark:opacity-[0.12] dark:group-hover:opacity-[0.25]">
           <TextureOverlay texture="grid" className="mix-blend-overlay" />
         </div>
 
-        <div className="relative z-10 max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl space-y-2">
+        <div className="relative z-10 max-w-xs space-y-2 sm:max-w-md md:max-w-lg lg:max-w-xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0091ff]/10 px-3 py-1 text-xs font-semibold text-[#0091ff]">
             <Compass className="h-3 w-3" />
             Onoma (
@@ -238,8 +245,15 @@ export function OverviewSection() {
             </button>
             • Greek for “name,” root of onomastics)
           </span>
-          <h1 className="text-foreground text-2xl font-extrabold tracking-wide sm:text-3xl">
-            Project Onoma
+          <h1
+            className="text-foreground text-2xl font-extrabold tracking-wide sm:text-3xl"
+            style={{
+              fontFamily: speechConfig?.brand?.fontFamily
+                ? `'${speechConfig.brand.fontFamily}', sans-serif`
+                : undefined,
+            }}
+          >
+            {applyFlanking("Project Onoma", speechConfig?.brand?.flankingStyle)}
           </h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
             A{" "}
@@ -264,13 +278,18 @@ export function OverviewSection() {
             </span>
           </div>
         </div>
-        
+
         {/* Apple-style Glassmorphic App Icon Widget Container */}
-        <div className="hidden sm:flex absolute right-6 top-1/2 -translate-y-1/2 items-center justify-center z-20 pointer-events-none">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[22%] backdrop-blur-xl bg-white/40 dark:bg-neutral-900/60 border border-white/50 dark:border-neutral-800/80 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.3)] flex items-center justify-center overflow-hidden transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_12px_48px_rgba(0,145,255,0.15)] dark:group-hover:shadow-[0_16px_56px_rgba(0,145,255,0.25)]">
+        <div className="pointer-events-none absolute top-1/2 right-6 z-20 hidden -translate-y-1/2 items-center justify-center sm:flex">
+          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-[22%] border border-white/50 bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_12px_48px_rgba(0,145,255,0.15)] sm:h-28 sm:w-28 dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:shadow-[0_12px_40px_rgba(0,0,0,0.3)] dark:group-hover:shadow-[0_16px_56px_rgba(0,145,255,0.25)]">
             {/* Ambient background glow inside the squircle */}
-            <div className="absolute -inset-4 bg-gradient-to-tr from-[#0091ff]/10 to-indigo-500/10 dark:from-[#0091ff]/15 dark:to-indigo-500/15 opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
-            <OnomaDoubleHelixIcon className="h-4/5 w-4/5 relative z-10" isHovered={isHeroHovered} />
+            <div className="absolute -inset-4 bg-gradient-to-tr from-[#0091ff]/10 to-indigo-500/10 opacity-60 transition-opacity duration-500 group-hover:opacity-100 dark:from-[#0091ff]/15 dark:to-indigo-500/15" />
+            <OnomaDoubleHelixIcon
+              className="relative z-10 h-4/5 w-4/5"
+              isHovered={isHeroHovered}
+              variation={speechConfig?.brand?.variation}
+              nucleusSymbol={speechConfig?.brand?.nucleusSymbol}
+            />
           </div>
         </div>
       </div>

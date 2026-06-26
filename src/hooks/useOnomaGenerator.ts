@@ -42,7 +42,8 @@ import type { NameCategory, CulturalProfile, GenerateOptions, Gender } from "~/l
 function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "province" | "person" {
   if (cat === "city" || cat === "geography") return "city";
   if (cat === "province") return "province";
-  if (cat === "military" || cat === "organization" || cat === "person" || cat === "dynasty") return "person";
+  if (cat === "military" || cat === "organization" || cat === "person" || cat === "dynasty")
+    return "person";
   return "country";
 }
 
@@ -124,7 +125,10 @@ export function useOnomaGenerator() {
 
   // Instantiate client-side Markov Chain engines (both character-based and syllable-based)
   const characterChain = useMemo(() => new MarkovChain(order, "character"), [order]);
-  const syllableChain = useMemo(() => new MarkovChain(Math.min(2, Math.max(1, order - 1)), "syllable"), [order]);
+  const syllableChain = useMemo(
+    () => new MarkovChain(Math.min(2, Math.max(1, order - 1)), "syllable"),
+    [order]
+  );
 
   // Train the Markov chains when parameters change
   useEffect(() => {
@@ -166,7 +170,17 @@ export function useOnomaGenerator() {
     }
     // Phonotactic perplexity model over the same seeds (for naturalness scoring).
     lmRef.current = allSeeds.length > 0 ? trainLM(allSeeds, 3) : null;
-  }, [culture, category, dbTrainingNames, lexiconDict, includeWorldData, order, characterChain, syllableChain, lmRef]);
+  }, [
+    culture,
+    category,
+    dbTrainingNames,
+    lexiconDict,
+    includeWorldData,
+    order,
+    characterChain,
+    syllableChain,
+    lmRef,
+  ]);
 
   // Naturalness scorer (0–100) for a generated name, vs the current training set.
   const scoreNaturalness = (name: string): number | null =>
@@ -203,27 +217,50 @@ export function useOnomaGenerator() {
         else if (subType === "angel") name = generateAngelName(gender);
       } else if (category === "organization" && subType !== "generic") {
         if (subType === "mystic-order") name = generateMysticOrderName(characterChain, options);
-        else if (subType === "military-unit") name = generateMilitaryUnitName(characterChain, options);
+        else if (subType === "military-unit")
+          name = generateMilitaryUnitName(characterChain, options);
         else if (subType === "covert-org") name = generateCovertOrgName(characterChain, options);
         else if (subType === "tavern") name = generateTavernName(options);
-        else if (subType === "business-company") name = generateBusinessCompanyName(characterChain, options);
-        else if (subType === "academic-institution") name = generateAcademicInstitutionName(characterChain, options);
+        else if (subType === "business-company")
+          name = generateBusinessCompanyName(characterChain, options);
+        else if (subType === "academic-institution")
+          name = generateAcademicInstitutionName(characterChain, options);
       } else if (category === "military" && subType !== "generic") {
         if (subType === "military-unit") name = generateMilitaryUnitName(characterChain, options);
-        else if (subType === "mercenary-band") name = generateMercenaryBandName(characterChain, options);
+        else if (subType === "mercenary-band")
+          name = generateMercenaryBandName(characterChain, options);
       } else if (category === "dynasty" && subType !== "generic") {
         if (subType === "fantasy-syllable") name = generateFantasySyllableName();
-        else if (subType === "noble-surname") name = generateNobleSurname(culture, characterChain, options);
+        else if (subType === "noble-surname")
+          name = generateNobleSurname(culture, characterChain, options);
       } else if (category === "city" && subType === "settlement-colony") {
-        const base = characterChain.generate(options) || syllableChain.generate(options) || generateFantasySyllableName();
+        const base =
+          characterChain.generate(options) ||
+          syllableChain.generate(options) ||
+          generateFantasySyllableName();
         const d3 = Math.floor(Math.random() * 3);
         const capitalized = MarkovChain.capitalize(base);
         if (d3 === 0) name = `New ${capitalized}`;
         else if (d3 === 1) name = `Port ${capitalized}`;
         else name = `${capitalized} Colony`;
       } else if (category === "geography" && subType === "natural-landmark") {
-        const base = characterChain.generate(options) || syllableChain.generate(options) || generateFantasySyllableName();
-        const suffixes = ["River", "Valley", "Mount", "Bay", "Lake", "Ridge", "Coast", "Canyon", "Forest", "Peak", "Hills"];
+        const base =
+          characterChain.generate(options) ||
+          syllableChain.generate(options) ||
+          generateFantasySyllableName();
+        const suffixes = [
+          "River",
+          "Valley",
+          "Mount",
+          "Bay",
+          "Lake",
+          "Ridge",
+          "Coast",
+          "Canyon",
+          "Forest",
+          "Peak",
+          "Hills",
+        ];
         const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
         name = `${MarkovChain.capitalize(base)} ${suffix}`;
       }
@@ -269,10 +306,12 @@ export function useOnomaGenerator() {
 
     // Asynchronously log generation activity in feed
     if (results.length > 0) {
-      logActivityMutation.mutateAsync({
-        count: results.length,
-        category: category,
-      }).catch((err) => console.error("Failed to log generation activity:", err));
+      logActivityMutation
+        .mutateAsync({
+          count: results.length,
+          category: category,
+        })
+        .catch((err) => console.error("Failed to log generation activity:", err));
     }
 
     return results;

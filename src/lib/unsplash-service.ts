@@ -172,12 +172,15 @@ class UnsplashService {
       if (typeof window === "undefined") {
         try {
           const { externalApiCache } = await import("~/lib/external-api-cache");
-          await externalApiCache.set<UnsplashImageData[]>({
-            service: "unsplash",
-            type: "json",
-            identifier: cacheKey,
-            ttl: 30 * 24 * 60 * 60 * 1000, // 30 days
-          }, images);
+          await externalApiCache.set<UnsplashImageData[]>(
+            {
+              service: "unsplash",
+              type: "json",
+              identifier: cacheKey,
+              ttl: 30 * 24 * 60 * 60 * 1000, // 30 days
+            },
+            images
+          );
         } catch (err) {
           console.error("[UnsplashService] Error writing to externalApiCache:", err);
         }

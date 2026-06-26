@@ -12,10 +12,15 @@ const raw: LexiconName[] = JSON.parse(fs.readFileSync(path.join(dir, "lexicon-ra
 const clean = cleanLexicon(raw);
 
 const tally = (rows: LexiconName[]) =>
-  rows.reduce<Record<string, number>>((a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a), {});
+  rows.reduce<Record<string, number>>(
+    (a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a),
+    {}
+  );
 
 fs.writeFileSync(path.join(dir, "lexicon-clean.json"), JSON.stringify(clean));
 console.log(`raw   ${raw.length}`, tally(raw));
 console.log(`clean ${clean.length}`, tally(clean));
-console.log(`dropped ${raw.length - clean.length} (${((1 - clean.length / raw.length) * 100).toFixed(1)}%)`);
+console.log(
+  `dropped ${raw.length - clean.length} (${((1 - clean.length / raw.length) * 100).toFixed(1)}%)`
+);
 console.log(`-> ${path.join(dir, "lexicon-clean.json")}`);

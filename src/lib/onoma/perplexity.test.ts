@@ -1,8 +1,21 @@
 import { trainLM, perplexity, naturalnessScore } from "./perplexity";
 
 const ROMAN = [
-  "Marcus", "Lucius", "Gaius", "Julius", "Tiberius", "Claudius", "Verona", "Roma",
-  "Carthago", "Ravenna", "Mediolanum", "Aquileia", "Capua", "Brundisium", "Tarentum",
+  "Marcus",
+  "Lucius",
+  "Gaius",
+  "Julius",
+  "Tiberius",
+  "Claudius",
+  "Verona",
+  "Roma",
+  "Carthago",
+  "Ravenna",
+  "Mediolanum",
+  "Aquileia",
+  "Capua",
+  "Brundisium",
+  "Tarentum",
 ];
 
 describe("perplexity scorer", () => {

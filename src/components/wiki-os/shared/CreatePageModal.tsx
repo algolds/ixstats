@@ -92,7 +92,19 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
         const params = new URLSearchParams(window.location.search);
         initialTitle = params.get("wiki_title") || params.get("title") || "";
         const typeParam = params.get("wiki_type") || params.get("type");
-        if (typeParam && ["blank", "person", "company", "history", "country", "conflict", "politics", "tech"].includes(typeParam)) {
+        if (
+          typeParam &&
+          [
+            "blank",
+            "person",
+            "company",
+            "history",
+            "country",
+            "conflict",
+            "politics",
+            "tech",
+          ].includes(typeParam)
+        ) {
           initialType = typeParam as PageType;
         }
       }

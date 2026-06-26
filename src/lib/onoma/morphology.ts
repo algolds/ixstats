@@ -275,7 +275,7 @@ export function generateNounDeclension(word: string, culture: string | null): De
     // Quenya-like noun cases
     const lastChar = lower.charAt(lower.length - 1);
     const isVowel = "aeiouyëöü".includes(lastChar);
-    
+
     if (isVowel) {
       nomS = baseWord;
       nomP = baseWord + "r";
@@ -306,32 +306,32 @@ export function generateNounDeclension(word: string, culture: string | null): De
     nominative: {
       singular: capitalize(nomS),
       plural: capitalize(nomP),
-      descriptionSingular: "Subject (e.g. \"The city is here\")",
-      descriptionPlural: "Multiple subjects (e.g. \"These cities are here\")",
+      descriptionSingular: 'Subject (e.g. "The city is here")',
+      descriptionPlural: 'Multiple subjects (e.g. "These cities are here")',
     },
     genitive: {
       singular: capitalize(genS),
       plural: capitalize(genP),
-      descriptionSingular: "Possession / Origin (e.g. \"Of the city\")",
-      descriptionPlural: "Plural possession / Origin (e.g. \"Of the cities\")",
+      descriptionSingular: 'Possession / Origin (e.g. "Of the city")',
+      descriptionPlural: 'Plural possession / Origin (e.g. "Of the cities")',
     },
     accusative: {
       singular: capitalize(accS),
       plural: capitalize(accP),
-      descriptionSingular: "Direct Object (e.g. \"I found the city\")",
-      descriptionPlural: "Plural direct objects (e.g. \"I found the cities\")",
+      descriptionSingular: 'Direct Object (e.g. "I found the city")',
+      descriptionPlural: 'Plural direct objects (e.g. "I found the cities")',
     },
     dative: {
       singular: capitalize(datS),
       plural: capitalize(datP),
-      descriptionSingular: "Recipient (e.g. \"Dedicated to/for the city\")",
-      descriptionPlural: "Plural recipients (e.g. \"Dedicated to/for the cities\")",
+      descriptionSingular: 'Recipient (e.g. "Dedicated to/for the city")',
+      descriptionPlural: 'Plural recipients (e.g. "Dedicated to/for the cities")',
     },
     ablative: {
       singular: capitalize(ablS),
       plural: capitalize(ablP),
-      descriptionSingular: "Origin / Instrument (e.g. \"From/by the city\")",
-      descriptionPlural: "Plural origins / instruments (e.g. \"From/by the cities\")",
+      descriptionSingular: 'Origin / Instrument (e.g. "From/by the city")',
+      descriptionPlural: 'Plural origins / instruments (e.g. "From/by the cities")',
     },
   };
 }

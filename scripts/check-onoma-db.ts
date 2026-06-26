@@ -6,7 +6,7 @@ async function main() {
   try {
     const totalCount = await db.nameBank.count();
     const dictionaryCount = await db.nameBank.count({
-      where: { type: "dictionary" }
+      where: { type: "dictionary" },
     });
     const publicDicts = await db.nameBank.findMany({
       where: { type: "dictionary", isPublic: true },
@@ -14,8 +14,8 @@ async function main() {
         id: true,
         title: true,
         category: true,
-        values: true
-      }
+        values: true,
+      },
     });
 
     console.log(`Total NameBank records: ${totalCount}`);
@@ -24,7 +24,9 @@ async function main() {
     console.log("\nPublic Dictionaries in DB:");
     for (const dict of publicDicts) {
       const valCount = Array.isArray(dict.values) ? dict.values.length : 0;
-      console.log(`- ${dict.title} (ID: ${dict.id}, Category: ${dict.category}): ${valCount} words`);
+      console.log(
+        `- ${dict.title} (ID: ${dict.id}, Category: ${dict.category}): ${valCount} words`
+      );
     }
   } catch (err) {
     console.error("Error querying NameBank:", err);

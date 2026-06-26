@@ -29,6 +29,7 @@ import {
   Search,
   Newspaper,
   Palette,
+  Languages,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
@@ -263,6 +264,14 @@ const NAV_GROUPS: NavGroup[] = [
         description: "Flavorizer LLM configs & sandbox",
         activeColor: "text-amber-450 dark:text-amber-350 border-l-amber-500",
         section: "narrator",
+      },
+      {
+        label: "Onoma Settings",
+        href: "/admin/onoma",
+        icon: Languages,
+        description: "Pronunciation & natural voice",
+        activeColor: "text-indigo-500 dark:text-indigo-400 border-l-indigo-500",
+        section: "onoma",
       },
     ],
   },

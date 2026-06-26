@@ -109,10 +109,10 @@ const NarratorAdminPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
-const OnomaAdminPanel = dynamic(
-  () => import("./OnomaAdminPanel").then((m) => m.OnomaAdminPanel),
-  { loading: Loader, ssr: false }
-);
+const OnomaAdminPanel = dynamic(() => import("./OnomaAdminPanel").then((m) => m.OnomaAdminPanel), {
+  loading: Loader,
+  ssr: false,
+});
 
 const UnifiedMediaServiceAdmin = dynamic(
   () => import("./UnifiedMediaServiceAdmin").then((m) => m.UnifiedMediaServiceAdmin),

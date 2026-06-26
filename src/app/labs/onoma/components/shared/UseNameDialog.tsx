@@ -123,49 +123,47 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <FacetModal className="relative w-full max-w-md border border-border/40 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <FacetModal className="border-border/40 animate-in fade-in zoom-in-95 relative w-full max-w-md border p-6 shadow-2xl duration-200">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground absolute top-4 right-4 transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
 
         {/* Dialog Header */}
         <div className="mb-5">
-          <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest">
+          <span className="text-[10px] font-bold tracking-widest text-cyan-600 uppercase dark:text-cyan-400">
             Deploy Entity Name
           </span>
-          <h3 className="text-lg font-black text-foreground mt-1 select-all">
-            {name}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
+          <h3 className="text-foreground mt-1 text-lg font-black select-all">{name}</h3>
+          <p className="text-muted-foreground mt-1 text-xs">
             Deploy this generated name to one of the following creation forms:
           </p>
         </div>
 
         {/* Action Options */}
-        <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+        <div className="max-h-96 space-y-2.5 overflow-y-auto pr-1">
           {targets.map((target, idx) => {
             const Icon = target.icon;
             return (
               <button
                 key={idx}
                 onClick={() => handleSelect(target.href)}
-                className="group w-full flex items-start gap-3 rounded-xl border border-border/40 bg-secondary/15 dark:bg-slate-900/30 p-3 text-left hover:border-cyan-500/30 hover:bg-secondary/30 dark:hover:bg-slate-900/50 transition-all duration-300"
+                className="group border-border/40 bg-secondary/15 hover:bg-secondary/30 flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all duration-300 hover:border-cyan-500/30 dark:bg-slate-900/30 dark:hover:bg-slate-900/50"
               >
-                <div className="rounded-lg bg-cyan-500/10 p-2 text-cyan-600 dark:text-cyan-400 group-hover:bg-cyan-500/20 transition-all">
+                <div className="rounded-lg bg-cyan-500/10 p-2 text-cyan-600 transition-all group-hover:bg-cyan-500/20 dark:text-cyan-400">
                   <Icon className="h-4 w-4" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-foreground group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                    <span className="text-foreground text-xs font-bold transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
                       {target.label}
                     </span>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transform group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="text-muted-foreground/60 h-4 w-4 transform transition-all group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
                   </div>
-                  <p className="text-xs leading-normal text-muted-foreground">
+                  <p className="text-muted-foreground text-xs leading-normal">
                     {target.description}
                   </p>
                 </div>

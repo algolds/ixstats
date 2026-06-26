@@ -72,8 +72,8 @@ export interface SpeciesSyllables {
 }
 
 export const SPECIES_SYLLABLES: SpeciesSyllables = {
-  "vileAndCrude": {
-    "small": [
+  vileAndCrude: {
+    small: [
       "ach",
       "adz",
       "ak",
@@ -173,9 +173,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "zat",
       "zib",
       "zit",
-      "ziz"
+      "ziz",
     ],
-    "medium": [
+    medium: [
       "ag",
       "aug",
       "bad",
@@ -275,9 +275,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "yash",
       "yob",
       "zahk",
-      "zog"
+      "zog",
     ],
-    "large": [
+    large: [
       "argh",
       "barsh",
       "bog",
@@ -377,11 +377,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "yug",
       "yur",
       "zud",
-      "zug"
-    ]
+      "zug",
+    ],
   },
-  "primitive": {
-    "names": [
+  primitive: {
+    names: [
       "ahg",
       "baod",
       "beegh",
@@ -481,21 +481,12 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "yeeh",
       "yih",
       "yuh",
-      "zham"
+      "zham",
     ],
-    "suffixes": [
-      "doh",
-      "rei",
-      "mih",
-      "fah",
-      "soh",
-      "lah",
-      "tih",
-      "daoh"
-    ]
+    suffixes: ["doh", "rei", "mih", "fah", "soh", "lah", "tih", "daoh"],
   },
-  "doughty": {
-    "syllables": [
+  doughty: {
+    syllables: [
       "bal",
       "durn",
       "na",
@@ -555,9 +546,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "thrur",
       "durm",
       "hra",
-      "thund"
+      "thund",
     ],
-    "maleSuffixes": [
+    maleSuffixes: [
       "bor",
       "din",
       "in",
@@ -577,9 +568,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "rur",
       "vi",
       "vir",
-      "vor"
+      "vor",
     ],
-    "femaleSuffixes": [
+    femaleSuffixes: [
       "bis",
       "da",
       "dis",
@@ -599,11 +590,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "rith",
       "run",
       "run",
-      "vis"
-    ]
+      "vis",
+    ],
   },
-  "homely": {
-    "syllables": [
+  homely: {
+    syllables: [
       "ad",
       "blanc",
       "falc",
@@ -651,39 +642,13 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "bild",
       "ever",
       "mark",
-      "wyd"
+      "wyd",
     ],
-    "maleSuffixes": [
-      "ald",
-      "ard",
-      "ert",
-      "fast",
-      "o",
-      "o",
-      "o",
-      "o",
-      "o",
-      "old",
-      "win",
-      "wise"
-    ],
-    "femaleSuffixes": [
-      "a",
-      "a",
-      "a",
-      "a",
-      "a",
-      "ia",
-      "ia",
-      "ice",
-      "ily",
-      "ina",
-      "wina",
-      "wisa"
-    ]
+    maleSuffixes: ["ald", "ard", "ert", "fast", "o", "o", "o", "o", "o", "old", "win", "wise"],
+    femaleSuffixes: ["a", "a", "a", "a", "a", "ia", "ia", "ice", "ily", "ina", "wina", "wisa"],
   },
-  "familyName": {
-    "english": [
+  familyName: {
+    english: [
       "Adshead",
       "Akers",
       "Antell",
@@ -1290,9 +1255,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "Yeandle",
       "Yeend",
       "Yemm",
-      "Yould"
+      "Yould",
     ],
-    "scottish": [
+    scottish: [
       "Aiken",
       "Aitken",
       "Baikie",
@@ -1450,11 +1415,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "Wilkie",
       "Wiseheart",
       "Wishart",
-      "Yarrow"
-    ]
+      "Yarrow",
+    ],
   },
-  "fairAndNoble": {
-    "elfprefixes": [
+  fairAndNoble: {
+    elfprefixes: [
       "an",
       "im",
       "ar",
@@ -1494,9 +1459,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "gil",
       "rin",
       "ilm",
-      "rim"
+      "rim",
     ],
-    "alternativeElfPrefixes": [
+    alternativeElfPrefixes: [
       "aeg",
       "lith",
       "ael",
@@ -1536,9 +1501,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "lend",
       "ther",
       "lind",
-      "thir"
+      "thir",
     ],
-    "middle": [
+    middle: [
       "ad",
       "al",
       "am",
@@ -1558,9 +1523,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "ir",
       "ol",
       "thal",
-      "thon"
+      "thon",
     ],
-    "maleSuffixes": [
+    maleSuffixes: [
       "ad",
       "dan",
       "del",
@@ -1580,9 +1545,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "rod",
       "rond",
       "ros",
-      "thir"
+      "thir",
     ],
-    "femaleSuffixes": [
+    femaleSuffixes: [
       "edel",
       "el",
       "eth",
@@ -1602,11 +1567,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "sil",
       "wë",
       "wen",
-      "wen"
-    ]
+      "wen",
+    ],
   },
-  "faerykind": {
-    "prefixes": [
+  faerykind: {
+    prefixes: [
       "dex",
       "gliss",
       "tink",
@@ -1642,9 +1607,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "winn",
       "glim",
       "shim",
-      "wisp"
+      "wisp",
     ],
-    "maleSuffixes": [
+    maleSuffixes: [
       "aldo",
       "allo",
       "amo",
@@ -1656,9 +1621,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "eroll",
       "eron",
       "esto",
-      "ondo"
+      "ondo",
     ],
-    "femaleSuffixes": [
+    femaleSuffixes: [
       "afer",
       "amer",
       "anel",
@@ -1670,11 +1635,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "ifer",
       "imer",
       "inel",
-      "irel"
-    ]
+      "irel",
+    ],
   },
-  "alternativeFaerykind": {
-    "prefixes": [
+  alternativeFaerykind: {
+    prefixes: [
       "bris",
       "iphil",
       "opal",
@@ -1710,9 +1675,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "whis",
       "hist",
       "ninka",
-      "zando"
+      "zando",
     ],
-    "maleSuffixes": [
+    maleSuffixes: [
       "bik",
       "brix",
       "frell",
@@ -1724,9 +1689,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "tross",
       "twik",
       "win",
-      "zisk"
+      "zisk",
     ],
-    "femaleSuffixes": [
+    femaleSuffixes: [
       "dee",
       "kiss",
       "la",
@@ -1738,11 +1703,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "riss",
       "sa",
       "tiss",
-      "ynx"
-    ]
+      "ynx",
+    ],
   },
-  "elegantEvil": {
-    "prefixesDarkElves": [
+  elegantEvil: {
+    prefixesDarkElves: [
       "bal",
       "myr",
       "ber",
@@ -1782,9 +1747,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "mez",
       "vril",
       "mor",
-      "yas"
+      "yas",
     ],
-    "prefixesAlternateDarkElves": [
+    prefixesAlternateDarkElves: [
       "bur",
       "olg",
       "chor",
@@ -1824,9 +1789,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "noth",
       "yel",
       "ol",
-      "yol"
+      "yol",
     ],
-    "middle": [
+    middle: [
       "dyl",
       "el",
       "en",
@@ -1846,9 +1811,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "ril",
       "rin",
       "sin",
-      "syl"
+      "syl",
     ],
-    "maleSuffixes": [
+    maleSuffixes: [
       "ald",
       "eld",
       "id",
@@ -1868,9 +1833,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "vid",
       "vim",
       "vir",
-      "viz"
+      "viz",
     ],
-    "femaleSuffixes": [
+    femaleSuffixes: [
       "bra",
       "dra",
       "dril",
@@ -1890,11 +1855,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "sil",
       "tra",
       "vra",
-      "vril"
-    ]
+      "vril",
+    ],
   },
-  "malevolent": {
-    "prefixes": [
+  malevolent: {
+    prefixes: [
       "aag",
       "karg",
       "ulthu",
@@ -1954,9 +1919,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "zuldu",
       "kaaz",
       "skaur",
-      "zuv"
+      "zuv",
     ],
-    "maleSuffixes": [
+    maleSuffixes: [
       "arag",
       "bru",
       "drul",
@@ -1976,9 +1941,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "uvik",
       "xulg",
       "zu",
-      "zuk"
+      "zuk",
     ],
-    "femaleSuffixes": [
+    femaleSuffixes: [
       "anil",
       "bau",
       "diu",
@@ -1998,11 +1963,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "ulla",
       "xhiu",
       "zihyl",
-      "ziu"
-    ]
+      "ziu",
+    ],
   },
-  "draconic": {
-    "prefixes": [
+  draconic: {
+    prefixes: [
       "abra",
       "har",
       "phrixu",
@@ -2062,9 +2027,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "zalar",
       "glau",
       "phoro",
-      "zerul"
+      "zerul",
     ],
-    "suffixes": [
+    suffixes: [
       "bazius",
       "boros",
       "bradax",
@@ -2084,11 +2049,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "xenor",
       "zuthrax",
       "zzebrax",
-      "zzemal"
-    ]
+      "zzemal",
+    ],
   },
-  "infernal": {
-    "softs": [
+  infernal: {
+    softs: [
       "alu",
       "alz",
       "avu",
@@ -2188,9 +2153,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "juu",
       "rhuu",
       "vuul",
-      "zuu"
+      "zuu",
     ],
-    "dulls": [
+    dulls: [
       "agh",
       "alg",
       "barg",
@@ -2290,9 +2255,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "thaug",
       "iub",
       "iug",
-      "ruug"
+      "ruug",
     ],
-    "sharps": [
+    sharps: [
       "ach",
       "akk",
       "ash",
@@ -2392,11 +2357,11 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "saur",
       "duum",
       "nuur",
-      "ruun"
-    ]
+      "ruun",
+    ],
   },
-  "empyreal": {
-    "prefixes": [
+  empyreal: {
+    prefixes: [
       "adan",
       "asan",
       "jasan",
@@ -2468,9 +2433,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "palad",
       "sardar",
       "valkar",
-      "voltar"
+      "voltar",
     ],
-    "maleSuffixes": [
+    maleSuffixes: [
       "al",
       "an",
       "ar",
@@ -2482,9 +2447,9 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "anth",
       "athal",
       "athar",
-      "athas"
+      "athas",
     ],
-    "femaleSuffixes": [
+    femaleSuffixes: [
       "el",
       "en",
       "er",
@@ -2496,18 +2461,8 @@ export const SPECIES_SYLLABLES: SpeciesSyllables = {
       "enth",
       "eleth",
       "ereth",
-      "eseth"
+      "eseth",
     ],
-    "titles": [
-      "ar-",
-      "sar-",
-      "tar-",
-      "var-",
-      "jal-",
-      "kal-",
-      "pal-",
-      "ral-",
-      "tal-"
-    ]
-  }
+    titles: ["ar-", "sar-", "tar-", "var-", "jal-", "kal-", "pal-", "ral-", "tal-"],
+  },
 };

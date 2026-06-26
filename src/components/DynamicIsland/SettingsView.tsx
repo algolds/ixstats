@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import type { SettingsViewProps } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
+import { useIsAdmin } from "~/hooks/usePermissions";
 import { PreText } from "~/components/ui/pretext";
 
 // ─── Local toggle hook ───────────────────────────────────────────────────────
@@ -83,6 +84,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   const { theme, effectiveTheme, compactMode, toggleCompactMode } = useTheme();
   const activePlugin = useActiveDIPlugin();
   const isOnWikiPage = activePlugin?.id === "wiki";
+  const isAdmin = useIsAdmin();
 
   // Wiki-specific toggles
   const [showCiteTooltips, toggleCiteTooltips] = useLocalToggle(
@@ -237,6 +239,33 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             >
               <ToggleSwitch enabled={openInNewTab} onToggle={toggleOpenInNewTab} />
             </SettingsRow>
+          </>
+        )}
+
+        {/* ── Administration ────────────────────────────────────────── */}
+        {isSignedIn && isAdmin && (
+          <>
+            <SectionLabel>Administration</SectionLabel>
+            <button
+              onClick={() => {
+                onClose();
+                window.location.href = createAbsoluteUrl("/admin");
+              }}
+              className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
+            >
+              <div className="shrink-0 rounded-md bg-red-500/15 p-1.5">
+                <Settings className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+                  Admin Panel
+                </PreText>
+                <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
+                  Manage platform settings and content
+                </PreText>
+              </div>
+              <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
+            </button>
           </>
         )}
 

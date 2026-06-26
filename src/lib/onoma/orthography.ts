@@ -114,7 +114,7 @@ function transcribeToGreek(word: string): string {
   ];
 
   let result = word;
-  
+
   // Handle ending 's' character specially (final sigma 'ς')
   let endsWithS = false;
   if (result.endsWith("s")) {

@@ -251,7 +251,9 @@ export class WikiCacheService {
       console.log(
         `[WikiCache] Cache miss for infobox: ${countryName} (${wikiSource}), fetching from API`
       );
-      const infobox = await this.getWikiService(wikiSource).getCountryInfobox(countryName, { skipCache: true });
+      const infobox = await this.getWikiService(wikiSource).getCountryInfobox(countryName, {
+        skipCache: true,
+      });
 
       const now = Date.now();
       const metadata = {
@@ -273,7 +275,9 @@ export class WikiCacheService {
       console.error(`[WikiCache] Error getting infobox for ${countryName} (${wikiSource}):`, error);
 
       // Return from API as fallback
-      const infobox = await this.getWikiService(wikiSource).getCountryInfobox(countryName, { skipCache: true });
+      const infobox = await this.getWikiService(wikiSource).getCountryInfobox(countryName, {
+        skipCache: true,
+      });
       return {
         data: infobox,
         metadata: {
@@ -356,7 +360,9 @@ export class WikiCacheService {
       console.log(
         `[WikiCache] Cache miss for page: ${pageName} (${wikiSource}), fetching from API`
       );
-      const wikitext = await this.getWikiService(wikiSource).getPageWikitext(pageName, { skipCache: true });
+      const wikitext = await this.getWikiService(wikiSource).getPageWikitext(pageName, {
+        skipCache: true,
+      });
 
       const content = typeof wikitext === "string" ? wikitext : null;
       const now = Date.now();
@@ -380,7 +386,9 @@ export class WikiCacheService {
       console.error(`[WikiCache] Error getting page ${pageName} (${wikiSource}):`, error);
 
       // Return from API as fallback
-      const wikitext = await this.getWikiService(wikiSource).getPageWikitext(pageName, { skipCache: true });
+      const wikitext = await this.getWikiService(wikiSource).getPageWikitext(pageName, {
+        skipCache: true,
+      });
       const content = typeof wikitext === "string" ? wikitext : null;
 
       return {
@@ -465,7 +473,9 @@ export class WikiCacheService {
       console.log(
         `[WikiCache] Cache miss for flag: ${countryName} (${wikiSource}), fetching from API`
       );
-      const flagUrl = await this.getWikiService(wikiSource).getFlagUrl(countryName, { skipCache: true });
+      const flagUrl = await this.getWikiService(wikiSource).getFlagUrl(countryName, {
+        skipCache: true,
+      });
 
       const url = typeof flagUrl === "string" ? flagUrl : null;
       const now = Date.now();
@@ -488,7 +498,9 @@ export class WikiCacheService {
       console.error(`[WikiCache] Error getting flag for ${countryName} (${wikiSource}):`, error);
 
       // Return from API as fallback
-      const flagUrl = await this.getWikiService(wikiSource).getFlagUrl(countryName, { skipCache: true });
+      const flagUrl = await this.getWikiService(wikiSource).getFlagUrl(countryName, {
+        skipCache: true,
+      });
       const url = typeof flagUrl === "string" ? flagUrl : null;
 
       return {

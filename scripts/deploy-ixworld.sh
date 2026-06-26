@@ -90,6 +90,14 @@ fi
 # Step 1: Install & Build (isolated from the IxStats production .next)
 log "[1/4] Preparing build environment..."
 bun install --frozen-lockfile
+
+# Run environment verification (ensures DB, Redis, and Kokoro config are valid)
+log "Verifying deployment environment..."
+if ! bun run verify:environment; then
+    log "ERROR: Environment verification failed! Fix environment issues before deploying."
+    exit 1
+fi
+
 bun run prebuild
 
 # Save the existing IxStats .next so the IxWorld build does not clobber it. (D1)

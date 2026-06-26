@@ -24,7 +24,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
-import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/flavorization";
+import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/constants";
 
 export function NarratorAdminPanel() {
   const notify = useNotify();

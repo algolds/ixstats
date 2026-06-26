@@ -214,3 +214,8 @@ scripts/onoma/raw/
 # Onoma meSpeak voice assets (served at runtime, must be tracked)
 !/public/onoma/
 !/public/onoma/**
+
+# --------------------------------------------------------------------------------
+# Kokoro TTS Service local caches
+# --------------------------------------------------------------------------------
+kokoro-cache/

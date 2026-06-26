@@ -16,6 +16,22 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Changed
 
+## [1.1.4 Ogma (Alpha)] - 2026-06-26
+
+### Added
+- **Project Onoma — Production Speech Synthesis Infrastructure**:
+  - **Browser Native SpeechSynthesis**: Implemented `speakBrowserNative` in [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
+  - **Phonetic IPA Spelling Translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
+  - **Three-Tier Fallback Playback**: Refactored [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback $\rightarrow$ client-side meSpeak.
+  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml) mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
+  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](file:///home/jxsig/projects/ixstats/scripts/deploy-ixworld.sh).
+  - **Environment Templates**: Added the `KOKORO_API_KEY` environment placeholder to [.env.example](file:///home/jxsig/projects/ixstats/.env.example).
+
+### Changed
+- **Global Navigation & Halo Settings Integration**:
+  - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in [useNavigationItems.ts](file:///home/jxsig/projects/ixstats/src/hooks/useNavigationItems.ts).
+  - Integrated the Admin Panel link into the Halo (Dynamic Island) settings overlay [SettingsView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/SettingsView.tsx), restricted to signed-in administrators (`isAdmin && isSignedIn`).
+
 ## [1.1.3 Ogma (Alpha)] - 2026-06-26
 
 ### Added

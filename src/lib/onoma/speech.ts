@@ -29,7 +29,7 @@ export interface SpeechConfig {
 }
 
 export const DEFAULT_SPEECH_CONFIG: SpeechConfig = {
-  speed: 175,
+  speed: 125,
   pitch: 50,
   amplitude: 100,
   wordgap: 0,
@@ -62,16 +62,43 @@ export function voiceForCulture(culture: string | null | undefined): string {
 // IPA → eSpeak phoneme, longest-match first. Covers the inventory phonology.ts emits.
 const IPA_TO_ESPEAK: [string, string][] = [
   // diphthongs / long vowels (multi-char first)
-  ["aɪ", "aI"], ["eɪ", "eI"], ["aʊ", "aU"], ["ɔɪ", "OI"], ["oʊ", "oU"],
-  ["iː", "i:"], ["uː", "u:"], ["aː", "A:"], ["ɑː", "A:"],
+  ["aɪ", "aI"],
+  ["eɪ", "eI"],
+  ["aʊ", "aU"],
+  ["ɔɪ", "OI"],
+  ["oʊ", "oU"],
+  ["iː", "i:"],
+  ["uː", "u:"],
+  ["aː", "A:"],
+  ["ɑː", "A:"],
   // affricates
-  ["tʃ", "tS"], ["dʒ", "dZ"], ["ts", "ts"], ["kw", "kw"], ["ks", "ks"],
+  ["tʃ", "tS"],
+  ["dʒ", "dZ"],
+  ["ts", "ts"],
+  ["kw", "kw"],
+  ["ks", "ks"],
   // single consonants
-  ["θ", "T"], ["ð", "D"], ["ʃ", "S"], ["ʒ", "Z"], ["ŋ", "N"],
-  ["ɣ", "Q"], ["ɬ", "l"], ["ʁ", "r"], ["ɾ", "r"], ["x", "x"], ["ʔ", "?"],
+  ["θ", "T"],
+  ["ð", "D"],
+  ["ʃ", "S"],
+  ["ʒ", "Z"],
+  ["ŋ", "N"],
+  ["ɣ", "Q"],
+  ["ɬ", "l"],
+  ["ʁ", "r"],
+  ["ɾ", "r"],
+  ["x", "x"],
+  ["ʔ", "?"],
   // single vowels
-  ["ø", "2"], ["œ", "9"], ["ɛ", "E"], ["ɔ", "O"], ["ə", "@"],
-  ["æ", "{"], ["y", "y"], ["ʌ", "V"], ["ɨ", "i"],
+  ["ø", "2"],
+  ["œ", "9"],
+  ["ɛ", "E"],
+  ["ɔ", "O"],
+  ["ə", "@"],
+  ["æ", "{"],
+  ["y", "y"],
+  ["ʌ", "V"],
+  ["ɨ", "i"],
 ];
 
 /**

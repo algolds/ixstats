@@ -9,7 +9,7 @@ import { classifyCulture, rankCultures } from "./culture-classifier";
 /** Assign a name to its dictionary bucket given the set of kept compound labels. */
 export function assignBucket(name: string, keptCompounds: Set<string>): string {
   const r = classifyCulture(name);
-  if (!r.compound) return r.culture;                  // clear single culture
+  if (!r.compound) return r.culture; // clear single culture
   if (keptCompounds.has(r.culture)) return r.culture; // a kept top-N compound
   return rankCultures(name)[0]?.culture ?? r.culture; // collapse tail → dominant single
 }

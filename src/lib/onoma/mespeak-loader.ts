@@ -6,8 +6,7 @@
 
 import { ipaToEspeak, voiceForCulture, getSpeechConfig } from "./speech";
 
-const basePath = () =>
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_PATH) || "";
+const basePath = () => (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_PATH) || "";
 const assetUrl = (p: string) => `${basePath()}/onoma/mespeak/${p}`;
 
 let enginePromise: Promise<any> | null = null;

@@ -257,7 +257,12 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
             if (dbUser) {
               user = {
                 id: dbUser.clerkUserId,
-                name: dbUser.wikiUsername ?? dbUser.discordUsername ?? dbUser.forumUsername ?? dbUser.country?.name ?? "User",
+                name:
+                  dbUser.wikiUsername ??
+                  dbUser.discordUsername ??
+                  dbUser.forumUsername ??
+                  dbUser.country?.name ??
+                  "User",
                 countryName: dbUser.country?.name,
                 countryId: dbUser.countryId,
                 countryFlag: dbUser.country?.flag ?? null,

@@ -25,6 +25,8 @@ import {
   SlidersHorizontal,
   BookOpen,
 } from "lucide-react";
+import { api } from "~/trpc/react";
+import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
 
 // Import sections
 import OverviewSection from "./sections/OverviewSection";
@@ -130,6 +132,11 @@ const ONOMA_TABS = [
 
 export function OnomaRouter() {
   const pathname = usePathname();
+  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
+
+  const fontLink = useMemo(() => {
+    return getGoogleFontLink(speechConfig?.brand?.fontFamily || "Inter");
+  }, [speechConfig?.brand?.fontFamily]);
 
   // Active section state
   const [activeSection, setActiveSection] = useState<OnomaSection>(() =>
@@ -172,40 +179,44 @@ export function OnomaRouter() {
   }, [bank.nameBank]);
 
   // Dynamic Studio Navigation Tabs
-  const studioTabs = useMemo(() => [
-    {
-      id: "exit-studio",
-      label: "Exit Studio",
-      icon: ArrowLeft,
-      themeColor: "#ec4899",
-      glowClassName: "bg-pink-500/10 dark:bg-pink-500/5",
-      activeIndicatorClassName: "bg-pink-500/5 border-pink-500/20 text-pink-600 dark:text-pink-400",
-      activeTextClassName: "text-pink-600 dark:text-pink-400",
-      activeIconClassName: "text-pink-500 dark:text-pink-400",
-    },
-    {
-      id: "workshop",
-      label: "Model Workshop",
-      icon: SlidersHorizontal,
-      themeColor: "#0091ff",
-      glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
-      activeIndicatorClassName:
-        "bg-[#0091ff]/5 border-[#0091ff]/20 text-[#0091ff] dark:text-[#33a7ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]",
-      activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-      activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-    },
-    {
-      id: "lexicon",
-      label: lexiconCount > 0 ? `Lexicon Dictionary (${lexiconCount})` : "Lexicon Dictionary",
-      icon: BookOpen,
-      themeColor: "#10b981",
-      glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
-      activeIndicatorClassName:
-        "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
-      activeTextClassName: "text-emerald-600 dark:text-emerald-400",
-      activeIconClassName: "text-emerald-500 dark:text-emerald-400",
-    },
-  ], [lexiconCount]);
+  const studioTabs = useMemo(
+    () => [
+      {
+        id: "exit-studio",
+        label: "Exit Studio",
+        icon: ArrowLeft,
+        themeColor: "#ec4899",
+        glowClassName: "bg-pink-500/10 dark:bg-pink-500/5",
+        activeIndicatorClassName:
+          "bg-pink-500/5 border-pink-500/20 text-pink-600 dark:text-pink-400",
+        activeTextClassName: "text-pink-600 dark:text-pink-400",
+        activeIconClassName: "text-pink-500 dark:text-pink-400",
+      },
+      {
+        id: "workshop",
+        label: "Model Workshop",
+        icon: SlidersHorizontal,
+        themeColor: "#0091ff",
+        glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+        activeIndicatorClassName:
+          "bg-[#0091ff]/5 border-[#0091ff]/20 text-[#0091ff] dark:text-[#33a7ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]",
+        activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+        activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      },
+      {
+        id: "lexicon",
+        label: lexiconCount > 0 ? `Lexicon Dictionary (${lexiconCount})` : "Lexicon Dictionary",
+        icon: BookOpen,
+        themeColor: "#10b981",
+        glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
+        activeIndicatorClassName:
+          "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
+        activeTextClassName: "text-emerald-600 dark:text-emerald-400",
+        activeIconClassName: "text-emerald-500 dark:text-emerald-400",
+      },
+    ],
+    [lexiconCount]
+  );
 
   const [showHelpModal, setShowHelpModal] = useState(false);
 
@@ -223,16 +234,13 @@ export function OnomaRouter() {
   const [studioInitialTitle, setStudioInitialTitle] = useState<string | undefined>(undefined);
 
   // Handle Studio-specific subtab navigation
-  const handleNavigateStudio = useCallback(
-    (tab: "workshop" | "lexicon") => {
-      setActiveSubTab(tab);
-      const href = `/labs/onoma/studio/${tab}`;
-      window.history.pushState(null, "", withBasePath(href));
-      document.title = `Onoma Lab - Studio: ${tab === "workshop" ? "Model Workshop" : "Lexicon Dictionary"} - IxStats`;
-      window.scrollTo({ top: 0, behavior: "instant" });
-    },
-    []
-  );
+  const handleNavigateStudio = useCallback((tab: "workshop" | "lexicon") => {
+    setActiveSubTab(tab);
+    const href = `/labs/onoma/studio/${tab}`;
+    window.history.pushState(null, "", withBasePath(href));
+    document.title = `Onoma Lab - Studio: ${tab === "workshop" ? "Model Workshop" : "Lexicon Dictionary"} - IxStats`;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
 
   // Handle SPA navigation
   const handleNavigate = useCallback(
@@ -257,8 +265,8 @@ export function OnomaRouter() {
         section === "overview"
           ? "/labs/onoma"
           : section === "studio"
-          ? `/labs/onoma/studio/${activeSubTab}`
-          : `/labs/onoma/${section}`;
+            ? `/labs/onoma/studio/${activeSubTab}`
+            : `/labs/onoma/${section}`;
       window.history.pushState(null, "", withBasePath(href));
 
       // Update document title
@@ -355,6 +363,7 @@ export function OnomaRouter() {
 
   return (
     <div className="bg-background text-foreground min-h-screen p-4 antialiased transition-colors duration-300 sm:p-6">
+      {fontLink && <link rel="stylesheet" href={fontLink} />}
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="border-border/40 flex justify-end border-b pb-4">
           <div className="flex gap-2">
@@ -378,10 +387,10 @@ export function OnomaRouter() {
             </button>
             <button
               onClick={() => handleNavigate("studio")}
-              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
                 activeSection === "studio"
-                  ? "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/30 shadow-[0_0_10px_rgba(236,72,153,0.15)]"
-                  : "border-border/40 bg-secondary/20 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-500/30 text-muted-foreground"
+                  ? "border-pink-500/30 bg-pink-500/10 text-pink-600 shadow-[0_0_10px_rgba(236,72,153,0.15)] dark:text-pink-400"
+                  : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400"
               }`}
             >
               <Wrench className="h-3.5 w-3.5" />

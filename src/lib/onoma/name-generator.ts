@@ -48,7 +48,7 @@ export function generateFantasySyllableName(): string {
   // Capitalize each part of the name
   return name
     .split(" ")
-    .map(word => MarkovChain.capitalize(word))
+    .map((word) => MarkovChain.capitalize(word))
     .join(" ");
 }
 
@@ -96,4 +96,3 @@ export function generateNobleSurname(
     return Math.random() < 0.5 ? `de ${name}` : name;
   }
 }
-

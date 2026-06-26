@@ -9,7 +9,6 @@ import {
   Database,
   Globe,
   MessageSquare,
-  Settings,
   Trophy,
 } from "lucide-react";
 import { FaWikipediaW } from "react-icons/fa";
@@ -89,13 +88,6 @@ export function useNavigationItems({
         description: "Community discussion forums",
       },
 
-      {
-        name: "Admin",
-        href: "/admin",
-        icon: Settings,
-        requiresAuth: true,
-        adminOnly: true,
-      },
       {
         name: "Wiki",
         href: "/wiki",

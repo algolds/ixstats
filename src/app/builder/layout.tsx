@@ -51,8 +51,13 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
           transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
       `}</style>
- 
-      <div data-builder-headless data-headless-nav data-show-nav={showNav} className="relative min-h-screen">
+
+      <div
+        data-builder-headless
+        data-headless-nav
+        data-show-nav={showNav}
+        className="relative min-h-screen"
+      >
         <BackgroundImageTexture
           variant="groovepaper"
           opacity={0.08}

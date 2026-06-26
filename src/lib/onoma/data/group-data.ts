@@ -2,14 +2,14 @@
 // Generated from original Onoma groupNamesGenerator.js templates.
 
 export const MYSTIC_ORDER_DATA = {
-  "patterns": [
+  patterns: [
     "<group> of the <entity>",
     "<group> of the <description> <entity>",
     "<description> <group> of the <description> <entity>",
-    "<description> <group>"
+    "<description> <group>",
   ],
-  "group": {
-    "cliques": [
+  group: {
+    cliques: [
       "alliance",
       "association",
       "band",
@@ -28,9 +28,9 @@ export const MYSTIC_ORDER_DATA = {
       "siblingship",
       "sisterhood",
       "society",
-      "sorority"
+      "sorority",
     ],
-    "people": [
+    people: [
       "adepts",
       "apostles",
       "aspirants",
@@ -53,11 +53,11 @@ export const MYSTIC_ORDER_DATA = {
       "servants",
       "siblings",
       "sisters",
-      "votaries"
-    ]
+      "votaries",
+    ],
   },
-  "description": {
-    "quality": [
+  description: {
+    quality: [
       "ancient",
       "arcane",
       "astral",
@@ -125,9 +125,9 @@ export const MYSTIC_ORDER_DATA = {
       "transcendent",
       "true",
       "veiled",
-      "zetetic"
+      "zetetic",
     ],
-    "colour": [
+    colour: [
       "amber",
       "amethyst",
       "aquamarine",
@@ -174,10 +174,10 @@ export const MYSTIC_ORDER_DATA = {
       "violet",
       "viridian",
       "white",
-      "yellow"
-    ]
+      "yellow",
+    ],
   },
-  "entities": [
+  entities: [
     "arcana",
     "beyond",
     "chalice",
@@ -263,17 +263,17 @@ export const MYSTIC_ORDER_DATA = {
     "way",
     "wisdom",
     "word",
-    "world"
-  ]
+    "world",
+  ],
 };
 export const MILITARY_UNIT_DATA = {
-  "patterns": [
+  patterns: [
     "<commander>'s <group>",
     "<description> <group>",
     "<description> <description> <group>",
-    "<group> of the <place>"
+    "<group> of the <place>",
   ],
-  "groups": [
+  groups: [
     [
       "armada",
       "army",
@@ -300,7 +300,7 @@ export const MILITARY_UNIT_DATA = {
       "squad",
       "squadron",
       "troop",
-      "vanguard"
+      "vanguard",
     ],
     [
       "avengers",
@@ -316,7 +316,7 @@ export const MILITARY_UNIT_DATA = {
       "troopers",
       "veterans",
       "victors",
-      "warriors"
+      "warriors",
     ],
     [
       "crusaders",
@@ -333,17 +333,9 @@ export const MILITARY_UNIT_DATA = {
       "sentries",
       "wardens",
       "warders",
-      "watchers"
+      "watchers",
     ],
-    [
-      "bandits",
-      "destroyers",
-      "devourers",
-      "marauders",
-      "pirates",
-      "raptors",
-      "reavers"
-    ],
+    ["bandits", "destroyers", "devourers", "marauders", "pirates", "raptors", "reavers"],
     [
       "arrows",
       "axes",
@@ -369,7 +361,7 @@ export const MILITARY_UNIT_DATA = {
       "spears",
       "swords",
       "talons",
-      "teeth"
+      "teeth",
     ],
     [
       "angels",
@@ -390,22 +382,12 @@ export const MILITARY_UNIT_DATA = {
       "sharks",
       "tigers",
       "vipers",
-      "wolves"
-    ]
-  ],
-  "description": {
-    "colour": [
-      "black",
-      "white",
-      "red",
-      "gold",
-      "silver",
-      "iron",
-      "blue",
-      "green",
-      "grey"
+      "wolves",
     ],
-    "other": [
+  ],
+  description: {
+    colour: ["black", "white", "red", "gold", "silver", "iron", "blue", "green", "grey"],
+    other: [
       "battle",
       "blood",
       "bolt",
@@ -437,11 +419,11 @@ export const MILITARY_UNIT_DATA = {
       "wave",
       "wind",
       "wing",
-      "wrath"
-    ]
+      "wrath",
+    ],
   },
-  "places": {
-    "seas": [
+  places: {
+    seas: [
       "billow",
       "breaker",
       "brine",
@@ -453,9 +435,9 @@ export const MILITARY_UNIT_DATA = {
       "surf",
       "swell",
       "water",
-      "wave"
+      "wave",
     ],
-    "lands": [
+    lands: [
       "cave",
       "cavern",
       "city",
@@ -488,12 +470,12 @@ export const MILITARY_UNIT_DATA = {
       "valley",
       "water",
       "way",
-      "wood"
-    ]
-  }
+      "wood",
+    ],
+  },
 };
 export const COVERT_ORG_DATA = {
-  "roles": [
+  roles: [
     "arrangers",
     "bestowers",
     "disbursers",
@@ -502,9 +484,9 @@ export const COVERT_ORG_DATA = {
     "reconcilers",
     "regulators",
     "reinstaters",
-    "restorers"
+    "restorers",
   ],
-  "goals": [
+  goals: [
     "balance",
     "congruity",
     "correlation",
@@ -514,9 +496,9 @@ export const COVERT_ORG_DATA = {
     "equity",
     "equivalence",
     "parity",
-    "symmetry"
+    "symmetry",
   ],
-  "adjectives": [
+  adjectives: [
     "acute",
     "apposite",
     "apt",
@@ -530,9 +512,9 @@ export const COVERT_ORG_DATA = {
     "reliable",
     "supreme",
     "ultimate",
-    "utmost"
+    "utmost",
   ],
-  "actions": [
+  actions: [
     "action",
     "justice",
     "reckoning",
@@ -543,18 +525,18 @@ export const COVERT_ORG_DATA = {
     "requital",
     "retribution",
     "satisfaction",
-    "vindication"
+    "vindication",
   ],
-  "titles": [
+  titles: [
     "alliance",
     "association",
     "company",
     "corporation",
     "organisation",
     "society",
-    "syndicate"
+    "syndicate",
   ],
-  "descriptions": [
+  descriptions: [
     "black",
     "cloud",
     "dark",
@@ -575,53 +557,12 @@ export const COVERT_ORG_DATA = {
     "red",
     "ready",
     "sharp",
-    "sudden"
+    "sudden",
   ],
-  "groups": [
-    [
-      "blade",
-      "bolt",
-      "claw",
-      "dagger",
-      "dirk",
-      "fang",
-      "hand",
-      "knife"
-    ],
-    [
-      "balance",
-      "hourglass",
-      "scales",
-      "cloak",
-      "cowl",
-      "hand",
-      "hood",
-      "mantle",
-      "mask"
-    ],
-    [
-      "snake",
-      "scorpion",
-      "spider",
-      "bat",
-      "cat",
-      "daw",
-      "dog",
-      "owl",
-      "pye",
-      "rat",
-      "weasel"
-    ],
-    [
-      "bring",
-      "find",
-      "hunt",
-      "kill",
-      "search",
-      "seek",
-      "shadow",
-      "slay",
-      "stalk"
-    ]
-  ]
+  groups: [
+    ["blade", "bolt", "claw", "dagger", "dirk", "fang", "hand", "knife"],
+    ["balance", "hourglass", "scales", "cloak", "cowl", "hand", "hood", "mantle", "mask"],
+    ["snake", "scorpion", "spider", "bat", "cat", "daw", "dog", "owl", "pye", "rat", "weasel"],
+    ["bring", "find", "hunt", "kill", "search", "seek", "shadow", "slay", "stalk"],
+  ],
 };

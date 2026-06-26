@@ -1,31 +1,34 @@
 // scripts/extract-onoma-data.ts
-import * as fs from 'fs';
-import * as path from 'path';
-import * as vm from 'vm';
+import * as fs from "fs";
+import * as path from "path";
+import * as vm from "vm";
 
-const SCRATCH_DIR = '/home/jxsig/.gemini/antigravity-ide/scratch/onoma';
-const DEST_DIR = '/home/jxsig/projects/ixstats/src/lib/onoma/data';
+const SCRATCH_DIR = "/home/jxsig/.gemini/antigravity-ide/scratch/onoma";
+const DEST_DIR = "/home/jxsig/projects/ixstats/src/lib/onoma/data";
 
 if (!fs.existsSync(DEST_DIR)) {
   fs.mkdirSync(DEST_DIR, { recursive: true });
 }
 
 // 1. Extract NameGenerator names array
-console.log('Extracting name generator syllables...');
-let nameGenCode = fs.readFileSync(path.join(SCRATCH_DIR, 'js', 'services', 'nameGenerator.js'), 'utf8');
-const nameGenReturnIdx = nameGenCode.indexOf('return {');
+console.log("Extracting name generator syllables...");
+let nameGenCode = fs.readFileSync(
+  path.join(SCRATCH_DIR, "js", "services", "nameGenerator.js"),
+  "utf8"
+);
+const nameGenReturnIdx = nameGenCode.indexOf("return {");
 if (nameGenReturnIdx === -1) {
-  throw new Error('Could not find return statement in nameGenerator.js');
+  throw new Error("Could not find return statement in nameGenerator.js");
 }
 // Truncate at return and replace with custom return
-nameGenCode = nameGenCode.substring(0, nameGenReturnIdx) + 'return { names: names }; \n}]);';
+nameGenCode = nameGenCode.substring(0, nameGenReturnIdx) + "return { names: names }; \n}]);";
 
 let extractedNames: any = null;
 const mockApp1 = {
   factory: (name: string, fnArray: any[]) => {
     const fn = fnArray[fnArray.length - 1];
     extractedNames = fn().names;
-  }
+  },
 };
 
 const nameGenContext = { app: mockApp1, console };
@@ -38,27 +41,31 @@ if (extractedNames && Array.isArray(extractedNames)) {
 
 export const FANTASY_SYLLABLES: string[][] = ${JSON.stringify(extractedNames, null, 2)};
 `;
-  fs.writeFileSync(path.join(DEST_DIR, 'fantasy-names-data.ts'), fileContent, 'utf8');
+  fs.writeFileSync(path.join(DEST_DIR, "fantasy-names-data.ts"), fileContent, "utf8");
   console.log(`Saved fantasy-names-data.ts with ${extractedNames.length} syllable groups`);
 } else {
-  console.error('Failed to extract names array from nameGenerator.js');
+  console.error("Failed to extract names array from nameGenerator.js");
 }
 
 // 2. Extract SpeciesGenerator names
-console.log('Extracting species syllables...');
-let speciesGenCode = fs.readFileSync(path.join(SCRATCH_DIR, 'js', 'services', 'fantasticSpeciesGenerator.js'), 'utf8');
-const speciesGenReturnIdx = speciesGenCode.indexOf('return {');
+console.log("Extracting species syllables...");
+let speciesGenCode = fs.readFileSync(
+  path.join(SCRATCH_DIR, "js", "services", "fantasticSpeciesGenerator.js"),
+  "utf8"
+);
+const speciesGenReturnIdx = speciesGenCode.indexOf("return {");
 if (speciesGenReturnIdx === -1) {
-  throw new Error('Could not find return statement in fantasticSpeciesGenerator.js');
+  throw new Error("Could not find return statement in fantasticSpeciesGenerator.js");
 }
-speciesGenCode = speciesGenCode.substring(0, speciesGenReturnIdx) + 'return { names: names }; \n}]);';
+speciesGenCode =
+  speciesGenCode.substring(0, speciesGenReturnIdx) + "return { names: names }; \n}]);";
 
 let extractedSpecies: any = null;
 const mockApp2 = {
   factory: (name: string, fnArray: any[]) => {
     const fn = fnArray[fnArray.length - 1];
     extractedSpecies = fn().names;
-  }
+  },
 };
 
 const speciesGenContext = { app: mockApp2, String: { prototype: {} }, console };
@@ -72,8 +79,8 @@ if (extractedSpecies) {
     const obj: any = val;
     formatted[key] = {};
     for (const [propName, propVal] of Object.entries(obj)) {
-      if (propName === 'syllabes') {
-        formatted[key]['syllables'] = propVal;
+      if (propName === "syllabes") {
+        formatted[key]["syllables"] = propVal;
       } else {
         formatted[key][propName] = propVal;
       }
@@ -155,27 +162,32 @@ export interface SpeciesSyllables {
 
 export const SPECIES_SYLLABLES: SpeciesSyllables = ${JSON.stringify(formatted, null, 2)};
 `;
-  fs.writeFileSync(path.join(DEST_DIR, 'species-data.ts'), fileContent, 'utf8');
-  console.log('Saved species-data.ts');
+  fs.writeFileSync(path.join(DEST_DIR, "species-data.ts"), fileContent, "utf8");
+  console.log("Saved species-data.ts");
 } else {
-  console.error('Failed to extract species syllables');
+  console.error("Failed to extract species syllables");
 }
 
 // 3. Extract GroupGenerator names
-console.log('Extracting group/organization templates...');
-let groupGenCode = fs.readFileSync(path.join(SCRATCH_DIR, 'js', 'services', 'groupNamesGenerator.js'), 'utf8');
-const groupGenReturnIdx = groupGenCode.indexOf('return {');
+console.log("Extracting group/organization templates...");
+let groupGenCode = fs.readFileSync(
+  path.join(SCRATCH_DIR, "js", "services", "groupNamesGenerator.js"),
+  "utf8"
+);
+const groupGenReturnIdx = groupGenCode.indexOf("return {");
 if (groupGenReturnIdx === -1) {
-  throw new Error('Could not find return statement in groupNamesGenerator.js');
+  throw new Error("Could not find return statement in groupNamesGenerator.js");
 }
-groupGenCode = groupGenCode.substring(0, groupGenReturnIdx) + 'return { mysticOrder: mysticOrder, militaryUnit: militaryUnit, thievesAndAssassins: thievesAndAssassins }; \n}]);';
+groupGenCode =
+  groupGenCode.substring(0, groupGenReturnIdx) +
+  "return { mysticOrder: mysticOrder, militaryUnit: militaryUnit, thievesAndAssassins: thievesAndAssassins }; \n}]);";
 
 let extractedGroups: any = null;
 const mockApp3 = {
   factory: (name: string, fnArray: any[]) => {
     const fn = fnArray[fnArray.length - 1];
     extractedGroups = fn();
-  }
+  },
 };
 
 const groupGenContext = { app: mockApp3, String: { prototype: {} }, console };
@@ -190,27 +202,32 @@ export const MYSTIC_ORDER_DATA = ${JSON.stringify(extractedGroups.mysticOrder, n
 export const MILITARY_UNIT_DATA = ${JSON.stringify(extractedGroups.militaryUnit, null, 2)};
 export const COVERT_ORG_DATA = ${JSON.stringify(extractedGroups.thievesAndAssassins, null, 2)};
 `;
-  fs.writeFileSync(path.join(DEST_DIR, 'group-data.ts'), fileContent, 'utf8');
-  console.log('Saved group-data.ts');
+  fs.writeFileSync(path.join(DEST_DIR, "group-data.ts"), fileContent, "utf8");
+  console.log("Saved group-data.ts");
 } else {
-  console.error('Failed to extract group templates');
+  console.error("Failed to extract group templates");
 }
 
 // 4. Extract TavernGenerator defaultValues
-console.log('Extracting tavern word lists...');
-let tavernGenCode = fs.readFileSync(path.join(SCRATCH_DIR, 'js', 'services', 'tavernGenerator.js'), 'utf8');
-const tavernGenReturnIdx = tavernGenCode.indexOf('return {');
+console.log("Extracting tavern word lists...");
+let tavernGenCode = fs.readFileSync(
+  path.join(SCRATCH_DIR, "js", "services", "tavernGenerator.js"),
+  "utf8"
+);
+const tavernGenReturnIdx = tavernGenCode.indexOf("return {");
 if (tavernGenReturnIdx === -1) {
-  throw new Error('Could not find return statement in tavernGenerator.js');
+  throw new Error("Could not find return statement in tavernGenerator.js");
 }
-tavernGenCode = tavernGenCode.substring(0, tavernGenReturnIdx) + 'return { patterns: patterns, defaultValues: defaultValues }; \n}]);';
+tavernGenCode =
+  tavernGenCode.substring(0, tavernGenReturnIdx) +
+  "return { patterns: patterns, defaultValues: defaultValues }; \n}]);";
 
 let extractedTavern: any = null;
 const mockApp4 = {
   factory: (name: string, fnArray: any[]) => {
     const fn = fnArray[fnArray.length - 1];
     extractedTavern = fn();
-  }
+  },
 };
 
 const tavernGenContext = { app: mockApp4, String: { prototype: {} }, console };
@@ -228,21 +245,24 @@ export const TAVERN_DATA = {
   titles: ${JSON.stringify(extractedTavern.defaultValues.titles, null, 2)}
 };
 `;
-  fs.writeFileSync(path.join(DEST_DIR, 'tavern-data.ts'), fileContent, 'utf8');
-  console.log('Saved tavern-data.ts');
+  fs.writeFileSync(path.join(DEST_DIR, "tavern-data.ts"), fileContent, "utf8");
+  console.log("Saved tavern-data.ts");
 } else {
-  console.error('Failed to extract tavern word lists');
+  console.error("Failed to extract tavern word lists");
 }
 
 // 5. Extract Default Dictionaries from json file
-console.log('Extracting default dictionaries...');
-const dictsJson = fs.readFileSync(path.join(SCRATCH_DIR, 'data', 'defaultDictionaries.json'), 'utf8');
+console.log("Extracting default dictionaries...");
+const dictsJson = fs.readFileSync(
+  path.join(SCRATCH_DIR, "data", "defaultDictionaries.json"),
+  "utf8"
+);
 const parsedDicts = JSON.parse(dictsJson);
 
 const mappedDicts = parsedDicts.map((d: any) => ({
   id: d._id,
   title: d.title,
-  values: d.values
+  values: d.values,
 }));
 
 const dictsFileContent = `// src/lib/onoma/data/default-dictionaries.ts
@@ -256,6 +276,6 @@ export interface DefaultDictionary {
 
 export const DEFAULT_DICTIONARIES: DefaultDictionary[] = ${JSON.stringify(mappedDicts, null, 2)};
 `;
-fs.writeFileSync(path.join(DEST_DIR, 'default-dictionaries.ts'), dictsFileContent, 'utf8');
-console.log('Saved default-dictionaries.ts');
-console.log('All Onoma data extracted successfully!');
+fs.writeFileSync(path.join(DEST_DIR, "default-dictionaries.ts"), dictsFileContent, "utf8");
+console.log("Saved default-dictionaries.ts");
+console.log("All Onoma data extracted successfully!");

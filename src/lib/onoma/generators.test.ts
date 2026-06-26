@@ -28,7 +28,9 @@ describe("Onoma Lab Category Preset Generators", () => {
   test("generateAcademicInstitutionName should generate academy/university names", () => {
     const nameWithChain = generateAcademicInstitutionName(chain);
     expect(nameWithChain).toBeDefined();
-    expect(nameWithChain).toMatch(/(University|Academy|College|Institute|Lyceum|Conservatory|School)/);
+    expect(nameWithChain).toMatch(
+      /(University|Academy|College|Institute|Lyceum|Conservatory|School)/
+    );
 
     const nameWithoutChain = generateAcademicInstitutionName();
     expect(nameWithoutChain).toBeDefined();

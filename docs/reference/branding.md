@@ -425,7 +425,7 @@ Prototype and early-stage experimental systems. Nav icon: GiSoapExperiment (Game
 | Lab | Icon | Description |
 |---|---|---|
 | **Vexel** | GiVibratingShield | — |
-| **Onoma** | Database | — |
+| **Onoma** | GiSoapExperiment / Rotating DNA Helix | Language & Naming Engine: Procedural name generator + conlang linguistics engine with interactive Markov path visualizer, Shannon entropy analytics, case declensions, and three-tier fallback speech synthesis (Kokoro TTS container + Web Speech API + meSpeak). |
 | **Strata** | FaTreeCity | — |
 | **Dynas** | GiFamilyTree | — |
 | **Nomora** | FaLanguage | — |

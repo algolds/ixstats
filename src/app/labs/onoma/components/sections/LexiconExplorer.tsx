@@ -104,15 +104,15 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
   const HealthIcon = healthTheme.icon;
 
   return (
-    <FacetCard className="p-4 border border-border/40 bg-secondary/5 space-y-5 flex flex-col justify-between h-full">
+    <FacetCard className="border-border/40 bg-secondary/5 flex h-full flex-col justify-between space-y-5 border p-4">
       {/* Header */}
-      <div className="border-b border-border/40 pb-3 flex items-center justify-between">
+      <div className="border-border/40 flex items-center justify-between border-b pb-3">
         <div>
-          <h3 className="text-sm font-bold tracking-tight text-[#0091ff] flex items-center gap-1.5">
+          <h3 className="flex items-center gap-1.5 text-sm font-bold tracking-tight text-[#0091ff]">
             <Activity className="h-4 w-4" />
             <span>Lexicon Explorer & Health</span>
           </h3>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
+          <p className="text-muted-foreground mt-0.5 text-[11px]">
             Real-time phonetic and structure analysis of the seed list.
           </p>
         </div>
@@ -121,9 +121,11 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
       {/* Main Grid: Health Indicator vs Phonetic Diversity */}
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Health Score Panel */}
-        <div className={`p-3.5 rounded-xl border ${healthTheme.border} ${healthTheme.bg} space-y-3`}>
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div
+          className={`rounded-xl border p-3.5 ${healthTheme.border} ${healthTheme.bg} space-y-3`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Lexicon Health
             </span>
             <HealthIcon className={`h-4.5 w-4.5 ${healthTheme.text}`} />
@@ -133,11 +135,11 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
             <span className={`text-3xl font-extrabold tracking-tight ${healthTheme.text}`}>
               {healthReport.score}
             </span>
-            <span className="text-xs text-muted-foreground">/ 100</span>
+            <span className="text-muted-foreground text-xs">/ 100</span>
           </div>
 
           {/* Mini Health Bar */}
-          <div className="w-full h-1.5 rounded-full bg-secondary/60 overflow-hidden">
+          <div className="bg-secondary/60 h-1.5 w-full overflow-hidden rounded-full">
             <div
               className={`h-full rounded-full ${healthTheme.bar} transition-all duration-300`}
               style={{ width: `${healthReport.score}%` }}
@@ -152,10 +154,13 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
                 <span>All health parameters check out perfectly!</span>
               </div>
             ) : (
-              <div className="max-h-[110px] overflow-y-auto pr-1 space-y-1.5">
+              <div className="max-h-[110px] space-y-1.5 overflow-y-auto pr-1">
                 {healthReport.issues.map((issue, idx) => (
-                  <div key={idx} className="flex gap-1.5 items-start text-[10px] text-foreground/80 dark:text-foreground/90 leading-tight">
-                    <span className="text-amber-500 mt-0.5 font-bold shrink-0">•</span>
+                  <div
+                    key={idx}
+                    className="text-foreground/80 dark:text-foreground/90 flex items-start gap-1.5 text-[10px] leading-tight"
+                  >
+                    <span className="mt-0.5 shrink-0 font-bold text-amber-500">•</span>
                     <span>{issue}</span>
                   </div>
                 ))}
@@ -165,35 +170,33 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         </div>
 
         {/* Phonetic Diversity / Shannon Entropy Panel */}
-        <div className={`p-3.5 rounded-xl border ${diversityInfo.color} space-y-3 flex flex-col justify-between`}>
+        <div
+          className={`rounded-xl border p-3.5 ${diversityInfo.color} flex flex-col justify-between space-y-3`}
+        >
           <div className="space-y-1.5">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Phonetic Diversity
               </span>
-              <Award className="h-4.5 w-4.5 text-muted-foreground/75" />
+              <Award className="text-muted-foreground/75 h-4.5 w-4.5" />
             </div>
 
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-extrabold tracking-tight">
-                {entropy.toFixed(2)}
-              </span>
-              <span className="text-xs text-muted-foreground">bits / letter</span>
+              <span className="text-3xl font-extrabold tracking-tight">{entropy.toFixed(2)}</span>
+              <span className="text-muted-foreground text-xs">bits / letter</span>
             </div>
 
-            <span className="text-xs font-bold block">{diversityInfo.label}</span>
-            <p className="text-[10px] text-muted-foreground leading-snug">
-              {diversityInfo.desc}
-            </p>
+            <span className="block text-xs font-bold">{diversityInfo.label}</span>
+            <p className="text-muted-foreground text-[10px] leading-snug">{diversityInfo.desc}</p>
           </div>
 
           {/* Diversity progress bar */}
-          <div className="space-y-1 pt-1 mt-auto">
-            <div className="flex justify-between text-[9px] text-muted-foreground font-semibold">
+          <div className="mt-auto space-y-1 pt-1">
+            <div className="text-muted-foreground flex justify-between text-[9px] font-semibold">
               <span>Entropy Range</span>
               <span>{diversityInfo.pct}%</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-secondary/60 overflow-hidden">
+            <div className="bg-secondary/60 h-1.5 w-full overflow-hidden rounded-full">
               <div
                 className={`h-full rounded-full bg-[#0091ff] transition-all duration-300`}
                 style={{ width: `${diversityInfo.pct}%` }}
@@ -204,16 +207,16 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
       </div>
 
       {/* Stats Section: Letters vs Bigrams/Trigrams */}
-      <div className="grid gap-4 sm:grid-cols-2 pt-2">
+      <div className="grid gap-4 pt-2 sm:grid-cols-2">
         {/* Letter Frequencies */}
         <div className="space-y-2.5">
-          <h4 className="text-xs font-bold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5 border-b border-border/40 pb-1.5">
+          <h4 className="text-muted-foreground border-border/40 flex items-center gap-1.5 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
             <BarChart3 className="h-3.5 w-3.5 text-[#0091ff]" />
             <span>Top Letter Densities</span>
           </h4>
 
           {letterFrequencies.length === 0 ? (
-            <div className="text-center py-6 text-[10px] text-muted-foreground">
+            <div className="text-muted-foreground py-6 text-center text-[10px]">
               No letter data available.
             </div>
           ) : (
@@ -221,10 +224,10 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
               {letterFrequencies.map(({ letter, frequency }) => (
                 <div key={letter} className="space-y-0.5">
                   <div className="flex justify-between text-[10px] font-semibold">
-                    <span className="font-mono uppercase text-foreground">{letter}</span>
+                    <span className="text-foreground font-mono uppercase">{letter}</span>
                     <span className="text-muted-foreground">{(frequency * 100).toFixed(1)}%</span>
                   </div>
-                  <div className="w-full h-1 rounded-full bg-secondary/50 overflow-hidden">
+                  <div className="bg-secondary/50 h-1 w-full overflow-hidden rounded-full">
                     <div
                       className="h-full rounded-full bg-[#0091ff]/60"
                       style={{ width: `${frequency * 100}%` }}
@@ -238,7 +241,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
 
         {/* N-Gram Frequencies (Bigrams/Trigrams Side-by-side or combined list) */}
         <div className="space-y-2.5">
-          <h4 className="text-xs font-bold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5 border-b border-border/40 pb-1.5">
+          <h4 className="text-muted-foreground border-border/40 flex items-center gap-1.5 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
             <Layers className="h-3.5 w-3.5 text-[#0091ff]" />
             <span>Frequent Substrings</span>
           </h4>
@@ -246,16 +249,16 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
           <div className="grid grid-cols-2 gap-3.5">
             {/* Bigrams */}
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase block border-b border-border/20 pb-0.5">
+              <span className="text-muted-foreground border-border/20 block border-b pb-0.5 text-[10px] font-bold uppercase">
                 Bigrams (2-char)
               </span>
               {bigrams.length === 0 ? (
-                <div className="text-[9px] text-muted-foreground py-2 text-center">None</div>
+                <div className="text-muted-foreground py-2 text-center text-[9px]">None</div>
               ) : (
                 <div className="space-y-1">
                   {bigrams.map(({ ngram, count }) => (
-                    <div key={ngram} className="flex justify-between items-center text-[10px]">
-                      <span className="font-mono font-bold text-foreground bg-secondary/50 px-1 py-0.5 rounded uppercase">
+                    <div key={ngram} className="flex items-center justify-between text-[10px]">
+                      <span className="text-foreground bg-secondary/50 rounded px-1 py-0.5 font-mono font-bold uppercase">
                         {ngram}
                       </span>
                       <span className="text-muted-foreground text-[9px] font-semibold">
@@ -269,16 +272,16 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
 
             {/* Trigrams */}
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase block border-b border-border/20 pb-0.5">
+              <span className="text-muted-foreground border-border/20 block border-b pb-0.5 text-[10px] font-bold uppercase">
                 Trigrams (3-char)
               </span>
               {trigrams.length === 0 ? (
-                <div className="text-[9px] text-muted-foreground py-2 text-center">None</div>
+                <div className="text-muted-foreground py-2 text-center text-[9px]">None</div>
               ) : (
                 <div className="space-y-1">
                   {trigrams.map(({ ngram, count }) => (
-                    <div key={ngram} className="flex justify-between items-center text-[10px]">
-                      <span className="font-mono font-bold text-foreground bg-secondary/50 px-1 py-0.5 rounded uppercase">
+                    <div key={ngram} className="flex items-center justify-between text-[10px]">
+                      <span className="text-foreground bg-secondary/50 rounded px-1 py-0.5 font-mono font-bold uppercase">
                         {ngram}
                       </span>
                       <span className="text-muted-foreground text-[9px] font-semibold">

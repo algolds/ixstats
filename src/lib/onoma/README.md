@@ -50,6 +50,8 @@ src/lib/onoma/
   perplexity.ts          Char n-gram LM → name "naturalness" 0–100 (Phase 5)
   speech.ts              IPA→eSpeak phoneme converter + culture→voice map (Phase 7, pure)
   mespeak-loader.ts      Lazy meSpeak (asm.js eSpeak) loader; speaks names from IPA (browser)
+  browser-speech.ts      Browser-native SpeechSynthesis player mapping naming cultures to language tags
+  branding-utils.ts      Linguistic flanking styles, Google Fonts registry, and IPA-to-Speech-Spelling converter
   lexicon-analytics.ts   Shannon entropy, letter/bigram/trigram freqs, 0–100 health audit
   species/group/tavern   Rule-based assemblers (port)
   cultural-profiles.ts   8 culture word lists (preset training + classifier training)
@@ -112,14 +114,8 @@ Applied per generated name (in `NameResultCard`), all pure-TS and deterministic:
 
 Two distinct modes (two buttons in `NameResultCard`), not one speaker:
 
-- **🔊 Pronounce** (done) — the *pronunciation engine*. `speakName(name, ipa, culture)` (in
-  `mespeak-loader.ts`, browser-only) lazy-loads **meSpeak** (asm.js eSpeak — no WASM, no CSP
-  change) and articulates the **IPA** via `ipaToEspeak` → eSpeak `[[phoneme]]` in a
-  culture-matched voice (`voiceForCulture`); falls back to native Web Speech on error. eSpeak is
-  robotic by design — it teaches *how* a name is said, it is not a natural voice. Assets live in
-  `public/onoma/mespeak/` (config + `voices/<id>.json`; English id is `en/en`).
-- **🎙 Read Naturally** (pending) — immersive AI voice (Fish Speech / Kokoro / Chatterbox). Button
-  is present but disabled until that engine is wired. Same word→IPA pipeline, different backend.
+- **🔊 Pronounce** (done) — the *pronunciation engine*. Uses the browser's native Web Speech API `window.speechSynthesis` (mapping conworld naming cultures to BCP-47 language tags) and translates IPA to phonetic spelled syllable chunks (`branding-utils.ts` -> `ipaToSpeechSpelling`). Falls back to client-side **meSpeak** (eSpeak asm.js, lazy-loaded in `mespeak-loader.ts` reading IPA from eSpeak phoneme definitions) if the browser engine fails or is unsupported.
+- **🎙 Read Naturally** (done) — immersive natural neural voice. Proxies requests to a self-hosted **Kokoro TTS service** Docker container running in the production stack via Next.js `/api/onoma/tts`. Caches synthesized name audio files inside Redis (for fast playback and minimal API calls). Falls back automatically to the browser-native synthesis voice, and finally falls back to meSpeak on complete failure.
 
 ## Lexicon analytics
 

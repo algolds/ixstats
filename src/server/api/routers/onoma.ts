@@ -3,7 +3,12 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 import { ActivityGenerator } from "~/lib/activity-generator";
 import { CULTURE_VOICE, DEFAULT_SPEECH_CONFIG } from "~/lib/onoma/speech";
 
@@ -16,9 +21,11 @@ export const onomaRouter = createTRPCRouter({
    */
   getNameBank: protectedProcedure
     .input(
-      z.object({
-        type: z.enum(["dictionary", "saved-name"]).optional(),
-      }).optional()
+      z
+        .object({
+          type: z.enum(["dictionary", "saved-name"]).optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -57,7 +64,10 @@ export const onomaRouter = createTRPCRouter({
           } catch {
             // Fallback for legacy comma-separated values
             if (item.contentType === "dictionary") {
-              values = item.note.split(",").map((v) => v.trim()).filter(Boolean);
+              values = item.note
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean);
             }
           }
         }
@@ -98,10 +108,12 @@ export const onomaRouter = createTRPCRouter({
    */
   getPublicDictionaries: publicProcedure
     .input(
-      z.object({
-        category: z.string().nullable().optional(),
-        culturalProfile: z.string().nullable().optional(),
-      }).optional()
+      z
+        .object({
+          category: z.string().nullable().optional(),
+          culturalProfile: z.string().nullable().optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -527,6 +539,18 @@ export const onomaRouter = createTRPCRouter({
     for (const culture of Object.keys(CULTURE_VOICE)) {
       voices[culture] = map.get(`onoma.voice.${culture}`) || CULTURE_VOICE[culture];
     }
+    const kokoroEnabled = map.get("onoma.kokoro.enabled") === "true";
+    const kokoroVoice = map.get("onoma.kokoro.voice") || "af_heart";
+    const kokoroModel = map.get("onoma.kokoro.model") || "model_q8f16";
+    const kokoroSpeedVal = map.get("onoma.kokoro.speed");
+    const kokoroSpeed =
+      kokoroSpeedVal != null && kokoroSpeedVal !== "" ? Number(kokoroSpeedVal) : 1.0;
+
+    const brandVariation = map.get("onoma.brand.variation") || "nucleus";
+    const brandNucleusSymbol = map.get("onoma.brand.nucleusSymbol") || "ə";
+    const brandFlankingStyle = map.get("onoma.brand.flankingStyle") || "brackets";
+    const brandFontFamily = map.get("onoma.brand.fontFamily") || "Inter";
+
     return {
       speed: num("speed", DEFAULT_SPEECH_CONFIG.speed),
       pitch: num("pitch", DEFAULT_SPEECH_CONFIG.pitch),
@@ -534,6 +558,18 @@ export const onomaRouter = createTRPCRouter({
       wordgap: num("wordgap", DEFAULT_SPEECH_CONFIG.wordgap),
       variant: map.get("onoma.speech.variant") ?? DEFAULT_SPEECH_CONFIG.variant,
       voices,
+      kokoro: {
+        enabled: kokoroEnabled,
+        voice: kokoroVoice,
+        speed: kokoroSpeed,
+        model: kokoroModel,
+      },
+      brand: {
+        variation: brandVariation,
+        nucleusSymbol: brandNucleusSymbol,
+        flankingStyle: brandFlankingStyle,
+        fontFamily: brandFontFamily,
+      },
     };
   }),
 
@@ -563,6 +599,117 @@ export const onomaRouter = createTRPCRouter({
             where: { key: e.key },
             update: { value: e.value, updatedAt: new Date() },
             create: { key: e.key, value: e.value, description: `Onoma pronunciation: ${e.key}` },
+          })
+        )
+      );
+      return { success: true };
+    }),
+
+  /** Admin: get the Kokoro natural voice config including secrets. */
+  getKokoroAdminConfig: adminProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db.systemConfig.findMany({
+      where: { key: { startsWith: "onoma.kokoro." } },
+    });
+    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const speedVal = map.get("onoma.kokoro.speed");
+    return {
+      enabled: map.get("onoma.kokoro.enabled") === "true",
+      baseUrl: map.get("onoma.kokoro.baseUrl") || "",
+      apiKey: map.get("onoma.kokoro.apiKey") || "",
+      model: map.get("onoma.kokoro.model") || "model_q8f16",
+      voice: map.get("onoma.kokoro.voice") || "af_heart",
+      speed: speedVal != null && speedVal !== "" ? Number(speedVal) : 1.0,
+    };
+  }),
+
+  /** Admin: persist the Kokoro config keys. */
+  updateKokoroConfig: adminProcedure
+    .input(
+      z.object({
+        enabled: z.boolean(),
+        baseUrl: z.string().url().or(z.string().length(0)),
+        apiKey: z.string(),
+        model: z.string(),
+        voice: z.string(),
+        speed: z.number().min(0.2).max(5.0),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const entries = [
+        {
+          key: "onoma.kokoro.enabled",
+          value: String(input.enabled),
+          desc: "Kokoro natural voice: enabled",
+        },
+        {
+          key: "onoma.kokoro.baseUrl",
+          value: input.baseUrl,
+          desc: "Kokoro natural voice: API base URL",
+        },
+        { key: "onoma.kokoro.apiKey", value: input.apiKey, desc: "Kokoro natural voice: API key" },
+        { key: "onoma.kokoro.model", value: input.model, desc: "Kokoro natural voice: TTS model" },
+        {
+          key: "onoma.kokoro.voice",
+          value: input.voice,
+          desc: "Kokoro natural voice: default voice",
+        },
+        {
+          key: "onoma.kokoro.speed",
+          value: String(input.speed),
+          desc: "Kokoro natural voice: play speed multiplier",
+        },
+      ];
+      await ctx.db.$transaction(
+        entries.map((e) =>
+          ctx.db.systemConfig.upsert({
+            where: { key: e.key },
+            update: { value: e.value, updatedAt: new Date() },
+            create: { key: e.key, value: e.value, description: e.desc },
+          })
+        )
+      );
+      return { success: true };
+    }),
+
+  /** Admin: persist the Onoma brand configuration. */
+  updateBrandConfig: adminProcedure
+    .input(
+      z.object({
+        variation: z.string().max(32),
+        nucleusSymbol: z.string().max(8),
+        flankingStyle: z.string().max(32),
+        fontFamily: z.string().max(64),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const entries = [
+        {
+          key: "onoma.brand.variation",
+          value: input.variation,
+          desc: "Onoma brand logo variation",
+        },
+        {
+          key: "onoma.brand.nucleusSymbol",
+          value: input.nucleusSymbol,
+          desc: "Onoma brand nucleus phonetic symbol",
+        },
+        {
+          key: "onoma.brand.flankingStyle",
+          value: input.flankingStyle,
+          desc: "Onoma brand flanking notation style",
+        },
+        {
+          key: "onoma.brand.fontFamily",
+          value: input.fontFamily,
+          desc: "Onoma brand typography font family",
+        },
+      ];
+      await ctx.db.$transaction(
+        entries.map((e) =>
+          ctx.db.systemConfig.upsert({
+            where: { key: e.key },
+            update: { value: e.value, updatedAt: new Date() },
+            create: { key: e.key, value: e.value, description: e.desc },
           })
         )
       );

@@ -6,6 +6,8 @@
 import { useStudioState } from "../../hooks/useStudioState";
 import { StudioWorkshop } from "./studio/StudioWorkshop";
 import { StudioLexicon } from "./studio/StudioLexicon";
+import { api } from "~/trpc/react";
+import { applyFlanking } from "~/lib/onoma/branding-utils";
 
 interface StudioSectionProps {
   initialWords?: string[];
@@ -22,6 +24,7 @@ export function StudioSection({
   activeSubTab,
   setActiveSubTab,
 }: StudioSectionProps = {}) {
+  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
   const state = useStudioState({
     initialWords,
     initialTitle,
@@ -34,10 +37,21 @@ export function StudioSection({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="space-y-1 border-b border-border/40 pb-4">
-        <h2 className="text-xl font-bold tracking-tight text-foreground">Onoma Studio</h2>
-        <p className="text-sm text-muted-foreground">
-          Import your own lexicons and linguistic data, or leverage our ever-growing collection of real-world cultural datasets to create names that feel authentic, resonant, and unique to your world.
+      <div className="border-border/40 space-y-1 border-b pb-4">
+        <h2
+          className="text-foreground text-xl font-bold tracking-tight"
+          style={{
+            fontFamily: speechConfig?.brand?.fontFamily
+              ? `'${speechConfig.brand.fontFamily}', sans-serif`
+              : undefined,
+          }}
+        >
+          {applyFlanking("Onoma Studio", speechConfig?.brand?.flankingStyle)}
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Import your own lexicons and linguistic data, or leverage our ever-growing collection of
+          real-world cultural datasets to create names that feel authentic, resonant, and unique to
+          your world.
         </p>
       </div>
 

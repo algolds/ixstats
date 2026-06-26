@@ -11,7 +11,9 @@ export async function POST(request: Request) {
 
     // In production, IXTIME_BOT_SECRET is mandatory
     if (isProduction && !botSecret) {
-      console.error("[SECURITY] IXTIME_BOT_SECRET not configured in production - bot sync disabled");
+      console.error(
+        "[SECURITY] IXTIME_BOT_SECRET not configured in production - bot sync disabled"
+      );
       return NextResponse.json({ error: "Sync endpoint not configured" }, { status: 503 });
     }
 

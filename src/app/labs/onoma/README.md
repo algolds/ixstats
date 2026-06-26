@@ -59,3 +59,10 @@ show IPA, declension tables, and script transcriptions (the linguistics engine).
   Light + Dark must both pass.
 - Sections are thin: they set the category and render `GeneratorPanel`. Keep generation logic
   in the hook/lib, not in section components.
+
+## Speech Synthesis & Natural Voices
+
+Onoma supports two audio modes:
+- **🔊 Pronunciation (IPA Badge)**: articular guide reading the generated IPA string. Driven by the browser's native `SpeechSynthesis` Web Speech API using BCP-47 culture mapped accents (falls back to client-side `meSpeak` (eSpeak asm.js) if browser synthesis fails).
+- **🎙 Read Naturally (Natural Voice)**: immersive natural voice generation. Queries the self-hosted **Kokoro TTS container** proxy `/api/onoma/tts`. Falls back to the browser-native synthesis player if the Kokoro server is unreachable or disabled, and finally falls back to meSpeak.
+

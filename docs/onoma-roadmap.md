@@ -16,12 +16,12 @@ gantt
     Phase 1: Foundation            :done, p1, 2026-06-01, 2026-06-15
     Phase 2: Corpus Intelligence   :done, p2, 2026-06-16, 2026-06-22
     Phase 3: Linguistics Engine    :done, p3, 2026-06-23, 2026-06-26
+    Phase 7: Voice                 :done, p7, 2026-06-25, 2026-06-26
     section Active & Planned
     Phase 4: Living Languages      :active, p4, 2026-06-27, 2026-07-10
     Phase 5: Machine Learning      :after p4, p5, 14d
     Phase 6: AI Linguist           :after p5, p6, 14d
-    Phase 7: Voice                 :after p6, p7, 10d
-    Phase 8: Translation Engine    :after p7, p8, 14d
+    Phase 8: Translation Engine    :after p6, p8, 14d
     Phase 9: Language Studio       :after p8, p9, 21d
     Phase 10: Onoma AI             :after p9, p10, 21d
 ```
@@ -30,11 +30,11 @@ gantt
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Foundation** | **100% Completed** | [markov-chain.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/markov-chain.ts), [useOnomaGenerator.ts](file:///home/jxsig/projects/ixstats/src/hooks/useOnomaGenerator.ts), [GeneratorPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/GeneratorPanel.tsx), [OnomaRouter.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/OnomaRouter.tsx) |
 | **Phase 2** | **Corpus Intelligence** | **100% Completed** | [lexicon-analytics.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-analytics.ts), [LexiconExplorer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/LexiconExplorer.tsx), [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) |
-| **Phase 3** | **Linguistics Engine** | **90% Completed** | [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts), [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts), [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts), [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx) |
+| **Phase 3** | **Linguistics Engine** | **100% Completed** | [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts), [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts), [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts), [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx) |
 | **Phase 4** | **Living Languages** | *Planned* | Evolution engine, timelines, loanword/dialect tracking. |
 | **Phase 5** | **ML Layer** | *In Progress* | ✅ Phonotactic perplexity scorer (`perplexity.ts`, naturalness % badge). ⏳ TF-IDF semantic search, lexicon gap recommender. |
 | **Phase 6** | **AI Linguist** | *Planned* | Local LLM-backed dictionary writing & etymologies. |
-| **Phase 7** | **Voice** | *Pronunciation done; voice pending* | ✅ **🔊 Pronounce** = meSpeak phonetic articulation from IPA (`speech.ts`/`mespeak-loader.ts`). It's a *pronunciation engine*, not a natural voice (eSpeak sounds robotic — fine for teaching how a name is said). ⏳ **🎙 Read Naturally** = immersive AI voice (Fish Speech / Kokoro / Chatterbox), user-selectable; button is wired+disabled awaiting the engine. ⏳ Historical voice shifts (depends on Phase 4). |
+| **Phase 7** | **Voice** | **100% Completed** | [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts), [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts), [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx), [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml), [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) |
 | **Phase 8** | **Translation Engine** | *Planned* | Grammar-aware English <=> conlang translators. |
 | **Phase 9** | **Language Studio** | *Planned* | Visual grammar/alphabet editor, dialect forks. |
 | **Phase 10**| **Onoma AI** | *Planned* | Generative language simulation agents. |
@@ -67,6 +67,15 @@ gantt
   - **UI Integrations**:
     - Interactive audio pronunciation player badges in [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx).
     - Split-screen Lexicon Dictionary and terms catalog editor in [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx).
+
+### Phase 7: Voice (Audio Synthesis)
+- **Status**: Complete.
+- **Architectural Delivery**:
+  - **Browser Native Speech Synthesis**: Implemented [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
+  - **Phonetic IPA spelling translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
+  - **Three-Tier Fallback Playback**: Refactored [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback $\rightarrow$ client-side meSpeak.
+  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml) mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
+  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](file:///home/jxsig/projects/ixstats/scripts/deploy-ixworld.sh).
 
 ---
 
@@ -119,19 +128,12 @@ gantt
 ### Phase 7: Voice
 - **Objective**: Audio voice synthesis matching conlang dialect constraints.
 - **Framing — two distinct buttons, not one speaker**:
-  - **🔊 Pronounce** (done): meSpeak/eSpeak articulates the IPA. Robotic-by-design — it
-    *teaches pronunciation*. Perfect for a single name; breaks immersion for anthems/poetry/
-    speeches/dialogue. Think of meSpeak as the **pronunciation engine**, not "the voice system".
-  - **🎙 Read Naturally** (pending): a natural/immersive AI voice. The pronunciation pipeline
-    stays shared — both modes consume the same generated word → IPA → pronunciation rules,
-    then branch to meSpeak (fast) or AI voice (immersive).
-- **Backlog Items**:
-  - **AI voice providers** (user-selectable: Natural / Historical / Narrator / Radio): integrate
-    an open-source TTS — candidates **Fish Speech, Kokoro, Chatterbox**. Likely a server/worker
-    endpoint (these are heavier than client asm.js), returning audio for the IPA/text.
-  - **Speech Evolution**: once the Phase 4 sound-change engine exists, render the *same* word at
-    several epochs (500 BC → 100 AD → 900 AD → 2033) so users **hear the language evolve** — each
-    epoch a 🔊 button. (Differentiator: not seen in other conlang tools.)
+  - **🔊 Pronounce** (Completed): client-side Web Speech API + meSpeak fallback. Badges and IPA transcriptions read using BCP-47 culture mapping accents (e.g. German voice for Germanic names).
+  - **🎙 Read Naturally** (Completed): self-hosted secure Kokoro TTS engine running in a separate Docker container with three-tier fallback (Kokoro -> Browser Native -> meSpeak).
+- **Architectural Delivery**:
+  - **Kokoro Container Isolation**: Deployed `ghcr.io/eduardolat/kokoro-web:latest` image inside the production stack, bound to port 3004, secured with API tokens, and constrained under memory/CPU limits.
+  - **IPA to English Syllable Translator**: Created rules converting raw IPA sounds into stressed hyphenated spelling chunks (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`) to guide browser synthesis voice pacing.
+  - **Pre-Deployment Health Checks**: Added database-gated port-pings in `verify-environment.ts` and automated validation inside `deploy-ixworld.sh`.
 
 ### Phase 8: Translation Engine
 - **Objective**: Context-aware conlang translators.

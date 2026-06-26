@@ -20,7 +20,10 @@ function blendColors(c1: string, c2: string, progress: number): string {
   const hex = (h: string) => {
     let clean = h.replace("#", "");
     if (clean.length === 3) {
-      clean = clean.split("").map((c) => c + c).join("");
+      clean = clean
+        .split("")
+        .map((c) => c + c)
+        .join("");
     }
     const num = parseInt(clean, 16);
     return {
@@ -126,10 +129,11 @@ function FacetTabTrigger({
           }}
           className={cn(
             metrics.icon,
-            "flex items-center justify-center mr-1.5",
+            "mr-1.5 flex items-center justify-center",
             useThemeColor ? "" : "transition-colors duration-200",
-            !useThemeColor && (isActive
-              ? tab.activeIconClassName ||
+            !useThemeColor &&
+              (isActive
+                ? tab.activeIconClassName ||
                   (tone === "neutral"
                     ? "text-slate-950 dark:text-white"
                     : tone === "accent"
@@ -139,7 +143,7 @@ function FacetTabTrigger({
                         : tone === "forum"
                           ? "text-orange-500 dark:text-orange-400"
                           : "text-red-500 dark:text-red-400")
-              : "text-slate-400 dark:text-slate-500")
+                : "text-slate-400 dark:text-slate-500")
           )}
         >
           <Icon className="h-full w-full" />
@@ -152,7 +156,8 @@ function FacetTabTrigger({
         }}
         className={cn(
           useThemeColor ? "" : "transition-colors duration-200",
-          !useThemeColor && (isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground")
+          !useThemeColor &&
+            (isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground")
         )}
       >
         {tab.label}
@@ -243,7 +248,9 @@ export function FacetTabs({
       return tabs.find((t) => t.id === sortedTabs[0]!.id)?.themeColor || defaultColor;
     }
     if (x >= sortedTabs[sortedTabs.length - 1]!.left) {
-      return tabs.find((t) => t.id === sortedTabs[sortedTabs.length - 1]!.id)?.themeColor || defaultColor;
+      return (
+        tabs.find((t) => t.id === sortedTabs[sortedTabs.length - 1]!.id)?.themeColor || defaultColor
+      );
     }
 
     const prevColor = tabs.find((t) => t.id === prevTab.id)?.themeColor || defaultColor;
@@ -266,7 +273,10 @@ export function FacetTabs({
     }
     let clean = colorStr.replace("#", "");
     if (clean.length === 3) {
-      clean = clean.split("").map((c) => c + c).join("");
+      clean = clean
+        .split("")
+        .map((c) => c + c)
+        .join("");
     }
     try {
       const num = parseInt(clean, 16);
@@ -282,8 +292,6 @@ export function FacetTabs({
   const glowColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.25));
   const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.08));
   const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.22));
-
-
 
   // Track relative pointer coordinates for the frosted satin sheen highlight
   const [sheenPos, setSheenPos] = React.useState({ x: "50%", y: "50%", active: false });
@@ -379,14 +387,14 @@ export function FacetTabs({
             metrics.indicator,
             useThemeColor
               ? ""
-              : (tabs.find((t) => t.id === activeTab)?.activeIndicatorClassName ||
+              : tabs.find((t) => t.id === activeTab)?.activeIndicatorClassName ||
                   cn(
                     activeIndicatorTone.light,
                     activeIndicatorTone.dark
                       .split(" ")
                       .map((c) => `dark:${c}`)
                       .join(" ")
-                  )),
+                  ),
             indicatorClassName
           )}
         >

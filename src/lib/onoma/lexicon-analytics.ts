@@ -34,7 +34,10 @@ export function getLetterFrequencies(words: string[]): { letter: string; frequen
  * E.g., for n=2 (bigrams) or n=3 (trigrams).
  * Ignores case and filters out non-alphabetic chars within the n-grams.
  */
-export function getNgramFrequencies(words: string[], n: number): { ngram: string; count: number }[] {
+export function getNgramFrequencies(
+  words: string[],
+  n: number
+): { ngram: string; count: number }[] {
   if (n <= 0) return [];
   const counts: Record<string, number> = {};
 
@@ -118,10 +121,14 @@ export function auditLexiconHealth(words: string[]): LexiconHealthReport {
   // 1. Lexicon Size Check (Markov chains need a baseline amount of data)
   if (words.length < 5) {
     score -= 30;
-    issues.push("Critical: Extremely small seed list. Markov generator needs at least 5 words to function, ideally 15+.");
+    issues.push(
+      "Critical: Extremely small seed list. Markov generator needs at least 5 words to function, ideally 15+."
+    );
   } else if (words.length < 15) {
     score -= 10;
-    issues.push("Warning: Small seed list. Add more names to increase variation and avoid repetitive outputs.");
+    issues.push(
+      "Warning: Small seed list. Add more names to increase variation and avoid repetitive outputs."
+    );
   }
 
   // 2. Duplicate Check
@@ -173,13 +180,17 @@ export function auditLexiconHealth(words: string[]): LexiconHealthReport {
     const pct = Math.round((shortCount / words.length) * 100);
     if (pct > 20) {
       score -= 10;
-      issues.push(`High density of very short words (<= 2 chars): ${shortCount} words found (${pct}% of list).`);
+      issues.push(
+        `High density of very short words (<= 2 chars): ${shortCount} words found (${pct}% of list).`
+      );
     }
   }
 
   if (longCount > 0) {
     score -= Math.min(10, longCount * 2);
-    issues.push(`Extremely long words (>= 15 chars) detected: ${longCount} word(s) found. May cause awkward generation.`);
+    issues.push(
+      `Extremely long words (>= 15 chars) detected: ${longCount} word(s) found. May cause awkward generation.`
+    );
   }
 
   // 5. Noise Words

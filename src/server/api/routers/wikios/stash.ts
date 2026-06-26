@@ -182,9 +182,9 @@ export const wikiosStashRouter = createTRPCRouter({
         });
       } else {
         // Remove from all user's stashes
-        const stashIds = (
-          await db.stash.findMany({ where: { userId }, select: { id: true } })
-        ).map((s) => s.id);
+        const stashIds = (await db.stash.findMany({ where: { userId }, select: { id: true } })).map(
+          (s) => s.id
+        );
         if (stashIds.length > 0) {
           await db.stashItem.deleteMany({
             where: { stashId: { in: stashIds }, pageTitle: input.pageTitle },

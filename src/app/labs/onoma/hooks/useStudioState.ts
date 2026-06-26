@@ -35,12 +35,17 @@ export function useStudioState({
   const setActiveSubTab = externalSetActiveSubTab ?? setLocalActiveSubTab;
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [definitions, setDefinitions] = useState<Record<string, {
-    partOfSpeech: string;
-    root: string;
-    meaning: string;
-    origin: string;
-  }>>({});
+  const [definitions, setDefinitions] = useState<
+    Record<
+      string,
+      {
+        partOfSpeech: string;
+        root: string;
+        meaning: string;
+        origin: string;
+      }
+    >
+  >({});
 
   const [lexEditPos, setLexEditPos] = useState("Noun");
   const [lexEditRoot, setLexEditRoot] = useState("");
@@ -51,7 +56,7 @@ export function useStudioState({
   const [inputText, setInputText] = useState(
     "roma, mediolanum, carthago, ravenna, verona, pompeii, florentia, corduba, toletum, tarraco"
   );
-  
+
   // Generator Config
   const [order, setOrder] = useState<number>(3);
   const [batchCount, setBatchCount] = useState<number>(10);
@@ -91,25 +96,28 @@ export function useStudioState({
   }, [trainingWords]);
 
   // Handle generation
-  const generateNames = useCallback((customWords?: string[]) => {
-    const words = customWords || trainingWordsRef.current;
-    if (words.length === 0) return;
-    const chain = new MarkovChain(order);
-    chain.addWords(words);
+  const generateNames = useCallback(
+    (customWords?: string[]) => {
+      const words = customWords || trainingWordsRef.current;
+      if (words.length === 0) return;
+      const chain = new MarkovChain(order);
+      chain.addWords(words);
 
-    const names: string[] = [];
-    for (let i = 0; i < batchCount; i++) {
-      const name = chain.generate(options);
-      if (name) {
-        names.push(name);
-      } else {
-        // Fallback to random capitalized word from input to avoid blank cards
-        const randSeed = words[Math.floor(Math.random() * words.length)];
-        names.push(MarkovChain.capitalize(randSeed));
+      const names: string[] = [];
+      for (let i = 0; i < batchCount; i++) {
+        const name = chain.generate(options);
+        if (name) {
+          names.push(name);
+        } else {
+          // Fallback to random capitalized word from input to avoid blank cards
+          const randSeed = words[Math.floor(Math.random() * words.length)];
+          names.push(MarkovChain.capitalize(randSeed));
+        }
       }
-    }
-    setGeneratedNames(names);
-  }, [order, batchCount, options]);
+      setGeneratedNames(names);
+    },
+    [order, batchCount, options]
+  );
 
   // Load saved input text from localStorage on mount
   useEffect(() => {
@@ -180,7 +188,7 @@ export function useStudioState({
           setInputText((prev) => {
             const trimmedPrev = prev.trim();
             const combinedText = trimmedPrev ? `${trimmedPrev}, ${mergedText}` : mergedText;
-            
+
             // Schedule the generation after state updates
             setTimeout(() => {
               const combinedWords = combinedText
@@ -308,9 +316,7 @@ export function useStudioState({
   // Extract stashed names and define unique lexicon terms
   const stashedNames = useMemo(() => {
     if (!bank.nameBank) return [];
-    return bank.nameBank
-      .filter((entry) => entry.type === "saved-name")
-      .map((entry) => entry.title);
+    return bank.nameBank.filter((entry) => entry.type === "saved-name").map((entry) => entry.title);
   }, [bank.nameBank]);
 
   const lexiconTerms = useMemo(() => {

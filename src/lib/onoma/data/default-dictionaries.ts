@@ -9,9 +9,9 @@ export interface DefaultDictionary {
 
 export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
   {
-    "id": "demons",
-    "title": "Theological Demons",
-    "values": [
+    id: "demons",
+    title: "Theological Demons",
+    values: [
       "aamon",
       "amon",
       "abaddon",
@@ -265,13 +265,13 @@ export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
       "yeterel",
       "zagan",
       "zepar",
-      "ziminiar"
-    ]
+      "ziminiar",
+    ],
   },
   {
-    "id": "angels",
-    "title": "Theological Angels",
-    "values": [
+    id: "angels",
+    title: "Theological Angels",
+    values: [
       "abaddon",
       "abathar",
       "adriel",
@@ -378,13 +378,13 @@ export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
       "zephon",
       "zaphkiel",
       "tzaphkiel",
-      "zophiel"
-    ]
+      "zophiel",
+    ],
   },
   {
-    "id": "egyptdeities",
-    "title": "Egyptian Deities",
-    "values": [
+    id: "egyptdeities",
+    title: "Egyptian Deities",
+    values: [
       "aker",
       "ammit",
       "amenhotep",
@@ -504,13 +504,13 @@ export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
       "wepwawet",
       "werethekau",
       "wosret",
-      "yam"
-    ]
+      "yam",
+    ],
   },
   {
-    "id": "planets",
-    "title": "Planets & Satellites",
-    "values": [
+    id: "planets",
+    title: "Planets & Satellites",
+    values: [
       "moon",
       "phobos",
       "deimos",
@@ -678,13 +678,13 @@ export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
       "pluto",
       "haumea",
       "makemake",
-      "eris"
-    ]
+      "eris",
+    ],
   },
   {
-    "id": "greekcities",
-    "title": "Ancient Greek Cities",
-    "values": [
+    id: "greekcities",
+    title: "Ancient Greek Cities",
+    values: [
       "abdera",
       "abila",
       "abydos",
@@ -1007,13 +1007,13 @@ export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
       "vathypetros",
       "zakynthos",
       "zakros",
-      "zancle"
-    ]
+      "zancle",
+    ],
   },
   {
-    "id": "states",
-    "title": "Iron Age States",
-    "values": [
+    id: "states",
+    title: "Iron Age States",
+    values: [
       "aethiopia",
       "alashiya",
       "alba",
@@ -1234,13 +1234,13 @@ export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
       "zheng",
       "zhou",
       "zikirti",
-      "zou"
-    ]
+      "zou",
+    ],
   },
   {
-    "id": "emperors",
-    "title": "Roman Emperors",
-    "values": [
+    id: "emperors",
+    title: "Roman Emperors",
+    values: [
       "achilleus",
       "aelianusca",
       "aemilianus",
@@ -1468,7 +1468,7 @@ export const DEFAULT_DICTIONARIES: DefaultDictionary[] = [
       "vitellius",
       "volusianus",
       "zeno",
-      "zoe"
-    ]
-  }
+      "zoe",
+    ],
+  },
 ];

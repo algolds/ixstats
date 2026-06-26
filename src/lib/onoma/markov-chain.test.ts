@@ -187,9 +187,9 @@ describe("MarkovChain", () => {
       const transitions = charChain.getTransitions("a");
       // "a" should transition to "b", "c", "d" with 1/3 probability each
       expect(transitions).toHaveLength(3);
-      expect(transitions).toContainEqual({ token: "b", count: 1, probability: 1/3 });
-      expect(transitions).toContainEqual({ token: "c", count: 1, probability: 1/3 });
-      expect(transitions).toContainEqual({ token: "d", count: 1, probability: 1/3 });
+      expect(transitions).toContainEqual({ token: "b", count: 1, probability: 1 / 3 });
+      expect(transitions).toContainEqual({ token: "c", count: 1, probability: 1 / 3 });
+      expect(transitions).toContainEqual({ token: "d", count: 1, probability: 1 / 3 });
     });
 
     test("should retrieve transitions in syllable mode", () => {
@@ -200,8 +200,8 @@ describe("MarkovChain", () => {
 
       const starts = syllableChain.getTransitions("");
       expect(starts).toHaveLength(2);
-      expect(starts.map(t => t.token)).toContain("upp");
-      expect(starts.map(t => t.token)).toContain("cons");
+      expect(starts.map((t) => t.token)).toContain("upp");
+      expect(starts.map((t) => t.token)).toContain("cons");
 
       const transitions = syllableChain.getTransitions("upp");
       expect(transitions).toHaveLength(1);

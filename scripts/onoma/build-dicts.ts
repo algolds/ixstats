@@ -13,7 +13,7 @@ import { assignBucket, topCompounds } from "../../src/lib/onoma/lexicon/bucket";
 
 const TOP_N_COMPOUNDS = 6;
 const CAP_PER_BUCKET = 300; // plenty for a Markov chain; keeps files small
-const MIN_BUCKET = 12;      // drop buckets too small to train on
+const MIN_BUCKET = 12; // drop buckets too small to train on
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RAW = path.join(here, "raw", "lexicon-clean.json");
@@ -24,12 +24,18 @@ function sample<T>(arr: T[], cap: number): T[] {
   if (arr.length <= cap) return arr;
   const step = arr.length / cap;
   const out: T[] = [];
-  for (let i = 0; out.length < cap && Math.floor(i) < arr.length; i += step) out.push(arr[Math.floor(i)]);
+  for (let i = 0; out.length < cap && Math.floor(i) < arr.length; i += step)
+    out.push(arr[Math.floor(i)]);
   return out;
 }
 
 const lexicon: LexiconName[] = JSON.parse(fs.readFileSync(RAW, "utf8"));
-const keptCompounds = new Set(topCompounds(lexicon.map((r) => r.name), TOP_N_COMPOUNDS));
+const keptCompounds = new Set(
+  topCompounds(
+    lexicon.map((r) => r.name),
+    TOP_N_COMPOUNDS
+  )
+);
 
 const byCategory = new Map<string, Map<string, string[]>>();
 for (const { name, category } of lexicon) {
@@ -48,7 +54,10 @@ for (const [category, buckets] of byCategory) {
   const counts: Record<string, number> = {};
   const overflow: string[] = [];
   for (const [bucket, names] of buckets) {
-    if (names.length < MIN_BUCKET) { overflow.push(...names); continue; } // pool thin buckets
+    if (names.length < MIN_BUCKET) {
+      overflow.push(...names);
+      continue;
+    } // pool thin buckets
     const capped = sample(names, CAP_PER_BUCKET);
     dict[bucket] = capped;
     counts[bucket] = capped.length;
@@ -72,7 +81,11 @@ fs.writeFileSync(
 
 console.log("kept compounds:", [...keptCompounds].join(", "));
 for (const [cat, m] of Object.entries(manifest)) {
-  console.log(`${cat.padEnd(13)} ${String(m.total).padStart(5)}  ${Object.keys(m.buckets).length} buckets`);
+  console.log(
+    `${cat.padEnd(13)} ${String(m.total).padStart(5)}  ${Object.keys(m.buckets).length} buckets`
+  );
 }
 const bytes = fs.readdirSync(OUT).reduce((a, f) => a + fs.statSync(path.join(OUT, f)).size, 0);
-console.log(`total ${grandTotal} names, ${(bytes / 1024).toFixed(0)} KB across ${byCategory.size} category files -> ${OUT}`);
+console.log(
+  `total ${grandTotal} names, ${(bytes / 1024).toFixed(0)} KB across ${byCategory.size} category files -> ${OUT}`
+);

@@ -252,7 +252,7 @@ export class MarkovChain {
         let consecutiveVowels = 0;
         let consecutiveConsonants = 0;
         let invalidCluster = false;
-        
+
         for (const char of candidate.toLowerCase()) {
           if (VOWELS_CLASS.includes(char)) {
             consecutiveVowels++;
@@ -264,7 +264,7 @@ export class MarkovChain {
             consecutiveVowels = 0;
             consecutiveConsonants = 0;
           }
-          
+
           if (consecutiveVowels > maxVowelCluster || consecutiveConsonants > maxConsonantCluster) {
             invalidCluster = true;
             break;
@@ -276,15 +276,15 @@ export class MarkovChain {
         if (vowelHarmony !== "none") {
           const frontVowels = "eiyäöüéèêëěēę";
           const backVowels = "aouáàâǎăāãåąóòôǒŏōõúùûǔŭūũ";
-          
+
           let hasFront = false;
           let hasBack = false;
-          
+
           for (const char of candidate.toLowerCase()) {
             if (frontVowels.includes(char)) hasFront = true;
             if (backVowels.includes(char)) hasBack = true;
           }
-          
+
           if (vowelHarmony === "front" && hasBack) continue;
           if (vowelHarmony === "back" && hasFront) continue;
         }

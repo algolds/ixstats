@@ -445,6 +445,74 @@ async function testExternalAPIs(): Promise<ValidationResult> {
 }
 
 /**
+ * Test Kokoro natural voice service connectivity
+ */
+async function testKokoroConnection(): Promise<ValidationResult> {
+  const result: ValidationResult = {
+    passed: true,
+    warnings: [],
+    errors: [],
+  };
+
+  try {
+    const { PrismaClient } = await import("@prisma/client");
+    const prisma = new PrismaClient();
+    const rows = await prisma.systemConfig.findMany({
+      where: { key: { startsWith: "onoma.kokoro." } },
+    });
+    await prisma.$disconnect();
+
+    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const enabled = map.get("onoma.kokoro.enabled") === "true";
+    const baseUrl = map.get("onoma.kokoro.baseUrl");
+
+    if (!enabled) {
+      print("⚠️  Kokoro natural voice service is disabled in SystemConfig, skipping connection test", "yellow");
+      return result;
+    }
+
+    if (!baseUrl) {
+      result.warnings.push("Kokoro service is enabled but baseUrl is empty in SystemConfig");
+      return result;
+    }
+
+    // Try reaching baseUrl (or appending api/v1/audio/speech)
+    const cleanUrl = baseUrl.trim().replace(/\/$/, "");
+    const testUrl = cleanUrl.endsWith("/api")
+      ? `${cleanUrl}/v1/audio/speech`
+      : cleanUrl.endsWith("/api/v1")
+        ? `${cleanUrl}/audio/speech`
+        : `${cleanUrl}/api/v1/audio/speech`;
+
+    try {
+      const response = await fetch(testUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(5000),
+      });
+
+      // 401 is success for this ping since we sent no bearer auth, meaning it's reachable and running
+      if (response.status === 401 || response.status === 200 || response.ok) {
+        print(`✅ Kokoro natural voice service accessible at ${baseUrl} (HTTP ${response.status})`, "green");
+      } else {
+        result.warnings.push(`Kokoro voice service returned unexpected status ${response.status} at ${testUrl}`);
+      }
+    } catch (e) {
+      result.warnings.push(
+        `Kokoro voice service not accessible at ${baseUrl}: ${e instanceof Error ? e.message : String(e)}`
+      );
+    }
+  } catch (error) {
+    result.warnings.push(
+      `Could not retrieve Kokoro config from DB: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  return result;
+}
+
+/**
  * Main verification function
  */
 async function main() {
@@ -532,6 +600,10 @@ async function main() {
   print("\nTesting external APIs...", "blue");
   const apiResult = await testExternalAPIs();
   allResults.push(apiResult);
+
+  print("\nTesting Kokoro voice service connection...", "blue");
+  const kokoroConnResult = await testKokoroConnection();
+  allResults.push(kokoroConnResult);
 
   // Summary
   printHeader("Verification Summary");

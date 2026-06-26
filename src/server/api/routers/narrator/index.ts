@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { getFlavorText, DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/flavorization";
+import { getFlavorText } from "~/lib/narrator/flavorization";
+import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/constants";
 import { buildCanonContext, formatCanonContext } from "~/lib/narrator/canon-context";
 import { queryLLM } from "~/lib/narrator/client";
 

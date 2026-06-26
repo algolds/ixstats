@@ -16,55 +16,96 @@ import {
   type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  Volume2,
-  RotateCcw,
-  Sparkles,
-  HelpCircle,
-} from "lucide-react";
+import { Volume2, RotateCcw, Sparkles, HelpCircle } from "lucide-react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 
 // Custom node components for React Flow
 function CenterNode({ data }: { data: { label: string } }) {
   return (
-    <div className="px-5 py-3 rounded-2xl border-2 border-[#0091ff] bg-[#0091ff]/15 text-foreground font-bold shadow-xl shadow-[#0091ff]/10 backdrop-blur-md flex flex-col items-center gap-0.5 min-w-[125px] text-center select-none animate-in scale-in duration-200">
-      <span className="text-[9px] text-[#0091ff] uppercase tracking-wider font-extrabold">Active State</span>
-      <span className="text-base tracking-wide font-mono leading-tight">{data.label || "[Start]"}</span>
-      <Handle type="source" position={Position.Right} id="r" style={{ opacity: 0, width: 0, height: 0 }} />
-      <Handle type="source" position={Position.Left} id="l" style={{ opacity: 0, width: 0, height: 0 }} />
-      <Handle type="source" position={Position.Top} id="t" style={{ opacity: 0, width: 0, height: 0 }} />
-      <Handle type="source" position={Position.Bottom} id="b" style={{ opacity: 0, width: 0, height: 0 }} />
+    <div className="text-foreground animate-in scale-in flex min-w-[125px] flex-col items-center gap-0.5 rounded-2xl border-2 border-[#0091ff] bg-[#0091ff]/15 px-5 py-3 text-center font-bold shadow-xl shadow-[#0091ff]/10 backdrop-blur-md duration-200 select-none">
+      <span className="text-[9px] font-extrabold tracking-wider text-[#0091ff] uppercase">
+        Active State
+      </span>
+      <span className="font-mono text-base leading-tight tracking-wide">
+        {data.label || "[Start]"}
+      </span>
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="r"
+        style={{ opacity: 0, width: 0, height: 0 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="l"
+        style={{ opacity: 0, width: 0, height: 0 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="t"
+        style={{ opacity: 0, width: 0, height: 0 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="b"
+        style={{ opacity: 0, width: 0, height: 0 }}
+      />
     </div>
   );
 }
 
-function NeighborNode({ data }: { data: { label: string; onClick: () => void; probability: number; targetPosition: Position } }) {
+function NeighborNode({
+  data,
+}: {
+  data: { label: string; onClick: () => void; probability: number; targetPosition: Position };
+}) {
   return (
-    <div className="relative group">
-      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[#0091ff]/25 to-[#00d2ff]/25 opacity-0 group-hover:opacity-100 transition-all duration-300 blur-sm" />
+    <div className="group relative">
+      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[#0091ff]/25 to-[#00d2ff]/25 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100" />
       <button
         onClick={data.onClick}
-        className="relative px-3.5 py-2 rounded-xl border border-border/80 bg-background/95 text-foreground hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 transition-all font-mono font-bold shadow-md backdrop-blur-md cursor-pointer select-none text-xs active:scale-95 flex items-center gap-1.5 min-w-[85px] justify-center"
+        className="border-border/80 bg-background/95 text-foreground relative flex min-w-[85px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 font-mono text-xs font-bold shadow-md backdrop-blur-md transition-all select-none hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 active:scale-95"
       >
-        <span className="text-[#0091ff] font-extrabold font-mono">+{data.label}</span>
-        <span className="text-[9px] text-muted-foreground font-sans font-semibold">({(data.probability * 100).toFixed(0)}%)</span>
-        <Handle type="target" position={data.targetPosition} id="target" style={{ opacity: 0, width: 0, height: 0 }} />
+        <span className="font-mono font-extrabold text-[#0091ff]">+{data.label}</span>
+        <span className="text-muted-foreground font-sans text-[9px] font-semibold">
+          ({(data.probability * 100).toFixed(0)}%)
+        </span>
+        <Handle
+          type="target"
+          position={data.targetPosition}
+          id="target"
+          style={{ opacity: 0, width: 0, height: 0 }}
+        />
       </button>
     </div>
   );
 }
 
-function EndNode({ data }: { data: { onClick: () => void; probability: number; targetPosition: Position } }) {
+function EndNode({
+  data,
+}: {
+  data: { onClick: () => void; probability: number; targetPosition: Position };
+}) {
   return (
-    <div className="relative group">
-      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-red-500/25 to-amber-500/25 opacity-0 group-hover:opacity-100 transition-all duration-300 blur-sm" />
+    <div className="group relative">
+      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-red-500/25 to-amber-500/25 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100" />
       <button
         onClick={data.onClick}
-        className="relative px-3.5 py-2 rounded-xl border border-red-500/30 bg-red-500/5 text-red-500 dark:text-red-400 hover:bg-red-500/10 hover:border-red-500/60 transition-all font-bold shadow-md backdrop-blur-md cursor-pointer select-none text-xs active:scale-95 flex items-center gap-1.5 min-w-[85px] justify-center"
+        className="relative flex min-w-[85px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 px-3.5 py-2 text-xs font-bold text-red-500 shadow-md backdrop-blur-md transition-all select-none hover:border-red-500/60 hover:bg-red-500/10 active:scale-95 dark:text-red-400"
       >
         <span>[End]</span>
-        <span className="text-[9px] text-red-500/80 dark:text-red-400/80 font-sans font-semibold">({(data.probability * 100).toFixed(0)}%)</span>
-        <Handle type="target" position={data.targetPosition} id="target" style={{ opacity: 0, width: 0, height: 0 }} />
+        <span className="font-sans text-[9px] font-semibold text-red-500/80 dark:text-red-400/80">
+          ({(data.probability * 100).toFixed(0)}%)
+        </span>
+        <Handle
+          type="target"
+          position={data.targetPosition}
+          id="target"
+          style={{ opacity: 0, width: 0, height: 0 }}
+        />
       </button>
     </div>
   );
@@ -84,9 +125,9 @@ function getHandleConfig(angle: number) {
 
   if (normalized >= -Math.PI / 4 && normalized < Math.PI / 4) {
     return { sourceHandle: "r", targetPosition: Position.Left };
-  } else if (normalized >= Math.PI / 4 && normalized < 3 * Math.PI / 4) {
+  } else if (normalized >= Math.PI / 4 && normalized < (3 * Math.PI) / 4) {
     return { sourceHandle: "b", targetPosition: Position.Top };
-  } else if (normalized >= -3 * Math.PI / 4 && normalized < -Math.PI / 4) {
+  } else if (normalized >= (-3 * Math.PI) / 4 && normalized < -Math.PI / 4) {
     return { sourceHandle: "t", targetPosition: Position.Bottom };
   } else {
     return { sourceHandle: "l", targetPosition: Position.Right };
@@ -251,29 +292,33 @@ export function MarkovVisualizerInner({
   };
 
   return (
-    <div className="relative border border-border/40 rounded-xl bg-card/40 backdrop-blur-md flex flex-col overflow-hidden">
+    <div className="border-border/40 bg-card/40 relative flex flex-col overflow-hidden rounded-xl border backdrop-blur-md">
       {/* Control panel bar */}
-      <div className="flex flex-wrap items-center justify-between border-b border-border/30 px-4 py-3 bg-secondary/5 gap-3">
+      <div className="border-border/30 bg-secondary/5 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#0091ff] animate-pulse" />
-          <h3 className="text-xs font-bold text-foreground tracking-wide uppercase">Markov Path Visualizer</h3>
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#0091ff]" />
+          <h3 className="text-foreground text-xs font-bold tracking-wide uppercase">
+            Markov Path Visualizer
+          </h3>
         </div>
 
         {/* Input box showing active path */}
-        <div className="flex items-center gap-2 flex-1 max-w-sm sm:justify-end">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase hidden sm:inline">Path:</span>
+        <div className="flex max-w-sm flex-1 items-center gap-2 sm:justify-end">
+          <span className="text-muted-foreground hidden text-[10px] font-bold uppercase sm:inline">
+            Path:
+          </span>
           <input
             type="text"
             value={activePrefix}
             onChange={(e) => onChangePrefix(e.target.value.toLowerCase())}
             placeholder="Type prefix or click nodes..."
-            className="flex-1 sm:max-w-[200px] rounded-lg border border-border/60 bg-background/80 px-2.5 py-1 text-xs font-mono text-foreground placeholder-muted-foreground focus:border-[#0091ff]/50 focus:outline-none"
+            className="border-border/60 bg-background/80 text-foreground placeholder-muted-foreground flex-1 rounded-lg border px-2.5 py-1 font-mono text-xs focus:border-[#0091ff]/50 focus:outline-none sm:max-w-[200px]"
           />
-          
+
           <button
             onClick={handleSpeak}
             disabled={!activePrefix}
-            className="p-1 rounded-md border border-border/60 bg-background/50 hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 text-muted-foreground hover:text-[#0091ff] transition-all disabled:opacity-40 cursor-pointer"
+            className="border-border/60 bg-background/50 text-muted-foreground cursor-pointer rounded-md border p-1 transition-all hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 hover:text-[#0091ff] disabled:opacity-40"
             title="Pronounce name"
           >
             <Volume2 className="h-3.5 w-3.5" />
@@ -284,16 +329,16 @@ export function MarkovVisualizerInner({
         <div className="flex items-center gap-2">
           <button
             onClick={handleRollRandom}
-            className="flex items-center gap-1 rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/5 hover:bg-[#0091ff]/10 text-xs font-semibold text-[#0091ff] px-2.5 py-1 transition-all cursor-pointer"
+            className="flex cursor-pointer items-center gap-1 rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/5 px-2.5 py-1 text-xs font-semibold text-[#0091ff] transition-all hover:bg-[#0091ff]/10"
             title="Roll path randomly to end"
           >
             <Sparkles className="h-3 w-3" />
             <span>Roll Path</span>
           </button>
-          
+
           <button
             onClick={() => onChangePrefix("")}
-            className="flex items-center gap-1 rounded-lg border border-border/60 bg-background/50 hover:bg-secondary/40 text-xs font-semibold text-muted-foreground px-2.5 py-1 transition-all cursor-pointer"
+            className="border-border/60 bg-background/50 hover:bg-secondary/40 text-muted-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all"
             title="Reset path to start"
           >
             <RotateCcw className="h-3 w-3" />
@@ -303,7 +348,7 @@ export function MarkovVisualizerInner({
       </div>
 
       {/* Main Flow Canvas */}
-      <div className="h-[380px] w-full relative bg-secondary/5">
+      <div className="bg-secondary/5 relative h-[380px] w-full">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -315,12 +360,15 @@ export function MarkovVisualizerInner({
           className="relative z-10"
         >
           <Background color="var(--border)" gap={20} size={1} className="opacity-40" />
-          <Controls showInteractive={false} className="!bg-background/80 !border-border/60 !shadow-md !rounded-lg" />
+          <Controls
+            showInteractive={false}
+            className="!bg-background/80 !border-border/60 !rounded-lg !shadow-md"
+          />
           <FlowFitViewController activePrefix={activePrefix} />
         </ReactFlow>
-        
+
         {/* Help tip overlay */}
-        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-md bg-background/85 border border-border/40 px-2 py-1 text-[10px] text-muted-foreground select-none pointer-events-none shadow-sm backdrop-blur-sm">
+        <div className="bg-background/85 border-border/40 text-muted-foreground pointer-events-none absolute right-3 bottom-3 z-20 flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] shadow-sm backdrop-blur-sm select-none">
           <HelpCircle className="h-3 w-3 text-[#0091ff]/80" />
           <span>Click neighbor nodes to grow the name token-by-token</span>
         </div>

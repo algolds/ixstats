@@ -77,7 +77,11 @@ function extractIxWiki(): RawName[] {
   const out = execFileSync(
     "mysql",
     ["-u", creds.user, "-h", creds.server, "-N", "--batch", creds.name, "-e", sql],
-    { env: { ...process.env, MYSQL_PWD: creds.password }, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }
+    {
+      env: { ...process.env, MYSQL_PWD: creds.password },
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    }
   );
 
   const catOf = new Map(INFOBOX_CATEGORY);
@@ -126,7 +130,11 @@ async function fetchRetry(url: URL, tries = 4): Promise<Response> {
  * (`list=embeddedin`) → typed names. Targeted (only relevant pages, not a full
  * dump), continuation-paged, disk-cached, polite. Same INFOBOX_CATEGORY map.
  */
-async function fetchTypedNames(api: string, sourceWiki: string, capPerTpl = 8000): Promise<RawName[]> {
+async function fetchTypedNames(
+  api: string,
+  sourceWiki: string,
+  capPerTpl = 8000
+): Promise<RawName[]> {
   const cacheFile = path.join(CACHE_DIR, `${sourceWiki}-typed.json`);
   if (fs.existsSync(cacheFile)) return JSON.parse(fs.readFileSync(cacheFile, "utf8"));
 
@@ -184,7 +192,10 @@ async function main() {
 
   console.log("Extracting IxWiki (SQL)...");
   const rows: RawName[] = extractIxWiki();
-  const byCat = rows.reduce<Record<string, number>>((a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a), {});
+  const byCat = rows.reduce<Record<string, number>>(
+    (a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a),
+    {}
+  );
   console.log(`  IxWiki: ${rows.length} names`, byCat);
 
   if (!ixwikiOnly) {
@@ -197,7 +208,10 @@ async function main() {
         console.log(`Fetching ${src.wiki} (API, infobox-typed)...`);
         const ext = await fetchTypedNames(src.api, src.wiki);
         for (const r of ext) rows.push({ ...r, name: titleToName(r.name) });
-        const c = ext.reduce<Record<string, number>>((a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a), {});
+        const c = ext.reduce<Record<string, number>>(
+          (a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a),
+          {}
+        );
         console.log(`  ${src.wiki}: ${ext.length} typed names`, c);
       } catch (e) {
         console.warn(`  ${src.wiki} failed: ${(e as Error).message}`);

@@ -224,7 +224,7 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
   const segment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
   const baseSegment = segment.split("/")[0];
   const match = ONOMA_NAV_ITEMS.find(
-    (item) => item.path === `/labs/onoma${baseSegment ? `/${baseSegment}` : ""}`,
+    (item) => item.path === `/labs/onoma${baseSegment ? `/${baseSegment}` : ""}`
   );
   return match?.id ?? "overview";
 }

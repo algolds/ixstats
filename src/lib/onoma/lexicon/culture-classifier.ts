@@ -15,7 +15,13 @@
 import { CULTURAL_PROFILES } from "../cultural-profiles";
 
 const BASE_CULTURES = [
-  "latin", "germanic", "celtic", "slavic", "arabic", "east-asian", "austronesian",
+  "latin",
+  "germanic",
+  "celtic",
+  "slavic",
+  "arabic",
+  "east-asian",
+  "austronesian",
 ] as const;
 
 // Min per-gram log-prob margin between top and runner-up to call a single culture.
@@ -85,20 +91,26 @@ export function rankCultures(name: string): Array<{ culture: string; score: numb
 }
 
 export type CultureResult = {
-  culture: string;            // single culture, or "A+B" (components sorted), or "mixed"
+  culture: string; // single culture, or "A+B" (components sorted), or "mixed"
   compound: boolean;
-  components: string[];       // [single] or [A, B]
-  confidence: number;         // top-vs-runnerup margin (0 when unclassifiable)
+  components: string[]; // [single] or [A, B]
+  confidence: number; // top-vs-runnerup margin (0 when unclassifiable)
 };
 
 /** Classify a name into a single culture, or a compound "A+B" blend. */
 export function classifyCulture(name: string): CultureResult {
   const ranked = rankCultures(name);
-  if (ranked.length === 0) return { culture: "mixed", compound: false, components: [], confidence: 0 };
+  if (ranked.length === 0)
+    return { culture: "mixed", compound: false, components: [], confidence: 0 };
 
   const margin = ranked[0].score - (ranked[1]?.score ?? -Infinity);
   if (margin >= MIN_MARGIN || ranked.length === 1) {
-    return { culture: ranked[0].culture, compound: false, components: [ranked[0].culture], confidence: margin };
+    return {
+      culture: ranked[0].culture,
+      compound: false,
+      components: [ranked[0].culture],
+      confidence: margin,
+    };
   }
   const pair = [ranked[0].culture, ranked[1].culture].sort();
   return { culture: pair.join("+"), compound: true, components: pair, confidence: margin };

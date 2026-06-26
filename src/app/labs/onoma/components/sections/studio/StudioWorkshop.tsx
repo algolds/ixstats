@@ -49,18 +49,16 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
   return (
     <>
       {/* Two-Column Layout */}
-      <div className="grid gap-6 lg:grid-cols-12 items-start">
-        
+      <div className="grid items-start gap-6 lg:grid-cols-12">
         {/* Left Column (5/12): Seed input and parameters */}
-        <div className="lg:col-span-5 space-y-4">
-          <FacetCard className="p-4 border border-border/40 bg-secondary/5 space-y-4">
-            
+        <div className="space-y-4 lg:col-span-5">
+          <FacetCard className="border-border/40 bg-secondary/5 space-y-4 border p-4">
             {/* Seeds text area */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-muted-foreground">Training Seeds</label>
+              <div className="flex items-center justify-between">
+                <label className="text-muted-foreground text-xs font-bold">Training Seeds</label>
                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1 text-[10px] font-bold text-[#0091ff] hover:bg-[#0091ff]/10 hover:text-[#0091ff] cursor-pointer transition-all duration-200 bg-[#0091ff]/5 border border-[#0091ff]/20 px-2 py-0.5 rounded-lg active:scale-95">
+                  <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/5 px-2 py-0.5 text-[10px] font-bold text-[#0091ff] transition-all duration-200 hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-95">
                     <Upload className="h-3 w-3" />
                     <span>Upload .txt</span>
                     <input
@@ -71,9 +69,11 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       onChange={handleFileUpload}
                     />
                   </label>
-                  <span className="text-[10px] text-muted-foreground font-semibold">{trainingWords.length} words loaded</span>
+                  <span className="text-muted-foreground text-[10px] font-semibold">
+                    {trainingWords.length} words loaded
+                  </span>
                   {classifiedCulture !== "any" && (
-                    <span className="text-[9px] bg-[#0091ff]/10 text-[#0091ff] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider border border-[#0091ff]/20 animate-in fade-in duration-200">
+                    <span className="animate-in fade-in rounded-md border border-[#0091ff]/20 bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-[#0091ff] uppercase duration-200">
                       Classified: {classifiedCulture}
                     </span>
                   )}
@@ -85,7 +85,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   <select
                     value={selectedDictId}
                     onChange={(e) => handleLoadSavedDictionary(e.target.value)}
-                    className="w-full rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs text-foreground focus:border-[#0091ff]/50 focus:outline-none"
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:border-[#0091ff]/50 focus:outline-none"
                   >
                     <option value="">-- Load a saved dictionary --</option>
                     {savedDictionaries.map((dict) => (
@@ -101,12 +101,12 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Paste words separated by commas or newlines, or upload .txt files..."
-                className="h-32 w-full rounded-xl border border-border/60 bg-background p-3 text-sm text-foreground placeholder-muted-foreground focus:border-[#0091ff]/50 focus:outline-none focus:ring-1 focus:ring-[#0091ff]/50"
+                className="border-border/60 bg-background text-foreground placeholder-muted-foreground h-32 w-full rounded-xl border p-3 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
               />
             </div>
 
             {uploadStatus && (
-              <div className="rounded-lg bg-[#0091ff]/10 border border-[#0091ff]/20 px-3.5 py-2 text-xs text-[#0091ff] font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-1.5 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/10 px-3.5 py-2 text-xs font-medium text-[#0091ff] duration-200">
                 <Info className="h-3.5 w-3.5 shrink-0" />
                 <span>{uploadStatus}</span>
               </div>
@@ -116,7 +116,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             {isEdited && (
               <form
                 onSubmit={handleSaveDictionary}
-                className="flex items-center gap-2 rounded-xl border border-[#0091ff]/25 bg-[#0091ff]/5 p-3.5 animate-in slide-in-from-top-2 duration-300"
+                className="animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-[#0091ff]/25 bg-[#0091ff]/5 p-3.5 duration-300"
               >
                 <input
                   type="text"
@@ -124,28 +124,32 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   required
                   value={dictTitle}
                   onChange={(e) => setDictTitle(e.target.value)}
-                  className="flex-1 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none"
+                  className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-3 py-1.5 text-xs focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={isSaving || trainingWords.length === 0}
-                  className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#33a7ff] disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#33a7ff] disabled:opacity-50"
                 >
-                  {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bookmark className="h-3.5 w-3.5" />}
+                  {isSaving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Bookmark className="h-3.5 w-3.5" />
+                  )}
                   <span>Save</span>
                 </button>
               </form>
             )}
 
             {successMsg && (
-              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 text-xs text-emerald-600 dark:text-emerald-400 animate-in fade-in duration-300">
+              <div className="animate-in fade-in rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-600 duration-300 dark:text-emerald-400">
                 {successMsg}
               </div>
             )}
 
             {/* Parameters Accordion/Content */}
-            <div className="border-t border-border/40 pt-4 space-y-3.5">
-              <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase pb-1 flex items-center gap-1">
+            <div className="border-border/40 space-y-3.5 border-t pt-4">
+              <h3 className="text-muted-foreground flex items-center gap-1 pb-1 text-xs font-bold tracking-wider uppercase">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Parameters
               </h3>
@@ -153,8 +157,10 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               {/* Look-back order */}
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Markov Order</label>
-                  <span className="text-[10px] text-[#0091ff] font-bold">{order} char</span>
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Markov Order
+                  </label>
+                  <span className="text-[10px] font-bold text-[#0091ff]">{order} char</span>
                 </div>
                 <input
                   type="range"
@@ -163,14 +169,16 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   step={1}
                   value={order}
                   onChange={(e) => setOrder(parseInt(e.target.value))}
-                  className="w-full h-1.5 rounded-lg bg-secondary/80 accent-[#0091ff] cursor-pointer"
+                  className="bg-secondary/80 h-1.5 w-full cursor-pointer rounded-lg accent-[#0091ff]"
                 />
               </div>
 
               {/* Length limits */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Min Length</label>
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Min Length
+                  </label>
                   <input
                     type="number"
                     min={1}
@@ -179,11 +187,13 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     onChange={(e) =>
                       setOptions({ ...options, minLength: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none"
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Max Length</label>
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Max Length
+                  </label>
                   <input
                     type="number"
                     min={1}
@@ -192,7 +202,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     onChange={(e) =>
                       setOptions({ ...options, maxLength: parseInt(e.target.value) || 0 })
                     }
-                    className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none"
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -200,42 +210,48 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               {/* Advanced Substring constraints */}
               <div className="grid grid-cols-2 gap-3 pb-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Starts With</label>
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Starts With
+                  </label>
                   <input
                     type="text"
                     placeholder="Prefix"
                     value={options.startsWith || ""}
                     onChange={(e) => setOptions({ ...options, startsWith: e.target.value })}
-                    className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Ends With</label>
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Ends With
+                  </label>
                   <input
                     type="text"
                     placeholder="Suffix"
                     value={options.endsWith || ""}
                     onChange={(e) => setOptions({ ...options, endsWith: e.target.value })}
-                    className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Phonotactic Constraints */}
-              <div className="space-y-3 border-t border-border/20 pt-3">
-                <h4 className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase pb-0.5">
+              <div className="border-border/20 space-y-3 border-t pt-3">
+                <h4 className="text-muted-foreground pb-0.5 text-[10px] font-bold tracking-wider uppercase">
                   Phonotactic Constraints
                 </h4>
 
                 {/* Vowel Harmony */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Vowel Harmony</label>
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Vowel Harmony
+                  </label>
                   <select
                     value={options.vowelHarmony || "none"}
                     onChange={(e) =>
                       setOptions({ ...options, vowelHarmony: e.target.value as any })
                     }
-                    className="w-full rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
                   >
                     <option value="none">None (Standard)</option>
                     <option value="front">Front Harmony (e, i, y, ä, ö, ü)</option>
@@ -247,8 +263,12 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <label className="text-[9px] font-bold text-muted-foreground uppercase">Max Consonant Cluster</label>
-                      <span className="text-[9px] text-[#0091ff] font-bold">{options.maxConsonantCluster ?? 3}</span>
+                      <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                        Max Consonant Cluster
+                      </label>
+                      <span className="text-[9px] font-bold text-[#0091ff]">
+                        {options.maxConsonantCluster ?? 3}
+                      </span>
                     </div>
                     <input
                       type="range"
@@ -259,13 +279,17 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       onChange={(e) =>
                         setOptions({ ...options, maxConsonantCluster: parseInt(e.target.value) })
                       }
-                      className="w-full h-1 rounded-lg bg-secondary/80 accent-[#0091ff] cursor-pointer"
+                      className="bg-secondary/80 h-1 w-full cursor-pointer rounded-lg accent-[#0091ff]"
                     />
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <label className="text-[9px] font-bold text-muted-foreground uppercase">Max Vowel Cluster</label>
-                      <span className="text-[9px] text-[#0091ff] font-bold">{options.maxVowelCluster ?? 3}</span>
+                      <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                        Max Vowel Cluster
+                      </label>
+                      <span className="text-[9px] font-bold text-[#0091ff]">
+                        {options.maxVowelCluster ?? 3}
+                      </span>
                     </div>
                     <input
                       type="range"
@@ -276,16 +300,20 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       onChange={(e) =>
                         setOptions({ ...options, maxVowelCluster: parseInt(e.target.value) })
                       }
-                      className="w-full h-1 rounded-lg bg-secondary/80 accent-[#0091ff] cursor-pointer"
+                      className="bg-secondary/80 h-1 w-full cursor-pointer rounded-lg accent-[#0091ff]"
                     />
                   </div>
                 </div>
 
                 {/* Allow Double Letters Toggle */}
-                <div className="flex items-center justify-between border-t border-border/20 pt-2.5">
+                <div className="border-border/20 flex items-center justify-between border-t pt-2.5">
                   <div className="space-y-0.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Allow Double Letters</label>
-                    <p className="text-[8px] text-muted-foreground leading-normal">Permit repeating vowels/consonants (e.g. aa, ss)</p>
+                    <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                      Allow Double Letters
+                    </label>
+                    <p className="text-muted-foreground text-[8px] leading-normal">
+                      Permit repeating vowels/consonants (e.g. aa, ss)
+                    </p>
                   </div>
                   <input
                     type="checkbox"
@@ -293,19 +321,19 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     onChange={(e) =>
                       setOptions({ ...options, allowDoubleLetters: e.target.checked })
                     }
-                    className="h-3.5 w-3.5 rounded border-border/60 bg-background text-[#0091ff] focus:ring-[#0091ff]"
+                    className="border-border/60 bg-background h-3.5 w-3.5 rounded text-[#0091ff] focus:ring-[#0091ff]"
                   />
                 </div>
               </div>
             </div>
 
             {/* Assemble control */}
-            <div className="flex gap-2 items-center border-t border-border/40 pt-4 mt-2">
+            <div className="border-border/40 mt-2 flex items-center gap-2 border-t pt-4">
               <div className="w-16">
                 <select
                   value={batchCount}
                   onChange={(e) => setBatchCount(parseInt(e.target.value))}
-                  className="w-full rounded-md border border-border/60 bg-background px-2 py-1 text-xs text-foreground focus:outline-none"
+                  className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1 text-xs focus:outline-none"
                 >
                   <option value={5}>5</option>
                   <option value={10}>10</option>
@@ -316,30 +344,29 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               <button
                 onClick={() => generateNames()}
                 disabled={trainingWords.length === 0}
-                className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#0091ff] hover:bg-[#33a7ff] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 disabled:opacity-50 transition-all"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] disabled:opacity-50"
               >
                 <Wand2 className="h-4 w-4" />
                 <span>Assemble Seeds</span>
               </button>
             </div>
-
           </FacetCard>
         </div>
 
         {/* Right Column (7/12): scrollable candidates grid */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="space-y-4 lg:col-span-7">
           {generatedNames.length > 0 ? (
-            <FacetCard className="p-4 border border-border/40 bg-secondary/5 space-y-4 animate-in fade-in duration-300">
-              <div className="border-b border-border/40 pb-3">
-                <h3 className="text-sm font-bold tracking-tight text-foreground">
+            <FacetCard className="border-border/40 bg-secondary/5 animate-in fade-in space-y-4 border p-4 duration-300">
+              <div className="border-border/40 border-b pb-3">
+                <h3 className="text-foreground text-sm font-bold tracking-tight">
                   Custom Model Output
                 </h3>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-muted-foreground mt-0.5 text-[11px]">
                   Names assembled by training Markov trie on input seeds.
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 max-h-[500px] overflow-y-auto pr-1">
+              <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
                 {generatedNames.map((name, idx) => (
                   <NameResultCard
                     key={idx}
@@ -358,20 +385,20 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               </div>
             </FacetCard>
           ) : (
-            <FacetCard className="p-8 border border-border/40 border-dashed bg-secondary/5 text-center text-sm text-muted-foreground">
-              <Info className="h-8 w-8 mx-auto text-[#0091ff]/40 mb-3 animate-pulse" />
+            <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground border border-dashed p-8 text-center text-sm">
+              <Info className="mx-auto mb-3 h-8 w-8 animate-pulse text-[#0091ff]/40" />
               <p className="font-semibold">Generate name candidates</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Enter your seed list (comma or newline separated) in the training box, and click Assemble to view Markov results.
+              <p className="text-muted-foreground mt-1 text-xs">
+                Enter your seed list (comma or newline separated) in the training box, and click
+                Assemble to view Markov results.
               </p>
             </FacetCard>
           )}
         </div>
-
       </div>
 
       {/* Interactive Markov Path Visualizer & Lexicon Explorer Grid */}
-      <div className="grid gap-6 lg:grid-cols-2 mt-4 border-t border-border/40 pt-6">
+      <div className="border-border/40 mt-4 grid gap-6 border-t pt-6 lg:grid-cols-2">
         {/* Interactive Markov Path Visualizer Panel */}
         <div>
           {visualizerChain ? (
@@ -380,8 +407,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 <h3 className="text-sm font-bold tracking-tight text-[#0091ff]">
                   Interactive Path Workshop
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  Explore the Markov transition tree step-by-step. Click green tokens to grow the path and click red [End] to finalize name compilation.
+                <p className="text-muted-foreground text-xs">
+                  Explore the Markov transition tree step-by-step. Click green tokens to grow the
+                  path and click red [End] to finalize name compilation.
                 </p>
               </div>
               <MarkovVisualizer
@@ -392,10 +420,10 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               />
             </div>
           ) : (
-            <FacetCard className="p-8 border border-border/40 border-dashed bg-secondary/5 text-center text-sm text-muted-foreground flex flex-col items-center justify-center h-full min-h-[300px]">
-              <Info className="h-8 w-8 text-[#0091ff]/40 mb-3" />
+            <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex h-full min-h-[300px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">
+              <Info className="mb-3 h-8 w-8 text-[#0091ff]/40" />
               <p className="font-semibold">Interactive visualizer is inactive</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Provide training seeds to build the Markov trie.
               </p>
             </FacetCard>

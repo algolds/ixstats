@@ -154,7 +154,8 @@ export function generateFaeryName(gender: Gender, alternate = false): string {
     return MarkovChain.capitalize(prefix) + suffix;
   } else {
     const prefix = pickRandom(altFae.prefixes);
-    const suffix = g === "male" ? pickRandom(altFae.maleSuffixes) : pickRandom(altFae.femaleSuffixes);
+    const suffix =
+      g === "male" ? pickRandom(altFae.maleSuffixes) : pickRandom(altFae.femaleSuffixes);
     return MarkovChain.capitalize(prefix) + suffix;
   }
 }
@@ -252,19 +253,13 @@ export function generateAngelName(gender: Gender): string {
     } else if (endsWithAr) {
       // Male: pick titles index 4 to 7 (or 4 to 8, titles has length 9)
       // Female: pick titles index 0 to 3
-      const titleList =
-        g === "male"
-          ? emp.titles.slice(4, 8)
-          : emp.titles.slice(0, 4);
+      const titleList = g === "male" ? emp.titles.slice(4, 8) : emp.titles.slice(0, 4);
       name = MarkovChain.capitalize(pickRandom(titleList)) + name;
     } else {
       // Ends with 'al'
       // Male: pick titles index 0 to 3
       // Female: pick titles index 4 to 7 (or 4 to 8)
-      const titleList =
-        g === "male"
-          ? emp.titles.slice(0, 4)
-          : emp.titles.slice(4, 8);
+      const titleList = g === "male" ? emp.titles.slice(0, 4) : emp.titles.slice(4, 8);
       name = MarkovChain.capitalize(pickRandom(titleList)) + name;
     }
   } else {

@@ -18,8 +18,8 @@ describe("Lexicon Analytics", () => {
       expect(freqs).toHaveLength(3);
       expect(freqs[0]).toEqual({ letter: "a", frequency: 0.5 });
       // b and c have 0.25, order might be based on sort or occurrence
-      expect(freqs.find(f => f.letter === "b")?.frequency).toBe(0.25);
-      expect(freqs.find(f => f.letter === "c")?.frequency).toBe(0.25);
+      expect(freqs.find((f) => f.letter === "b")?.frequency).toBe(0.25);
+      expect(freqs.find((f) => f.letter === "c")?.frequency).toBe(0.25);
     });
 
     it("should ignore case and non-alphabetic characters", () => {
@@ -27,8 +27,8 @@ describe("Lexicon Analytics", () => {
       // Letters: a (2), b (1). Total: 3
       const freqs = getLetterFrequencies(words);
       expect(freqs).toHaveLength(2);
-      expect(freqs.find(f => f.letter === "a")?.frequency).toBeCloseTo(2 / 3);
-      expect(freqs.find(f => f.letter === "b")?.frequency).toBeCloseTo(1 / 3);
+      expect(freqs.find((f) => f.letter === "a")?.frequency).toBeCloseTo(2 / 3);
+      expect(freqs.find((f) => f.letter === "b")?.frequency).toBeCloseTo(1 / 3);
     });
 
     it("should return empty array for empty or invalid inputs", () => {
@@ -83,26 +83,48 @@ describe("Lexicon Analytics", () => {
     it("should score low for critically small lexicons", () => {
       const report = auditLexiconHealth(["Roma", "Pompeii"]);
       expect(report.score).toBeLessThan(100);
-      expect(report.issues.some(i => i.includes("small"))).toBe(true);
+      expect(report.issues.some((i) => i.includes("small"))).toBe(true);
     });
 
     it("should deduct score for duplicates", () => {
       // 6 words, 1 duplicate
-      const report = auditLexiconHealth(["Roma", "Pompeii", "Verona", "Roma", "Toletum", "Tarraco"]);
+      const report = auditLexiconHealth([
+        "Roma",
+        "Pompeii",
+        "Verona",
+        "Roma",
+        "Toletum",
+        "Tarraco",
+      ]);
       expect(report.score).toBeLessThan(100);
-      expect(report.issues.some(i => i.toLowerCase().includes("duplicate"))).toBe(true);
+      expect(report.issues.some((i) => i.toLowerCase().includes("duplicate"))).toBe(true);
     });
 
     it("should deduct score for invalid characters", () => {
-      const report = auditLexiconHealth(["Roma1", "Pompeii", "Verona", "Toletum", "Tarraco", "Athera"]);
+      const report = auditLexiconHealth([
+        "Roma1",
+        "Pompeii",
+        "Verona",
+        "Toletum",
+        "Tarraco",
+        "Athera",
+      ]);
       expect(report.score).toBeLessThan(100);
-      expect(report.issues.some(i => i.toLowerCase().includes("special characters"))).toBe(true);
+      expect(report.issues.some((i) => i.toLowerCase().includes("special characters"))).toBe(true);
     });
 
     it("should deduct score for noise/placeholder words", () => {
-      const report = auditLexiconHealth(["Roma", "Pompeii", "Verona", "Toletum", "Tarraco", "undefined", "test"]);
+      const report = auditLexiconHealth([
+        "Roma",
+        "Pompeii",
+        "Verona",
+        "Toletum",
+        "Tarraco",
+        "undefined",
+        "test",
+      ]);
       expect(report.score).toBeLessThan(100);
-      expect(report.issues.some(i => i.toLowerCase().includes("noise"))).toBe(true);
+      expect(report.issues.some((i) => i.toLowerCase().includes("noise"))).toBe(true);
     });
   });
 });

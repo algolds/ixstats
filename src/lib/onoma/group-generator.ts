@@ -36,9 +36,7 @@ export function generateMysticOrderName(chain?: MarkovChain, options?: GenerateO
   }
 
   const groupOptions =
-    Math.random() < 0.5
-      ? MYSTIC_ORDER_DATA.group.cliques
-      : MYSTIC_ORDER_DATA.group.people;
+    Math.random() < 0.5 ? MYSTIC_ORDER_DATA.group.cliques : MYSTIC_ORDER_DATA.group.people;
 
   const descOptions = MYSTIC_ORDER_DATA.description.quality.concat(
     MYSTIC_ORDER_DATA.description.colour
@@ -57,7 +55,6 @@ export function generateMysticOrderName(chain?: MarkovChain, options?: GenerateO
     return MarkovChain.capitalize(pickRandom(values));
   });
 }
-
 
 /**
  * Generates a name for a military unit or formation.
@@ -83,9 +80,7 @@ export function generateMilitaryUnitName(chain?: MarkovChain, options?: Generate
   const descList = MILITARY_UNIT_DATA.description.colour.concat(
     MILITARY_UNIT_DATA.description.other
   );
-  const placeList = MILITARY_UNIT_DATA.places.seas.concat(
-    MILITARY_UNIT_DATA.places.lands
-  );
+  const placeList = MILITARY_UNIT_DATA.places.seas.concat(MILITARY_UNIT_DATA.places.lands);
 
   const commanderName = chain?.generate(options) || generateFantasySyllableName();
 
@@ -138,13 +133,68 @@ export function generateCovertOrgName(chain?: MarkovChain, options?: GenerateOpt
 /**
  * Generates a name for a commercial business or company.
  */
-export function generateBusinessCompanyName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generateBusinessCompanyName(
+  chain?: MarkovChain,
+  options?: GenerateOptions
+): string {
   const d3 = Math.floor(Math.random() * 3);
   const founder = chain?.generate(options) || generateFantasySyllableName();
-  
-  const adjectives = ["global", "united", "central", "imperial", "national", "cooperative", "union", "standard", "sovereign", "continental", "apex", "vertex", "alpha", "omega", "first", "iron", "golden", "silver", "bronze", "eastern", "western", "northern", "southern"];
-  const industries = ["trade", "shipping", "logistics", "industries", "holdings", "mining", "steel", "textiles", "railway", "agricultural", "manufacturing", "chemicals", "trust", "ventures", "banking", "finance", "energy", "petroleum"];
-  const suffixes = ["Syndicate", "Company", "Corporation", "Group", "Consortium", "Enterprise", "Firm", "Guild"];
+
+  const adjectives = [
+    "global",
+    "united",
+    "central",
+    "imperial",
+    "national",
+    "cooperative",
+    "union",
+    "standard",
+    "sovereign",
+    "continental",
+    "apex",
+    "vertex",
+    "alpha",
+    "omega",
+    "first",
+    "iron",
+    "golden",
+    "silver",
+    "bronze",
+    "eastern",
+    "western",
+    "northern",
+    "southern",
+  ];
+  const industries = [
+    "trade",
+    "shipping",
+    "logistics",
+    "industries",
+    "holdings",
+    "mining",
+    "steel",
+    "textiles",
+    "railway",
+    "agricultural",
+    "manufacturing",
+    "chemicals",
+    "trust",
+    "ventures",
+    "banking",
+    "finance",
+    "energy",
+    "petroleum",
+  ];
+  const suffixes = [
+    "Syndicate",
+    "Company",
+    "Corporation",
+    "Group",
+    "Consortium",
+    "Enterprise",
+    "Firm",
+    "Guild",
+  ];
 
   const adj = MarkovChain.capitalize(pickRandom(adjectives));
   const ind = MarkovChain.capitalize(pickRandom(industries));
@@ -162,12 +212,35 @@ export function generateBusinessCompanyName(chain?: MarkovChain, options?: Gener
 /**
  * Generates a name for an academic institution / university.
  */
-export function generateAcademicInstitutionName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generateAcademicInstitutionName(
+  chain?: MarkovChain,
+  options?: GenerateOptions
+): string {
   const d3 = Math.floor(Math.random() * 3);
   const name = chain?.generate(options) || generateFantasySyllableName();
-  
-  const types = ["University", "Academy", "College", "Institute", "Lyceum", "Conservatory", "School"];
-  const fields = ["Sciences", "Arts", "Medicine", "Philosophy", "Engineering", "Astronomy", "Lore", "Arcana", "Linguistics", "Diplomacy", "Administration"];
+
+  const types = [
+    "University",
+    "Academy",
+    "College",
+    "Institute",
+    "Lyceum",
+    "Conservatory",
+    "School",
+  ];
+  const fields = [
+    "Sciences",
+    "Arts",
+    "Medicine",
+    "Philosophy",
+    "Engineering",
+    "Astronomy",
+    "Lore",
+    "Arcana",
+    "Linguistics",
+    "Diplomacy",
+    "Administration",
+  ];
 
   const type = pickRandom(types);
   const field = pickRandom(fields);
@@ -188,9 +261,46 @@ export function generateMercenaryBandName(chain?: MarkovChain, options?: Generat
   const d3 = Math.floor(Math.random() * 3);
   const commander = chain?.generate(options) || generateFantasySyllableName();
 
-  const groups = ["Mercenaries", "Company", "Free Company", "Legion", "Band", "Raiders", "Soldiers", "Blades", "Swords", "Hounds", "Wolves"];
-  const descriptions = ["Crimson", "Golden", "Black", "Silver", "Iron", "Red", "Grey", "Blood", "Death", "Doom", "Dark", "Free", "Wild"];
-  const entities = ["Coast", "North", "South", "East", "West", "Valley", "Ridge", "Sea", "Shield", "Skull"];
+  const groups = [
+    "Mercenaries",
+    "Company",
+    "Free Company",
+    "Legion",
+    "Band",
+    "Raiders",
+    "Soldiers",
+    "Blades",
+    "Swords",
+    "Hounds",
+    "Wolves",
+  ];
+  const descriptions = [
+    "Crimson",
+    "Golden",
+    "Black",
+    "Silver",
+    "Iron",
+    "Red",
+    "Grey",
+    "Blood",
+    "Death",
+    "Doom",
+    "Dark",
+    "Free",
+    "Wild",
+  ];
+  const entities = [
+    "Coast",
+    "North",
+    "South",
+    "East",
+    "West",
+    "Valley",
+    "Ridge",
+    "Sea",
+    "Shield",
+    "Skull",
+  ];
 
   const group = pickRandom(groups);
   const desc = pickRandom(descriptions);
