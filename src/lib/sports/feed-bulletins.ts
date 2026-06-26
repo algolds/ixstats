@@ -42,9 +42,7 @@ export function encodeSportsBulletin(data: SportsBulletinData, markdown: string)
   return `<!-- sports-bulletin:${JSON.stringify(data)} -->\n${markdown}`;
 }
 
-export function parseSportsBulletin(
-  content: string | null | undefined
-): SportsBulletinData | null {
+export function parseSportsBulletin(content: string | null | undefined): SportsBulletinData | null {
   if (!content) return null;
   const match = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
   if (!match) return null;

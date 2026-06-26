@@ -42,20 +42,8 @@ export default function WikiOSEditPage() {
     title = slug.replace(/_/g, " ");
   }
 
-  const [mode, setMode] = useState<EditorMode>(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const m = params.get("mode");
-      if (m === "visual" || m === "source") return m;
-
-      const htmlDraft = localStorage.getItem(`wikios-draft-html-${title}`);
-      const wtDraft = localStorage.getItem(`wikios-draft-${title}`);
-      if (htmlDraft && !wtDraft) {
-        return "visual";
-      }
-    }
-    return "source";
-  });
+  const [mode, setMode] = useState<EditorMode>("source");
+  const [modeSynced, setModeSynced] = useState(false);
   const [saving, setSaving] = useState(false);
   const [converting, setConverting] = useState(false);
   const [editConflict, setEditConflict] = useState(false);
@@ -70,7 +58,7 @@ export default function WikiOSEditPage() {
     refetch: refetchEditorHtml,
   } = api.wikios.getEditorHtml.useQuery(
     { title },
-    { enabled: !!title && mode === "visual", staleTime: 5 * 60 * 1000 }
+    { enabled: !!title && mode === "visual" && modeSynced, staleTime: 5 * 60 * 1000 }
   );
 
   // Fetch wikitext for source editor
@@ -80,10 +68,40 @@ export default function WikiOSEditPage() {
     refetch: refetchWikitext,
   } = api.wikios.getWikitext.useQuery(
     { title },
-    { enabled: !!title && mode === "source", staleTime: 5 * 60 * 1000 }
+    { enabled: !!title && mode === "source" && modeSynced, staleTime: 5 * 60 * 1000 }
   );
 
-  const isLoading = mode === "visual" ? editorLoading : wtLoading;
+  const isLoading = !modeSynced || (mode === "visual" ? editorLoading : wtLoading);
+
+  // Sync mode with URL query parameter or localStorage preference on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    let m = params.get("mode");
+    if (m !== "visual" && m !== "source") {
+      const pref = localStorage.getItem("wikios:preferredEditor");
+      if (pref === "visual" || pref === "source") {
+        m = pref;
+      }
+    }
+    if (m === "visual" || m === "source") {
+      setMode(m);
+      if (params.get("mode") !== m) {
+        params.set("mode", m);
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState(null, "", newUrl);
+      }
+    } else {
+      const htmlDraft = localStorage.getItem(`wikios-draft-html-${title}`);
+      const wtDraft = localStorage.getItem(`wikios-draft-${title}`);
+      if (htmlDraft && !wtDraft) {
+        setMode("visual");
+        params.set("mode", "visual");
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState(null, "", newUrl);
+      }
+    }
+    setModeSynced(true);
+  }, [title]);
 
   useEffect(() => {
     if (editorHtml?.html && activeHtml === null) {
@@ -183,6 +201,14 @@ export default function WikiOSEditPage() {
           setActiveWikitext(null);
         }
         setMode(newMode);
+      }
+
+      // Sync URL query param
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") !== newMode) {
+        params.set("mode", newMode);
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState(null, "", newUrl);
       }
     },
     [mode, title, convertWikitextToHtml, convertHtmlToWikitext]

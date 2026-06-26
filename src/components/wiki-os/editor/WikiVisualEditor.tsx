@@ -922,7 +922,7 @@ export function WikiVisualEditor({
             Minor
           </label>
           <button
-            className="wikios-editor-btn-primary"
+            className="flex h-8 items-center justify-center rounded-lg bg-[var(--wikios-accent)] px-3 text-xs font-semibold text-white transition-all hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
             onClick={handleSave}
             type="button"
             disabled={saving}

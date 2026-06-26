@@ -16,7 +16,6 @@ import {
 import {
   Search,
   Image as ImageIcon,
-  Trophy,
   FileEdit,
   MessageSquare,
   Clock,
@@ -343,9 +342,9 @@ export function WikiOSUnifiedSidebar({
     const wrapperClass = cn(
       "flex items-center px-2.5 py-1 rounded-xl transition-all duration-300 ease-in-out group outline-none relative",
       isLocalHoverExpanded
-        ? "w-[12rem] z-50 border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] shadow-lg backdrop-blur-md"
-        : "w-full border-transparent bg-transparent hover:bg-white/5",
-      isActive ? "bg-white/[0.03]" : ""
+        ? "w-max z-50 border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] shadow-lg backdrop-blur-md pr-4"
+        : "w-full border-transparent bg-transparent hover:bg-foreground/5",
+      isActive ? "bg-foreground/[0.02]" : ""
     );
 
     if (href) {
@@ -500,17 +499,6 @@ export function WikiOSUnifiedSidebar({
               isActive: pathname === "/wiki/repository" || pathname.startsWith("/wiki/repository/"),
               index: rowIndex++,
             })}
-
-            {renderRow({
-              id: "lorewards",
-              href: withBasePath("/wiki/lorewards"),
-              icon: Trophy,
-              title: "Lore Awards",
-              glowClass:
-                "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
-              isActive: pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
-              index: rowIndex++,
-            })}
           </>
         )}
 
@@ -561,8 +549,8 @@ export function WikiOSUnifiedSidebar({
                     className={cn(
                       "group relative flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out",
                       isStashLocalHovered
-                        ? "z-50 w-[12rem] border border-white/10 bg-neutral-950/90 shadow-lg backdrop-blur-md"
-                        : "w-full border-transparent bg-transparent hover:bg-white/5"
+                        ? "z-50 w-max border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] pr-4 shadow-lg backdrop-blur-md"
+                        : "hover:bg-foreground/5 w-full border-transparent bg-transparent"
                     )}
                   >
                     <div className="shrink-0">
@@ -681,17 +669,6 @@ export function WikiOSUnifiedSidebar({
               glowClass:
                 "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
               isActive: pathname === "/wiki/repository" || pathname.startsWith("/wiki/repository/"),
-              index: rowIndex++,
-            })}
-
-            {renderRow({
-              id: "lorewards",
-              href: withBasePath("/wiki/lorewards"),
-              icon: Trophy,
-              title: "Lore Awards",
-              glowClass:
-                "rail-glow-gold rail-animate-rotate border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15",
-              isActive: pathname === "/wiki/lorewards" || pathname.startsWith("/wiki/lorewards/"),
               index: rowIndex++,
             })}
 

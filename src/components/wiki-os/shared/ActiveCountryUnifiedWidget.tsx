@@ -69,8 +69,8 @@ export function ActiveCountryUnifiedWidget({
         className={cn(
           "group relative flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out outline-none",
           isLocalHoverExpanded
-            ? "z-50 w-[12rem] border border-white/10 bg-neutral-950/90 shadow-lg backdrop-blur-md"
-            : "w-full border-transparent bg-transparent hover:bg-white/5"
+            ? "z-50 w-max border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] pr-4 shadow-lg backdrop-blur-md"
+            : "hover:bg-foreground/5 w-full border-transparent bg-transparent"
         )}
       >
         <button
@@ -181,19 +181,19 @@ export function ActiveCountryUnifiedWidget({
                 Vitality Indices
               </div>
               <div className="grid grid-cols-2 gap-1.5 text-[9px]">
-                <div className="flex justify-between rounded bg-white/5 px-1.5 py-1">
+                <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Econ:</span>
                   <span className="font-bold text-green-400">{rings.economicVitality}</span>
                 </div>
-                <div className="flex justify-between rounded bg-white/5 px-1.5 py-1">
+                <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Well:</span>
                   <span className="font-bold text-blue-400">{rings.populationWellbeing}</span>
                 </div>
-                <div className="flex justify-between rounded bg-white/5 px-1.5 py-1">
+                <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Diplo:</span>
                   <span className="font-bold text-purple-400">{rings.diplomaticStanding}</span>
                 </div>
-                <div className="flex justify-between rounded bg-white/5 px-1.5 py-1">
+                <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Gov:</span>
                   <span className="font-bold text-amber-400">{rings.governmentalEfficiency}</span>
                 </div>

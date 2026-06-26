@@ -11,7 +11,7 @@ export interface ArrowTrendingUpIconHandle {
   stopAnimation: () => void;
 }
 
-interface ArrowTrendingUpIconProps extends HTMLAttributes<HTMLDivElement> {
+interface ArrowTrendingUpIconProps extends HTMLAttributes<HTMLSpanElement> {
   size?: number;
 }
 
@@ -74,7 +74,7 @@ const ArrowTrendingUpIcon = forwardRef<ArrowTrendingUpIconHandle, ArrowTrendingU
     });
 
     const handleMouseEnter = useCallback(
-      (e: React.MouseEvent<HTMLDivElement>) => {
+      (e: React.MouseEvent<HTMLSpanElement>) => {
         if (isControlledRef.current) {
           onMouseEnter?.(e);
         } else {
@@ -85,7 +85,7 @@ const ArrowTrendingUpIcon = forwardRef<ArrowTrendingUpIconHandle, ArrowTrendingU
     );
 
     const handleMouseLeave = useCallback(
-      (e: React.MouseEvent<HTMLDivElement>) => {
+      (e: React.MouseEvent<HTMLSpanElement>) => {
         if (isControlledRef.current) {
           onMouseLeave?.(e);
         } else {
@@ -96,8 +96,8 @@ const ArrowTrendingUpIcon = forwardRef<ArrowTrendingUpIconHandle, ArrowTrendingU
     );
 
     return (
-      <div
-        className={cn(className)}
+      <span
+        className={cn("inline-block", className)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         {...props}
@@ -129,7 +129,7 @@ const ArrowTrendingUpIcon = forwardRef<ArrowTrendingUpIconHandle, ArrowTrendingU
             variants={ARROW_VARIANTS}
           />
         </motion.svg>
-      </div>
+      </span>
     );
   }
 );
