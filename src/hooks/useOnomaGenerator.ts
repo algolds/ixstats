@@ -1,9 +1,10 @@
 // src/hooks/useOnomaGenerator.ts
 // Onoma Lab — Custom Hook for Client-side Generation
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
+import { trainLM, naturalnessScore, type NgramLM } from "~/lib/onoma/perplexity";
 import { CULTURAL_PROFILES } from "~/lib/onoma/cultural-profiles";
 import { generateFantasySyllableName, generateNobleSurname } from "~/lib/onoma/name-generator";
 import {
@@ -31,7 +32,7 @@ import {
   generateMercenaryBandName,
 } from "~/lib/onoma/group-generator";
 import { generateTavernName } from "~/lib/onoma/tavern-generator";
-import { NameCategory, CulturalProfile, TrainingMode, GenerateOptions, Gender } from "~/lib/onoma/types";
+import type { NameCategory, CulturalProfile, GenerateOptions, Gender } from "~/lib/onoma/types";
 
 /**
  * Maps NameCategory to training data types fetched from backend.
@@ -109,6 +110,9 @@ export function useOnomaGenerator() {
     };
   }, [lexiconCat]);
 
+  // Phonotactic perplexity model over the current training set (naturalness scoring).
+  const lmRef = useRef<NgramLM | null>(null);
+
   // Instantiate client-side Markov Chain engines (both character-based and syllable-based)
   const characterChain = useMemo(() => new MarkovChain(order, "character"), [order]);
   const syllableChain = useMemo(() => new MarkovChain(Math.min(2, Math.max(1, order - 1)), "syllable"), [order]);
@@ -151,7 +155,13 @@ export function useOnomaGenerator() {
       characterChain.addWords(allSeeds);
       syllableChain.addWords(allSeeds);
     }
-  }, [culture, category, dbTrainingNames, lexiconDict, includeWorldData, order, characterChain, syllableChain]);
+    // Phonotactic perplexity model over the same seeds (for naturalness scoring).
+    lmRef.current = allSeeds.length > 0 ? trainLM(allSeeds, 3) : null;
+  }, [culture, category, dbTrainingNames, lexiconDict, includeWorldData, order, characterChain, syllableChain, lmRef]);
+
+  // Naturalness scorer (0–100) for a generated name, vs the current training set.
+  const scoreNaturalness = (name: string): number | null =>
+    lmRef.current ? naturalnessScore(name, lmRef.current) : null;
 
   /**
    * Generates a batch of names based on current configuration and rule-based presets.
@@ -285,6 +295,7 @@ export function useOnomaGenerator() {
     generatedNames,
     isGenerating,
     generate,
+    scoreNaturalness,
     refetchTraining,
   };
 }

@@ -31,7 +31,7 @@ Single-Page Router pattern.
 - **`hooks/`** — local state managers:
   - **`useStudioState.ts`** — unified hook housing all Custom Studio state, analytics calculations (entropy, letter frequencies), dictionary loader triggers, and deletion cascades.
 - **`components/shared/`**
-  - **`GeneratorPanel.tsx`** — the reusable generator UI every section mounts. Left column: constraints (subtype, gender, **Markov source**, **culture family**, advanced length/affix/order). Right column: results grid with copy / save-name / save-dictionary.
+  - **`GeneratorPanel.tsx`** — the reusable generator UI every section mounts. Left column: constraints (subtype, gender, **Culture / Linguistic Family**, and advanced options: Include Live World Data toggle, prefix/suffix, length/affix/order). Right column: results grid with copy / save-name / save-dictionary.
   - **`NameResultCard.tsx`** — name results featuring inline detail morphs. Toggling details expands the card to `col-span-2` in the grid and renders case-declension case tables, script badges, and dictionary definition edit forms in-situ.
   - `UseNameDialog.tsx` — "use this name" → routes into a builder/wiki flow.
   - `OnomaHelpModal.tsx` — in-app explainer.
@@ -41,14 +41,16 @@ Single-Page Router pattern.
 Sections render `<GeneratorPanel category=… />`. The panel drives the
 [`useOnomaGenerator`](../../../hooks/useOnomaGenerator.ts) hook, which:
 
-1. picks a **Markov source** — `corpus` (default, wiki-trained dicts), `preset` (hand-authored
-   cultures), or `ixworld` (live DB);
-2. in corpus mode, lazy-loads `data/corpus/<category>.json` and exposes the **Culture Bucket**
-   facet (Any / 7 single cultures / top-6 `A+B` compounds);
-3. trains a client-side Markov chain and `generate(n)` produces a batch.
+1. picks one **Culture / Linguistic Family** (default `any`). For that family it blends the
+   hand-authored `cultural-profiles.ts` list with the matching bucket of the prebuilt wiki
+   **lexicon** (lazy-loaded `data/lexicon/<category>.json`). Optionally folds in **live world
+   data** (advanced toggle → `api.onoma.getTrainingData`).
+2. trains parallel character + syllable Markov chains and `generate(n)` produces a batch,
+   applying any prefix/suffix.
 
-Some People/Organization subtypes (dwarf, elf, tavern, …) use rule-based assemblers instead
-of the Markov chain — see the lib README.
+Some People/Organization subtypes (dwarf, elf, tavern, noble-surname, …) use rule-based
+assemblers instead of the Markov chain — see the lib README. Each result can morph open to
+show IPA, declension tables, and script transcriptions (the linguistics engine).
 
 ## Conventions
 

@@ -1,77 +1,132 @@
-# Onoma — Name Generation Lab
+# Onoma — Language & Naming Engine
 
-Client-side procedural name generator at **`/labs/onoma`**. Two engines:
+Client-side procedural name generator + linguistics engine at **`/labs/onoma`**. The
+philosophy is **"deterministic first"**: procedural generation is the source of truth.
 
-1. **Markov chain** — order-N character model trained on a word list, generates novel
-   names in that style. This is the flagship path.
-2. **Rule-based assemblers** — syllable/template generators ported from the original
+Three layers:
+
+1. **Markov engine** (`markov-chain.ts`) — the flagship. Multi-order character **and**
+   syllable models trained on a word list, with automatic **backoff** (tries order N, falls
+   back to N−1 … down to 1 when constraints are tight) and phonotactic safeguards
+   (consonant/vowel cluster caps, vowel harmony, double-letter control). Generates novel,
+   pronounceable names in the trained style.
+2. **Linguistics engine** — enriches each generated name: IPA (`phonology.ts`), grammatical
+   gender + 5-case declensions (`morphology.ts`), and Cyrillic/Greek/Arabic transcription
+   (`orthography.ts`).
+3. **Rule-based assemblers** — syllable/template generators ported from the original
    [Onoma](https://github.com/algolds/onoma) (fantasy species, taverns, mystic orders,
-   military units, etc.). Pattern-driven, not learned.
+   military units, noble surnames, etc.). Pattern-driven, not learned.
 
-Everything runs in the browser. The server is only touched to save names to the Stash
-and to log generation activity.
+Everything runs in the browser. The server is only touched to save names to the Stash,
+fetch optional live-world training data, and log generation activity.
 
-## Markov sources
+## Training source (one culture selector + optional world data)
 
-The generator can train its Markov chain from three sources (`TrainingMode`), chosen in
-`GeneratorPanel`:
+The generator trains on **one blended pool**, configured in `GeneratorPanel` →
+`useOnomaGenerator`:
 
-| Mode | Source | Notes |
-|------|--------|-------|
-| **`corpus`** (default) | Prebuilt dictionaries mined from IxWiki + iiwiki + althistory | Offline-built, lazy-loaded, culture-faceted. The flagship. |
-| `preset` | `cultural-profiles.ts` (7 hand-authored culture lists) | Latin, Germanic, Celtic, Slavic, Arabic, East-Asian, Austronesian, Constructed. |
-| `ixworld` | Live DB via `api.onoma.getTrainingData` | Current country/city/province/official names. |
+- **Culture / Linguistic Family** (`culture`, default `"any"`) — picks the flavour. For a
+  given family it trains on the hand-authored `cultural-profiles.ts` list **plus** the
+  matching bucket from the prebuilt wiki **lexicon** (`data/lexicon/<category>.json`). The
+  wiki lexicon is always mixed into the presets — there is no separate "source" toggle.
+  `"any"` blends every culture; `"constructed"` is preset-only (no wiki bucket).
+- **Include Live World Data** (`includeWorldData`, advanced toggle, default off) — also folds
+  in current country/city/province/official names from the live DB
+  (`api.onoma.getTrainingData`).
+
+Two chains are trained in parallel (`characterChain`, `syllableChain`); generation tries the
+character chain, then the syllable chain, then a fantasy-syllable fallback.
 
 ## File map
 
 ```
 src/lib/onoma/
-  markov-chain.ts        Markov engine (multi-order lookback & backoff, cluster limits, harmony)
-  name-generator.ts      Markov wrapper + fantasy-syllable assembler
-  phonology.ts           Grapheme-to-IPA parser and consonant-onset stress heuristics
-  morphology.ts          Grammatical gender detection & noun case declensions table
-  orthography.ts         Script transcribers for Greek, Cyrillic, and Arabic (RTL)
-  lexicon-analytics.ts   Shannon entropy, bigram/trigram frequencies, health audit report
+  markov-chain.ts        Markov engine (multi-order backoff, char+syllable modes, cluster
+                         limits, vowel harmony, getTransitions for the visualizer)
+  name-generator.ts      Markov wrapper + fantasy-syllable & noble-surname assemblers
+  phonology.ts           Grapheme→IPA parser per culture + consonant-onset stress heuristic
+  morphology.ts          Grammatical gender detection & 5-case noun declension tables
+  orthography.ts         Script transcribers for Cyrillic, Greek, and Arabic (RTL)
+  perplexity.ts          Char n-gram LM → name "naturalness" 0–100 (Phase 5)
+  speech.ts              IPA→eSpeak phoneme converter + culture→voice map (Phase 7, pure)
+  mespeak-loader.ts      Lazy meSpeak (asm.js eSpeak) loader; speaks names from IPA (browser)
+  lexicon-analytics.ts   Shannon entropy, letter/bigram/trigram freqs, 0–100 health audit
   species/group/tavern   Rule-based assemblers (port)
-  cultural-profiles.ts   7 culture word lists (preset mode + classifier training)
+  cultural-profiles.ts   8 culture word lists (preset training + classifier training)
   data/                  Generated, COMMITTED:
     fantasy/species/group/tavern-data.ts   syllable/template data (from the original repo)
-    lexicon/<category>.json + manifest.json compact wiki dictionaries (Phase 4 output)
+    lexicon/<category>.json + manifest.json  compact wiki dictionaries (build output)
   lexicon/               Lexicon pipeline logic (pure, jest-tested):
     clean.ts             title → trainable name
     culture-classifier.ts  n-gram Naive-Bayes → single culture or "A+B" compound
     bucket.ts            final bucket assignment + top-compound ranking
-src/hooks/useOnomaGenerator.ts   state, lazy dict loading, training, generate()
-src/app/labs/onoma/              SPA router + sections + GeneratorPanel UI
+src/hooks/useOnomaGenerator.ts   state, lazy lexicon loading, training, generate()
+src/app/labs/onoma/              SPA router + sections + Studio + GeneratorPanel UI
 src/server/api/routers/onoma.ts  Stash save/load, training data, activity log
 scripts/onoma/                   offline build pipeline (run with bun)
 ```
 
-## Rebuilding the corpus
+## Rebuilding the wiki lexicon
 
-The wiki-trained dictionaries are built offline in four steps. **Run with `bun`** (not
+The wiki-trained dictionaries (`data/lexicon/`) are built offline. **Run with `bun`** (not
 `tsx` — `cultural-profiles.ts` has a type-only import tsx ESM mishandles). Re-run manually
 whenever you want fresh wiki data; output is deterministic.
 
 ```bash
-bun scripts/onoma/extract-corpus.ts   # 1. harvest → scripts/onoma/raw/corpus-raw.json (gitignored)
-bun scripts/onoma/clean.ts            # 2. clean+dedup → raw/corpus-clean.json
-bun scripts/onoma/build-dicts.ts      # 3+4. classify, bucket, emit → src/lib/onoma/data/corpus/*.json
+bun scripts/onoma/extract-lexicon.ts  # 1. harvest → scripts/onoma/raw/lexicon-raw.json (gitignored)
+bun scripts/onoma/clean.ts            # 2. clean+dedup → raw/lexicon-clean.json
+bun scripts/onoma/build-dicts.ts      # 3+4. classify, bucket, emit → src/lib/onoma/data/lexicon/*.json
 ```
 
-`extract-corpus.ts` reads IxWiki straight from MariaDB (creds parsed from
+`extract-lexicon.ts` reads IxWiki straight from MariaDB (creds parsed from
 `/ixwiki/config/LocalSettings.php`) and the external wikis via the MediaWiki action API.
 Both type names by which `Infobox_*` template a page transcludes (SQL `templatelinks` /
 API `list=embeddedin`). External fetches are disk-cached under `scripts/onoma/raw/cache/`.
+`rebuild-from-committed.ts` re-derives the lexicon from the committed JSON without re-fetching.
 
 > **iiwiki note:** requests must send `User-Agent: IxStats-Builder` (allowlisted past its
 > Cloudflare challenge) and hit `https://iiwiki.com/api.php`. See CLAUDE.md → "External
 > Wiki Access".
 
+## Linguistics engine
+
+Applied per generated name (in `NameResultCard`), all pure-TS and deterministic:
+
+- **`translateToIPA(name, culture)`** — left-to-right grapheme→IPA scan using per-culture
+  rule tables (Latin, Germanic, Celtic, Slavic, Arabic, East-Asian, Austronesian,
+  Constructed), then a consonant-onset primary-stress mark.
+- **`getMorphologyDetails(name, culture)`** — grammatical gender from word endings, plus a
+  full singular/plural declension table across 5 cases (Nominative→Ablative), with
+  culture-specific paradigms (Latin declensions, Greek, Slavic, Arabic triptote, Quenya…).
+- **`transcribeToScript(name, "cyrillic"|"greek"|"arabic")`** — grapheme→script mapping
+  (Greek final-sigma handling, Arabic RTL).
+
+## Naturalness scoring (Phase 5)
+
+`trainLM(words)` builds a char n-gram language model; `naturalnessScore(name, lm)` returns
+0–100 — the percentile of training words a candidate is at least as natural/pronounceable as
+(no magic constants). `useOnomaGenerator` trains an LM on the active seed pool and exposes
+`scoreNaturalness(name)`; `NameResultCard` shows it as a "% fit" badge.
+
+## Voice (Phase 7)
+
+`speakName(name, ipa, culture)` (in `mespeak-loader.ts`, browser-only) lazy-loads **meSpeak**
+(asm.js eSpeak — no WASM, no CSP change) and synthesizes the **IPA** the phonology engine
+produced, via `ipaToEspeak` → eSpeak `[[phoneme]]` notation, in a culture-matched voice
+(`voiceForCulture`). Any failure falls back to native Web Speech. Voice assets are served from
+`public/onoma/mespeak/` (config + `voices/<id>.json`; English id is `en/en`).
+
+## Lexicon analytics
+
+`lexicon-analytics.ts` powers the Studio's health panel: `calculateEntropy` (Shannon entropy
+of letter distribution), `getLetterFrequencies` / `getNgramFrequencies`, and
+`auditLexiconHealth` → a 0–100 score + issue list (size, duplicates, invalid chars, length
+outliers, noise words).
+
 ## Culture classification
 
 `classifyCulture(name)` is a character bigram+trigram Naive-Bayes classifier (pure TS, no
-ML dependency). It trains at module load from the 7 `CULTURAL_PROFILES` lists. For each
+ML dependency). It trains at module load from the 8 `CULTURAL_PROFILES` lists. For each
 name it returns either a **single culture** (one wins by `MIN_MARGIN`) or a **compound
 `A+B`** blend when the top two are close — which is the norm for invented conworld names.
 `build-dicts.ts` keeps the 7 singles + the **top-6 compounds** as dictionary buckets;
@@ -92,9 +147,10 @@ After changing a classifier/build knob, re-run `bun scripts/onoma/build-dicts.ts
 ## Tests
 
 ```bash
-bun run test -- src/lib/onoma           # engine + corpus logic
+bun run test -- src/lib/onoma           # engine, linguistics, lexicon logic
 ```
 
-Covers: Markov capitalize/dedup/constraints, corpus cleaning, the culture classifier
-(held-out names + precision floor), and bucket assignment. The extractor seam check runs
-standalone: `bunx tsx scripts/onoma/extract-corpus.test.ts`.
+Covers: Markov capitalize/dedup/constraints, phonology/morphology/orthography, lexicon
+analytics, lexicon cleaning, the culture classifier (held-out names + precision floor), and
+bucket assignment. The extractor seam check runs standalone:
+`bunx tsx scripts/onoma/extract-lexicon.test.ts`.

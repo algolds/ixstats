@@ -25,9 +25,11 @@ interface NameResultCardProps {
   onSave?: (name: string, stashId?: string) => Promise<any>;
   onUse?: (name: string) => void;
   culture?: string;
+  /** Phonotactic naturalness 0–100 vs the training set (Phase 5 perplexity scorer). */
+  naturalness?: number | null;
 }
 
-export function NameResultCard({ name, isSaved = false, onSave, onUse, culture }: NameResultCardProps) {
+export function NameResultCard({ name, isSaved = false, onSave, onUse, culture, naturalness }: NameResultCardProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [localSaved, setLocalSaved] = useState(isSaved);
@@ -113,12 +115,9 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse, culture }
 
   const handlePlayPronunciation = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(name);
-      utterance.rate = 0.85;
-      window.speechSynthesis.speak(utterance);
-    }
+    // eSpeak (meSpeak) synthesis from the IPA, with a culture-matched voice;
+    // lazy-loads the engine on first click and falls back to Web Speech on error.
+    void import("~/lib/onoma/mespeak-loader").then((m) => m.speakName(name, ipa, culture ?? null));
   };
 
   // Sync prop changes to local state
@@ -181,6 +180,20 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse, culture }
                 <Volume2 className="h-2.5 w-2.5" />
                 <span>{ipa}</span>
               </button>
+            )}
+            {typeof naturalness === "number" && (
+              <span
+                title="Phonotactic naturalness — how well this name fits the trained style"
+                className={`text-[9px] px-2 py-0.5 rounded-full border font-mono select-none ${
+                  naturalness >= 66
+                    ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                    : naturalness >= 33
+                      ? "text-amber-600 border-amber-500/30 bg-amber-500/10"
+                      : "text-rose-600 border-rose-500/30 bg-rose-500/10"
+                }`}
+              >
+                {naturalness}% fit
+              </span>
             )}
             {/* Hidden for now: Cyrillic/Greek/Arabic spelling buttons */}
             {/*

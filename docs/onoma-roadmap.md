@@ -32,9 +32,9 @@ gantt
 | **Phase 2** | **Corpus Intelligence** | **100% Completed** | [lexicon-analytics.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-analytics.ts), [LexiconExplorer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/LexiconExplorer.tsx), [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) |
 | **Phase 3** | **Linguistics Engine** | **90% Completed** | [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts), [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts), [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts), [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx) |
 | **Phase 4** | **Living Languages** | *Planned* | Evolution engine, timelines, loanword/dialect tracking. |
-| **Phase 5** | **ML Layer** | *Planned* | Perplexity validation, semantic search embedding. |
+| **Phase 5** | **ML Layer** | *In Progress* | ✅ Phonotactic perplexity scorer (`perplexity.ts`, naturalness % badge). ⏳ TF-IDF semantic search, lexicon gap recommender. |
 | **Phase 6** | **AI Linguist** | *Planned* | Local LLM-backed dictionary writing & etymologies. |
-| **Phase 7** | **Voice** | *Planned* | TTS speech synthesis, historical voice shifts. |
+| **Phase 7** | **Voice** | *Core Done* | ✅ IPA-driven synthesis via meSpeak (asm.js eSpeak): `speech.ts` (`ipaToEspeak`, culture→voice) + `mespeak-loader.ts`, wired to the pronounce button. ⏳ Historical voice shifts (depends on Phase 4). |
 | **Phase 8** | **Translation Engine** | *Planned* | Grammar-aware English <=> conlang translators. |
 | **Phase 9** | **Language Studio** | *Planned* | Visual grammar/alphabet editor, dialect forks. |
 | **Phase 10**| **Onoma AI** | *Planned* | Generative language simulation agents. |

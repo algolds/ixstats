@@ -462,6 +462,7 @@ export function GeneratorPanel({
                     onSave={handleSaveName}
                     onUse={(n) => setUseName(n)}
                     culture={gen.culture}
+                    naturalness={gen.scoreNaturalness(name)}
                   />
                 ))}
               </div>
