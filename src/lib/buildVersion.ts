@@ -28,7 +28,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 1,
-    patch: 2,
+    patch: 3,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },
@@ -56,6 +56,7 @@ export const VERSIONS = {
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
     halo: 2, // global contextual overlay (was "Dynamic Island"); +Live Activities
+    onoma: 1, // name generation and linguistic dictionary studio
   },
 
   // Design system.
@@ -108,6 +109,7 @@ export const ACHIEVEMENTS_VERSION = String(VERSIONS.systems.achievements);
 export const STASH_VERSION = String(VERSIONS.systems.stash);
 export const REPOSITORY_VERSION = String(VERSIONS.systems.repository);
 export const HALO_VERSION = String(VERSIONS.systems.halo);
+export const ONOMA_VERSION = String(VERSIONS.systems.onoma);
 
 // Design system.
 export const FACET_VERSION = String(VERSIONS.design.facet);

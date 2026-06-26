@@ -84,7 +84,20 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   useEffect(() => {
     if (open) {
       setStep(1);
-      setTitle("");
+
+      // Try to read title and page type from URL search parameters
+      let initialTitle = "";
+      let initialType: PageType = "blank";
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        initialTitle = params.get("wiki_title") || params.get("title") || "";
+        const typeParam = params.get("wiki_type") || params.get("type");
+        if (typeParam && ["blank", "person", "company", "history", "country", "conflict", "politics", "tech"].includes(typeParam)) {
+          initialType = typeParam as PageType;
+        }
+      }
+
+      setTitle(initialTitle);
       const stored = localStorage.getItem("wikios:preferredEditor");
       if (stored === "visual" || stored === "source") {
         setEditorMode(stored);
@@ -93,7 +106,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
         setEditorMode("visual");
         setRememberChoice(false);
       }
-      setPageType("blank");
+      setPageType(initialType);
       setExistsWarning(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }

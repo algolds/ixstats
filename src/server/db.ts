@@ -244,10 +244,10 @@ const createPrismaClient = () => {
     // Wiki cache (written by WikiCacheService for 3-layer caching)
     "WikiCache",
     "ExternalApiCache",
-    // WikiOS Lore Stash — save-for-later with annotations
-    "LoreStash",
-    "LoreStashItem",
-    "LoreStashAnnotation",
+    // WikiOS Stash — save-for-later with annotations
+    "Stash",
+    "StashItem",
+    "StashAnnotation",
     // WikiOS Template Registry
     "WikiTemplate",
     // Lorewards — synced from Discord bot + cross-validation

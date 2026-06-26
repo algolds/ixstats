@@ -12,7 +12,8 @@
 }
 
 /* On pages with headless builder, preserve fixed positioning */
-body:has([data-builder-headless]) .navigation-bar {
+body:has([data-builder-headless]) .navigation-bar,
+body:has([data-headless-nav]) .navigation-bar {
   position: fixed !important;
 }
 
@@ -33,7 +34,8 @@ body.compact-mode main {
 }
 
 /* Headless builder mode should have zero padding at the top since it starts hidden */
-body:has([data-builder-headless]) main {
+body:has([data-builder-headless]) main,
+body:has([data-headless-nav]) main {
   padding-top: 0 !important;
 }
 
@@ -65,6 +67,7 @@ body.compact-mode .extend-under-nav {
   top: -48px;
 }
 
-body:has([data-builder-headless]) .extend-under-nav {
+body:has([data-builder-headless]) .extend-under-nav,
+body:has([data-headless-nav]) .extend-under-nav {
   top: 0 !important;
 }

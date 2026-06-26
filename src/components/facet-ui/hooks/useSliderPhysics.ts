@@ -51,12 +51,14 @@ export function useSliderPhysics({
 
   // ─── Motion Values & Springs ───────────────────────────────────────────────
 
+  const [springConfig, setSpringConfig] = React.useState(indicatorSpringConfig);
+
   const rawX = useMotionValue(activeBounds ? activeBounds.left : 0);
   const rawWidth = useMotionValue(activeBounds ? activeBounds.width : 0);
   const grabProgress = useMotionValue(0);
 
-  const springX = useSpring(rawX, indicatorSpringConfig);
-  const springWidth = useSpring(rawWidth, indicatorSpringConfig);
+  const springX = useSpring(rawX, springConfig);
+  const springWidth = useSpring(rawWidth, springConfig);
   const springGrab = useSpring(grabProgress, grabSpringConfig);
 
   // Ref tracking drag coordinates and state
@@ -68,6 +70,28 @@ export function useSliderPhysics({
   const activePointerId = useRef<number | null>(null);
   const lastMoveTime = useRef(0);
   const lastMoveX = useRef(0);
+
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearClickTimeout = () => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+  };
+
+  // Keep springConfig in sync with parent prop if it changes (value comparison to avoid false triggers)
+  const lastIndicatorConfig = useRef(indicatorSpringConfig);
+  useEffect(() => {
+    if (
+      indicatorSpringConfig.stiffness !== lastIndicatorConfig.current.stiffness ||
+      indicatorSpringConfig.damping !== lastIndicatorConfig.current.damping ||
+      indicatorSpringConfig.mass !== lastIndicatorConfig.current.mass
+    ) {
+      setSpringConfig(indicatorSpringConfig);
+      lastIndicatorConfig.current = indicatorSpringConfig;
+    }
+  }, [indicatorSpringConfig]);
 
   // Keep target X & Width in sync with active changes when not dragging
   useEffect(() => {
@@ -86,6 +110,10 @@ export function useSliderPhysics({
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
     activePointerId.current = event.pointerId;
+
+    // Reset spring config to default immediately on pointer down for fluid drag/flick
+    clearClickTimeout();
+    setSpringConfig(indicatorSpringConfig);
 
     grabProgress.set(1);
     dragStartX.current = event.clientX;
@@ -225,6 +253,9 @@ export function useSliderPhysics({
     isDragging.current = false;
     grabProgress.set(0);
 
+    clearClickTimeout();
+    setSpringConfig(indicatorSpringConfig);
+
     if (activeBounds) {
       rawX.set(activeBounds.left);
       rawWidth.set(activeBounds.width);
@@ -237,7 +268,16 @@ export function useSliderPhysics({
       event.preventDefault();
       return;
     }
+
+    clearClickTimeout();
+    // Fast snap settings: stiffness: 3000, damping: 120 (settles in ~60ms)
+    setSpringConfig({ stiffness: 3000, damping: 120, mass: 1 });
     onChange(id);
+
+    // After animation settles, restore default spring configuration
+    clickTimeoutRef.current = setTimeout(() => {
+      setSpringConfig(indicatorSpringConfig);
+    }, 150);
   };
 
   // Cleanup on unmount
@@ -245,6 +285,7 @@ export function useSliderPhysics({
     return () => {
       activePointerId.current = null;
       isDragging.current = false;
+      clearClickTimeout();
     };
   }, []);
 

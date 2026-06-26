@@ -78,18 +78,18 @@ model WikiTemplate {
   @@map("wiki_templates")
 }
 
-/// A named, color-coded collection of saved wiki pages (Lore Stash).
-model LoreStash {
-  id        String          @id @default(cuid())
+/// A named, color-coded collection of saved wiki pages (Stash).
+model Stash {
+  id        String      @id @default(cuid())
   userId    String
-  name      String          @default("My Stash")
-  color     String          @default("#3b82f6")
+  name      String      @default("My Stash")
+  color     String      @default("#3b82f6")
   icon      String?
-  isDefault Boolean         @default(false)
-  order     Int             @default(0)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  items     LoreStashItem[]
+  isDefault Boolean     @default(false)
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     StashItem[]
 
   @@unique([userId, name])
   @@index([userId])
@@ -97,20 +97,20 @@ model LoreStash {
   @@map("lore_stashes")
 }
 
-/// A single saved page within a Lore Stash, with optional notes.
-model LoreStashItem {
-  id          String              @id @default(cuid())
+/// A single saved page within a Stash, with optional notes.
+model StashItem {
+  id          String            @id @default(cuid())
   stashId     String
   pageTitle   String
   pageSlug    String
-  contentType String              @default("wiki") // "wiki" | "forum_thread" | "forum_post"
+  contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
   contentId   Int?                                  // XenForo thread_id or post_id for forum items
   note        String?
-  order       Int                 @default(0)
-  savedAt     DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  stash       LoreStash           @relation(fields: [stashId], references: [id], onDelete: Cascade)
-  annotations LoreStashAnnotation[]
+  order       Int               @default(0)
+  savedAt     DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  stash       Stash             @relation(fields: [stashId], references: [id], onDelete: Cascade)
+  annotations StashAnnotation[]
 
   @@unique([stashId, pageTitle])
   @@index([stashId])
@@ -120,8 +120,8 @@ model LoreStashItem {
 }
 
 /// A text-selection annotation on a saved wiki page.
-model LoreStashAnnotation {
-  id             String        @id @default(cuid())
+model StashAnnotation {
+  id             String    @id @default(cuid())
   itemId         String
   anchorSelector String
   anchorOffset   Int
@@ -129,10 +129,10 @@ model LoreStashAnnotation {
   focusOffset    Int
   selectedText   String
   comment        String?
-  color          String        @default("#fbbf24")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  item           LoreStashItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  color          String    @default("#fbbf24")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  item           StashItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@index([itemId])
   @@map("lore_stash_annotations")

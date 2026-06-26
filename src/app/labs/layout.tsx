@@ -1,17 +1,8 @@
 "use client";
 
-import { BackgroundImageTexture } from "~/components/ui/bg-image-texture";
 import { useHeadlessNav } from "~/hooks/useHeadlessNav";
 
-/**
- * Builder Layout - Headless mode with scroll-up navigation reveal
- *
- * The builder starts "headless" - content begins at the top of the viewport.
- * The main site navigation is hidden by default.
- * Wheel up (when content area is at its scroll top) reveals the nav.
- * Wheel down hides it. Touch/mouse drag-up at the top also triggers it.
- */
-export default function BuilderLayout({ children }: { children: React.ReactNode }) {
+export default function LabsLayout({ children }: { children: React.ReactNode }) {
   const { showNav } = useHeadlessNav();
 
   return (
@@ -51,13 +42,8 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
           transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
       `}</style>
- 
-      <div data-builder-headless data-headless-nav data-show-nav={showNav} className="relative min-h-screen">
-        <BackgroundImageTexture
-          variant="groovepaper"
-          opacity={0.08}
-          className="pointer-events-none absolute inset-0 z-0"
-        />
+
+      <div data-headless-nav data-show-nav={showNav} className="relative min-h-screen">
         {children}
       </div>
     </>

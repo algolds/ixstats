@@ -77,8 +77,8 @@ export const adminSystemRouter = createTRPCRouter({
   getStashStats: adminProcedure.query(async ({ ctx }) => {
     try {
       const [totalStashes, totalHighlights] = await Promise.all([
-        ctx.db.loreStashItem.count(),
-        ctx.db.loreStashAnnotation.count(),
+        ctx.db.stashItem.count(),
+        ctx.db.stashAnnotation.count(),
       ]);
       return {
         totalStashes,

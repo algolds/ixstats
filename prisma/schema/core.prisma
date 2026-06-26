@@ -180,6 +180,7 @@ model Country {
   blurbResponses              BlurbResponse[]               @relation("CountryBlurbResponses")
   realm                       Realm?                        @relation("RealmCountries", fields: [realmId], references: [id])
   realmId                     String                        @default("default")
+  nameBankEntries             NameBank[]                    @relation("CountryNameBank")
 
   @@index([name])
   @@index([economicTier])
@@ -256,6 +257,7 @@ model User {
   shareholdings       Shareholding[]           @relation("UserShareholdings")
   sectorPositions     SectorPosition[]         @relation("UserSectorPositions")
   conversionLogs      ConversionLog[]          @relation("UserConversionLogs")
+  nameBankEntries     NameBank[]               @relation("UserNameBank")
 
   @@index([clerkUserId])
   @@index([countryId])

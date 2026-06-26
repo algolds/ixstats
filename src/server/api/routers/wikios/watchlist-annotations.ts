@@ -53,12 +53,12 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const item = await db.loreStashItem.findUnique({
+      const item = await db.stashItem.findUnique({
         where: { id: input.itemId },
         include: { stash: true },
       });
       if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
-      return db.loreStashAnnotation.create({ data: input });
+      return db.stashAnnotation.create({ data: input });
     }),
 
   /** Update an annotation's comment or color. */
@@ -71,13 +71,13 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const ann = await db.loreStashAnnotation.findUnique({
+      const ann = await db.stashAnnotation.findUnique({
         where: { id: input.id },
         include: { item: { include: { stash: true } } },
       });
       if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
         throw new Error("Annotation not found");
-      return db.loreStashAnnotation.update({
+      return db.stashAnnotation.update({
         where: { id: input.id },
         data: {
           ...(input.comment !== undefined && { comment: input.comment }),
@@ -90,13 +90,13 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   deleteAnnotation: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const ann = await db.loreStashAnnotation.findUnique({
+      const ann = await db.stashAnnotation.findUnique({
         where: { id: input.id },
         include: { item: { include: { stash: true } } },
       });
       if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
         throw new Error("Annotation not found");
-      await db.loreStashAnnotation.delete({ where: { id: input.id } });
+      await db.stashAnnotation.delete({ where: { id: input.id } });
       return { success: true };
     }),
 
@@ -105,7 +105,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
-      const annotations = await db.loreStashAnnotation.findMany({
+      const annotations = await db.stashAnnotation.findMany({
         where: { item: { pageTitle: input.pageTitle, stash: { userId } } },
         orderBy: { createdAt: "asc" },
       });
@@ -161,16 +161,16 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
       // Find or create the "Watchlist" stash
-      let watchlistStash = await ctx.db.loreStash.findFirst({
+      let watchlistStash = await ctx.db.stash.findFirst({
         where: { userId, name: "Watchlist" },
       });
       if (!watchlistStash) {
-        watchlistStash = await ctx.db.loreStash.create({
+        watchlistStash = await ctx.db.stash.create({
           data: { userId, name: "Watchlist", color: "#f59e0b", icon: "eye", isDefault: false },
         });
       }
       // Add page (upsert to avoid duplicates)
-      await ctx.db.loreStashItem.upsert({
+      await ctx.db.stashItem.upsert({
         where: { stashId_pageTitle: { stashId: watchlistStash.id, pageTitle: input.pageTitle } },
         create: {
           stashId: watchlistStash.id,
@@ -189,11 +189,11 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
-      const watchlistStash = await ctx.db.loreStash.findFirst({
+      const watchlistStash = await ctx.db.stash.findFirst({
         where: { userId, name: "Watchlist" },
       });
       if (!watchlistStash) return { success: true };
-      await ctx.db.loreStashItem.deleteMany({
+      await ctx.db.stashItem.deleteMany({
         where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
       });
       return { success: true };
@@ -204,7 +204,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
    */
   getWatchlist: protectedProcedure.query(async ({ ctx }) => {
     const userId = requireWikiUserId(ctx);
-    const watchlistStash = await ctx.db.loreStash.findFirst({
+    const watchlistStash = await ctx.db.stash.findFirst({
       where: { userId, name: "Watchlist" },
       include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
     });
@@ -218,11 +218,11 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string() }))
     .query(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
-      const watchlistStash = await ctx.db.loreStash.findFirst({
+      const watchlistStash = await ctx.db.stash.findFirst({
         where: { userId, name: "Watchlist" },
       });
       if (!watchlistStash) return false;
-      const item = await ctx.db.loreStashItem.findFirst({
+      const item = await ctx.db.stashItem.findFirst({
         where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
       });
       return !!item;

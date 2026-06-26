@@ -35,7 +35,7 @@ The components with independent versions are:
 
 * **Apps** — IxWorld, WikiOS, IxVault
 * **Engines** (internal simulation cores) — MyCountry, Concord, Atlas
-* **UI / Feature Systems** — MyCountry, Builder, ThinkPages, Achievements, Stash, Repository, Halo
+* **UI / Feature Systems** — MyCountry, Builder, ThinkPages, Achievements, Stash, Repository, Halo, Onoma
 * **Design system** — Facet
 
 Each evolves independently. A major **Concord** release does not require a major **WikiOS** release.
@@ -46,7 +46,7 @@ These inherit the platform version (they do not carry their own number):
 
 * **IxForum** — folded into the platform version until it is promoted to an App
 * **Platform Utilities** — IxTime, IxnayID
-* **Experimental / Labs** — Vexel, Onoma, Strata, Dynas, Nomora (carry a `preview` label only)
+* **Experimental / Labs** — Vexel, Strata, Dynas, Nomora (carry a `preview` label only)
 * **Navigation Hubs** — Dashboard, Explore/Countries, Feed
 
 > **Note:** "IxWiki" is retired as a component name — it was only our name for the wiki, which is the **WikiOS** app. "Canvas" is not a top-level component; it is a **WikiOS sub-system** that carries a sub-version under WikiOS.
@@ -247,12 +247,14 @@ Systems:
 * **Stash** (save-for-later wiki articles; formerly LoreStash)
 * **Repository** (WikiOS Commons image explorer)
 * **Halo** (global contextual overlay; formerly "Dynamic Island")
+* **Onoma** (name generation and linguistic dictionary studio)
 
 ```text
 MyCountry 1
 Builder 1
 ThinkPages 1
 Halo 1
+Onoma 1
 ```
 
 System versions represent capability evolution.

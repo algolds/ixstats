@@ -587,9 +587,39 @@ export const contextualMenus: Record<string, ContextualMenuDefinition> = {
       },
     ],
   },
+  onoma: {
+    title: "Onoma Lab",
+    description: "Fantasy naming synthesis engine.",
+    groups: [
+      {
+        title: "Name Generator",
+        items: [
+          {
+            name: "Overview",
+            href: "/labs/onoma",
+            icon: Compass,
+            description: "Onoma dashboard and statistics.",
+          },
+          {
+            name: "Custom Studio",
+            href: "/labs/onoma/studio",
+            icon: SlidersHorizontal,
+            description: "Markov chain workshop.",
+          },
+          {
+            name: "Name Bank",
+            href: "/labs/onoma/bank",
+            icon: Database,
+            description: "Saved names and dictionaries.",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 export function getContextKey(path: string): keyof typeof contextualMenus {
+  if (path.startsWith("/labs/onoma")) return "onoma";
   if (path.startsWith("/mycountry")) return "mycountry";
   if (path.startsWith("/thinkpages")) return "thinkpages";
   if (path.startsWith("/forum")) return "forum";

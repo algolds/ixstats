@@ -14,7 +14,7 @@ export const SPRING_BOUNCY = { stiffness: 350, damping: 28, mass: 0.8 } as const
 export const SPRING_GENTLE = { stiffness: 200, damping: 30, mass: 1.0 } as const;
 
 /** Fluid, smooth spring — defaults for FacetTabs */
-export const SPRING_FLUID = { stiffness: 480, damping: 36, mass: 0.65 } as const;
+export const SPRING_FLUID = { stiffness: 500, damping: 38, mass: 0.5 } as const;
 
 export const SPRING_PRESETS = {
   tight: SPRING_TIGHT,

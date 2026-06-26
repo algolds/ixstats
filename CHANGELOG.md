@@ -12,6 +12,28 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [1.1.2 Ogma (Alpha)] - 2026-06-26
+
+### Added
+
+- **Project Onoma — Linguistic Synthesis Lab & Custom Studio** (Onoma System 1):
+  - Re-architected and ported the fantasy naming utility `onoma` to `/labs/onoma` in `ixstates`.
+  - Added `onoma` to the platform version registry (`buildVersion.ts`) under feature systems and exported `ONOMA_VERSION = 1`.
+  - Rebuilt the workspace SPA router (`OnomaRouter.tsx`) with top-level `FacetTabs` and unified `FacetMaterial` satin glass container.
+  - Implemented theme-adaptive color tokens to ensure 100% compliance with both Light and Dark themes, replacing all obsolete hardcoded slate/white/black styling values.
+  - Structured all generator sub-sections (`PlacesSection`, `PeopleSection`, `MilitarySection`, `OrganizationsSection`, `CultureSection`) and the Custom Studio (`StudioSection`) into dynamic, two-column responsive layouts separating constraint inputs and name output lists.
+  - Rebuilt the Name Bank (`NameBankSection`) to display saved names (left) and seed dictionaries (right) side-by-side. Added support for loading dictionary seeds back into the Custom Studio, and public dictionary cloning.
+  - Consolidated backend models: renamed `LoreStash` to `Stash` and updated all database references, then integrated Onoma's saving bookmarks and dictionaries directly with unified Stash folders.
+  - Added support for multiple `.txt` file uploads in Onoma Custom Studio for batch loading names training dictionaries.
+  - Enhanced `FacetTabs` with dynamic click transitions: tab clicks snap near-instantly (~60ms transition with `stiffness: 3000, damping: 120`), while pointer dragging/flicking preserves custom organic spring animations.
+  - Resolved visual stutters on `FacetTabs` active background indicator by replacing conflicting CSS `transition-all` class with `transition-colors`.
+  - Created a PostGIS-backed data mapping layer in `prisma/schema/onoma.prisma` and related tRPC routers for saving names and custom dictionaries.
+  - Fixed a runtime `TypeError` in `useOnomaGenerator.ts` by using `mutateAsync` for logging generation activity instead of `mutate` to allow chaining a `.catch()` block.
+
 - **MyLeague Background Automation, Halo Live Activities & Matchday Prediction Market**:
   - **IxTime auto-advance hardening**: Replaced the one-matchday-per-run drip in [season-cron.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/season-cron.ts) `advanceSportsSeasons` with a bounded catch-up loop (`MAX_STEPS_PER_RUN = 50`) so seasons that fall behind the clock (e.g. after cron downtime) resolve every due matchday in a single pass instead of drifting. Tightened the cron tick from every 6h to `*/15` with a per-process reentrancy guard in both [cron-runner.mjs](file:///ixwiki/public/projects/ixstats/cron-runner.mjs) and [server.mjs](file:///ixwiki/public/projects/ixstats/server.mjs).
   - **Per-league match cadence**: Added `matchIntervalMs`/`raceIntervalMs` helpers in [scheduler.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/scheduler.ts) reading `league.settings.matchIntervalDays` (default 1 IxDay, e.g. 7 for an in-world weekly schedule), applied at all six schedule-write sites (lifecycle / leagues / transition, matches + races). Exposed an "IxDays Between Matchdays" control in [LeagueCreator.tsx](file:///ixwiki/public/projects/ixstats/src/components/myleague/LeagueCreator.tsx).

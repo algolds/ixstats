@@ -50,6 +50,16 @@ export function WikiOSLayout({
   const [searchOpen, setSearchOpen] = useState(false);
   const [createPageOpen, setCreatePageOpen] = useState(false);
 
+  // Check URL params to auto-open page creation modal
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("create") === "true" || params.get("action") === "create-page") {
+        setCreatePageOpen(true);
+      }
+    }
+  }, []);
+
   // Global Cmd+K to open search
   useEffect(() => {
     const handleKey = (e: globalThis.KeyboardEvent) => {

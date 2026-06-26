@@ -9,6 +9,7 @@ import { PrismaClient } from "@prisma/client";
 import { seedCardPacks } from "../../prisma/seeds/card-packs";
 import { seedSmallArmsEquipment } from "../../prisma/seeds/seed-small-arms-equipment";
 import { seedMilitaryEquipmentCatalog } from "../../prisma/seeds/military-equipment-catalog";
+import { seedOnomaPresets } from "../../prisma/seeds/onoma-presets";
 
 const db = new PrismaClient();
 
@@ -54,6 +55,8 @@ async function seedDatabase() {
     await seedSmallArmsEquipment();
     console.log("🪖 Seeding military equipment catalog...");
     await seedMilitaryEquipmentCatalog();
+    console.log("📚 Seeding Onoma default dictionary presets...");
+    await seedOnomaPresets(db);
 
     // Seed canonical sports leagues
     const firstCountry = await db.country.findFirst({ select: { id: true } });

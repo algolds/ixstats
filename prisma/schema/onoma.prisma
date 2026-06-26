@@ -1,0 +1,25 @@
+// prisma/schema/onoma.prisma
+// Onoma Lab — Saved Names & Custom Dictionaries Schema
+
+model NameBank {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  type            String   // "dictionary" | "saved-name"
+  title           String
+  values          Json     // string[] — word list for dictionaries, or single-name entries
+  category        String?  // "city" | "province" | "country" | "person" | "military" | "organization" | "geography" | "culture" | "ship"
+  culturalProfile String?  @map("cultural_profile") // "latin" | "germanic" | "celtic" | "slavic" | "arabic" | "east-asian" | "austronesian" | "constructed"
+  isPublic        Boolean  @default(false) @map("is_public")
+  countryId       String?  @map("country_id") // optional link to the user's country
+  clonedFromId    String?  @map("cloned_from_id") // if cloned from another user's public dictionary
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation("UserNameBank", fields: [userId], references: [id], onDelete: Cascade)
+  country Country? @relation("CountryNameBank", fields: [countryId], references: [id])
+
+  @@index([userId, type])
+  @@index([isPublic, category])
+  @@index([countryId])
+  @@map("name_bank")
+}

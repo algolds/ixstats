@@ -469,4 +469,83 @@ export class ActivityGenerator {
       console.error("Error generating sample activities:", error);
     }
   }
+
+  /**
+   * Create an Onoma generation activity
+   */
+  static async createOnomaGeneration(
+    userId: string,
+    countryId: string | null | undefined,
+    count: number,
+    category: string
+  ): Promise<void> {
+    try {
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: { country: { select: { name: true } } },
+      });
+
+      const nameSource = user?.country?.name || "A citizen";
+
+      const activity: ActivityData = {
+        type: "social",
+        category: "game",
+        userId,
+        countryId: countryId || undefined,
+        title: "Names Generated in Onoma Lab",
+        description: `${nameSource} generated ${count} ${category} names using Onoma Lab.`,
+        metadata: {
+          count,
+          category,
+          timestamp: new Date().toISOString(),
+        },
+        priority: "LOW",
+        visibility: "public",
+        relatedCountries: countryId ? [countryId] : [],
+      };
+
+      await this.createActivity(activity);
+    } catch (error) {
+      console.error("Error creating Onoma generation activity:", error);
+    }
+  }
+
+  /**
+   * Create an Onoma dictionary share activity
+   */
+  static async createOnomaShare(
+    userId: string,
+    countryId: string | null | undefined,
+    title: string
+  ): Promise<void> {
+    try {
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: { country: { select: { name: true } } },
+      });
+
+      const nameSource = user?.country?.name || "A citizen";
+
+      const activity: ActivityData = {
+        type: "social",
+        category: "game",
+        userId,
+        countryId: countryId || undefined,
+        title: "Naming Dictionary Shared",
+        description: `${nameSource} shared a naming dictionary: ${title}`,
+        metadata: {
+          title,
+          timestamp: new Date().toISOString(),
+        },
+        priority: "MEDIUM",
+        visibility: "public",
+        relatedCountries: countryId ? [countryId] : [],
+      };
+
+      await this.createActivity(activity);
+    } catch (error) {
+      console.error("Error creating Onoma share activity:", error);
+    }
+  }
 }
+

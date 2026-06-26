@@ -16,6 +16,34 @@ import {
 } from "./constants";
 import { SPRING_PRESETS } from "../shared/constants";
 
+function blendColors(c1: string, c2: string, progress: number): string {
+  const hex = (h: string) => {
+    let clean = h.replace("#", "");
+    if (clean.length === 3) {
+      clean = clean.split("").map((c) => c + c).join("");
+    }
+    const num = parseInt(clean, 16);
+    return {
+      r: (num >> 16) & 255,
+      g: (num >> 8) & 255,
+      b: num & 255,
+    };
+  };
+
+  try {
+    const rgb1 = hex(c1);
+    const rgb2 = hex(c2);
+
+    const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * progress);
+    const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * progress);
+    const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * progress);
+
+    return `rgb(${r}, ${g}, ${b})`;
+  } catch {
+    return c1;
+  }
+}
+
 export function FacetTabs({
   tabs,
   activeTab,
@@ -49,6 +77,99 @@ export function FacetTabs({
   const activeScale = useTransform(springGrab, [0, 1], [1, 0.95]);
 
   const activeIndicatorTone = toneIndicatorStyles[tone] || toneIndicatorStyles.accent;
+
+  const useThemeColor = React.useMemo(() => tabs.some((t) => !!t.themeColor), [tabs]);
+
+  // ─── Proximity Color Blending Logic ───────────────────────────────────────
+  const interpolatedColor = useTransform(springX, (xValue) => {
+    const x = xValue as number;
+    const ids = tabs.map((t) => t.id);
+    const activeIndex = ids.indexOf(activeTab);
+    const defaultColor = tabs[activeIndex]?.themeColor || "#6366f1";
+
+    const hasAllBounds = ids.every((id) => bounds[id] !== undefined);
+    if (!hasAllBounds || ids.length < 2) {
+      return defaultColor;
+    }
+
+    const sortedTabs = ids
+      .map((id) => ({ id, left: bounds[id]!.left }))
+      .sort((a, b) => a.left - b.left);
+
+    let prevTab = sortedTabs[0]!;
+    let nextTab = sortedTabs[sortedTabs.length - 1]!;
+
+    for (let i = 0; i < sortedTabs.length - 1; i++) {
+      const current = sortedTabs[i]!;
+      const next = sortedTabs[i + 1]!;
+      if (x >= current.left && x <= next.left) {
+        prevTab = current;
+        nextTab = next;
+        break;
+      }
+    }
+
+    if (x <= sortedTabs[0]!.left) {
+      return tabs.find((t) => t.id === sortedTabs[0]!.id)?.themeColor || defaultColor;
+    }
+    if (x >= sortedTabs[sortedTabs.length - 1]!.left) {
+      return tabs.find((t) => t.id === sortedTabs[sortedTabs.length - 1]!.id)?.themeColor || defaultColor;
+    }
+
+    const prevColor = tabs.find((t) => t.id === prevTab.id)?.themeColor || defaultColor;
+    const nextColor = tabs.find((t) => t.id === nextTab.id)?.themeColor || defaultColor;
+
+    const range = nextTab.left - prevTab.left;
+    if (range <= 0) return prevColor;
+
+    const progress = (x - prevTab.left) / range;
+    return blendColors(prevColor, nextColor, progress);
+  });
+
+  const getRgba = (colorStr: string, opacity: number) => {
+    if (colorStr.startsWith("rgb")) {
+      const matches = colorStr.match(/\d+/g);
+      if (matches && matches.length >= 3) {
+        return `rgba(${matches[0]}, ${matches[1]}, ${matches[2]}, ${opacity})`;
+      }
+      return colorStr;
+    }
+    let clean = colorStr.replace("#", "");
+    if (clean.length === 3) {
+      clean = clean.split("").map((c) => c + c).join("");
+    }
+    try {
+      const num = parseInt(clean, 16);
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    } catch {
+      return colorStr;
+    }
+  };
+
+  const glowColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.25));
+  const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.08));
+  const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.22));
+
+  // Dynamic tab colors (proximity-based blending)
+  const tabColors = tabs.map((tab) => {
+    if (!tab.themeColor) return null;
+
+    return useTransform([springX, springWidth], ([x, width]) => {
+      const center = (x as number) + (width as number) / 2;
+      const tabBound = bounds[tab.id];
+      if (!tabBound) return "rgba(100, 116, 139, 0.65)";
+
+      const tabCenter = tabBound.left + tabBound.width / 2;
+      const distance = Math.abs(center - tabCenter);
+      const maxDistance = tabBound.width * 1.1;
+      const progress = Math.max(0, Math.min(1, 1 - distance / maxDistance));
+
+      return blendColors("#64748b", tab.themeColor!, progress);
+    });
+  });
 
   // Track relative pointer coordinates for the frosted satin sheen highlight
   const [sheenPos, setSheenPos] = React.useState({ x: "50%", y: "50%", active: false });
@@ -107,10 +228,16 @@ export function FacetTabs({
         style={{
           x: springX,
           width: springWidth,
+          backgroundColor: useThemeColor ? glowColor : undefined,
         }}
         className={cn(
-          "pointer-events-none absolute inset-y-1 rounded-[inherit] opacity-20 blur-md transition-colors duration-300 dark:opacity-25",
-          tabs.find((t) => t.id === activeTab)?.glowClassName || toneGlowClasses[tone]
+          "pointer-events-none absolute inset-y-1 rounded-[inherit] blur-md",
+          useThemeColor
+            ? "opacity-35 dark:opacity-30"
+            : cn(
+                "transition-colors duration-300",
+                tabs.find((t) => t.id === activeTab)?.glowClassName || toneGlowClasses[tone]
+              )
         )}
       />
 
@@ -129,18 +256,23 @@ export function FacetTabs({
             x: springX,
             width: springWidth,
             scale: activeScale,
+            backgroundColor: useThemeColor ? indicatorBgColor : undefined,
+            borderColor: useThemeColor ? indicatorBorderColor : undefined,
           }}
           className={cn(
-            "pointer-events-none absolute inset-y-1 z-20 overflow-hidden border shadow-sm backdrop-blur-sm transition-colors duration-300",
+            "pointer-events-none absolute inset-y-1 z-20 overflow-hidden border shadow-sm backdrop-blur-sm",
+            useThemeColor ? "" : "transition-colors duration-300",
             metrics.indicator,
-            tabs.find((t) => t.id === activeTab)?.activeIndicatorClassName ||
-              cn(
-                activeIndicatorTone.light,
-                activeIndicatorTone.dark
-                  .split(" ")
-                  .map((c) => `dark:${c}`)
-                  .join(" ")
-              ),
+            useThemeColor
+              ? ""
+              : (tabs.find((t) => t.id === activeTab)?.activeIndicatorClassName ||
+                  cn(
+                    activeIndicatorTone.light,
+                    activeIndicatorTone.dark
+                      .split(" ")
+                      .map((c) => `dark:${c}`)
+                      .join(" ")
+                  )),
             indicatorClassName
           )}
         >
@@ -161,7 +293,7 @@ export function FacetTabs({
       )}
 
       {/* 5. Tab Triggers (Z-30) */}
-      {tabs.map((tab) => {
+      {tabs.map((tab, idx) => {
         const Icon = tab.icon;
         const isActive = tab.id === activeTab;
 
@@ -187,23 +319,26 @@ export function FacetTabs({
               updateSheenFromEvent(e);
             }}
             className={cn(
-              "relative z-30 flex flex-1 cursor-pointer items-center justify-center transition-colors duration-200 outline-none select-none",
+              "relative z-30 flex flex-1 cursor-pointer items-center justify-center outline-none select-none",
+              useThemeColor ? "" : "transition-colors duration-200",
               "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
               metrics.item,
-              isActive
-                ? cn("font-semibold", tab.activeTextClassName || "text-foreground")
-                : "text-muted-foreground hover:text-foreground"
+              isActive ? "font-semibold" : ""
             )}
             style={{
               touchAction: "pan-y",
             }}
           >
             {Icon && (
-              <Icon
+              <motion.div
+                style={{
+                  color: useThemeColor && tabColors[idx] ? tabColors[idx] : undefined,
+                }}
                 className={cn(
                   metrics.icon,
-                  "transition-colors duration-200",
-                  isActive
+                  "flex items-center justify-center mr-1.5",
+                  useThemeColor ? "" : "transition-colors duration-200",
+                  !useThemeColor && (isActive
                     ? tab.activeIconClassName ||
                         (tone === "neutral"
                           ? "text-slate-950 dark:text-white"
@@ -214,12 +349,24 @@ export function FacetTabs({
                               : tone === "forum"
                                 ? "text-orange-500 dark:text-orange-400"
                                 : "text-red-500 dark:text-red-400")
-                    : "text-slate-400 dark:text-slate-500"
+                    : "text-slate-400 dark:text-slate-500")
                 )}
-              />
+              >
+                <Icon className="h-full w-full" />
+              </motion.div>
             )}
 
-            <span>{tab.label}</span>
+            <motion.span
+              style={{
+                color: useThemeColor && tabColors[idx] ? tabColors[idx] : undefined,
+              }}
+              className={cn(
+                useThemeColor ? "" : "transition-colors duration-200",
+                !useThemeColor && (isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground")
+              )}
+            >
+              {tab.label}
+            </motion.span>
 
             {tab.badge !== undefined && (
               <span

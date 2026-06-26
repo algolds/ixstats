@@ -11,6 +11,7 @@ export interface FacetTabItem {
   activeTextClassName?: string;
   activeIconClassName?: string;
   glowClassName?: string;
+  themeColor?: string;
 }
 
 export interface FacetTabsProps {

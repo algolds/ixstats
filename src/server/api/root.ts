@@ -42,6 +42,7 @@ import { systemValidationRouter } from "./routers/system-validation";
 import { autosaveHistoryRouter } from "./routers/autosaveHistory";
 import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
 import { builderDraftRouter } from "./routers/builderDraft";
+import { onomaRouter } from "./routers/onoma";
 
 // ─── Economy ─────────────────────────────────────────────────────────────────
 import { economicsRouter } from "./routers/economics";
@@ -273,6 +274,7 @@ export const appRouter = createTRPCRouter({
   mycountry: safeRouter("mycountry", () => myCountryRouter),
   historical: safeRouter("historical", () => historicalRouter),
   countryGeo: safeRouter("countryGeo", () => countryGeoRouter),
+  onoma: safeRouter("onoma", () => onomaRouter),
 });
 
 // export type definition of API

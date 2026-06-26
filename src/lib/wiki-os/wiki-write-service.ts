@@ -164,7 +164,7 @@ export async function notifyStashOwners(
   editorUserId: string | null | undefined,
   revisionId: number | null
 ): Promise<void> {
-  const stashItems = await db.loreStashItem.findMany({
+  const stashItems = await db.stashItem.findMany({
     where: { pageTitle },
     include: { stash: { select: { userId: true } } },
   });
