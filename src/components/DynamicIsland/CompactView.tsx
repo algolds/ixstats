@@ -43,11 +43,20 @@ const getGreeting = (ixTime: number): string => {
   return "Good night";
 };
 
-const getTimeDisplay = (ixTime: number): string => {
-  const d = new Date(ixTime);
+/** Realtime pill clock — H:MM AM/PM (no seconds); colon pulses each second. */
+const LivePillClock = ({ ts, className }: { ts: number; className?: string }) => {
+  const d = new Date(ts);
   const h = d.getUTCHours();
   const m = d.getUTCMinutes().toString().padStart(2, "0");
-  return `${h % 12 || 12}:${m} ${h >= 12 ? "PM" : "AM"}`;
+  const colonOn = d.getUTCSeconds() % 2 === 0;
+  return (
+    <span className={cn("inline-flex items-center whitespace-nowrap tabular-nums", className)}>
+      {h % 12 || 12}
+      <span className={colonOn ? "opacity-100" : "opacity-30"}>:</span>
+      {m}
+      <span className="ml-1">{h >= 12 ? "PM" : "AM"}</span>
+    </span>
+  );
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -89,7 +98,7 @@ function CompactViewComponent({
   const [isFlashing, setIsFlashing] = useState(false);
   const previousNotificationCountRef = useRef(0);
 
-  const [currentTime, setCurrentTime] = useState({ greeting: "Good morning", timeDisplay: "" });
+  const [currentTime, setCurrentTime] = useState({ greeting: "Good morning" });
 
   // ─── Notification peek ─────────────────────────────────────────────────
 
@@ -145,8 +154,7 @@ function CompactViewComponent({
 
   useEffect(() => {
     const greeting = getGreeting(ixTimeTimestamp);
-    const timeDisplay = getTimeDisplay(ixTimeTimestamp);
-    setCurrentTime((prev) => (prev.timeDisplay !== timeDisplay ? { greeting, timeDisplay } : prev));
+    setCurrentTime((prev) => (prev.greeting !== greeting ? { greeting } : prev));
   }, [ixTimeTimestamp]);
 
   useEffect(() => {
@@ -340,12 +348,10 @@ function CompactViewComponent({
                         {timeDisplayMode === "time" && (
                           <>
                             <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                            <PreText
-                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                              whiteSpace="nowrap"
-                            >
-                              {currentTime.timeDisplay}
-                            </PreText>
+                            <LivePillClock
+                              ts={ixTimeTimestamp}
+                              className="text-foreground/80 text-[11px] font-semibold"
+                            />
                           </>
                         )}
                         {timeDisplayMode === "date" && (
@@ -365,12 +371,10 @@ function CompactViewComponent({
                         {timeDisplayMode === "both" && (
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                            <PreText
-                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                              whiteSpace="nowrap"
-                            >
-                              {currentTime.timeDisplay}
-                            </PreText>
+                            <LivePillClock
+                              ts={ixTimeTimestamp}
+                              className="text-foreground/80 text-[11px] font-semibold"
+                            />
                             <span className="text-muted-foreground/50 inline text-[10px]">·</span>
                             <PreText
                               className="text-foreground/70 inline text-[10px] font-semibold whitespace-nowrap tabular-nums"

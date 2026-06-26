@@ -144,7 +144,9 @@ scripts/world-roster-data.json
 # --------------------------------------------------------------------------------
 # IDE / Tool Settings
 # --------------------------------------------------------------------------------
-.claude/
+.claude/*
+!.claude/memory/
+!.claude/settings.json
 .antigravitycli/
 .antigravityignore
 .cursor/

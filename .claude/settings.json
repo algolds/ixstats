@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx next build:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "ponytail@ponytail": true,
+    "improve@improve": true
+  }
+}
