@@ -90,8 +90,23 @@ export class MemoryOptimizer {
       PerformanceMonitor.clearMetrics();
       console.log("[MemoryOptimizer] Cleared PerformanceMonitor metrics");
 
-      // Note: tRPC cache is a module-level Map, we can't easily clear it from here
-      // but it has TTL-based auto-cleanup
+      // Clear tRPC memory cache
+      try {
+        const { clearTrpcMemoryCache } = await import("./trpc-cache");
+        clearTrpcMemoryCache();
+        console.log("[MemoryOptimizer] Cleared trpcMemoryCache");
+      } catch (error) {
+        console.error("[MemoryOptimizer] Failed to clear trpc memory cache:", error);
+      }
+
+      // Clear MediaWiki L1 caches
+      try {
+        const { clearAllMediaWikiCaches } = await import("./mediawiki-service");
+        clearAllMediaWikiCaches();
+        console.log("[MemoryOptimizer] Cleared mediawikiL1Caches");
+      } catch (error) {
+        console.error("[MemoryOptimizer] Failed to clear mediawiki memory caches:", error);
+      }
 
       console.log("[MemoryOptimizer] All caches cleared");
     } catch (error) {

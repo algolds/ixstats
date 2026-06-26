@@ -7,7 +7,7 @@
  */
 
 import { performance } from "perf_hooks";
-import { createClient } from "redis";
+import { Redis } from "ioredis";
 
 // ============================================================================
 // Types
@@ -120,7 +120,11 @@ async function testRedisConnection(): Promise<RedisStats> {
   const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 
   try {
-    const client = createClient({ url: redisUrl });
+    const client = new Redis(redisUrl, {
+      maxRetriesPerRequest: 1,
+      connectTimeout: 2000,
+      lazyConnect: true,
+    });
 
     client.on("error", () => {
       // Suppress error logging
@@ -143,9 +147,9 @@ async function testRedisConnection(): Promise<RedisStats> {
     const uptime = parseInt(getInfoValue("uptime_in_seconds") || "0", 10);
 
     // Get key count
-    const dbSize = await client.dbSize();
+    const dbSize = await client.dbsize();
 
-    await client.disconnect();
+    await client.quit();
 
     const totalHits = keyspaceHits + keyspaceMisses;
     const hitRate = totalHits > 0 ? (keyspaceHits / totalHits) * 100 : undefined;
@@ -174,7 +178,11 @@ async function benchmarkRedisOperations(): Promise<{
   const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 
   try {
-    const client = createClient({ url: redisUrl });
+    const client = new Redis(redisUrl, {
+      maxRetriesPerRequest: 1,
+      connectTimeout: 2000,
+      lazyConnect: true,
+    });
     client.on("error", () => {});
     await client.connect();
 
@@ -185,9 +193,7 @@ async function benchmarkRedisOperations(): Promise<{
     // Benchmark SET operations
     for (let i = 0; i < TEST_ITERATIONS; i++) {
       const start = performance.now();
-      await client.set(`${testKey}:${i}`, JSON.stringify({ test: i }), {
-        EX: 60,
-      });
+      await client.set(`${testKey}:${i}`, JSON.stringify({ test: i }), "EX", 60);
       setTimes.push(performance.now() - start);
     }
 
@@ -203,7 +209,7 @@ async function benchmarkRedisOperations(): Promise<{
       await client.del(`${testKey}:${i}`);
     }
 
-    await client.disconnect();
+    await client.quit();
 
     return {
       setLatency: setTimes.reduce((a, b) => a + b, 0) / setTimes.length,

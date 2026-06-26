@@ -237,6 +237,8 @@ class LRUCache<K, V> extends Map<K, V> {
   }
 }
 
+const activeWikiInstances: IxnayWikiService[] = [];
+
 export class IxnayWikiService {
   private readonly wikiSource: WikiSource;
 
@@ -284,6 +286,9 @@ export class IxnayWikiService {
   constructor(wikiSource: WikiSource = "ixwiki") {
     this.wikiSource = wikiSource;
     this.startCacheCleanup();
+    if (typeof window === "undefined") {
+      activeWikiInstances.push(this);
+    }
   }
 
   /**
@@ -434,11 +439,27 @@ export class IxnayWikiService {
   /**
    * Get raw wikitext for a page using MediaWiki API via Next.js API route to avoid CORS issues
    */
-  async getPageWikitext(pageName: string): Promise<string | { error: string }> {
+  async getPageWikitext(
+    pageName: string,
+    options?: { skipCache?: boolean }
+  ): Promise<string | { error: string }> {
     const normName = normalizeKey(pageName);
     const cached = this.getCacheValue(this.WIKITEXT_CACHE, normName);
     if (cached !== null) {
       return cached;
+    }
+
+    if (typeof window === "undefined" && !options?.skipCache) {
+      try {
+        const { wikiCacheService } = await import("~/lib/services/wiki-cache-service");
+        const cacheEntry = await wikiCacheService.getPageWikitext(pageName, this.wikiSource);
+        if (cacheEntry && cacheEntry.data !== null && cacheEntry.data !== undefined) {
+          this.setCacheValue(this.WIKITEXT_CACHE, normName, cacheEntry.data, this.WIKITEXT_TTL);
+          return cacheEntry.data;
+        }
+      } catch (err) {
+        console.error(`[MediaWiki] Error fetching cached wikitext from wikiCacheService:`, err);
+      }
     }
 
     if (typeof window === "undefined" && this.wikiSource === "ixwiki") {
@@ -1009,7 +1030,10 @@ export class IxnayWikiService {
   /**
    * Get country infobox data with complete template parsing
    */
-  async getCountryInfobox(countryName: string): Promise<CountryInfoboxWithDynamicProps | null> {
+  async getCountryInfobox(
+    countryName: string,
+    options?: { skipCache?: boolean }
+  ): Promise<CountryInfoboxWithDynamicProps | null> {
     // Check cache first
     const cached = this.getCacheValue(this.INFOBOX_CACHE, countryName);
     if (cached !== null) {
@@ -1017,12 +1041,25 @@ export class IxnayWikiService {
       return cached;
     }
 
+    if (typeof window === "undefined" && !options?.skipCache) {
+      try {
+        const { wikiCacheService } = await import("~/lib/services/wiki-cache-service");
+        const cacheEntry = await wikiCacheService.getCountryInfobox(countryName, this.wikiSource);
+        if (cacheEntry && cacheEntry.data !== null && cacheEntry.data !== undefined) {
+          this.setCacheValue(this.INFOBOX_CACHE, countryName, cacheEntry.data, this.INFOBOX_TTL);
+          return cacheEntry.data;
+        }
+      } catch (err) {
+        console.error(`[MediaWiki] Error fetching cached infobox from wikiCacheService:`, err);
+      }
+    }
+
     return this.getOrCreateRequest(`infobox_${countryName}`, async () => {
       try {
         console.log(`[MediaWiki] Getting complete infobox for: ${countryName}`);
 
         // Step 1: Get raw wikitext for the page
-        const wikitext = await this.getPageWikitext(countryName);
+        const wikitext = await this.getPageWikitext(countryName, options);
         if (!wikitext || typeof wikitext === "object") {
           console.warn(`[MediaWiki] No wikitext found for ${countryName}:`, wikitext);
           this.setCacheValue(this.INFOBOX_CACHE, countryName, null, this.INFOBOX_TTL);
@@ -1422,13 +1459,29 @@ export class IxnayWikiService {
   /**
    * Get flag URL for a country using the new flag cache manager
    */
-  async getFlagUrl(countryName: string): Promise<string | { error: string }> {
+  async getFlagUrl(
+    countryName: string,
+    options?: { skipCache?: boolean }
+  ): Promise<string | { error: string }> {
     console.log(`[MediaWiki] getFlagUrl called for: ${countryName}`);
     const normName = normalizeKey(countryName);
     const cached = this.getCacheValue(this.FLAG_CACHE, normName);
     if (cached !== null) {
       console.log(`[MediaWiki] Flag cache hit for: ${countryName}`);
       return cached;
+    }
+
+    if (typeof window === "undefined" && !options?.skipCache) {
+      try {
+        const { wikiCacheService } = await import("~/lib/services/wiki-cache-service");
+        const cacheEntry = await wikiCacheService.getFlagUrl(countryName, this.wikiSource);
+        if (cacheEntry && cacheEntry.data !== null && cacheEntry.data !== undefined) {
+          this.setCacheValue(this.FLAG_CACHE, normName, cacheEntry.data, this.FLAG_TTL);
+          return cacheEntry.data;
+        }
+      } catch (err) {
+        console.error(`[MediaWiki] Error fetching cached flag URL from wikiCacheService:`, err);
+      }
     }
 
     console.log(`[MediaWiki] No cache hit for flag: ${countryName}, making request`);
@@ -1472,7 +1525,7 @@ export class IxnayWikiService {
         // Method 2: Try direct page infobox
         try {
           console.log(`[MediaWiki] Trying direct page infobox for: ${countryName}`);
-          const infobox = await this.getCountryInfobox(countryName);
+          const infobox = await this.getCountryInfobox(countryName, options);
           if (infobox) {
             console.log(`[MediaWiki] Got infobox for: ${countryName}`);
             const flagFields = [infobox.image_flag, infobox.flag, infobox.flag_caption];
@@ -2493,3 +2546,10 @@ export class IxnayWikiService {
 
 // Export singleton instance for backward compatibility
 export const ixnayWiki = new IxnayWikiService();
+
+export function clearAllMediaWikiCaches(): void {
+  activeWikiInstances.forEach((instance) => {
+    instance.clearCache();
+  });
+  console.log(`[MediaWiki] Cleared L1 caches for ${activeWikiInstances.length} service instances`);
+}

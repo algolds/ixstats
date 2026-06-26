@@ -99,6 +99,23 @@ class UnsplashService {
       return cached;
     }
 
+    if (typeof window === "undefined") {
+      try {
+        const { externalApiCache } = await import("~/lib/external-api-cache");
+        const dbCached = await externalApiCache.get<UnsplashImageData[]>({
+          service: "unsplash",
+          type: "json",
+          identifier: cacheKey,
+        });
+        if (dbCached && dbCached.data) {
+          this.unsplashCache.set(cacheKey, dbCached.data);
+          return dbCached.data;
+        }
+      } catch (err) {
+        console.error("[UnsplashService] Error reading from externalApiCache:", err);
+      }
+    }
+
     const searchParams = new URLSearchParams({
       query: params.query,
       orientation: params.orientation || "landscape",
@@ -151,6 +168,20 @@ class UnsplashService {
 
       // Cache the results
       this.unsplashCache.set(cacheKey, images);
+
+      if (typeof window === "undefined") {
+        try {
+          const { externalApiCache } = await import("~/lib/external-api-cache");
+          await externalApiCache.set<UnsplashImageData[]>({
+            service: "unsplash",
+            type: "json",
+            identifier: cacheKey,
+            ttl: 30 * 24 * 60 * 60 * 1000, // 30 days
+          }, images);
+        } catch (err) {
+          console.error("[UnsplashService] Error writing to externalApiCache:", err);
+        }
+      }
 
       return images;
     } catch (error) {

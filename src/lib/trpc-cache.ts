@@ -379,3 +379,9 @@ export const cacheConfigs = {
   /** User-specific data (30 seconds) */
   userSpecific: { ttlSeconds: 30, namespace: "user", userAware: true },
 } as const;
+
+export function clearTrpcMemoryCache(): void {
+  memoryCache.clear();
+  console.log("[TRPC_CACHE] Module-level memory cache cleared manually");
+}
+
