@@ -18,10 +18,45 @@ export const CULTURE_VOICE: Record<string, string> = {
   any: "en/en",
 };
 
+// Admin-tunable pronunciation settings (meSpeak/eSpeak speak() params + voice map).
+export interface SpeechConfig {
+  speed: number; // words/min, ~80–450 (eSpeak default 175)
+  pitch: number; // 0–99 (default 50)
+  amplitude: number; // 0–200 (default 100)
+  wordgap: number; // pause between words, ×10ms (default 0)
+  variant: string; // voice variant e.g. "m1".."m7" / "f1".."f5", or "" for none
+  voices: Record<string, string>; // culture → meSpeak voice id (overrides CULTURE_VOICE)
+}
+
+export const DEFAULT_SPEECH_CONFIG: SpeechConfig = {
+  speed: 175,
+  pitch: 50,
+  amplitude: 100,
+  wordgap: 0,
+  variant: "",
+  voices: { ...CULTURE_VOICE },
+};
+
+let activeConfig: SpeechConfig = DEFAULT_SPEECH_CONFIG;
+
+/** Apply admin overrides (partial) to the active pronunciation config. */
+export function setSpeechConfig(cfg: Partial<SpeechConfig>): void {
+  activeConfig = {
+    ...DEFAULT_SPEECH_CONFIG,
+    ...cfg,
+    voices: { ...CULTURE_VOICE, ...(cfg.voices ?? {}) },
+  };
+}
+
+export function getSpeechConfig(): SpeechConfig {
+  return activeConfig;
+}
+
 export function voiceForCulture(culture: string | null | undefined): string {
-  if (!culture) return "en/en";
+  const voices = activeConfig.voices;
+  if (!culture) return voices.any ?? "en/en";
   const primary = culture.split("+")[0].toLowerCase().trim();
-  return CULTURE_VOICE[primary] ?? "en/en";
+  return voices[primary] ?? voices.any ?? "en/en";
 }
 
 // IPA → eSpeak phoneme, longest-match first. Covers the inventory phonology.ts emits.

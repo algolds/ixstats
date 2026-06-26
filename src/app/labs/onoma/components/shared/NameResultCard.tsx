@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   Loader2,
   Volume2,
+  Mic,
   Languages,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -171,16 +172,36 @@ export function NameResultCard({ name, isSaved = false, onSave, onUse, culture, 
             {name}
           </span>
           <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+            {/* IPA reference (informational) */}
             {ipa && (
-              <button
-                onClick={handlePlayPronunciation}
-                title="Listen to pronunciation"
-                className="flex items-center gap-1 text-[9px] text-muted-foreground hover:text-[#0091ff] hover:bg-[#0091ff]/10 border border-border/40 bg-secondary/5 px-2 py-0.5 rounded-full transition-all duration-200 cursor-pointer font-mono select-none"
+              <span
+                title="IPA transcription"
+                className="text-[9px] text-muted-foreground border border-border/40 bg-secondary/5 px-2 py-0.5 rounded-full font-mono select-none"
               >
-                <Volume2 className="h-2.5 w-2.5" />
-                <span>{ipa}</span>
-              </button>
+                {ipa}
+              </span>
             )}
+            {/* Two audio modes: phonetic pronunciation now, natural AI voice later.
+                "Read Naturally" is the future immersive voice (Fish Speech / Kokoro /
+                Chatterbox); disabled until that engine is wired. */}
+            <button
+              type="button"
+              onClick={handlePlayPronunciation}
+              title="Pronounce — phonetic articulation from IPA (eSpeak). Teaches how it's said, not a natural voice."
+              className="flex items-center gap-1 text-[9px] text-muted-foreground hover:text-[#0091ff] hover:bg-[#0091ff]/10 border border-border/40 bg-secondary/5 px-2 py-0.5 rounded-full transition-all duration-200 cursor-pointer select-none"
+            >
+              <Volume2 className="h-2.5 w-2.5" />
+              <span>Pronounce</span>
+            </button>
+            <button
+              type="button"
+              disabled
+              title="Read Naturally — immersive AI voice (coming soon)"
+              className="flex items-center gap-1 text-[9px] text-muted-foreground/50 border border-dashed border-border/40 bg-secondary/5 px-2 py-0.5 rounded-full select-none cursor-not-allowed"
+            >
+              <Mic className="h-2.5 w-2.5" />
+              <span>Read Naturally</span>
+            </button>
             {typeof naturalness === "number" && (
               <span
                 title="Phonotactic naturalness — how well this name fits the trained style"

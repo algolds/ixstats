@@ -34,7 +34,7 @@ gantt
 | **Phase 4** | **Living Languages** | *Planned* | Evolution engine, timelines, loanword/dialect tracking. |
 | **Phase 5** | **ML Layer** | *In Progress* | ✅ Phonotactic perplexity scorer (`perplexity.ts`, naturalness % badge). ⏳ TF-IDF semantic search, lexicon gap recommender. |
 | **Phase 6** | **AI Linguist** | *Planned* | Local LLM-backed dictionary writing & etymologies. |
-| **Phase 7** | **Voice** | *Core Done* | ✅ IPA-driven synthesis via meSpeak (asm.js eSpeak): `speech.ts` (`ipaToEspeak`, culture→voice) + `mespeak-loader.ts`, wired to the pronounce button. ⏳ Historical voice shifts (depends on Phase 4). |
+| **Phase 7** | **Voice** | *Pronunciation done; voice pending* | ✅ **🔊 Pronounce** = meSpeak phonetic articulation from IPA (`speech.ts`/`mespeak-loader.ts`). It's a *pronunciation engine*, not a natural voice (eSpeak sounds robotic — fine for teaching how a name is said). ⏳ **🎙 Read Naturally** = immersive AI voice (Fish Speech / Kokoro / Chatterbox), user-selectable; button is wired+disabled awaiting the engine. ⏳ Historical voice shifts (depends on Phase 4). |
 | **Phase 8** | **Translation Engine** | *Planned* | Grammar-aware English <=> conlang translators. |
 | **Phase 9** | **Language Studio** | *Planned* | Visual grammar/alphabet editor, dialect forks. |
 | **Phase 10**| **Onoma AI** | *Planned* | Generative language simulation agents. |
@@ -118,9 +118,20 @@ gantt
 
 ### Phase 7: Voice
 - **Objective**: Audio voice synthesis matching conlang dialect constraints.
+- **Framing — two distinct buttons, not one speaker**:
+  - **🔊 Pronounce** (done): meSpeak/eSpeak articulates the IPA. Robotic-by-design — it
+    *teaches pronunciation*. Perfect for a single name; breaks immersion for anthems/poetry/
+    speeches/dialogue. Think of meSpeak as the **pronunciation engine**, not "the voice system".
+  - **🎙 Read Naturally** (pending): a natural/immersive AI voice. The pronunciation pipeline
+    stays shared — both modes consume the same generated word → IPA → pronunciation rules,
+    then branch to meSpeak (fast) or AI voice (immersive).
 - **Backlog Items**:
-  - **Speech Synthesizer integration**: Connect an open-source grapheme-to-speech model mapping synthesized IPA transcriptions into natural speech audio files.
-  - **Speech Evolution**: Voice qualities changing over timelines.
+  - **AI voice providers** (user-selectable: Natural / Historical / Narrator / Radio): integrate
+    an open-source TTS — candidates **Fish Speech, Kokoro, Chatterbox**. Likely a server/worker
+    endpoint (these are heavier than client asm.js), returning audio for the IPA/text.
+  - **Speech Evolution**: once the Phase 4 sound-change engine exists, render the *same* word at
+    several epochs (500 BC → 100 AD → 900 AD → 2033) so users **hear the language evolve** — each
+    epoch a 🔊 button. (Differentiator: not seen in other conlang tools.)
 
 ### Phase 8: Translation Engine
 - **Objective**: Context-aware conlang translators.

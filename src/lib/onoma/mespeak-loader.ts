@@ -4,7 +4,7 @@
 // culture-matched eSpeak voice. The heavy engine + voice JSON load on first use
 // and are cached. Any failure falls back to native Web Speech.
 
-import { ipaToEspeak, voiceForCulture } from "./speech";
+import { ipaToEspeak, voiceForCulture, getSpeechConfig } from "./speech";
 
 const basePath = () =>
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_PATH) || "";
@@ -58,9 +58,18 @@ export async function speakName(name: string, ipa: string, culture: string | nul
     const meSpeak = await getEngine();
     const voice = voiceForCulture(culture);
     await ensureVoice(meSpeak, voice);
+    const c = getSpeechConfig();
+    const opts: Record<string, unknown> = {
+      voice,
+      speed: c.speed,
+      pitch: c.pitch,
+      amplitude: c.amplitude,
+      wordgap: c.wordgap,
+      ...(c.variant ? { variant: c.variant } : {}),
+    };
     const phonemes = ipaToEspeak(ipa);
-    if (phonemes) meSpeak.speak(`[[${phonemes}]]`, { voice });
-    else meSpeak.speak(name, { voice }); // no IPA → let eSpeak's letter-to-sound handle it
+    if (phonemes) meSpeak.speak(`[[${phonemes}]]`, opts);
+    else meSpeak.speak(name, opts); // no IPA → let eSpeak's letter-to-sound handle it
   } catch {
     webSpeechFallback(name);
   }

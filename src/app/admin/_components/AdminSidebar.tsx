@@ -16,6 +16,7 @@ import {
   Database,
   BookOpen,
   Sparkles,
+  Languages,
   MessageCircle,
   Menu,
   // eslint-disable-next-line unused-imports/no-unused-imports
@@ -149,6 +150,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/narrator",
     icon: Sparkles,
     description: "LLM Narrator & Playground",
+  },
+  {
+    label: "Onoma",
+    href: "/admin/onoma",
+    icon: Languages,
+    description: "Naming Lab pronunciation & voice",
   },
 ];
 

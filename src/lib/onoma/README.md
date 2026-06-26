@@ -110,11 +110,16 @@ Applied per generated name (in `NameResultCard`), all pure-TS and deterministic:
 
 ## Voice (Phase 7)
 
-`speakName(name, ipa, culture)` (in `mespeak-loader.ts`, browser-only) lazy-loads **meSpeak**
-(asm.js eSpeak — no WASM, no CSP change) and synthesizes the **IPA** the phonology engine
-produced, via `ipaToEspeak` → eSpeak `[[phoneme]]` notation, in a culture-matched voice
-(`voiceForCulture`). Any failure falls back to native Web Speech. Voice assets are served from
-`public/onoma/mespeak/` (config + `voices/<id>.json`; English id is `en/en`).
+Two distinct modes (two buttons in `NameResultCard`), not one speaker:
+
+- **🔊 Pronounce** (done) — the *pronunciation engine*. `speakName(name, ipa, culture)` (in
+  `mespeak-loader.ts`, browser-only) lazy-loads **meSpeak** (asm.js eSpeak — no WASM, no CSP
+  change) and articulates the **IPA** via `ipaToEspeak` → eSpeak `[[phoneme]]` in a
+  culture-matched voice (`voiceForCulture`); falls back to native Web Speech on error. eSpeak is
+  robotic by design — it teaches *how* a name is said, it is not a natural voice. Assets live in
+  `public/onoma/mespeak/` (config + `voices/<id>.json`; English id is `en/en`).
+- **🎙 Read Naturally** (pending) — immersive AI voice (Fish Speech / Kokoro / Chatterbox). Button
+  is present but disabled until that engine is wired. Same word→IPA pipeline, different backend.
 
 ## Lexicon analytics
 
