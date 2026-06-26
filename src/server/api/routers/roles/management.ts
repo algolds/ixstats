@@ -360,6 +360,9 @@ export const rolesManagementRouter = createTRPCRouter({
         { name: "analytics.view", displayName: "View Analytics", category: "analytics" },
         { name: "analytics.export", displayName: "Export Analytics", category: "analytics" },
 
+        // Labs permissions
+        { name: "labs.access", displayName: "Access Labs", category: "labs" },
+
         // Role management permissions
         { name: "role.view", displayName: "View Roles", category: "user" },
         { name: "role.create", displayName: "Create Roles", category: "user" },

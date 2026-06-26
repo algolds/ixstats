@@ -25,6 +25,8 @@ export interface UseNavigationItemsParams {
   isPremium: boolean;
   isStandalone: boolean;
   setupStatus: string;
+  /** Per-user override: user has been granted Labs access (RBAC `labs.access`). */
+  hasLabsAccess?: boolean;
   navigationSettings:
     | {
         showWikiTab?: boolean;
@@ -50,6 +52,7 @@ export function useNavigationItems({
   isStandalone: _isStandalone,
   setupStatus,
   navigationSettings,
+  hasLabsAccess = false,
 }: UseNavigationItemsParams): NavigationItem[] {
   const navigationItems: NavigationItem[] = useMemo(() => {
     const items: NavigationItem[] = [
@@ -187,9 +190,13 @@ export function useNavigationItems({
       if (navigationSettings) {
         if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
         if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
+        // Admins/system owners (role level ≤ 10) and users explicitly granted
+        // Labs access always see Labs, regardless of the global showLabsTab control.
         if (
           item.name === "Labs" &&
           !navigationSettings.showLabsTab &&
+          !isAdmin &&
+          !hasLabsAccess &&
           process.env.NODE_ENV !== "development"
         )
           return false;

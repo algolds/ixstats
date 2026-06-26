@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react";
 import { CommandPalette } from "~/components/DynamicIsland";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { useHasRoleLevel } from "~/hooks/usePermissions";
+import { useHasRoleLevel, useHasPermission } from "~/hooks/usePermissions";
 import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
@@ -50,7 +50,10 @@ export function Navigation() {
   const activeScrollY = isWriterMode ? 56 : scrollY;
 
   // Use new role management system
-  const isAdmin = useHasRoleLevel(10); // Admin level or higher
+  const isAdmin = useHasRoleLevel(10); // Admin level or higher (≤10 includes system owners)
+
+  // Per-user Labs grant: any role carrying the `labs.access` permission.
+  const hasLabsAccess = useHasPermission("labs.access");
 
   // Get premium status
   const { isPremium } = usePremium();
@@ -96,6 +99,7 @@ export function Navigation() {
     isStandalone,
     setupStatus,
     navigationSettings,
+    hasLabsAccess,
   });
 
   const contextKey = getContextKey(normalizedPathname);

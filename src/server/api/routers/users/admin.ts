@@ -115,6 +115,7 @@ export const usersAdminRouter = createTRPCRouter({
         { name: "content.manage", displayName: "Manage Content", category: "content" },
         { name: "countries.view", displayName: "View Countries", category: "countries" },
         { name: "countries.manage", displayName: "Manage Countries", category: "countries" },
+        { name: "labs.access", displayName: "Access Labs", category: "labs" },
       ];
 
       for (const perm of permissions) {
