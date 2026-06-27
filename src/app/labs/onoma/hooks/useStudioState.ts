@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNameBank } from "~/hooks/useNameBank";
-import { type GenerateOptions } from "~/lib/onoma/types";
+import { type GenerateOptions, type StudioSubTab } from "~/lib/onoma/types";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { translateToIPA } from "~/lib/onoma/phonology";
@@ -16,8 +16,8 @@ export interface UseStudioStateProps {
   initialWords?: string[];
   initialTitle?: string;
   onClearInitial?: () => void;
-  activeSubTab?: "workshop" | "lexicon";
-  setActiveSubTab?: (tab: "workshop" | "lexicon") => void;
+  activeSubTab?: StudioSubTab;
+  setActiveSubTab?: (tab: StudioSubTab) => void;
 }
 
 export function useStudioState({
@@ -30,7 +30,7 @@ export function useStudioState({
   const bank = useNameBank();
 
   // Lexicon Sub-Tabs & Dictionary State
-  const [localActiveSubTab, setLocalActiveSubTab] = useState<"workshop" | "lexicon">("workshop");
+  const [localActiveSubTab, setLocalActiveSubTab] = useState<StudioSubTab>("workshop");
   const activeSubTab = externalActiveSubTab ?? localActiveSubTab;
   const setActiveSubTab = externalSetActiveSubTab ?? setLocalActiveSubTab;
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);

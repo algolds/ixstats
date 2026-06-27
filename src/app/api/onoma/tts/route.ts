@@ -6,6 +6,29 @@ import { globalCache } from "~/lib/advanced-cache-system";
 import { db } from "~/server/db";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import crypto from "crypto";
+import { ipaToSpokenText } from "~/lib/onoma/branding-utils";
+import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+
+type KokoroEngine = "kokoro-fastapi" | "kokoro-web";
+
+/** Parse and validate the engine config value (defaults to the fastapi path). */
+function parseEngine(raw: string | undefined): KokoroEngine {
+  return raw === "kokoro-web" ? "kokoro-web" : "kokoro-fastapi";
+}
+
+/** Read a cached {d, ct} wrapper, falling back to legacy plain-base64 entries. */
+function readCached(raw: string | undefined): { data: string; ct: string } | null {
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw) as unknown;
+    if (p && typeof p === "object" && typeof (p as { d?: unknown }).d === "string") {
+      return { data: (p as { d: string }).d, ct: (p as { ct?: string }).ct || "audio/mpeg" };
+    }
+  } catch {
+    /* legacy plain base64 string */
+  }
+  return { data: raw, ct: "audio/mpeg" };
+}
 
 async function handleTts(request: NextRequest) {
   try {
@@ -57,11 +80,26 @@ async function handleTts(request: NextRequest) {
     const defaultSpeedVal = map.get("onoma.kokoro.speed");
     let defaultSpeed =
       defaultSpeedVal != null && defaultSpeedVal !== "" ? Number(defaultSpeedVal) : 1.0;
+    // Phoneme-native engine + its base URL. kokoro-fastapi is primary; kokoro-web
+    // (the re-spelling path) stays as fallback so the swap is rollback-safe.
+    let engine = parseEngine(map.get("onoma.kokoro.engine"));
+    let fastApiUrl = map.get("onoma.kokoro.fastApiUrl") || "";
+
+    // Per-culture voice assignments (JSON in systemConfig).
+    let voiceMap: Record<string, string> = {};
+    try {
+      const parsed = JSON.parse(map.get("onoma.kokoro.voiceMap") || "{}");
+      if (parsed && typeof parsed === "object") voiceMap = parsed;
+    } catch {
+      /* ignore malformed map */
+    }
 
     // Extract input parameters
     let text = "";
     let ipa = ""; // Onoma's canonical IPA — drives phoneme synthesis when present
     let voice = defaultVoice;
+    let voiceExplicit = false; // client picked a voice (per-name override) → skip culture map
+    let culture = "";
     let speed = defaultSpeed;
     let model = defaultModel;
 
@@ -70,7 +108,11 @@ async function handleTts(request: NextRequest) {
         const body = await request.json();
         text = body.text || "";
         if (body.ipa) ipa = body.ipa;
-        if (body.voice) voice = body.voice;
+        if (body.voice) {
+          voice = body.voice;
+          voiceExplicit = true;
+        }
+        if (body.culture) culture = body.culture;
         if (body.speed != null) speed = Number(body.speed);
         if (body.model) model = body.model;
 
@@ -89,7 +131,11 @@ async function handleTts(request: NextRequest) {
       const { searchParams } = new URL(request.url);
       text = searchParams.get("text") || "";
       ipa = searchParams.get("ipa") || "";
-      if (searchParams.get("voice")) voice = searchParams.get("voice")!;
+      if (searchParams.get("voice")) {
+        voice = searchParams.get("voice")!;
+        voiceExplicit = true;
+      }
+      culture = searchParams.get("culture") || "";
       if (searchParams.get("speed")) speed = Number(searchParams.get("speed"));
       if (searchParams.get("model")) model = searchParams.get("model")!;
     }
@@ -98,29 +144,43 @@ async function handleTts(request: NextRequest) {
       return NextResponse.json({ error: "Text parameter is required" }, { status: 400 });
     }
 
+    // Apply the per-culture voice unless the client explicitly chose a voice.
+    if (!voiceExplicit && culture) {
+      const primaryCulture = culture.split("+")[0].toLowerCase().trim();
+      if (voiceMap[primaryCulture]) voice = voiceMap[primaryCulture];
+    }
+
     let normalizedBaseUrl = baseUrl.trim();
-    if (!enabled || !normalizedBaseUrl) {
+    let normalizedFastApiUrl = fastApiUrl.trim();
+
+    if (!enabled) {
       return NextResponse.json(
-        { error: "Kokoro natural voice service is not enabled or configured" },
+        { error: "Kokoro natural voice service is not enabled" },
+        { status: 503 }
+      );
+    }
+    if (!normalizedBaseUrl && !normalizedFastApiUrl) {
+      return NextResponse.json(
+        { error: "Kokoro natural voice service is not configured" },
         { status: 503 }
       );
     }
 
-    if (!/^https?:\/\//i.test(normalizedBaseUrl)) {
+    if (normalizedBaseUrl && !/^https?:\/\//i.test(normalizedBaseUrl)) {
       normalizedBaseUrl = `http://${normalizedBaseUrl}`;
     }
+    if (normalizedFastApiUrl && !/^https?:\/\//i.test(normalizedFastApiUrl)) {
+      normalizedFastApiUrl = `http://${normalizedFastApiUrl}`;
+    }
 
-    // Cache Lookup
+    // Cache key includes the engine + the IPA (which drives the phoneme string)
+    // so kokoro-fastapi (WAV) and kokoro-web (MP3) results never collide.
     const cacheKey =
       "onoma:tts:" +
-      crypto.createHash("sha1").update(`${text}|${ipa}|${voice}|${speed}|${model}`).digest("hex");
-
-    // Phoneme mode: when Onoma supplies IPA, synthesize from phonemes directly
-    // (kokoro-fastapi /dev/generate_from_phonemes) so pronunciation comes from the
-    // language's own rules, not English G2P. Otherwise fall back to text→speech.
-    const phonemes = ipa.replace(/[/[\]]/g, "").trim();
-    const phonemeMode = phonemes.length > 0;
-    const contentType = phonemeMode ? "audio/wav" : "audio/mpeg";
+      crypto
+        .createHash("sha1")
+        .update(`${engine}|${text}|${ipa}|${voice}|${speed}|${model}`)
+        .digest("hex");
 
     // Only skip cache if we are testing overrides explicitly
     const isTestingOverrides =
@@ -130,40 +190,85 @@ async function handleTts(request: NextRequest) {
         baseUrl !== (map.get("onoma.kokoro.baseUrl") || ""));
 
     if (!isTestingOverrides) {
-      const cachedBase64 = await globalCache.get<string>(cacheKey);
-      if (cachedBase64) {
-        const audioBuffer = Buffer.from(cachedBase64, "base64");
+      const cached = readCached(await globalCache.get<string>(cacheKey));
+      if (cached) {
+        const audioBuffer = Buffer.from(cached.data, "base64");
         return new NextResponse(audioBuffer, {
           status: 200,
           headers: {
-            "Content-Type": contentType,
+            "Content-Type": cached.ct,
             "Content-Length": String(audioBuffer.length),
           },
         });
       }
     }
 
-    // Miss: Fetch from the Kokoro (kokoro-fastapi) server
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (apiKey) {
-      headers["Authorization"] = `Bearer ${apiKey}`;
+    const authHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) authHeaders["Authorization"] = `Bearer ${apiKey}`;
+
+    // ---- Engine: kokoro-fastapi (phoneme-native, primary) -----------------
+    // Speak Onoma's IPA directly with stress honored. On any failure (non-2xx,
+    // throw, or no phonemes) fall through to the kokoro-web re-spelling block so
+    // audio always degrades gracefully — the client never sees a hard failure
+    // unless the fallback also fails.
+    if (engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl) {
+      const { phonemes } = ipaToKokoroPhonemes(ipa);
+      if (phonemes) {
+        try {
+          const fastApiBase = normalizedFastApiUrl.replace(/\/$/, "");
+          const fastRes = await fetch(`${fastApiBase}/dev/generate_from_phonemes`, {
+            method: "POST",
+            headers: authHeaders,
+            body: JSON.stringify({ phonemes, voice }),
+            signal: AbortSignal.timeout(60000),
+          });
+          if (fastRes.ok) {
+            const fastBuf = Buffer.from(await fastRes.arrayBuffer());
+            const fastCt = fastRes.headers.get("content-type") || "audio/wav";
+            if (!isTestingOverrides) {
+              await globalCache.set(
+                cacheKey,
+                JSON.stringify({ d: fastBuf.toString("base64"), ct: fastCt }),
+                { ttl: 30 * 24 * 60 * 60, tier: "standard" }
+              );
+            }
+            return new NextResponse(fastBuf, {
+              status: 200,
+              headers: {
+                "Content-Type": fastCt,
+                "Content-Length": String(fastBuf.length),
+              },
+            });
+          }
+          console.error(
+            `[Kokoro FastAPI] non-2xx ${fastRes.status}; falling back to kokoro-web`
+          );
+        } catch (e: any) {
+          console.error(`[Kokoro FastAPI] error; falling back to kokoro-web`, e?.message);
+        }
+      }
     }
 
-    const cleanBaseUrl = normalizedBaseUrl.replace(/\/$/, "");
-    const ttsUrl = phonemeMode
-      ? `${cleanBaseUrl}/dev/generate_from_phonemes`
-      : `${cleanBaseUrl}/v1/audio/speech`;
-    const reqBody = phonemeMode
-      ? { phonemes, voice }
-      : { model, voice, input: text, response_format: "mp3", speed };
+    // ---- Engine: kokoro-web (re-spelling, fallback) -----------------------
+    // kokoro-web's REST API only does English G2P on plain text (its markdown
+    // phoneme syntax is UI-only and would be read out literally). Speak the IPA
+    // re-spelled into English syllables, falling back to the raw name.
+    if (!normalizedBaseUrl) {
+      return NextResponse.json(
+        { error: "Kokoro natural voice service fallback is not configured" },
+        { status: 503 }
+      );
+    }
+    const input = ipaToSpokenText(ipa) || text;
+    const cleanBaseUrl = normalizedBaseUrl.replace(/\/$/, "").replace(/\/api$/, "");
+    const ttsUrl = `${cleanBaseUrl}/api/v1/audio/speech`;
+    const reqBody = { model, voice, input, response_format: "mp3", speed };
 
     const response = await fetch(ttsUrl, {
       method: "POST",
-      headers,
+      headers: authHeaders,
       body: JSON.stringify(reqBody),
-      signal: AbortSignal.timeout(15000), // 15s timeout
+      signal: AbortSignal.timeout(60000), // 60s timeout
     });
 
     if (!response.ok) {
@@ -178,15 +283,16 @@ async function handleTts(request: NextRequest) {
       );
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = Buffer.from(arrayBuffer);
+    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    const contentType = "audio/mpeg";
 
     // Save to cache (30 days TTL)
     if (!isTestingOverrides) {
-      await globalCache.set(cacheKey, audioBuffer.toString("base64"), {
-        ttl: 30 * 24 * 60 * 60,
-        tier: "standard",
-      });
+      await globalCache.set(
+        cacheKey,
+        JSON.stringify({ d: audioBuffer.toString("base64"), ct: contentType }),
+        { ttl: 30 * 24 * 60 * 60, tier: "standard" }
+      );
     }
 
     return new NextResponse(audioBuffer, {
@@ -197,7 +303,7 @@ async function handleTts(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("[Kokoro TTS Proxy Error]", error);
+    console.warn("[Kokoro TTS Proxy Connection Failure/Timeout] falling back. Error:", error?.message || error);
     return NextResponse.json(
       {
         error: "Failed to connect to Kokoro natural voice service",

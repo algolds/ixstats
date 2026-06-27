@@ -13,15 +13,25 @@ import {
   Volume2,
   Mic,
   Languages,
+  Pencil,
+  X,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { translateToIPA } from "~/lib/onoma/phonology";
+import {
+  resolveIpa,
+  getNameOverride,
+  setNameOverride,
+  OVERRIDES_UPDATED_EVENT,
+} from "~/lib/onoma/ipa-overrides";
 import { getMorphologyDetails } from "~/lib/onoma/morphology";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { speakBrowserNative } from "~/lib/onoma/browser-speech";
+import { speakName } from "~/lib/onoma/browser-speech";
+import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
 
 interface NameResultCardProps {
   name: string;
@@ -42,6 +52,7 @@ export function NameResultCard({
   naturalness,
 }: NameResultCardProps) {
   const notify = useNotify();
+  const suggestMutation = api.onoma.suggestPhonemes.useMutation();
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [localSaved, setLocalSaved] = useState(isSaved);
@@ -50,10 +61,32 @@ export function NameResultCard({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isPlayingKokoro, setIsPlayingKokoro] = useState(false);
 
+  // Per-name pronunciation editor (IPA + voice overrides, stored in localStorage)
+  const [mounted, setMounted] = useState(false);
+  const [overridesVersion, setOverridesVersion] = useState(0);
+  const [editingPron, setEditingPron] = useState(false);
+  const [ipaDraft, setIpaDraft] = useState("");
+  const [voiceDraft, setVoiceDraft] = useState("");
+
   // Load public speech config (including Kokoro settings)
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
     staleTime: 600000,
   });
+
+  // Voice catalog — only fetched when the editor opens
+  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+    staleTime: 600000,
+    enabled: editingPron,
+  });
+
+  // Apply localStorage overrides only after mount to avoid SSR hydration mismatch,
+  // and re-resolve when any override changes (event from ipa-overrides helpers).
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const bump = () => setOverridesVersion((v) => v + 1);
+    window.addEventListener(OVERRIDES_UPDATED_EVENT, bump);
+    return () => window.removeEventListener(OVERRIDES_UPDATED_EVENT, bump);
+  }, []);
 
   const [definition, setDefinition] = useState<{
     partOfSpeech: string;
@@ -68,8 +101,13 @@ export function NameResultCard({
   const [editOrigin, setEditOrigin] = useState("");
 
   const ipa = useMemo(() => {
-    return translateToIPA(name, culture ?? null);
-  }, [name, culture]);
+    // SSR/first render: base translation (no localStorage) so markup matches the server.
+    return mounted ? resolveIpa(name, culture ?? null) : translateToIPA(name, culture ?? null);
+    // overridesVersion bumps when a localStorage override changes, forcing a re-resolve.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, culture, mounted, overridesVersion]);
+
+  const hasOverride = mounted ? Boolean(getNameOverride(name)) : false;
 
   // const cyrillicScript = useMemo(() => transcribeToScript(name, "cyrillic"), [name]);
   // const greekScript = useMemo(() => transcribeToScript(name, "greek"), [name]);
@@ -131,56 +169,72 @@ export function NameResultCard({
     window.dispatchEvent(new Event("onoma-definitions-updated"));
   };
 
+  // Shared playback: prefer Kokoro (phoneme mode from the resolved IPA), fall back to browser.
+  //  - forceDefaultVoice → 🔊 reads exact phonemes in the configured default voice
+  //  - voice / ipaText   → explicit overrides (used by the per-name editor preview)
+  //  - otherwise          → per-name override → per-culture map → default (server resolves)
+  const playName = (opts?: { forceDefaultVoice?: boolean; ipaText?: string; voice?: string }) =>
+    speakName({
+      name,
+      ipa: opts?.ipaText ?? ipa,
+      culture: culture ?? null,
+      kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
+      voice: opts?.voice ?? getNameOverride(name)?.voice,
+      defaultVoice: speechConfig?.kokoro?.voice,
+      forceDefaultVoice: opts?.forceDefaultVoice,
+    });
+
+  // 🔊 Pronounce — exact phonemes in the default voice.
   const handlePlayPronunciation = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await speakBrowserNative(name, ipa, culture ?? null);
+      await playName({ forceDefaultVoice: true });
     } catch (err) {
-      console.error("Browser SpeechSynthesis failed:", err);
-      notify.error("Your browser couldn't speak this name. Try the natural voice instead.");
+      console.error("Pronunciation playback failed:", err);
+      notify.error("Could not play this pronunciation.");
     }
   };
 
+  // 🎙 Read Naturally — per-name / per-culture natural voice.
   const handlePlayNatural = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isPlayingKokoro) return;
     setIsPlayingKokoro(true);
-
-    const tryBrowserSpeechFallback = async () => {
-      try {
-        await speakBrowserNative(name, ipa, culture ?? null);
-      } catch (err) {
-        console.error("Browser speech failed:", err);
-        notify.error("Could not play this name.");
-      }
-    };
-
-    if (speechConfig?.kokoro?.enabled) {
-      try {
-        const res = await fetch(
-          `/api/onoma/tts?text=${encodeURIComponent(name)}&ipa=${encodeURIComponent(ipa)}`
-        );
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => ({}));
-          throw new Error(errJson.error || errJson.details || `HTTP error ${res.status}`);
-        }
-
-        const blob = await res.blob();
-        const audioUrl = URL.createObjectURL(blob);
-        const audio = new Audio(audioUrl);
-        audio.onended = () => URL.revokeObjectURL(audioUrl);
-        await audio.play();
-      } catch (err: any) {
-        console.error("Kokoro TTS failed, falling back to browser speech:", err);
-        notify.error("Could not reach natural voice server. Using browser speech fallback.");
-        await tryBrowserSpeechFallback();
-      } finally {
-        setIsPlayingKokoro(false);
-      }
-    } else {
-      await tryBrowserSpeechFallback();
+    try {
+      await playName();
+    } catch (err) {
+      console.error("Natural playback failed:", err);
+      notify.error("Could not play this name.");
+    } finally {
       setIsPlayingKokoro(false);
     }
+  };
+
+  const previewPron = async () => {
+    try {
+      await playName({ ipaText: ipaDraft.trim() || ipa, voice: voiceDraft || undefined });
+    } catch (err) {
+      console.error("Preview playback failed:", err);
+      notify.error("Could not play this preview.");
+    }
+  };
+
+  const openPronEditor = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const ov = getNameOverride(name);
+    setIpaDraft(ov?.ipa ?? ipa);
+    setVoiceDraft(ov?.voice ?? "");
+    setEditingPron(true);
+  };
+
+  const savePron = () => {
+    setNameOverride(name, { ipa: ipaDraft.trim() || undefined, voice: voiceDraft || undefined });
+    setEditingPron(false);
+  };
+
+  const resetPron = () => {
+    setNameOverride(name, { ipa: undefined, voice: undefined });
+    setEditingPron(false);
   };
 
   // Sync prop changes to local state
@@ -234,17 +288,33 @@ export function NameResultCard({
             {name}
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            {/* IPA badge — click to hear the phonetic (browser) pronunciation */}
+            {/* IPA badge — click to hear the exact phonetic pronunciation */}
             {ipa && (
-              <button
-                type="button"
-                onClick={handlePlayPronunciation}
-                title="Click to hear the phonetic pronunciation"
-                className="text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
-              >
-                <Volume2 className="h-2.5 w-2.5" />
-                {ipa}
-              </button>
+              <span className="flex items-center">
+                <button
+                  type="button"
+                  onClick={handlePlayPronunciation}
+                  title="Click to hear the exact phonetic pronunciation"
+                  className={cn(
+                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 rounded-l-full border py-0.5 pr-1.5 pl-2 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                    hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                  )}
+                >
+                  <Volume2 className="h-2.5 w-2.5" />
+                  {ipa}
+                </button>
+                <button
+                  type="button"
+                  onClick={openPronEditor}
+                  title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
+                  className={cn(
+                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                    hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                  )}
+                >
+                  <Pencil className="h-2.5 w-2.5" />
+                </button>
+              </span>
             )}
             {/* Natural AI voice (Kokoro container), falls back to browser speech */}
             <button
@@ -388,6 +458,114 @@ export function NameResultCard({
           )}
         </div>
       </div>
+
+      {/* Per-name pronunciation editor (IPA + voice override) */}
+      {editingPron && (
+        <div className="border-border/20 animate-in slide-in-from-top-1 relative z-10 w-full space-y-2.5 rounded-xl border bg-[#0091ff]/[0.02] p-3 text-left duration-200">
+          <div className="flex items-center justify-between">
+            <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
+              Customize Pronunciation
+            </h4>
+            <button
+              onClick={() => setEditingPron(false)}
+              title="Close"
+              className="text-muted-foreground cursor-pointer rounded p-0.5 hover:text-[#0091ff]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between">
+              <label className="text-muted-foreground text-[8px] font-bold uppercase">
+                IPA (drives Read Naturally phonemes)
+              </label>
+              {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await suggestMutation.mutateAsync({ text: name });
+                      if (res.phonemes) {
+                        setIpaDraft(res.phonemes);
+                        notify.success("Suggested IPA loaded.");
+                      } else {
+                        notify.error("Could not generate IPA suggestion.");
+                      }
+                    } catch (err: any) {
+                      notify.error(err.message || "Failed to fetch suggestion.");
+                    }
+                  }}
+                  disabled={suggestMutation.isPending}
+                  className="text-[8px] text-[#0091ff] hover:underline font-bold select-none cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                >
+                  {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
+                </button>
+              )}
+            </div>
+            <input
+              type="text"
+              value={ipaDraft}
+              onChange={(e) => setIpaDraft(e.target.value)}
+              placeholder="/ˈeksɑːmpl/"
+              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
+            />
+            {speechConfig?.kokoro?.enabled && (() => {
+              const result = ipaToKokoroPhonemes(ipaDraft);
+              return (
+                <div className="text-[9px] text-muted-foreground font-mono mt-1 flex flex-wrap gap-1">
+                  <span>Phonemes: {result.phonemes || "(empty)"}</span>
+                  {result.dropped.length > 0 && (
+                    <span className="text-amber-500 font-semibold">
+                      (dropped: {result.dropped.join(", ")})
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="space-y-0.5">
+            <label className="text-muted-foreground text-[8px] font-bold uppercase">Voice</label>
+            <select
+              value={voiceDraft}
+              onChange={(e) => setVoiceDraft(e.target.value)}
+              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 text-xs focus:outline-none"
+            >
+              <option value="">Default / culture voice</option>
+              {(voicesData?.voices ?? []).map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between gap-1.5 pt-0.5">
+            <button
+              onClick={resetPron}
+              title="Reset to defaults"
+              className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" /> Reset
+            </button>
+            <div className="flex gap-1.5">
+              <button
+                onClick={previewPron}
+                className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
+              >
+                <Volume2 className="h-3 w-3" /> Preview
+              </button>
+              <button
+                onClick={savePron}
+                className="rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff]"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Expanded Inline Morph Area */}
       {showDetailsModal && (

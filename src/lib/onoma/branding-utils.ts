@@ -56,172 +56,119 @@ export function getGoogleFontLink(fontFamily: string): string {
   return `https://fonts.googleapis.com/css2?family=${queryFamily}:wght@400;600;800&display=swap`;
 }
 
-/**
- * Translates an IPA transcription string into a phonetically readable
- * English spelling string for browser SpeechSynthesis.
- *
- * Example: "/ʃəˈnoʊmə/" -> "shuh-NOH-muh"
- */
-export function ipaToSpeechSpelling(ipa: string): string {
-  if (!ipa) return "";
+// IPA tokens that act as syllable nuclei (vowels & diphthongs).
+const IPA_VOWEL_TOKENS = new Set([
+  "aɪ", "eɪ", "aʊ", "ɔɪ", "oʊ", "iː", "uː", "ɑː", "ɔː",
+  "ø", "œ", "ɛ", "ɔ", "ə", "æ", "y", "ʌ", "ɪ", "ʊ", "a", "e", "i", "o", "u",
+]);
 
-  // Strip delimiters and lower boundaries
-  let clean = ipa.replace(/[/\[\]]/g, "").trim();
-  if (!clean) return "";
+// IPA token → English re-spelling chunk. Longest tokens first (scanner takes first match).
+const IPA_RESPELL: [string, string][] = [
+  ["aɪ", "eye"], ["eɪ", "ay"], ["aʊ", "ow"], ["ɔɪ", "oy"], ["oʊ", "oh"],
+  ["iː", "ee"], ["uː", "oo"], ["ɑː", "ah"], ["ɔː", "aw"],
+  ["tʃ", "ch"], ["dʒ", "j"], ["ts", "ts"], ["ks", "ks"], ["kw", "kw"],
+  ["θ", "th"], ["ð", "th"], ["ʃ", "sh"], ["ʒ", "zh"], ["ŋ", "ng"],
+  ["ʁ", "r"], ["ɣ", "gh"], ["ɬ", "l"], ["ɾ", "r"], ["x", "kh"], ["ʔ", ""],
+  ["ø", "ur"], ["œ", "ur"], ["ɛ", "eh"], ["ɔ", "aw"], ["ə", "uh"], ["æ", "ah"],
+  ["y", "ew"], ["ʌ", "uh"], ["ɪ", "ih"], ["ʊ", "uu"],
+  ["a", "ah"], ["e", "eh"], ["i", "ee"], ["o", "oh"], ["u", "oo"],
+];
 
-  // Remember stress index relative to vowel positions
-  const stressIndex = clean.indexOf("ˈ");
-  clean = clean.replace(/[ˈˌ]/g, "");
+interface RespellChunk {
+  text: string;
+  vowel: boolean;
+}
 
-  // Mapping rules from IPA phonemes to English phonetic chunks
-  const ipaMap: [string, string][] = [
-    // Long vowels & Diphthongs (longest first)
-    ["aɪ", "eye"],
-    ["eɪ", "ay"],
-    ["aʊ", "ow"],
-    ["ɔɪ", "oy"],
-    ["oʊ", "oh"],
-    ["iː", "ee"],
-    ["uː", "oo"],
-    ["ɑː", "ah"],
-    ["ɔː", "aw"],
+/** Tokenize one IPA word into re-spelled chunks, tracking which chunk carries primary stress. */
+function chunkIpaWord(word: string): { chunks: RespellChunk[]; stressChunk: number } {
+  const stressPos = word.indexOf("ˈ");
+  const removedBefore = stressPos < 0 ? 0 : (word.slice(0, stressPos).match(/[ˈˌ]/g) || []).length;
+  const cleanStressPos = stressPos < 0 ? -1 : stressPos - removedBefore;
+  const clean = word.replace(/[ˈˌ]/g, "");
 
-    // Consonants
-    ["tʃ", "ch"],
-    ["dʒ", "j"],
-    ["ts", "ts"],
-    ["ks", "ks"],
-    ["kw", "kw"],
-    ["θ", "th"],
-    ["ð", "th"],
-    ["ʃ", "sh"],
-    ["ʒ", "zh"],
-    ["ŋ", "ng"],
-    ["ʁ", "r"],
-    ["ɣ", "gh"],
-    ["ɬ", "l"],
-    ["ɾ", "r"],
-    ["x", "kh"],
-    ["ʔ", ""], // silent glottal stop
-
-    // Vowels
-    ["ø", "ur"],
-    ["œ", "ur"],
-    ["ɛ", "eh"],
-    ["ɔ", "aw"],
-    ["ə", "uh"],
-    ["æ", "ah"],
-    ["y", "ew"],
-    ["ʌ", "uh"],
-    ["ɪ", "ih"],
-    ["ʊ", "uu"],
-    ["a", "ah"],
-    ["e", "eh"],
-    ["i", "ee"],
-    ["o", "oh"],
-    ["u", "oo"],
-  ];
-
-  // Perform translation token-by-token
-  let spelled = "";
+  const chunks: RespellChunk[] = [];
+  let stressChunk = -1;
+  let sawStress = false;
   let i = 0;
-  let stressCharIndex = -1;
-
   while (i < clean.length) {
-    if (i === stressIndex) {
-      stressCharIndex = spelled.length;
-    }
-
-    let matched = false;
-    for (const [from, to] of ipaMap) {
-      if (clean.startsWith(from, i)) {
-        spelled += to;
-        i += from.length;
-        matched = true;
+    if (cleanStressPos >= 0 && i >= cleanStressPos) sawStress = true;
+    let tok = clean[i]!;
+    let rep = clean[i]!;
+    for (const [t, r] of IPA_RESPELL) {
+      if (clean.startsWith(t, i)) {
+        tok = t;
+        rep = r;
         break;
       }
     }
-    if (!matched) {
-      spelled += clean[i];
-      i++;
-    }
+    const vowel = IPA_VOWEL_TOKENS.has(tok);
+    if (rep) chunks.push({ text: rep, vowel });
+    if (sawStress && vowel && stressChunk === -1) stressChunk = chunks.length - 1;
+    i += tok.length;
   }
+  return { chunks, stressChunk };
+}
 
-  if (i === stressIndex) {
-    stressCharIndex = spelled.length;
-  }
+/** Group chunks into syllables — one nucleus each; a single intervocalic consonant is the next onset. */
+function syllabifyChunks(chunks: RespellChunk[]): { text: string; start: number; end: number }[] {
+  const vowels: number[] = [];
+  chunks.forEach((c, idx) => { if (c.vowel) vowels.push(idx); });
+  const join = (s: number, e: number) => chunks.slice(s, e).map((c) => c.text).join("");
+  if (vowels.length === 0) return [{ text: join(0, chunks.length), start: 0, end: chunks.length }];
 
-  // Syllabify the spelled English word
-  const vowels = ["a", "e", "i", "o", "u", "y"];
-  const isVowel = (char: string) => vowels.includes(char.toLowerCase());
-
-  const letters = spelled.split("");
-  const vowelPositions: number[] = [];
-  for (let j = 0; j < letters.length; j++) {
-    if (isVowel(letters[j])) {
-      if (vowelPositions.length > 0 && vowelPositions[vowelPositions.length - 1] === j - 1) {
-        // consecutive vowel characters
-      } else {
-        vowelPositions.push(j);
-      }
-    }
-  }
-
-  if (vowelPositions.length <= 1) {
-    return spelled.toUpperCase();
-  }
-
-  const splitPoints: number[] = [];
-  for (let k = 0; k < vowelPositions.length - 1; k++) {
-    const v1 = vowelPositions[k];
-    const v2 = vowelPositions[k + 1];
-
-    let v1End = v1;
-    while (v1End + 1 < letters.length && isVowel(letters[v1End + 1])) {
-      v1End++;
-    }
-
-    const cBetween = v2 - v1End - 1;
-    if (cBetween <= 1) {
-      splitPoints.push(v1End + 1);
-    } else {
-      splitPoints.push(v1End + Math.floor(cBetween / 2) + 1);
-    }
-  }
-
-  const syllables: string[] = [];
+  const out: { text: string; start: number; end: number }[] = [];
   let start = 0;
-  for (const pt of splitPoints) {
-    syllables.push(spelled.slice(start, pt));
-    start = pt;
-  }
-  syllables.push(spelled.slice(start));
-
-  const activeSyllables = syllables.filter(Boolean);
-
-  if (activeSyllables.length <= 1) {
-    return spelled.toUpperCase();
-  }
-
-  let currentPos = 0;
-  const processedSyllables = activeSyllables.map((syl) => {
-    const sylStart = currentPos;
-    const sylEnd = currentPos + syl.length;
-    currentPos = sylEnd;
-
-    if (stressCharIndex >= sylStart && stressCharIndex < sylEnd) {
-      return syl.toUpperCase();
+  for (let v = 0; v < vowels.length; v++) {
+    let end: number;
+    if (v === vowels.length - 1) {
+      end = chunks.length;
+    } else {
+      const between = vowels[v + 1]! - vowels[v]! - 1;
+      // 0–1 consonants → coda stays with this vowel; 2+ → last consonant becomes the next onset.
+      end = between <= 1 ? vowels[v]! + 1 : vowels[v + 1]! - 1;
     }
-    if (stressCharIndex === sylStart) {
-      return syl.toUpperCase();
-    }
-    return syl.toLowerCase();
-  });
-
-  const hasUppercase = processedSyllables.some((s) => s === s.toUpperCase() && s !== "");
-  if (!hasUppercase && processedSyllables.length > 0) {
-    processedSyllables[0] = processedSyllables[0].toUpperCase();
+    out.push({ text: join(start, end), start, end });
+    start = end;
   }
+  return out;
+}
 
-  return processedSyllables.join("-");
+/**
+ * Translates an IPA transcription into a phonetically readable English re-spelling for TTS.
+ * The stressed syllable is upper-cased; syllables are hyphen-joined.
+ *
+ * Example: "/ʃəˈnoʊmə/" → "shuh-NOH-muh"
+ */
+export function ipaToSpeechSpelling(ipa: string): string {
+  if (!ipa) return "";
+  const cleaned = ipa.replace(/[/[\]]/g, "").trim();
+  if (!cleaned) return "";
+
+  const parts = cleaned.split(/(\s+|-)/); // keep spaces/hyphens as separators
+  return parts
+    .map((part) => {
+      if (!part || /^(\s+|-)$/.test(part)) return part;
+      const { chunks, stressChunk } = chunkIpaWord(part);
+      const sylls = syllabifyChunks(chunks);
+      if (sylls.length <= 1) return sylls.map((s) => s.text).join("").toUpperCase();
+      let anyStressed = false;
+      const rendered = sylls.map((s) => {
+        const stressed = stressChunk >= s.start && stressChunk < s.end;
+        if (stressed) anyStressed = true;
+        return stressed ? s.text.toUpperCase() : s.text.toLowerCase();
+      });
+      if (!anyStressed && rendered.length > 0) rendered[0] = rendered[0]!.toUpperCase();
+      return rendered.join("-");
+    })
+    .join("");
+}
+
+/**
+ * Re-spelling formatted for kokoro-web's text input (no phoneme input supported via REST).
+ * Stress caps dropped (TTS ignores letter case); syllables are space-separated.
+ */
+export function ipaToSpokenText(ipa: string): string {
+  const spelled = ipaToSpeechSpelling(ipa);
+  if (!spelled) return "";
+  return spelled.toLowerCase().replace(/-/g, " ");
 }

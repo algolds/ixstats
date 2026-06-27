@@ -28,7 +28,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 1,
-    patch: 4,
+    patch: 5,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },
@@ -56,7 +56,7 @@ export const VERSIONS = {
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
     halo: 2, // global contextual overlay (was "Dynamic Island"); +Live Activities
-    onoma: 1, // name generation and linguistic dictionary studio
+    onoma: 2, // name generation and linguistic dictionary studio
   },
 
   // Design system.

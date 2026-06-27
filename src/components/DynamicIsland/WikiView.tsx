@@ -14,6 +14,7 @@ import {
   History,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Link2,
   Clock,
   ExternalLink,
@@ -21,6 +22,8 @@ import {
   Settings,
   Bookmark,
   Loader2,
+  Play,
+  Pause,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -50,8 +53,15 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { articleTitle, tocEntries, themeColors, activeSectionId, navigateToSection } =
-    useWikiContext();
+  const {
+    articleTitle,
+    tocEntries,
+    themeColors,
+    activeSectionId,
+    navigateToSection,
+    narratorState,
+    narratorActions,
+  } = useWikiContext() as any;
   const [searchQuery, setSearchQuery] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -246,33 +256,62 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     }
   }, [articleTitle]);
 
-  // Drag / Click handlers for scrubbing
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleScrub = useCallback((pct: number) => {
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    if (scrollHeight > 0) {
-      window.scrollTo({
-        top: (pct / 100) * scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, []);
+  const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
+  const activeSectionTitle = activeEntry?.text ?? "";
 
-  const updateScrollFromPointer = (e: React.PointerEvent, smooth = false) => {
+  const isNarratorActive = !!(
+    narratorState &&
+    narratorState.totalBlocks > 0 &&
+    (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
+  );
+
+  const displayPercent = isNarratorActive
+    ? (narratorState.activeBlockIndex / narratorState.totalBlocks) * 100
+    : scrollPercent;
+
+  // Drag / Click handlers for scrubbing
+  const handleScrub = useCallback((pct: number) => {
+    if (isNarratorActive && narratorActions) {
+      const targetIdx = Math.min(
+        narratorState.totalBlocks - 1,
+        Math.max(0, Math.round((pct / 100) * (narratorState.totalBlocks - 1)))
+      );
+      narratorActions.jumpToBlock(targetIdx);
+    } else {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight > 0) {
+        window.scrollTo({
+          top: (pct / 100) * scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [isNarratorActive, narratorActions, narratorState?.totalBlocks]);
+
+  const updateScrollFromPointer = (e: React.PointerEvent, _smooth = false) => {
     if (!trackRef.current) return;
     const rect = trackRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const pct = (clickX / rect.width) * 100;
     const clampedPct = Math.min(100, Math.max(0, pct));
 
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    if (scrollHeight > 0) {
-      window.scrollTo({
-        top: (clampedPct / 100) * scrollHeight,
-        behavior: smooth ? "smooth" : "auto",
-      });
+    if (isNarratorActive && narratorActions) {
+      const targetIdx = Math.min(
+        narratorState.totalBlocks - 1,
+        Math.max(0, Math.round((clampedPct / 100) * (narratorState.totalBlocks - 1)))
+      );
+      narratorActions.jumpToBlock(targetIdx);
+    } else {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight > 0) {
+        window.scrollTo({
+          top: (clampedPct / 100) * scrollHeight,
+          behavior: "auto",
+        });
+      }
     }
   };
 
@@ -291,9 +330,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     setIsDragging(false);
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
-
-  const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
-  const activeSectionTitle = activeEntry?.text ?? "";
 
   return (
     <div className="p-4">
@@ -385,9 +421,13 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         <div className="mb-4 px-1">
           <div className="text-muted-foreground mb-1.5 flex items-center justify-between text-[10px] font-semibold select-none">
             <span className="max-w-[200px] truncate">
-              {activeSectionTitle ? `Reading: ${activeSectionTitle}` : "Overview"}
+              {isNarratorActive
+                ? `Narrating: ${narratorState.activeSectionTitle || "Overview"}`
+                : activeSectionTitle
+                  ? `Reading: ${activeSectionTitle}`
+                  : "Overview"}
             </span>
-            <span className="tabular-nums">{Math.round(scrollPercent)}%</span>
+            <span className="tabular-nums">{Math.round(displayPercent)}%</span>
           </div>
 
           <div
@@ -405,7 +445,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             <div
               className="absolute left-0 h-1 rounded-full bg-blue-500"
               style={{
-                width: `${scrollPercent}%`,
+                width: `${displayPercent}%`,
                 backgroundColor: themeColors?.primary ?? undefined,
               }}
             />
@@ -421,7 +461,11 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                   style={{ left: `${offset}%` }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleScrub(offset);
+                    if (isNarratorActive && narratorActions) {
+                      narratorActions.jumpToSection(entry.id);
+                    } else {
+                      handleScrub(offset);
+                    }
                   }}
                 >
                   <div
@@ -455,7 +499,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             <div
               className="absolute z-30 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border border-blue-500 bg-white shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-transform hover:scale-115 active:cursor-grabbing"
               style={{
-                left: `${scrollPercent}%`,
+                left: `${displayPercent}%`,
                 borderColor: themeColors?.primary ?? undefined,
                 boxShadow: themeColors ? `0 0 8px ${themeColors.primary}` : undefined,
               }}
@@ -647,6 +691,44 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                 </PreText>
               )}
             </CollapsibleSection>
+          )}
+
+          {/* Narrator controls inside Dynamic Island */}
+          {isNarratorActive && narratorActions && (
+            <div className="border-border mb-3 border-b pb-3">
+              <SectionHeader label="Audio Narrator" />
+              <div className="flex items-center justify-between px-2 py-1.5 bg-white/5 rounded-md border border-white/5">
+                <button
+                  onClick={narratorActions.skipPrev}
+                  className="text-zinc-400 hover:text-white p-1"
+                  title="Previous block"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {narratorState.isPlaying ? (
+                  <button
+                    onClick={narratorActions.pause}
+                    className="text-white hover:text-blue-400 p-1 flex items-center gap-1 text-[11px] font-bold"
+                  >
+                    <Pause className="h-3.5 w-3.5 fill-current" /> Pause
+                  </button>
+                ) : (
+                  <button
+                    onClick={narratorActions.play}
+                    className="text-white hover:text-emerald-400 p-1 flex items-center gap-1 text-[11px] font-bold"
+                  >
+                    <Play className="h-3.5 w-3.5 fill-current" /> Resume
+                  </button>
+                )}
+                <button
+                  onClick={narratorActions.skipNext}
+                  className="text-zinc-400 hover:text-white p-1"
+                  title="Next block"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Page Actions — contextual to current article */}

@@ -16,6 +16,31 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Changed
 
+## [1.1.5 Ogma (Alpha)] - 2026-06-27
+
+### Added
+- **Project Onoma — Phoneme-Level Speech Synthesis & Studio Customization (Onoma System v2)**:
+  - **Phoneme-Native API Synthesis Route**: Re-engineered the `/api/onoma/tts` endpoint to read configured `engine` and `fastApiUrl` values. If the engine is set to `kokoro-fastapi` and an IPA translation is present, it normalizes and cleans the transcription and sends it to `/dev/generate_from_phonemes` for direct high-fidelity speech synthesis.
+  - **Fallback-Safe Audio Degradation**: Implemented standard try/catch logic surrounding the fastapi engine pipeline. If fastapi is unconfigured or encounters a network error / non-2xx status, it falls back to the `kokoro-web` `/api/v1/audio/speech` endpoint (using respelled English syllable chunks) so pronunciation never fails completely.
+  - **JSON Cache Packaging & Compatibility**: Updated `advanced-cache-system` values for speech keys to store structured JSON (`{ d: base64_audio, ct: content_type }`) to handle both WAV (fastapi) and MP3 (web) formats, maintaining backward compatibility for legacy base64 strings.
+  - **Linguistic Normalization Pipeline**: Created [kokoro-phonemes.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/kokoro-phonemes.ts) scanning incoming IPA strings longest-first to preserve valid misaki-en tokens (stress, length, vowels, and consonants), remap unsupported symbols, and gracefully drop unknown tokens to prevent audio garbling.
+  - **Phoneme Preview & Dropped-Token Warnings**: Added live phoneme previews and amber warning lists to both the custom pronunciation card editor [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) and the rule builder [StudioPhonology.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioPhonology.tsx).
+  - **IPA Suggestions G2P Integration**: Added the `suggestPhonemes` mutation in the `onoma` router querying fastapi's `/dev/phonemize` endpoint, and wired it to a "Suggest IPA" button in the custom card editor.
+  - **Engine Health & Status Diagnostics**: Added a live `getEngineHealth` query polling `fastapi` and `web` base URLs, showing active indicators in the administration panel [OnomaAdminPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/admin/_components/OnomaAdminPanel.tsx).
+  - **Per-Culture Voice Blending**: Enabled a custom voice weight builder (`voice1*w1+voice2*w2`) in the culture voice mapper dropdowns of the admin configuration panel.
+  - **Wav Format Audition Harness**: Extended the [audition-voice.ts](file:///home/jxsig/projects/ixstats/scripts/onoma/audition-voice.ts) script with support for direct phoneme wav synthesis.
+  - **Workspace Settings Section & Voice Sandbox**: Built [SettingsSection.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/SettingsSection.tsx) supporting personal voice select overrides, speed slider overrides, interactive G2P voice sandboxes, and browser local storage conlang backup/restore tools.
+  - **WikiOS Full-Article Audio Narrator**: Developed [useWikiNarrator.ts](file:///home/jxsig/projects/ixstats/src/hooks/useWikiNarrator.ts) and [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx) reading clean headers and paragraphs out-loud sequentially, highlighting spoken text, pre-buffering future paragraphs, and auto-scrolling to follow text focus.
+  - **Dynamic Island (Halo) Timeline & Scrubber Sync**: Connected the audio narrator state to the expanded Dynamic Island [WikiView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/WikiView.tsx) and compact [WikiDIPlugin.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/plugins/WikiDIPlugin.tsx) to render bouncing equalizer soundwaves, quick play/pause icons, audio control toolbars, and jump audio playback directly when dragging the playhead or clicking section ticks.
+
+### Fixed
+- **Onoma Voice & WikiOS Narrator Stability & Theme Polish**:
+  - **Dynamic Theme Compliance**: Updated narrator player container, buttons, selects, and text styles in [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx) to be theme-compliant across Light, Dark, and Sepia modes.
+  - **React Rules of Hooks Fix**: Re-ordered React queries, state, and effect hook calls to run unconditionally before early return statements in [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx), resolving runtime hydration and rendering errors.
+  - **Connection Timeout Extension**: Increased the backend API proxy fetch timeout from 15 seconds to 60 seconds in [route.ts](file:///home/jxsig/projects/ixstats/src/app/api/onoma/tts/route.ts) to accommodate full-article paragraph audio synthesis on CPU-bound Kokoro voice containers.
+  - **Console Error Alert Suppression**: Downgraded connection errors and timeouts from `console.error` to `console.warn` in both the frontend [useWikiNarrator.ts](file:///home/jxsig/projects/ixstats/src/hooks/useWikiNarrator.ts) and backend [route.ts](file:///home/jxsig/projects/ixstats/src/app/api/onoma/tts/route.ts) to prevent triggering environment error alarms during SpeechSynthesis fallbacks.
+  - **Build Markup Errors**: Corrected progress track absolute container tags to fix JSX compilation errors.
+
 ## [1.1.4 Ogma (Alpha)] - 2026-06-26
 
 ### Added

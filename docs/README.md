@@ -59,6 +59,7 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 | [systems/maps.md](systems/maps.md) | IxWorld map: MapLibre GL, layers, geo API, border editor |
 | [systems/dynamic-island.md](systems/dynamic-island.md) | **Halo** (formerly Dynamic Island) plugin-driven system |
 | [systems/myleague.md](systems/myleague.md) | MyLeague & MyClub sports management |
+| [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Onoma Voice (Kokoro) developer integration & testing guide |
 
 ### IxVault
 
@@ -116,6 +117,13 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 | [design/territory-brush.md](design/territory-brush.md) | Territory brush design doc |
 | [design/province-generator.md](design/province-generator.md) | Province generator design doc |
 | [superpowers/specs/2026-06-15-unified-world-editor-design.md](superpowers/specs/2026-06-15-unified-world-editor-design.md) | Unified world editor design spec |
+
+## Voice & Speech (Onoma)
+
+| Document | Summary |
+| --- | --- |
+| [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Onoma Voice (Kokoro) developer integration & testing guide |
+| [superpowers/plans/2026-06-27-wikios-voice-narrator-plan.md](superpowers/plans/2026-06-27-wikios-voice-narrator-plan.md) | Implementation plan for WikiOS Article Narrator |
 
 ## Audits & Research
 

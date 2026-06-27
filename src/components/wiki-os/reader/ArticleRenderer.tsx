@@ -30,6 +30,8 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { CategoryBreadcrumb } from "~/components/wiki-os/reader/CategoryBreadcrumb";
 import { useAnnotationOverlay } from "~/components/wiki-os/reader/AnnotationOverlay";
 import { useCiteTooltips } from "~/components/wiki-os/reader/useCiteTooltips";
+import { useWikiNarrator } from "~/hooks/useWikiNarrator";
+import { WikiOSNarratorPlayer } from "~/components/wiki-os/reader/WikiOSNarratorPlayer";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flag-color-extractor";
@@ -499,6 +501,7 @@ export function ArticleRenderer({
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const { setWikiPage, activeModal, setActiveModal, setActiveSectionId } = useWikiContext();
+  const narrator = useWikiNarrator(contentRef);
   const { isSignedIn } = useWikiAuth();
   const isAuthenticated = isSignedIn;
   const [tocOpen, setTocOpen] = useState(false);
@@ -825,6 +828,9 @@ export function ArticleRenderer({
         tocLength={toc.length}
         onTocClick={() => setTocOpen(true)}
       />
+
+      {/* Onoma Voice Narrator Player */}
+      <WikiOSNarratorPlayer />
 
       {/* External wiki source badge */}
       {wikiSource && wikiSource !== "ixwiki" && WIKI_SOURCE_LABELS[wikiSource] && (

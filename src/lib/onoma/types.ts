@@ -142,7 +142,8 @@ export type OnomaSection =
   | "organizations"
   | "culture"
   | "studio"
-  | "bank";
+  | "bank"
+  | "settings";
 
 /**
  * Mapping of section IDs to display metadata.
@@ -215,6 +216,13 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     description: "Saved names & dictionaries",
     path: "/labs/onoma/bank",
   },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: "SlidersHorizontal",
+    description: "Voice preferences & sandbox",
+    path: "/labs/onoma/settings",
+  },
 ];
 
 /**
@@ -229,11 +237,16 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
   return match?.id ?? "overview";
 }
 
+/** Studio workspace sub-tabs. */
+export type StudioSubTab = "workshop" | "lexicon" | "phonology";
+
 /**
  * Helper to get studio sub-tab from a pathname.
  */
-export function getStudioSubTabFromPathname(pathname: string): "workshop" | "lexicon" {
+export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   const segment = pathname.split("/labs/onoma/studio")[1]?.replace(/^\//, "") || "";
   const subsegment = segment.split("/")[0];
-  return subsegment === "lexicon" ? "lexicon" : "workshop";
+  if (subsegment === "lexicon") return "lexicon";
+  if (subsegment === "phonology") return "phonology";
+  return "workshop";
 }

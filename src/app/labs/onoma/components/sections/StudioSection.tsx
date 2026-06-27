@@ -6,15 +6,17 @@
 import { useStudioState } from "../../hooks/useStudioState";
 import { StudioWorkshop } from "./studio/StudioWorkshop";
 import { StudioLexicon } from "./studio/StudioLexicon";
+import { StudioPhonology } from "./studio/StudioPhonology";
 import { api } from "~/trpc/react";
 import { applyFlanking } from "~/lib/onoma/branding-utils";
+import type { StudioSubTab } from "~/lib/onoma/types";
 
 interface StudioSectionProps {
   initialWords?: string[];
   initialTitle?: string;
   onClearInitial?: () => void;
-  activeSubTab?: "workshop" | "lexicon";
-  setActiveSubTab?: (tab: "workshop" | "lexicon") => void;
+  activeSubTab?: StudioSubTab;
+  setActiveSubTab?: (tab: StudioSubTab) => void;
 }
 
 export function StudioSection({
@@ -57,6 +59,8 @@ export function StudioSection({
 
       {currentSubTab === "workshop" ? (
         <StudioWorkshop state={state} />
+      ) : currentSubTab === "phonology" ? (
+        <StudioPhonology />
       ) : (
         <StudioLexicon state={state} />
       )}

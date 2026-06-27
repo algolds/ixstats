@@ -120,16 +120,31 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
 
 const IPA_VOWELS = /[aeiouyøɛɔœɨææǽǣ]/i;
 
+/** Built-in grapheme→IPA rules for a culture, exposed so the IPA Studio can show/extend them. */
+export function getCultureRules(culture: string | null): [string, string][] {
+  const primaryCulture = culture ? culture.split("+")[0].toLowerCase().trim() : "any";
+  return CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+}
+
 /**
  * Translates a given name string into its International Phonetic Alphabet (IPA) representation
  * based on the specified culture family.
+ *
+ * `overrideRules` are user-supplied grapheme→IPA pairs (from the IPA Studio) that take priority
+ * over the built-in culture rules. Multi-character precedence is preserved by the scanner.
  */
-export function translateToIPA(name: string, culture: string | null): string {
+export function translateToIPA(
+  name: string,
+  culture: string | null,
+  overrideRules?: [string, string][]
+): string {
   if (!name || !name.trim()) return "";
 
   // Parse culture compounds (e.g. "germanic+slavic" -> "germanic")
   const primaryCulture = culture ? culture.split("+")[0].toLowerCase().trim() : "any";
-  const rules = CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+  const baseRules = CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+  const rules =
+    overrideRules && overrideRules.length > 0 ? [...overrideRules, ...baseRules] : baseRules;
 
   // Process word-by-word to preserve spaces and hyphens
   const words = name.split(/(\s+|-)/);

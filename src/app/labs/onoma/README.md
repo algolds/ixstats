@@ -24,6 +24,7 @@ Single-Page Router pattern.
   | Culture | `CultureSection` | `dynasty`, `culture` |
   | Studio | `StudioSection` | Custom Studio (delegates to Workshop or Lexicon views) |
   | Name Bank | `StashSection` (`"bank"`) | saved names + seed dictionaries |
+  | Settings | `SettingsSection` | User Voice preferences (default voice, speed slider), Sandbox previewer, conlang data exporter/importer |
 
 - **`components/sections/studio/`** — modular Custom Studio sub-panels:
   - **`StudioWorkshop.tsx`** — the Markov training input workspace, parameter controls, circular React Flow probability path visualizer, and Lexicon Explorer health panel.

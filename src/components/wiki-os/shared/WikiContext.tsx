@@ -15,6 +15,28 @@ export interface WikiThemeColors {
   accent: string;
 }
 
+export interface WikiNarratorState {
+  isPlaying: boolean;
+  activeBlockIndex: number;
+  totalBlocks: number;
+  activeText: string;
+  activeSectionTitle: string;
+  speed: number;
+  voice: string;
+}
+
+export interface WikiNarratorActions {
+  play: () => void;
+  pause: () => void;
+  stop: () => void;
+  skipNext: () => void;
+  skipPrev: () => void;
+  setSpeed: (speed: number) => void;
+  setVoice: (voice: string) => void;
+  jumpToSection: (id: string) => void;
+  jumpToBlock: (index: number) => void;
+}
+
 interface WikiContextState {
   /** Whether we're on a WikiOS page */
   isWikiPage: boolean;
@@ -40,6 +62,14 @@ interface WikiContextState {
   activeModal: "history" | "backlinks" | null;
   /** Set the active modal */
   setActiveModal: (modal: "history" | "backlinks" | null) => void;
+  /** Audio Narrator playback state */
+  narratorState: WikiNarratorState;
+  /** Update audio narrator playback state */
+  setNarratorState: (state: Partial<WikiNarratorState>) => void;
+  /** Action hooks for controlling narrator playback */
+  narratorActions: WikiNarratorActions | null;
+  /** Register narrator playback control action hooks */
+  registerNarratorActions: (actions: WikiNarratorActions | null) => void;
 }
 
 const WikiContext = createContext<WikiContextState>({
@@ -55,6 +85,18 @@ const WikiContext = createContext<WikiContextState>({
   restoreSession: () => {},
   activeModal: null,
   setActiveModal: () => {},
+  narratorState: {
+    isPlaying: false,
+    activeBlockIndex: 0,
+    totalBlocks: 0,
+    activeText: "",
+    activeSectionTitle: "",
+    speed: 1.0,
+    voice: "",
+  },
+  setNarratorState: () => {},
+  narratorActions: null,
+  registerNarratorActions: () => {},
 });
 
 export function WikiContextProvider({ children }: { children: ReactNode }) {
@@ -65,6 +107,26 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [recentArticles, setRecentArticles] = useState<string[]>([]);
   const [activeModal, setActiveModal] = useState<"history" | "backlinks" | null>(null);
+
+  // Narrator state and action hooks
+  const [narratorState, setNarratorStateInternal] = useState<WikiNarratorState>({
+    isPlaying: false,
+    activeBlockIndex: 0,
+    totalBlocks: 0,
+    activeText: "",
+    activeSectionTitle: "",
+    speed: 1.0,
+    voice: "",
+  });
+  const [narratorActions, setNarratorActions] = useState<WikiNarratorActions | null>(null);
+
+  const setNarratorState = useCallback((state: Partial<WikiNarratorState>) => {
+    setNarratorStateInternal((prev) => ({ ...prev, ...state }));
+  }, []);
+
+  const registerNarratorActions = useCallback((actions: WikiNarratorActions | null) => {
+    setNarratorActions(actions);
+  }, []);
 
   // Restore recent articles from sessionStorage on mount
   useEffect(() => {
@@ -212,6 +274,10 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
         restoreSession,
         activeModal,
         setActiveModal,
+        narratorState,
+        setNarratorState,
+        narratorActions,
+        registerNarratorActions,
       }}
     >
       {children}

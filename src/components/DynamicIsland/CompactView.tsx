@@ -275,12 +275,24 @@ function CompactViewComponent({
               activePlugin &&
               pluginCenter &&
               (pluginViewKey ? (
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     if (mode === `plugin:${pluginViewKey}`) {
                       onSwitchMode("compact");
                     } else {
                       onSwitchMode(`plugin:${pluginViewKey}`);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      if (mode === `plugin:${pluginViewKey}`) {
+                        onSwitchMode("compact");
+                      } else {
+                        onSwitchMode(`plugin:${pluginViewKey}`);
+                      }
                     }
                   }}
                   className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
@@ -289,7 +301,7 @@ function CompactViewComponent({
                   title={`Open ${activePlugin.id} mode`}
                 >
                   {pluginCenter}
-                </button>
+                </div>
               ) : (
                 <div
                   className={`flex items-center gap-1.5 px-1.5 py-0.5 transition-all duration-300 ${
@@ -377,12 +389,24 @@ function CompactViewComponent({
                     {/* Context switcher / Plugin center */}
                     {activePlugin && pluginCenter ? (
                       pluginViewKey ? (
-                        <button
+                        <div
+                          role="button"
+                          tabIndex={0}
                           onClick={() => {
                             if (mode === `plugin:${pluginViewKey}`) {
                               onSwitchMode("compact");
                             } else {
                               onSwitchMode(`plugin:${pluginViewKey}`);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              if (mode === `plugin:${pluginViewKey}`) {
+                                onSwitchMode("compact");
+                              } else {
+                                onSwitchMode(`plugin:${pluginViewKey}`);
+                              }
                             }
                           }}
                           className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
@@ -391,7 +415,7 @@ function CompactViewComponent({
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
-                        </button>
+                        </div>
                       ) : (
                         <div
                           className={`flex items-center gap-1.5 px-1.5 transition-all duration-300 ${

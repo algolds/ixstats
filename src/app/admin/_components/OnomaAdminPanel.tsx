@@ -10,6 +10,7 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA } from "~/lib/onoma/phonology";
+import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
 
 const CULTURES = [
   "latin",
@@ -22,18 +23,20 @@ const CULTURES = [
   "constructed",
 ];
 
-const KOKORO_VOICES = [
-  { id: "af_heart", label: "Female US - Heart (af_heart)" },
-  { id: "af_bella", label: "Female US - Bella (af_bella)" },
-  { id: "af_nicole", label: "Female US - Nicole (af_nicole)" },
-  { id: "af_sarah", label: "Female US - Sarah (af_sarah)" },
-  { id: "am_adam", label: "Male US - Adam (am_adam)" },
-  { id: "am_michael", label: "Male US - Michael (am_michael)" },
-  { id: "bf_emma", label: "Female UK - Emma (bf_emma)" },
-  { id: "bf_isabella", label: "Female UK - Isabella (bf_isabella)" },
-  { id: "bm_george", label: "Male UK - George (bm_george)" },
-  { id: "bm_lewis", label: "Male UK - Lewis (bm_lewis)" },
-];
+// Friendly labels for the common Kokoro voices; unknown ids fall back to the raw id.
+const VOICE_LABELS: Record<string, string> = {
+  af_heart: "Female US - Soft / Celtic & Elven tone",
+  af_bella: "Female US - Bright / Germanic & Custom conlang tone",
+  af_nicole: "Female US - Whisper / Shadow & Covert tone",
+  af_sarah: "Female US - Warm / Slavic & Runic tone",
+  am_adam: "Male US - Clear / Latin & Academic tone",
+  am_michael: "Male US - Deep / Imperial & Military tone",
+  bf_emma: "Female UK - Noble / Austronesian & Royal tone",
+  bf_isabella: "Female UK - Expressive / Arabic & Cultural tone",
+  bm_george: "Male UK - Gravel / Stout-folk & Deep tone",
+  bm_lewis: "Male UK - Mellow / Place names & Geography tone",
+};
+const voiceLabel = (id: string) => (VOICE_LABELS[id] ? `${VOICE_LABELS[id]} (${id})` : id);
 
 function Slider({
   label,
@@ -81,14 +84,25 @@ export function OnomaAdminPanel() {
   // Kokoro configuration queries/mutations
   const { data: kokoroData, isLoading: isLoadingKokoro } =
     api.onoma.getKokoroAdminConfig.useQuery();
+  const { data: healthData, refetch: refetchHealth } = api.onoma.getEngineHealth.useQuery(undefined, {
+    refetchInterval: 30000,
+  });
+
   const saveKokoro = api.onoma.updateKokoroConfig.useMutation({
     onSuccess: async () => {
       await utils.onoma.getKokoroAdminConfig.invalidate();
       await utils.onoma.getSpeechConfig.invalidate();
+      await refetchHealth();
       notify.success("Kokoro natural voice settings saved.");
     },
     onError: (e) => notify.error(e.message),
   });
+
+  // Live voice catalog from the configured Kokoro server (falls back to a built-in list).
+  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+    staleTime: 600000,
+  });
+  const voiceOptions = voicesData?.voices ?? Object.keys(VOICE_LABELS);
 
   // Test word state
   const [testWord, setTestWord] = useState("Imperia");
@@ -101,6 +115,9 @@ export function OnomaAdminPanel() {
   const [kokoroModel, setKokoroModel] = useState("model_q8f16");
   const [kokoroVoice, setKokoroVoice] = useState("af_heart");
   const [kokoroSpeed, setKokoroSpeed] = useState(1.0);
+  const [voiceMap, setVoiceMap] = useState<Record<string, string>>({});
+  const [kokoroEngine, setKokoroEngine] = useState<"kokoro-fastapi" | "kokoro-web">("kokoro-fastapi");
+  const [kokoroFastApiUrl, setKokoroFastApiUrl] = useState("");
   const [isTestingKokoro, setIsTestingKokoro] = useState(false);
 
   useEffect(() => {
@@ -111,6 +128,9 @@ export function OnomaAdminPanel() {
       setKokoroModel(kokoroData.model);
       setKokoroVoice(kokoroData.voice);
       setKokoroSpeed(kokoroData.speed);
+      setVoiceMap(kokoroData.voiceMap || {});
+      setKokoroEngine(kokoroData.engine || "kokoro-fastapi");
+      setKokoroFastApiUrl(kokoroData.fastApiUrl || "");
     }
   }, [kokoroData]);
 
@@ -162,7 +182,7 @@ export function OnomaAdminPanel() {
       <AdminHeader
         icon={Languages}
         title="Onoma — Pronunciation"
-        description="Configure the Kokoro natural neural voice that powers name pronunciation. Names are spoken from Onoma's own IPA, not English spelling."
+        description="Configure the kokoro-web natural neural voice for the 🎙 Read Naturally button. The 🔊 phonetic badge is driven by Onoma's IPA in the naming lab."
       />
 
       {isLoadingKokoro ? (
@@ -174,8 +194,9 @@ export function OnomaAdminPanel() {
               <Mic className="h-4 w-4 text-[#0091ff]" /> Read Naturally (Kokoro)
             </CardTitle>
             <CardDescription>
-              Self-hosted phoneme-driven neural voice. Onoma sends the canonical IPA for each name
-              directly to the model.
+              Self-hosted Kokoro neural voice for the 🎙 Read Naturally button.
+              kokoro-fastapi accepts raw phonemes for precise pronunciation;
+              kokoro-web uses re-spelling heuristics.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -195,15 +216,58 @@ export function OnomaAdminPanel() {
             </div>
 
             <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Engine</Label>
+                {healthData && (
+                  <span className="text-[9px] font-semibold flex items-center gap-1">
+                    {kokoroEngine === "kokoro-fastapi" ? (
+                      <span className={healthData.fastapi === "up" ? "text-emerald-500" : healthData.fastapi === "down" ? "text-rose-500" : "text-muted-foreground"}>
+                        {healthData.fastapi === "up" ? "● Reachable" : healthData.fastapi === "down" ? "○ Unreachable" : "Not configured"}
+                      </span>
+                    ) : (
+                      <span className={healthData.web === "up" ? "text-emerald-500" : healthData.web === "down" ? "text-rose-500" : "text-muted-foreground"}>
+                        {healthData.web === "up" ? "● Reachable" : healthData.web === "down" ? "○ Unreachable" : "Not configured"}
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+              <select
+                value={kokoroEngine}
+                onChange={(e) => setKokoroEngine(e.target.value as "kokoro-fastapi" | "kokoro-web")}
+                className="border-border/60 bg-background w-full rounded-md border px-2 py-1.5 text-xs focus:outline-none"
+              >
+                <option value="kokoro-fastapi">Phoneme-native (kokoro-fastapi)</option>
+                <option value="kokoro-web">Re-spelling (kokoro-web)</option>
+              </select>
+            </div>
+
+            {kokoroEngine === "kokoro-fastapi" && (
+              <div className="space-y-1">
+                <Label className="text-xs">kokoro-fastapi URL</Label>
+                <Input
+                  placeholder="http://localhost:8880"
+                  value={kokoroFastApiUrl}
+                  onChange={(e) => setKokoroFastApiUrl(e.target.value)}
+                  className="text-xs"
+                />
+                <p className="text-muted-foreground text-[9px]">
+                  Host of the self-hosted kokoro-fastapi server that accepts raw phoneme input.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-1">
               <Label className="text-xs">Base URL</Label>
               <Input
-                placeholder="e.g. http://localhost:3005"
+                placeholder="e.g. localhost:8888"
                 value={kokoroBaseUrl}
                 onChange={(e) => setKokoroBaseUrl(e.target.value)}
                 className="text-xs"
               />
               <p className="text-muted-foreground text-[9px]">
-                Endpoint of the self-hosted kokoro-fastapi container (phoneme input).
+                Host of the self-hosted kokoro-web container — the /api/v1 path is added
+                automatically.
               </p>
             </div>
 
@@ -226,12 +290,17 @@ export function OnomaAdminPanel() {
                   onChange={(e) => setKokoroVoice(e.target.value)}
                   className="border-border/60 bg-background w-full rounded-md border px-2 py-1.5 text-xs focus:outline-none"
                 >
-                  {KOKORO_VOICES.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.label}
+                  {voiceOptions.map((id) => (
+                    <option key={id} value={id}>
+                      {voiceLabel(id)}
                     </option>
                   ))}
                 </select>
+                <p className="text-muted-foreground text-[9px]">
+                  {voicesData?.source === "server"
+                    ? `${voiceOptions.length} voices loaded from the Kokoro server.`
+                    : "Showing built-in voices (Kokoro server not reachable)."}
+                </p>
               </div>
 
               <div className="space-y-1">
@@ -254,6 +323,63 @@ export function OnomaAdminPanel() {
               suffix="x"
               onChange={(v) => setKokoroSpeed(v)}
             />
+
+            {/* Per-culture voice mapping */}
+            <div className="border-border/40 space-y-2 border-t pt-3">
+              <Label className="text-xs font-semibold">Per-culture voices</Label>
+              <p className="text-muted-foreground text-[10px]">
+                Assign a voice per naming culture. "Use default" falls back to the default voice
+                above. The 🔊 Pronounce button always uses the default voice.
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {CULTURES.map((c) => {
+                  const val = voiceMap[c] ?? "";
+                  const isCustomBlend = val !== "" && !voiceOptions.includes(val);
+                  return (
+                    <div key={c} className="space-y-0.5">
+                      <Label className="text-[10px] capitalize">{c}</Label>
+                      <select
+                        value={isCustomBlend ? "custom_blend" : val}
+                        onChange={(e) =>
+                          setVoiceMap((prev) => {
+                            const next = { ...prev };
+                            const v = e.target.value;
+                            if (v === "custom_blend") {
+                              next[c] = "af_heart*0.5+am_adam*0.5";
+                            } else if (v) {
+                              next[c] = v;
+                            } else {
+                              delete next[c];
+                            }
+                            return next;
+                          })
+                        }
+                        className="border-border/60 bg-background w-full rounded-md border px-2 py-1 text-[11px] focus:outline-none"
+                      >
+                        <option value="">Use default</option>
+                        <option value="custom_blend">Custom Blend...</option>
+                        {voiceOptions.map((id) => (
+                          <option key={id} value={id}>
+                            {voiceLabel(id)}
+                          </option>
+                        ))}
+                      </select>
+                      {isCustomBlend && (
+                        <Input
+                          value={val}
+                          onChange={(e) => {
+                            const inputVal = e.target.value;
+                            setVoiceMap((prev) => ({ ...prev, [c]: inputVal }));
+                          }}
+                          placeholder="voice1*0.5+voice2*0.5"
+                          className="h-7 text-[10px] font-mono mt-1 px-2 py-1"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Test word */}
             <div className="border-border/40 flex flex-wrap items-end gap-3 border-t pt-3">
@@ -282,6 +408,17 @@ export function OnomaAdminPanel() {
               <span className="text-muted-foreground self-center font-mono text-xs">
                 {translateToIPA(testWord, testCulture)}
               </span>
+              {kokoroEngine === "kokoro-fastapi" && (() => {
+                const result = ipaToKokoroPhonemes(translateToIPA(testWord, testCulture));
+                return (
+                  <>
+                    <span className="text-muted-foreground self-center font-mono text-xs">→ {result.phonemes || "(empty)"}</span>
+                    {result.dropped.length > 0 && (
+                      <span className="self-center text-[10px] text-amber-500">⚠ dropped: {result.dropped.join(", ")}</span>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <div className="border-border/40 flex gap-2 border-t pt-2">
@@ -294,6 +431,9 @@ export function OnomaAdminPanel() {
                     model: kokoroModel,
                     voice: kokoroVoice,
                     speed: kokoroSpeed,
+                    voiceMap,
+                    engine: kokoroEngine,
+                    fastApiUrl: kokoroFastApiUrl,
                   })
                 }
                 disabled={saveKokoro.isPending}

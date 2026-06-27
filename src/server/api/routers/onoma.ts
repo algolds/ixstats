@@ -11,6 +11,31 @@ import {
 } from "~/server/api/trpc";
 import { ActivityGenerator } from "~/lib/activity-generator";
 
+// Per-culture Kokoro voice assignments, stored as a JSON string in systemConfig.
+function parseVoiceMap(raw: string | undefined): Record<string, string> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+// Fallback voice catalog used when the Kokoro server can't be reached.
+const KOKORO_FALLBACK_VOICES = [
+  "af_heart",
+  "af_bella",
+  "af_nicole",
+  "af_sarah",
+  "am_adam",
+  "am_michael",
+  "bf_emma",
+  "bf_isabella",
+  "bm_george",
+  "bm_lewis",
+];
+
 export const onomaRouter = createTRPCRouter({
   /**
    * Fetch the saved names or dictionaries for the authenticated user from the global Stash system.
@@ -533,6 +558,7 @@ export const onomaRouter = createTRPCRouter({
     const kokoroSpeedVal = map.get("onoma.kokoro.speed");
     const kokoroSpeed =
       kokoroSpeedVal != null && kokoroSpeedVal !== "" ? Number(kokoroSpeedVal) : 1.0;
+    const kokoroVoiceMap = parseVoiceMap(map.get("onoma.kokoro.voiceMap"));
 
     const brandVariation = map.get("onoma.brand.variation") || "nucleus";
     const brandNucleusSymbol = map.get("onoma.brand.nucleusSymbol") || "ə";
@@ -545,6 +571,7 @@ export const onomaRouter = createTRPCRouter({
         voice: kokoroVoice,
         speed: kokoroSpeed,
         model: kokoroModel,
+        voiceMap: kokoroVoiceMap,
       },
       brand: {
         variation: brandVariation,
@@ -569,7 +596,167 @@ export const onomaRouter = createTRPCRouter({
       model: map.get("onoma.kokoro.model") || "model_q8f16",
       voice: map.get("onoma.kokoro.voice") || "af_heart",
       speed: speedVal != null && speedVal !== "" ? Number(speedVal) : 1.0,
+      voiceMap: parseVoiceMap(map.get("onoma.kokoro.voiceMap")),
+      engine:
+        (map.get("onoma.kokoro.engine") as "kokoro-fastapi" | "kokoro-web") ||
+        "kokoro-fastapi",
+      fastApiUrl: map.get("onoma.kokoro.fastApiUrl") || "",
     };
+  }),
+
+  /**
+   * Public: list the voices available from the configured Kokoro server.
+   * Returns the live catalog when reachable, otherwise a small fallback list so
+   * the admin grid and studio picker always have something to show.
+   */
+  getKokoroVoices: publicProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db.systemConfig.findMany({
+      where: { key: { startsWith: "onoma.kokoro." } },
+    });
+    const map = new Map(rows.map((r) => [r.key, r.value]));
+    let baseUrl = (map.get("onoma.kokoro.baseUrl") || "").trim();
+    const apiKey = map.get("onoma.kokoro.apiKey") || "";
+
+    if (baseUrl && !/^https?:\/\//i.test(baseUrl)) baseUrl = `http://${baseUrl}`;
+    if (!baseUrl) return { voices: KOKORO_FALLBACK_VOICES, source: "fallback" as const };
+    // kokoro-web serves under /api/v1; tolerate a baseUrl with or without /api.
+    const apiBase = baseUrl.replace(/\/$/, "").replace(/\/api$/, "");
+
+    try {
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+      const res = await fetch(`${apiBase}/api/v1/audio/voices`, {
+        headers,
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const data = await res.json();
+      // kokoro-web returns an array of { id, name, lang, ... }; tolerate { voices: [...] } too.
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray((data as { voices?: unknown })?.voices)
+          ? (data as { voices: unknown[] }).voices
+          : [];
+      const voices = list
+        .map((v) => (typeof v === "string" ? v : (v as { id?: unknown })?.id))
+        .filter((v): v is string => typeof v === "string");
+      return voices.length > 0
+        ? { voices, source: "server" as const }
+        : { voices: KOKORO_FALLBACK_VOICES, source: "fallback" as const };
+    } catch {
+      return { voices: KOKORO_FALLBACK_VOICES, source: "fallback" as const };
+    }
+  }),
+
+  /**
+   * Public: suggest IPA phonemization from Kokoro's own G2P (/dev/phonemize).
+   */
+  suggestPhonemes: publicProcedure
+    .input(z.object({ text: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const rows = await ctx.db.systemConfig.findMany({
+        where: { key: { in: ["onoma.kokoro.fastApiUrl", "onoma.kokoro.apiKey"] } },
+      });
+      const map = new Map(rows.map((r) => [r.key, r.value]));
+      let fastApiUrl = (map.get("onoma.kokoro.fastApiUrl") || "").trim();
+      const apiKey = map.get("onoma.kokoro.apiKey") || "";
+
+      if (!fastApiUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "kokoro-fastapi is not configured",
+        });
+      }
+
+      if (!/^https?:\/\//i.test(fastApiUrl)) {
+        fastApiUrl = `http://${fastApiUrl}`;
+      }
+
+      const cleanFastApiUrl = fastApiUrl.replace(/\/$/, "");
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+      }
+
+      try {
+        const res = await fetch(`${cleanFastApiUrl}/dev/phonemize`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ text: input.text, language: "en-us" }),
+          signal: AbortSignal.timeout(8000),
+        });
+
+        if (!res.ok) {
+          throw new Error(`FastAPI returned status ${res.status}`);
+        }
+
+        const data = (await res.json()) as { phonemes?: string | string[] };
+        const ph = data.phonemes;
+        const normalized = Array.isArray(ph) ? ph.join(" ") : typeof ph === "string" ? ph : "";
+        return { phonemes: normalized ? `/${normalized}/` : "" };
+      } catch (err: any) {
+        console.error("[Suggest Phonemes Error]", err);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to suggest phonemes: ${err.message || err}`,
+        });
+      }
+    }),
+
+  /**
+   * Public: Query health status of both engines.
+   */
+  getEngineHealth: publicProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db.systemConfig.findMany({
+      where: { key: { startsWith: "onoma.kokoro." } },
+    });
+    const map = new Map(rows.map((r) => [r.key, r.value]));
+    let baseUrl = (map.get("onoma.kokoro.baseUrl") || "").trim();
+    let fastApiUrl = (map.get("onoma.kokoro.fastApiUrl") || "").trim();
+    const apiKey = map.get("onoma.kokoro.apiKey") || "";
+
+    if (baseUrl && !/^https?:\/\//i.test(baseUrl)) baseUrl = `http://${baseUrl}`;
+    if (fastApiUrl && !/^https?:\/\//i.test(fastApiUrl)) fastApiUrl = `http://${fastApiUrl}`;
+
+    const health: { fastapi: "up" | "down" | "unconfigured"; web: "up" | "down" | "unconfigured" } = {
+      fastapi: "unconfigured",
+      web: "unconfigured",
+    };
+
+    const headers: Record<string, string> = {};
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+    if (fastApiUrl) {
+      try {
+        const cleanFastApiUrl = fastApiUrl.replace(/\/$/, "");
+        const res = await fetch(`${cleanFastApiUrl}/`, {
+          method: "GET",
+          headers,
+          signal: AbortSignal.timeout(3000),
+        });
+        health.fastapi = res.ok || res.status === 404 ? "up" : "down";
+      } catch {
+        health.fastapi = "down";
+      }
+    }
+
+    if (baseUrl) {
+      try {
+        const cleanBaseUrl = baseUrl.replace(/\/$/, "").replace(/\/api$/, "");
+        const res = await fetch(`${cleanBaseUrl}/api/v1/audio/voices`, {
+          method: "GET",
+          headers,
+          signal: AbortSignal.timeout(3000),
+        });
+        health.web = res.ok ? "up" : "down";
+      } catch {
+        health.web = "down";
+      }
+    }
+
+    return health;
   }),
 
   /** Admin: persist the Kokoro config keys. */
@@ -582,6 +769,9 @@ export const onomaRouter = createTRPCRouter({
         model: z.string(),
         voice: z.string(),
         speed: z.number().min(0.2).max(5.0),
+        voiceMap: z.record(z.string(), z.string()).optional(),
+        engine: z.enum(["kokoro-fastapi", "kokoro-web"]).default("kokoro-fastapi"),
+        fastApiUrl: z.string().default(""),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -607,6 +797,21 @@ export const onomaRouter = createTRPCRouter({
           key: "onoma.kokoro.speed",
           value: String(input.speed),
           desc: "Kokoro natural voice: play speed multiplier",
+        },
+        {
+          key: "onoma.kokoro.voiceMap",
+          value: JSON.stringify(input.voiceMap ?? {}),
+          desc: "Kokoro natural voice: per-culture voice assignments",
+        },
+        {
+          key: "onoma.kokoro.engine",
+          value: input.engine,
+          desc: "Kokoro natural voice: TTS engine (kokoro-fastapi or kokoro-web)",
+        },
+        {
+          key: "onoma.kokoro.fastApiUrl",
+          value: input.fastApiUrl,
+          desc: "Kokoro natural voice: kokoro-fastapi base URL",
         },
       ];
       await ctx.db.$transaction(

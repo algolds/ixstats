@@ -129,9 +129,13 @@ gantt
 - **Objective**: Audio voice synthesis matching conlang dialect constraints.
 - **Framing — two distinct buttons, not one speaker**:
   - **🔊 Pronounce** (Completed): client-side Web Speech API + meSpeak fallback. Badges and IPA transcriptions read using BCP-47 culture mapping accents (e.g. German voice for Germanic names).
-  - **🎙 Read Naturally** (Completed): self-hosted secure Kokoro TTS engine running in a separate Docker container with three-tier fallback (Kokoro -> Browser Native -> meSpeak).
-- **Architectural Delivery**:
-  - **Kokoro Container Isolation**: Deployed `ghcr.io/eduardolat/kokoro-web:latest` image inside the production stack, bound to port 3004, secured with API tokens, and constrained under memory/CPU limits.
+  - **🎙 Read Naturally** (Completed — Upgraded to System v2): self-hosted secure Kokoro TTS engine running in a separate Docker container with three-tier fallback (Kokoro -> Browser Native -> meSpeak).
+- **Architectural Delivery (Onoma System v2)**:
+  - **Phoneme-Native API Synthesis**: Added support for `kokoro-fastapi` mapping/normalization of IPA transcriptions down to raw misaki-en tokens with a robust custom fallback to `kokoro-web`.
+  - **G2P Suggestion Tooling**: Integrated thin tRPC endpoints triggering fastapi `/dev/phonemize` to auto-suggest IPA strings in the name editor cards.
+  - **Health Check Diagnostics**: Developed health queries assessing reachable status for both containers, displayed live inside the admin dashboard.
+  - **Custom Weight Voice Blending**: Supported blended voices (e.g. `af_heart*0.6+am_adam*0.4`) directly configurable per-culture.
+  - **JSON Cache Layer**: Upgraded the standard cache serialization to save WAV/MP3 formats under engine-hashed keys.
   - **IPA to English Syllable Translator**: Created rules converting raw IPA sounds into stressed hyphenated spelling chunks (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`) to guide browser synthesis voice pacing.
   - **Pre-Deployment Health Checks**: Added database-gated port-pings in `verify-environment.ts` and automated validation inside `deploy-ixworld.sh`.
 

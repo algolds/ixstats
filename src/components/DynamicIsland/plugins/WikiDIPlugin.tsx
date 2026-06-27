@@ -8,6 +8,7 @@
  */
 
 import React, { useMemo, useState } from "react";
+import { Play, Pause } from "lucide-react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { WikiView } from "~/components/DynamicIsland/WikiView";
@@ -32,8 +33,15 @@ function getRgbaColor(colorStr: string, opacity: number): string {
 }
 
 function WikiBreadcrumb() {
-  const { articleTitle, activeSectionId, tocEntries, navigateToSection, themeColors } =
-    useWikiContext();
+  const {
+    articleTitle,
+    activeSectionId,
+    tocEntries,
+    navigateToSection,
+    themeColors,
+    narratorState,
+    narratorActions,
+  } = useWikiContext() as any;
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const activeSectionName = activeSectionId
@@ -44,9 +52,38 @@ function WikiBreadcrumb() {
     <span
       className={cn(
         "flex w-full items-center gap-1.5 overflow-hidden transition-all duration-300",
-        activeSectionName ? "max-w-[260px] min-w-[200px]" : "max-w-[200px] min-w-[140px]"
+        activeSectionName ? "max-w-[285px] min-w-[220px]" : "max-w-[220px] min-w-[160px]"
       )}
     >
+      {narratorState && narratorState.totalBlocks > 0 && narratorActions && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (narratorState.isPlaying) {
+              narratorActions.pause();
+            } else {
+              narratorActions.play();
+            }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="h-5 w-5 shrink-0 rounded bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-90"
+          title={narratorState.isPlaying ? "Pause Narration" : "Resume Narration"}
+        >
+          {narratorState.isPlaying ? (
+            <Pause size={10} className="fill-current text-blue-400 animate-pulse" />
+          ) : (
+            <Play size={10} className="fill-current text-zinc-400" />
+          )}
+        </button>
+      )}
+
+      {narratorState?.isPlaying && (
+        <div className="flex items-center gap-[2px] h-3 select-none mr-1 bg-blue-500/10 px-1 py-0.5 rounded border border-blue-500/20 scale-[0.8] origin-center shrink-0" title="Audio narrator playing">
+          <span className="w-[1.5px] bg-blue-400 rounded-full animate-bounce h-2.5" />
+          <span className="w-[1.5px] bg-blue-400 rounded-full animate-bounce h-1.5" style={{ animationDelay: "0.15s" }} />
+          <span className="w-[1.5px] bg-blue-400 rounded-full animate-bounce h-2" style={{ animationDelay: "0.3s" }} />
+        </div>
+      )}
       <span
         className={cn(
           "di-wiki-title flex-1 transition-all duration-300",
