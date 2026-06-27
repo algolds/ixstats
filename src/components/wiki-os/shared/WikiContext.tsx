@@ -35,6 +35,7 @@ export interface WikiNarratorActions {
   setVoice: (voice: string) => void;
   jumpToSection: (id: string) => void;
   jumpToBlock: (index: number) => void;
+  clearCache?: () => Promise<void>;
 }
 
 interface WikiContextState {
