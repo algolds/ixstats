@@ -273,23 +273,26 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     : scrollPercent;
 
   // Drag / Click handlers for scrubbing
-  const handleScrub = useCallback((pct: number) => {
-    if (isNarratorActive && narratorActions) {
-      const targetIdx = Math.min(
-        narratorState.totalBlocks - 1,
-        Math.max(0, Math.round((pct / 100) * (narratorState.totalBlocks - 1)))
-      );
-      narratorActions.jumpToBlock(targetIdx);
-    } else {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (scrollHeight > 0) {
-        window.scrollTo({
-          top: (pct / 100) * scrollHeight,
-          behavior: "smooth",
-        });
+  const handleScrub = useCallback(
+    (pct: number) => {
+      if (isNarratorActive && narratorActions) {
+        const targetIdx = Math.min(
+          narratorState.totalBlocks - 1,
+          Math.max(0, Math.round((pct / 100) * (narratorState.totalBlocks - 1)))
+        );
+        narratorActions.jumpToBlock(targetIdx);
+      } else {
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (scrollHeight > 0) {
+          window.scrollTo({
+            top: (pct / 100) * scrollHeight,
+            behavior: "smooth",
+          });
+        }
       }
-    }
-  }, [isNarratorActive, narratorActions, narratorState?.totalBlocks]);
+    },
+    [isNarratorActive, narratorActions, narratorState?.totalBlocks]
+  );
 
   const updateScrollFromPointer = (e: React.PointerEvent, _smooth = false) => {
     if (!trackRef.current) return;
@@ -697,10 +700,10 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
           {isNarratorActive && narratorActions && (
             <div className="border-border mb-3 border-b pb-3">
               <SectionHeader label="Audio Narrator" />
-              <div className="flex items-center justify-between px-2 py-1.5 bg-white/5 rounded-md border border-white/5">
+              <div className="flex items-center justify-between rounded-md border border-white/5 bg-white/5 px-2 py-1.5">
                 <button
                   onClick={narratorActions.skipPrev}
-                  className="text-zinc-400 hover:text-white p-1"
+                  className="p-1 text-zinc-400 hover:text-white"
                   title="Previous block"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -708,21 +711,21 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                 {narratorState.isPlaying ? (
                   <button
                     onClick={narratorActions.pause}
-                    className="text-white hover:text-blue-400 p-1 flex items-center gap-1 text-[11px] font-bold"
+                    className="flex items-center gap-1 p-1 text-[11px] font-bold text-white hover:text-blue-400"
                   >
                     <Pause className="h-3.5 w-3.5 fill-current" /> Pause
                   </button>
                 ) : (
                   <button
                     onClick={narratorActions.play}
-                    className="text-white hover:text-emerald-400 p-1 flex items-center gap-1 text-[11px] font-bold"
+                    className="flex items-center gap-1 p-1 text-[11px] font-bold text-white hover:text-emerald-400"
                   >
                     <Play className="h-3.5 w-3.5 fill-current" /> Resume
                   </button>
                 )}
                 <button
                   onClick={narratorActions.skipNext}
-                  className="text-zinc-400 hover:text-white p-1"
+                  className="p-1 text-zinc-400 hover:text-white"
                   title="Next block"
                 >
                   <ChevronRight className="h-4 w-4" />

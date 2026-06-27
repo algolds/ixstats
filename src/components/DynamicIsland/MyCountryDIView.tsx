@@ -1,7 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-import { Crown, Globe, User, ChevronRight, LogOut, X, Shield, Building2, Map, MessageSquare, Handshake, BookOpen, Scale, Edit3 } from "lucide-react";
+import {
+  Crown,
+  Globe,
+  User,
+  ChevronRight,
+  LogOut,
+  X,
+  Shield,
+  Building2,
+  Map,
+  MessageSquare,
+  Handshake,
+  BookOpen,
+  Scale,
+  Edit3,
+} from "lucide-react";
 import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
 
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
@@ -63,8 +78,6 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
     undefined,
     { enabled: !!user?.id }
   );
-
-
 
   const setupStatus = (() => {
     if (!isLoaded || profileLoading) return "loading";
@@ -316,13 +329,11 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
                 </TooltipProvider>
               )}
             </div>
-
-
           </div>
 
           {/* ── Country Actions Grid ──────────────────────────── */}
           <div className="px-3 py-2">
-            <p className="px-1 pb-2 text-[10px] font-bold tracking-widest text-muted-foreground/60 uppercase">
+            <p className="text-muted-foreground/60 px-1 pb-2 text-[10px] font-bold tracking-widest uppercase">
               Country Actions
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -394,7 +405,7 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
           </div>
 
           {/* ── Bottom Actions (Sign Out & View Profile) ────── */}
-          <div className="border-border/40 border-t px-3 py-2 flex items-center justify-between">
+          <div className="border-border/40 flex items-center justify-between border-t px-3 py-2">
             <SignOutButton>
               <button className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive group flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors">
                 <LogOut className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5 group-hover:scale-110" />
@@ -406,8 +417,7 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
 
             <button
               onClick={() =>
-                userProfile?.country?.name &&
-                handleNavigate(getNationUrl(userProfile.country.name))
+                userProfile?.country?.name && handleNavigate(getNationUrl(userProfile.country.name))
               }
               disabled={!userProfile?.country?.name}
               className="text-muted-foreground/60 hover:bg-accent/10 hover:text-foreground group flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors disabled:opacity-50"

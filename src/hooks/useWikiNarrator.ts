@@ -2,8 +2,8 @@
 
 // src/hooks/useWikiNarrator.ts
 // Custom hook to manage full-article audio narration using Onoma Voice (Kokoro TTS).
-// Splits the article DOM into clean text segments, manages sequential playback, 
-// pre-buffers future blocks, highlights active text, and bridges state/actions 
+// Splits the article DOM into clean text segments, manages sequential playback,
+// pre-buffers future blocks, highlights active text, and bridges state/actions
 // to the Dynamic Island (Halo) context.
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -85,11 +85,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const rebuildBlocks = useCallback(() => {
     if (!articleRef.current) return;
     const container = articleRef.current;
-    
+
     // Find all headings, paragraphs, and list items
-    const elements = Array.from(
-      container.querySelectorAll("h2, h3, h4, p, li")
-    ) as HTMLElement[];
+    const elements = Array.from(container.querySelectorAll("h2, h3, h4, p, li")) as HTMLElement[];
 
     const validBlocks: PlaybackBlock[] = [];
     let currentSectionId = "";
@@ -171,140 +169,155 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   }, []);
 
   // Highlight block
-  const highlightBlock = useCallback((el: HTMLElement) => {
-    clearHighlight();
-    el.classList.add(
-      "wikios-narrator-active-block",
-      "border-l-4",
-      "border-[#0091ff]",
-      "pl-3",
-      "bg-[#0091ff]/5",
-      "transition-all",
-      "duration-300"
-    );
-    highlightedElementRef.current = el;
+  const highlightBlock = useCallback(
+    (el: HTMLElement) => {
+      clearHighlight();
+      el.classList.add(
+        "wikios-narrator-active-block",
+        "border-l-4",
+        "border-[#0091ff]",
+        "pl-3",
+        "bg-[#0091ff]/5",
+        "transition-all",
+        "duration-300"
+      );
+      highlightedElementRef.current = el;
 
-    // Check if auto-scroll is enabled in localStorage
-    const autoScroll = localStorage.getItem("onoma-narrator-autoscroll") !== "false";
-    if (autoScroll) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [clearHighlight]);
+      // Check if auto-scroll is enabled in localStorage
+      const autoScroll = localStorage.getItem("onoma-narrator-autoscroll") !== "false";
+      if (autoScroll) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    },
+    [clearHighlight]
+  );
 
   // Synthesize and play block
-  const playBlock = useCallback(async (index: number) => {
-    if (index < 0 || index >= blocksRef.current.length) {
-      // Done reading article
-      stopPlayback();
-      notify.success("Finished reading article.");
-      return;
-    }
-
-    setActiveIdx(index);
-    const block = blocksRef.current[index];
-
-    // Highlight block UI
-    highlightBlock(block.element);
-
-    // Sync active section id in WikiContext
-    if (block.sectionId) {
-      setActiveSectionId(block.sectionId);
-    }
-
-    // Determine Nearest Heading Section text
-    let nearestSectionText = "";
-    for (let i = index; i >= 0; i--) {
-      if (blocksRef.current[i].type === "heading") {
-        nearestSectionText = blocksRef.current[i].text;
-        break;
+  const playBlock = useCallback(
+    async (index: number) => {
+      if (index < 0 || index >= blocksRef.current.length) {
+        // Done reading article
+        stopPlayback();
+        notify.success("Finished reading article.");
+        return;
       }
-    }
 
-    // Sync state with Dynamic Island
-    setNarratorState({
-      isPlaying: true,
-      activeBlockIndex: index + 1,
-      totalBlocks: blocksRef.current.length,
-      activeText: block.text,
-      activeSectionTitle: nearestSectionText || "Overview",
-      speed,
-      voice,
-    });
+      setActiveIdx(index);
+      const block = blocksRef.current[index];
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
+      // Highlight block UI
+      highlightBlock(block.element);
 
-    const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
-    const activeVoice = voice || undefined;
+      // Sync active section id in WikiContext
+      if (block.sectionId) {
+        setActiveSectionId(block.sectionId);
+      }
 
-    try {
-      if (isKokoroEnabled) {
-        // Synthesize via backend route
-        const params = new URLSearchParams({
-          text: block.text,
-          ipa: "", // segment G2P translation resolved on server for full prose
-        });
-        const chosenVoice = activeVoice || config?.kokoro?.voice;
-        if (chosenVoice) params.set("voice", chosenVoice);
-        params.set("speed", String(speed));
-
-        const res = await fetch(`/api/onoma/tts?${params.toString()}`);
-        if (!res.ok) {
-          throw new Error("TTS API returned non-2xx");
+      // Determine Nearest Heading Section text
+      let nearestSectionText = "";
+      for (let i = index; i >= 0; i--) {
+        if (blocksRef.current[i].type === "heading") {
+          nearestSectionText = blocksRef.current[i].text;
+          break;
         }
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audioRef.current = audio;
+      }
 
-        audio.onended = () => {
-          URL.revokeObjectURL(url);
-          if (isPlayingRef.current) {
-            // Read next block after a tiny natural phrasing pause
-            setTimeout(() => {
-              if (isPlayingRef.current) {
-                playBlock(activeIdxRef.current + 1);
-              }
-            }, block.type === "heading" ? 600 : 350);
+      // Sync state with Dynamic Island
+      setNarratorState({
+        isPlaying: true,
+        activeBlockIndex: index + 1,
+        totalBlocks: blocksRef.current.length,
+        activeText: block.text,
+        activeSectionTitle: nearestSectionText || "Overview",
+        speed,
+        voice,
+      });
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
+      const activeVoice = voice || undefined;
+
+      try {
+        if (isKokoroEnabled) {
+          // Synthesize via backend route
+          const params = new URLSearchParams({
+            text: block.text,
+            ipa: "", // segment G2P translation resolved on server for full prose
+          });
+          const chosenVoice = activeVoice || config?.kokoro?.voice;
+          if (chosenVoice) params.set("voice", chosenVoice);
+          params.set("speed", String(speed));
+
+          const res = await fetch(`/api/onoma/tts?${params.toString()}`);
+          if (!res.ok) {
+            throw new Error("TTS API returned non-2xx");
           }
-        };
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audioRef.current = audio;
 
-        await audio.play();
-      } else {
-        // Fallback to browser SpeechSynthesis
-        const phonetic = block.text;
-        const utterance = new SpeechSynthesisUtterance(phonetic);
+          audio.onended = () => {
+            URL.revokeObjectURL(url);
+            if (isPlayingRef.current) {
+              // Read next block after a tiny natural phrasing pause
+              setTimeout(
+                () => {
+                  if (isPlayingRef.current) {
+                    playBlock(activeIdxRef.current + 1);
+                  }
+                },
+                block.type === "heading" ? 600 : 350
+              );
+            }
+          };
+
+          await audio.play();
+        } else {
+          // Fallback to browser SpeechSynthesis
+          const phonetic = block.text;
+          const utterance = new SpeechSynthesisUtterance(phonetic);
+          utterance.rate = speed * 0.85;
+
+          utterance.onend = () => {
+            if (isPlayingRef.current) {
+              setTimeout(
+                () => {
+                  if (isPlayingRef.current) {
+                    playBlock(activeIdxRef.current + 1);
+                  }
+                },
+                block.type === "heading" ? 600 : 350
+              );
+            }
+          };
+
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+        }
+      } catch (err: any) {
+        console.warn(
+          "[Narrator Synthesis Fallback] TTS API fell back to browser speech. Error:",
+          err?.message || err
+        );
+        // Fallback to browser speech directly
+        const utterance = new SpeechSynthesisUtterance(block.text);
         utterance.rate = speed * 0.85;
-
         utterance.onend = () => {
           if (isPlayingRef.current) {
-            setTimeout(() => {
-              if (isPlayingRef.current) {
-                playBlock(activeIdxRef.current + 1);
-              }
-            }, block.type === "heading" ? 600 : 350);
+            playBlock(activeIdxRef.current + 1);
           }
         };
-
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
       }
-    } catch (err: any) {
-      console.warn("[Narrator Synthesis Fallback] TTS API fell back to browser speech. Error:", err?.message || err);
-      // Fallback to browser speech directly
-      const utterance = new SpeechSynthesisUtterance(block.text);
-      utterance.rate = speed * 0.85;
-      utterance.onend = () => {
-        if (isPlayingRef.current) {
-          playBlock(activeIdxRef.current + 1);
-        }
-      };
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    }
-  }, [config, speed, voice, highlightBlock, setNarratorState, setActiveSectionId, notify]);
+    },
+    [config, speed, voice, highlightBlock, setNarratorState, setActiveSectionId, notify]
+  );
 
   // Narrator Control Actions
   const play = useCallback(() => {
@@ -358,40 +371,51 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     }
   }, [activeIdx, playBlock]);
 
-  const jumpToSection = useCallback((sectionId: string) => {
-    const idx = blocksRef.current.findIndex((b) => b.sectionId === sectionId && b.type === "heading");
-    if (idx !== -1) {
-      setIsPlaying(true);
-      playBlock(idx);
-    } else {
-      // Find paragraph under that section if no heading
-      const paraIdx = blocksRef.current.findIndex((b) => b.sectionId === sectionId);
-      if (paraIdx !== -1) {
+  const jumpToSection = useCallback(
+    (sectionId: string) => {
+      const idx = blocksRef.current.findIndex(
+        (b) => b.sectionId === sectionId && b.type === "heading"
+      );
+      if (idx !== -1) {
         setIsPlaying(true);
-        playBlock(paraIdx);
+        playBlock(idx);
+      } else {
+        // Find paragraph under that section if no heading
+        const paraIdx = blocksRef.current.findIndex((b) => b.sectionId === sectionId);
+        if (paraIdx !== -1) {
+          setIsPlaying(true);
+          playBlock(paraIdx);
+        }
       }
-    }
-  }, [playBlock]);
+    },
+    [playBlock]
+  );
 
-  const changeSpeed = useCallback((newSpeed: number) => {
-    setSpeed(newSpeed);
-    localStorage.setItem("onoma-personal-speed", String(newSpeed));
-    setNarratorState({ speed: newSpeed });
-    if (isPlayingRef.current) {
-      // Re-trigger current block to apply speed changes
-      playBlock(activeIdxRef.current);
-    }
-  }, [playBlock, setNarratorState]);
+  const changeSpeed = useCallback(
+    (newSpeed: number) => {
+      setSpeed(newSpeed);
+      localStorage.setItem("onoma-personal-speed", String(newSpeed));
+      setNarratorState({ speed: newSpeed });
+      if (isPlayingRef.current) {
+        // Re-trigger current block to apply speed changes
+        playBlock(activeIdxRef.current);
+      }
+    },
+    [playBlock, setNarratorState]
+  );
 
-  const changeVoice = useCallback((newVoice: string) => {
-    setVoice(newVoice);
-    localStorage.setItem("onoma-personal-voice", newVoice);
-    setNarratorState({ voice: newVoice });
-    if (isPlayingRef.current) {
-      // Re-trigger current block to apply voice changes
-      playBlock(activeIdxRef.current);
-    }
-  }, [playBlock, setNarratorState]);
+  const changeVoice = useCallback(
+    (newVoice: string) => {
+      setVoice(newVoice);
+      localStorage.setItem("onoma-personal-voice", newVoice);
+      setNarratorState({ voice: newVoice });
+      if (isPlayingRef.current) {
+        // Re-trigger current block to apply voice changes
+        playBlock(activeIdxRef.current);
+      }
+    },
+    [playBlock, setNarratorState]
+  );
 
   // Register action hooks in global WikiContext
   useEffect(() => {

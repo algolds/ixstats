@@ -29,17 +29,17 @@ case "$1" in
     if [ -n "$REDIS_PASSWORD" ]; then
       docker run -d \
         --name "$REDIS_CONTAINER" \
-        -p "$REDIS_PORT:6379" \
+        -p "127.0.0.1:$REDIS_PORT:6379" \
         -v ixstats-redis-data:/data \
         redis:7-alpine \
-        redis-server --requirepass "$REDIS_PASSWORD" --maxmemory 2gb --maxmemory-policy allkeys-lru > /dev/null
+        redis-server --requirepass "$REDIS_PASSWORD" --maxmemory 2gb --maxmemory-policy allkeys-lru --protected-mode no > /dev/null
     else
       docker run -d \
         --name "$REDIS_CONTAINER" \
-        -p "$REDIS_PORT:6379" \
+        -p "127.0.0.1:$REDIS_PORT:6379" \
         -v ixstats-redis-data:/data \
         redis:7-alpine \
-        redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru > /dev/null
+        redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru --protected-mode no > /dev/null
     fi
     echo "✓ Redis started on port $REDIS_PORT"
     echo "  - Max Memory: 2GB"

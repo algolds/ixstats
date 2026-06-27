@@ -20,19 +20,73 @@ export interface KokoroPhonemeResult {
 // before their single-char components so the longest-first scanner prefers them.
 export const KOKORO_VALID_TOKENS: ReadonlySet<string> = new Set([
   // affricates & common clusters
-  "tʃ", "dʒ", "ts",
+  "tʃ",
+  "dʒ",
+  "ts",
   // diphthongs
-  "aɪ", "eɪ", "aʊ", "ɔɪ", "oʊ", "əʊ",
+  "aɪ",
+  "eɪ",
+  "aʊ",
+  "ɔɪ",
+  "oʊ",
+  "əʊ",
   // long vowels
-  "iː", "uː", "ɑː", "ɔː", "ɜː", "əː",
+  "iː",
+  "uː",
+  "ɑː",
+  "ɔː",
+  "ɜː",
+  "əː",
   // consonants
-  "p", "b", "t", "d", "k", "ɡ", "f", "v", "θ", "ð", "s", "z", "ʃ", "ʒ",
-  "h", "m", "n", "ŋ", "l", "ɹ", "j", "w", "ɾ",
+  "p",
+  "b",
+  "t",
+  "d",
+  "k",
+  "ɡ",
+  "f",
+  "v",
+  "θ",
+  "ð",
+  "s",
+  "z",
+  "ʃ",
+  "ʒ",
+  "h",
+  "m",
+  "n",
+  "ŋ",
+  "l",
+  "ɹ",
+  "j",
+  "w",
+  "ɾ",
   // vowels (monophthongs)
-  "i", "ɪ", "e", "ɛ", "æ", "ɑ", "ɒ", "ɔ", "o", "ʊ", "u", "ʌ", "ə", "ɚ", "ɝ",
-  "ɐ", "ɨ", "ʉ", "a",
+  "i",
+  "ɪ",
+  "e",
+  "ɛ",
+  "æ",
+  "ɑ",
+  "ɒ",
+  "ɔ",
+  "o",
+  "ʊ",
+  "u",
+  "ʌ",
+  "ə",
+  "ɚ",
+  "ɝ",
+  "ɐ",
+  "ɨ",
+  "ʉ",
+  "a",
   // stress, length, syllable boundary -- preserved verbatim
-  "ˈ", "ˌ", "ː", ".", " ",
+  "ˈ",
+  "ˌ",
+  "ː",
+  ".",
+  " ",
 ]);
 
 // IPA token -> nearest valid misaki-en equivalent. Empty target = drop (and the
@@ -101,6 +155,9 @@ export function ipaToKokoroPhonemes(ipa: string): KokoroPhonemeResult {
     }
   }
 
-  const phonemes = out.join("").replace(/[^\S\n]+/g, " ").trim();
+  const phonemes = out
+    .join("")
+    .replace(/[^\S\n]+/g, " ")
+    .trim();
   return { phonemes, dropped };
 }

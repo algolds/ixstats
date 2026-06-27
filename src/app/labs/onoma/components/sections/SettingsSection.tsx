@@ -180,7 +180,10 @@ export function SettingsSection() {
             localStorage.setItem(PHONOLOGY_RULES_KEY, JSON.stringify(backup.phonologyRules));
           }
           if (backup.lexiconDefinitions) {
-            localStorage.setItem("onoma-lexicon-definitions", JSON.stringify(backup.lexiconDefinitions));
+            localStorage.setItem(
+              "onoma-lexicon-definitions",
+              JSON.stringify(backup.lexiconDefinitions)
+            );
           }
           if (backup.personalVoice !== undefined) {
             localStorage.setItem("onoma-personal-voice", backup.personalVoice);
@@ -234,18 +237,20 @@ export function SettingsSection() {
           <Sliders className="h-4 w-4 text-[#0091ff]" /> Onoma Preferences & Sandbox
         </h3>
         <p className="text-muted-foreground text-sm">
-          Customize playback parameters, preview voices, and manage conlang dictionaries stored in this browser.
+          Customize playback parameters, preview voices, and manage conlang dictionaries stored in
+          this browser.
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Left Column: Preferences Card */}
-        <div className="border-border/40 bg-secondary/5 rounded-xl border p-4 space-y-4 text-left">
+        <div className="border-border/40 bg-secondary/5 space-y-4 rounded-xl border p-4 text-left">
           <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
             Voice Preferences
           </h4>
           <p className="text-muted-foreground text-[10px] leading-normal">
-            These preferences act as a default override for your browser session, running on top of per-culture voice selections.
+            These preferences act as a default override for your browser session, running on top of
+            per-culture voice selections.
           </p>
 
           <div className="space-y-3.5">
@@ -268,11 +273,11 @@ export function SettingsSection() {
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <label className="text-muted-foreground text-[10px] font-bold uppercase">
                   Personal Speed Override
                 </label>
-                <span className="font-mono text-xs text-[#0091ff] font-semibold">
+                <span className="font-mono text-xs font-semibold text-[#0091ff]">
                   {personalSpeed}x
                 </span>
               </div>
@@ -297,12 +302,12 @@ export function SettingsSection() {
         </div>
 
         {/* Right Column: Voice Sandbox Card */}
-        <div className="border-border/40 bg-secondary/5 rounded-xl border p-4 space-y-4 text-left">
+        <div className="border-border/40 bg-secondary/5 space-y-4 rounded-xl border p-4 text-left">
           <div className="flex items-center justify-between">
             <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
               Voice Sandbox
             </h4>
-            <span className="text-[10px] text-muted-foreground font-mono">
+            <span className="text-muted-foreground font-mono text-[10px]">
               {speechConfig?.kokoro?.enabled ? "Kokoro (AI) Active" : "Browser TTS fallback"}
             </span>
           </div>
@@ -346,20 +351,21 @@ export function SettingsSection() {
                 <label className="text-muted-foreground text-[10px] font-bold uppercase">
                   IPA Sound Transcribe
                 </label>
-                {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-                  <button
-                    type="button"
-                    onClick={handleSuggestSandboxIpa}
-                    disabled={suggestMutation.isPending}
-                    className="text-[9px] text-[#0091ff] hover:underline font-bold select-none cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                  >
-                    {suggestMutation.isPending ? (
-                      <Loader2 className="h-2 w-2 animate-spin" />
-                    ) : (
-                      "Suggest IPA"
-                    )}
-                  </button>
-                )}
+                {speechConfig?.kokoro?.enabled &&
+                  speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
+                    <button
+                      type="button"
+                      onClick={handleSuggestSandboxIpa}
+                      disabled={suggestMutation.isPending}
+                      className="flex cursor-pointer items-center gap-1 text-[9px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
+                    >
+                      {suggestMutation.isPending ? (
+                        <Loader2 className="h-2 w-2 animate-spin" />
+                      ) : (
+                        "Suggest IPA"
+                      )}
+                    </button>
+                  )}
               </div>
               <input
                 type="text"
@@ -368,14 +374,14 @@ export function SettingsSection() {
                 placeholder="/ˈimpeɾia/"
                 className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1 font-mono text-xs focus:outline-none"
               />
-              
+
               {/* Normalizer Preview & Warning */}
               {speechConfig?.kokoro?.enabled && (
-                <div className="text-[10px] text-muted-foreground font-mono mt-1 space-y-0.5">
+                <div className="text-muted-foreground mt-1 space-y-0.5 font-mono text-[10px]">
                   <div className="flex justify-between">
                     <span>Phonemes: {sandboxNormalized.phonemes || "(empty)"}</span>
                     {sandboxNormalized.dropped.length > 0 && (
-                      <span className="text-amber-500 font-semibold flex items-center gap-0.5">
+                      <span className="flex items-center gap-0.5 font-semibold text-amber-500">
                         <AlertTriangle className="h-2.5 w-2.5" />
                         dropped: {sandboxNormalized.dropped.join(", ")}
                       </span>
@@ -388,7 +394,7 @@ export function SettingsSection() {
             <button
               onClick={handlePlaySandbox}
               disabled={isPlayingSandbox || !sandboxText}
-              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#0091ff] hover:bg-[#33a7ff] text-white px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed select-none"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0091ff] px-3 py-1.5 text-xs font-bold text-white transition-colors select-none hover:bg-[#33a7ff] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPlayingSandbox ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -402,15 +408,16 @@ export function SettingsSection() {
       </div>
 
       {/* Browser Conlang Data Manager */}
-      <div className="border-border/40 bg-secondary/5 rounded-xl border p-4 space-y-4 text-left">
+      <div className="border-border/40 bg-secondary/5 space-y-4 rounded-xl border p-4 text-left">
         <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
           Browser Conlang Data Manager
         </h4>
         <p className="text-muted-foreground text-[10px] leading-normal">
-          All conlang dictionary definitions, custom pronunciation rules, and overrides are stored device-locally. Use these controls to backup, restore, or clear your data.
+          All conlang dictionary definitions, custom pronunciation rules, and overrides are stored
+          device-locally. Use these controls to backup, restore, or clear your data.
         </p>
 
-        <div className="grid gap-3 sm:grid-cols-3 pt-1">
+        <div className="grid gap-3 pt-1 sm:grid-cols-3">
           {/* Backup / Export */}
           <button
             onClick={handleExportData}
@@ -420,25 +427,24 @@ export function SettingsSection() {
           </button>
 
           {/* Restore / Import */}
-          <label className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer select-none">
+          <label className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors select-none">
             <Upload className="h-3.5 w-3.5 text-emerald-500" /> Import Backup File
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImportData}
-              className="hidden"
-            />
+            <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
           </label>
 
           {/* Clear Actions Dropdown / Selector */}
           <div className="flex gap-1.5">
             <button
               onClick={() => {
-                if (confirm("Are you sure you want to delete all local conlang data? This cannot be undone.")) {
+                if (
+                  confirm(
+                    "Are you sure you want to delete all local conlang data? This cannot be undone."
+                  )
+                ) {
                   handleClearData("all");
                 }
               }}
-              className="flex-1 border-red-500/20 bg-red-500/5 text-red-600 hover:bg-red-500/10 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-500/10"
             >
               <Trash2 className="h-3.5 w-3.5" /> Clear All Data
             </button>

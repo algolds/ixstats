@@ -12,7 +12,16 @@
  */
 
 import { useMemo } from "react";
-import { Clock, ChevronRight, Zap, Pause, Sun, CalendarDays, Gavel, CalendarClock } from "lucide-react";
+import {
+  Clock,
+  ChevronRight,
+  Zap,
+  Pause,
+  Sun,
+  CalendarDays,
+  Gavel,
+  CalendarClock,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-calendar";
@@ -112,7 +121,9 @@ export function CalendarView({ onClose }: DIViewProps) {
   // Find soonest scheduled/upcoming/campaigning general election
   const upcomingElection = useMemo(() => {
     return (elections ?? [])
-      .filter((e) => e.status === "upcoming" || e.status === "scheduled" || e.status === "campaigning")
+      .filter(
+        (e) => e.status === "upcoming" || e.status === "scheduled" || e.status === "campaigning"
+      )
       .sort((a, b) => a.scheduledIxTime - b.scheduledIxTime)[0];
   }, [elections]);
 
@@ -121,7 +132,10 @@ export function CalendarView({ onClose }: DIViewProps) {
     const termEnd = upcomingElection.scheduledIxTime;
     const TERM_LENGTH_MS = 4 * 365.25 * 24 * 60 * 60 * 1000; // 4 game years
     const termStart = termEnd - TERM_LENGTH_MS;
-    const pct = Math.min(100, Math.max(0, Math.round(((now - termStart) / (termEnd - termStart)) * 100)));
+    const pct = Math.min(
+      100,
+      Math.max(0, Math.round(((now - termStart) / (termEnd - termStart)) * 100))
+    );
     return `${pct}%`;
   }, [upcomingElection, now]);
 
@@ -135,7 +149,7 @@ export function CalendarView({ onClose }: DIViewProps) {
         {/* time-of-day ambient glow */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-blue-500/20 blur-3xl"
+          className="pointer-events-none absolute -top-10 -right-8 h-32 w-32 rounded-full bg-blue-500/20 blur-3xl"
         />
         <div className="relative">
           <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
@@ -185,7 +199,7 @@ export function CalendarView({ onClose }: DIViewProps) {
       {/* ── Daily Agenda (Smart Stack) ─────────────────────────────────── */}
       {countryId && agendaItems.length > 0 && (
         <div className="mt-4">
-          <div className="text-muted-foreground mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide">
+          <div className="text-muted-foreground mb-1.5 px-1 text-[11px] font-semibold tracking-wide uppercase">
             Daily Agenda
           </div>
           <SmartStack items={agendaItems} onResolve={go} />
@@ -194,7 +208,7 @@ export function CalendarView({ onClose }: DIViewProps) {
 
       {/* ── Upcoming events ────────────────────────────────────────────── */}
       <div className="mt-4">
-        <div className="text-muted-foreground mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide">
+        <div className="text-muted-foreground mb-1.5 px-1 text-[11px] font-semibold tracking-wide uppercase">
           Upcoming
         </div>
         {!countryId ? (
@@ -240,7 +254,7 @@ function Complication({
   return (
     <div className="glass-hierarchy-child flex flex-col items-center justify-center rounded-xl p-2.5 text-center">
       <div className="text-muted-foreground/80 flex items-center justify-center">{icon}</div>
-      <div className="text-muted-foreground mt-1 text-[9px] font-medium uppercase tracking-wider">
+      <div className="text-muted-foreground mt-1 text-[9px] font-medium tracking-wider uppercase">
         {label}
       </div>
       <div className="text-foreground mt-0.5 text-[11px] font-semibold tracking-tight">{value}</div>

@@ -598,8 +598,7 @@ export const onomaRouter = createTRPCRouter({
       speed: speedVal != null && speedVal !== "" ? Number(speedVal) : 1.0,
       voiceMap: parseVoiceMap(map.get("onoma.kokoro.voiceMap")),
       engine:
-        (map.get("onoma.kokoro.engine") as "kokoro-fastapi" | "kokoro-web") ||
-        "kokoro-fastapi",
+        (map.get("onoma.kokoro.engine") as "kokoro-fastapi" | "kokoro-web") || "kokoro-fastapi",
       fastApiUrl: map.get("onoma.kokoro.fastApiUrl") || "",
     };
   }),
@@ -720,10 +719,11 @@ export const onomaRouter = createTRPCRouter({
     if (baseUrl && !/^https?:\/\//i.test(baseUrl)) baseUrl = `http://${baseUrl}`;
     if (fastApiUrl && !/^https?:\/\//i.test(fastApiUrl)) fastApiUrl = `http://${fastApiUrl}`;
 
-    const health: { fastapi: "up" | "down" | "unconfigured"; web: "up" | "down" | "unconfigured" } = {
-      fastapi: "unconfigured",
-      web: "unconfigured",
-    };
+    const health: { fastapi: "up" | "down" | "unconfigured"; web: "up" | "down" | "unconfigured" } =
+      {
+        fastapi: "unconfigured",
+        web: "unconfigured",
+      };
 
     const headers: Record<string, string> = {};
     if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;

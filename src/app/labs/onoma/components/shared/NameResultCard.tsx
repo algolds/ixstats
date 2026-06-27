@@ -480,28 +480,29 @@ export function NameResultCard({
               <label className="text-muted-foreground text-[8px] font-bold uppercase">
                 IPA (drives Read Naturally phonemes)
               </label>
-              {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const res = await suggestMutation.mutateAsync({ text: name });
-                      if (res.phonemes) {
-                        setIpaDraft(res.phonemes);
-                        notify.success("Suggested IPA loaded.");
-                      } else {
-                        notify.error("Could not generate IPA suggestion.");
+              {speechConfig?.kokoro?.enabled &&
+                speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await suggestMutation.mutateAsync({ text: name });
+                        if (res.phonemes) {
+                          setIpaDraft(res.phonemes);
+                          notify.success("Suggested IPA loaded.");
+                        } else {
+                          notify.error("Could not generate IPA suggestion.");
+                        }
+                      } catch (err: any) {
+                        notify.error(err.message || "Failed to fetch suggestion.");
                       }
-                    } catch (err: any) {
-                      notify.error(err.message || "Failed to fetch suggestion.");
-                    }
-                  }}
-                  disabled={suggestMutation.isPending}
-                  className="text-[8px] text-[#0091ff] hover:underline font-bold select-none cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                >
-                  {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
-                </button>
-              )}
+                    }}
+                    disabled={suggestMutation.isPending}
+                    className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
+                  >
+                    {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
+                  </button>
+                )}
             </div>
             <input
               type="text"
@@ -510,19 +511,20 @@ export function NameResultCard({
               placeholder="/ˈeksɑːmpl/"
               className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
             />
-            {speechConfig?.kokoro?.enabled && (() => {
-              const result = ipaToKokoroPhonemes(ipaDraft);
-              return (
-                <div className="text-[9px] text-muted-foreground font-mono mt-1 flex flex-wrap gap-1">
-                  <span>Phonemes: {result.phonemes || "(empty)"}</span>
-                  {result.dropped.length > 0 && (
-                    <span className="text-amber-500 font-semibold">
-                      (dropped: {result.dropped.join(", ")})
-                    </span>
-                  )}
-                </div>
-              );
-            })()}
+            {speechConfig?.kokoro?.enabled &&
+              (() => {
+                const result = ipaToKokoroPhonemes(ipaDraft);
+                return (
+                  <div className="text-muted-foreground mt-1 flex flex-wrap gap-1 font-mono text-[9px]">
+                    <span>Phonemes: {result.phonemes || "(empty)"}</span>
+                    {result.dropped.length > 0 && (
+                      <span className="font-semibold text-amber-500">
+                        (dropped: {result.dropped.join(", ")})
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
           </div>
 
           <div className="space-y-0.5">

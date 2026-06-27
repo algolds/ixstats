@@ -340,46 +340,49 @@ function CompactViewComponent({
                   >
                     {/* Time/Date — hidden when plugin is active */}
                     {/* Time/Date — hidden when plugin is active */}
-                    {!activePlugin && (() => {
-                      const d = new Date(ixTimeTimestamp);
-                      const weekday = d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }).toUpperCase();
-                      const day = d.getUTCDate();
+                    {!activePlugin &&
+                      (() => {
+                        const d = new Date(ixTimeTimestamp);
+                        const weekday = d
+                          .toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })
+                          .toUpperCase();
+                        const day = d.getUTCDate();
 
-                      return (
-                        <button
-                          onClick={() => onSwitchMode("calendar")}
-                          title="Open Calendar"
-                          className="hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 transition-colors"
-                        >
-                          {/* iOS-style Live Calendar Icon — styled with Facet Glass design */}
-                          <div className="relative flex h-3.5 w-3.5 flex-col overflow-hidden rounded-[3px] border border-white/20 bg-white/5 backdrop-blur-[2px] shadow-[0_1px_3px_rgba(0,0,0,0.2)] shrink-0 select-none">
-                            {/* Glassy Red Header */}
-                            <div className="h-[4.5px] w-full bg-red-500/25 border-b border-red-500/30 flex items-center justify-center">
-                              <span className="text-[5px] font-extrabold leading-none text-red-400 tracking-wide scale-[0.8] origin-center">
-                                {weekday}
-                              </span>
-                            </div>
-                            {/* Glassy Day Number Area */}
-                            <div className="flex-1 w-full bg-white/[0.02] flex items-center justify-center">
-                              <span className="text-[8px] font-bold leading-none text-white/95 origin-center scale-[0.95] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                                {day}
-                              </span>
-                            </div>
-                          </div>
-
-                          <PreText
-                            className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                            whiteSpace="nowrap"
+                        return (
+                          <button
+                            onClick={() => onSwitchMode("calendar")}
+                            title="Open Calendar"
+                            className="hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 transition-colors"
                           >
-                            {d.toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              timeZone: "UTC",
-                            })}
-                          </PreText>
-                        </button>
-                      );
-                    })()}
+                            {/* iOS-style Live Calendar Icon — styled with Facet Glass design */}
+                            <div className="relative flex h-3.5 w-3.5 shrink-0 flex-col overflow-hidden rounded-[3px] border border-white/20 bg-white/5 shadow-[0_1px_3px_rgba(0,0,0,0.2)] backdrop-blur-[2px] select-none">
+                              {/* Glassy Red Header */}
+                              <div className="flex h-[4.5px] w-full items-center justify-center border-b border-red-500/30 bg-red-500/25">
+                                <span className="origin-center scale-[0.8] text-[5px] leading-none font-extrabold tracking-wide text-red-400">
+                                  {weekday}
+                                </span>
+                              </div>
+                              {/* Glassy Day Number Area */}
+                              <div className="flex w-full flex-1 items-center justify-center bg-white/[0.02]">
+                                <span className="origin-center scale-[0.95] text-[8px] leading-none font-bold text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                                  {day}
+                                </span>
+                              </div>
+                            </div>
+
+                            <PreText
+                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
+                              whiteSpace="nowrap"
+                            >
+                              {d.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                timeZone: "UTC",
+                              })}
+                            </PreText>
+                          </button>
+                        );
+                      })()}
 
                     {/* Separator — only if no active plugin and user is authenticated/loaded */}
                     {!activePlugin && user && (

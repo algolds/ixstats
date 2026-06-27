@@ -240,9 +240,7 @@ async function handleTts(request: NextRequest) {
               },
             });
           }
-          console.error(
-            `[Kokoro FastAPI] non-2xx ${fastRes.status}; falling back to kokoro-web`
-          );
+          console.error(`[Kokoro FastAPI] non-2xx ${fastRes.status}; falling back to kokoro-web`);
         } catch (e: any) {
           console.error(`[Kokoro FastAPI] error; falling back to kokoro-web`, e?.message);
         }
@@ -303,7 +301,10 @@ async function handleTts(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.warn("[Kokoro TTS Proxy Connection Failure/Timeout] falling back. Error:", error?.message || error);
+    console.warn(
+      "[Kokoro TTS Proxy Connection Failure/Timeout] falling back. Error:",
+      error?.message || error
+    );
     return NextResponse.json(
       {
         error: "Failed to connect to Kokoro natural voice service",

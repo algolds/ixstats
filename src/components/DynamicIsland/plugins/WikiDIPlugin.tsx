@@ -66,11 +66,11 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="h-5 w-5 shrink-0 rounded bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white flex items-center justify-center transition-all duration-200 active:scale-90"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-white/10 bg-white/5 text-white transition-all duration-200 hover:border-white/20 hover:bg-white/10 active:scale-90"
           title={narratorState.isPlaying ? "Pause Narration" : "Resume Narration"}
         >
           {narratorState.isPlaying ? (
-            <Pause size={10} className="fill-current text-blue-400 animate-pulse" />
+            <Pause size={10} className="animate-pulse fill-current text-blue-400" />
           ) : (
             <Play size={10} className="fill-current text-zinc-400" />
           )}
@@ -78,10 +78,19 @@ function WikiBreadcrumb() {
       )}
 
       {narratorState?.isPlaying && (
-        <div className="flex items-center gap-[2px] h-3 select-none mr-1 bg-blue-500/10 px-1 py-0.5 rounded border border-blue-500/20 scale-[0.8] origin-center shrink-0" title="Audio narrator playing">
-          <span className="w-[1.5px] bg-blue-400 rounded-full animate-bounce h-2.5" />
-          <span className="w-[1.5px] bg-blue-400 rounded-full animate-bounce h-1.5" style={{ animationDelay: "0.15s" }} />
-          <span className="w-[1.5px] bg-blue-400 rounded-full animate-bounce h-2" style={{ animationDelay: "0.3s" }} />
+        <div
+          className="mr-1 flex h-3 shrink-0 origin-center scale-[0.8] items-center gap-[2px] rounded border border-blue-500/20 bg-blue-500/10 px-1 py-0.5 select-none"
+          title="Audio narrator playing"
+        >
+          <span className="h-2.5 w-[1.5px] animate-bounce rounded-full bg-blue-400" />
+          <span
+            className="h-1.5 w-[1.5px] animate-bounce rounded-full bg-blue-400"
+            style={{ animationDelay: "0.15s" }}
+          />
+          <span
+            className="h-2 w-[1.5px] animate-bounce rounded-full bg-blue-400"
+            style={{ animationDelay: "0.3s" }}
+          />
         </div>
       )}
       <span

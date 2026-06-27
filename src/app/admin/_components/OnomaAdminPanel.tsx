@@ -84,9 +84,12 @@ export function OnomaAdminPanel() {
   // Kokoro configuration queries/mutations
   const { data: kokoroData, isLoading: isLoadingKokoro } =
     api.onoma.getKokoroAdminConfig.useQuery();
-  const { data: healthData, refetch: refetchHealth } = api.onoma.getEngineHealth.useQuery(undefined, {
-    refetchInterval: 30000,
-  });
+  const { data: healthData, refetch: refetchHealth } = api.onoma.getEngineHealth.useQuery(
+    undefined,
+    {
+      refetchInterval: 30000,
+    }
+  );
 
   const saveKokoro = api.onoma.updateKokoroConfig.useMutation({
     onSuccess: async () => {
@@ -116,7 +119,9 @@ export function OnomaAdminPanel() {
   const [kokoroVoice, setKokoroVoice] = useState("af_heart");
   const [kokoroSpeed, setKokoroSpeed] = useState(1.0);
   const [voiceMap, setVoiceMap] = useState<Record<string, string>>({});
-  const [kokoroEngine, setKokoroEngine] = useState<"kokoro-fastapi" | "kokoro-web">("kokoro-fastapi");
+  const [kokoroEngine, setKokoroEngine] = useState<"kokoro-fastapi" | "kokoro-web">(
+    "kokoro-fastapi"
+  );
   const [kokoroFastApiUrl, setKokoroFastApiUrl] = useState("");
   const [isTestingKokoro, setIsTestingKokoro] = useState(false);
 
@@ -194,9 +199,9 @@ export function OnomaAdminPanel() {
               <Mic className="h-4 w-4 text-[#0091ff]" /> Read Naturally (Kokoro)
             </CardTitle>
             <CardDescription>
-              Self-hosted Kokoro neural voice for the 🎙 Read Naturally button.
-              kokoro-fastapi accepts raw phonemes for precise pronunciation;
-              kokoro-web uses re-spelling heuristics.
+              Self-hosted Kokoro neural voice for the 🎙 Read Naturally button. kokoro-fastapi
+              accepts raw phonemes for precise pronunciation; kokoro-web uses re-spelling
+              heuristics.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -219,14 +224,38 @@ export function OnomaAdminPanel() {
               <div className="flex items-center justify-between">
                 <Label className="text-xs">Engine</Label>
                 {healthData && (
-                  <span className="text-[9px] font-semibold flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-[9px] font-semibold">
                     {kokoroEngine === "kokoro-fastapi" ? (
-                      <span className={healthData.fastapi === "up" ? "text-emerald-500" : healthData.fastapi === "down" ? "text-rose-500" : "text-muted-foreground"}>
-                        {healthData.fastapi === "up" ? "● Reachable" : healthData.fastapi === "down" ? "○ Unreachable" : "Not configured"}
+                      <span
+                        className={
+                          healthData.fastapi === "up"
+                            ? "text-emerald-500"
+                            : healthData.fastapi === "down"
+                              ? "text-rose-500"
+                              : "text-muted-foreground"
+                        }
+                      >
+                        {healthData.fastapi === "up"
+                          ? "● Reachable"
+                          : healthData.fastapi === "down"
+                            ? "○ Unreachable"
+                            : "Not configured"}
                       </span>
                     ) : (
-                      <span className={healthData.web === "up" ? "text-emerald-500" : healthData.web === "down" ? "text-rose-500" : "text-muted-foreground"}>
-                        {healthData.web === "up" ? "● Reachable" : healthData.web === "down" ? "○ Unreachable" : "Not configured"}
+                      <span
+                        className={
+                          healthData.web === "up"
+                            ? "text-emerald-500"
+                            : healthData.web === "down"
+                              ? "text-rose-500"
+                              : "text-muted-foreground"
+                        }
+                      >
+                        {healthData.web === "up"
+                          ? "● Reachable"
+                          : healthData.web === "down"
+                            ? "○ Unreachable"
+                            : "Not configured"}
                       </span>
                     )}
                   </span>
@@ -372,7 +401,7 @@ export function OnomaAdminPanel() {
                             setVoiceMap((prev) => ({ ...prev, [c]: inputVal }));
                           }}
                           placeholder="voice1*0.5+voice2*0.5"
-                          className="h-7 text-[10px] font-mono mt-1 px-2 py-1"
+                          className="mt-1 h-7 px-2 py-1 font-mono text-[10px]"
                         />
                       )}
                     </div>
@@ -408,17 +437,22 @@ export function OnomaAdminPanel() {
               <span className="text-muted-foreground self-center font-mono text-xs">
                 {translateToIPA(testWord, testCulture)}
               </span>
-              {kokoroEngine === "kokoro-fastapi" && (() => {
-                const result = ipaToKokoroPhonemes(translateToIPA(testWord, testCulture));
-                return (
-                  <>
-                    <span className="text-muted-foreground self-center font-mono text-xs">→ {result.phonemes || "(empty)"}</span>
-                    {result.dropped.length > 0 && (
-                      <span className="self-center text-[10px] text-amber-500">⚠ dropped: {result.dropped.join(", ")}</span>
-                    )}
-                  </>
-                );
-              })()}
+              {kokoroEngine === "kokoro-fastapi" &&
+                (() => {
+                  const result = ipaToKokoroPhonemes(translateToIPA(testWord, testCulture));
+                  return (
+                    <>
+                      <span className="text-muted-foreground self-center font-mono text-xs">
+                        → {result.phonemes || "(empty)"}
+                      </span>
+                      {result.dropped.length > 0 && (
+                        <span className="self-center text-[10px] text-amber-500">
+                          ⚠ dropped: {result.dropped.join(", ")}
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
             </div>
 
             <div className="border-border/40 flex gap-2 border-t pt-2">

@@ -37,7 +37,13 @@ async function synth(input: string, file: string) {
   const res = await fetch(`${BASE}/api/v1/audio/speech`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ model: "model_q8f16", voice: "af_heart", input, response_format: "mp3", speed: 1 }),
+    body: JSON.stringify({
+      model: "model_q8f16",
+      voice: "af_heart",
+      input,
+      response_format: "mp3",
+      speed: 1,
+    }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} for input="${input}"`);
   writeFileSync(file, Buffer.from(await res.arrayBuffer()));
@@ -74,12 +80,20 @@ async function synthPhonemes(phonemes: string, file: string) {
         console.log(`  ${"phonemes".padEnd(10)} input="${phonemes}"  -> ${file}`);
       }
     } catch (err) {
-      console.log(`  phonemes   (skipped – kokoro-fastapi not reachable: ${(err as Error).message})`);
+      console.log(
+        `  phonemes   (skipped – kokoro-fastapi not reachable: ${(err as Error).message})`
+      );
     }
   }
   console.log(`\nListen to ${OUT}/ and decide: raw | spaced | joined | phonemes`);
   console.log("  spaced (default): no code change");
-  console.log("  joined: change ipaToSpokenText replace(/-/g, ' ') -> replace(/-/g, '') and update test");
-  console.log("  raw wins: revert route.ts `const input = ipaToSpokenText(ipa) || text` to `const input = text`");
-  console.log("  phonemes: use kokoro-fastapi /dev/generate_from_phonemes (best fidelity, needs fastapi container)");
+  console.log(
+    "  joined: change ipaToSpokenText replace(/-/g, ' ') -> replace(/-/g, '') and update test"
+  );
+  console.log(
+    "  raw wins: revert route.ts `const input = ipaToSpokenText(ipa) || text` to `const input = text`"
+  );
+  console.log(
+    "  phonemes: use kokoro-fastapi /dev/generate_from_phonemes (best fidelity, needs fastapi container)"
+  );
 })();

@@ -58,7 +58,8 @@ export function speakBrowserNative(
       }
 
       // Configure natural rate and pitch
-      const personalSpeed = typeof window !== "undefined" ? localStorage.getItem("onoma-personal-speed") : null;
+      const personalSpeed =
+        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-speed") : null;
       utterance.rate = personalSpeed ? Number(personalSpeed) : 0.82; // slightly slower for clean syllable articulation
       utterance.pitch = 1.05;
 
@@ -104,7 +105,7 @@ export async function speakName(opts: {
         personalSpeed = localStorage.getItem("onoma-personal-speed") || "";
       }
 
-      const chosen = forceDefaultVoice ? defaultVoice : (voice || personalVoice || undefined);
+      const chosen = forceDefaultVoice ? defaultVoice : voice || personalVoice || undefined;
       if (chosen) params.set("voice", chosen); // explicit/personal voice -> server skips culture map
       if (personalSpeed) params.set("speed", personalSpeed); // personal speed override
 

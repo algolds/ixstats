@@ -17,7 +17,11 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { PreText } from "~/components/ui/pretext";
-import { getUpcomingEvents, formatIxCountdown, type CalendarEvent } from "~/lib/statecraft-calendar";
+import {
+  getUpcomingEvents,
+  formatIxCountdown,
+  type CalendarEvent,
+} from "~/lib/statecraft-calendar";
 import { CalendarView } from "~/components/DynamicIsland/CalendarView";
 
 const ACCENT = "#3b82f6"; // calendar blue

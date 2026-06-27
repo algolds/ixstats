@@ -2,7 +2,7 @@
 
 // src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx
 // Front-end UI player bar component for Onoma Voice full-article narrator in WikiOS.
-// Frosted glass UI featuring play/pause state controls, speed slider, 
+// Frosted glass UI featuring play/pause state controls, speed slider,
 // voice select overrides, progress tracking, and animation overlays.
 
 import { useEffect, useState } from "react";
@@ -77,16 +77,19 @@ export function WikiOSNarratorPlayer() {
 
   return (
     <div
-      className="wikios-narrator-player glass-hierarchy-child border border-black/10 dark:border-white/10 rounded-xl p-3.5 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 text-left select-none shadow-md backdrop-blur-md relative overflow-hidden transition-all duration-300"
+      className="wikios-narrator-player glass-hierarchy-child relative mb-6 flex flex-col items-center justify-between gap-4 overflow-hidden rounded-xl border border-black/10 p-3.5 text-left shadow-md backdrop-blur-md transition-all duration-300 select-none md:flex-row dark:border-white/10"
       style={{
         borderColor: isPlaying && themeColors?.secondary ? `${themeColors.secondary}30` : undefined,
-        boxShadow: isPlaying && themeColors?.primary ? `0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 0 12px 1px ${themeColors.primary}05` : undefined,
+        boxShadow:
+          isPlaying && themeColors?.primary
+            ? `0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 0 12px 1px ${themeColors.primary}05`
+            : undefined,
       }}
     >
       {/* Decorative gradient overlay when playing */}
       {isPlaying && (
         <div
-          className="absolute -inset-1 opacity-[0.03] pointer-events-none animate-pulse"
+          className="pointer-events-none absolute -inset-1 animate-pulse opacity-[0.03]"
           style={{
             background: `radial-gradient(circle, ${themeColors?.primary || "#0091ff"} 0%, transparent 70%)`,
           }}
@@ -94,14 +97,17 @@ export function WikiOSNarratorPlayer() {
       )}
 
       {/* Title & Reading progress */}
-      <div className="flex items-center gap-3 w-full md:w-auto relative z-10">
+      <div className="relative z-10 flex w-full items-center gap-3 md:w-auto">
         <div
           className={cn(
-            "h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-300",
-            isPlaying ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400" : "bg-black/5 dark:bg-white/5 text-muted-foreground"
+            "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-300",
+            isPlaying
+              ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400"
+              : "text-muted-foreground bg-black/5 dark:bg-white/5"
           )}
           style={{
-            backgroundColor: isPlaying && themeColors?.primary ? `${themeColors.primary}15` : undefined,
+            backgroundColor:
+              isPlaying && themeColors?.primary ? `${themeColors.primary}15` : undefined,
             color: isPlaying && themeColors?.primary ? themeColors.primary : undefined,
           }}
         >
@@ -111,11 +117,11 @@ export function WikiOSNarratorPlayer() {
             <VolumeX className="h-4.5 w-4.5" />
           )}
         </div>
-        <div className="flex flex-col min-w-0">
+        <div className="flex min-w-0 flex-col">
           <span className="text-foreground text-xs font-bold tracking-wide">
             Onoma Natural Voice Narrator
           </span>
-          <span className="text-muted-foreground text-[10px] truncate max-w-[280px]">
+          <span className="text-muted-foreground max-w-[280px] truncate text-[10px]">
             {isPlaying
               ? `Reading: ${narratorState.activeSectionTitle || "Overview"} (${activeBlockIndex}/${totalBlocks})`
               : "Narrator Idle — Click Play to listen to this article"}
@@ -124,12 +130,12 @@ export function WikiOSNarratorPlayer() {
       </div>
 
       {/* Central Playback Controls */}
-      <div className="flex items-center gap-2 relative z-10">
+      <div className="relative z-10 flex items-center gap-2">
         {/* Skip Prev */}
         <button
           onClick={skipPrev}
           disabled={activeBlockIndex <= 1}
-          className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-lg transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+          className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-all hover:bg-black/5 active:scale-95 disabled:pointer-events-none disabled:opacity-30 dark:hover:bg-white/5"
           title="Previous section"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -139,7 +145,7 @@ export function WikiOSNarratorPlayer() {
         {isPlaying ? (
           <button
             onClick={pause}
-            className="h-9 px-4 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground flex items-center justify-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer border border-black/5 dark:border-white/5"
+            className="text-foreground flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-black/5 bg-black/5 px-4 text-xs font-bold transition-all hover:bg-black/10 active:scale-95 dark:border-white/5 dark:bg-white/10 dark:hover:bg-white/15"
             title="Pause narration"
           >
             <Pause className="h-3.5 w-3.5 fill-current" />
@@ -148,7 +154,7 @@ export function WikiOSNarratorPlayer() {
         ) : (
           <button
             onClick={play}
-            className="h-9 px-4 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold text-white transition-all active:scale-95 cursor-pointer"
+            className="flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-bold text-white transition-all active:scale-95"
             style={{
               backgroundColor: themeColors?.primary || "#0091ff",
             }}
@@ -163,7 +169,7 @@ export function WikiOSNarratorPlayer() {
         <button
           onClick={stop}
           disabled={activeBlockIndex === 0}
-          className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-lg transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+          className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-all hover:bg-black/5 active:scale-95 disabled:pointer-events-none disabled:opacity-30 dark:hover:bg-white/5"
           title="Stop reading"
         >
           <Square className="h-3.5 w-3.5 fill-current" />
@@ -173,7 +179,7 @@ export function WikiOSNarratorPlayer() {
         <button
           onClick={skipNext}
           disabled={activeBlockIndex >= totalBlocks}
-          className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-lg transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+          className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-all hover:bg-black/5 active:scale-95 disabled:pointer-events-none disabled:opacity-30 dark:hover:bg-white/5"
           title="Next section"
         >
           <ChevronRight className="h-4 w-4" />
@@ -181,14 +187,14 @@ export function WikiOSNarratorPlayer() {
       </div>
 
       {/* Voice, Speed, & Auto-Scroll Preferences */}
-      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative z-10 text-[11px] font-semibold">
+      <div className="relative z-10 flex w-full flex-wrap items-center justify-end gap-3 text-[11px] font-semibold md:w-auto">
         {/* Speed Adjustment */}
         <div className="flex items-center gap-1.5">
-          <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
+          <Gauge className="text-muted-foreground h-3.5 w-3.5" />
           <select
             value={speed}
             onChange={(e) => setSpeed(Number(e.target.value))}
-            className="bg-background/80 dark:bg-zinc-950 border border-black/10 dark:border-white/10 rounded px-1.5 py-1 text-[11px] focus:outline-none font-mono text-foreground hover:border-black/20 dark:hover:border-white/20 transition-colors cursor-pointer"
+            className="bg-background/80 text-foreground cursor-pointer rounded border border-black/10 px-1.5 py-1 font-mono text-[11px] transition-colors hover:border-black/20 focus:outline-none dark:border-white/10 dark:bg-zinc-950 dark:hover:border-white/20"
           >
             <option value="0.8">0.8x</option>
             <option value="1.0">1.0x</option>
@@ -200,11 +206,11 @@ export function WikiOSNarratorPlayer() {
 
         {/* Voice Selector Override */}
         <div className="flex items-center gap-1.5">
-          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <User className="text-muted-foreground h-3.5 w-3.5" />
           <select
             value={voice}
             onChange={(e) => setVoice(e.target.value)}
-            className="bg-background/80 dark:bg-zinc-950 border border-black/10 dark:border-white/10 rounded px-1.5 py-1 text-[11px] max-w-[130px] truncate focus:outline-none text-foreground hover:border-black/20 dark:hover:border-white/20 transition-colors cursor-pointer"
+            className="bg-background/80 text-foreground max-w-[130px] cursor-pointer truncate rounded border border-black/10 px-1.5 py-1 text-[11px] transition-colors hover:border-black/20 focus:outline-none dark:border-white/10 dark:bg-zinc-950 dark:hover:border-white/20"
           >
             <option value="">Default voice</option>
             {voiceOptions.map((id) => (
@@ -219,10 +225,10 @@ export function WikiOSNarratorPlayer() {
         <button
           onClick={handleToggleAutoScroll}
           className={cn(
-            "flex items-center gap-1 border rounded px-2 py-1 transition-all active:scale-95",
+            "flex items-center gap-1 rounded border px-2 py-1 transition-all active:scale-95",
             autoScroll
               ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400"
-              : "border-black/10 dark:border-white/10 bg-background/80 dark:bg-zinc-950 text-muted-foreground hover:border-black/20 dark:hover:border-white/20"
+              : "bg-background/80 text-muted-foreground border-black/10 hover:border-black/20 dark:border-white/10 dark:bg-zinc-950 dark:hover:border-white/20"
           )}
           title="Auto-scroll window to follow currently spoken block"
         >
@@ -232,7 +238,7 @@ export function WikiOSNarratorPlayer() {
       </div>
 
       {/* Progress track background underlay */}
-      <div className="absolute bottom-0 left-0 w-full h-[3px] bg-black/5 dark:bg-white/5 pointer-events-none">
+      <div className="pointer-events-none absolute bottom-0 left-0 h-[3px] w-full bg-black/5 dark:bg-white/5">
         <div
           className="h-full bg-emerald-500 transition-all duration-300"
           style={{

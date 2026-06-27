@@ -19,7 +19,9 @@ interface DiplomaticEvent {
     | "alliance"
     | "sanction"
     | "embassy"
-    | "meeting";
+    | "meeting"
+    | "update"
+    | string;
   title: string;
   description: string;
   countries: string[];
@@ -151,7 +153,11 @@ class DiplomaticNotificationService extends EventEmitter {
       return;
     }
 
-    const config = this.eventTypeConfigs[event.type];
+    let config = this.eventTypeConfigs[event.type];
+    if (!config) {
+      // Fallback to update config for status/unrecognized event types
+      config = this.eventTypeConfigs["update"];
+    }
     if (!config) {
       console.warn(`[DiplomaticNotificationService] Unknown event type: ${event.type}`);
       return;

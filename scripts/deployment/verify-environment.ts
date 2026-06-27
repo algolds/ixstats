@@ -465,43 +465,82 @@ async function testKokoroConnection(): Promise<ValidationResult> {
     const map = new Map(rows.map((r) => [r.key, r.value]));
     const enabled = map.get("onoma.kokoro.enabled") === "true";
     const baseUrl = map.get("onoma.kokoro.baseUrl");
+    const fastApiUrl = map.get("onoma.kokoro.fastApiUrl");
+    const engine = map.get("onoma.kokoro.engine") || "kokoro-fastapi";
 
     if (!enabled) {
-      print("⚠️  Kokoro natural voice service is disabled in SystemConfig, skipping connection test", "yellow");
-      return result;
-    }
-
-    if (!baseUrl) {
-      result.warnings.push("Kokoro service is enabled but baseUrl is empty in SystemConfig");
-      return result;
-    }
-
-    // Try reaching baseUrl (or appending api/v1/audio/speech)
-    const cleanUrl = baseUrl.trim().replace(/\/$/, "");
-    const testUrl = cleanUrl.endsWith("/api")
-      ? `${cleanUrl}/v1/audio/speech`
-      : cleanUrl.endsWith("/api/v1")
-        ? `${cleanUrl}/audio/speech`
-        : `${cleanUrl}/api/v1/audio/speech`;
-
-    try {
-      const response = await fetch(testUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-        signal: AbortSignal.timeout(5000),
-      });
-
-      // 401 is success for this ping since we sent no bearer auth, meaning it's reachable and running
-      if (response.status === 401 || response.status === 200 || response.ok) {
-        print(`✅ Kokoro natural voice service accessible at ${baseUrl} (HTTP ${response.status})`, "green");
-      } else {
-        result.warnings.push(`Kokoro voice service returned unexpected status ${response.status} at ${testUrl}`);
-      }
-    } catch (e) {
-      result.warnings.push(
-        `Kokoro voice service not accessible at ${baseUrl}: ${e instanceof Error ? e.message : String(e)}`
+      print(
+        "⚠️  Kokoro natural voice service is disabled in SystemConfig, skipping connection test",
+        "yellow"
       );
+      return result;
+    }
+
+    if (engine === "kokoro-fastapi") {
+      const url = (fastApiUrl || baseUrl || "").trim().replace(/\/$/, "");
+      if (!url) {
+        result.warnings.push("Kokoro fastapi engine is active but fastApiUrl is empty in SystemConfig");
+        return result;
+      }
+      const testUrl = `${url}/health`;
+      try {
+        const response = await fetch(testUrl, {
+          method: "GET",
+          signal: AbortSignal.timeout(5000),
+        });
+        if (response.ok) {
+          print(
+            `✅ Kokoro natural voice service (FastAPI) accessible at ${url} (HTTP ${response.status})`,
+            "green"
+          );
+        } else {
+          result.warnings.push(
+            `Kokoro voice service (FastAPI) returned unexpected status ${response.status} at ${testUrl}`
+          );
+        }
+      } catch (e) {
+        result.warnings.push(
+          `Kokoro voice service (FastAPI) not accessible at ${url}: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+    } else {
+      if (!baseUrl) {
+        result.warnings.push("Kokoro service is enabled but baseUrl is empty in SystemConfig");
+        return result;
+      }
+
+      // Try reaching baseUrl (or appending api/v1/audio/speech)
+      const cleanUrl = baseUrl.trim().replace(/\/$/, "");
+      const testUrl = cleanUrl.endsWith("/api")
+        ? `${cleanUrl}/v1/audio/speech`
+        : cleanUrl.endsWith("/api/v1")
+          ? `${cleanUrl}/audio/speech`
+          : `${cleanUrl}/api/v1/audio/speech`;
+
+      try {
+        const response = await fetch(testUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+          signal: AbortSignal.timeout(5000),
+        });
+
+        // 401 is success for this ping since we sent no bearer auth, meaning it's reachable and running
+        if (response.status === 401 || response.status === 200 || response.ok) {
+          print(
+            `✅ Kokoro natural voice service accessible at ${baseUrl} (HTTP ${response.status})`,
+            "green"
+          );
+        } else {
+          result.warnings.push(
+            `Kokoro voice service returned unexpected status ${response.status} at ${testUrl}`
+          );
+        }
+      } catch (e) {
+        result.warnings.push(
+          `Kokoro voice service not accessible at ${baseUrl}: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
     }
   } catch (error) {
     result.warnings.push(

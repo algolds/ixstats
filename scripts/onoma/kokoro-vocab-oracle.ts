@@ -18,9 +18,24 @@ const BASE = (process.env.KOKORO_FASTAPI_URL || "http://localhost:8880")
 // A spread of Onoma-generated names across cultures so the phonemizer exercises
 // a wide slice of its English vocabulary.
 const WORDS = [
-  "Imperia", "Vlachezar", "Adelhardt", "Caoimhe", "Rahmani", "Sakura",
-  "Tane", "Aelith", "Novus Roma", "encyclopedia", "strength", "through",
-  "queue", "rhythm", "asterisk", "knowledge", "christmas", "worcestershire",
+  "Imperia",
+  "Vlachezar",
+  "Adelhardt",
+  "Caoimhe",
+  "Rahmani",
+  "Sakura",
+  "Tane",
+  "Aelith",
+  "Novus Roma",
+  "encyclopedia",
+  "strength",
+  "through",
+  "queue",
+  "rhythm",
+  "asterisk",
+  "knowledge",
+  "christmas",
+  "worcestershire",
 ];
 
 interface PhonemizeResp {
@@ -59,7 +74,17 @@ async function phonemize(text: string): Promise<string> {
   // phonemizer recognizes vs. normalizes away.
   console.log("\nOnoma IPA sanity (translateToIPA outputs):");
   for (const w of WORDS.slice(0, 9)) {
-    const culture = ["latin", "slavic", "germanic", "celtic", "arabic", "east-asian", "austronesian", "constructed", "latin"][WORDS.slice(0, 9).indexOf(w)];
+    const culture = [
+      "latin",
+      "slavic",
+      "germanic",
+      "celtic",
+      "arabic",
+      "east-asian",
+      "austronesian",
+      "constructed",
+      "latin",
+    ][WORDS.slice(0, 9).indexOf(w)];
     console.log(`${w.padEnd(16)} -> ${translateToIPA(w, culture)}`);
   }
 

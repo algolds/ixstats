@@ -58,20 +58,74 @@ export function getGoogleFontLink(fontFamily: string): string {
 
 // IPA tokens that act as syllable nuclei (vowels & diphthongs).
 const IPA_VOWEL_TOKENS = new Set([
-  "aɪ", "eɪ", "aʊ", "ɔɪ", "oʊ", "iː", "uː", "ɑː", "ɔː",
-  "ø", "œ", "ɛ", "ɔ", "ə", "æ", "y", "ʌ", "ɪ", "ʊ", "a", "e", "i", "o", "u",
+  "aɪ",
+  "eɪ",
+  "aʊ",
+  "ɔɪ",
+  "oʊ",
+  "iː",
+  "uː",
+  "ɑː",
+  "ɔː",
+  "ø",
+  "œ",
+  "ɛ",
+  "ɔ",
+  "ə",
+  "æ",
+  "y",
+  "ʌ",
+  "ɪ",
+  "ʊ",
+  "a",
+  "e",
+  "i",
+  "o",
+  "u",
 ]);
 
 // IPA token → English re-spelling chunk. Longest tokens first (scanner takes first match).
 const IPA_RESPELL: [string, string][] = [
-  ["aɪ", "eye"], ["eɪ", "ay"], ["aʊ", "ow"], ["ɔɪ", "oy"], ["oʊ", "oh"],
-  ["iː", "ee"], ["uː", "oo"], ["ɑː", "ah"], ["ɔː", "aw"],
-  ["tʃ", "ch"], ["dʒ", "j"], ["ts", "ts"], ["ks", "ks"], ["kw", "kw"],
-  ["θ", "th"], ["ð", "th"], ["ʃ", "sh"], ["ʒ", "zh"], ["ŋ", "ng"],
-  ["ʁ", "r"], ["ɣ", "gh"], ["ɬ", "l"], ["ɾ", "r"], ["x", "kh"], ["ʔ", ""],
-  ["ø", "ur"], ["œ", "ur"], ["ɛ", "eh"], ["ɔ", "aw"], ["ə", "uh"], ["æ", "ah"],
-  ["y", "ew"], ["ʌ", "uh"], ["ɪ", "ih"], ["ʊ", "uu"],
-  ["a", "ah"], ["e", "eh"], ["i", "ee"], ["o", "oh"], ["u", "oo"],
+  ["aɪ", "eye"],
+  ["eɪ", "ay"],
+  ["aʊ", "ow"],
+  ["ɔɪ", "oy"],
+  ["oʊ", "oh"],
+  ["iː", "ee"],
+  ["uː", "oo"],
+  ["ɑː", "ah"],
+  ["ɔː", "aw"],
+  ["tʃ", "ch"],
+  ["dʒ", "j"],
+  ["ts", "ts"],
+  ["ks", "ks"],
+  ["kw", "kw"],
+  ["θ", "th"],
+  ["ð", "th"],
+  ["ʃ", "sh"],
+  ["ʒ", "zh"],
+  ["ŋ", "ng"],
+  ["ʁ", "r"],
+  ["ɣ", "gh"],
+  ["ɬ", "l"],
+  ["ɾ", "r"],
+  ["x", "kh"],
+  ["ʔ", ""],
+  ["ø", "ur"],
+  ["œ", "ur"],
+  ["ɛ", "eh"],
+  ["ɔ", "aw"],
+  ["ə", "uh"],
+  ["æ", "ah"],
+  ["y", "ew"],
+  ["ʌ", "uh"],
+  ["ɪ", "ih"],
+  ["ʊ", "uu"],
+  ["a", "ah"],
+  ["e", "eh"],
+  ["i", "ee"],
+  ["o", "oh"],
+  ["u", "oo"],
 ];
 
 interface RespellChunk {
@@ -112,8 +166,14 @@ function chunkIpaWord(word: string): { chunks: RespellChunk[]; stressChunk: numb
 /** Group chunks into syllables — one nucleus each; a single intervocalic consonant is the next onset. */
 function syllabifyChunks(chunks: RespellChunk[]): { text: string; start: number; end: number }[] {
   const vowels: number[] = [];
-  chunks.forEach((c, idx) => { if (c.vowel) vowels.push(idx); });
-  const join = (s: number, e: number) => chunks.slice(s, e).map((c) => c.text).join("");
+  chunks.forEach((c, idx) => {
+    if (c.vowel) vowels.push(idx);
+  });
+  const join = (s: number, e: number) =>
+    chunks
+      .slice(s, e)
+      .map((c) => c.text)
+      .join("");
   if (vowels.length === 0) return [{ text: join(0, chunks.length), start: 0, end: chunks.length }];
 
   const out: { text: string; start: number; end: number }[] = [];
@@ -150,7 +210,11 @@ export function ipaToSpeechSpelling(ipa: string): string {
       if (!part || /^(\s+|-)$/.test(part)) return part;
       const { chunks, stressChunk } = chunkIpaWord(part);
       const sylls = syllabifyChunks(chunks);
-      if (sylls.length <= 1) return sylls.map((s) => s.text).join("").toUpperCase();
+      if (sylls.length <= 1)
+        return sylls
+          .map((s) => s.text)
+          .join("")
+          .toUpperCase();
       let anyStressed = false;
       const rendered = sylls.map((s) => {
         const stressed = stressChunk >= s.start && stressChunk < s.end;

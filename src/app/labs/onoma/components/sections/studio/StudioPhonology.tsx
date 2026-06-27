@@ -119,8 +119,8 @@ export function StudioPhonology() {
           <AudioLines className="h-4 w-4" style={{ color: ACCENT }} /> IPA Studio
         </h3>
         <p className="text-muted-foreground text-sm">
-          Tune how letters map to sounds. Edits drive the pronunciation badges and the Read Naturally
-          voice. Everything here is saved to this browser.
+          Tune how letters map to sounds. Edits drive the pronunciation badges and the Read
+          Naturally voice. Everything here is saved to this browser.
         </p>
       </div>
 
@@ -147,21 +147,22 @@ export function StudioPhonology() {
               </option>
             ))}
           </select>
-          <div className="flex flex-wrap items-center gap-2 font-mono text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-2 font-mono text-sm">
             <span>{previewIpa}</span>
-            {speechConfig?.kokoro?.enabled && (() => {
-              const result = ipaToKokoroPhonemes(previewIpa);
-              return (
-                <span className="text-xs text-muted-foreground/80 flex items-center gap-1.5">
-                  <span>→ {result.phonemes || "(empty)"}</span>
-                  {result.dropped.length > 0 && (
-                    <span className="text-amber-500 text-[10px] font-semibold">
-                      ⚠ dropped: {result.dropped.join(", ")}
-                    </span>
-                  )}
-                </span>
-              );
-            })()}
+            {speechConfig?.kokoro?.enabled &&
+              (() => {
+                const result = ipaToKokoroPhonemes(previewIpa);
+                return (
+                  <span className="text-muted-foreground/80 flex items-center gap-1.5 text-xs">
+                    <span>→ {result.phonemes || "(empty)"}</span>
+                    {result.dropped.length > 0 && (
+                      <span className="text-[10px] font-semibold text-amber-500">
+                        ⚠ dropped: {result.dropped.join(", ")}
+                      </span>
+                    )}
+                  </span>
+                );
+              })()}
           </div>
           <button
             onClick={() => play(previewText, previewIpa)}
@@ -276,7 +277,7 @@ export function StudioPhonology() {
                   <span className="text-foreground font-semibold">{name}</span>
                   {ov.ipa && <span className="text-muted-foreground font-mono">{ov.ipa}</span>}
                   {ov.voice && (
-                    <span className="text-muted-foreground rounded bg-secondary/20 px-1.5 py-0.5 font-mono text-[10px]">
+                    <span className="text-muted-foreground bg-secondary/20 rounded px-1.5 py-0.5 font-mono text-[10px]">
                       {ov.voice}
                     </span>
                   )}

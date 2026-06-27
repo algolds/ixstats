@@ -88,7 +88,9 @@ describe("ipaToKokoroPhonemes", () => {
           throw new Error(
             `Invalid char ${JSON.stringify(ch)} (U+${ch
               .codePointAt(0)!
-              .toString(16)}) in normalized phonemes "${phonemes}" for ${name}/${culture} (ipa=${ipa})`
+              .toString(
+                16
+              )}) in normalized phonemes "${phonemes}" for ${name}/${culture} (ipa=${ipa})`
           );
         }
       }
@@ -100,7 +102,9 @@ describe("ipaToKokoroPhonemes", () => {
       if (!target) continue; // empty = drop, not an emitted token
       // Every emitted character of a remap target must be in the valid inventory.
       for (const ch of target) {
-        expect(KOKORO_VALID_TOKENS.has(ch) || [...KOKORO_VALID_TOKENS].some((t) => t.includes(ch))).toBe(true);
+        expect(
+          KOKORO_VALID_TOKENS.has(ch) || [...KOKORO_VALID_TOKENS].some((t) => t.includes(ch))
+        ).toBe(true);
       }
     }
   });

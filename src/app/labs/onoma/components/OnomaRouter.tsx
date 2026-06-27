@@ -159,7 +159,9 @@ export function OnomaRouter() {
   // Track the last standard tab visited (default to overview)
   const [lastActiveTab, setLastActiveTab] = useState<OnomaSection>(() => {
     const initial = getSectionFromPathname(pathname);
-    return initial === "bank" || initial === "studio" || initial === "settings" ? "overview" : initial;
+    return initial === "bank" || initial === "studio" || initial === "settings"
+      ? "overview"
+      : initial;
   });
 
   const bank = useNameBank();

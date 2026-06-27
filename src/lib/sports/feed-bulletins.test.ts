@@ -164,7 +164,12 @@ describe("encode and parse sports bulletin", () => {
       sportEmoji: "⚽",
       matchDay: 18,
       results: [
-        { homeName: "Imperial League Team 1", awayName: "Imperial League Team 3", homeScore: 2, awayScore: 0 },
+        {
+          homeName: "Imperial League Team 1",
+          awayName: "Imperial League Team 3",
+          homeScore: 2,
+          awayScore: 0,
+        },
         { homeName: "Imperial League Team 5", awayName: "Venatores", homeScore: 0, awayScore: 0 },
       ],
       movers: [{ name: "Venatores", oldRank: 6, newRank: 8 }],
