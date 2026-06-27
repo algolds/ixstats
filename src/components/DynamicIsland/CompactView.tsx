@@ -189,6 +189,10 @@ function CompactViewComponent({
             {(() => {
               const isWikiActive = activePlugin?.id === "wiki";
               if (isWikiActive) return null;
+
+              // Hide on root and dashboard pages
+              const isRootOrDashboard = diPathname === "/" || diPathname === "/dashboard";
+              if (isRootOrDashboard) return null;
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -337,7 +341,6 @@ function CompactViewComponent({
                           {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
-                            year: "numeric",
                             timeZone: "UTC",
                           })}
                         </PreText>

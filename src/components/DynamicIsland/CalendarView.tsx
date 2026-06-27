@@ -12,13 +12,15 @@
  */
 
 import { useMemo } from "react";
-import { Clock, ChevronRight, Zap, Pause, Sun, CalendarDays } from "lucide-react";
+import { Clock, ChevronRight, Zap, Pause, Sun, CalendarDays, Gavel, CalendarClock } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-calendar";
 import { withBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import type { DIViewProps } from "./types";
+import { SmartStack } from "~/components/mycountry/SmartStack";
+import { useMyCountryAgenda } from "~/hooks/useMyCountryAgenda";
 
 // ─── Time-of-day flavor ──────────────────────────────────────────────────────
 
@@ -43,7 +45,7 @@ function dayOfYear(d: Date): number {
 }
 
 export function CalendarView({ onClose }: DIViewProps) {
-  const { ixTimeTimestamp: now, multiplier, isPaused, gameYear } = useIxTime();
+  const { ixTimeTimestamp: now, gameYear } = useIxTime();
 
   const { data: profile } = api.users.getProfile.useQuery(undefined, { staleTime: 60_000 });
   const countryId = profile?.countryId;
@@ -55,6 +57,11 @@ export function CalendarView({ onClose }: DIViewProps) {
   const { data: issuesData } = api.nationalIssues.getMyIssues.useQuery(
     { countryId: countryId ?? "", status: "active" },
     { enabled: !!countryId, staleTime: 60_000 }
+  );
+
+  const agendaItems = useMyCountryAgenda(
+    countryId ?? undefined,
+    profile?.membershipTier === "mycountry_premium"
   );
 
   // Live clock fields, recomputed each per-second tick of the IxTime store.
@@ -102,6 +109,25 @@ export function CalendarView({ onClose }: DIViewProps) {
     }
   };
 
+  // Find soonest scheduled/upcoming/campaigning general election
+  const upcomingElection = useMemo(() => {
+    return (elections ?? [])
+      .filter((e) => e.status === "upcoming" || e.status === "scheduled" || e.status === "campaigning")
+      .sort((a, b) => a.scheduledIxTime - b.scheduledIxTime)[0];
+  }, [elections]);
+
+  const termProgress = useMemo(() => {
+    if (!upcomingElection) return "—";
+    const termEnd = upcomingElection.scheduledIxTime;
+    const TERM_LENGTH_MS = 4 * 365.25 * 24 * 60 * 60 * 1000; // 4 game years
+    const termStart = termEnd - TERM_LENGTH_MS;
+    const pct = Math.min(100, Math.max(0, Math.round(((now - termStart) / (termEnd - termStart)) * 100)));
+    return `${pct}%`;
+  }, [upcomingElection, now]);
+
+  const soonestEvent = events[0];
+  const nextEventValue = soonestEvent ? formatRelativeIxDays(soonestEvent.ixTime, now) : "—";
+
   return (
     <div className="p-4">
       {/* ── Hero clock ─────────────────────────────────────────────────── */}
@@ -132,7 +158,7 @@ export function CalendarView({ onClose }: DIViewProps) {
           <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
             <span className="font-medium">{dateLine}</span>
             <span className="opacity-40">·</span>
-            <span className="tabular-nums">{gameYear} ILT</span>
+            <span className="tabular-nums">{gameYear}</span>
           </div>
         </div>
       </div>
@@ -140,21 +166,31 @@ export function CalendarView({ onClose }: DIViewProps) {
       {/* ── Complications (watchOS smart-stack row) ────────────────────── */}
       <div className="mt-2 grid grid-cols-3 gap-2">
         <Complication
-          icon={isPaused ? <Pause className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-          label={isPaused ? "Paused" : "Game speed"}
-          value={isPaused ? "—" : `${multiplier}×`}
+          icon={<Gavel className="h-3.5 w-3.5 text-blue-500/70" />}
+          label="Term progress"
+          value={termProgress}
         />
         <Complication
-          icon={<CalendarDays className="h-3 w-3" />}
-          label="Day of year"
-          value={String(dayOfYear(d))}
+          icon={<CalendarClock className="h-3.5 w-3.5 text-blue-500/70" />}
+          label="Next event"
+          value={nextEventValue}
         />
         <Complication
-          icon={<Sun className="h-3 w-3" />}
+          icon={<Sun className="h-3 w-3 text-blue-500/70" />}
           label="Season"
           value={seasonFor(d.getUTCMonth())}
         />
       </div>
+
+      {/* ── Daily Agenda (Smart Stack) ─────────────────────────────────── */}
+      {countryId && agendaItems.length > 0 && (
+        <div className="mt-4">
+          <div className="text-muted-foreground mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide">
+            Daily Agenda
+          </div>
+          <SmartStack items={agendaItems} onResolve={go} />
+        </div>
+      )}
 
       {/* ── Upcoming events ────────────────────────────────────────────── */}
       <div className="mt-4">

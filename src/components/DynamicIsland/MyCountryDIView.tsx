@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Crown, Globe, User, ChevronRight, LogOut, X, Shield } from "lucide-react";
+import { Crown, Globe, User, ChevronRight, LogOut, X, Shield, Building2, Map, MessageSquare, Handshake, BookOpen, Scale } from "lucide-react";
 import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
-import { SmartStack } from "~/components/mycountry/SmartStack";
-import { useMyCountryAgenda } from "~/hooks/useMyCountryAgenda";
+
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { getNationUrl } from "~/lib/slug-utils";
@@ -65,10 +64,7 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
     { enabled: !!user?.id }
   );
 
-  const agendaItems = useMyCountryAgenda(
-    userProfile?.countryId ?? undefined,
-    userProfile?.membershipTier === "mycountry_premium"
-  );
+
 
   const setupStatus = (() => {
     if (!isLoaded || profileLoading) return "loading";
@@ -88,6 +84,14 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
         popGrowth: normalizeGrowth(country.populationGrowthRate),
       }
     : null;
+
+  const handleNavigate = (path: string) => {
+    onClose();
+    window.location.href = createAbsoluteUrl(path);
+  };
+
+  const actionButtonClass = (colors: string) =>
+    `flex w-full items-center justify-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
 
   return (
     <motion.div
@@ -313,59 +317,106 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
               )}
             </div>
 
-            {/* Daily Agenda Smart Stack */}
-            <div className="mt-3">
-              <SmartStack
-                items={agendaItems}
-                onResolve={(section) =>
-                  (window.location.href = createAbsoluteUrl(
-                    section === "overview" ? "/mycountry" : `/mycountry/${section}`
-                  ))
-                }
-              />
+
+          </div>
+
+          {/* ── Country Actions Grid ──────────────────────────── */}
+          <div className="px-3 py-2">
+            <p className="px-1 pb-2 text-[10px] font-bold tracking-widest text-muted-foreground/60 uppercase">
+              Country Actions
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleNavigate("/mycountry")}
+                className={actionButtonClass(
+                  "border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-orange-500/5 text-amber-500/90 hover:from-amber-500/15 hover:to-orange-500/15"
+                )}
+              >
+                <Building2 className="h-4 w-4 shrink-0" />
+                <span className="truncate">Dashboard</span>
+              </button>
+
+              <button
+                onClick={() => handleNavigate("/mycountry/editor")}
+                className={actionButtonClass(
+                  "border-sky-500/20 bg-gradient-to-r from-sky-500/5 to-blue-500/5 text-sky-400 hover:from-sky-500/15 hover:to-blue-500/15"
+                )}
+              >
+                <Map className="h-4 w-4 shrink-0" />
+                <span className="truncate">Map Editor</span>
+              </button>
+
+              <button
+                onClick={() => handleNavigate("/mycountry/politics")}
+                className={actionButtonClass(
+                  "border-violet-500/20 bg-gradient-to-r from-violet-500/5 to-purple-500/5 text-violet-400 hover:from-violet-500/15 hover:to-purple-500/15"
+                )}
+              >
+                <Scale className="h-4 w-4 shrink-0" />
+                <span className="truncate">Politics</span>
+              </button>
+
+              <button
+                onClick={() => handleNavigate("/messages")}
+                className={actionButtonClass(
+                  "border-pink-500/20 bg-gradient-to-r from-pink-500/5 to-rose-500/5 text-pink-400 hover:from-pink-500/15 hover:to-rose-500/15"
+                )}
+              >
+                <MessageSquare className="h-4 w-4 shrink-0" />
+                <span className="truncate">Messages</span>
+              </button>
+
+              <button
+                onClick={() => handleNavigate("/mycountry/diplomacy")}
+                className={actionButtonClass(
+                  "border-teal-500/20 bg-gradient-to-r from-teal-500/5 to-emerald-500/5 text-teal-400 hover:from-teal-500/15 hover:to-emerald-500/15"
+                )}
+              >
+                <Handshake className="h-4 w-4 shrink-0" />
+                <span className="truncate">Diplomacy</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const wikiPath = userProfile?.country?.name
+                    ? `/wiki/${encodeURIComponent(userProfile.country.name.replace(/ /g, "_"))}`
+                    : "/wiki";
+                  handleNavigate(wikiPath);
+                }}
+                className={actionButtonClass(
+                  "border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 to-blue-500/5 text-indigo-400 hover:from-indigo-500/15 hover:to-blue-500/15"
+                )}
+              >
+                <BookOpen className="h-4 w-4 shrink-0" />
+                <span className="truncate">Wiki Page</span>
+              </button>
             </div>
           </div>
 
-          {/* ── Quick Actions ────────────────────────────────── */}
-          <div className="space-y-0.5 px-2 py-2">
-            {!isStandalone && (
-              <button
-                onClick={() => (window.location.href = createAbsoluteUrl("/mycountry"))}
-                className="text-foreground/70 hover:bg-accent/10 hover:text-foreground group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
-              >
-                <Crown className="h-3.5 w-3.5 text-amber-400 drop-shadow-[0_0_4px_rgba(245,158,11,0.5)] transition-all group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
-                <PreText className="flex-1 text-left text-inherit" whiteSpace="nowrap">
-                  MyCountry
-                </PreText>
-                <ChevronRight className="text-muted-foreground/30 h-3 w-3" />
-              </button>
-            )}
-
-            <button
-              onClick={() =>
-                userProfile.country &&
-                (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))
-              }
-              className="text-foreground/70 hover:bg-accent/10 hover:text-foreground group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors"
-            >
-              <Globe className="h-3.5 w-3.5 text-purple-400 drop-shadow-[0_0_4px_rgba(168,85,247,0.5)] transition-all group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.7)]" />
-              <PreText className="flex-1 text-left text-inherit" whiteSpace="nowrap">
-                View Profile
-              </PreText>
-              <ChevronRight className="text-muted-foreground/30 h-3 w-3" />
-            </button>
-          </div>
-
-          {/* ── Sign Out ────────────────────────────────────── */}
-          <div className="border-border/40 border-t px-2 py-2">
+          {/* ── Bottom Actions (Sign Out & View Profile) ────── */}
+          <div className="border-border/40 border-t px-3 py-2 flex items-center justify-between">
             <SignOutButton>
-              <button className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors">
+              <button className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive group flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors">
                 <LogOut className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5 group-hover:scale-110" />
                 <PreText className="text-inherit" whiteSpace="nowrap">
                   Sign Out
                 </PreText>
               </button>
             </SignOutButton>
+
+            <button
+              onClick={() =>
+                userProfile?.country?.name &&
+                handleNavigate(getNationUrl(userProfile.country.name))
+              }
+              disabled={!userProfile?.country?.name}
+              className="text-muted-foreground/60 hover:bg-accent/10 hover:text-foreground group flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors disabled:opacity-50"
+            >
+              <Globe className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+              <PreText className="text-inherit" whiteSpace="nowrap">
+                View Profile
+              </PreText>
+            </button>
           </div>
         </div>
       ) : (
