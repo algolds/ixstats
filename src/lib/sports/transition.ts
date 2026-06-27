@@ -74,9 +74,12 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         dbConfig
       );
 
-      const sportsAccount = await prisma.thinkpagesAccount.findUnique({
-        where: { username: "SportsNews" },
-      });
+      const { getSportsNotifyConfig } = await import("./notify-config");
+      const notify = await getSportsNotifyConfig(prisma);
+
+      const sportsAccount = notify.seasonBulletins
+        ? await prisma.thinkpagesAccount.findUnique({ where: { username: "SportsNews" } })
+        : null;
 
       if (sportsAccount) {
         const { getSportEmoji } = await import("./presets");
@@ -96,15 +99,17 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
           },
         });
 
-        try {
-          const { mirrorThinkPagesPostToDiscordFeed } =
-            await import("~/lib/thinkpages-discord-feed");
-          await mirrorThinkPagesPostToDiscordFeed(prisma, post.id);
-        } catch (mirrorErr) {
-          console.error(
-            "[Post-Season Summary] Failed to mirror sports post to Discord:",
-            mirrorErr
-          );
+        if (notify.discordMirror) {
+          try {
+            const { mirrorThinkPagesPostToDiscordFeed } =
+              await import("~/lib/thinkpages-discord-feed");
+            await mirrorThinkPagesPostToDiscordFeed(prisma, post.id);
+          } catch (mirrorErr) {
+            console.error(
+              "[Post-Season Summary] Failed to mirror sports post to Discord:",
+              mirrorErr
+            );
+          }
         }
       }
     }
@@ -301,10 +306,12 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         }
 
         try {
+          const { getSportsNotifyConfig } = await import("./notify-config");
+          const notify = await getSportsNotifyConfig(tx);
           // eslint-disable-next-line prefer-const
-          let sportsAccount = await tx.thinkpagesAccount.findUnique({
-            where: { username: "SportsNews" },
-          });
+          let sportsAccount = notify.seasonBulletins
+            ? await tx.thinkpagesAccount.findUnique({ where: { username: "SportsNews" } })
+            : null;
           if (sportsAccount) {
             const parentTeams = await tx.sportTeam.findMany({
               where: { id: { in: relegatedTeamIds } },
@@ -326,15 +333,17 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
               },
             });
 
-            try {
-              const { mirrorThinkPagesPostToDiscordFeed } =
-                await import("~/lib/thinkpages-discord-feed");
-              await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
-            } catch (mirrorErr) {
-              console.error(
-                "[Promotion Relegation bulletin] Failed to mirror to Discord:",
-                mirrorErr
-              );
+            if (notify.discordMirror) {
+              try {
+                const { mirrorThinkPagesPostToDiscordFeed } =
+                  await import("~/lib/thinkpages-discord-feed");
+                await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
+              } catch (mirrorErr) {
+                console.error(
+                  "[Promotion Relegation bulletin] Failed to mirror to Discord:",
+                  mirrorErr
+                );
+              }
             }
           }
         } catch (bulletinErr) {
@@ -979,9 +988,11 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
         const champScore = winnerId === homeId ? result.homeScore : result.awayScore;
         const runnerUpScore = winnerId === homeId ? result.awayScore : result.homeScore;
 
-        const sportsAccount = await tx.thinkpagesAccount.findUnique({
-          where: { username: "SportsNews" },
-        });
+        const { getSportsNotifyConfig } = await import("./notify-config");
+        const notify = await getSportsNotifyConfig(tx);
+        const sportsAccount = notify.seasonBulletins
+          ? await tx.thinkpagesAccount.findUnique({ where: { username: "SportsNews" } })
+          : null;
 
         if (sportsAccount) {
           const post = await tx.thinkpagesPost.create({
@@ -993,12 +1004,14 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
             },
           });
 
-          try {
-            const { mirrorThinkPagesPostToDiscordFeed } =
-              await import("~/lib/thinkpages-discord-feed");
-            await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
-          } catch (mirrorErr) {
-            console.error("[World Cup Final bulletin] Failed to mirror to Discord:", mirrorErr);
+          if (notify.discordMirror) {
+            try {
+              const { mirrorThinkPagesPostToDiscordFeed } =
+                await import("~/lib/thinkpages-discord-feed");
+              await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
+            } catch (mirrorErr) {
+              console.error("[World Cup Final bulletin] Failed to mirror to Discord:", mirrorErr);
+            }
           }
         }
 

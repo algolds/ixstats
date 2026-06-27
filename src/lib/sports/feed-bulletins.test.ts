@@ -156,4 +156,30 @@ describe("encode and parse sports bulletin", () => {
   test("returns null for content without sports bulletin comments", () => {
     expect(parseSportsBulletin("some other content")).toBeNull();
   });
+
+  test("recovers a legacy markdown bulletin (no marker) into card data", () => {
+    // Exactly what the pre-encode cron posted — names with trailing digits + movers.
+    const markdown = formatMatchDayBulletin({
+      leagueName: "Imperial League",
+      sportEmoji: "⚽",
+      matchDay: 18,
+      results: [
+        { homeName: "Imperial League Team 1", awayName: "Imperial League Team 3", homeScore: 2, awayScore: 0 },
+        { homeName: "Imperial League Team 5", awayName: "Venatores", homeScore: 0, awayScore: 0 },
+      ],
+      movers: [{ name: "Venatores", oldRank: 6, newRank: 8 }],
+    });
+    const parsed = parseSportsBulletin(markdown);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.matchDay).toBe(18);
+    expect(parsed!.league.name).toBe("Imperial League");
+    expect(parsed!.results[0]).toMatchObject({
+      home: { name: "Imperial League Team 1" },
+      away: { name: "Imperial League Team 3" },
+      homeScore: 2,
+      awayScore: 0,
+    });
+    expect(parsed!.results[1]!.away.name).toBe("Venatores");
+    expect(parsed!.movers).toEqual([{ name: "Venatores", oldRank: 6, newRank: 8 }]);
+  });
 });

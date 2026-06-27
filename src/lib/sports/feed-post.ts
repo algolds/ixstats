@@ -21,6 +21,10 @@ export async function postMatchDayBulletin(
   }
 ): Promise<void> {
   try {
+    const { getSportsNotifyConfig } = await import("./notify-config");
+    const notify = await getSportsNotifyConfig(prisma);
+    if (!notify.matchdayBulletins) return;
+
     const acct = await prisma.thinkpagesAccount.findUnique({
       where: { username: "SportsNews" },
     });
@@ -59,6 +63,7 @@ export async function postMatchDayBulletin(
     // Fire-and-forget: append LLM narration, then mirror to Discord either way.
     void (async () => {
       try {
+        if (!notify.llmNarration) return;
         const { narrateBulletin } = await import("./commentary/narrator");
         const { getGlobalLLMConfig } = await import("./commentary/db-config");
         const dbConfig = await getGlobalLLMConfig(prisma);
@@ -77,12 +82,14 @@ export async function postMatchDayBulletin(
       } catch (narrateErr) {
         console.error("[postMatchDayBulletin] narration failed:", narrateErr);
       } finally {
-        try {
-          const { mirrorThinkPagesPostToDiscordFeed } =
-            await import("~/lib/thinkpages-discord-feed");
-          await mirrorThinkPagesPostToDiscordFeed(prisma as never, post.id);
-        } catch (mirrorErr) {
-          console.error("[postMatchDayBulletin] Discord mirror failed:", mirrorErr);
+        if (notify.discordMirror) {
+          try {
+            const { mirrorThinkPagesPostToDiscordFeed } =
+              await import("~/lib/thinkpages-discord-feed");
+            await mirrorThinkPagesPostToDiscordFeed(prisma as never, post.id);
+          } catch (mirrorErr) {
+            console.error("[postMatchDayBulletin] Discord mirror failed:", mirrorErr);
+          }
         }
       }
     })();

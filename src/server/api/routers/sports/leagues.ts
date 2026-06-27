@@ -1206,6 +1206,36 @@ export const sportsLeaguesRouter = createTRPCRouter({
     }
   }),
 
+  // Global on/off switches for sports auto-notifications (feed bulletins, LLM
+  // narration, season posts, club DMs, Discord mirror). Stored as sports:notify:*.
+  getNotificationSettings: adminProcedure.query(async ({ ctx }) => {
+    const { getSportsNotifyConfig } = await import("~/lib/sports/notify-config");
+    return getSportsNotifyConfig(ctx.db);
+  }),
+
+  saveNotificationSettings: adminProcedure
+    .input(
+      z.object({
+        matchdayBulletins: z.boolean(),
+        llmNarration: z.boolean(),
+        seasonBulletins: z.boolean(),
+        clubDms: z.boolean(),
+        discordMirror: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { SPORTS_NOTIFY_KEYS } = await import("~/lib/sports/notify-config");
+      for (const k of Object.keys(SPORTS_NOTIFY_KEYS) as (keyof typeof SPORTS_NOTIFY_KEYS)[]) {
+        const key = SPORTS_NOTIFY_KEYS[k];
+        await ctx.db.systemConfig.upsert({
+          where: { key },
+          update: { value: String(input[k]) },
+          create: { key, value: String(input[k]), description: "Sports auto-notification toggle" },
+        });
+      }
+      return { success: true };
+    }),
+
   // Which league is pinned as the lobby hero. Stored in systemConfig (no schema column).
   getFeaturedLeagueId: publicProcedure.query(async ({ ctx }) => {
     const row = await ctx.db.systemConfig.findUnique({

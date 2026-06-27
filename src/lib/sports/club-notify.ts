@@ -25,6 +25,9 @@ export async function notifyClubMatchResult(
   }
 ): Promise<void> {
   try {
+    const { getSportsNotifyConfig } = await import("./notify-config");
+    if (!(await getSportsNotifyConfig(prisma)).clubDms) return;
+
     const { userId, leagueName, teamName, opponentName, teamScore, opponentScore, matchDay } = args;
     const outcome = teamScore > opponentScore ? "won" : teamScore < opponentScore ? "lost" : "drew";
     const emoji = outcome === "won" ? "✅" : outcome === "lost" ? "❌" : "➖";

@@ -45,12 +45,69 @@ export function encodeSportsBulletin(data: SportsBulletinData, markdown: string)
 export function parseSportsBulletin(content: string | null | undefined): SportsBulletinData | null {
   if (!content) return null;
   const match = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
-  if (!match) return null;
-  try {
-    return JSON.parse(match[1]!) as SportsBulletinData;
-  } catch {
-    return null;
+  if (match) {
+    try {
+      return JSON.parse(match[1]!) as SportsBulletinData;
+    } catch {
+      // fall through to markdown parse
+    }
   }
+  // Legacy / stale-deploy bulletins were posted as raw markdown with no marker.
+  // Recover them so the rich card still renders (no deep links — ids are lost).
+  return parseMarkdownBulletin(content);
+}
+
+/**
+ * Reconstruct bulletin data from the deterministic `formatMatchDayBulletin`
+ * markdown (header + score lines + optional table movers). ids are unrecoverable
+ * from text, so cards from this path render without deep links.
+ *
+ * ponytail: heuristic text parse; splits scores on the " – " en-dash. Breaks only
+ * if a team name literally contains " – " (none do). Marker-encoded posts skip this.
+ */
+function parseMarkdownBulletin(content: string): SportsBulletinData | null {
+  const lines = content.split("\n");
+  const header = lines[0]?.match(/^(\S+)\s+\*\*(.+?)\*\*\s+—\s+Matchday\s+(\d+)/);
+  if (!header) return null;
+
+  const results: SportsBulletinData["results"] = [];
+  const movers: NonNullable<SportsBulletinData["movers"]> = [];
+  let inMovers = false;
+
+  for (const raw of lines.slice(1)) {
+    const line = raw.trim();
+    if (!line || /^═+$/.test(line)) continue;
+    if (line.includes("Table Movers")) {
+      inMovers = true;
+      continue;
+    }
+    if (inMovers) {
+      const m = line.match(/^•\s+(.+?)\s+[▲▼]\d+\s+\((\d+)\w+\s+→\s+(\d+)\w+\)/);
+      if (m) movers.push({ name: m[1]!, oldRank: Number(m[2]), newRank: Number(m[3]) });
+      continue;
+    }
+    if (line.startsWith("⭐") || line.startsWith("•") || line.startsWith("📝")) continue;
+    // Score line: "[🏆 ][**]Home[**] S – S [🏆 ][**]Away[**]"
+    const parts = line.replace(/🏆/g, "").replace(/\*\*/g, "").split(" – ");
+    if (parts.length !== 2) continue;
+    const left = parts[0]!.trim().split(" ");
+    const right = parts[1]!.trim().split(" ");
+    const homeScore = Number(left.pop());
+    const awayScore = Number(right.shift());
+    const homeName = left.join(" ").trim();
+    const awayName = right.join(" ").trim();
+    if (Number.isNaN(homeScore) || Number.isNaN(awayScore) || !homeName || !awayName) continue;
+    results.push({ home: { name: homeName }, away: { name: awayName }, homeScore, awayScore });
+  }
+
+  if (results.length === 0) return null;
+  return {
+    league: { name: header[2]! },
+    sportEmoji: header[1]!,
+    matchDay: Number(header[3]),
+    results,
+    movers: movers.length > 0 ? movers : undefined,
+  };
 }
 
 function ordinal(n: number): string {

@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import { Switch } from "~/components/ui/switch";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -834,6 +835,81 @@ function getSportIcon(sportPreset: string): string {
   return preset?.icon ?? "🏆";
 }
 
+const NOTIFY_TOGGLES = [
+  {
+    key: "matchdayBulletins" as const,
+    label: "Matchday bulletins",
+    hint: "Per-matchday result cards posted to the SportsNews feed.",
+  },
+  {
+    key: "llmNarration" as const,
+    label: "AI narration",
+    hint: "AI-written summary paragraph appended to matchday bulletins.",
+  },
+  {
+    key: "seasonBulletins" as const,
+    label: "Season / promo posts",
+    hint: "Champion crowned, promotion/relegation swaps, World Cup final posts.",
+  },
+  {
+    key: "clubDms" as const,
+    label: "Club match DMs",
+    hint: "Per-owner bell notification + DM after their team's result.",
+  },
+  {
+    key: "discordMirror" as const,
+    label: "Discord mirror",
+    hint: "Echo sports bulletins to the Discord feed channel.",
+  },
+];
+
+function NotificationSettingsCard() {
+  const notify = useNotify();
+  const utils = api.useUtils();
+  const { data, isLoading } = api.sports.getNotificationSettings.useQuery();
+  const save = api.sports.saveNotificationSettings.useMutation({
+    onSuccess: () => {
+      void utils.sports.getNotificationSettings.invalidate();
+      notify.success("Saved", "Notification settings updated.");
+    },
+    onError: (e) => notify.error("Save failed", e.message),
+  });
+
+  const toggle = (key: (typeof NOTIFY_TOGGLES)[number]["key"], value: boolean) => {
+    if (!data) return;
+    save.mutate({ ...data, [key]: value });
+  };
+
+  return (
+    <Card className="facet-hierarchy-parent border-border/60 bg-card/40">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Auto-Notifications</CardTitle>
+        <p className="text-muted-foreground text-xs">
+          Master on/off switches for every automatic sports post and alert. Applies to all leagues.
+        </p>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {NOTIFY_TOGGLES.map((t) => (
+          <div
+            key={t.key}
+            className="facet-hierarchy-child border-border/50 bg-card/30 flex items-start justify-between gap-3 rounded-lg border p-3"
+          >
+            <div>
+              <div className="text-foreground text-sm font-medium">{t.label}</div>
+              <p className="text-muted-foreground mt-0.5 text-[11px] leading-snug">{t.hint}</p>
+            </div>
+            <Switch
+              checked={data?.[t.key] ?? true}
+              disabled={isLoading || save.isPending}
+              onCheckedChange={(v) => toggle(t.key, v)}
+            />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SportsOversightPanel() {
   const router = useRouter();
   const notify = useNotify();
@@ -1049,6 +1125,8 @@ export default function SportsOversightPanel() {
 
   return (
     <div className="space-y-6">
+      <NotificationSettingsCard />
+
       {/* Overview stats cards */}
       <div className="facet-hierarchy-parent border-border/60 bg-card/40 rounded-xl border p-6">
         <div className="flex items-center justify-between">
