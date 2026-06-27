@@ -149,7 +149,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
 
     // Verify fetch call parameters
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://kokoro-service/api/v1/audio/speech",
+      "http://kokoro-service/v1/audio/speech",
       expect.objectContaining({
         method: "POST",
         headers: {
@@ -172,6 +172,57 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
       JSON.stringify({ d: Buffer.from(cleanArrayBuffer).toString("base64"), ct: "audio/mpeg" }),
       expect.objectContaining({
         ttl: 30 * 24 * 60 * 60,
+      })
+    );
+  });
+
+  test("should proxy to Kokoro-web using legacy path if engine is kokoro-web", async () => {
+    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
+    (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
+      { key: "onoma.kokoro.enabled", value: "true" },
+      { key: "onoma.kokoro.baseUrl", value: "http://kokoro-service" },
+      { key: "onoma.kokoro.apiKey", value: "secret-key" },
+      { key: "onoma.kokoro.engine", value: "kokoro-web" },
+    ]);
+    (globalCache.get as jest.Mock).mockResolvedValue(null);
+
+    const mockResponseText = "generated-audio";
+    const uint8 = new TextEncoder().encode(mockResponseText);
+    const cleanArrayBuffer = uint8.buffer.slice(
+      uint8.byteOffset,
+      uint8.byteOffset + uint8.byteLength
+    );
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => cleanArrayBuffer,
+    });
+
+    const request = new NextRequest(
+      "http://localhost/api/onoma/tts?text=hello&voice=af_heart&speed=1.2"
+    );
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("audio/mpeg");
+
+    // Verify fetch call parameters (should use api/v1 path)
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://kokoro-service/api/v1/audio/speech",
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer secret-key",
+        },
+        body: JSON.stringify({
+          model: "model_q8f16",
+          voice: "af_heart",
+          input: "hello",
+          response_format: "mp3",
+          speed: 1.2,
+        }),
       })
     );
   });
@@ -309,9 +360,9 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
       "http://fastapi-service:8880/dev/generate_from_phonemes"
     );
 
-    // Second call: kokoro-web fallback with re-spelled IPA
+    // Second call: kokoro fallback with re-spelled IPA
     const [fallbackUrl, fallbackInit] = (global.fetch as jest.Mock).mock.calls[1]!;
-    expect(fallbackUrl).toBe("http://kokoro-service/api/v1/audio/speech");
+    expect(fallbackUrl).toBe("http://kokoro-service/v1/audio/speech");
     const fallbackBody = JSON.parse(fallbackInit.body as string);
     expect(fallbackBody.input).toBe("ihm peh ree ah");
     expect(fallbackBody.input).not.toContain("/");
@@ -358,7 +409,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
     const response = await POST(request);
     expect(response.status).toBe(200);
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:3000/api/v1/audio/speech",
+      "http://localhost:3000/v1/audio/speech",
       expect.any(Object)
     );
   });

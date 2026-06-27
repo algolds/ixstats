@@ -28,7 +28,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 1,
-    patch: 5,
+    patch: 6,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },

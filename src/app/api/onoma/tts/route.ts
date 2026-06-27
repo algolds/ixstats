@@ -258,8 +258,14 @@ async function handleTts(request: NextRequest) {
       );
     }
     const input = ipaToSpokenText(ipa) || text;
-    const cleanBaseUrl = normalizedBaseUrl.replace(/\/$/, "").replace(/\/api$/, "");
-    const ttsUrl = `${cleanBaseUrl}/api/v1/audio/speech`;
+    const cleanBaseUrl = normalizedBaseUrl
+      .replace(/\/$/, "")
+      .replace(/\/api$/, "")
+      .replace(/\/v1$/, "");
+    const ttsUrl =
+      engine === "kokoro-fastapi"
+        ? `${cleanBaseUrl}/v1/audio/speech`
+        : `${cleanBaseUrl}/api/v1/audio/speech`;
     const reqBody = { model, voice, input, response_format: "mp3", speed };
 
     const response = await fetch(ttsUrl, {

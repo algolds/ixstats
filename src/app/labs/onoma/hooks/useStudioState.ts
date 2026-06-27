@@ -84,7 +84,7 @@ export function useStudioState({
   // Parse words from input text
   const trainingWords = useMemo(() => {
     return inputText
-      .split(/[,\n]/)
+      .split(/[\s,]+/)
       .map((w) => w.trim())
       .filter((w) => w.length > 0);
   }, [inputText]);
@@ -127,7 +127,7 @@ export function useStudioState({
         setInputText(savedText);
         setLoadedDictContent(savedText);
         const words = savedText
-          .split(/[,\n]/)
+          .split(/[\s,]+/)
           .map((w) => w.trim())
           .filter((w) => w.length > 0);
         generateNames(words);
@@ -181,7 +181,7 @@ export function useStudioState({
 
         if (filesProcessed === fileList.length) {
           const words = mergedText
-            .split(/[,\n]/)
+            .split(/[\s,]+/)
             .map((w) => w.trim())
             .filter((w) => w.length > 0);
 
@@ -192,7 +192,7 @@ export function useStudioState({
             // Schedule the generation after state updates
             setTimeout(() => {
               const combinedWords = combinedText
-                .split(/[,\n]/)
+                .split(/[\s,]+/)
                 .map((w) => w.trim())
                 .filter((w) => w.length > 0);
               generateNames(combinedWords);

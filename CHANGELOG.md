@@ -16,6 +16,12 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Changed
 
+## [1.1.6 Ogma (Alpha)] - 2026-06-27
+
+### Fixed
+- **WikiOS Full-Article Narrator**: Swapped the fallback speech endpoint to `/v1/audio/speech` (OpenAI-compatible standard) instead of `/api/v1/audio/speech` when the active engine is `kokoro-fastapi`. This resolves the `404 Not Found` API errors and prevents the narrator from falling back to the browser's native robotic voice.
+- **Onoma Custom Studio Dictionary**: Expanded the dictionary input parsing in [useStudioState.ts](file:///ixwiki/public/projects/ixstats/src/app/labs/onoma/hooks/useStudioState.ts) to split lists using space delimiters (`/[\s,]+/`), enabling support for conlang dictionaries separated by spaces, commas, or linebreaks.
+
 ## [1.1.5 Ogma (Alpha)] - 2026-06-27
 
 ### Added
