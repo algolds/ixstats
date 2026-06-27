@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Crown, Globe, User, ChevronRight, LogOut, X, Shield, Building2, Map, MessageSquare, Handshake, BookOpen, Scale } from "lucide-react";
+import { Crown, Globe, User, ChevronRight, LogOut, X, Shield, Building2, Map, MessageSquare, Handshake, BookOpen, Scale, Edit3 } from "lucide-react";
 import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
 
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
@@ -327,17 +327,17 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => handleNavigate("/mycountry")}
+                onClick={() => handleNavigate("/mycountry/editor")}
                 className={actionButtonClass(
                   "border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-orange-500/5 text-amber-500/90 hover:from-amber-500/15 hover:to-orange-500/15"
                 )}
               >
-                <Building2 className="h-4 w-4 shrink-0" />
-                <span className="truncate">Dashboard</span>
+                <Edit3 className="h-4 w-4 shrink-0" />
+                <span className="truncate">Country Editor</span>
               </button>
 
               <button
-                onClick={() => handleNavigate("/mycountry/editor")}
+                onClick={() => handleNavigate("/mycountry/map-editor")}
                 className={actionButtonClass(
                   "border-sky-500/20 bg-gradient-to-r from-sky-500/5 to-blue-500/5 text-sky-400 hover:from-sky-500/15 hover:to-blue-500/15"
                 )}
