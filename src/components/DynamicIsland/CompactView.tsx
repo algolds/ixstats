@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { Clock, Calendar, Search, Bell, MessageCircle, BookOpen, Settings } from "lucide-react";
+import { Calendar, Search, Bell, MessageCircle, BookOpen, Settings } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { useUser } from "~/context/auth-context";
 import { useIxTime } from "~/contexts/IxTimeContext";
@@ -43,21 +43,7 @@ const getGreeting = (ixTime: number): string => {
   return "Good night";
 };
 
-/** Realtime pill clock — H:MM AM/PM (no seconds); colon pulses each second. */
-const LivePillClock = ({ ts, className }: { ts: number; className?: string }) => {
-  const d = new Date(ts);
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes().toString().padStart(2, "0");
-  const colonOn = d.getUTCSeconds() % 2 === 0;
-  return (
-    <span className={cn("inline-flex items-center whitespace-nowrap tabular-nums", className)}>
-      {h % 12 || 12}
-      <span className={colonOn ? "opacity-100" : "opacity-30"}>:</span>
-      {m}
-      <span className="ml-1">{h >= 12 ? "PM" : "AM"}</span>
-    </span>
-  );
-};
+// LivePillClock removed (static date display only in compact view)
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -67,8 +53,6 @@ function CompactViewComponent({
   isCollapsed,
   setIsCollapsed,
   setIsUserInteracting,
-  timeDisplayMode,
-  setTimeDisplayMode,
   onSwitchMode,
   activePlugin,
   pluginCenter,
@@ -338,55 +322,25 @@ function CompactViewComponent({
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     className="flex items-center gap-1"
                   >
-                    {/* Time — hidden when plugin is active */}
+                    {/* Time/Date — hidden when plugin is active */}
                     {!activePlugin && (
                       <button
-                        onClick={() => onSwitchMode("almanac")}
-                        title="Open Almanac"
+                        onClick={() => onSwitchMode("calendar")}
+                        title="Open Calendar"
                         className="hover:bg-accent/50 flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 transition-colors"
                       >
-                        {timeDisplayMode === "time" && (
-                          <>
-                            <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                            <LivePillClock
-                              ts={ixTimeTimestamp}
-                              className="text-foreground/80 text-[11px] font-semibold"
-                            />
-                          </>
-                        )}
-                        {timeDisplayMode === "date" && (
-                          <>
-                            <Calendar className="h-3 w-3 text-blue-500 opacity-70" />
-                            <PreText
-                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                              whiteSpace="nowrap"
-                            >
-                              {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </PreText>
-                          </>
-                        )}
-                        {timeDisplayMode === "both" && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-blue-500 opacity-70" />
-                            <LivePillClock
-                              ts={ixTimeTimestamp}
-                              className="text-foreground/80 text-[11px] font-semibold"
-                            />
-                            <span className="text-muted-foreground/50 inline text-[10px]">·</span>
-                            <PreText
-                              className="text-foreground/70 inline text-[10px] font-semibold whitespace-nowrap tabular-nums"
-                              whiteSpace="nowrap"
-                            >
-                              {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </PreText>
-                          </div>
-                        )}
+                        <Calendar className="h-3 w-3 text-blue-500 opacity-70" />
+                        <PreText
+                          className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
+                          whiteSpace="nowrap"
+                        >
+                          {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            timeZone: "UTC",
+                          })}
+                        </PreText>
                       </button>
                     )}
 

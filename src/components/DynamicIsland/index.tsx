@@ -285,7 +285,7 @@ function CommandPaletteContent({
           mode === "settings" ||
           mode === "notifications" ||
           mode === "mycountry" ||
-          mode === "almanac")
+          mode === "calendar")
       ) {
         wasManuallyClosedRef.current = true;
       }
@@ -409,8 +409,6 @@ function CommandPaletteContent({
                   isCollapsed={isCollapsed}
                   setIsCollapsed={setIsCollapsed}
                   setIsUserInteracting={setIsUserInteracting}
-                  timeDisplayMode={timeDisplayMode}
-                  setTimeDisplayMode={setTimeDisplayMode}
                   onSwitchMode={switchMode}
                   scrollY={scrollY}
                   activePlugin={activePlugin}

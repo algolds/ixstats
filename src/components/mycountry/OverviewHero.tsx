@@ -23,7 +23,7 @@ import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
 import { IxTime } from "~/lib/ixtime";
-import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-almanac";
+import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-calendar";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";

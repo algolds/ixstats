@@ -35,11 +35,9 @@ export type ViewMode =
   | "notifications"
   | "settings"
   | "mycountry"
-  | "almanac"
-  | "cycling"
+  | "calendar"
   | `plugin:${string}`;
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
-export type TimeDisplayMode = "time" | "date" | "both";
 
 // ── Plugin System Types ─────────────────────────────────────────────
 
@@ -98,8 +96,6 @@ export interface CompactViewProps {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   setIsUserInteracting: (interacting: boolean) => void;
-  timeDisplayMode: TimeDisplayMode;
-  setTimeDisplayMode: (mode: TimeDisplayMode) => void;
   onSwitchMode: (mode: ViewMode) => void;
   scrollY?: number;
   activePlugin?: DIPlugin | null;

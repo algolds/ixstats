@@ -142,7 +142,6 @@ export function useDynamicIslandState() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [searchFilter, setSearchFilter] = useState<SearchFilter>("all");
   const [isUserInteracting, setIsUserInteracting] = useState(false);
-  const [timeDisplayMode, setTimeDisplayMode] = useState<"time" | "date" | "both">("time");
 
   // Lazy-load countries only when search is expanded (not on mount)
   const { data: countriesData } = api.countries.getSelectList.useQuery(
@@ -201,7 +200,7 @@ export function useDynamicIslandState() {
         newMode === "notifications" ||
         newMode === "settings" ||
         newMode === "mycountry" ||
-        newMode === "almanac" ||
+        newMode === "calendar" ||
         newMode.startsWith("plugin:");
 
       if (isExpandedMode) {
@@ -448,67 +447,7 @@ export function useDynamicIslandState() {
     isWikiActive,
   ]);
 
-  // Cycling timeout ref
-  const cyclingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-
-  // Start cycling mode after inactivity; relax on wide screens
-  useEffect(() => {
-    const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 0;
-    const isWide = viewportWidth >= 1440; // 1440p and up
-    const idleMs = isWide ? 20000 : 10000;
-    // Clear existing cycling timeout
-    if (cyclingTimeoutRef.current) {
-      clearTimeout(cyclingTimeoutRef.current);
-    }
-
-    if (mode === "compact" && !isUserInteracting && !activePlugin) {
-      cyclingTimeoutRef.current = setTimeout(() => {
-        switchMode("cycling");
-      }, idleMs);
-    }
-
-    return () => {
-      if (cyclingTimeoutRef.current) {
-        clearTimeout(cyclingTimeoutRef.current);
-      }
-    };
-  }, [mode, isUserInteracting, activePlugin, switchMode]);
-
-  // Cycle time/date display mode when in cycling mode
-  useEffect(() => {
-    if (mode !== "cycling") return;
-
-    const interval = setInterval(() => {
-      setTimeDisplayMode((prev) => {
-        if (prev === "time") return "date";
-        if (prev === "date") return "both";
-        return "time";
-      });
-    }, 4000); // cycle every 4 seconds
-
-    return () => clearInterval(interval);
-  }, [mode, setTimeDisplayMode]);
-
-  // Exit cycling mode on any user activity
-  useEffect(() => {
-    if (mode !== "cycling") return;
-
-    const handleActivity = () => {
-      switchMode("compact");
-    };
-
-    window.addEventListener("mousemove", handleActivity, { passive: true });
-    window.addEventListener("mousedown", handleActivity, { passive: true });
-    window.addEventListener("keydown", handleActivity, { passive: true });
-    window.addEventListener("touchstart", handleActivity, { passive: true });
-
-    return () => {
-      window.removeEventListener("mousemove", handleActivity);
-      window.removeEventListener("mousedown", handleActivity);
-      window.removeEventListener("keydown", handleActivity);
-      window.removeEventListener("touchstart", handleActivity);
-    };
-  }, [mode, switchMode]);
+  // Cycling timeout and logic removed in favor of static date display
 
   // When active plugin changes, default expanded mode to plugin view
   useEffect(() => {
@@ -736,9 +675,6 @@ export function useDynamicIslandState() {
       if (interactionTimeoutRef.current) {
         clearTimeout(interactionTimeoutRef.current);
       }
-      if (cyclingTimeoutRef.current) {
-        clearTimeout(cyclingTimeoutRef.current);
-      }
       if (shortcutTimeoutRef.current) {
         clearTimeout(shortcutTimeoutRef.current);
       }
@@ -754,7 +690,6 @@ export function useDynamicIslandState() {
     debouncedSearchQuery,
     searchFilter,
     isUserInteracting,
-    timeDisplayMode,
     searchResults,
     countriesData,
 
@@ -765,7 +700,6 @@ export function useDynamicIslandState() {
     setSearchQuery,
     setSearchFilter,
     setIsUserInteracting,
-    setTimeDisplayMode,
     switchMode,
   };
 }

@@ -26,7 +26,7 @@ import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { DIPluginProvider } from "~/components/DynamicIsland";
 import { SportsLiveDIPlugin } from "~/components/DynamicIsland/plugins/SportsLiveDIPlugin";
-import { AlmanacLiveDIPlugin } from "~/components/DynamicIsland/plugins/AlmanacLiveDIPlugin";
+import { CalendarLiveDIPlugin } from "~/components/DynamicIsland/plugins/CalendarLiveDIPlugin";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 
@@ -43,9 +43,8 @@ const isClerkConfigured = Boolean(
 
 export const metadata: Metadata = {
   title: "IxStats — Nations, economy, lore",
-  description:
-    "Build your country from the ground up. Design government systems, shape culture and identity, manage diplomacy, and watch your nation evolve",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  description: "Statistics and simulation game",
+  icons: [{ rel: "icon", url: withBasePath("/favicon.ico") }],
 };
 
 const geist = Geist({
@@ -58,7 +57,7 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
 });
 
-const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>) => {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
   const isStandalone = isStandaloneRequest(headersList);
   const dashboardPath = withBasePath("/dashboard");
@@ -77,7 +76,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                     <GlobalNotificationSystem>
                       <DIPluginProvider>
                         <SportsLiveDIPlugin />
-                        <AlmanacLiveDIPlugin />
+                        <CalendarLiveDIPlugin />
                         <WikiContextProvider>
                           <WebGLErrorHandler />
                           <MapPrefetcher />
@@ -141,6 +140,4 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
       </body>
     </html>
   );
-};
-
-export default RootLayout;
+}
