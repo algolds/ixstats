@@ -43,6 +43,22 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   // Create mediaTrack representing the article
   const mediaTrack = useMemo<Media>(() => {
+    // Generate chapters from blocks of type "heading"
+    const chaptersList: { title: string; startTime: number; endTime: number }[] = [];
+    blocks.forEach((b, idx) => {
+      if (b.type === "heading" || idx === 0) {
+        const startTime = idx * 10;
+        if (chaptersList.length > 0) {
+          chaptersList[chaptersList.length - 1].endTime = startTime;
+        }
+        chaptersList.push({
+          title: b.text,
+          startTime,
+          endTime: blocks.length * 10,
+        });
+      }
+    });
+
     return {
       id: `wiki:${articleTitle || "article"}`,
       title: articleTitle || "Wiki Article",
@@ -55,6 +71,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         endTime: (idx + 1) * 10,
         text: b.text,
       })),
+      chapters: chaptersList,
       isDynamicTts: true,
     };
   }, [articleTitle, blocks]);
@@ -65,12 +82,15 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const setSpeedRef = useRef<(speed: number) => void>(() => {});
 
   // Expose a stable delegate memoized once
-  const playbackDelegate = useMemo(() => ({
-    play: () => playRef.current(),
-    pause: () => pauseRef.current(),
-    seek: (seconds: number) => seekRef.current(seconds),
-    setSpeed: (s: number) => setSpeedRef.current(s),
-  }), []);
+  const playbackDelegate = useMemo(
+    () => ({
+      play: () => playRef.current(),
+      pause: () => pauseRef.current(),
+      seek: (seconds: number) => seekRef.current(seconds),
+      setSpeed: (s: number) => setSpeedRef.current(s),
+    }),
+    []
+  );
 
   // Load public speech config (including Kokoro settings)
   const { data: config } = api.onoma.getSpeechConfig.useQuery(undefined, {
@@ -129,31 +149,34 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     return fetchPromise;
   }, []);
 
-  const preFetchBlocks = useCallback(async (index: number) => {
-    const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
-    if (!isKokoroEnabled) return;
+  const preFetchBlocks = useCallback(
+    async (index: number) => {
+      const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
+      if (!isKokoroEnabled) return;
 
-    const activeVoice = voice || undefined;
-    const chosenVoice = activeVoice || config?.kokoro?.voice;
+      const activeVoice = voice || undefined;
+      const chosenVoice = activeVoice || config?.kokoro?.voice;
 
-    for (let i = 1; i <= 2; i++) {
-      const nextIdx = index + i;
-      if (nextIdx < blocksRef.current.length) {
-        const block = blocksRef.current[nextIdx];
-        const params = new URLSearchParams({
-          text: block.text,
-          ipa: "",
-        });
-        const finalVoice = chosenVoice;
-        if (finalVoice) params.set("voice", finalVoice);
-        params.set("speed", String(speed));
+      for (let i = 1; i <= 2; i++) {
+        const nextIdx = index + i;
+        if (nextIdx < blocksRef.current.length) {
+          const block = blocksRef.current[nextIdx];
+          const params = new URLSearchParams({
+            text: block.text,
+            ipa: "",
+          });
+          const finalVoice = chosenVoice;
+          if (finalVoice) params.set("voice", finalVoice);
+          params.set("speed", String(speed));
 
-        const requestUrl = `/api/onoma/tts?${params.toString()}`;
-        // Trigger fetch in background and ignore failures
-        fetchAudioBlob(requestUrl).catch(() => {});
+          const requestUrl = `/api/onoma/tts?${params.toString()}`;
+          // Trigger fetch in background and ignore failures
+          fetchAudioBlob(requestUrl).catch(() => {});
+        }
       }
-    }
-  }, [config, speed, voice, fetchAudioBlob]);
+    },
+    [config, speed, voice, fetchAudioBlob]
+  );
 
   // Local storage personal preferences loading
   useEffect(() => {
@@ -177,8 +200,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   useEffect(() => {
     blocksRef.current = blocks;
   }, [blocks]);
-
-
 
   useEffect(() => {
     registerPlaybackDelegate(playbackDelegate);
@@ -418,7 +439,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
           audio.ontimeupdate = () => {
             if (audioRef.current === audio) {
-              const progress = audio.duration ? (audio.currentTime / audio.duration) : 0;
+              const progress = audio.duration ? audio.currentTime / audio.duration : 0;
               const currentSecs = index * 10 + progress * 10;
               updatePlaybackState({
                 currentTime: currentSecs,
@@ -518,7 +539,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     updatePlaybackState({ isPlaying: false });
   }, [setNarratorState, updatePlaybackState]);
 
-
   const skipNext = useCallback(() => {
     const nextIdx = activeIdx + 1;
     if (nextIdx < blocks.length) {
@@ -538,7 +558,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       const idx = blocksRef.current.findIndex(
         (b) => b.sectionId === sectionId && b.type === "heading"
       );
-      const targetIdx = idx !== -1 ? idx : blocksRef.current.findIndex((b) => b.sectionId === sectionId);
+      const targetIdx =
+        idx !== -1 ? idx : blocksRef.current.findIndex((b) => b.sectionId === sectionId);
       if (targetIdx !== -1) {
         setIsPlaying(true);
         activeIdxRef.current = targetIdx;
@@ -656,6 +677,23 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     playTrack,
     mediaTrack,
   ]);
+
+  // Halt playback and clear native audio / speech on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (activeAudioUrlRef.current) {
+        URL.revokeObjectURL(activeAudioUrlRef.current);
+        activeAudioUrlRef.current = null;
+      }
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   return {
     blocks,
