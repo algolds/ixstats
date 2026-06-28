@@ -9,7 +9,7 @@ export const electionsBrokersRouter = createTRPCRouter({
       // Load active components
       const components = await ctx.db.governmentComponent.findMany({
         where: { countryId: input.countryId, isActive: true },
-        select: { componentType: true }
+        select: { componentType: true },
       });
 
       // Load current budget allocations + department categories
@@ -20,9 +20,9 @@ export const electionsBrokersRouter = createTRPCRouter({
         },
         include: {
           department: {
-            select: { category: true }
-          }
-        }
+            select: { category: true },
+          },
+        },
       });
 
       // Calculate total allocation percentages by department category
@@ -34,5 +34,5 @@ export const electionsBrokersRouter = createTRPCRouter({
 
       const activeComponentTypes = components.map((c) => c.componentType);
       return deriveBrokers(activeComponentTypes, spendByCategory);
-    })
+    }),
 });

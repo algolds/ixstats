@@ -127,16 +127,22 @@ export function calculateGovernmentEffectivenessScore(componentTypes: ComponentT
 
 export async function applyGovernmentComponentEffects(
   db: PrismaClient,
-  countryId: string
+  countryId: string,
+  preloaded?: {
+    activeComponents?: Array<{ componentType: ComponentType; effectivenessScore: number }>;
+    allocations?: Array<{ allocatedPercent: number; department: { category: string } }>;
+  }
 ): Promise<{
   effectsCreated: number;
   politicalMetricsUpdated: boolean;
   overallEffectiveness: number;
 }> {
-  const activeComponents = await db.governmentComponent.findMany({
-    where: { countryId, isActive: true },
-    select: { componentType: true, effectivenessScore: true },
-  });
+  const activeComponents =
+    preloaded?.activeComponents ??
+    (await db.governmentComponent.findMany({
+      where: { countryId, isActive: true },
+      select: { componentType: true, effectivenessScore: true },
+    }));
 
   if (activeComponents.length === 0) {
     try {
@@ -161,8 +167,8 @@ export async function applyGovernmentComponentEffects(
       isActive: true,
       OR: [
         { description: { startsWith: "[GovComponent]" } },
-        { description: { startsWith: "[BrokerComponent]" } }
-      ]
+        { description: { startsWith: "[BrokerComponent]" } },
+      ],
     },
     select: { id: true },
   });
@@ -218,13 +224,15 @@ export async function applyGovernmentComponentEffects(
   }
 
   // Calculate allocations to derive brokers
-  const allocations = await db.budgetAllocation.findMany({
-    where: {
-      governmentStructure: { countryId },
-      budgetYear: new Date().getFullYear(),
-    },
-    include: { department: { select: { category: true } } }
-  });
+  const allocations =
+    preloaded?.allocations ??
+    (await db.budgetAllocation.findMany({
+      where: {
+        governmentStructure: { countryId },
+        budgetYear: new Date().getFullYear(),
+      },
+      include: { department: { select: { category: true } } },
+    }));
   const spendByCategory: Record<string, number> = {};
   allocations.forEach((alloc) => {
     const cat = alloc.department.category;
@@ -263,7 +271,7 @@ export async function applyGovernmentComponentEffects(
       countryId,
       ixTimeTimestamp: now,
       inputType: "MILITARY_READINESS",
-      value: 0.10,
+      value: 0.1,
       duration: 5,
       description: "[BrokerComponent] The Generals: +10% military readiness",
       isActive: true,
@@ -290,7 +298,7 @@ export async function applyGovernmentComponentEffects(
 
   // Apply satisfied broker political metric bonuses
   if (satisfiedSet.has("party")) {
-    deltas.politicalStability = (deltas.politicalStability ?? 0) + 0.10; // +10% stability
+    deltas.politicalStability = (deltas.politicalStability ?? 0) + 0.1; // +10% stability
   }
   if (satisfiedSet.has("clergy")) {
     deltas.politicalStability = (deltas.politicalStability ?? 0) + 0.05; // +5% stability

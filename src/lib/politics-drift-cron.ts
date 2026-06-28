@@ -53,14 +53,15 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
         db.budgetAllocation.findMany({
           where: {
             governmentStructure: { countryId },
+            // budgetYear filtering uses the real-world calendar year due to database model constraints (validation maximum limits of 2030/2035)
             budgetYear: new Date().getFullYear(),
           },
-          include: { department: { select: { category: true } } }
+          include: { department: { select: { category: true } } },
         }),
         db.governmentComponent.findMany({
           where: { countryId, isActive: true },
-          select: { componentType: true }
-        })
+          select: { componentType: true, effectivenessScore: true },
+        }),
       ]);
 
       const spendByCategory: Record<string, number> = {};
@@ -81,7 +82,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
 
         for (const p of parties) {
           const meanRevert = (p.baseSupport - p.currentSupport) * 0.1;
-          
+
           // The Party satisfied gives +5% base support drift toward governing party
           let partyBrokerEffect = 0;
           if (isPartyBrokerSatisfied) {
@@ -91,7 +92,11 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
           const econEffect = (p.id === governing.id ? econMod : -econMod / oppositionSplit) * 0.3;
           // Deterministic-ish jitter per party (no Math.random — keep cron resumable-safe).
           const jitter = ((p.id.charCodeAt(0) % 7) - 3) * 0.1;
-          const next = clamp(p.currentSupport + meanRevert + econEffect + partyBrokerEffect + jitter, 1, 99);
+          const next = clamp(
+            p.currentSupport + meanRevert + econEffect + partyBrokerEffect + jitter,
+            1,
+            99
+          );
           if (Math.abs(next - p.currentSupport) > 0.01) {
             await db.politicalParty.update({
               where: { id: p.id },
@@ -114,7 +119,10 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
       }
 
       // ── Stability / political metrics recompute ──
-      await applyGovernmentComponentEffects(db, countryId);
+      await applyGovernmentComponentEffects(db, countryId, {
+        activeComponents: components,
+        allocations,
+      });
       result.metricsRecomputed++;
     } catch (err) {
       console.error(`[PoliticsDrift] Failed for ${countryId}:`, err);

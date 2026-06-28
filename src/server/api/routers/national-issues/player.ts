@@ -59,8 +59,8 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
         governmentStructure: { countryId },
         budgetYear: new Date().getFullYear(),
       },
-      include: { department: { select: { category: true } } }
-    })
+      include: { department: { select: { category: true } } },
+    }),
   ]);
 
   const spendByCategory: Record<string, number> = {};
@@ -75,13 +75,13 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
 
   const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
   const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
-  
+
   const govStaff = calculateTotalConsumedStaff(
     components.map((c) => c.componentType as any),
     [],
     []
   );
-  
+
   // Apply 15% domestic policy upkeep Capacity relief if satisfied
   const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
   const used = effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST;

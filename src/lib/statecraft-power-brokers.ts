@@ -30,7 +30,7 @@ export const POWER_BROKERS: PowerBrokerDefinition[] = [
     requiredComponents: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES],
     spendCategories: ["Science and Technology", "Education", "Commerce"],
     minSpendPercent: 15.0,
-    bonusDescription: "-15% domestic policy upkeep (Capacity relief)"
+    bonusDescription: "-15% domestic policy upkeep (Capacity relief)",
   },
   {
     id: "party",
@@ -39,7 +39,7 @@ export const POWER_BROKERS: PowerBrokerDefinition[] = [
     requiredComponents: [ComponentType.PARTISAN_INSTITUTIONS, ComponentType.OLIGARCHIC_PROCESS],
     spendCategories: ["Interior", "Intelligence", "Justice"],
     minSpendPercent: 15.0,
-    bonusDescription: "+10% political stability and +5% leading party support drift"
+    bonusDescription: "+10% political stability and +5% leading party support drift",
   },
   {
     id: "generals",
@@ -48,7 +48,7 @@ export const POWER_BROKERS: PowerBrokerDefinition[] = [
     requiredComponents: [ComponentType.MILITARY_ADMINISTRATION], // fallback to MILITARY_ENFORCEMENT handled dynamically
     spendCategories: ["Defense"],
     minSpendPercent: 15.0,
-    bonusDescription: "+10% military readiness (-5% political stability if Defense spend > 30%)"
+    bonusDescription: "+10% military readiness (-5% political stability if Defense spend > 30%)",
   },
   {
     id: "magnates",
@@ -57,7 +57,7 @@ export const POWER_BROKERS: PowerBrokerDefinition[] = [
     requiredComponents: [ComponentType.OLIGARCHIC_PROCESS, ComponentType.ECONOMIC_INCENTIVES],
     spendCategories: ["Commerce", "Energy"],
     minSpendPercent: 15.0,
-    bonusDescription: "+0.5% GDP growth modifier (-3% political stability due to social tension)"
+    bonusDescription: "+0.5% GDP growth modifier (-3% political stability due to social tension)",
   },
   {
     id: "clergy",
@@ -66,8 +66,8 @@ export const POWER_BROKERS: PowerBrokerDefinition[] = [
     requiredComponents: [ComponentType.RELIGIOUS_LEGITIMACY], // fallback to TRADITIONAL_LEGITIMACY handled dynamically
     spendCategories: ["Culture"],
     minSpendPercent: 15.0,
-    bonusDescription: "+5% political stability"
-  }
+    bonusDescription: "+5% political stability",
+  },
 ];
 
 export function deriveBrokers(
@@ -80,11 +80,13 @@ export function deriveBrokers(
     // Handle fallback/OR unlocks for Generals and Clergy
     let unlocked = false;
     if (def.id === "generals") {
-      unlocked = componentSet.has(ComponentType.MILITARY_ADMINISTRATION) || 
-                 componentSet.has(ComponentType.MILITARY_ENFORCEMENT);
+      unlocked =
+        componentSet.has(ComponentType.MILITARY_ADMINISTRATION) ||
+        componentSet.has(ComponentType.MILITARY_ENFORCEMENT);
     } else if (def.id === "clergy") {
-      unlocked = componentSet.has(ComponentType.RELIGIOUS_LEGITIMACY) || 
-                 componentSet.has(ComponentType.TRADITIONAL_LEGITIMACY);
+      unlocked =
+        componentSet.has(ComponentType.RELIGIOUS_LEGITIMACY) ||
+        componentSet.has(ComponentType.TRADITIONAL_LEGITIMACY);
     } else {
       unlocked = def.requiredComponents.every((c) => componentSet.has(c));
     }
@@ -108,7 +110,7 @@ export function deriveBrokers(
       currentSpend: Math.round(currentSpend * 100) / 100,
       requiredSpend,
       gapPercent: Math.round(gapPercent * 100) / 100,
-      bonusDescription: def.bonusDescription
+      bonusDescription: def.bonusDescription,
     };
   });
 }

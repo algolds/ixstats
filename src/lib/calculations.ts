@@ -270,7 +270,8 @@ export class IxStatsCalculator {
 
     effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
-      if (input.inputType === StorytellerEffectType.POPULATION_ADJUSTMENT) {
+      const inputTypeLower = input.inputType?.toLowerCase();
+      if (inputTypeLower === StorytellerEffectType.POPULATION_ADJUSTMENT) {
         adjustedRate += inputValue;
       }
     });
@@ -307,9 +308,10 @@ export class IxStatsCalculator {
     // Apply storyteller effects
     effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
-      if (input.inputType === StorytellerEffectType.GDP_ADJUSTMENT) {
+      const inputTypeLower = input.inputType?.toLowerCase();
+      if (inputTypeLower === StorytellerEffectType.GDP_ADJUSTMENT) {
         effectiveGrowthRate += inputValue;
-      } else if (input.inputType === StorytellerEffectType.GROWTH_RATE_MODIFIER) {
+      } else if (inputTypeLower === StorytellerEffectType.GROWTH_RATE_MODIFIER) {
         effectiveGrowthRate *= 1 + inputValue;
       }
     });
