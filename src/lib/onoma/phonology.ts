@@ -283,3 +283,57 @@ function applyStress(word: string): string {
   // Insert stress mark
   return word.slice(0, onsetIndex) + "ˈ" + word.slice(onsetIndex);
 }
+
+/**
+ * Splits a word into its constituent grapheme segments according to phonetic matching rules.
+ */
+export function segmentGraphemes(
+  name: string,
+  culture: string | null,
+  overrideRules?: [string, string][]
+): { grapheme: string; ipa: string }[] {
+  if (!name || !name.trim()) return [];
+
+  const primaryCulture = culture ? culture.split("+")[0].toLowerCase().trim() : "any";
+  const baseRules = CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+  const rules =
+    overrideRules && overrideRules.length > 0 ? [...overrideRules, ...baseRules] : baseRules;
+
+  const lowerWord = name.toLowerCase().trim();
+  const segments: { grapheme: string; ipa: string }[] = [];
+  let i = 0;
+
+  while (i < lowerWord.length) {
+    let matched = false;
+
+    // Try multi-character rules first
+    for (const [grapheme, ipa] of rules) {
+      if (grapheme.length > 1 && lowerWord.startsWith(grapheme, i)) {
+        segments.push({ grapheme, ipa });
+        i += grapheme.length;
+        matched = true;
+        break;
+      }
+    }
+
+    if (matched) continue;
+
+    // Try single-character rules
+    for (const [grapheme, ipa] of rules) {
+      if (grapheme.length === 1 && lowerWord[i] === grapheme) {
+        segments.push({ grapheme, ipa });
+        i++;
+        matched = true;
+        break;
+      }
+    }
+
+    if (matched) continue;
+
+    // Fallback: append character as is
+    segments.push({ grapheme: lowerWord[i], ipa: lowerWord[i] });
+    i++;
+  }
+
+  return segments;
+}

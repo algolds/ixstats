@@ -7,12 +7,23 @@ import { BookOpen, Search, Volume2, Trash2 } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { type StudioState } from "../../../hooks/useStudioState";
+import { api } from "~/trpc/react";
+import { speakName } from "~/lib/onoma/browser-speech";
+import { getNameOverride } from "~/lib/onoma/ipa-overrides";
+import { useNotify } from "~/hooks/useNotify";
 
 interface StudioLexiconProps {
   state: StudioState;
 }
 
 export function StudioLexicon({ state }: StudioLexiconProps) {
+  const notify = useNotify();
+
+  // Load public speech config (including Kokoro settings)
+  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
+    staleTime: 600000,
+  });
+
   const {
     searchTerm,
     setSearchTerm,
@@ -140,12 +151,19 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   {selectedTermIpa && (
                     <button
-                      onClick={() => {
-                        if (typeof window !== "undefined" && window.speechSynthesis) {
-                          window.speechSynthesis.cancel();
-                          const utterance = new SpeechSynthesisUtterance(selectedTerm);
-                          utterance.rate = 0.85;
-                          window.speechSynthesis.speak(utterance);
+                      onClick={async () => {
+                        try {
+                          await speakName({
+                            name: selectedTerm,
+                            ipa: selectedTermIpa,
+                            culture: classifiedCulture || null,
+                            kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
+                            voice: getNameOverride(selectedTerm)?.voice,
+                            defaultVoice: speechConfig?.kokoro?.voice,
+                          });
+                        } catch (err) {
+                          console.error("Pronunciation playback failed:", err);
+                          notify.error("Could not play this pronunciation.");
                         }
                       }}
                       title="Listen to pronunciation"

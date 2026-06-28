@@ -137,7 +137,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
       try {
         const text = await file.text();
         const words = text
-          .split(/[\r\n,]+/)
+          .split(/[\r\n,\s]+/)
           .map((w) => w.trim())
           .filter(Boolean);
         if (words.length === 0) continue;

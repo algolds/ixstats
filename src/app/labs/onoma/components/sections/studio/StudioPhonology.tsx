@@ -6,12 +6,13 @@
 // (localStorage) via ~/lib/onoma/ipa-overrides.
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Volume2, Save, RotateCcw, AudioLines } from "lucide-react";
+import { Plus, Trash2, Volume2, Save, RotateCcw, AudioLines, X } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { translateToIPA, getCultureRules } from "~/lib/onoma/phonology";
+import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/phonology";
 import { speakName } from "~/lib/onoma/browser-speech";
-import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import { ipaToKokoroPhonemes, KOKORO_VALID_TOKENS } from "~/lib/onoma/kokoro-phonemes";
+import { cn } from "~/lib/utils";
 import {
   getCultureRuleOverrides,
   setCultureRuleOverrides,
@@ -39,6 +40,15 @@ const CULTURES = [
 
 const ACCENT = "#8b5cf6";
 
+const IPA_VOWELS = ["i", "ɪ", "e", "ɛ", "æ", "a", "ɑ", "ɒ", "ɔ", "o", "ʊ", "u", "ʌ", "ə", "ø", "y", "œ"];
+const IPA_CONSONANTS = [
+  "p", "b", "t", "d", "k", "ɡ", "f", "v", "θ", "ð", "s", "z", "ʃ", "ʒ", "h", "x", "ɣ", "ɬ", "ɮ",
+  "m", "n", "ŋ", "l", "ɹ", "j", "w", "r", "ɾ", "tʃ", "dʒ", "ts"
+];
+const IPA_DIPHTHONGS = [
+  "aɪ", "eɪ", "aʊ", "ɔɪ", "oʊ", "əʊ", "iː", "uː", "ɑː", "ɔː", "ɜː", "əː", "ː"
+];
+
 export function StudioPhonology() {
   const notify = useNotify();
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
@@ -49,6 +59,8 @@ export function StudioPhonology() {
   const [rows, setRows] = useState<[string, string][]>([]);
   const [previewText, setPreviewText] = useState("Imperia");
   const [nameOverrides, setNameOverrides] = useState<Record<string, NameOverride>>({});
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | null>(null);
+  const [soundboardTab, setSoundboardTab] = useState<"vowels" | "consonants" | "diphthongs">("vowels");
 
   // Load this culture's saved rule overrides into editable state when it changes.
   useEffect(() => {
@@ -75,6 +87,15 @@ export function StudioPhonology() {
       ),
     [previewText, culture, rows]
   );
+
+  const segments = useMemo(() => {
+    return segmentGraphemes(previewText, culture, rows.filter(([g]) => g.trim().length > 0));
+  }, [previewText, culture, rows]);
+
+  // Clean active popover if previewText changes length/segments
+  useEffect(() => {
+    setActiveSegmentIndex(null);
+  }, [previewText, culture]);
 
   const updateRow = (i: number, idx: 0 | 1, value: string) => {
     setRows((prev) => {
@@ -113,6 +134,36 @@ export function StudioPhonology() {
       console.error("Playback failed:", err);
       notify.error("Could not play this pronunciation.");
     }
+  };
+
+  const playPhoneme = async (symbol: string) => {
+    try {
+      await speakName({
+        name: "sound",
+        ipa: `/${symbol}/`,
+        culture: "constructed",
+        kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
+        defaultVoice: speechConfig?.kokoro?.voice,
+      });
+    } catch (err) {
+      console.error("Phoneme playback failed:", err);
+    }
+  };
+
+  const mapGrapheme = (grapheme: string, symbol: string) => {
+    setRows((prev) => {
+      let next = prev.map((r) => [...r] as [string, string]);
+      const idx = next.findIndex(([g]) => g === grapheme);
+      if (idx !== -1) {
+        next[idx][1] = symbol;
+      } else {
+        next = [[grapheme, symbol], ...next];
+      }
+      setCultureRuleOverrides(culture, next);
+      return next;
+    });
+    notify.success(`Mapped "${grapheme}" → /${symbol}/`);
+    setActiveSegmentIndex(null);
   };
 
   const overrideNames = Object.keys(nameOverrides);
@@ -178,6 +229,108 @@ export function StudioPhonology() {
             <Volume2 className="h-3.5 w-3.5" /> Play
           </button>
         </div>
+
+        {/* Interactive Grapheme Mapper Timeline */}
+        {previewText.trim().length > 0 && (
+          <div className="border-border/30 border-t pt-3.5 mt-3 space-y-2.5 animate-in fade-in duration-200">
+            <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              Interactive Grapheme Mapper (click segment to customize sound)
+            </h4>
+            <div className="flex flex-wrap items-center gap-2">
+              {segments.map((seg, idx) => {
+                const isOverridden = rows.some(([g]) => g === seg.grapheme);
+                const isActive = activeSegmentIndex === idx;
+
+                return (
+                  <div key={idx} className="relative">
+                    <button
+                      onClick={() => setActiveSegmentIndex(isActive ? null : idx)}
+                      className={cn(
+                        "flex flex-col items-center justify-center min-w-10 h-14 rounded-xl border px-3 py-1.5 text-center transition-all duration-200 cursor-pointer active:scale-95",
+                        isOverridden
+                          ? "border-[#8b5cf6]/40 bg-[#8b5cf6]/10 text-foreground hover:bg-[#8b5cf6]/20"
+                          : "border-border/50 bg-background text-foreground hover:bg-secondary/40",
+                        isActive && "ring-2 ring-[#8b5cf6] border-transparent"
+                      )}
+                    >
+                      <span className="font-mono text-sm font-bold capitalize">{seg.grapheme}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                        /{seg.ipa || "∅"}/
+                      </span>
+                    </button>
+
+                    {isActive && (
+                      <div className="absolute left-0 mt-2.5 z-30 w-72 rounded-2xl border border-white/10 bg-popover/95 p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200 dark:border-white/5">
+                        <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-white/10">
+                          <span className="text-[10px] font-bold text-foreground uppercase">
+                            Map segment: <span className="font-mono text-[#8b5cf6] font-bold">"{seg.grapheme}"</span>
+                          </span>
+                          <button
+                            onClick={() => setActiveSegmentIndex(null)}
+                            className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Popover Tabs */}
+                        <div className="flex gap-1 mb-3 bg-secondary/15 rounded-lg p-0.5">
+                          {(["vowels", "consonants", "diphthongs"] as const).map((tab) => (
+                            <button
+                              key={tab}
+                              onClick={() => setSoundboardTab(tab)}
+                              className={cn(
+                                "flex-1 py-1 text-[9px] font-bold uppercase rounded-md transition-all cursor-pointer capitalize",
+                                soundboardTab === tab
+                                  ? "bg-[#8b5cf6] text-white"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/10"
+                              )}
+                            >
+                              {tab === "diphthongs" ? "Diphthongs/Length" : tab}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Tab Content (IPA Grid) */}
+                        <div className="grid grid-cols-5 gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+                          {(soundboardTab === "vowels"
+                            ? IPA_VOWELS
+                            : soundboardTab === "consonants"
+                              ? IPA_CONSONANTS
+                              : IPA_DIPHTHONGS
+                          ).map((sym) => {
+                            const isKokoro = KOKORO_VALID_TOKENS.has(sym);
+                            return (
+                              <button
+                                key={sym}
+                                onClick={async () => {
+                                  await playPhoneme(sym);
+                                  mapGrapheme(seg.grapheme, sym);
+                                }}
+                                title={isKokoro ? `${sym} (Kokoro high-fidelity native)` : `${sym} (fallback/synthesized)`}
+                                className={cn(
+                                  "relative flex h-8 items-center justify-center rounded-lg border font-mono text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer",
+                                  isKokoro
+                                    ? "border-[#0091ff]/30 bg-[#0091ff]/5 hover:bg-[#0091ff]/15 text-[#0091ff]"
+                                    : "border-border/60 bg-background hover:bg-secondary/30 text-foreground"
+                                )}
+                              >
+                                {sym}
+                                {isKokoro && (
+                                  <span className="absolute top-1 right-1 h-1 w-1 rounded-full bg-[#0091ff]" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Rule editor */}

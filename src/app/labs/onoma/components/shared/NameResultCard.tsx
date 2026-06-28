@@ -273,10 +273,10 @@ export function NameResultCard({
       </div>
 
       {/* Main Top Row */}
-      <div className="relative z-10 flex w-full items-center justify-between gap-3">
+      <div className="relative z-10 flex w-full items-start justify-between gap-2">
         {/* Name Display */}
-        <div className="flex flex-col items-start gap-1">
-          <span className="text-foreground text-sm font-semibold tracking-wide transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base">
+        <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
+          <span className="text-foreground text-sm font-semibold tracking-wide transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base truncate w-full">
             {name}
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
@@ -362,7 +362,7 @@ export function NameResultCard({
         {/* Action Buttons */}
         <div
           className={cn(
-            "relative z-10 flex items-center gap-1.5 transition-all duration-300 ease-out",
+            "relative z-10 flex flex-shrink-0 items-center gap-1 transition-all duration-300 ease-out pt-0.5",
             showDetailsModal
               ? "translate-x-0 opacity-100"
               : "translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100"

@@ -88,16 +88,16 @@ export const onomaRouter = createTRPCRouter({
               setName = parsed.setName || null;
               const rawValues = parsed.values || [];
               values = Array.isArray(rawValues)
-                ? rawValues.flatMap((v: string) => v.split(/[\r\n,]+/)).map((v: string) => v.trim()).filter(Boolean)
+                ? rawValues.flatMap((v: string) => v.split(/[\r\n,\s]+/)).map((v: string) => v.trim()).filter(Boolean)
                 : typeof rawValues === "string"
-                ? rawValues.split(/[\r\n,]+/).map((v: string) => v.trim()).filter(Boolean)
+                ? rawValues.split(/[\r\n,\s]+/).map((v: string) => v.trim()).filter(Boolean)
                 : [];
             }
           } catch {
             // Fallback for legacy comma-separated values
             if (item.contentType === "dictionary") {
               values = item.note
-                .split(/[\r\n,]+/)
+                .split(/[\r\n,\s]+/)
                 .map((v) => v.trim())
                 .filter(Boolean);
             }
@@ -168,12 +168,12 @@ export const onomaRouter = createTRPCRouter({
         let values: string[] = [];
         if (Array.isArray(rawValues)) {
           values = (rawValues as string[])
-            .flatMap((v) => v.split(/[\r\n,]+/))
+            .flatMap((v) => v.split(/[\r\n,\s]+/))
             .map((v) => v.trim())
             .filter(Boolean);
         } else if (typeof rawValues === "string") {
           values = (rawValues as string)
-            .split(/[\r\n,]+/)
+            .split(/[\r\n,\s]+/)
             .map((v) => v.trim())
             .filter(Boolean);
         }
@@ -264,7 +264,7 @@ export const onomaRouter = createTRPCRouter({
       // 2. Serialize metadata into JSON note
       const rawValues = input.values;
       const cleanValues = rawValues
-        .flatMap((v) => v.split(/[\r\n,]+/))
+        .flatMap((v) => v.split(/[\r\n,\s]+/))
         .map((v) => v.trim())
         .filter(Boolean);
 

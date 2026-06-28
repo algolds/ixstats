@@ -42,7 +42,7 @@ export function StudioNameSets() {
       if (e.type !== "dictionary" || !setName) continue;
 
       const cleanValues = (e.values || [])
-        .flatMap((v: string) => v.split(/[\r\n,]+/))
+        .flatMap((v: string) => v.split(/[\r\n,\s]+/))
         .map((v) => v.trim())
         .filter(Boolean);
 
@@ -120,7 +120,7 @@ export function StudioNameSets() {
       const words = activeDicts
         .filter((d) => d.role === slot.role && genderMatches(slot.gender, d.gender))
         .flatMap((d) => d.values)
-        .flatMap((v) => v.split(/[\r\n,]+/))
+        .flatMap((v) => v.split(/[\r\n,\s]+/))
         .map((v) => v.trim())
         .filter(Boolean);
       if (words.length === 0) {
