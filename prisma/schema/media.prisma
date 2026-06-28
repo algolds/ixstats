@@ -1,0 +1,61 @@
+enum MediaType {
+  MUSIC
+  SPEECH
+  LANGUAGE
+  RADIO
+  PODCAST
+  NARRATION
+  AMBIENT
+}
+
+model MediaTrack {
+  id          String            @id @default(cuid())
+  title       String
+  subtitle    String?
+  description String?           @db.Text
+  type        MediaType         @default(MUSIC)
+  audioUrl    String
+  duration    Float
+  coverArt    String?
+  peaks       Int[]
+  tags        String[]
+  metadata    Json?
+
+  playlists   PlaylistTrack[]
+  history     PlaybackHistory[]
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model MediaPlaylist {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  tracks      PlaylistTrack[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model PlaylistTrack {
+  id          String        @id @default(cuid())
+  playlistId  String
+  trackId     String
+  orderIndex  Int
+
+  playlist    MediaPlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track       MediaTrack    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, orderIndex])
+}
+
+model PlaybackHistory {
+  id          String      @id @default(cuid())
+  userId      String
+  trackId     String
+  playedAt    DateTime    @default(now())
+  progress    Float
+
+  track       MediaTrack  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
