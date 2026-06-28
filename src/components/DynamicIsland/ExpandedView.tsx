@@ -37,8 +37,8 @@ export function ExpandedView({
     window.location.href = "/admin/user-management";
   };
 
-  // Don't render if mode is compact or cycling
-  if (mode === "compact" || mode === "cycling") {
+  // Don't render if mode is compact
+  if (mode === "compact") {
     return null;
   }
 

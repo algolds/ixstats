@@ -182,6 +182,8 @@ interface PackItem {
   ultraRareOdds: number;
   epicOdds: number;
   legendaryOdds: number;
+  season?: number | null;
+  cardType?: string | null;
 }
 
 interface PackShelfItemProps {

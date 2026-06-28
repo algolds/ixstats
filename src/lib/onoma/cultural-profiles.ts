@@ -1,7 +1,7 @@
 // src/lib/onoma/cultural-profiles.ts
 // Onoma Lab — Cultural & Linguistic Seed Data
 
-import { CulturalProfile, NameCategory } from "./types";
+import type { CulturalProfile, NameCategory } from "./types";
 
 /**
  * Seed names representing different linguistic and cultural families.

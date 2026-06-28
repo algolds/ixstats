@@ -3,7 +3,7 @@
 
 import { SPECIES_SYLLABLES } from "./data/species-data";
 import { MarkovChain } from "./markov-chain";
-import { Gender } from "./types";
+import type { Gender } from "./types";
 
 function isVowel(c: string): boolean {
   const cl = c.toLowerCase();

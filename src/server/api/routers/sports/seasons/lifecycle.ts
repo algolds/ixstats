@@ -205,7 +205,16 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
       const season = await ctx.db.sportSeason.findUnique({
         where: { id: input.id },
         include: {
-          league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
+          league: {
+            select: {
+              id: true,
+              name: true,
+              sportPreset: true,
+              archetype: true,
+              promotionCount: true,
+              relegationCount: true,
+            },
+          },
           standings: {
             include: {
               team: {

@@ -74,7 +74,7 @@ function parseEngine(raw: string | undefined): KokoroEngine {
 }
 
 /** Read a cached {d, ct} wrapper, falling back to legacy plain-base64 entries. */
-function readCached(raw: string | undefined): { data: string; ct: string } | null {
+function readCached(raw: string | undefined | null): { data: string; ct: string } | null {
   if (!raw) return null;
   try {
     const p = JSON.parse(raw) as unknown;
@@ -273,7 +273,7 @@ async function handleTts(request: NextRequest) {
     }
 
     const audioBuffers: Buffer[] = [];
-    let isWav = engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl;
+    let isWav = !!(engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl);
 
     for (const sentence of sentences) {
       // Generate individual cache key per sentence segment
@@ -395,7 +395,7 @@ async function handleTts(request: NextRequest) {
       );
     }
 
-    return new NextResponse(finalBuffer, {
+    return new NextResponse(new Uint8Array(finalBuffer), {
       status: 200,
       headers: {
         "Content-Type": contentType,

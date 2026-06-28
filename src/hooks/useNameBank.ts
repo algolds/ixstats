@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { NameCategory, CulturalProfile } from "~/lib/onoma/types";
+import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 
 export function useNameBank() {
   const utils = api.useUtils();

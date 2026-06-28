@@ -61,6 +61,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
       }, 50);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isOpen]);
   return (
     <AnimatePresence>

@@ -3,6 +3,7 @@ export interface ActiveCosmeticEffects {
     enabled: boolean;
     color: string;
     intensity: string;
+    style?: string;
   };
   chatBadge?: {
     enabled: boolean;

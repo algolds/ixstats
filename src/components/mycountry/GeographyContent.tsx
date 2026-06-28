@@ -115,7 +115,7 @@ export function GeographyContent() {
               <span className="text-[9px] uppercase">Climate Model</span>
               <div
                 className="text-foreground/80 truncate text-xs font-semibold"
-                title={geoProfile.climate.dominant}
+                title={geoProfile.climate.dominant ?? undefined}
               >
                 {geoProfile.climate.dominant}
               </div>

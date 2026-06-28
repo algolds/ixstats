@@ -45,7 +45,7 @@ function WikiBreadcrumb() {
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const activeSectionName = activeSectionId
-    ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
+    ? (tocEntries.find((e: any) => e.id === activeSectionId)?.text ?? null)
     : null;
 
   return (
@@ -139,8 +139,8 @@ function WikiBreadcrumb() {
             >
               <div className="max-h-[200px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto select-none">
                 {tocEntries
-                  .filter((e) => e.level <= 3)
-                  .map((entry) => {
+                  .filter((e: any) => e.level <= 3)
+                  .map((entry: any) => {
                     const isActive = activeSectionId === entry.id;
                     return (
                       <button

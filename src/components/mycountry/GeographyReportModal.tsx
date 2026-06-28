@@ -9,88 +9,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Compass, CloudSun, TrendingUp, Waves, Globe2, Trophy, ExternalLink } from "lucide-react";
+import { Compass, CloudSun, TrendingUp, Waves, Globe2, Trophy } from "lucide-react";
+import type { RouterOutputs } from "~/trpc/react";
 
-interface ClimateZoneEntry {
-  type: string;
-  percentArea: number;
-  areaSqKm: number;
-  agricultureFactor: number;
-}
-
-interface ElevationZoneEntry {
-  type: string;
-  percentArea: number;
-  areaSqKm: number;
-}
-
-interface NeighborEntry {
-  id: string;
-  name: string;
-  slug: string;
-  sharedBorderKm: number;
-}
-
-interface SuperlativeItem {
-  id: string;
-  name: string;
-  elevation?: number;
-  height?: number;
-  prominence?: number | null;
-  lengthKm?: number | null;
-  areaSqKm?: number | null;
-  maxDepthM?: number | null;
-  wikiPageTitle?: string | null;
-  subdivision?: { name: string } | null;
-  subdivisionId?: string | null;
-}
-
-interface GeoProfileData {
-  countryId: string;
-  countryName: string;
-  area: {
-    areaKm2: number;
-    perimeterKm: number;
-    nsSpanKm: number;
-    ewSpanKm: number;
-    centroid: [number, number];
-  };
-  climate: {
-    zones: ClimateZoneEntry[];
-    dominant: string;
-    diversityIndex: number;
-    estMeanTempC: number;
-    estAnnualPrecipMm: number;
-    estSummerHighC: number;
-    estWinterLowC: number;
-  };
-  elevation: {
-    zones: ElevationZoneEntry[];
-    dominant: string;
-    meanElev: number;
-    terrainRoughness: string;
-  };
-  hydro: {
-    riverCount: number;
-    totalRiverLengthKm: number;
-    lakeCount: number;
-    totalLakeAreaSqKm: number;
-    drainageDensity: number;
-  };
-  derived: {
-    arableLandPercent: number;
-    isLandlocked: boolean;
-    isIsland: boolean;
-    coastlineKm: number;
-    neighborCount: number;
-  };
-  neighbors: NeighborEntry[];
-  superlatives: {
-    tallestPeak?: SuperlativeItem | null;
-    longestRiver?: SuperlativeItem | null;
-    largestLake?: SuperlativeItem | null;
-  };
-}
+// Derived from the tRPC output so the type can't drift from the actual data shape.
+type GeoProfileData = RouterOutputs["geoCore"]["getCountryGeoProfile"];
+type SuperlativeItem = NonNullable<
+  | GeoProfileData["superlatives"]["tallestPeak"]
+  | GeoProfileData["superlatives"]["longestRiver"]
+  | GeoProfileData["superlatives"]["largestLake"]
+>;
 
 interface GeographyReportModalProps {
   countryName: string;
@@ -210,7 +138,7 @@ export function GeographyReportModal({
                       <span className="text-muted-foreground text-[10px]">Dominant Climate</span>
                       <div
                         className="text-foreground truncate font-semibold"
-                        title={geoProfile.climate.dominant}
+                        title={geoProfile.climate.dominant ?? undefined}
                       >
                         {geoProfile.climate.dominant}
                       </div>
@@ -335,8 +263,8 @@ export function GeographyReportModal({
                     </thead>
                     <tbody className="divide-border/60 divide-y">
                       {geoProfile.elevation.zones.map((zone) => (
-                        <tr key={zone.type} className="hover:bg-muted/30">
-                          <td className="text-foreground px-3 py-1.5 font-medium">{zone.type}</td>
+                        <tr key={zone.zone} className="hover:bg-muted/30">
+                          <td className="text-foreground px-3 py-1.5 font-medium">{zone.name}</td>
                           <td className="px-3 py-1.5 text-right font-mono">
                             {zone.percentArea.toFixed(1)}%
                           </td>
@@ -458,7 +386,7 @@ export function GeographyReportModal({
                   metricLabel="Elevation"
                   metricVal={
                     geoProfile.superlatives.tallestPeak
-                      ? `${geoProfile.superlatives.tallestPeak.elevation ?? geoProfile.superlatives.tallestPeak.height ?? 0}m`
+                      ? `${geoProfile.superlatives.tallestPeak.elevation ?? 0}m`
                       : null
                   }
                   description={
@@ -466,7 +394,6 @@ export function GeographyReportModal({
                       ? `Prominence: ${geoProfile.superlatives.tallestPeak.prominence}m`
                       : undefined
                   }
-                  subdivision={geoProfile.superlatives.tallestPeak?.subdivision?.name}
                   fallbackMsg="No named peaks exist. Add a Peak in the map editor geography section."
                 />
 
@@ -532,17 +459,6 @@ function SuperlativeCard({
         <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
           {title}
         </span>
-        {item?.wikiPageTitle && (
-          <a
-            href={`https://ixwiki.com/wiki/${encodeURIComponent(item.wikiPageTitle)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary flex items-center gap-0.5 text-[10px] font-medium hover:underline"
-          >
-            <span>Wiki page</span>
-            <ExternalLink className="h-2.5 w-2.5" />
-          </a>
-        )}
       </div>
       {item ? (
         <div className="flex items-end justify-between">

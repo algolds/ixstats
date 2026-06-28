@@ -30,7 +30,7 @@ export function ValuationAdmin() {
   const [form, setForm] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (data) setForm(data as Record<string, number>);
+    if (data) setForm(data as unknown as Record<string, number>);
   }, [data]);
 
   const saveMutation = api.cards.setValuationConfig.useMutation({

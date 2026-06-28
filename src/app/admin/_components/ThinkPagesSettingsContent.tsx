@@ -630,7 +630,7 @@ function DiscordMirrorTab() {
             </p>
           ) : (
             <div className="divide-border/30 divide-y">
-              {preview.map((p) => (
+              {preview.map((p: any) => (
                 <div key={p.id} className="flex items-start gap-3 py-2">
                   <div className="mt-0.5 shrink-0">
                     {p.mirrorStatus === "sent" ? (

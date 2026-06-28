@@ -84,7 +84,7 @@ export function useGovernmentBuilderAutoSync(
       if (showConflictWarnings) {
         const conflictResult = await checkConflictsMutation.mutateAsync({
           countryId,
-          data: builderState,
+          data: builderState as any,
         });
         warnings = conflictResult.warnings;
 
@@ -122,13 +122,13 @@ export function useGovernmentBuilderAutoSync(
           attemptedUpdate = true;
           result = await updateMutation.mutateAsync({
             countryId,
-            data: builderState,
+            data: builderState as any,
             skipConflictCheck: true, // Already checked above
           });
         } else {
           result = await createMutation.mutateAsync({
             countryId,
-            data: builderState,
+            data: builderState as any,
             skipConflictCheck: true, // Already checked above
           });
         }
@@ -138,7 +138,7 @@ export function useGovernmentBuilderAutoSync(
         if (attemptedUpdate && looksLikeNotFound) {
           result = await createMutation.mutateAsync({
             countryId,
-            data: builderState,
+            data: builderState as any,
             skipConflictCheck: true,
           });
         } else {
@@ -299,7 +299,7 @@ export function useTaxBuilderAutoSync(
       if (showConflictWarnings) {
         const conflictResult = await checkConflictsMutation.mutateAsync({
           countryId,
-          data: builderState,
+          data: builderState as any,
         });
         warnings = conflictResult.warnings;
 
@@ -328,7 +328,7 @@ export function useTaxBuilderAutoSync(
         // Try update first (handles existing records and avoids P2002 on create)
         result = await updateMutation.mutateAsync({
           countryId,
-          data: builderState,
+          data: builderState as any,
           skipConflictCheck: true,
         });
       } catch (updateErr) {
@@ -338,7 +338,7 @@ export function useTaxBuilderAutoSync(
             // Create if no existing record
             result = await createMutation.mutateAsync({
               countryId,
-              data: builderState,
+              data: builderState as any,
               skipConflictCheck: true,
             });
           } catch (createErr) {
@@ -347,7 +347,7 @@ export function useTaxBuilderAutoSync(
               // Another writer created it between our check and create; retry update
               result = await updateMutation.mutateAsync({
                 countryId,
-                data: builderState,
+                data: builderState as any,
                 skipConflictCheck: true,
               });
             } else {

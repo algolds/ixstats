@@ -3,7 +3,7 @@
 
 import { TAVERN_DATA } from "./data/tavern-data";
 import { MarkovChain } from "./markov-chain";
-import { GenerateOptions } from "./types";
+import type { GenerateOptions } from "./types";
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];

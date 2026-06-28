@@ -75,7 +75,7 @@ export default function SeasonDetailPage() {
     points: s.points,
     pointsFor: s.pointsFor,
     pointsAgainst: s.pointsAgainst,
-    rank: s.position,
+    rank: s.rank ?? undefined,
     division: s.division ?? undefined,
     conference: s.conference ?? undefined,
     color: s.team.color ?? "#3b82f6",
@@ -264,9 +264,9 @@ export default function SeasonDetailPage() {
             />
           )}
 
-          {activeTab === "bracket" && seasonId && <BracketView seasonId={seasonId} />}
+          {activeTab === "bracket" && <BracketView brackets={season.brackets as any} />}
 
-          {activeTab === "races" && seasonId && <RaceResults seasonId={seasonId} />}
+          {activeTab === "races" && <RaceResults races={season.races as any} />}
         </div>
       </div>
 

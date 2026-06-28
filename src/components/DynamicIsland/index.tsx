@@ -105,7 +105,6 @@ function CommandPaletteContent({
     debouncedSearchQuery,
     searchFilter,
     isUserInteracting,
-    timeDisplayMode,
     searchResults,
     countriesData,
     setMode,
@@ -114,7 +113,6 @@ function CommandPaletteContent({
     setSearchQuery,
     setSearchFilter,
     setIsUserInteracting,
-    setTimeDisplayMode,
     switchMode,
   } = diState;
 

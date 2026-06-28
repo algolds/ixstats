@@ -142,7 +142,7 @@ export function LeagueSettingsModal({
     { enabled: open && !!activeSeason?.id }
   );
 
-  const activeMatches = scheduleData?.type === "fixture" ? scheduleData.matches : [];
+  const activeMatches = (scheduleData?.type === "fixture" ? scheduleData.matches : []) ?? [];
 
   useEffect(() => {
     if (open) {

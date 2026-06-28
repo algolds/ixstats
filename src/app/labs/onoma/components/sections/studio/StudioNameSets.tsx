@@ -52,15 +52,15 @@ export function StudioNameSets() {
     return map;
   }, [bank.nameBank]);
 
-  const setNames = useMemo(() => Array.from(sets.keys()).sort(), [sets]);
+  const setNameKeys = useMemo(() => Array.from(sets.keys()).sort(), [sets]);
 
   // Default the selected set + template when sets load / change.
   useEffect(() => {
-    if (setNames.length === 0) return;
+    if (setNameKeys.length === 0) return;
     if (!selectedSet || !sets.has(selectedSet)) {
-      setSelectedSet(setNames[0]);
+      setSelectedSet(setNameKeys[0]);
     }
-  }, [setNames, selectedSet, sets]);
+  }, [setNameKeys, selectedSet, sets]);
 
   const activeDicts = useMemo(
     () => (selectedSet ? sets.get(selectedSet) ?? [] : []),
@@ -153,13 +153,13 @@ export function StudioNameSets() {
             <label className="text-muted-foreground flex items-center gap-1 text-xs font-bold">
               <Users className="h-3.5 w-3.5" /> Name Set
             </label>
-            {setNames.length > 0 ? (
+            {setNameKeys.length > 0 ? (
               <select
                 value={selectedSet}
                 onChange={(e) => setSelectedSet(e.target.value)}
                 className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none"
               >
-                {setNames.map((s) => (
+                {setNameKeys.map((s) => (
                   <option key={s} value={s}>
                     {s} ({sets.get(s)?.length} dicts)
                   </option>
