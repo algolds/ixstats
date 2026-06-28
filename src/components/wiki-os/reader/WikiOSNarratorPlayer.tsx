@@ -7,6 +7,7 @@
 // Speed / voice / follow-scroll / clear-cache live in a "⋯" Facet popover.
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { api } from "~/trpc/react";
 import {
@@ -91,12 +92,16 @@ export function WikiOSNarratorPlayer() {
     localStorage.setItem("onoma-narrator-autoscroll", String(next));
   };
 
-  return (
+  // Portal to body: the WikiOS reader wraps content in a 3D `transform`, which would
+  // otherwise capture this fixed-position pill and push it offscreen.
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 transition-all duration-500 ease-out select-none",
+        "fixed bottom-4 left-1/2 z-[100040] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 transition-all duration-500 ease-out select-none",
         mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
       )}
     >
@@ -276,6 +281,7 @@ export function WikiOSNarratorPlayer() {
           />
         </div>
       </FacetContainer>
-    </div>
+    </div>,
+    document.body
   );
 }

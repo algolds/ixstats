@@ -7,7 +7,7 @@ import { db } from "~/server/db";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import crypto from "crypto";
 import { ipaToSpokenText } from "~/lib/onoma/branding-utils";
-import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import { ipaToKokoroPhonemes, anglicizeForSpeech } from "~/lib/onoma/kokoro-phonemes";
 
 type KokoroEngine = "kokoro-fastapi" | "kokoro-web";
 
@@ -301,7 +301,7 @@ async function handleTts(request: NextRequest) {
       // 2. Synthesize segment if cache miss
       if (!sentenceBuf) {
         if (engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl) {
-          const { phonemes } = ipaToKokoroPhonemes(ipa);
+          const { phonemes } = ipaToKokoroPhonemes(anglicizeForSpeech(ipa));
           if (phonemes) {
             try {
               const fastApiBase = normalizedFastApiUrl.replace(/\/$/, "");

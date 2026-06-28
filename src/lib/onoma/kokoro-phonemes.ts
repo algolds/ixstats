@@ -114,6 +114,111 @@ const SORTED_KNOWN: readonly string[] = Object.freeze(
     .sort((a, b) => b.length - a.length)
 );
 
+// Diphthongs / long vowels that are already English-natural — skipped whole so we
+// never crack "oʊ" into a bare "o" and then reduce it.
+const ANGLICIZE_SKIP_VOWELS: readonly string[] = [
+  "aɪ",
+  "eɪ",
+  "aʊ",
+  "ɔɪ",
+  "oʊ",
+  "əʊ",
+  "iː",
+  "uː",
+  "ɑː",
+  "ɔː",
+  "ɜː",
+  "əː",
+];
+
+// Other single-char vowels that act as syllable nuclei (so they clear the "stressed"
+// flag) but are left as-is — only the over-articulated cardinals a/e/o get reworked.
+const ANGLICIZE_OTHER_VOWELS = new Set([
+  "i",
+  "ɪ",
+  "u",
+  "ʊ",
+  "ɛ",
+  "æ",
+  "ɑ",
+  "ɒ",
+  "ɔ",
+  "ʌ",
+  "ə",
+  "ɚ",
+  "ɝ",
+  "ɐ",
+  "ɨ",
+  "ʉ",
+  "y",
+  "ø",
+  "œ",
+]);
+
+/**
+ * Soften Onoma's cardinal vowels toward English so kokoro stops voicing a crisp
+ * "eh / ah / oh" on every syllable. Stress-aware:
+ *   - stressed   cardinal: e → ɛ ("bed"), o → oʊ ("go"), a kept
+ *   - unstressed cardinal: a / e / o → ə (schwa)
+ * Diphthongs, long vowels and already-English vowels pass through untouched. Applied
+ * only on the synthesis path (not the studio's canonical IPA display).
+ *
+ * Example: "/ˈdelepas/" → "/ˈdɛləpəs/"  ("DEH-luh-pus" instead of "DEH-leh-pahs")
+ */
+export function anglicizeForSpeech(ipa: string): string {
+  if (!ipa) return "";
+  let out = "";
+  let stressNext = false; // a stress mark was seen; the next vowel is the stressed nucleus
+  let i = 0;
+  while (i < ipa.length) {
+    const ch = ipa[i]!;
+
+    if (ch === "ˈ" || ch === "ˌ") {
+      stressNext = true;
+      out += ch;
+      i++;
+      continue;
+    }
+    if (ch === " " || ch === ".") {
+      stressNext = false; // syllable/word boundary resets stress tracking
+      out += ch;
+      i++;
+      continue;
+    }
+
+    // Skip already-fine multi-char vowels whole (they are nuclei → clear stress).
+    let skipped = false;
+    for (const v of ANGLICIZE_SKIP_VOWELS) {
+      if (ipa.startsWith(v, i)) {
+        out += v;
+        i += v.length;
+        stressNext = false;
+        skipped = true;
+        break;
+      }
+    }
+    if (skipped) continue;
+
+    if (ch === "e" || ch === "a" || ch === "o") {
+      if (stressNext) {
+        out += ch === "e" ? "ɛ" : ch === "o" ? "oʊ" : "a";
+      } else {
+        out += "ə";
+      }
+      stressNext = false;
+      i++;
+      continue;
+    }
+
+    if (ANGLICIZE_OTHER_VOWELS.has(ch)) {
+      stressNext = false; // also a nucleus
+    }
+    out += ch;
+    i++;
+  }
+  return out;
+}
+
 /**
  * Normalize an IPA transcription into a string of Kokoro-vocab phonemes.
  *

@@ -21,6 +21,56 @@ export interface PlaybackBlock {
   element: HTMLElement;
 }
 
+// Strip citation/edit cruft from raw article text.
+function cleanContentText(text: string): string {
+  return text
+    .replace(/\[\d+\]/g, "") // remove [1], [2] citation brackets
+    .replace(/\[citation needed\]/gi, "")
+    .replace(/\[edit\]/gi, "")
+    .trim();
+}
+
+// Split prose into sentences (abbreviation-naive, but the server re-splits anyway).
+function splitSentences(text: string): string[] {
+  const parts = text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g);
+  return parts ? parts.map((s) => s.trim()).filter(Boolean) : [text];
+}
+
+// Pack prose into bounded chunks so every TTS request is ~constant size regardless of
+// input: one chunk ≈ TTS_CHUNK_CHARS of audio on the free HF Space (~14s). Short sentences
+// merge up (fewer requests, smoother playback); a giant run-on sentence or list item
+// hard-splits on clause then word boundaries so it can never stall/timeout.
+const TTS_CHUNK_CHARS = 240;
+function chunkText(text: string): string[] {
+  const out: string[] = [];
+  let buf = "";
+  const flush = () => {
+    const t = buf.trim();
+    if (t) out.push(t);
+    buf = "";
+  };
+  const add = (s: string) => {
+    if (buf && buf.length + s.length + 1 > TTS_CHUNK_CHARS) flush();
+    buf = buf ? `${buf} ${s}` : s;
+  };
+  for (const sentence of splitSentences(text)) {
+    if (sentence.length <= TTS_CHUNK_CHARS) {
+      add(sentence);
+      continue;
+    }
+    flush(); // oversize sentence — split on clause, then words
+    for (const clause of sentence.split(/(?<=[,;:—-])\s+/)) {
+      if (clause.length <= TTS_CHUNK_CHARS) {
+        add(clause);
+        continue;
+      }
+      for (const word of clause.split(/\s+/)) add(word);
+    }
+  }
+  flush();
+  return out.length ? out : [text];
+}
+
 export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | null>) {
   const notify = useNotify();
   const {
@@ -217,15 +267,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     };
   }, [registerPlaybackDelegate, playbackDelegate]);
 
-  // Clean raw HTML content
-  const cleanContentText = (text: string): string => {
-    return text
-      .replace(/\[\d+\]/g, "") // remove [1], [2] citation brackets
-      .replace(/\[citation needed\]/gi, "")
-      .replace(/\[edit\]/gi, "")
-      .trim();
-  };
-
   // Re-build text blocks when article DOM renders
   const rebuildBlocks = useCallback(() => {
     if (!articleRef.current) return;
@@ -266,13 +307,26 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       const blockId = `wikios-narrator-block-${index}`;
       el.setAttribute("data-narrator-block", blockId);
 
-      validBlocks.push({
-        id: blockId,
-        text: clean,
-        type: isHeading ? "heading" : "prose",
-        sectionId: currentSectionId || undefined,
-        element: el,
-      });
+      if (isHeading) {
+        validBlocks.push({
+          id: blockId,
+          text: clean,
+          type: "heading",
+          sectionId: currentSectionId || undefined,
+          element: el,
+        });
+      } else {
+        // One block per bounded chunk, all sharing the same DOM element for highlighting.
+        chunkText(clean).forEach((chunk, si) => {
+          validBlocks.push({
+            id: `${blockId}-s${si}`,
+            text: chunk,
+            type: "prose",
+            sectionId: currentSectionId || undefined,
+            element: el,
+          });
+        });
+      }
     });
 
     setBlocks(validBlocks);

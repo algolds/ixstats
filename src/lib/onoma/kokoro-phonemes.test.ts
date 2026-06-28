@@ -1,5 +1,40 @@
-import { ipaToKokoroPhonemes, KOKORO_VALID_TOKENS, KOKORO_REMAP } from "./kokoro-phonemes";
+import {
+  ipaToKokoroPhonemes,
+  anglicizeForSpeech,
+  KOKORO_VALID_TOKENS,
+  KOKORO_REMAP,
+} from "./kokoro-phonemes";
 import { translateToIPA } from "./phonology";
+
+describe("anglicizeForSpeech", () => {
+  it("reduces unstressed cardinal vowels to schwa, keeps the stressed nucleus", () => {
+    expect(anglicizeForSpeech("ˈdelepas")).toBe("ˈdɛləpəs");
+  });
+
+  it("maps stressed cardinal o → oʊ", () => {
+    expect(anglicizeForSpeech("ˈtola")).toBe("ˈtoʊlə");
+  });
+
+  it("leaves diphthongs and long vowels untouched, reducing only the bare trailing vowel", () => {
+    expect(anglicizeForSpeech("ˈnoʊva")).toBe("ˈnoʊvə");
+    expect(anglicizeForSpeech("laˈtiːn")).toBe("ləˈtiːn");
+  });
+
+  it("does not touch already-English vowels (ɛ æ ɪ ə …)", () => {
+    expect(anglicizeForSpeech("ˌæktɪˈveɪʃən")).toBe("ˌæktɪˈveɪʃən");
+  });
+
+  it("returns empty for blank input", () => {
+    expect(anglicizeForSpeech("")).toBe("");
+  });
+
+  it("output still normalizes to valid kokoro tokens", () => {
+    const { phonemes } = ipaToKokoroPhonemes(anglicizeForSpeech(translateToIPA("Delepas", "latin")));
+    const allowed = new Set<string>();
+    for (const t of KOKORO_VALID_TOKENS) for (const ch of t) allowed.add(ch);
+    for (const ch of phonemes) expect(allowed.has(ch)).toBe(true);
+  });
+});
 
 describe("ipaToKokoroPhonemes", () => {
   it("strips slash/bracket delimiters", () => {
