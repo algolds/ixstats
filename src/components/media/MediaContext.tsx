@@ -4,6 +4,13 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { IxMediaEngine } from "~/lib/media/IxMediaEngine";
 import type { Media } from "~/lib/media/types";
 
+export interface PlaybackDelegate {
+  play: () => void;
+  pause: () => void;
+  seek: (seconds: number) => void;
+  setSpeed?: (speed: number) => void;
+}
+
 export interface MediaContextState {
   activeTrack: Media | null;
   isPlaying: boolean;
@@ -25,12 +32,15 @@ export interface MediaContextState {
   clearQueue: () => void;
   skipNext: () => void;
   skipPrevious: () => void;
+  registerPlaybackDelegate: (delegate: PlaybackDelegate | null) => void;
+  updatePlaybackState: (state: Partial<{ currentTime: number; duration: number; isPlaying: boolean }>) => void;
 }
 
 const MediaContext = createContext<MediaContextState>({} as any);
 
 export function MediaContextProvider({ children }: { children: React.ReactNode }) {
   const engineRef = useRef<IxMediaEngine | null>(null);
+  const activeDelegateRef = useRef<PlaybackDelegate | null>(null);
   const [activeTrack, setActiveTrack] = useState<Media | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -42,7 +52,18 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const playTrack = useCallback((track: Media) => {
-    if (!engineRef.current) return;
+    const isSameTrack = activeTrack && activeTrack.id === track.id;
+    const isDelegatedTrack = track.isDynamicTts || track.id.startsWith("wiki:");
+
+    if (activeDelegateRef.current && isDelegatedTrack) {
+      setActiveTrack(track);
+      activeDelegateRef.current.play();
+      return;
+    } else if (activeDelegateRef.current && !isDelegatedTrack) {
+      activeDelegateRef.current.pause();
+      activeDelegateRef.current = null;
+    }
+
     setActiveTrack(track);
 
     const idx = queue.findIndex((t) => t.id === track.id);
@@ -50,19 +71,32 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
       setCurrentIndex(idx);
     }
 
+    if (!engineRef.current) return;
     engineRef.current.load(track.audioUrl, speed);
     engineRef.current.play().catch(console.warn);
-  }, [speed, queue]);
+  }, [activeTrack, speed, queue]);
 
   const pauseTrack = useCallback(() => {
+    if (activeDelegateRef.current) {
+      activeDelegateRef.current.pause();
+      return;
+    }
     engineRef.current?.pause();
   }, []);
 
   const resumeTrack = useCallback(() => {
+    if (activeDelegateRef.current) {
+      activeDelegateRef.current.play();
+      return;
+    }
     engineRef.current?.play().catch(console.warn);
   }, []);
 
   const seekTrack = useCallback((seconds: number) => {
+    if (activeDelegateRef.current) {
+      activeDelegateRef.current.seek(seconds);
+      return;
+    }
     engineRef.current?.seek(seconds);
   }, []);
 
@@ -74,7 +108,11 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
 
   const changeSpeed = useCallback((s: number) => {
     setSpeed(s);
-    engineRef.current?.setSpeed(s);
+    if (activeDelegateRef.current?.setSpeed) {
+      activeDelegateRef.current.setSpeed(s);
+    } else {
+      engineRef.current?.setSpeed(s);
+    }
     localStorage.setItem("ixmedia:settings", JSON.stringify({ v: volume, s }));
   }, [volume]);
 
@@ -105,6 +143,16 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
     playTrack(queue[prevIdx]);
   }, [queue, currentIndex, playTrack]);
 
+  const registerPlaybackDelegate = useCallback((delegate: PlaybackDelegate | null) => {
+    activeDelegateRef.current = delegate;
+  }, []);
+
+  const updatePlaybackState = useCallback((state: Partial<{ currentTime: number; duration: number; isPlaying: boolean }>) => {
+    if (state.currentTime !== undefined) setCurrentTime(state.currentTime);
+    if (state.duration !== undefined) setDuration(state.duration);
+    if (state.isPlaying !== undefined) setIsPlaying(state.isPlaying);
+  }, []);
+
   // Keep a ref to the latest skipNext function to avoid stale closures in the ended listener
   const skipNextRef = useRef(skipNext);
   useEffect(() => {
@@ -116,10 +164,23 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
     engineRef.current = new IxMediaEngine();
     const engine = engineRef.current;
 
-    const handleStateChange = (state: string) => setIsPlaying(state === "playing");
-    const handleTimeUpdate = (time: number) => setCurrentTime(time);
-    const handleDurationChange = (dur: number) => setDuration(dur);
-    const handleEnded = () => skipNextRef.current();
+    const handleStateChange = (state: string) => {
+      // If we have an active delegate, do not let engine state events override the delegate's playback state.
+      if (activeDelegateRef.current) return;
+      setIsPlaying(state === "playing");
+    };
+    const handleTimeUpdate = (time: number) => {
+      if (activeDelegateRef.current) return;
+      setCurrentTime(time);
+    };
+    const handleDurationChange = (dur: number) => {
+      if (activeDelegateRef.current) return;
+      setDuration(dur);
+    };
+    const handleEnded = () => {
+      if (activeDelegateRef.current) return;
+      skipNextRef.current();
+    };
 
     engine.addEventListener("statechange", handleStateChange);
     engine.addEventListener("timeupdate", handleTimeUpdate);
@@ -206,6 +267,8 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
         clearQueue,
         skipNext,
         skipPrevious,
+        registerPlaybackDelegate,
+        updatePlaybackState,
       }}
     >
       {children}
