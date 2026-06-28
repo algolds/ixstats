@@ -308,7 +308,7 @@ export function SettingsSection() {
               Voice Sandbox
             </h4>
             <span className="text-muted-foreground font-mono text-[10px]">
-              {speechConfig?.kokoro?.enabled ? "Kokoro (AI) Active" : "Browser TTS fallback"}
+              {speechConfig?.kokoro?.enabled ? "Kokoro Active" : "Browser TTS fallback"}
             </span>
           </div>
 

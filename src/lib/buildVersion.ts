@@ -56,7 +56,7 @@ export const VERSIONS = {
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
     halo: 2, // global contextual overlay (was "Dynamic Island"); +Live Activities
-    onoma: 2, // name generation and linguistic dictionary studio
+    onoma: 3, // name generation + linguistics studio; v3: 13 linguistic families, curated culture data, per-family phonotactics
   },
 
   // Design system.

@@ -28,6 +28,11 @@ export type CulturalProfile =
   | "arabic"
   | "east-asian"
   | "austronesian"
+  | "persian"
+  | "turkic"
+  | "african"
+  | "indic"
+  | "uralic"
   | "constructed";
 
 /**

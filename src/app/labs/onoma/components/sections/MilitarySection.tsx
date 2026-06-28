@@ -25,7 +25,7 @@ export function MilitarySection() {
   ];
 
   const militarySubTypes = [
-    { value: "generic", label: "Markov Military Name (Default)" },
+    { value: "generic", label: "Military Name (Default)" },
     { value: "military-unit", label: "Template-Generated Military Unit" },
     { value: "mercenary-band", label: "Mercenary Company / Band" },
   ];

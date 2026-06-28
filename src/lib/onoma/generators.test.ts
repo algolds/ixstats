@@ -4,6 +4,11 @@ import {
   generateBusinessCompanyName,
   generateAcademicInstitutionName,
   generateMercenaryBandName,
+  generatePoliticalPartyName,
+  generateGovernmentAgencyName,
+  generateMediaOutletName,
+  generateNgoName,
+  generateReligiousOrderName,
 } from "./group-generator";
 import { generateNobleSurname } from "./name-generator";
 
@@ -43,6 +48,20 @@ describe("Onoma Lab Category Preset Generators", () => {
 
     const nameWithoutChain = generateMercenaryBandName();
     expect(nameWithoutChain).toBeDefined();
+  });
+
+  test("new civic org generators produce non-empty names with and without a chain", () => {
+    const gens = [
+      generatePoliticalPartyName,
+      generateGovernmentAgencyName,
+      generateMediaOutletName,
+      generateNgoName,
+      generateReligiousOrderName,
+    ];
+    for (const gen of gens) {
+      expect(gen(chain).length).toBeGreaterThan(0);
+      expect(gen().length).toBeGreaterThan(0);
+    }
   });
 
   test("generateNobleSurname should generate culture-specific surnames", () => {

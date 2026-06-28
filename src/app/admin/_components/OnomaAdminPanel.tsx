@@ -18,8 +18,13 @@ const CULTURES = [
   "celtic",
   "slavic",
   "arabic",
+  "persian",
+  "turkic",
+  "indic",
   "east-asian",
   "austronesian",
+  "african",
+  "uralic",
   "constructed",
 ];
 

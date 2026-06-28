@@ -30,6 +30,11 @@ import {
   generateBusinessCompanyName,
   generateAcademicInstitutionName,
   generateMercenaryBandName,
+  generatePoliticalPartyName,
+  generateGovernmentAgencyName,
+  generateMediaOutletName,
+  generateNgoName,
+  generateReligiousOrderName,
 } from "~/lib/onoma/group-generator";
 import { generateTavernName } from "~/lib/onoma/tavern-generator";
 import type { NameCategory, CulturalProfile, GenerateOptions, Gender } from "~/lib/onoma/types";
@@ -74,15 +79,32 @@ function mapCategoryForLexicon(cat: NameCategory, subType?: string): LexiconCat 
   if (cat === "culture") {
     if (subType === "sports") return "culture_sports";
     if (subType === "cuisine") return "culture_cuisine";
-    if (subType === "architecture") return "culture_architecture";
     return "culture_generic";
   }
+  // Architecture/buildings live under the Places > Landmarks tab now.
+  if (cat === "geography" && subType === "architecture") return "culture_architecture";
   if (cat === "city" || cat === "geography") return "city";
   if (cat === "province") return "province";
   if (cat === "person" || cat === "dynasty") return "person";
   if (cat === "organization" || cat === "military") return "organization";
   return "country";
 }
+
+// Per-family phonotactic floor applied to generation so families differ by
+// *structure*, not just seed list (austronesian stays open-syllable CV, slavic
+// tolerates dense clusters, etc.). User advanced options override these.
+const FAMILY_PHONOTACTICS: Record<string, Partial<GenerateOptions>> = {
+  austronesian: { maxConsonantCluster: 1 },
+  "east-asian": { maxConsonantCluster: 1 },
+  arabic: { maxConsonantCluster: 2 },
+  persian: { maxConsonantCluster: 2 },
+  turkic: { maxConsonantCluster: 2 },
+  indic: { maxConsonantCluster: 2 },
+  african: { maxConsonantCluster: 2 },
+  uralic: { maxConsonantCluster: 2 },
+  germanic: { maxConsonantCluster: 3 },
+  slavic: { maxConsonantCluster: 4 },
+};
 
 export function useOnomaGenerator() {
   const [culture, setCulture] = useState<string>("any");
@@ -204,6 +226,34 @@ export function useOnomaGenerator() {
     setIsGenerating(true);
     const results: string[] = [];
 
+    // Family phonotactic floor first, user options win on conflict (advanced
+    // panel keys only exist once the user touches them, so the floor survives).
+    const genOptions = { ...(FAMILY_PHONOTACTICS[culture] ?? {}), ...options };
+
+    // Curated picker: sports & cuisine are real-world proper nouns that don't
+    // Markov-blend into anything coherent, so draw real examples instead of
+    // generating. Architecture & generic stay Markov (they read as names).
+    if (category === "culture" && (subType === "sports" || subType === "cuisine")) {
+      const pool =
+        culture === "any"
+          ? Object.values(lexiconDict ?? {}).flat()
+          : (lexiconDict?.[culture] ?? Object.values(lexiconDict ?? {}).flat());
+      const unique = [...new Set(pool)];
+      for (let i = unique.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [unique[i], unique[j]] = [unique[j], unique[i]];
+      }
+      const picked = unique.slice(0, count);
+      setGeneratedNames(picked);
+      setIsGenerating(false);
+      if (picked.length > 0) {
+        logActivityMutation
+          .mutateAsync({ count: picked.length, category })
+          .catch((err) => console.error("Failed to log generation activity:", err));
+      }
+      return picked;
+    }
+
     for (let i = 0; i < count; i++) {
       let name: string | null = null;
 
@@ -227,27 +277,36 @@ export function useOnomaGenerator() {
         else if (subType === "demon") name = generateDemonName();
         else if (subType === "angel") name = generateAngelName(gender);
       } else if (category === "organization" && subType !== "generic") {
-        if (subType === "mystic-order") name = generateMysticOrderName(characterChain, options);
+        if (subType === "mystic-order") name = generateMysticOrderName(characterChain, genOptions);
         else if (subType === "military-unit")
-          name = generateMilitaryUnitName(characterChain, options);
-        else if (subType === "covert-org") name = generateCovertOrgName(characterChain, options);
-        else if (subType === "tavern") name = generateTavernName(options);
+          name = generateMilitaryUnitName(characterChain, genOptions);
+        else if (subType === "covert-org") name = generateCovertOrgName(characterChain, genOptions);
+        else if (subType === "tavern") name = generateTavernName(genOptions);
         else if (subType === "business-company")
-          name = generateBusinessCompanyName(characterChain, options);
+          name = generateBusinessCompanyName(characterChain, genOptions);
         else if (subType === "academic-institution")
-          name = generateAcademicInstitutionName(characterChain, options);
+          name = generateAcademicInstitutionName(characterChain, genOptions);
+        else if (subType === "political-party")
+          name = generatePoliticalPartyName(characterChain, genOptions);
+        else if (subType === "government-agency")
+          name = generateGovernmentAgencyName(characterChain, genOptions);
+        else if (subType === "media-outlet")
+          name = generateMediaOutletName(characterChain, genOptions);
+        else if (subType === "ngo-foundation") name = generateNgoName(characterChain, genOptions);
+        else if (subType === "religious-order")
+          name = generateReligiousOrderName(characterChain, genOptions);
       } else if (category === "military" && subType !== "generic") {
-        if (subType === "military-unit") name = generateMilitaryUnitName(characterChain, options);
+        if (subType === "military-unit") name = generateMilitaryUnitName(characterChain, genOptions);
         else if (subType === "mercenary-band")
-          name = generateMercenaryBandName(characterChain, options);
+          name = generateMercenaryBandName(characterChain, genOptions);
       } else if (category === "dynasty" && subType !== "generic") {
         if (subType === "fantasy-syllable") name = generateFantasySyllableName();
         else if (subType === "noble-surname")
-          name = generateNobleSurname(culture, characterChain, options);
+          name = generateNobleSurname(culture, characterChain, genOptions);
       } else if (category === "city" && subType === "settlement-colony") {
         const base =
-          characterChain.generate(options) ||
-          syllableChain.generate(options) ||
+          characterChain.generate(genOptions) ||
+          syllableChain.generate(genOptions) ||
           generateFantasySyllableName();
         const d3 = Math.floor(Math.random() * 3);
         const capitalized = MarkovChain.capitalize(base);
@@ -256,8 +315,8 @@ export function useOnomaGenerator() {
         else name = `${capitalized} Colony`;
       } else if (category === "geography" && subType === "natural-landmark") {
         const base =
-          characterChain.generate(options) ||
-          syllableChain.generate(options) ||
+          characterChain.generate(genOptions) ||
+          syllableChain.generate(genOptions) ||
           generateFantasySyllableName();
         const suffixes = [
           "River",
@@ -278,10 +337,10 @@ export function useOnomaGenerator() {
 
       // 2. Fallback to Markov chain generation
       if (!name) {
-        name = characterChain.generate(options);
+        name = characterChain.generate(genOptions);
       }
       if (!name) {
-        name = syllableChain.generate(options);
+        name = syllableChain.generate(genOptions);
       }
 
       // 3. Fallback to generic syllable concatenation if Markov chain is empty or fails

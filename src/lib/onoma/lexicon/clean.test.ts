@@ -56,6 +56,16 @@ describe("cleanName", () => {
     expect(cleanName("Sir General John", "person")).toBe("John");
   });
 
+  test("rejects wiki meta/maintenance pages", () => {
+    expect(cleanName("Infobox cheese/doc", "culture_cuisine")).toBeNull();
+    expect(cleanName("Infobox food/doc", "culture_cuisine")).toBeNull();
+    expect(cleanName("Template:Navbox", "organization")).toBeNull();
+    expect(cleanName("Module:Citation", "organization")).toBeNull();
+    expect(cleanName("Borscht/sandbox", "culture_cuisine")).toBeNull();
+    // …but a real name that merely contains "doc" is kept
+    expect(cleanName("Doclea", "city")).toBe("Doclea");
+  });
+
   test("rejects junk", () => {
     expect(cleanName("1607-1860", "country")).toBeNull();
     expect(cleanName("", "city")).toBeNull();

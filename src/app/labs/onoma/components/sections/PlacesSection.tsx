@@ -35,13 +35,16 @@ export function PlacesSection() {
   ];
 
   const citySubTypes = [
-    { value: "generic", label: "Markov City Name (Default)" },
+    { value: "generic", label: "City Name (Default)" },
     { value: "settlement-colony", label: "Settlement / Colony" },
   ];
 
+  // Architecture/buildings folded in here so Landmarks lives in one place (was a
+  // duplicate "Architecture & Landmarks" subtype under Culture).
   const geographySubTypes = [
-    { value: "generic", label: "Markov Landmark Name (Default)" },
+    { value: "generic", label: "Landmark Name (Default)" },
     { value: "natural-landmark", label: "Natural Landmark" },
+    { value: "architecture", label: "Architecture & Buildings" },
   ];
 
   const getSubTypes = () => {

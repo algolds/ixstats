@@ -173,14 +173,29 @@ export function GeneratorPanel({
                 className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:outline-none"
               >
                 <option value="any">Any / Mixed Culture</option>
-                <option value="latin">Latin / Romance</option>
-                <option value="germanic">Germanic / Norse</option>
-                <option value="celtic">Celtic / Gaelic</option>
-                <option value="slavic">Slavic / Eastern European</option>
-                <option value="arabic">Arabic / Semitic</option>
-                <option value="east-asian">East Asian / Romanized</option>
-                <option value="austronesian">Austronesian / Polynesian</option>
-                <option value="constructed">Constructed / Fantasy (Tolkien)</option>
+                <optgroup label="Linguistic Families">
+                  <option value="latin">Latin / Romance</option>
+                  <option value="germanic">Germanic / Norse</option>
+                  <option value="celtic">Celtic / Gaelic</option>
+                  <option value="slavic">Slavic / Eastern European</option>
+                  <option value="arabic">Arabic / Semitic</option>
+                  <option value="persian">Persian / Iranian</option>
+                  <option value="turkic">Turkic / Central Asian</option>
+                  <option value="indic">Indic / South Asian</option>
+                  <option value="east-asian">East Asian / Romanized</option>
+                  <option value="austronesian">Austronesian / Polynesian</option>
+                  <option value="african">African / Sub-Saharan</option>
+                  <option value="uralic">Uralic / Finno-Ugric</option>
+                  <option value="constructed">Constructed / Fantasy (Tolkien)</option>
+                </optgroup>
+                <optgroup label="Hybrid Families (places &amp; people)">
+                  <option value="celtic+germanic">Celtic + Germanic</option>
+                  <option value="celtic+latin">Celtic + Latin</option>
+                  <option value="germanic+latin">Germanic + Latin</option>
+                  <option value="germanic+slavic">Germanic + Slavic</option>
+                  <option value="latin+slavic">Latin + Slavic</option>
+                  <option value="arabic+austronesian">Arabic + Austronesian</option>
+                </optgroup>
               </select>
               <p className="text-muted-foreground text-[10px]">
                 Markov chains are trained on both curated linguistic presets and classified wiki

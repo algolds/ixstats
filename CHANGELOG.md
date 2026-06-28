@@ -11,6 +11,12 @@ capability integer. Each release entry below lists which components advanced and
 ## [Unreleased]
 
 ### Added
+- **Project Onoma — Culture & Linguistic Family Overhaul (Onoma System v2 → v3)**:
+  - **5 new linguistic families** — Persian/Iranian, Turkic/Central Asian, African/Sub-Saharan, Indic/South Asian, and Uralic/Finno-Ugric — bringing the total to **13**. Each ships full 10-category curated seed blocks (`cultural-profiles.ts`), grapheme→IPA rule tables (`phonology.ts`), and culture-data floors, and is selectable in the generator, IPA Studio, and admin panels.
+  - **Hybrid families exposed**: the six curated compound buckets (`Celtic + Germanic`, `Latin + Slavic`, etc.) that previously only fired in "Any" mode are now selectable from the culture dropdown.
+  - **Per-family phonotactics (`FAMILY_PHONOTACTICS`)**: generation now applies a per-family consonant-cluster floor (Austronesian/East-Asian stay open-syllable CV, Slavic tolerates dense clusters, etc.) under the user's advanced options, so families differ by *structure*, not just word lists.
+  - **Curated culture data**: the starved culture lexicons were rebuilt from a much larger curated seed floor (`build-dicts.ts`) — Sports 78→166, Cuisine 127→232, Architecture 122→232, Ethnicities 150→292 entries.
+  - **New civic Organization presets**: Political Party, Government Ministry/Agency, News/Media Outlet, NGO/Foundation, and Religious Order/Church (`group-generator.ts`), complementing the existing fantasy/commercial set.
 - **IxMedia Subsystem (Phase 1 Foundation)**:
   - **Playback Engine (`IxMediaEngine.ts`)**: Built a pure TypeScript playback coordinator wrapping native HTML5 Audio and Web Audio API events, fully guarded for SSR compatibility.
   - **Global Context Provider (`MediaContext.tsx`)**: Created the global media context and `<MediaContextProvider>` to handle active track queues, volumes, speeds, and state distribution, with automatic `localStorage` synchronization for preferences and active session resume.
@@ -33,6 +39,11 @@ capability integer. Each release entry below lists which components advanced and
   - **Interactive Transcript (`TranscriptViewer.tsx`)**: Implemented a scroll-safe segment visualizer that highlights the active speaking block and centers the view without thrashing the user's manual scroll.
 
 ### Changed
+- **Project Onoma — Culture generation behavior & cleanup**:
+  - **Sports & Cuisine are now curated pickers**, not Markov generators: they draw real-world examples from the culture lexicon (proper nouns like "Sushi" or "Hurling" don't blend coherently through a Markov chain). Cultures/Ethnicities still generate novel names; Architecture moved to Places.
+  - **Landmarks consolidated**: the duplicate "Architecture & Landmarks" subtype was removed from Culture and folded into the Places → "Landmarks & Features" tab as an "Architecture & Buildings" option — a single landmarks home.
+  - **Lexicon cleaner hardened (`lexicon/clean.ts`)**: rejects wiki maintenance/meta pages (`Infobox*`, `Template:`, `Module:`, `/doc`, `/sandbox`, `/testcases`), removing junk like "Infobox cheese/doc" from the dictionaries.
+  - **Preset labels**: dropped the implementation-detail "Markov" prefix from default generation presets (now "City Name (Default)", "Organization Name (Default)", etc.).
 - **WikiOS Onoma Voice Narrator**:
   - Swapped the sequential fetch sequence to retrieve audio from the persistent Cache Storage API (`"onoma-voice-cache"`), caching by query parameters.
   - Added a double-block moving pre-fetch window ($N+1$ and $N+2$ blocks) with a `useRef` deduplication map to prevent parallel network requests.

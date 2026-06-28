@@ -29,115 +29,71 @@ function sample<T>(arr: T[], cap: number): T[] {
   return out;
 }
 
+// Curated real-world seed floor merged into the extracted lexicon by category +
+// family. The wiki has almost no culture data (sports=2 rows, cuisine=14), so
+// these floors are what actually trains the culture generators. Keep them real:
+// they're Markov seeds, so authentic terms produce authentic-feeling new names.
 const PUBLIC_SEEDS: Record<string, Record<string, string[]>> = {
   culture_sports: {
-    latin: [
-      "Harpastum", "Calcio", "Trigon", "Lucta", "Cursus", "Venatio", "Pelota", "Bocce", "Pallone", "Tamburello", "Ruzzola"
-    ],
-    germanic: [
-      "Eisstockschießen", "Hornussen", "Glima", "Schwingen", "Kloppstock", "Kubb", "Rounders", "Shinty", "Skittles"
-    ],
-    celtic: [
-      "Hurling", "Camogie", "Shinty", "Cnapan", "Caid", "Keating", "Rounders", "Road Bowling"
-    ],
-    slavic: [
-      "Gorodki", "Lapta", "Kila", "Sambo", "Chizhk", "Babki", "Pandolo"
-    ],
-    arabic: [
-      "Al-Dahma", "Tahteeb", "Kurra", "Jarid", "Al-Mizmar", "Al-Tabtaba", "Naza"
-    ],
-    "east-asian": [
-      "Kemari", "Cuju", "Jianzi", "Sumo", "Wushu", "Baduk", "Xiangqi", "Yutnori", "Go", "Shogi", "Tug-of-war"
-    ],
-    austronesian: [
-      "Ki-o-rahi", "Kula", "Surfing", "He'e nalu", "Ulu maika", "Tatau", "Bando", "Seka", "Makahiki"
-    ],
-    constructed: [
-      "Harpastum", "Cuju", "Kemari", "Glima", "Hurling", "Gorodki", "Tahteeb", "Ki-o-rahi",
-      "Ringer", "Spear-throw", "Bow-flight", "Stone-cast", "Run-race", "Shield-clash"
-    ]
+    latin: ["Harpastum", "Calcio Storico", "Trigon", "Lucta", "Cursus", "Venatio", "Pelota", "Bocce", "Pallone", "Tamburello", "Ruzzola", "Petanque", "Jeu de Paume", "Morra", "Volata", "Palio"],
+    germanic: ["Eisstockschiessen", "Hornussen", "Glima", "Schwingen", "Kubb", "Skittles", "Faustball", "Klootschieten", "Fierljeppen", "Wikingerschach", "Ringreiten", "Boßeln", "Stoolball"],
+    celtic: ["Hurling", "Camogie", "Shinty", "Cnapan", "Caid", "Rounders", "Road Bowling", "Gaelic Football", "Bando", "Caber Toss", "Stone Put", "Highland Wrestling", "Knappan"],
+    slavic: ["Gorodki", "Lapta", "Kila", "Sambo", "Babki", "Chizh", "Svayka", "Klek", "Gulki", "Palant", "Pesapallo"],
+    arabic: ["Tahteeb", "Jereed", "Kurra", "Furusiyya", "Saluki Racing", "Camel Racing", "Falconry", "Mounted Archery", "Zorkhaneh", "Matrah", "Al-Dahma", "Kabsh"],
+    "east-asian": ["Kemari", "Cuju", "Jianzi", "Sumo", "Wushu", "Baduk", "Xiangqi", "Yutnori", "Go", "Shogi", "Kendo", "Kyudo", "Dragon Boat", "Sepak Takraw", "Taekkyon"],
+    austronesian: ["Ki-o-rahi", "Surfing", "Hee Nalu", "Ulu Maika", "Tatau", "Pencak Silat", "Arnis", "Sipa", "Vaa", "Waka Ama", "Lua", "Sepak Takraw", "Mokomoko"],
+    persian: ["Polo", "Chovgan", "Zurkhaneh", "Koshti", "Pahlavani", "Varzesh-e Bastani", "Buzkashi", "Mounted Archery", "Tent Pegging", "Skittle Toss"],
+    turkic: ["Oil Wrestling", "Yagli Gures", "Cirit", "Jereed", "Buzkashi", "Kokpar", "Kyz Kuu", "Mas-wrestling", "Mangala", "Asik", "Goresh", "Kurash", "Audaryspak", "Tepuk"],
+    african: ["Dambe", "Laamb", "Nguni Stick Fighting", "Donga", "Senet", "Mancala", "Ayo", "Engolo", "Morabaraba", "Kgati", "Nuba Wrestling", "Surma Stick Fighting", "Boomerang Hunt"],
+    indic: ["Kabaddi", "Kho Kho", "Gilli Danda", "Mallakhamba", "Kalaripayattu", "Gatka", "Pehlwani", "Polo", "Lagori", "Atya Patya", "Silambam", "Vajra Mushti", "Insuknawr"],
+    uralic: ["Pesapallo", "Eukonkanto", "Swamp Football", "Molkky", "Kyykka", "Sauna Endurance", "Kaukalopallo", "Skijoring", "Reindeer Racing", "Hiidenkivi"],
+    constructed: ["Harpastum", "Cuju", "Glima", "Hurling", "Ringer", "Spear-throw", "Bow-flight", "Stone-cast", "Run-race", "Shield-clash", "Axe-throw", "Mead-hall Wrestling", "Sky-joust"],
   },
   culture_cuisine: {
-    latin: [
-      "Paella", "Risotto", "Polenta", "Focaccia", "Lasagne", "Gelato", "Sangria", "Tiramisu", "Minestrone",
-      "Gnocchi", "Bruschetta", "Cannoli", "Prosciutto", "Coq au Vin", "Ratatouille", "Bouillabaisse", "Crepe", "Camembert"
-    ],
-    germanic: [
-      "Sauerbraten", "Schnitzel", "Bratwurst", "Sauerkraut", "Pretzel", "Strudel", "Pumpernickel", "Knödel",
-      "Spätzle", "Smørrebrød", "Lutefisk", "Haggis", "Black Pudding", "Cider", "Mead", "Ale", "Stout"
-    ],
-    celtic: [
-      "Haggis", "Colcannon", "Champ", "Boxty", "Irish Stew", "Cullen Skink", "Stovies", "Cranachan", "Bannock", "Soda Bread", "Mead", "Whiskey"
-    ],
-    slavic: [
-      "Borscht", "Pierogi", "Pelmeni", "Varenyky", "Blini", "Bigos", "Golubtsi", "Kvass", "Kompot", "Medovukha", "Smetana", "Bryndza", "Kielbasa", "Paska"
-    ],
-    arabic: [
-      "Hummus", "Falafel", "Shawarma", "Tabbouleh", "Baba Ghanoush", "Kibbeh", "Mansaf", "Kabsa", "Shakshuka", "Baklava", "Halva", "Knafeh", "Arak", "Kahwa"
-    ],
-    "east-asian": [
-      "Sushi", "Ramen", "Gyoza", "Tempura", "Kimchi", "Bibimbap", "Bulgogi", "Dim Sum", "Peking Duck", "Kung Pao", "Baozi", "Tofu", "Sake", "Soju", "Oolong", "Matcha"
-    ],
-    austronesian: [
-      "Poi", "Luau", "Kalua Pig", "Haupia", "Lomi Salmon", "Poke", "Kava", "Roti", "Nasi Goreng", "Satay", "Rendang", "Tempeh", "Durian"
-    ],
-    constructed: [
-      "Lembas", "Cram", "Miruvor", "Honey-cake", "Elven-bread", "Ent-draught", "Orc-draught", "Dwarven-stout", "Shire-ale"
-    ]
+    latin: ["Paella", "Risotto", "Polenta", "Focaccia", "Lasagne", "Gelato", "Sangria", "Tiramisu", "Minestrone", "Gnocchi", "Bruschetta", "Cannoli", "Prosciutto", "Coq au Vin", "Ratatouille", "Bouillabaisse", "Crepe", "Camembert", "Baguette", "Chorizo", "Gazpacho", "Bacalhau"],
+    germanic: ["Sauerbraten", "Schnitzel", "Bratwurst", "Sauerkraut", "Pretzel", "Strudel", "Pumpernickel", "Knodel", "Spatzle", "Smorrebrod", "Lutefisk", "Rollmops", "Stollen", "Currywurst", "Frikadeller", "Gravlax", "Cider", "Mead", "Ale", "Stout", "Aquavit"],
+    celtic: ["Haggis", "Colcannon", "Champ", "Boxty", "Irish Stew", "Cullen Skink", "Stovies", "Cranachan", "Bannock", "Soda Bread", "Cawl", "Welsh Rarebit", "Laverbread", "Barmbrack", "Mead", "Whiskey"],
+    slavic: ["Borscht", "Pierogi", "Pelmeni", "Varenyky", "Blini", "Bigos", "Golubtsi", "Kvass", "Kompot", "Medovukha", "Smetana", "Bryndza", "Kielbasa", "Paska", "Shchi", "Okroshka", "Kasha", "Syrniki", "Halushky"],
+    arabic: ["Hummus", "Falafel", "Shawarma", "Tabbouleh", "Baba Ghanoush", "Kibbeh", "Mansaf", "Kabsa", "Shakshuka", "Baklava", "Halva", "Knafeh", "Maqluba", "Fattoush", "Mahshi", "Harira", "Arak", "Kahwa"],
+    "east-asian": ["Sushi", "Ramen", "Gyoza", "Tempura", "Kimchi", "Bibimbap", "Bulgogi", "Dim Sum", "Peking Duck", "Kung Pao", "Baozi", "Tofu", "Mapo Tofu", "Hotpot", "Congee", "Sake", "Soju", "Oolong", "Matcha", "Udon", "Tteokbokki"],
+    austronesian: ["Poi", "Luau", "Kalua Pig", "Haupia", "Lomi Salmon", "Poke", "Kava", "Roti", "Nasi Goreng", "Satay", "Rendang", "Tempeh", "Durian", "Laksa", "Sambal", "Lumpia", "Adobo", "Sinigang", "Kinilaw"],
+    persian: ["Chelow Kebab", "Ghormeh Sabzi", "Fesenjan", "Tahdig", "Ash Reshteh", "Kuku", "Dolmeh", "Sholeh Zard", "Halim", "Abgoosht", "Zereshk Polo", "Faloodeh", "Doogh", "Sharbat", "Kashk Bademjan"],
+    turkic: ["Pilaf", "Manti", "Kebab", "Lahmacun", "Borek", "Dolma", "Baklava", "Lokum", "Ayran", "Kumis", "Beshbarmak", "Shashlik", "Plov", "Cig Kofte", "Simit", "Pide", "Lagman"],
+    african: ["Jollof", "Fufu", "Injera", "Egusi", "Bobotie", "Bunny Chow", "Suya", "Couscous", "Tagine", "Ugali", "Nyama Choma", "Biltong", "Pap", "Doro Wat", "Maafe", "Waakye", "Chapati", "Sadza"],
+    indic: ["Biryani", "Curry", "Samosa", "Dosa", "Naan", "Tandoori", "Tikka", "Vindaloo", "Korma", "Dal", "Rogan Josh", "Paneer", "Idli", "Chaat", "Lassi", "Gulab Jamun", "Jalebi", "Chai", "Paratha"],
+    uralic: ["Karjalanpiirakka", "Kalakukko", "Ruisleipa", "Mammi", "Leipajuusto", "Gulyas", "Porkolt", "Langos", "Halaszle", "Toltott Kaposzta", "Kurtoskalacs", "Verivorst", "Mulgipuder", "Palinka", "Kalja"],
+    constructed: ["Lembas", "Cram", "Miruvor", "Honey-cake", "Elven-bread", "Ent-draught", "Orc-draught", "Dwarven-stout", "Shire-ale", "Old Toby", "Coney Stew", "Seed-cake"],
   },
   culture_architecture: {
-    latin: [
-      "Basilica", "Colosseum", "Pantheon", "Villa", "Aqueduct", "Forum", "Amphitheatre", "Cathedral",
-      "Campanile", "Duomo", "Palazzo", "Piazza", "Rotunda", "Chateau", "Arc de Triomphe"
-    ],
-    germanic: [
-      "Fachwerkhäuser", "Burg", "Schloss", "Dom", "Rathaus", "Belfry", "Keep", "Manor", "Minster", "Abbey", "Gablehouse", "Longhouse"
-    ],
-    celtic: [
-      "Round Tower", "Broch", "Crannog", "Dolmen", "Menhir", "Cairn", "Rath", "Ringfort", "Hillfort", "Abbey", "Keep"
-    ],
-    slavic: [
-      "Kremlin", "Ostrog", "Terem", "Izba", "Sobor", "Belltower", "Monastyr", "Chapel", "Wooden Church", "Kurgan"
-    ],
-    arabic: [
-      "Mosque", "Minaret", "Madrasa", "Caravanserai", "Kasbah", "Souq", "Riad", "Alcazar", "Citadel", "Mihrab", "Dome", "Hammam"
-    ],
-    "east-asian": [
-      "Pagoda", "Pavilion", "Temple", "Shrine", "Torii", "Castle", "Tenshu", "Hanok", "Minka", "Hutong", "Great Wall"
-    ],
-    austronesian: [
-      "Marae", "Fale", "Bure", "Heiau", "Longhouse", "Toraja", "Stilt house", "Langghar"
-    ],
-    constructed: [
-      "Orthanc", "Barad-dur", "Minas Tirith", "Rivendell", "Caras Galadhon", "Meduseld", "Khazad-dum", "Erebor", "Gondolin"
-    ]
+    latin: ["Basilica", "Colosseum", "Pantheon", "Villa", "Aqueduct", "Forum", "Amphitheatre", "Cathedral", "Campanile", "Duomo", "Palazzo", "Piazza", "Rotunda", "Chateau", "Arc de Triomphe", "Insula", "Thermae", "Loggia", "Belvedere"],
+    germanic: ["Fachwerkhaus", "Burg", "Schloss", "Dom", "Rathaus", "Belfry", "Keep", "Manor", "Minster", "Abbey", "Gablehouse", "Longhouse", "Stave Church", "Hallenkirche", "Wasserburg", "Bergfried", "Burgerhaus"],
+    celtic: ["Round Tower", "Broch", "Crannog", "Dolmen", "Menhir", "Cairn", "Rath", "Ringfort", "Hillfort", "Abbey", "Keep", "Souterrain", "Wheelhouse", "Clochan", "High Cross", "Stone Circle"],
+    slavic: ["Kremlin", "Ostrog", "Terem", "Izba", "Sobor", "Belltower", "Monastyr", "Chapel", "Wooden Church", "Kurgan", "Detinets", "Palaty", "Zvonnitsa", "Trapeznaya", "Skansen"],
+    arabic: ["Mosque", "Minaret", "Madrasa", "Caravanserai", "Kasbah", "Souq", "Riad", "Alcazar", "Citadel", "Mihrab", "Dome", "Hammam", "Iwan", "Mashrabiya", "Qasr", "Ribat", "Mausoleum"],
+    "east-asian": ["Pagoda", "Pavilion", "Temple", "Shrine", "Torii", "Castle", "Tenshu", "Hanok", "Minka", "Hutong", "Great Wall", "Siheyuan", "Tulou", "Machiya", "Dougong", "Zen Garden"],
+    austronesian: ["Marae", "Fale", "Bure", "Heiau", "Longhouse", "Tongkonan", "Rumah Gadang", "Bahay Kubo", "Honai", "Nipa Hut", "Pa", "Ahu", "Moai", "Lapita"],
+    persian: ["Apadana", "Chahar Bagh", "Iwan", "Badgir", "Caravanserai", "Qanat", "Pishtaq", "Talar", "Hosseiniyeh", "Chartaqi", "Ab Anbar", "Yakhchal", "Bazaar", "Imamzadeh"],
+    turkic: ["Turbe", "Hammam", "Caravanserai", "Kumbet", "Han", "Yurt", "Kulliye", "Medrese", "Bedesten", "Konak", "Saray", "Cesme", "Kervansaray", "Minaret"],
+    african: ["Rondavel", "Kraal", "Great Enclosure", "Conical Tower", "Djenne Mosque", "Aksum Obelisk", "Stelae", "Tata Somba", "Musgum Hut", "Tukul", "Impluvium", "Beehive Hut", "Granary", "Royal Compound"],
+    indic: ["Mandir", "Gopuram", "Stupa", "Vihara", "Haveli", "Chhatri", "Shikhara", "Mandapa", "Baoli", "Stepwell", "Vimana", "Torana", "Jharokha", "Chaitya", "Garbhagriha", "Mahal"],
+    uralic: ["Lavvu", "Goahti", "Aitta", "Riihi", "Sauna", "Tono", "Hodaly", "Csarda", "Loft Granary", "Smoke Sauna", "Porte", "Kota", "Tornhouse"],
+    constructed: ["Orthanc", "Barad-dur", "Minas Tirith", "Rivendell", "Caras Galadhon", "Meduseld", "Khazad-dum", "Erebor", "Gondolin", "Helms Deep", "Bag End", "Isengard", "Argonath"],
   },
   culture_generic: {
-    latin: [
-      "Roman", "Latini", "Sabines", "Etruscans", "Italians", "Spanish", "French", "Portuguese", "Romanian", "Catalans"
-    ],
-    germanic: [
-      "Goths", "Saxons", "Angles", "Frisians", "Norse", "Danes", "Swedes", "Gera", "Teutons", "Franks"
-    ],
-    celtic: [
-      "Gauls", "Britons", "Picts", "Irish", "Scots", "Welsh", "Bretons", "Celtiberians", "Helvetii"
-    ],
-    slavic: [
-      "Russians", "Ukrainians", "Poles", "Czechs", "Slovaks", "Serbs", "Croats", "Bulgars", "Slovenes"
-    ],
-    arabic: [
-      "Arabs", "Phoenicians", "Carthaginians", "Nabataeans", "Hebrews", "Moabites", "Assyrians"
-    ],
-    "east-asian": [
-      "Han", "Yamato", "Joseon", "Mongols", "Jurchens", "Manchus", "Tibetans", "Ryukyuans"
-    ],
-    austronesian: [
-      "Polynesians", "Maori", "Hawaiians", "Samoans", "Tongans", "Tahitians", "Fijians", "Malays", "Javanese"
-    ],
-    constructed: [
-      "Elves", "Dwarves", "Hobbits", "Orcs", "Valar", "Maiar", "Dunadan"
-    ]
-  }
+    latin: ["Roman", "Latini", "Sabines", "Etruscans", "Italians", "Spanish", "French", "Portuguese", "Romanians", "Catalans", "Umbrians", "Samnites", "Lusitanians", "Dacians", "Occitans", "Galicians", "Sardinians", "Walloons", "Lombards", "Venetians"],
+    germanic: ["Goths", "Saxons", "Angles", "Jutes", "Frisians", "Franks", "Norse", "Danes", "Swedes", "Norwegians", "Teutons", "Vandals", "Burgundians", "Alemanni", "Bavarians", "Flemish", "Dutch", "Icelanders", "Geats"],
+    celtic: ["Gauls", "Britons", "Picts", "Irish", "Scots", "Welsh", "Bretons", "Cornish", "Manx", "Gaels", "Celtiberians", "Helvetii", "Belgae", "Boii", "Galatians", "Caledonians", "Brigantes", "Iceni"],
+    slavic: ["Russians", "Ukrainians", "Poles", "Czechs", "Slovaks", "Serbs", "Croats", "Bulgarians", "Slovenes", "Belarusians", "Macedonians", "Sorbs", "Kashubians", "Rusyns", "Pomeranians", "Wends", "Moravians"],
+    arabic: ["Arabs", "Phoenicians", "Carthaginians", "Nabataeans", "Hebrews", "Moabites", "Assyrians", "Akkadians", "Arameans", "Chaldeans", "Sabaeans", "Bedouins", "Levantines", "Hejazi", "Yemenis"],
+    "east-asian": ["Han", "Yamato", "Joseon", "Mongols", "Jurchens", "Manchus", "Tibetans", "Ryukyuans", "Khitan", "Tangut", "Hmong", "Zhuang", "Cantonese", "Hokkien", "Ainu"],
+    austronesian: ["Polynesians", "Maori", "Hawaiians", "Samoans", "Tongans", "Tahitians", "Fijians", "Malays", "Javanese", "Sundanese", "Balinese", "Filipinos", "Visayans", "Malagasy", "Chamorro", "Dayak"],
+    persian: ["Persians", "Medes", "Parthians", "Bactrians", "Sogdians", "Scythians", "Kurds", "Tajiks", "Pashtuns", "Baloch", "Lurs", "Gilaki", "Ossetians", "Alans", "Elamites"],
+    turkic: ["Turks", "Seljuks", "Ottomans", "Uyghurs", "Kazakhs", "Uzbeks", "Turkmens", "Kyrgyz", "Tatars", "Azeris", "Bashkirs", "Chuvash", "Yakuts", "Cumans", "Pechenegs", "Gokturks", "Khazars"],
+    african: ["Zulu", "Yoruba", "Igbo", "Akan", "Hausa", "Swahili", "Bantu", "Maasai", "Amhara", "Shona", "Mandinka", "Wolof", "Kongo", "Tuareg", "Oromo", "Fulani", "Xhosa", "Ndebele"],
+    indic: ["Tamils", "Bengalis", "Marathas", "Rajputs", "Gujaratis", "Punjabis", "Sinhalese", "Telugus", "Kannadigas", "Mughals", "Mauryans", "Cholas", "Pallavas", "Gondi", "Assamese"],
+    uralic: ["Finns", "Hungarians", "Estonians", "Sami", "Karelians", "Mordvins", "Mari", "Udmurts", "Komi", "Mansi", "Khanty", "Nenets", "Veps", "Ingrians"],
+    constructed: ["Elves", "Dwarves", "Hobbits", "Orcs", "Valar", "Maiar", "Dunedain", "Rohirrim", "Numenoreans", "Ents", "Easterlings", "Haradrim"],
+  },
 };
 
 const lexicon: LexiconName[] = JSON.parse(fs.readFileSync(RAW, "utf8"));
@@ -148,8 +104,15 @@ const keptCompounds = new Set(
   )
 );
 
+// The wiki has almost no sports/cuisine data (2 and 14 raw rows) and what exists
+// is mostly misclassified article titles ("Flying Somua", "Royal Billion"). The
+// curated PUBLIC_SEEDS below are strictly better, so these two categories are
+// seed-only. Architecture/generic keep raw — they carry real conworld content.
+const SEED_ONLY = new Set(["culture_sports", "culture_cuisine"]);
+
 const byCategory = new Map<string, Map<string, string[]>>();
 for (const { name, category } of lexicon) {
+  if (SEED_ONLY.has(category)) continue;
   const bucket = assignBucket(name, keptCompounds);
   if (!byCategory.has(category)) byCategory.set(category, new Map());
   const buckets = byCategory.get(category)!;

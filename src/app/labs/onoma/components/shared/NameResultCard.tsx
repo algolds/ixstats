@@ -41,6 +41,12 @@ interface NameResultCardProps {
   culture?: string;
   /** Phonotactic naturalness 0–100 vs the training set (Phase 5 perplexity scorer). */
   naturalness?: number | null;
+  /** Stash metadata — shown in the expanded details panel. */
+  savedAt?: Date | string | null;
+  /** What kind of word this is, e.g. "Category: Person" or "Dictionary: Elvish". */
+  originLabel?: string | null;
+  /** Extra action buttons (e.g. move-to-folder, delete) rendered in the header row. */
+  headerExtras?: React.ReactNode;
 }
 
 export function NameResultCard({
@@ -50,6 +56,9 @@ export function NameResultCard({
   onUse,
   culture,
   naturalness,
+  savedAt,
+  originLabel,
+  headerExtras,
 }: NameResultCardProps) {
   const notify = useNotify();
   const suggestMutation = api.onoma.suggestPhonemes.useMutation();
@@ -456,6 +465,9 @@ export function NameResultCard({
               <ArrowUpRight className="h-4 w-4" />
             </button>
           )}
+
+          {/* Consumer-supplied actions (e.g. move-to-folder, delete) */}
+          {headerExtras}
         </div>
       </div>
 
@@ -582,6 +594,29 @@ export function NameResultCard({
               <span className="font-bold text-[#0091ff] uppercase">{morphology.gender}</span>
             </p>
           </div>
+
+          {/* Stash metadata — word kind + date stashed */}
+          {(originLabel || savedAt) && (
+            <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px]">
+              {originLabel && (
+                <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 font-bold text-[#0091ff] capitalize">
+                  {originLabel}
+                </span>
+              )}
+              {savedAt && (
+                <span>
+                  Stashed{" "}
+                  <span className="text-foreground font-semibold">
+                    {new Date(savedAt).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Case Declension Table */}

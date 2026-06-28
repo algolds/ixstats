@@ -15,7 +15,10 @@ Three layers:
    (`orthography.ts`).
 3. **Rule-based assemblers** — syllable/template generators ported from the original
    [Onoma](https://github.com/algolds/onoma) (fantasy species, taverns, mystic orders,
-   military units, noble surnames, etc.). Pattern-driven, not learned.
+   military units, civic organizations, noble surnames, etc.). Pattern-driven, not learned.
+4. **Curated pickers** — a few categories are real-world proper nouns that don't Markov-blend
+   into anything coherent (traditional **sports** and **cuisine**). For these, Onoma draws a
+   shuffled sample of real examples from the culture lexicon instead of generating.
 
 Everything runs in the browser. The server is only touched to save names to the Stash,
 fetch optional live-world training data, and log generation activity.
@@ -25,17 +28,30 @@ fetch optional live-world training data, and log generation activity.
 The generator trains on **one blended pool**, configured in `GeneratorPanel` →
 `useOnomaGenerator`:
 
-- **Culture / Linguistic Family** (`culture`, default `"any"`) — picks the flavour. For a
-  given family it trains on the hand-authored `cultural-profiles.ts` list **plus** the
-  matching bucket from the prebuilt wiki **lexicon** (`data/lexicon/<category>.json`). The
-  wiki lexicon is always mixed into the presets — there is no separate "source" toggle.
-  `"any"` blends every culture; `"constructed"` is preset-only (no wiki bucket).
+- **Culture / Linguistic Family** (`culture`, default `"any"`) — picks the flavour from **13
+  families** (Latin, Germanic, Celtic, Slavic, Arabic, Persian, Turkic, Indic, East-Asian,
+  Austronesian, African, Uralic, Constructed) plus six selectable **hybrid** buckets
+  (`celtic+germanic`, `latin+slavic`, …). For a given family it trains on the hand-authored
+  `cultural-profiles.ts` list **plus** the matching bucket from the prebuilt wiki **lexicon**
+  (`data/lexicon/<category>.json`). The wiki lexicon is always mixed into the presets — there
+  is no separate "source" toggle. `"any"` blends every culture; `"constructed"` and the five
+  newer families are preset/seed-only (the wikis lack tagged content for them).
+- **Per-family phonotactics** (`FAMILY_PHONOTACTICS` in `useOnomaGenerator`) — each family
+  applies a consonant-cluster floor at generation (Austronesian/East-Asian stay open-syllable
+  CV, Slavic tolerates dense clusters, etc.), so families differ by structure, not just word
+  list. User advanced options override it.
 - **Include Live World Data** (`includeWorldData`, advanced toggle, default off) — also folds
   in current country/city/province/official names from the live DB
   (`api.onoma.getTrainingData`).
 
 Two chains are trained in parallel (`characterChain`, `syllableChain`); generation tries the
 character chain, then the syllable chain, then a fantasy-syllable fallback.
+
+### Culture section subtypes
+
+The **Culture** tab exposes three subtypes: *Cultures & Ethnicities* (Markov-generated
+ethnonyms), and *Sports* + *Cuisine* which are **curated pickers** (real examples drawn from
+the lexicon, no Markov). Architecture/buildings live under **Places → Landmarks & Features**.
 
 ## File map
 
@@ -52,7 +68,7 @@ src/lib/onoma/
   branding-utils.ts      Linguistic flanking styles, Google Fonts registry, and IPA-to-Speech-Spelling converter
   lexicon-analytics.ts   Shannon entropy, letter/bigram/trigram freqs, 0–100 health audit
   species/group/tavern   Rule-based assemblers (port)
-  cultural-profiles.ts   8 culture word lists (preset training + classifier training)
+  cultural-profiles.ts   13 culture word lists (preset training + classifier training)
   data/                  Generated, COMMITTED:
     fantasy/species/group/tavern-data.ts   syllable/template data (from the original repo)
     lexicon/<category>.json + manifest.json  compact wiki dictionaries (build output)
@@ -60,7 +76,8 @@ src/lib/onoma/
     clean.ts             title → trainable name
     culture-classifier.ts  n-gram Naive-Bayes → single culture or "A+B" compound
     bucket.ts            final bucket assignment + top-compound ranking
-src/hooks/useOnomaGenerator.ts   state, lazy lexicon loading, training, generate()
+src/hooks/useOnomaGenerator.ts   state, lazy lexicon loading, training, per-family
+                         phonotactics (FAMILY_PHONOTACTICS), curated pickers, generate()
 src/app/labs/onoma/              SPA router + sections + Studio + GeneratorPanel UI
 src/server/api/routers/onoma.ts  Stash save/load, training data, activity log
 scripts/onoma/                   offline build pipeline (run with bun)
@@ -93,8 +110,8 @@ API `list=embeddedin`). External fetches are disk-cached under `scripts/onoma/ra
 Applied per generated name (in `NameResultCard`), all pure-TS and deterministic:
 
 - **`translateToIPA(name, culture)`** — left-to-right grapheme→IPA scan using per-culture
-  rule tables (Latin, Germanic, Celtic, Slavic, Arabic, East-Asian, Austronesian,
-  Constructed), then a consonant-onset primary-stress mark.
+  rule tables (Latin, Germanic, Celtic, Slavic, Arabic, Persian, Turkic, African, Indic,
+  Uralic, East-Asian, Austronesian, Constructed), then a consonant-onset primary-stress mark.
 - **`getMorphologyDetails(name, culture)`** — grammatical gender from word endings, plus a
   full singular/plural declension table across 5 cases (Nominative→Ablative), with
   culture-specific paradigms (Latin declensions, Greek, Slavic, Arabic triptote, Quenya…).
@@ -131,12 +148,14 @@ outliers, noise words).
 ## Culture classification
 
 `classifyCulture(name)` is a character bigram+trigram Naive-Bayes classifier (pure TS, no
-ML dependency). It trains at module load from the 8 `CULTURAL_PROFILES` lists. For each
+ML dependency). It trains at module load from the `CULTURAL_PROFILES` lists. For each
 name it returns either a **single culture** (one wins by `MIN_MARGIN`) or a **compound
 `A+B`** blend when the top two are close — which is the norm for invented conworld names.
-`build-dicts.ts` keeps the 7 singles + the **top-6 compounds** as dictionary buckets;
+`build-dicts.ts` keeps the singles + the **top-6 compounds** as dictionary buckets;
 rarer blends collapse to their dominant single, and under-represented cultures pool into a
-per-category `mixed` bucket.
+per-category `mixed` bucket. The starved culture subtypes `culture_sports` and
+`culture_cuisine` are **seed-only** (`SEED_ONLY` set) — the wikis barely have such pages, so
+they're built purely from the curated `PUBLIC_SEEDS` floor rather than noisy extraction.
 
 ## Tuning knobs
 

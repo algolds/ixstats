@@ -9,6 +9,12 @@ const ROMAN = /^[IVXLCDM]+$/; // standalone regnal numeral (I, II, XIV…)
 // Meta names, colons (namespaces), and structural English filler words
 const REJECT_JUNK = /(?::|\b(?:and|the|in|or|for|with|list|timeline|index)\b)/i;
 
+// Wiki maintenance/meta pages: namespace-prefixed titles (incl. ones that lost
+// their "Template:" prefix) and /doc, /sandbox, /testcases subpages. These leak
+// in as garbage like "Infobox cheese/doc".
+const REJECT_META =
+  /^(?:Infobox|Template|Module|Category|Wikipedia|Portal|Help|Draft|User|MediaWiki|File|Image)\b|\/(?:doc|sandbox|testcases|styles\.css)$/i;
+
 // Conworld administrative/institutional suffixes
 const REJECT_ADMIN =
   /\b(?:Association|Committee|Society|Alliance|Union|Club|Company|Party|Organization)\b/i;
@@ -27,6 +33,7 @@ const GOV_PREFIX =
  * Category-aware: country strips gov descriptors, person strips regnal/territorial suffixes.
  */
 export function cleanName(raw: string, category: string): string | null {
+  if (REJECT_META.test(raw.trim())) return null;
   let s = raw.normalize("NFC");
 
   s = s.replace(/\s*[([][^)\]]*[)\]]/g, " "); // drop "(city)", "(1983: Doomsday)", "[note]"

@@ -314,3 +314,106 @@ export function generateMercenaryBandName(chain?: MarkovChain, options?: Generat
     return `${group} of the ${desc} ${ent}`;
   }
 }
+
+// --- Civic / modern organizations (geopolitical worldbuilding) ---
+// ponytail: inline word banks, same pattern as the generators above. Word lists
+// stay local until a second caller needs them, then promote to group-data.ts.
+
+/** Political party, front, or movement. */
+export function generatePoliticalPartyName(chain?: MarkovChain, options?: GenerateOptions): string {
+  const adjectives = [
+    "National", "People's", "United", "Democratic", "Progressive", "Liberal",
+    "Social", "Free", "Patriotic", "Popular", "Republican", "Federal",
+    "Sovereign", "Unity", "Reform", "Workers'", "Civic", "New",
+  ];
+  const ideologies = [
+    "Conservative", "Labour", "Liberal", "Socialist", "Nationalist", "Green",
+    "Centrist", "Communist", "Agrarian", "Democratic", "Reformist", "Federalist",
+  ];
+  const types = [
+    "Party", "Front", "Movement", "League", "Union", "Alliance", "Coalition",
+    "Congress", "Bloc",
+  ];
+  const adj = pickRandom(adjectives);
+  const ide = pickRandom(ideologies);
+  const type = pickRandom(types);
+  const d3 = Math.floor(Math.random() * 3);
+  if (d3 === 0) return `${adj} ${type}`;
+  if (d3 === 1) return `${adj} ${ide} ${type}`;
+  return `${ide} ${type}`;
+}
+
+/** Government ministry, department, or agency. */
+export function generateGovernmentAgencyName(chain?: MarkovChain, options?: GenerateOptions): string {
+  const fields = [
+    "Defense", "Finance", "Foreign Affairs", "the Interior", "Justice", "Health",
+    "Education", "Agriculture", "Energy", "Trade", "Transport", "Labour",
+    "Culture", "Intelligence", "Public Works", "the Treasury", "Industry",
+  ];
+  const prefixes = [
+    "Ministry of", "Department of", "Bureau of", "Office of", "Council for",
+    "Commission on",
+  ];
+  const field = pickRandom(fields);
+  const d3 = Math.floor(Math.random() * 3);
+  if (d3 < 2) return `${pickRandom(prefixes)} ${field}`;
+  const bare = field.replace(/^the /, "");
+  return pickRandom([`National ${bare} Agency`, `${bare} Authority`, `${bare} Administration`]);
+}
+
+/** Newspaper, broadcaster, or news agency. */
+export function generateMediaOutletName(chain?: MarkovChain, options?: GenerateOptions): string {
+  const place = MarkovChain.capitalize(chain?.generate(options) || generateFantasySyllableName());
+  const papers = [
+    "Times", "Herald", "Gazette", "Post", "Chronicle", "Tribune", "Observer",
+    "Journal", "Standard", "Sentinel", "Courier", "Ledger", "Dispatch", "Star",
+    "Mirror",
+  ];
+  const broadcast = [
+    "Broadcasting Corporation", "News Network", "News Agency", "Media Group",
+    "Press", "Broadcasting Service",
+  ];
+  const d3 = Math.floor(Math.random() * 3);
+  if (d3 === 0) return `The ${place} ${pickRandom(papers)}`;
+  if (d3 === 1) return `${place} ${pickRandom(broadcast)}`;
+  return `The ${pickRandom(papers)}`;
+}
+
+/** NGO, foundation, or charitable society. */
+export function generateNgoName(chain?: MarkovChain, options?: GenerateOptions): string {
+  const causes = [
+    "Children's", "Wildlife", "Humanitarian", "Heritage", "Peace", "Human Rights",
+    "Environmental", "Relief", "Health", "Education", "Development", "Refugee",
+    "Hunger", "Literacy",
+  ];
+  const types = [
+    "Foundation", "Trust", "Society", "Council", "Initiative", "Alliance", "Fund",
+    "Institute", "Federation", "Network",
+  ];
+  const founder = MarkovChain.capitalize(chain?.generate(options) || generateFantasySyllableName());
+  const cause = pickRandom(causes);
+  const type = pickRandom(types);
+  const d3 = Math.floor(Math.random() * 3);
+  if (d3 === 0) return `${cause} ${type}`;
+  if (d3 === 1) return `${founder} ${type}`;
+  return `${cause} ${type} of ${founder}`;
+}
+
+/** Religious order, church, or congregation. */
+export function generateReligiousOrderName(chain?: MarkovChain, options?: GenerateOptions): string {
+  const saint = MarkovChain.capitalize(chain?.generate(options) || generateFantasySyllableName());
+  const virtues = [
+    "the Sacred Heart", "the Holy Light", "Divine Mercy", "the Eternal Flame",
+    "the Blessed Dawn", "the Sacred Vow", "the Holy Covenant", "the Risen Sun",
+    "the Silent Saints",
+  ];
+  const orders = [
+    "Order", "Brotherhood", "Sisterhood", "Congregation", "Fellowship",
+    "Communion", "Synod", "Assembly",
+  ];
+  const churches = ["Church", "Temple", "Cathedral", "Chapter", "Mission"];
+  const d3 = Math.floor(Math.random() * 3);
+  if (d3 === 0) return `${pickRandom(orders)} of ${pickRandom(virtues)}`;
+  if (d3 === 1) return `Church of Saint ${saint}`;
+  return `${pickRandom(churches)} of ${pickRandom(virtues)}`;
+}
