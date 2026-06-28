@@ -9,6 +9,7 @@ import { PoliticsWarRoom } from "~/components/executive/politics/PoliticsWarRoom
 import { BillsPanel } from "~/components/executive/politics/BillsPanel";
 import { ApprovalPanel } from "~/components/executive/politics/ApprovalPanel";
 import { IssuesInbox } from "~/components/national-issues/IssuesInbox";
+import { PowerBrokersPanel } from "~/components/executive/politics/PowerBrokersPanel";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface EnhancedPoliticsContentProps {
@@ -66,6 +67,10 @@ export function EnhancedPoliticsContent({
       <div className="grid gap-3 lg:grid-cols-2">
         <BillsPanel countryId={country.id} />
         <ApprovalPanel countryId={country.id} />
+      </div>
+
+      <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+        <PowerBrokersPanel countryId={country.id} />
       </div>
 
       {/* Political crises & scandals — reuses the National Issues loop, scoped to politics */}
