@@ -45,6 +45,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   const activeIdxRef = useRef(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeAudioUrlRef = useRef<string | null>(null);
   const highlightedElementRef = useRef<HTMLElement | null>(null);
   const isPlayingRef = useRef(false);
   const blocksRef = useRef<PlaybackBlock[]>([]);
@@ -57,10 +58,17 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
     const fetchPromise = (async () => {
       try {
-        const cache = await caches.open("onoma-voice-cache");
-        const cachedResponse = await cache.match(requestUrl);
-        if (cachedResponse) {
-          return await cachedResponse.blob();
+        const hasCache = typeof window !== "undefined" && typeof caches !== "undefined";
+        if (hasCache) {
+          try {
+            const cache = await caches.open("onoma-voice-cache");
+            const cachedResponse = await cache.match(requestUrl);
+            if (cachedResponse) {
+              return await cachedResponse.blob();
+            }
+          } catch (err) {
+            console.warn("[Narrator Cache Read Fail]:", err);
+          }
         }
 
         const res = await fetch(requestUrl);
@@ -68,8 +76,15 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           throw new Error("TTS API returned non-2xx");
         }
 
-        // Store cloned response in Cache API
-        await cache.put(requestUrl, res.clone());
+        if (hasCache) {
+          try {
+            const cache = await caches.open("onoma-voice-cache");
+            await cache.put(requestUrl, res.clone());
+          } catch (err) {
+            console.warn("[Narrator Cache Write Fail]:", err);
+          }
+        }
+
         return await res.blob();
       } finally {
         activeFetchesRef.current.delete(requestUrl);
@@ -294,6 +309,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         audioRef.current.pause();
         audioRef.current = null;
       }
+      if (activeAudioUrlRef.current) {
+        URL.revokeObjectURL(activeAudioUrlRef.current);
+        activeAudioUrlRef.current = null;
+      }
 
       const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
       const activeVoice = voice || undefined;
@@ -315,11 +334,15 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
           const blob = await fetchAudioBlob(requestUrl);
           const url = URL.createObjectURL(blob);
+          activeAudioUrlRef.current = url;
           const audio = new Audio(url);
           audioRef.current = audio;
 
           audio.onended = () => {
-            URL.revokeObjectURL(url);
+            if (activeAudioUrlRef.current === url) {
+              URL.revokeObjectURL(url);
+              activeAudioUrlRef.current = null;
+            }
             if (isPlayingRef.current) {
               setTimeout(
                 () => {
@@ -412,6 +435,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       audioRef.current.pause();
       audioRef.current = null;
     }
+    if (activeAudioUrlRef.current) {
+      URL.revokeObjectURL(activeAudioUrlRef.current);
+      activeAudioUrlRef.current = null;
+    }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -485,6 +512,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   const clearVoiceCache = useCallback(async () => {
     try {
+      if (typeof window === "undefined" || typeof caches === "undefined") {
+        notify.info("Voice narrator cache is not supported in this environment.");
+        return;
+      }
       const deleted = await caches.delete("onoma-voice-cache");
       if (deleted) {
         notify.success("Voice narrator cache cleared.");
