@@ -3,7 +3,7 @@ global.TextDecoder = TextDecoder as any;
 global.TextEncoder = TextEncoder as any;
 
 import { NextRequest } from "next/server";
-import { GET, POST } from "../route";
+import { GET, POST, splitIntoSentences, mergeWavBuffers, mergeMp3Buffers } from "../route";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { rateLimiter } from "~/lib/rate-limiter";
@@ -412,5 +412,54 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
       "http://localhost:3000/v1/audio/speech",
       expect.any(Object)
     );
+  });
+
+  describe("Sentence Splitting and Audio Merging Helpers", () => {
+    test("splitIntoSentences should split normal sentences", () => {
+      const text = "Hello world! This is a test. Is it working?";
+      const result = splitIntoSentences(text);
+      expect(result).toEqual(["Hello world!", "This is a test.", "Is it working?"]);
+    });
+
+    test("splitIntoSentences should respect abbreviations and decimals", () => {
+      const text = "Dr. Pedro lives in Tierrador. St. Gerónimo has 1.5 million people.";
+      const result = splitIntoSentences(text);
+      expect(result).toEqual([
+        "Dr. Pedro lives in Tierrador.",
+        "St. Gerónimo has 1.5 million people.",
+      ]);
+    });
+
+    test("mergeMp3Buffers should concatenate MP3 chunks directly", () => {
+      const buf1 = Buffer.from([1, 2, 3]);
+      const buf2 = Buffer.from([4, 5, 6]);
+      const merged = mergeMp3Buffers([buf1, buf2]);
+      expect(merged).toEqual(Buffer.from([1, 2, 3, 4, 5, 6]));
+    });
+
+    test("mergeWavBuffers should merge PCM data and update RIFF header sizes", () => {
+      const buf1 = Buffer.alloc(50);
+      buf1.write("RIFF", 0);
+      buf1.writeUInt32LE(42, 4); // fileSize - 8
+      buf1.write("WAVE", 8);
+      buf1.write("data", 36);
+      buf1.writeUInt32LE(6, 40); // dataSize
+      buf1.fill(0xff, 44, 50); // data
+
+      const buf2 = Buffer.alloc(48);
+      buf2.write("RIFF", 0);
+      buf2.writeUInt32LE(40, 4);
+      buf2.write("data", 36);
+      buf2.writeUInt32LE(4, 40);
+      buf2.fill(0xee, 44, 48);
+
+      const merged = mergeWavBuffers([buf1, buf2]);
+
+      expect(merged.toString("utf8", 0, 4)).toBe("RIFF");
+      expect(merged.readUInt32LE(4)).toBe(46);
+      expect(merged.readUInt32LE(40)).toBe(10);
+      expect(merged.slice(44, 50)).toEqual(Buffer.from([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]));
+      expect(merged.slice(50, 54)).toEqual(Buffer.from([0xee, 0xee, 0xee, 0xee]));
+    });
   });
 });

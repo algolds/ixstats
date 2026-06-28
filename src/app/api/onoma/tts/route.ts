@@ -11,6 +11,63 @@ import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
 
 type KokoroEngine = "kokoro-fastapi" | "kokoro-web";
 
+/** Splits paragraphs into individual sentences respecting abbreviations and decimals */
+export function splitIntoSentences(text: string): string[] {
+  const abbrevs =
+    /\b(St|Dr|Mr|Mrs|Ms|Gen|Col|Lt|Gov|Sen|Rep|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec|v|No)\. *$/i;
+  const rawSegments = text.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g) || [text];
+  const sentences: string[] = [];
+
+  let current = "";
+  for (const segment of rawSegments) {
+    current += segment;
+    const trimmed = current.trim();
+    if (abbrevs.test(trimmed) || /\b\d+\.$/.test(trimmed)) {
+      continue;
+    }
+    sentences.push(trimmed);
+    current = "";
+  }
+  if (current.trim()) {
+    sentences.push(current.trim());
+  }
+  return sentences.map((s) => s.trim()).filter(Boolean);
+}
+
+/** Merges multiple WAV buffers by combining PCM data and updating the main RIFF header */
+export function mergeWavBuffers(buffers: Buffer[]): Buffer {
+  if (buffers.length === 0) return Buffer.alloc(0);
+  if (buffers.length === 1) return buffers[0];
+
+  let totalDataSize = 0;
+  buffers.forEach((buf) => {
+    // 44 bytes is standard WAV header size
+    if (buf.length > 44) totalDataSize += buf.length - 44;
+  });
+
+  const merged = Buffer.alloc(44 + totalDataSize);
+  buffers[0].copy(merged, 0, 0, 44);
+
+  const totalFileSize = 44 + totalDataSize - 8;
+  merged.writeUInt32LE(totalFileSize, 4);
+  merged.writeUInt32LE(totalDataSize, 40);
+
+  let offset = 44;
+  buffers.forEach((buf) => {
+    if (buf.length > 44) {
+      buf.copy(merged, offset, 44, buf.length);
+      offset += buf.length - 44;
+    }
+  });
+
+  return merged;
+}
+
+/** Merges multiple MP3 buffers by direct concatenation */
+export function mergeMp3Buffers(buffers: Buffer[]): Buffer {
+  return Buffer.concat(buffers);
+}
+
 /** Parse and validate the engine config value (defaults to the fastapi path). */
 function parseEngine(raw: string | undefined): KokoroEngine {
   return raw === "kokoro-web" ? "kokoro-web" : "kokoro-fastapi";
@@ -173,8 +230,7 @@ async function handleTts(request: NextRequest) {
       normalizedFastApiUrl = `http://${normalizedFastApiUrl}`;
     }
 
-    // Cache key includes the engine + the IPA (which drives the phoneme string)
-    // so kokoro-fastapi (WAV) and kokoro-web (MP3) results never collide.
+    // Cache key for the entire request to see if we have a full hit
     const cacheKey =
       "onoma:tts:" +
       crypto
@@ -206,104 +262,144 @@ async function handleTts(request: NextRequest) {
     const authHeaders: Record<string, string> = { "Content-Type": "application/json" };
     if (apiKey) authHeaders["Authorization"] = `Bearer ${apiKey}`;
 
-    // ---- Engine: kokoro-fastapi (phoneme-native, primary) -----------------
-    // Speak Onoma's IPA directly with stress honored. On any failure (non-2xx,
-    // throw, or no phonemes) fall through to the kokoro-web re-spelling block so
-    // audio always degrades gracefully — the client never sees a hard failure
-    // unless the fallback also fails.
-    if (engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl) {
-      const { phonemes } = ipaToKokoroPhonemes(ipa);
-      if (phonemes) {
-        try {
-          const fastApiBase = normalizedFastApiUrl.replace(/\/$/, "");
-          const fastRes = await fetch(`${fastApiBase}/dev/generate_from_phonemes`, {
-            method: "POST",
-            headers: authHeaders,
-            body: JSON.stringify({ phonemes, voice }),
-            signal: AbortSignal.timeout(60000),
-          });
-          if (fastRes.ok) {
-            const fastBuf = Buffer.from(await fastRes.arrayBuffer());
-            const fastCt = fastRes.headers.get("content-type") || "audio/wav";
-            if (!isTestingOverrides) {
-              await globalCache.set(
-                cacheKey,
-                JSON.stringify({ d: fastBuf.toString("base64"), ct: fastCt }),
-                { ttl: 30 * 24 * 60 * 60, tier: "standard" }
+    // Split incoming text into sentences
+    const sentences = splitIntoSentences(text);
+
+    if (sentences.length === 0) {
+      return NextResponse.json(
+        { error: "Text parameter contains no speakable content" },
+        { status: 400 }
+      );
+    }
+
+    const audioBuffers: Buffer[] = [];
+    let isWav = engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl;
+
+    for (const sentence of sentences) {
+      // Generate individual cache key per sentence segment
+      const segmentCacheKey =
+        "onoma:tts:segment:" +
+        crypto
+          .createHash("sha1")
+          .update(`${engine}|${sentence}|${ipa}|${voice}|${speed}|${model}`)
+          .digest("hex");
+
+      let sentenceBuf: Buffer | null = null;
+      let sentenceCt = isWav ? "audio/wav" : "audio/mpeg";
+
+      // 1. Check cache for segment
+      if (!isTestingOverrides) {
+        const cached = readCached(await globalCache.get<string>(segmentCacheKey));
+        if (cached) {
+          sentenceBuf = Buffer.from(cached.data, "base64");
+          sentenceCt = cached.ct;
+          if (sentenceCt === "audio/wav") isWav = true;
+          else if (sentenceCt === "audio/mpeg") isWav = false;
+        }
+      }
+
+      // 2. Synthesize segment if cache miss
+      if (!sentenceBuf) {
+        if (engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl) {
+          const { phonemes } = ipaToKokoroPhonemes(ipa);
+          if (phonemes) {
+            try {
+              const fastApiBase = normalizedFastApiUrl.replace(/\/$/, "");
+              const fastRes = await fetch(`${fastApiBase}/dev/generate_from_phonemes`, {
+                method: "POST",
+                headers: authHeaders,
+                body: JSON.stringify({ phonemes, voice }),
+                signal: AbortSignal.timeout(60000),
+              });
+              if (fastRes.ok) {
+                sentenceBuf = Buffer.from(await fastRes.arrayBuffer());
+                sentenceCt = fastRes.headers.get("content-type") || "audio/wav";
+                isWav = sentenceCt.includes("wav");
+              }
+            } catch (e: any) {
+              console.warn(
+                `[Kokoro FastAPI Segment] Failed, falling back to kokoro-web: ${e?.message}`
               );
             }
-            return new NextResponse(fastBuf, {
-              status: 200,
-              headers: {
-                "Content-Type": fastCt,
-                "Content-Length": String(fastBuf.length),
-              },
-            });
           }
-          console.error(`[Kokoro FastAPI] non-2xx ${fastRes.status}; falling back to kokoro-web`);
-        } catch (e: any) {
-          console.error(`[Kokoro FastAPI] error; falling back to kokoro-web`, e?.message);
         }
+
+        // Fallback or kokoro-web plain-text synthesis
+        if (!sentenceBuf) {
+          if (!normalizedBaseUrl) {
+            return NextResponse.json(
+              { error: "Kokoro natural voice service fallback is not configured" },
+              { status: 503 }
+            );
+          }
+          const cleanBaseUrl = normalizedBaseUrl
+            .replace(/\/$/, "")
+            .replace(/\/api$/, "")
+            .replace(/\/v1$/, "");
+          const ttsUrl =
+            engine === "kokoro-fastapi"
+              ? `${cleanBaseUrl}/v1/audio/speech`
+              : `${cleanBaseUrl}/api/v1/audio/speech`;
+          const input = ipaToSpokenText(ipa) || sentence;
+          const reqBody = { model, voice, input, response_format: "mp3", speed };
+
+          const response = await fetch(ttsUrl, {
+            method: "POST",
+            headers: authHeaders,
+            body: JSON.stringify(reqBody),
+            signal: AbortSignal.timeout(60000),
+          });
+
+          if (response.ok) {
+            sentenceBuf = Buffer.from(await response.arrayBuffer());
+            sentenceCt = "audio/mpeg";
+            isWav = false;
+          } else {
+            const errorText = await response.text();
+            console.error(`[Kokoro TTS API Segment Error] status=${response.status}`, errorText);
+            return NextResponse.json(
+              {
+                error: `Kokoro API returned error status ${response.status} for segment`,
+                details: errorText.substring(0, 200),
+              },
+              { status: 502 }
+            );
+          }
+        }
+
+        // Write segment to cache
+        if (sentenceBuf && !isTestingOverrides) {
+          await globalCache.set(
+            segmentCacheKey,
+            JSON.stringify({ d: sentenceBuf.toString("base64"), ct: sentenceCt }),
+            { ttl: 30 * 24 * 60 * 60, tier: "standard" }
+          );
+        }
+      }
+
+      if (sentenceBuf) {
+        audioBuffers.push(sentenceBuf);
       }
     }
 
-    // ---- Engine: kokoro-web (re-spelling, fallback) -----------------------
-    // kokoro-web's REST API only does English G2P on plain text (its markdown
-    // phoneme syntax is UI-only and would be read out literally). Speak the IPA
-    // re-spelled into English syllables, falling back to the raw name.
-    if (!normalizedBaseUrl) {
-      return NextResponse.json(
-        { error: "Kokoro natural voice service fallback is not configured" },
-        { status: 503 }
-      );
-    }
-    const input = ipaToSpokenText(ipa) || text;
-    const cleanBaseUrl = normalizedBaseUrl
-      .replace(/\/$/, "")
-      .replace(/\/api$/, "")
-      .replace(/\/v1$/, "");
-    const ttsUrl =
-      engine === "kokoro-fastapi"
-        ? `${cleanBaseUrl}/v1/audio/speech`
-        : `${cleanBaseUrl}/api/v1/audio/speech`;
-    const reqBody = { model, voice, input, response_format: "mp3", speed };
+    // Merge audio buffers based on the resolved content type
+    const finalBuffer = isWav ? mergeWavBuffers(audioBuffers) : mergeMp3Buffers(audioBuffers);
+    const contentType = isWav ? "audio/wav" : "audio/mpeg";
 
-    const response = await fetch(ttsUrl, {
-      method: "POST",
-      headers: authHeaders,
-      body: JSON.stringify(reqBody),
-      signal: AbortSignal.timeout(60000), // 60s timeout
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Kokoro TTS API Error] status=${response.status} response=${errorText}`);
-      return NextResponse.json(
-        {
-          error: `Kokoro API returned error status ${response.status}`,
-          details: errorText.substring(0, 200),
-        },
-        { status: 502 }
-      );
-    }
-
-    const audioBuffer = Buffer.from(await response.arrayBuffer());
-    const contentType = "audio/mpeg";
-
-    // Save to cache (30 days TTL)
-    if (!isTestingOverrides) {
+    // Save full paragraph result back to cache for direct future hits
+    if (!isTestingOverrides && finalBuffer.length > 0) {
       await globalCache.set(
         cacheKey,
-        JSON.stringify({ d: audioBuffer.toString("base64"), ct: contentType }),
+        JSON.stringify({ d: finalBuffer.toString("base64"), ct: contentType }),
         { ttl: 30 * 24 * 60 * 60, tier: "standard" }
       );
     }
 
-    return new NextResponse(audioBuffer, {
+    return new NextResponse(finalBuffer, {
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Content-Length": String(audioBuffer.length),
+        "Content-Length": String(finalBuffer.length),
       },
     });
   } catch (error: any) {
