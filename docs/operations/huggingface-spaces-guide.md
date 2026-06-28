@@ -34,7 +34,7 @@ Hugging Face Spaces provides a **CPU Basic** hardware tier that is **16 GB RAM /
    EXPOSE 7860
 
    # Run FastAPI binding to port 7860
-   ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+   ENTRYPOINT ["uvicorn", "api.src.main:app", "--host", "0.0.0.0", "--port", "7860"]
    ```
 
 5. **Build and Deploy:** Commit the `Dockerfile`. Hugging Face will automatically trigger the build pipeline. Within 3-4 minutes, the Space will compile and display a live status showing **Running**.
