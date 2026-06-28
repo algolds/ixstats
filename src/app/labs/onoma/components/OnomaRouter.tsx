@@ -109,6 +109,7 @@ const ONOMA_TABS = [
       "bg-purple-500/5 border-purple-500/20 text-purple-600 dark:text-purple-400 shadow-[inset_0_1px_0_rgba(168,85,247,0.15)]",
     activeTextClassName: "text-purple-600 dark:text-purple-400",
     activeIconClassName: "text-purple-500 dark:text-purple-400",
+  },
   {
     id: "organizations",
     label: "Organizations",
