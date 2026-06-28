@@ -104,6 +104,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const isPlayingRef = useRef(false);
   const blocksRef = useRef<PlaybackBlock[]>([]);
   const activeFetchesRef = useRef<Map<string, Promise<Blob>>>(new Map());
+  const transitionTimeoutRef = useRef<any>(null);
 
   const fetchAudioBlob = useCallback(async (requestUrl: string): Promise<Blob> => {
     if (activeFetchesRef.current.has(requestUrl)) {
@@ -337,6 +338,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       audioRef.current.pause();
       audioRef.current = null;
     }
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
     if (activeAudioUrlRef.current) {
       URL.revokeObjectURL(activeAudioUrlRef.current);
       activeAudioUrlRef.current = null;
@@ -359,6 +364,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   // Synthesize and play block
   const playBlock = useCallback(
     async (index: number) => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
+      }
       if (index < 0 || index >= blocksRef.current.length) {
         // Done reading article
         stopPlayback();
@@ -454,7 +463,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
               activeAudioUrlRef.current = null;
             }
             if (isPlayingRef.current) {
-              setTimeout(
+              if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+              transitionTimeoutRef.current = setTimeout(
                 () => {
                   if (isPlayingRef.current) {
                     playBlock(activeIdxRef.current + 1);
@@ -474,7 +484,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
           utterance.onend = () => {
             if (isPlayingRef.current) {
-              setTimeout(
+              if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+              transitionTimeoutRef.current = setTimeout(
                 () => {
                   if (isPlayingRef.current) {
                     playBlock(activeIdxRef.current + 1);
@@ -684,6 +695,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
       }
       if (activeAudioUrlRef.current) {
         URL.revokeObjectURL(activeAudioUrlRef.current);

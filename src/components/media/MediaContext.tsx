@@ -28,12 +28,14 @@ export interface MediaContextState {
   changeVolume: (volume: number) => void;
   changeSpeed: (speed: number) => void;
   addToQueue: (track: Media) => void;
-  removeFromQueue: (id: string) => void;
+  removeFromQueue: (index: number) => void;
   clearQueue: () => void;
   skipNext: () => void;
   skipPrevious: () => void;
   registerPlaybackDelegate: (delegate: PlaybackDelegate | null) => void;
-  updatePlaybackState: (state: Partial<{ currentTime: number; duration: number; isPlaying: boolean }>) => void;
+  updatePlaybackState: (
+    state: Partial<{ currentTime: number; duration: number; isPlaying: boolean }>
+  ) => void;
 }
 
 const MediaContext = createContext<MediaContextState>({} as any);
@@ -51,33 +53,42 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  const playTrack = useCallback((track: Media) => {
-    const isSameTrack = activeTrack && activeTrack.id === track.id;
-    const isDelegatedTrack = track.isDynamicTts || track.id.startsWith("wiki:");
+  const playTrack = useCallback(
+    (track: Media) => {
+      const isSameTrack = activeTrack && activeTrack.id === track.id;
+      const isDelegatedTrack = track.isDynamicTts || track.id.startsWith("wiki:");
 
-    if (activeDelegateRef.current && isDelegatedTrack) {
+      if (activeDelegateRef.current && isDelegatedTrack) {
+        setActiveTrack(track);
+        activeDelegateRef.current.play();
+        return;
+      } else if (activeDelegateRef.current && !isDelegatedTrack) {
+        activeDelegateRef.current.pause();
+        activeDelegateRef.current = null;
+      }
+
+      if (isDelegatedTrack && !activeDelegateRef.current) {
+        console.warn("Attempted to play delegated track, but no delegate is registered.");
+        return;
+      }
+
       setActiveTrack(track);
-      activeDelegateRef.current.play();
-      return;
-    } else if (activeDelegateRef.current && !isDelegatedTrack) {
-      activeDelegateRef.current.pause();
-      activeDelegateRef.current = null;
-    }
 
-    setActiveTrack(track);
+      const idx = queue.findIndex((t) => t.id === track.id);
+      if (idx !== -1) {
+        setCurrentIndex(idx);
+      }
 
-    const idx = queue.findIndex((t) => t.id === track.id);
-    if (idx !== -1) {
-      setCurrentIndex(idx);
-    }
-
-    if (!engineRef.current) return;
-    engineRef.current.load(track.audioUrl, speed);
-    engineRef.current.play().catch(console.warn);
-  }, [activeTrack, speed, queue]);
+      if (!engineRef.current) return;
+      engineRef.current.load(track.audioUrl, speed);
+      engineRef.current.play().catch(console.warn);
+    },
+    [activeTrack, speed, queue]
+  );
 
   const pauseTrack = useCallback(() => {
-    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+    const isDelegatedActive =
+      activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
     if (activeDelegateRef.current && isDelegatedActive) {
       activeDelegateRef.current.pause();
       return;
@@ -86,7 +97,8 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
   }, [activeTrack]);
 
   const resumeTrack = useCallback(() => {
-    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+    const isDelegatedActive =
+      activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
     if (activeDelegateRef.current && isDelegatedActive) {
       activeDelegateRef.current.play();
       return;
@@ -94,39 +106,64 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
     engineRef.current?.play().catch(console.warn);
   }, [activeTrack]);
 
-  const seekTrack = useCallback((seconds: number) => {
-    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
-    if (activeDelegateRef.current && isDelegatedActive) {
-      activeDelegateRef.current.seek(seconds);
-      return;
-    }
-    engineRef.current?.seek(seconds);
-  }, [activeTrack]);
+  const seekTrack = useCallback(
+    (seconds: number) => {
+      const isDelegatedActive =
+        activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+      if (activeDelegateRef.current && isDelegatedActive) {
+        activeDelegateRef.current.seek(seconds);
+        return;
+      }
+      engineRef.current?.seek(seconds);
+    },
+    [activeTrack]
+  );
 
-  const changeVolume = useCallback((v: number) => {
-    setVolume(v);
-    engineRef.current?.setVolume(v);
-    localStorage.setItem("ixmedia:settings", JSON.stringify({ v, s: speed }));
-  }, [speed]);
+  const changeVolume = useCallback(
+    (v: number) => {
+      setVolume(v);
+      engineRef.current?.setVolume(v);
+      localStorage.setItem("ixmedia:settings", JSON.stringify({ v, s: speed }));
+    },
+    [speed]
+  );
 
-  const changeSpeed = useCallback((s: number) => {
-    setSpeed(s);
-    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
-    if (activeDelegateRef.current?.setSpeed && isDelegatedActive) {
-      activeDelegateRef.current.setSpeed(s);
-    } else {
-      engineRef.current?.setSpeed(s);
-    }
-    localStorage.setItem("ixmedia:settings", JSON.stringify({ v: volume, s }));
-  }, [volume, activeTrack]);
+  const changeSpeed = useCallback(
+    (s: number) => {
+      setSpeed(s);
+      const isDelegatedActive =
+        activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+      if (activeDelegateRef.current?.setSpeed && isDelegatedActive) {
+        activeDelegateRef.current.setSpeed(s);
+      } else {
+        engineRef.current?.setSpeed(s);
+      }
+      localStorage.setItem("ixmedia:settings", JSON.stringify({ v: volume, s }));
+    },
+    [volume, activeTrack]
+  );
 
   const addToQueue = useCallback((track: Media) => {
     setQueue((prev) => [...prev, track]);
   }, []);
 
-  const removeFromQueue = useCallback((id: string) => {
-    setQueue((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  const removeFromQueue = useCallback(
+    (indexToRemove: number) => {
+      setQueue((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+
+      setCurrentIndex((prevIdx) => {
+        if (indexToRemove === prevIdx) {
+          pauseTrack();
+          return -1;
+        }
+        if (indexToRemove < prevIdx) {
+          return prevIdx - 1;
+        }
+        return prevIdx;
+      });
+    },
+    [pauseTrack]
+  );
 
   const clearQueue = useCallback(() => {
     setQueue([]);
@@ -151,11 +188,14 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
     activeDelegateRef.current = delegate;
   }, []);
 
-  const updatePlaybackState = useCallback((state: Partial<{ currentTime: number; duration: number; isPlaying: boolean }>) => {
-    if (state.currentTime !== undefined) setCurrentTime(state.currentTime);
-    if (state.duration !== undefined) setDuration(state.duration);
-    if (state.isPlaying !== undefined) setIsPlaying(state.isPlaying);
-  }, []);
+  const updatePlaybackState = useCallback(
+    (state: Partial<{ currentTime: number; duration: number; isPlaying: boolean }>) => {
+      if (state.currentTime !== undefined) setCurrentTime(state.currentTime);
+      if (state.duration !== undefined) setDuration(state.duration);
+      if (state.isPlaying !== undefined) setIsPlaying(state.isPlaying);
+    },
+    []
+  );
 
   // Keep a ref to the latest skipNext function to avoid stale closures in the ended listener
   const skipNextRef = useRef(skipNext);

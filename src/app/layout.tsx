@@ -30,6 +30,7 @@ import { CalendarLiveDIPlugin } from "~/components/DynamicIsland/plugins/Calenda
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 import { MediaContextProvider } from "~/components/media/MediaContext";
+import { MiniPlayer } from "~/components/media/MiniPlayer";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -97,6 +98,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                               <main className="flex flex-1 flex-col">
                                 <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
                               </main>
+                              <MiniPlayer />
                             </div>
                           )}
                         </WikiContextProvider>
