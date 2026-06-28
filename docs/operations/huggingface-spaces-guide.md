@@ -25,7 +25,7 @@ Hugging Face Spaces provides a **CPU Basic** hardware tier that is **16 GB RAM /
    FROM ghcr.io/remsky/kokoro-fastapi-cpu:latest
 
    # Append a root route '/' to main.py to satisfy Hugging Face's load balancer health check (preventing 404 loops)
-   RUN echo -e "\n@app.get('/')\nasync def root_health_check():\n    return {'status': 'healthy'}\n" >> /app/api/src/main.py
+   RUN printf "\n@app.get('/')\nasync def root_health_check():\n    return {'status': 'healthy'}\n" >> /app/api/src/main.py
 
    # Set environment variables for optimized ONNX execution
    ENV ONNX_NUM_THREADS=2
