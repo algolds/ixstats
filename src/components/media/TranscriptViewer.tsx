@@ -34,7 +34,7 @@ export function TranscriptViewer() {
       <span className="text-muted-foreground px-1 text-[10px] font-bold tracking-wider uppercase">
         Synchronized Transcript
       </span>
-      <div className="flex max-h-48 flex-col gap-1 overflow-y-auto p-0.5 scroll-smooth">
+      <div className="flex max-h-48 flex-col gap-1 overflow-y-auto scroll-smooth p-0.5">
         {transcript.map((seg, idx) => {
           const isActive = idx === activeIndex;
           return (
@@ -42,10 +42,10 @@ export function TranscriptViewer() {
               key={idx}
               ref={isActive ? activeRef : null}
               onClick={() => seekTrack(seg.startTime)}
-              className={`text-xs leading-relaxed cursor-pointer transition-all duration-300 rounded p-1.5 border ${
+              className={`cursor-pointer rounded border p-1.5 text-xs leading-relaxed transition-all duration-300 ${
                 isActive
-                  ? "bg-primary/10 border-primary/20 pl-2 font-semibold text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 border-transparent"
+                  ? "bg-primary/10 border-primary/20 text-primary pl-2 font-semibold"
+                  : "text-muted-foreground hover:text-foreground border-transparent hover:bg-black/5 dark:hover:bg-white/5"
               }`}
             >
               {seg.text}

@@ -26,8 +26,11 @@ export function ChapterNavigator() {
               onClick={() => seekTrack(chap.startTime)}
             >
               <span>{chap.title}</span>
-              <span className="text-[9px] font-mono text-muted-foreground">
-                {Math.floor(chap.startTime / 60)}:{Math.floor(chap.startTime % 60).toString().padStart(2, "0")}
+              <span className="text-muted-foreground font-mono text-[9px]">
+                {Math.floor(chap.startTime / 60)}:
+                {Math.floor(chap.startTime % 60)
+                  .toString()
+                  .padStart(2, "0")}
               </span>
             </FacetCard>
           );

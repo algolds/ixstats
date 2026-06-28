@@ -45,7 +45,7 @@ export function WaveformVisualizer({
       ref={svgRef}
       viewBox={`0 0 ${width} ${height}`}
       onClick={handleSeek}
-      className="w-full h-16 cursor-pointer select-none"
+      className="h-16 w-full cursor-pointer select-none"
     >
       {displayPeaks.map((peak, index) => {
         const barProgress = index / displayPeaks.length;

@@ -479,7 +479,9 @@ async function testKokoroConnection(): Promise<ValidationResult> {
     if (engine === "kokoro-fastapi") {
       const url = (fastApiUrl || baseUrl || "").trim().replace(/\/$/, "");
       if (!url) {
-        result.warnings.push("Kokoro fastapi engine is active but fastApiUrl is empty in SystemConfig");
+        result.warnings.push(
+          "Kokoro fastapi engine is active but fastApiUrl is empty in SystemConfig"
+        );
         return result;
       }
       const testUrl = `${url}/health`;

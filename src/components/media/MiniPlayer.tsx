@@ -17,39 +17,39 @@ export function MiniPlayer() {
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 right-4 z-40 md:left-auto md:right-4 md:w-96">
+      <div className="fixed right-4 bottom-4 left-4 z-40 md:right-4 md:left-auto md:w-96">
         <FacetContainer
           variant="base"
           depth={3}
           interactive="hover"
-          className="relative overflow-hidden flex items-center justify-between gap-4 p-3 border border-black/10 dark:border-white/10 shadow-lg backdrop-blur-md"
+          className="relative flex items-center justify-between gap-4 overflow-hidden border border-black/10 p-3 shadow-lg backdrop-blur-md dark:border-white/10"
         >
           {/* Top edge progress bar */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-black/5 dark:bg-white/5">
+          <div className="absolute top-0 right-0 left-0 h-[2px] bg-black/5 dark:bg-white/5">
             <div
-              className="h-full bg-primary transition-all duration-100 ease-out"
+              className="bg-primary h-full transition-all duration-100 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
 
           <div
             onClick={() => setIsFullOpen(true)}
-            className="flex items-center gap-3 min-w-0 cursor-pointer group"
+            className="group flex min-w-0 cursor-pointer items-center gap-3"
           >
             {activeTrack.coverArt && (
-              <div className="relative w-10 h-10 rounded overflow-hidden flex-shrink-0">
+              <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded">
                 <img
                   src={activeTrack.coverArt}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   alt="Art"
                 />
               </div>
             )}
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold truncate group-hover:text-primary transition-colors">
+            <div className="flex min-w-0 flex-col">
+              <span className="group-hover:text-primary truncate text-xs font-bold transition-colors">
                 {activeTrack.title}
               </span>
-              <span className="text-[10px] text-muted-foreground truncate">
+              <span className="text-muted-foreground truncate text-[10px]">
                 {activeTrack.subtitle}
               </span>
             </div>
@@ -59,27 +59,27 @@ export function MiniPlayer() {
             {isPlaying ? (
               <button
                 onClick={pauseTrack}
-                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
+                className="rounded-full p-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
               >
                 <Pause className="h-4 w-4" />
               </button>
             ) : (
               <button
                 onClick={resumeTrack}
-                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
+                className="rounded-full p-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
               >
                 <Play className="h-4 w-4" />
               </button>
             )}
             <button
               onClick={skipNext}
-              className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
+              className="rounded-full p-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
             >
               <SkipForward className="h-4 w-4" />
             </button>
             <button
               onClick={() => setIsFullOpen(true)}
-              className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground rounded-full p-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
               title="Maximize"
             >
               <Maximize2 className="h-3.5 w-3.5" />

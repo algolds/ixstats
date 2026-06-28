@@ -48,9 +48,15 @@ export class IxMediaEngine {
     this.audio.playbackRate = speed;
   }
 
-  public get duration(): number { return this.audio.duration || 0; }
-  public get currentTime(): number { return this.audio.currentTime || 0; }
-  public get isPlaying(): boolean { return typeof window !== "undefined" && !this.audio.paused; }
+  public get duration(): number {
+    return this.audio.duration || 0;
+  }
+  public get currentTime(): number {
+    return this.audio.currentTime || 0;
+  }
+  public get isPlaying(): boolean {
+    return typeof window !== "undefined" && !this.audio.paused;
+  }
 
   public addEventListener(event: EngineEvent, callback: (...args: any[]) => void) {
     if (!this.listeners.has(event)) {
@@ -71,8 +77,12 @@ export class IxMediaEngine {
   }
 
   private setupListeners() {
-    this.audio.addEventListener("timeupdate", () => this.emit("timeupdate", this.audio.currentTime));
-    this.audio.addEventListener("durationchange", () => this.emit("durationchange", this.audio.duration));
+    this.audio.addEventListener("timeupdate", () =>
+      this.emit("timeupdate", this.audio.currentTime)
+    );
+    this.audio.addEventListener("durationchange", () =>
+      this.emit("durationchange", this.audio.duration)
+    );
     this.audio.addEventListener("ended", () => this.emit("ended"));
     this.audio.addEventListener("error", (e) => this.emit("error", e));
     this.audio.addEventListener("play", () => this.emit("statechange", "playing"));

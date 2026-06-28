@@ -1,4 +1,11 @@
-export type MediaType = "MUSIC" | "SPEECH" | "LANGUAGE" | "RADIO" | "PODCAST" | "NARRATION" | "AMBIENT";
+export type MediaType =
+  | "MUSIC"
+  | "SPEECH"
+  | "LANGUAGE"
+  | "RADIO"
+  | "PODCAST"
+  | "NARRATION"
+  | "AMBIENT";
 
 export interface Chapter {
   title: string;

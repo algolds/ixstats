@@ -243,7 +243,7 @@ export function WikiOSNarratorPlayer() {
             onClick={clearCache}
             className={cn(
               "flex items-center gap-1 rounded border px-2 py-1 transition-all active:scale-95",
-              "bg-background/80 text-muted-foreground border-black/10 hover:text-red-500 hover:border-red-500/20 hover:bg-red-500/10 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-red-500/15"
+              "bg-background/80 text-muted-foreground border-black/10 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-500 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-red-500/15"
             )}
             title="Clear saved voice audio cache"
           >
