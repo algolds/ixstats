@@ -15,6 +15,7 @@ import { db } from "~/server/db";
 import { applyGovernmentComponentEffects } from "./government-component-effects";
 import { isNewsworthySwing } from "./approval";
 import { generateDiplomaticNews } from "./diplomatic-news-generator";
+import { deriveBrokers } from "~/lib/statecraft-power-brokers";
 
 export interface PoliticsDriftResult {
   countriesProcessed: number;
@@ -46,10 +47,28 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
       result.countriesProcessed++;
 
       // ── Party support drift ──
-      const [parties, country] = await Promise.all([
+      const [parties, country, allocations, components] = await Promise.all([
         db.politicalParty.findMany({ where: { countryId, isActive: true } }),
         db.country.findUnique({ where: { id: countryId }, select: { adjustedGdpGrowth: true } }),
+        db.budgetAllocation.findMany({
+          where: { governmentStructure: { countryId } },
+          include: { department: { select: { category: true } } }
+        }),
+        db.governmentComponent.findMany({
+          where: { countryId, isActive: true },
+          select: { componentType: true }
+        })
       ]);
+
+      const spendByCategory: Record<string, number> = {};
+      allocations.forEach((alloc) => {
+        const cat = alloc.department.category;
+        spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
+      });
+
+      const activeComponentTypes = components.map((c) => c.componentType);
+      const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
+      const isPartyBrokerSatisfied = activeBrokers.some((b) => b.id === "party" && b.satisfied);
 
       if (parties.length >= 2) {
         // Economy influence in percentage points (good growth helps the governing party).
@@ -59,10 +78,17 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
 
         for (const p of parties) {
           const meanRevert = (p.baseSupport - p.currentSupport) * 0.1;
+          
+          // The Party satisfied gives +5% base support drift toward governing party
+          let partyBrokerEffect = 0;
+          if (isPartyBrokerSatisfied) {
+            partyBrokerEffect = p.id === governing.id ? 0.5 : -0.5 / oppositionSplit;
+          }
+
           const econEffect = (p.id === governing.id ? econMod : -econMod / oppositionSplit) * 0.3;
           // Deterministic-ish jitter per party (no Math.random — keep cron resumable-safe).
           const jitter = ((p.id.charCodeAt(0) % 7) - 3) * 0.1;
-          const next = clamp(p.currentSupport + meanRevert + econEffect + jitter, 1, 99);
+          const next = clamp(p.currentSupport + meanRevert + econEffect + partyBrokerEffect + jitter, 1, 99);
           if (Math.abs(next - p.currentSupport) > 0.01) {
             await db.politicalParty.update({
               where: { id: p.id },

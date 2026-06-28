@@ -13,6 +13,7 @@ import { ComponentType, type PrismaClient } from "@prisma/client";
 import { COMPONENT_CATEGORIES } from "~/lib/atomic-government-data";
 import { calculateGovernmentEffectiveness } from "~/lib/atomic-government-utils";
 import { IxTime } from "~/lib/ixtime";
+import { deriveBrokers } from "~/lib/statecraft-power-brokers";
 
 // Category → StorytellerEffect inputType + base effect value per component
 const CATEGORY_EFFECTS: Record<string, { inputType: string; base: number; desc: string }> = {
@@ -153,9 +154,16 @@ export async function applyGovernmentComponentEffects(
   const overallEffectiveness = calculateGovernmentEffectivenessScore(componentTypes);
   const effectivenessMultiplier = (overallEffectiveness - 50) / 100;
 
-  // Deactivate previous government component effects (prevent stacking)
+  // Deactivate previous government component and broker effects (prevent stacking)
   const prevIds = await db.storytellerEffect.findMany({
-    where: { countryId, isActive: true, description: { startsWith: "[GovComponent]" } },
+    where: {
+      countryId,
+      isActive: true,
+      OR: [
+        { description: { startsWith: "[GovComponent]" } },
+        { description: { startsWith: "[BrokerComponent]" } }
+      ]
+    },
     select: { id: true },
   });
   if (prevIds.length > 0) {
@@ -209,12 +217,93 @@ export async function applyGovernmentComponentEffects(
     });
   }
 
+  // Calculate allocations to derive brokers
+  const allocations = await db.budgetAllocation.findMany({
+    where: { governmentStructure: { countryId } },
+    include: { department: { select: { category: true } } }
+  });
+  const spendByCategory: Record<string, number> = {};
+  allocations.forEach((alloc) => {
+    const cat = alloc.department.category;
+    spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
+  });
+
+  const activeComponentTypes = activeComponents.map((c) => c.componentType);
+  const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
+  const satisfiedSet = new Set(activeBrokers.filter((b) => b.satisfied).map((b) => b.id));
+
+  // Build StorytellerEffect records for brokers
+  if (satisfiedSet.has("technocrats")) {
+    effectsData.push({
+      countryId,
+      ixTimeTimestamp: now,
+      inputType: "CAPACITY_RELIEF",
+      value: 0.15,
+      duration: 5,
+      description: "[BrokerComponent] The Technocrats: -15% domestic policy upkeep",
+      isActive: true,
+    });
+  }
+  if (satisfiedSet.has("party")) {
+    effectsData.push({
+      countryId,
+      ixTimeTimestamp: now,
+      inputType: "PARTY_INFLUENCE",
+      value: 0.05,
+      duration: 5,
+      description: "[BrokerComponent] The Party: +5% leading-party strength",
+      isActive: true,
+    });
+  }
+  if (satisfiedSet.has("generals")) {
+    effectsData.push({
+      countryId,
+      ixTimeTimestamp: now,
+      inputType: "MILITARY_READINESS",
+      value: 0.10,
+      duration: 5,
+      description: "[BrokerComponent] The Generals: +10% military readiness",
+      isActive: true,
+    });
+  }
+  if (satisfiedSet.has("magnates")) {
+    effectsData.push({
+      countryId,
+      ixTimeTimestamp: now,
+      inputType: "GROWTH_RATE_MODIFIER",
+      value: 0.005, // +0.5% GDP growth
+      duration: 5,
+      description: "[BrokerComponent] The Magnates: +0.5% GDP growth modifier",
+      isActive: true,
+    });
+  }
+
   if (effectsData.length > 0) {
     await db.storytellerEffect.createMany({ data: effectsData });
   }
 
   // Update GovernmentStructure political metrics
   const deltas = computePoliticalDeltas(activeComponents);
+
+  // Apply satisfied broker political metric bonuses
+  if (satisfiedSet.has("party")) {
+    deltas.politicalStability = (deltas.politicalStability ?? 0) + 0.10; // +10% stability
+  }
+  if (satisfiedSet.has("clergy")) {
+    deltas.politicalStability = (deltas.politicalStability ?? 0) + 0.05; // +5% stability
+  }
+
+  // Apply satisfied broker tensions
+  if (satisfiedSet.has("generals")) {
+    const defenseSpend = spendByCategory["Defense"] || 0;
+    if (defenseSpend > 30.0) {
+      deltas.politicalStability = (deltas.politicalStability ?? 0) - 0.05; // Over-fed generals trigger tension
+    }
+  }
+  if (satisfiedSet.has("magnates")) {
+    deltas.politicalStability = (deltas.politicalStability ?? 0) - 0.03; // Magnates trigger social inequality tension
+  }
+
   let politicalMetricsUpdated = false;
 
   if (Object.keys(deltas).length > 0) {

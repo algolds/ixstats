@@ -22,6 +22,7 @@ import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
 } from "~/lib/atomic-government-utils";
+import { deriveBrokers } from "~/lib/statecraft-power-brokers";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 
@@ -36,7 +37,7 @@ const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT 
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
   const now = IxTime.getCurrentIxTime();
-  const [country, structure, components, pendingRecon] = await Promise.all([
+  const [country, structure, components, pendingRecon, allocations] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
       select: { currentPopulation: true, governmentalEfficiency: true },
@@ -53,17 +54,34 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
       select: { componentType: true },
     }),
     db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
+    db.budgetAllocation.findMany({
+      where: { governmentStructure: { countryId } },
+      include: { department: { select: { category: true } } }
+    })
   ]);
+
+  const spendByCategory: Record<string, number> = {};
+  allocations.forEach((alloc) => {
+    const cat = alloc.department.category;
+    spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
+  });
+
+  const activeComponentTypes = components.map((c) => c.componentType);
+  const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
+  const isTechnocratsSatisfied = activeBrokers.some((b) => b.id === "technocrats" && b.satisfied);
 
   const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
   const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
-  // Stage 1 approximation: gov-component staff only (econ/tax omitted) + recon reserve.
+  
   const govStaff = calculateTotalConsumedStaff(
     components.map((c) => c.componentType as any),
     [],
     []
   );
-  const used = govStaff + pendingRecon * RECON_CAPACITY_COST;
+  
+  // Apply 15% domestic policy upkeep Capacity relief if satisfied
+  const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
+  const used = effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST;
 
   return {
     componentTypes: components.map((c) => String(c.componentType)),
