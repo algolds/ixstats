@@ -23,6 +23,10 @@ capability integer. Each release entry below lists which components advanced and
   - **Politics Drift Cron Optimization (`politics-drift-cron.ts`)**: Added support for preloaded components/allocations, bypassing duplicate DB roundtrips per processed country.
   - **Facet UI Politics Panel (`PowerBrokersPanel.tsx`)**: Created a visual dashboard widget displaying active brokers, satisfied progress bars, and active lever bonuses, mounted inside the MyCountry politics layout.
 - **Storyteller Casing Normalization (`calculations.ts`)**: Normalized database input types to lowercase to prevent silent simulation mismatches.
+- **WikiOS Narrator Optimizations**:
+  - **Sentence-Level Splitting & Caching (`route.ts`)**: Re-engineered the `/api/onoma/tts` endpoint to split long paragraphs into sentences, checking and caching each segment individually to boost cache hits and prevent memory spikes.
+  - **Audio Concatenation & Merging**: Added pure Node.js byte-level merging utilities for WAV and MP3 buffers, allowing fragmented audio outputs to be combined into a single, seamless response.
+  - **ONNX Threading Caps (`docker-compose.yml`)**: Configured core-count limits (`ONNX_NUM_THREADS=2`) for the local Kokoro container to prevent CPU exhaustion on host systems.
 - **IxMedia Subsystem (Phase 2 Narration Integration)**:
   - **Playback Delegate Pattern**: Refactored `useWikiNarrator.ts` to register a `PlaybackDelegate` with `MediaContext.tsx`, enabling the global players and queue controls to orchestrate text-to-speech blocks smoothly.
   - **Chapter Navigator (`ChapterNavigator.tsx`)**: Built a sidebar component for the maximized player, mapping heading blocks to chapters with jump actions.
