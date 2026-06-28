@@ -14,7 +14,10 @@ export const electionsBrokersRouter = createTRPCRouter({
 
       // Load current budget allocations + department categories
       const allocations = await ctx.db.budgetAllocation.findMany({
-        where: { governmentStructure: { countryId: input.countryId } },
+        where: {
+          governmentStructure: { countryId: input.countryId },
+          budgetYear: new Date().getFullYear(),
+        },
         include: {
           department: {
             select: { category: true }

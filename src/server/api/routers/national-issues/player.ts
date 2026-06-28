@@ -55,7 +55,10 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
     }),
     db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
     db.budgetAllocation.findMany({
-      where: { governmentStructure: { countryId } },
+      where: {
+        governmentStructure: { countryId },
+        budgetYear: new Date().getFullYear(),
+      },
       include: { department: { select: { category: true } } }
     })
   ]);

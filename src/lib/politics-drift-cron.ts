@@ -51,7 +51,10 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
         db.politicalParty.findMany({ where: { countryId, isActive: true } }),
         db.country.findUnique({ where: { id: countryId }, select: { adjustedGdpGrowth: true } }),
         db.budgetAllocation.findMany({
-          where: { governmentStructure: { countryId } },
+          where: {
+            governmentStructure: { countryId },
+            budgetYear: new Date().getFullYear(),
+          },
           include: { department: { select: { category: true } } }
         }),
         db.governmentComponent.findMany({

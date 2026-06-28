@@ -219,7 +219,10 @@ export async function applyGovernmentComponentEffects(
 
   // Calculate allocations to derive brokers
   const allocations = await db.budgetAllocation.findMany({
-    where: { governmentStructure: { countryId } },
+    where: {
+      governmentStructure: { countryId },
+      budgetYear: new Date().getFullYear(),
+    },
     include: { department: { select: { category: true } } }
   });
   const spendByCategory: Record<string, number> = {};

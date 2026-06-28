@@ -28,7 +28,7 @@ export const POWER_BROKERS: PowerBrokerDefinition[] = [
     name: "The Technocrats",
     description: "A coalition of senior civil servants, scientific advisors, and planning experts.",
     requiredComponents: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES],
-    spendCategories: ["Science&Tech", "Education", "Commerce"],
+    spendCategories: ["Science and Technology", "Education", "Commerce"],
     minSpendPercent: 15.0,
     bonusDescription: "-15% domestic policy upkeep (Capacity relief)"
   },
