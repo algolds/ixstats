@@ -8,7 +8,6 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { speakName } from "~/lib/onoma/browser-speech";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useIxMedia } from "~/hooks/useIxMedia";
@@ -35,6 +34,12 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   } = useWikiContext() as any;
 
   const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMedia();
+
+  const [blocks, setBlocks] = useState<PlaybackBlock[]>([]);
+  const [activeIdx, setActiveIdx] = useState<number>(-1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1.0);
+  const [voice, setVoice] = useState("");
 
   // Create mediaTrack representing the article
   const mediaTrack = useMemo<Media>(() => {
@@ -71,12 +76,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const { data: config } = api.onoma.getSpeechConfig.useQuery(undefined, {
     staleTime: 600000,
   });
-
-  const [blocks, setBlocks] = useState<PlaybackBlock[]>([]);
-  const [activeIdx, setActiveIdx] = useState<number>(-1);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(1.0);
-  const [voice, setVoice] = useState("");
 
   const activeIdxRef = useRef(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -179,40 +178,14 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     blocksRef.current = blocks;
   }, [blocks]);
 
-  useEffect(() => {
-    playRef.current = () => {
-      setIsPlaying(true);
-      const idx = activeIdxRef.current === -1 ? 0 : activeIdxRef.current;
-      playBlock(idx);
-    };
-    pauseRef.current = () => {
-      setIsPlaying(false);
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        window.speechSynthesis.pause();
-      }
-      setNarratorState({ isPlaying: false });
-      updatePlaybackState({ isPlaying: false });
-    };
-    seekRef.current = (seconds: number) => {
-      const idx = Math.floor(seconds / 10);
-      if (idx >= 0 && idx < blocksRef.current.length) {
-        setIsPlaying(true);
-        playBlock(idx);
-      }
-    };
-    setSpeedRef.current = (s: number) => {
-      changeSpeed(s);
-    };
-  }, [playBlock, changeSpeed, setNarratorState, updatePlaybackState]);
+
 
   useEffect(() => {
+    registerPlaybackDelegate(playbackDelegate);
     return () => {
       registerPlaybackDelegate(null);
     };
-  }, [registerPlaybackDelegate]);
+  }, [registerPlaybackDelegate, playbackDelegate]);
 
   // Clean raw HTML content
   const cleanContentText = (text: string): string => {
@@ -292,6 +265,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       const timer = setTimeout(rebuildBlocks, 500);
       return () => clearTimeout(timer);
     }
+    return;
   }, [articleTitle, rebuildBlocks]);
 
   // Clean highlighting
@@ -333,6 +307,33 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     },
     [clearHighlight]
   );
+
+  const stopPlayback = useCallback(() => {
+    setIsPlaying(false);
+    setActiveIdx(-1);
+    clearHighlight();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (activeAudioUrlRef.current) {
+      URL.revokeObjectURL(activeAudioUrlRef.current);
+      activeAudioUrlRef.current = null;
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setNarratorState({
+      isPlaying: false,
+      activeBlockIndex: 0,
+      activeText: "",
+      activeSectionTitle: "",
+    });
+    updatePlaybackState({
+      isPlaying: false,
+      currentTime: 0,
+    });
+  }, [clearHighlight, setNarratorState, updatePlaybackState]);
 
   // Synthesize and play block
   const playBlock = useCallback(
@@ -494,6 +495,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       preFetchBlocks,
       fetchAudioBlob,
       updatePlaybackState,
+      stopPlayback,
     ]
   );
 
@@ -501,11 +503,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const play = useCallback(() => {
     if (isPlaying) return;
     setIsPlaying(true);
-    registerPlaybackDelegate(playbackDelegate);
     playTrack(mediaTrack);
-    const startIdx = activeIdx === -1 ? 0 : activeIdx;
-    playBlock(startIdx);
-  }, [isPlaying, activeIdx, playBlock, registerPlaybackDelegate, playTrack, mediaTrack, playbackDelegate]);
+  }, [isPlaying, playTrack, mediaTrack]);
 
   const pause = useCallback(() => {
     setIsPlaying(false);
@@ -519,33 +518,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     updatePlaybackState({ isPlaying: false });
   }, [setNarratorState, updatePlaybackState]);
 
-  const stopPlayback = useCallback(() => {
-    setIsPlaying(false);
-    setActiveIdx(-1);
-    clearHighlight();
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if (activeAudioUrlRef.current) {
-      URL.revokeObjectURL(activeAudioUrlRef.current);
-      activeAudioUrlRef.current = null;
-    }
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setNarratorState({
-      isPlaying: false,
-      activeBlockIndex: 0,
-      activeText: "",
-      activeSectionTitle: "",
-    });
-    updatePlaybackState({
-      isPlaying: false,
-      currentTime: 0,
-    });
-    registerPlaybackDelegate(null);
-  }, [clearHighlight, setNarratorState, updatePlaybackState, registerPlaybackDelegate]);
 
   const skipNext = useCallback(() => {
     const nextIdx = activeIdx + 1;
@@ -566,23 +538,15 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       const idx = blocksRef.current.findIndex(
         (b) => b.sectionId === sectionId && b.type === "heading"
       );
-      if (idx !== -1) {
+      const targetIdx = idx !== -1 ? idx : blocksRef.current.findIndex((b) => b.sectionId === sectionId);
+      if (targetIdx !== -1) {
         setIsPlaying(true);
-        registerPlaybackDelegate(playbackDelegate);
+        activeIdxRef.current = targetIdx;
+        setActiveIdx(targetIdx);
         playTrack(mediaTrack);
-        playBlock(idx);
-      } else {
-        // Find paragraph under that section if no heading
-        const paraIdx = blocksRef.current.findIndex((b) => b.sectionId === sectionId);
-        if (paraIdx !== -1) {
-          setIsPlaying(true);
-          registerPlaybackDelegate(playbackDelegate);
-          playTrack(mediaTrack);
-          playBlock(paraIdx);
-        }
       }
     },
-    [playBlock, registerPlaybackDelegate, playTrack, mediaTrack, playbackDelegate]
+    [playTrack, mediaTrack]
   );
 
   const changeSpeed = useCallback(
@@ -629,6 +593,35 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     }
   }, [notify]);
 
+  useEffect(() => {
+    playRef.current = () => {
+      setIsPlaying(true);
+      const idx = activeIdxRef.current === -1 ? 0 : activeIdxRef.current;
+      playBlock(idx);
+    };
+    pauseRef.current = () => {
+      setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.pause();
+      }
+      setNarratorState({ isPlaying: false });
+      updatePlaybackState({ isPlaying: false });
+    };
+    seekRef.current = (seconds: number) => {
+      const idx = Math.floor(seconds / 10);
+      if (idx >= 0 && idx < blocksRef.current.length) {
+        setIsPlaying(true);
+        playBlock(idx);
+      }
+    };
+    setSpeedRef.current = (s: number) => {
+      changeSpeed(s);
+    };
+  }, [playBlock, changeSpeed, setNarratorState, updatePlaybackState]);
+
   // Register action hooks in global WikiContext
   useEffect(() => {
     registerNarratorActions({
@@ -642,9 +635,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       jumpToSection,
       jumpToBlock: (idx: number) => {
         setIsPlaying(true);
-        registerPlaybackDelegate(playbackDelegate);
+        activeIdxRef.current = idx;
+        setActiveIdx(idx);
         playTrack(mediaTrack);
-        playBlock(idx);
       },
       clearCache: clearVoiceCache,
     });
@@ -659,12 +652,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     changeSpeed,
     changeVoice,
     jumpToSection,
-    playBlock,
     clearVoiceCache,
-    registerPlaybackDelegate,
     playTrack,
     mediaTrack,
-    playbackDelegate,
   ]);
 
   return {

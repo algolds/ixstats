@@ -77,28 +77,31 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
   }, [activeTrack, speed, queue]);
 
   const pauseTrack = useCallback(() => {
-    if (activeDelegateRef.current) {
+    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+    if (activeDelegateRef.current && isDelegatedActive) {
       activeDelegateRef.current.pause();
       return;
     }
     engineRef.current?.pause();
-  }, []);
+  }, [activeTrack]);
 
   const resumeTrack = useCallback(() => {
-    if (activeDelegateRef.current) {
+    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+    if (activeDelegateRef.current && isDelegatedActive) {
       activeDelegateRef.current.play();
       return;
     }
     engineRef.current?.play().catch(console.warn);
-  }, []);
+  }, [activeTrack]);
 
   const seekTrack = useCallback((seconds: number) => {
-    if (activeDelegateRef.current) {
+    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+    if (activeDelegateRef.current && isDelegatedActive) {
       activeDelegateRef.current.seek(seconds);
       return;
     }
     engineRef.current?.seek(seconds);
-  }, []);
+  }, [activeTrack]);
 
   const changeVolume = useCallback((v: number) => {
     setVolume(v);
@@ -108,13 +111,14 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
 
   const changeSpeed = useCallback((s: number) => {
     setSpeed(s);
-    if (activeDelegateRef.current?.setSpeed) {
+    const isDelegatedActive = activeTrack && (activeTrack.isDynamicTts || activeTrack.id.startsWith("wiki:"));
+    if (activeDelegateRef.current?.setSpeed && isDelegatedActive) {
       activeDelegateRef.current.setSpeed(s);
     } else {
       engineRef.current?.setSpeed(s);
     }
     localStorage.setItem("ixmedia:settings", JSON.stringify({ v: volume, s }));
-  }, [volume]);
+  }, [volume, activeTrack]);
 
   const addToQueue = useCallback((track: Media) => {
     setQueue((prev) => [...prev, track]);
