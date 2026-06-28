@@ -13,9 +13,11 @@ import { mergeRouters } from "~/server/api/trpc";
 import { electionsPartiesRouter } from "./parties";
 import { electionsLegislatureRouter } from "./legislature";
 import { electionsElectionsRouter } from "./elections";
+import { electionsBrokersRouter } from "./brokers";
 
 export const electionsRouter = mergeRouters(
   electionsPartiesRouter,
   electionsLegislatureRouter,
-  electionsElectionsRouter
+  electionsElectionsRouter,
+  electionsBrokersRouter
 );
