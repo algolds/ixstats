@@ -40,8 +40,14 @@ export function StudioNameSets() {
     for (const e of bank.nameBank ?? []) {
       const setName = (e as any).setName as string | null;
       if (e.type !== "dictionary" || !setName) continue;
+
+      const cleanValues = (e.values || [])
+        .flatMap((v: string) => v.split(/[\r\n,]+/))
+        .map((v) => v.trim())
+        .filter(Boolean);
+
       const dict: TaggedDict = {
-        values: e.values,
+        values: cleanValues,
         role: ((e as any).role as NameRole) || "given",
         gender: ((e as any).gender as NameGender) || "any",
       };
@@ -113,7 +119,10 @@ export function StudioNameSets() {
       if (chainCache.has(key)) return chainCache.get(key);
       const words = activeDicts
         .filter((d) => d.role === slot.role && genderMatches(slot.gender, d.gender))
-        .flatMap((d) => d.values);
+        .flatMap((d) => d.values)
+        .flatMap((v) => v.split(/[\r\n,]+/))
+        .map((v) => v.trim())
+        .filter(Boolean);
       if (words.length === 0) {
         chainCache.set(key, null);
         return null;

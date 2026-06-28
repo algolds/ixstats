@@ -86,13 +86,18 @@ export const onomaRouter = createTRPCRouter({
               role = parsed.role || null;
               gender = parsed.gender || null;
               setName = parsed.setName || null;
-              values = parsed.values || [];
+              const rawValues = parsed.values || [];
+              values = Array.isArray(rawValues)
+                ? rawValues.flatMap((v: string) => v.split(/[\r\n,]+/)).map((v: string) => v.trim()).filter(Boolean)
+                : typeof rawValues === "string"
+                ? rawValues.split(/[\r\n,]+/).map((v: string) => v.trim()).filter(Boolean)
+                : [];
             }
           } catch {
             // Fallback for legacy comma-separated values
             if (item.contentType === "dictionary") {
               values = item.note
-                .split(",")
+                .split(/[\r\n,]+/)
                 .map((v) => v.trim())
                 .filter(Boolean);
             }
@@ -148,7 +153,7 @@ export const onomaRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      return db.nameBank.findMany({
+      const items = await db.nameBank.findMany({
         where: {
           type: "dictionary",
           isPublic: true,
@@ -156,6 +161,26 @@ export const onomaRouter = createTRPCRouter({
           ...(input?.culturalProfile ? { culturalProfile: input.culturalProfile } : {}),
         },
         orderBy: { createdAt: "desc" },
+      });
+
+      return items.map((item) => {
+        const rawValues = item.values;
+        let values: string[] = [];
+        if (Array.isArray(rawValues)) {
+          values = (rawValues as string[])
+            .flatMap((v) => v.split(/[\r\n,]+/))
+            .map((v) => v.trim())
+            .filter(Boolean);
+        } else if (typeof rawValues === "string") {
+          values = (rawValues as string)
+            .split(/[\r\n,]+/)
+            .map((v) => v.trim())
+            .filter(Boolean);
+        }
+        return {
+          ...item,
+          values,
+        };
       });
     }),
 
@@ -237,12 +262,18 @@ export const onomaRouter = createTRPCRouter({
       }
 
       // 2. Serialize metadata into JSON note
+      const rawValues = input.values;
+      const cleanValues = rawValues
+        .flatMap((v) => v.split(/[\r\n,]+/))
+        .map((v) => v.trim())
+        .filter(Boolean);
+
       const noteData = {
         category: input.category || null,
         role: input.role || null,
         gender: input.gender || null,
         setName: input.setName || null,
-        values: input.values,
+        values: cleanValues,
       };
       const note = JSON.stringify(noteData);
       const pageTitle = input.title;

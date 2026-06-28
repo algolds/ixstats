@@ -182,13 +182,6 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     path: "/labs/onoma/people",
   },
   {
-    id: "military",
-    label: "Military",
-    icon: "Shield",
-    description: "Units, operations, ships, commanders",
-    path: "/labs/onoma/military",
-  },
-  {
     id: "organizations",
     label: "Organizations",
     icon: "Building2",

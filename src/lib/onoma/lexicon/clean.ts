@@ -42,7 +42,7 @@ export function cleanName(raw: string, category: string): string | null {
   if (!s) return null;
 
   if (REJECT_JUNK.test(s)) return null;
-  if (REJECT_ADMIN.test(s)) return null;
+  if (category !== "culture_sports" && REJECT_ADMIN.test(s)) return null;
 
   if (category === "country") {
     s = s.replace(GOV_PREFIX, "").trim();

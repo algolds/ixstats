@@ -12,7 +12,12 @@ export function CultureSection() {
         category="culture"
         title="Cultures & Ethnicities"
         description="Assemble names for indigenous tribes, historical ethnicities, linguistic dialects, or demographic profiles."
-        subTypes={[]}
+        subTypes={[
+          { value: "generic", label: "Cultures & Ethnicities" },
+          { value: "sports", label: "Sports & Traditional Games" },
+          { value: "cuisine", label: "Cuisine & Foods" },
+          { value: "architecture", label: "Architecture & Landmarks" },
+        ]}
       />
     </div>
   );

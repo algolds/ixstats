@@ -22,7 +22,16 @@ const OUT_FILE = path.join(OUT_DIR, "lexicon-raw.json");
 const CACHE_DIR = path.join(OUT_DIR, "cache");
 
 export type RawName = { name: string; category: NameCat; sourceWiki: string };
-type NameCat = "country" | "city" | "province" | "person" | "organization";
+type NameCat =
+  | "country"
+  | "city"
+  | "province"
+  | "person"
+  | "organization"
+  | "culture_generic"
+  | "culture_sports"
+  | "culture_cuisine"
+  | "culture_architecture";
 
 // Infobox template (linktarget lt_title, ns=10) -> our frontend NameCategory.
 // First match wins, so order = priority when a page has several infoboxes.
@@ -40,6 +49,25 @@ const INFOBOX_CATEGORY: Array<[string, NameCat]> = [
   ["Infobox_organization", "organization"],
   ["Infobox_political_party", "organization"],
   ["Infobox_legislature", "organization"],
+  ["Infobox_sport", "culture_sports"],
+  ["Infobox_game", "culture_sports"],
+  ["Infobox_sports_competition_event", "culture_sports"],
+  ["Infobox_sports_team", "culture_sports"],
+  ["Infobox_athlete", "culture_sports"],
+  ["Infobox_food", "culture_cuisine"],
+  ["Infobox_drink", "culture_cuisine"],
+  ["Infobox_cheese", "culture_cuisine"],
+  ["Infobox_cocktail", "culture_cuisine"],
+  ["Infobox_recipe", "culture_cuisine"],
+  ["Infobox_historic_site", "culture_architecture"],
+  ["Infobox_church", "culture_architecture"],
+  ["Infobox_religious_building", "culture_architecture"],
+  ["Infobox_bridge", "culture_architecture"],
+  ["Infobox_building", "culture_architecture"],
+  ["Infobox_monument", "culture_architecture"],
+  ["Infobox_protected_area", "culture_architecture"],
+  ["Infobox_ethnic_group", "culture_generic"],
+  ["Infobox_language", "culture_generic"],
 ];
 
 /** Read DB creds straight from LocalSettings.php — secret never enters the repo. */

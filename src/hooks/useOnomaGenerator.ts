@@ -47,16 +47,36 @@ function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "provin
 }
 
 // Prebuilt wiki lexicon dictionaries (one chunk per category, lazy code-split).
-type LexiconCat = "country" | "city" | "province" | "person" | "organization";
+type LexiconCat =
+  | "country"
+  | "city"
+  | "province"
+  | "person"
+  | "organization"
+  | "culture_generic"
+  | "culture_sports"
+  | "culture_cuisine"
+  | "culture_architecture";
+
 const LEXICON_LOADERS: Record<LexiconCat, () => Promise<{ default: Record<string, string[]> }>> = {
   country: () => import("~/lib/onoma/data/lexicon/country.json"),
   city: () => import("~/lib/onoma/data/lexicon/city.json"),
   province: () => import("~/lib/onoma/data/lexicon/province.json"),
   person: () => import("~/lib/onoma/data/lexicon/person.json"),
   organization: () => import("~/lib/onoma/data/lexicon/organization.json"),
+  culture_generic: () => import("~/lib/onoma/data/lexicon/culture_generic.json"),
+  culture_sports: () => import("~/lib/onoma/data/lexicon/culture_sports.json"),
+  culture_cuisine: () => import("~/lib/onoma/data/lexicon/culture_cuisine.json"),
+  culture_architecture: () => import("~/lib/onoma/data/lexicon/culture_architecture.json"),
 };
 
-function mapCategoryForLexicon(cat: NameCategory): LexiconCat {
+function mapCategoryForLexicon(cat: NameCategory, subType?: string): LexiconCat {
+  if (cat === "culture") {
+    if (subType === "sports") return "culture_sports";
+    if (subType === "cuisine") return "culture_cuisine";
+    if (subType === "architecture") return "culture_architecture";
+    return "culture_generic";
+  }
   if (cat === "city" || cat === "geography") return "city";
   if (cat === "province") return "province";
   if (cat === "person" || cat === "dynasty") return "person";
@@ -99,7 +119,7 @@ export function useOnomaGenerator() {
   const logActivityMutation = api.onoma.logGeneration.useMutation();
 
   // Lazy-load the prebuilt lexicon dictionary for the active category.
-  const lexiconCat = mapCategoryForLexicon(category);
+  const lexiconCat = mapCategoryForLexicon(category, subType);
   useEffect(() => {
     let cancelled = false;
     setLexiconDict(null);

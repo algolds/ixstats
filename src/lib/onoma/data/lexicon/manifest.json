@@ -2,9 +2,9 @@
   "keptCompounds": [
     "celtic+germanic",
     "celtic+latin",
-    "latin+slavic",
     "germanic+slavic",
     "arabic+austronesian",
+    "latin+slavic",
     "germanic+latin"
   ],
   "categories": {
@@ -14,76 +14,131 @@
         "mixed": 30
       }
     },
-    "organization": {
-      "total": 2531,
+    "culture_architecture": {
+      "total": 122,
       "buckets": {
-        "germanic": 236,
-        "celtic": 237,
-        "slavic": 203,
-        "latin+slavic": 155,
+        "celtic": 15,
+        "latin": 25,
+        "slavic": 13,
+        "arabic": 15,
+        "austronesian": 11,
+        "germanic": 17,
+        "east-asian": 11,
+        "constructed": 9,
+        "mixed": 6
+      }
+    },
+    "culture_cuisine": {
+      "total": 127,
+      "buckets": {
+        "slavic": 15,
+        "east-asian": 17,
+        "austronesian": 17,
+        "germanic": 21,
+        "celtic": 14,
+        "latin": 19,
+        "arabic": 14,
+        "constructed": 9,
+        "mixed": 1
+      }
+    },
+    "organization": {
+      "total": 3186,
+      "buckets": {
+        "celtic": 300,
+        "slavic": 300,
+        "germanic": 300,
         "germanic+latin": 127,
-        "celtic+germanic": 216,
-        "east-asian": 269,
+        "celtic+germanic": 300,
+        "east-asian": 300,
         "arabic+austronesian": 95,
-        "celtic+latin": 207,
-        "austronesian": 180,
-        "latin": 232,
+        "latin+slavic": 155,
+        "celtic+latin": 300,
+        "austronesian": 300,
+        "latin": 300,
         "germanic+slavic": 109,
-        "arabic": 265
+        "arabic": 300
       }
     },
     "country": {
-      "total": 3216,
+      "total": 3363,
       "buckets": {
-        "latin": 286,
-        "slavic": 295,
-        "germanic": 270,
-        "east-asian": 289,
-        "arabic": 292,
-        "austronesian": 292,
-        "celtic": 272,
-        "celtic+germanic": 251,
+        "latin": 300,
+        "slavic": 300,
+        "germanic": 300,
+        "east-asian": 300,
+        "arabic": 300,
+        "austronesian": 300,
+        "celtic": 300,
+        "celtic+germanic": 300,
         "germanic+slavic": 159,
-        "latin+slavic": 231,
+        "latin+slavic": 227,
         "germanic+latin": 173,
-        "celtic+latin": 236,
-        "arabic+austronesian": 170
+        "arabic+austronesian": 170,
+        "celtic+latin": 234
+      }
+    },
+    "culture_generic": {
+      "total": 150,
+      "buckets": {
+        "latin": 24,
+        "celtic": 20,
+        "slavic": 20,
+        "arabic": 10,
+        "germanic": 21,
+        "east-asian": 22,
+        "austronesian": 14,
+        "constructed": 7,
+        "mixed": 12
       }
     },
     "person": {
-      "total": 3453,
+      "total": 3488,
       "buckets": {
-        "arabic": 297,
+        "arabic": 300,
         "germanic+latin": 178,
-        "germanic": 285,
-        "latin": 296,
-        "celtic": 297,
-        "austronesian": 298,
-        "slavic": 296,
-        "east-asian": 294,
-        "celtic+germanic": 282,
-        "germanic+slavic": 289,
-        "celtic+latin": 206,
-        "arabic+austronesian": 274,
-        "latin+slavic": 161
+        "germanic": 300,
+        "latin": 300,
+        "celtic": 300,
+        "austronesian": 300,
+        "slavic": 300,
+        "east-asian": 300,
+        "celtic+germanic": 300,
+        "germanic+slavic": 284,
+        "celtic+latin": 194,
+        "arabic+austronesian": 279,
+        "latin+slavic": 153
       }
     },
     "city": {
-      "total": 2632,
+      "total": 2639,
       "buckets": {
-        "germanic": 298,
-        "slavic": 299,
+        "germanic": 300,
+        "slavic": 300,
         "arabic": 299,
         "celtic+latin": 81,
         "celtic+germanic": 177,
-        "latin": 299,
+        "latin": 300,
         "germanic+slavic": 95,
-        "celtic": 298,
+        "celtic": 300,
         "latin+slavic": 63,
         "austronesian": 300,
         "arabic+austronesian": 89,
         "germanic+latin": 35,
-        "east-asian": 299
+        "east-asian": 300
+      }
+    },
+    "culture_sports": {
+      "total": 78,
+      "buckets": {
+        "celtic": 10,
+        "latin": 11,
+        "germanic": 9,
+        "slavic": 7,
+        "arabic": 7,
+        "east-asian": 11,
+        "austronesian": 9,
+        "constructed": 14
       }
     }
   }
