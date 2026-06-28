@@ -66,6 +66,12 @@ export function NameResultCard({
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [localSaved, setLocalSaved] = useState(isSaved);
+  const [animatePulse, setAnimatePulse] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimatePulse(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   // const [copiedTextType, setCopiedTextType] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -259,6 +265,23 @@ export function NameResultCard({
     }
   };
 
+  const dynamicFontSize = useMemo(() => {
+    const len = name.length;
+    if (len <= 12) return undefined;
+    // Scale down linearly: 12 chars -> 16px, 30 chars -> 9.5px
+    const sizePx = Math.max(9.5, 16 - (len - 12) * 0.36);
+    return `${sizePx}px`;
+  }, [name]);
+
+  const dynamicIpaFontSize = useMemo(() => {
+    if (!ipa) return undefined;
+    const len = ipa.length;
+    if (len <= 15) return undefined;
+    // 15 chars -> 9px, 30 chars -> 7.5px
+    const sizePx = Math.max(7.5, 9 - (len - 15) * 0.1);
+    return `${sizePx}px`;
+  }, [ipa]);
+
   const fitColor =
     typeof naturalness === "number"
       ? naturalness >= 66
@@ -301,46 +324,84 @@ export function NameResultCard({
         <TextureOverlay texture="diamonds" className="mix-blend-overlay" />
       </div>
 
-      {/* Refraction Radial Glow on Hover with microanimations */}
+      {/* Refraction Radial Glows creeping from underneath all four corners */}
       {fitColor && (
-        <div
-          className={cn(
-            "pointer-events-none absolute -right-12 -top-12 h-24 w-24 rounded-full blur-2xl opacity-0 transition-all duration-700 ease-in-out group-hover:opacity-25 group-hover:scale-150 animate-pulse",
-            fitColor === "emerald" && "bg-emerald-500",
-            fitColor === "amber" && "bg-amber-500",
-            fitColor === "rose" && "bg-rose-500"
-          )}
-        />
+        <>
+          <div
+            className={cn(
+              "pointer-events-none absolute -left-10 -top-10 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out z-0",
+              fitColor === "emerald" && "bg-emerald-500",
+              fitColor === "amber" && "bg-amber-500",
+              fitColor === "rose" && "bg-rose-500",
+              animatePulse
+                ? "animate-pulse opacity-25 scale-110"
+                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+            )}
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute -right-10 -top-10 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out z-0",
+              fitColor === "emerald" && "bg-emerald-500",
+              fitColor === "amber" && "bg-amber-500",
+              fitColor === "rose" && "bg-rose-500",
+              animatePulse
+                ? "animate-pulse opacity-25 scale-110"
+                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+            )}
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute -left-10 -bottom-10 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out z-0",
+              fitColor === "emerald" && "bg-emerald-500",
+              fitColor === "amber" && "bg-amber-500",
+              fitColor === "rose" && "bg-rose-500",
+              animatePulse
+                ? "animate-pulse opacity-25 scale-110"
+                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+            )}
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute -right-10 -bottom-10 h-20 w-20 rounded-full blur-xl transition-all duration-700 ease-out z-0",
+              fitColor === "emerald" && "bg-emerald-500",
+              fitColor === "amber" && "bg-amber-500",
+              fitColor === "rose" && "bg-rose-500",
+              animatePulse
+                ? "animate-pulse opacity-25 scale-110"
+                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+            )}
+          />
+        </>
       )}
 
       {/* Main Top Row */}
-      <div className="relative z-10 flex w-full items-start justify-between gap-2">
-        {/* Name Display */}
-        <div
-          className={cn(
-            "flex flex-col items-start gap-1 flex-1 min-w-0 pr-6 transition-all duration-300 ease-in-out",
-            allowCustomize ? "group-hover:pr-[170px]" : "group-hover:pr-[135px]"
-          )}
-        >
-          <span className="text-foreground text-sm font-semibold tracking-wide transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base break-words w-full">
+      <div className="relative z-10 flex w-full items-center justify-between gap-3 min-w-0">
+        {/* Name Display Stack */}
+        <div className="flex flex-col items-start gap-1 min-w-0 flex-1">
+          <span
+            className="text-foreground text-sm font-semibold tracking-wide transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base whitespace-nowrap truncate w-full"
+            style={dynamicFontSize ? { fontSize: dynamicFontSize } : undefined}
+            title={name}
+          >
             {name}
           </span>
-          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 min-w-0 w-full">
             {/* IPA badge — click to hear the exact phonetic pronunciation */}
             {ipa && (
-              <span className="flex items-center">
+              <span className="flex items-center min-w-0 flex-shrink-0">
                 <button
                   type="button"
                   onClick={handlePlayPronunciation}
                   title="Click to hear the exact phonetic pronunciation"
                   className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 border py-0.5 pr-2 pl-2 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 border py-0.5 pr-2 pl-2 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] whitespace-nowrap",
                     allowCustomize ? "rounded-l-full" : "rounded-full",
                     hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
                   )}
+                  style={dynamicIpaFontSize ? { fontSize: dynamicIpaFontSize } : undefined}
                 >
-                  <Volume2 className="h-2.5 w-2.5" />
-                  {ipa}
+                  <Volume2 className="h-2.5 w-2.5 flex-shrink-0" />
+                  <span className="truncate">{ipa}</span>
                 </button>
                 {allowCustomize && (
                   <button
@@ -348,8 +409,7 @@ export function NameResultCard({
                     onClick={openPronEditor}
                     title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
                     className={cn(
-                      "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
-                      hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                      "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] flex-shrink-0"
                     )}
                   >
                     <Pencil className="h-2.5 w-2.5" />
@@ -357,47 +417,13 @@ export function NameResultCard({
                 )}
               </span>
             )}
-            {/* Hidden for now: Cyrillic/Greek/Arabic spelling buttons */}
-            {/*
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyText(cyrillicScript, "Cyrillic");
-              }}
-              title="Copy Cyrillic spelling"
-              className="text-[9px] text-muted-foreground hover:text-[#0091ff] hover:bg-[#0091ff]/10 border border-border/40 bg-secondary/5 px-2 py-0.5 rounded-full transition-all duration-200 cursor-pointer font-sans select-none"
-            >
-              <span>{copiedTextType === "Cyrillic" ? "Copied!" : `Cyrillic: ${cyrillicScript}`}</span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyText(greekScript, "Greek");
-              }}
-              title="Copy Greek spelling"
-              className="text-[9px] text-muted-foreground hover:text-[#0091ff] hover:bg-[#0091ff]/10 border border-border/40 bg-secondary/5 px-2 py-0.5 rounded-full transition-all duration-200 cursor-pointer font-sans select-none"
-            >
-              <span>{copiedTextType === "Greek" ? "Copied!" : `Greek: ${greekScript}`}</span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyText(arabicScript, "Arabic");
-              }}
-              title="Copy Arabic spelling"
-              className="text-[9px] text-muted-foreground hover:text-[#0091ff] hover:bg-[#0091ff]/10 border border-border/40 bg-secondary/5 px-2 py-0.5 rounded-full transition-all duration-200 cursor-pointer font-sans select-none"
-              dir="rtl"
-            >
-              <span>{copiedTextType === "Arabic" ? "Copied!" : arabicScript}</span>
-            </button>
-            */}
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons (Fades in on hover, but occupies fixed space in flex row) */}
         <div
           className={cn(
-            "absolute top-2.5 right-3.5 z-20 flex flex-shrink-0 items-center gap-1 rounded-lg border border-border/40 bg-background/85 px-1.5 py-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-out",
+            "flex flex-shrink-0 items-center gap-1 rounded-lg border border-border/40 bg-background/85 px-1.5 py-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-out select-none",
             showDetailsModal
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
