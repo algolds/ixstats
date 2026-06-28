@@ -7,6 +7,7 @@ import { X, Play, Pause, SkipForward, SkipBack, Volume2, ListMusic, Gauge } from
 import { WaveformVisualizer } from "./WaveformVisualizer";
 import { QueuePanel } from "./QueuePanel";
 import { ChapterNavigator } from "./ChapterNavigator";
+import { TranscriptViewer } from "./TranscriptViewer";
 
 export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const {
@@ -144,6 +145,7 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
         </div>
 
         <ChapterNavigator />
+        <TranscriptViewer />
 
         {/* Queue Toggle Button */}
         <div className="flex flex-col gap-3 border-t border-black/5 pt-4 dark:border-white/5">
