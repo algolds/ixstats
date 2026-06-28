@@ -61,6 +61,7 @@ export function StudioPhonology() {
   const [nameOverrides, setNameOverrides] = useState<Record<string, NameOverride>>({});
   const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | null>(null);
   const [soundboardTab, setSoundboardTab] = useState<"vowels" | "consonants" | "diphthongs">("vowels");
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
 
   // Load this culture's saved rule overrides into editable state when it changes.
   useEffect(() => {
@@ -95,6 +96,7 @@ export function StudioPhonology() {
   // Clean active popover if previewText changes length/segments
   useEffect(() => {
     setActiveSegmentIndex(null);
+    setSelectedSound(null);
   }, [previewText, culture]);
 
   const updateRow = (i: number, idx: 0 | 1, value: string) => {
@@ -244,7 +246,15 @@ export function StudioPhonology() {
                 return (
                   <div key={idx} className="relative">
                     <button
-                      onClick={() => setActiveSegmentIndex(isActive ? null : idx)}
+                      onClick={() => {
+                        if (isActive) {
+                          setActiveSegmentIndex(null);
+                          setSelectedSound(null);
+                        } else {
+                          setActiveSegmentIndex(idx);
+                          setSelectedSound(seg.ipa || null);
+                        }
+                      }}
                       className={cn(
                         "flex flex-col items-center justify-center min-w-10 h-14 rounded-xl border px-3 py-1.5 text-center transition-all duration-200 cursor-pointer active:scale-95",
                         isOverridden
@@ -299,20 +309,23 @@ export function StudioPhonology() {
                               ? IPA_CONSONANTS
                               : IPA_DIPHTHONGS
                           ).map((sym) => {
+                            const isSelected = selectedSound === sym;
                             const isKokoro = KOKORO_VALID_TOKENS.has(sym);
                             return (
                               <button
                                 key={sym}
                                 onClick={async () => {
+                                  setSelectedSound(sym);
                                   await playPhoneme(sym);
-                                  mapGrapheme(seg.grapheme, sym);
                                 }}
                                 title={isKokoro ? `${sym} (Kokoro high-fidelity native)` : `${sym} (fallback/synthesized)`}
                                 className={cn(
                                   "relative flex h-8 items-center justify-center rounded-lg border font-mono text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer",
-                                  isKokoro
-                                    ? "border-[#0091ff]/30 bg-[#0091ff]/5 hover:bg-[#0091ff]/15 text-[#0091ff]"
-                                    : "border-border/60 bg-background hover:bg-secondary/30 text-foreground"
+                                  isSelected
+                                    ? "border-[#8b5cf6] bg-[#8b5cf6]/20 text-foreground ring-1 ring-[#8b5cf6]"
+                                    : isKokoro
+                                      ? "border-[#0091ff]/30 bg-[#0091ff]/5 hover:bg-[#0091ff]/15 text-[#0091ff]"
+                                      : "border-border/60 bg-background hover:bg-secondary/30 text-foreground"
                                 )}
                               >
                                 {sym}
@@ -323,6 +336,25 @@ export function StudioPhonology() {
                             );
                           })}
                         </div>
+
+                        {/* Popover Footer (Preview & Confirm) */}
+                        {selectedSound && (
+                          <div className="flex items-center justify-between gap-2 mt-3.5 pt-2.5 border-t border-white/10 animate-in fade-in duration-200">
+                            <button
+                              onClick={() => playPhoneme(selectedSound)}
+                              title="Listen to selected sound again"
+                              className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              <Volume2 className="h-3.5 w-3.5" /> Hear again
+                            </button>
+                            <button
+                              onClick={() => mapGrapheme(seg.grapheme, selectedSound)}
+                              className="rounded-lg bg-[#8b5cf6] px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
+                            >
+                              Confirm Map
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

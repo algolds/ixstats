@@ -88,7 +88,7 @@ export function StudioNameSets() {
       try {
         const tpl = JSON.parse(saved);
         setSlots(tpl.slots ?? []);
-        setSeparator(tpl.separator ?? " ");
+        setSeparator(tpl.separator || " ");
         return;
       } catch {
         /* fall through to default */
