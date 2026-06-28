@@ -60,6 +60,8 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
 
       if (activeDelegateRef.current && isDelegatedTrack) {
         setActiveTrack(track);
+        const idx = queue.findIndex((t) => t.id === track.id);
+        setCurrentIndex(idx);
         activeDelegateRef.current.play();
         return;
       } else if (activeDelegateRef.current && !isDelegatedTrack) {

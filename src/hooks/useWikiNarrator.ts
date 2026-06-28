@@ -26,7 +26,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const {
     articleTitle,
     tocEntries,
-    speechConfig,
     setNarratorState,
     registerNarratorActions,
     activeSectionId,
@@ -441,6 +440,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           preFetchBlocks(index);
 
           const blob = await fetchAudioBlob(requestUrl);
+          if (!isPlayingRef.current || activeIdxRef.current !== index) {
+            return;
+          }
           const url = URL.createObjectURL(blob);
           activeAudioUrlRef.current = url;
           const audio = new Audio(url);
