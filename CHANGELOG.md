@@ -16,12 +16,19 @@ capability integer. Each release entry below lists which components advanced and
   - **Global Context Provider (`MediaContext.tsx`)**: Created the global media context and `<MediaContextProvider>` to handle active track queues, volumes, speeds, and state distribution, with automatic `localStorage` synchronization for preferences and active session resume.
   - **Prisma Database Integration**: Added database tables (`MediaTrack`, `MediaPlaylist`, `PlaylistTrack`, `PlaybackHistory`) with indexes for optimized `userId` and `trackId` relations.
   - **Facet UI Components**: Designed and built the player controls (`MiniPlayer.tsx`, `FullPlayer.tsx`, `QueuePanel.tsx`, `WaveformVisualizer.tsx`) fully styled with the physics-driven Facet design system primitives (`FacetContainer`, `FacetCard`, `FacetModal`).
+- **IxMedia Subsystem (Phase 2 Narration Integration)**:
+  - **Playback Delegate Pattern**: Refactored `useWikiNarrator.ts` to register a `PlaybackDelegate` with `MediaContext.tsx`, enabling the global players and queue controls to orchestrate text-to-speech blocks smoothly.
+  - **Chapter Navigator (`ChapterNavigator.tsx`)**: Built a sidebar component for the maximized player, mapping heading blocks to chapters with jump actions.
+  - **Interactive Transcript (`TranscriptViewer.tsx`)**: Implemented a scroll-safe segment visualizer that highlights the active speaking block and centers the view without thrashing the user's manual scroll.
 
 ### Changed
 - **WikiOS Onoma Voice Narrator**:
   - Swapped the sequential fetch sequence to retrieve audio from the persistent Cache Storage API (`"onoma-voice-cache"`), caching by query parameters.
   - Added a double-block moving pre-fetch window ($N+1$ and $N+2$ blocks) with a `useRef` deduplication map to prevent parallel network requests.
   - Implemented an `activeAudioUrlRef` to ensure Object URLs are successfully revoked when playback is paused, stopped, skipped, or finished.
+  - Added `transitionTimeoutRef` and fetch-state guards to prevent overlapping playback and race conditions when users seek, skip, or change speeds mid-load.
+  - Synced speed and voice configurations using mutable refs to eliminate React batching stale closures.
+  - Resolved `currentIndex` tracking bugs and delegate detachment states in `MediaContext.tsx`.
 
 
 ## [1.1.6 Ogma (Alpha)] - 2026-06-27
