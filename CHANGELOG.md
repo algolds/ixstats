@@ -11,10 +11,18 @@ capability integer. Each release entry below lists which components advanced and
 ## [Unreleased]
 
 ### Added
-
-### Fixed
+- **IxMedia Subsystem (Phase 1 Foundation)**:
+  - **Playback Engine (`IxMediaEngine.ts`)**: Built a pure TypeScript playback coordinator wrapping native HTML5 Audio and Web Audio API events, fully guarded for SSR compatibility.
+  - **Global Context Provider (`MediaContext.tsx`)**: Created the global media context and `<MediaContextProvider>` to handle active track queues, volumes, speeds, and state distribution, with automatic `localStorage` synchronization for preferences and active session resume.
+  - **Prisma Database Integration**: Added database tables (`MediaTrack`, `MediaPlaylist`, `PlaylistTrack`, `PlaybackHistory`) with indexes for optimized `userId` and `trackId` relations.
+  - **Facet UI Components**: Designed and built the player controls (`MiniPlayer.tsx`, `FullPlayer.tsx`, `QueuePanel.tsx`, `WaveformVisualizer.tsx`) fully styled with the physics-driven Facet design system primitives (`FacetContainer`, `FacetCard`, `FacetModal`).
 
 ### Changed
+- **WikiOS Onoma Voice Narrator**:
+  - Swapped the sequential fetch sequence to retrieve audio from the persistent Cache Storage API (`"onoma-voice-cache"`), caching by query parameters.
+  - Added a double-block moving pre-fetch window ($N+1$ and $N+2$ blocks) with a `useRef` deduplication map to prevent parallel network requests.
+  - Implemented an `activeAudioUrlRef` to ensure Object URLs are successfully revoked when playback is paused, stopped, skipped, or finished.
+
 
 ## [1.1.6 Ogma (Alpha)] - 2026-06-27
 
