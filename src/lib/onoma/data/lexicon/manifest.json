@@ -15,22 +15,46 @@
       }
     },
     "culture_architecture": {
-      "total": 232,
+      "total": 587,
       "buckets": {
-        "celtic": 20,
-        "latin": 29,
-        "slavic": 18,
-        "arabic": 20,
-        "austronesian": 17,
-        "germanic": 22,
-        "east-asian": 16,
+        "celtic": 80,
+        "latin": 69,
+        "celtic+germanic": 43,
+        "slavic": 34,
+        "arabic": 36,
+        "austronesian": 63,
+        "germanic": 87,
+        "germanic+slavic": 5,
+        "latin+slavic": 5,
+        "celtic+latin": 15,
+        "arabic+austronesian": 8,
+        "east-asian": 53,
+        "germanic+latin": 5,
         "persian": 14,
         "turkic": 14,
         "african": 14,
         "indic": 16,
         "uralic": 13,
-        "constructed": 13,
-        "mixed": 6
+        "constructed": 13
+      }
+    },
+    "culture_cuisine": {
+      "total": 277,
+      "buckets": {
+        "east-asian": 29,
+        "austronesian": 26,
+        "germanic": 28,
+        "celtic": 24,
+        "latin": 27,
+        "arabic": 19,
+        "slavic": 21,
+        "persian": 15,
+        "turkic": 17,
+        "african": 18,
+        "indic": 19,
+        "uralic": 15,
+        "constructed": 12,
+        "mixed": 7
       }
     },
     "organization": {
@@ -70,22 +94,27 @@
       }
     },
     "culture_generic": {
-      "total": 292,
+      "total": 1105,
       "buckets": {
-        "latin": 34,
-        "celtic": 29,
-        "slavic": 28,
-        "arabic": 18,
-        "germanic": 30,
-        "east-asian": 29,
-        "austronesian": 21,
+        "germanic+latin": 15,
+        "latin": 105,
+        "celtic": 73,
+        "slavic": 83,
+        "latin+slavic": 19,
+        "arabic": 93,
+        "germanic": 160,
+        "arabic+austronesian": 18,
+        "east-asian": 252,
+        "celtic+germanic": 41,
+        "austronesian": 113,
+        "celtic+latin": 24,
+        "germanic+slavic": 18,
         "persian": 15,
         "turkic": 17,
         "african": 18,
         "indic": 15,
         "uralic": 14,
-        "constructed": 12,
-        "mixed": 12
+        "constructed": 12
       }
     },
     "person": {
@@ -125,39 +154,24 @@
       }
     },
     "culture_sports": {
-      "total": 166,
+      "total": 320,
       "buckets": {
-        "latin": 16,
-        "germanic": 13,
-        "celtic": 13,
-        "slavic": 11,
-        "arabic": 12,
-        "east-asian": 15,
-        "austronesian": 13,
+        "celtic": 63,
+        "austronesian": 25,
+        "east-asian": 20,
+        "germanic": 42,
+        "celtic+latin": 8,
+        "celtic+germanic": 14,
+        "slavic": 17,
+        "latin": 29,
+        "arabic": 21,
         "persian": 10,
         "turkic": 14,
         "african": 13,
         "indic": 13,
         "uralic": 10,
-        "constructed": 13
-      }
-    },
-    "culture_cuisine": {
-      "total": 232,
-      "buckets": {
-        "latin": 22,
-        "germanic": 21,
-        "celtic": 16,
-        "slavic": 19,
-        "arabic": 18,
-        "east-asian": 21,
-        "austronesian": 19,
-        "persian": 15,
-        "turkic": 17,
-        "african": 18,
-        "indic": 19,
-        "uralic": 15,
-        "constructed": 12
+        "constructed": 13,
+        "mixed": 8
       }
     }
   }

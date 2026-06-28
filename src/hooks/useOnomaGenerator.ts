@@ -171,15 +171,21 @@ export function useOnomaGenerator() {
     syllableChain.reset();
     syllableChain.setOrder(Math.min(2, Math.max(1, order - 1)));
 
+    // CULTURAL_PROFILES["culture"] is the ethnonym list — correct for the generic
+    // Culture subtype, but wrong dictionary for sports/cuisine, which train purely
+    // on their own curated lexicon. Skip presets for those.
     const presetSeeds: string[] = [];
-    if (culture === "any") {
-      Object.values(CULTURAL_PROFILES).forEach((profile) => {
-        const seeds = profile[category] || [];
+    const usePresets = !(category === "culture" && subType !== "generic");
+    if (usePresets) {
+      if (culture === "any") {
+        Object.values(CULTURAL_PROFILES).forEach((profile) => {
+          const seeds = profile[category] || [];
+          presetSeeds.push(...seeds);
+        });
+      } else {
+        const seeds = CULTURAL_PROFILES[culture as CulturalProfile]?.[category] || [];
         presetSeeds.push(...seeds);
-      });
-    } else {
-      const seeds = CULTURAL_PROFILES[culture as CulturalProfile]?.[category] || [];
-      presetSeeds.push(...seeds);
+      }
     }
 
     const lexiconSeeds: string[] = [];
@@ -206,6 +212,7 @@ export function useOnomaGenerator() {
   }, [
     culture,
     category,
+    subType,
     dbTrainingNames,
     lexiconDict,
     includeWorldData,
@@ -229,30 +236,6 @@ export function useOnomaGenerator() {
     // Family phonotactic floor first, user options win on conflict (advanced
     // panel keys only exist once the user touches them, so the floor survives).
     const genOptions = { ...(FAMILY_PHONOTACTICS[culture] ?? {}), ...options };
-
-    // Curated picker: sports & cuisine are real-world proper nouns that don't
-    // Markov-blend into anything coherent, so draw real examples instead of
-    // generating. Architecture & generic stay Markov (they read as names).
-    if (category === "culture" && (subType === "sports" || subType === "cuisine")) {
-      const pool =
-        culture === "any"
-          ? Object.values(lexiconDict ?? {}).flat()
-          : (lexiconDict?.[culture] ?? Object.values(lexiconDict ?? {}).flat());
-      const unique = [...new Set(pool)];
-      for (let i = unique.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [unique[i], unique[j]] = [unique[j], unique[i]];
-      }
-      const picked = unique.slice(0, count);
-      setGeneratedNames(picked);
-      setIsGenerating(false);
-      if (picked.length > 0) {
-        logActivityMutation
-          .mutateAsync({ count: picked.length, category })
-          .catch((err) => console.error("Failed to log generation activity:", err));
-      }
-      return picked;
-    }
 
     for (let i = 0; i < count; i++) {
       let name: string | null = null;

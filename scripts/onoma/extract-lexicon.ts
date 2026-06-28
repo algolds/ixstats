@@ -164,11 +164,22 @@ async function fetchTypedNames(
   capPerTpl = 8000
 ): Promise<RawName[]> {
   const cacheFile = path.join(CACHE_DIR, `${sourceWiki}-typed.json`);
-  if (fs.existsSync(cacheFile)) return JSON.parse(fs.readFileSync(cacheFile, "utf8"));
 
-  const rows: RawName[] = [];
-  const seen = new Set<string>();
-  for (const [tpl, cat] of INFOBOX_CATEGORY) {
+  // Incremental cache: keep already-fetched rows, but fetch any INFOBOX_CATEGORY
+  // whose category is absent from the cache. Without this, adding new templates
+  // (e.g. the culture_* infoboxes) silently never fetched — the old code returned
+  // the stale full-cache verbatim. ponytail: keyed by category, not template, so a
+  // *new template for an existing category* won't refetch — fine, categories rarely
+  // gain templates; delete the cache file to force a full rebuild.
+  const rows: RawName[] = fs.existsSync(cacheFile)
+    ? (JSON.parse(fs.readFileSync(cacheFile, "utf8")) as RawName[])
+    : [];
+  const seen = new Set(rows.map((r) => `${r.category}|${r.name.toLowerCase()}`));
+  const presentCats = new Set(rows.map((r) => r.category));
+  const missing = INFOBOX_CATEGORY.filter(([, cat]) => !presentCats.has(cat));
+  if (missing.length === 0) return rows;
+
+  for (const [tpl, cat] of missing) {
     let cont: string | undefined;
     let got = 0;
     while (got < capPerTpl) {

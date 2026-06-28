@@ -11,11 +11,11 @@ export function CultureSection() {
       <GeneratorPanel
         category="culture"
         title="Cultures & Ethnicities"
-        description="Generate names for indigenous tribes, historical ethnicities, and linguistic dialects, or draw real-world examples of traditional sports and cuisine for inspiration."
+        description="Generate names for indigenous tribes, historical ethnicities, linguistic dialects, traditional sports, and regional cuisine — each trained on a curated dictionary for its category."
         subTypes={[
           { value: "generic", label: "Cultures & Ethnicities" },
-          { value: "sports", label: "Sports & Games (real examples)" },
-          { value: "cuisine", label: "Cuisine & Foods (real examples)" },
+          { value: "sports", label: "Sports & Traditional Games" },
+          { value: "cuisine", label: "Cuisine & Foods" },
         ]}
       />
     </div>

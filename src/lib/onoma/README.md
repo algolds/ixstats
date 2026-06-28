@@ -16,9 +16,6 @@ Three layers:
 3. **Rule-based assemblers** — syllable/template generators ported from the original
    [Onoma](https://github.com/algolds/onoma) (fantasy species, taverns, mystic orders,
    military units, civic organizations, noble surnames, etc.). Pattern-driven, not learned.
-4. **Curated pickers** — a few categories are real-world proper nouns that don't Markov-blend
-   into anything coherent (traditional **sports** and **cuisine**). For these, Onoma draws a
-   shuffled sample of real examples from the culture lexicon instead of generating.
 
 Everything runs in the browser. The server is only touched to save names to the Stash,
 fetch optional live-world training data, and log generation activity.
@@ -49,9 +46,12 @@ character chain, then the syllable chain, then a fantasy-syllable fallback.
 
 ### Culture section subtypes
 
-The **Culture** tab exposes three subtypes: *Cultures & Ethnicities* (Markov-generated
-ethnonyms), and *Sports* + *Cuisine* which are **curated pickers** (real examples drawn from
-the lexicon, no Markov). Architecture/buildings live under **Places → Landmarks & Features**.
+The **Culture** tab exposes three subtypes — *Cultures & Ethnicities*, *Sports*, and
+*Cuisine* — each Markov-**generated** but trained on its own per-category curated dictionary
+(`culture_generic` / `culture_sports` / `culture_cuisine`), so e.g. cuisine names are
+modelled on real dishes rather than ethnonyms. The generic subtype additionally folds in the
+`cultural-profiles.ts` ethnonym presets; sports/cuisine train on their lexicon alone.
+Architecture/buildings live under **Places → Landmarks & Features**.
 
 ## File map
 
@@ -96,10 +96,14 @@ bun scripts/onoma/build-dicts.ts      # 3+4. classify, bucket, emit → src/lib/
 ```
 
 `extract-lexicon.ts` reads IxWiki straight from MariaDB (creds parsed from
-`/ixwiki/config/LocalSettings.php`) and the external wikis via the MediaWiki action API.
-Both type names by which `Infobox_*` template a page transcludes (SQL `templatelinks` /
-API `list=embeddedin`). External fetches are disk-cached under `scripts/onoma/raw/cache/`.
-`rebuild-from-committed.ts` re-derives the lexicon from the committed JSON without re-fetching.
+`/ixwiki/config/LocalSettings.php`) and the external wikis (**iiwiki** + **althistory**) via
+the MediaWiki action API. Both type names by which `Infobox_*` template a page transcludes
+(SQL `templatelinks` / API `list=embeddedin`). External fetches are disk-cached under
+`scripts/onoma/raw/cache/` — the cache is **incremental**: re-running fetches only
+`INFOBOX_CATEGORY` entries whose category is missing from the cache (so adding a new template
+category tops up without a full re-crawl). Delete `scripts/onoma/raw/cache/*-typed.json` to
+force a full external rebuild. `rebuild-from-committed.ts` re-derives the lexicon from the
+committed JSON without re-fetching.
 
 > **iiwiki note:** requests must send `User-Agent: IxStats-Builder` (allowlisted past its
 > Cloudflare challenge) and hit `https://iiwiki.com/api.php`. See CLAUDE.md → "External
@@ -153,9 +157,10 @@ name it returns either a **single culture** (one wins by `MIN_MARGIN`) or a **co
 `A+B`** blend when the top two are close — which is the norm for invented conworld names.
 `build-dicts.ts` keeps the singles + the **top-6 compounds** as dictionary buckets;
 rarer blends collapse to their dominant single, and under-represented cultures pool into a
-per-category `mixed` bucket. The starved culture subtypes `culture_sports` and
-`culture_cuisine` are **seed-only** (`SEED_ONLY` set) — the wikis barely have such pages, so
-they're built purely from the curated `PUBLIC_SEEDS` floor rather than noisy extraction.
+per-category `mixed` bucket. Each category — including `culture_sports` / `culture_cuisine` /
+`culture_architecture` / `culture_generic` — merges the extracted wiki rows (ixwiki + iiwiki +
+althistory) with a curated `PUBLIC_SEEDS` floor in `build-dicts.ts`, so even the thinly-tagged
+culture categories train on a solid dictionary.
 
 ## Tuning knobs
 

@@ -11,7 +11,6 @@ import {
   ArrowUpRight,
   Loader2,
   Volume2,
-  Mic,
   Languages,
   Pencil,
   X,
@@ -68,7 +67,6 @@ export function NameResultCard({
 
   // const [copiedTextType, setCopiedTextType] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [isPlayingKokoro, setIsPlayingKokoro] = useState(false);
 
   // Per-name pronunciation editor (IPA + voice overrides, stored in localStorage)
   const [mounted, setMounted] = useState(false);
@@ -204,21 +202,6 @@ export function NameResultCard({
     }
   };
 
-  // 🎙 Read Naturally — per-name / per-culture natural voice.
-  const handlePlayNatural = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isPlayingKokoro) return;
-    setIsPlayingKokoro(true);
-    try {
-      await playName();
-    } catch (err) {
-      console.error("Natural playback failed:", err);
-      notify.error("Could not play this name.");
-    } finally {
-      setIsPlayingKokoro(false);
-    }
-  };
-
   const previewPron = async () => {
     try {
       await playName({ ipaText: ipaDraft.trim() || ipa, voice: voiceDraft || undefined });
@@ -325,25 +308,6 @@ export function NameResultCard({
                 </button>
               </span>
             )}
-            {/* Natural AI voice (Kokoro container), falls back to browser speech */}
-            <button
-              type="button"
-              onClick={handlePlayNatural}
-              disabled={isPlayingKokoro}
-              title={
-                speechConfig?.kokoro?.enabled
-                  ? "Read Naturally — realistic AI voice (Kokoro)"
-                  : "Read Naturally — browser phonetic voice"
-              }
-              className="text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] disabled:opacity-50"
-            >
-              {isPlayingKokoro ? (
-                <Loader2 className="h-2.5 w-2.5 animate-spin text-[#0091ff]" />
-              ) : (
-                <Mic className="h-2.5 w-2.5 text-[#0091ff]" />
-              )}
-              <span>Read Naturally</span>
-            </button>
             {typeof naturalness === "number" && (
               <span
                 title="Phonotactic naturalness — how well this name fits the trained style"
@@ -398,8 +362,10 @@ export function NameResultCard({
         {/* Action Buttons */}
         <div
           className={cn(
-            "relative z-10 flex items-center gap-1.5 transition-opacity duration-300",
-            showDetailsModal ? "opacity-100" : "opacity-60 group-hover:opacity-100"
+            "relative z-10 flex items-center gap-1.5 transition-all duration-300 ease-out",
+            showDetailsModal
+              ? "translate-x-0 opacity-100"
+              : "translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100"
           )}
         >
           {/* Linguistic Details Button (Toggles expand/shrink) */}

@@ -104,15 +104,8 @@ const keptCompounds = new Set(
   )
 );
 
-// The wiki has almost no sports/cuisine data (2 and 14 raw rows) and what exists
-// is mostly misclassified article titles ("Flying Somua", "Royal Billion"). The
-// curated PUBLIC_SEEDS below are strictly better, so these two categories are
-// seed-only. Architecture/generic keep raw — they carry real conworld content.
-const SEED_ONLY = new Set(["culture_sports", "culture_cuisine"]);
-
 const byCategory = new Map<string, Map<string, string[]>>();
 for (const { name, category } of lexicon) {
-  if (SEED_ONLY.has(category)) continue;
   const bucket = assignBucket(name, keptCompounds);
   if (!byCategory.has(category)) byCategory.set(category, new Map());
   const buckets = byCategory.get(category)!;

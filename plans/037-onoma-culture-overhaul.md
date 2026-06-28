@@ -105,12 +105,14 @@ Make families differ by *model*, not just seed list. Wire the existing
 - **Phase 1 — clean.** `lexicon/clean.ts` now rejects wiki meta pages (`Infobox*`,
   `Template:`, `Module:`, `/doc`, `/sandbox`, `/testcases`). Test added. Re-ran
   `clean.ts` + `build-dicts.ts`; the `Infobox cheese/doc` class of junk is gone.
-- **Phase 2 — bulk-up.** The wiki has ~no culture data (sports=2 rows, cuisine=14,
-  mostly junk), so extraction was a dead end. Instead massively expanded the curated
-  `PUBLIC_SEEDS` floor in `build-dicts.ts` and made sports/cuisine **seed-only**
-  (`SEED_ONLY` set) since their raw data was pure noise. Result per `manifest.json`:
-  sports 78→166, cuisine 127→232, architecture 122→232, generic 150→292, and 13–14
-  family buckets each (was 8–9).
+- **Phase 2 — bulk-up.** Two parts: (a) massively expanded the curated `PUBLIC_SEEDS`
+  floor in `build-dicts.ts`; (b) **fixed the external-corpus cache** in
+  `extract-lexicon.ts` — it returned the per-wiki cache verbatim and never re-fetched, so
+  iiwiki/althistory were never queried for the later-added culture infoboxes (culture data
+  came from ixwiki alone: sports=2, cuisine=14). Made the cache **incremental** (tops up
+  missing categories only), which pulled thousands of real culture rows from iiwiki +
+  althistory. Curated floor + wiki rows now merge for every category. Result per
+  `manifest.json`: sports 78→320, cuisine 127→277, architecture 122→587, generic 150→1,105.
 - **Phase 3 — families + dropdown.** Added 5 real families — **Persian, Turkic,
   African, Indic, Uralic** — as `CulturalProfile` values (`types.ts`), full
   10-category seed blocks (`cultural-profiles.ts`), `PUBLIC_SEEDS` culture floors,
@@ -129,8 +131,9 @@ all 10 categories + IPA rules. Did not run global tsc (forbidden).
 
 - `province` lexicon is still only `mixed`:30 — no per-family buckets (wiki lacks the
   data). Either source it or drop the bucket; presets cover province generation today.
-- Sports/cuisine are still Markov-generated from proper nouns. If output reads as
-  noise, switch those two subtypes to a curated "draw N real examples" picker.
+- Sports/cuisine Markov-generate new names from their own per-category dictionary (real
+  conworld + curated terms). A brief experiment with a "draw real examples" picker was
+  reverted — the requirement is generated names, dictionary used only as training data.
 - New families have no `culture-classifier.ts` / `bucket.ts` rules, so they get no
   raw-wiki data for normal categories — they run on presets + `PUBLIC_SEEDS` only.
   Fine until the wikis actually have tagged content for them.
