@@ -16,6 +16,13 @@ capability integer. Each release entry below lists which components advanced and
   - **Global Context Provider (`MediaContext.tsx`)**: Created the global media context and `<MediaContextProvider>` to handle active track queues, volumes, speeds, and state distribution, with automatic `localStorage` synchronization for preferences and active session resume.
   - **Prisma Database Integration**: Added database tables (`MediaTrack`, `MediaPlaylist`, `PlaylistTrack`, `PlaybackHistory`) with indexes for optimized `userId` and `trackId` relations.
   - **Facet UI Components**: Designed and built the player controls (`MiniPlayer.tsx`, `FullPlayer.tsx`, `QueuePanel.tsx`, `WaveformVisualizer.tsx`) fully styled with the physics-driven Facet design system primitives (`FacetContainer`, `FacetCard`, `FacetModal`).
+- **Statecraft Stage 4: Power Brokers**:
+  - **Derivation Logic (`statecraft-power-brokers.ts`)**: Built a pure functional derivation engine mapping active government components and department budget spend thresholds to summon/satisfy interest groups (Technocrats, Party, Generals, Magnates, Clergy).
+  - **tRPC getPowerBrokers Endpoint (`brokers.ts`)**: Exposed active power broker data to the frontend, queryable per country.
+  - **Simulation Engine Integration (`government-component-effects.ts`)**: Wires satisfied broker bonuses (e.g. GDP growth modifier, military readiness, capacity relief) directly into storyteller effects and political stability calculations.
+  - **Politics Drift Cron Optimization (`politics-drift-cron.ts`)**: Added support for preloaded components/allocations, bypassing duplicate DB roundtrips per processed country.
+  - **Facet UI Politics Panel (`PowerBrokersPanel.tsx`)**: Created a visual dashboard widget displaying active brokers, satisfied progress bars, and active lever bonuses, mounted inside the MyCountry politics layout.
+- **Storyteller Casing Normalization (`calculations.ts`)**: Normalized database input types to lowercase to prevent silent simulation mismatches.
 - **IxMedia Subsystem (Phase 2 Narration Integration)**:
   - **Playback Delegate Pattern**: Refactored `useWikiNarrator.ts` to register a `PlaybackDelegate` with `MediaContext.tsx`, enabling the global players and queue controls to orchestrate text-to-speech blocks smoothly.
   - **Chapter Navigator (`ChapterNavigator.tsx`)**: Built a sidebar component for the maximized player, mapping heading blocks to chapters with jump actions.
