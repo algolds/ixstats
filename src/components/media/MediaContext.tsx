@@ -58,20 +58,22 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
       const isSameTrack = activeTrack && activeTrack.id === track.id;
       const isDelegatedTrack = track.isDynamicTts || track.id.startsWith("wiki:");
 
-      if (activeDelegateRef.current && isDelegatedTrack) {
-        setActiveTrack(track);
-        const idx = queue.findIndex((t) => t.id === track.id);
-        setCurrentIndex(idx);
-        activeDelegateRef.current.play();
-        return;
-      } else if (activeDelegateRef.current && !isDelegatedTrack) {
-        activeDelegateRef.current.pause();
-        activeDelegateRef.current = null;
-      }
-
-      if (isDelegatedTrack && !activeDelegateRef.current) {
-        console.warn("Attempted to play delegated track, but no delegate is registered.");
-        return;
+      if (isDelegatedTrack) {
+        if (activeDelegateRef.current) {
+          engineRef.current?.pause();
+          setActiveTrack(track);
+          const idx = queue.findIndex((t) => t.id === track.id);
+          setCurrentIndex(idx);
+          activeDelegateRef.current.play();
+          return;
+        } else {
+          console.warn("Attempted to play delegated track, but no delegate is registered.");
+          return;
+        }
+      } else {
+        if (activeDelegateRef.current) {
+          activeDelegateRef.current.pause();
+        }
       }
 
       setActiveTrack(track);

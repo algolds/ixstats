@@ -104,6 +104,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const blocksRef = useRef<PlaybackBlock[]>([]);
   const activeFetchesRef = useRef<Map<string, Promise<Blob>>>(new Map());
   const transitionTimeoutRef = useRef<any>(null);
+  const speedRef = useRef(1.0);
+  const voiceRef = useRef("");
 
   const fetchAudioBlob = useCallback(async (requestUrl: string): Promise<Blob> => {
     if (activeFetchesRef.current.has(requestUrl)) {
@@ -154,7 +156,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
       if (!isKokoroEnabled) return;
 
-      const activeVoice = voice || undefined;
+      const activeVoice = voiceRef.current || undefined;
       const chosenVoice = activeVoice || config?.kokoro?.voice;
 
       for (let i = 1; i <= 2; i++) {
@@ -167,7 +169,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           });
           const finalVoice = chosenVoice;
           if (finalVoice) params.set("voice", finalVoice);
-          params.set("speed", String(speed));
+          params.set("speed", String(speedRef.current));
 
           const requestUrl = `/api/onoma/tts?${params.toString()}`;
           // Trigger fetch in background and ignore failures
@@ -175,7 +177,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         }
       }
     },
-    [config, speed, voice, fetchAudioBlob]
+    [config, fetchAudioBlob]
   );
 
   // Local storage personal preferences loading
@@ -200,6 +202,14 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   useEffect(() => {
     blocksRef.current = blocks;
   }, [blocks]);
+
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+
+  useEffect(() => {
+    voiceRef.current = voice;
+  }, [voice]);
 
   useEffect(() => {
     registerPlaybackDelegate(playbackDelegate);
@@ -408,8 +418,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         totalBlocks: blocksRef.current.length,
         activeText: block.text,
         activeSectionTitle: nearestSectionText || "Overview",
-        speed,
-        voice,
+        speed: speedRef.current,
+        voice: voiceRef.current,
       });
 
       if (audioRef.current) {
@@ -422,7 +432,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       }
 
       const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
-      const activeVoice = voice || undefined;
+      const activeVoice = voiceRef.current || undefined;
 
       try {
         if (isKokoroEnabled) {
@@ -432,7 +442,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           });
           const chosenVoice = activeVoice || config?.kokoro?.voice;
           if (chosenVoice) params.set("voice", chosenVoice);
-          params.set("speed", String(speed));
+          params.set("speed", String(speedRef.current));
 
           const requestUrl = `/api/onoma/tts?${params.toString()}`;
 
@@ -482,7 +492,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           // Fallback to browser SpeechSynthesis
           const phonetic = block.text;
           const utterance = new SpeechSynthesisUtterance(phonetic);
-          utterance.rate = speed * 0.85;
+          utterance.rate = speedRef.current * 0.85;
 
           utterance.onend = () => {
             if (isPlayingRef.current) {
@@ -508,7 +518,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         );
         // Fallback to browser speech directly
         const utterance = new SpeechSynthesisUtterance(block.text);
-        utterance.rate = speed * 0.85;
+        utterance.rate = speedRef.current * 0.85;
         utterance.onend = () => {
           if (isPlayingRef.current) {
             playBlock(activeIdxRef.current + 1);
@@ -586,6 +596,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const changeSpeed = useCallback(
     (newSpeed: number) => {
       setSpeed(newSpeed);
+      speedRef.current = newSpeed;
       localStorage.setItem("onoma-personal-speed", String(newSpeed));
       setNarratorState({ speed: newSpeed });
       if (isPlayingRef.current) {
@@ -599,6 +610,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const changeVoice = useCallback(
     (newVoice: string) => {
       setVoice(newVoice);
+      voiceRef.current = newVoice;
       localStorage.setItem("onoma-personal-voice", newVoice);
       setNarratorState({ voice: newVoice });
       if (isPlayingRef.current) {
