@@ -58,7 +58,7 @@ export function useStudioState({
   );
 
   // Generator Config
-  const [order, setOrder] = useState<number>(3);
+  const [order, setOrder] = useState<number>(2);
   const [batchCount, setBatchCount] = useState<number>(10);
   const [options, setOptions] = useState<GenerateOptions>({
     minLength: 4,

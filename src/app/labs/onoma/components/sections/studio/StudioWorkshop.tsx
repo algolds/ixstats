@@ -6,6 +6,7 @@
 import { Wand2, SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucide-react";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { FacetCard } from "~/components/ui/facet-container";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { MarkovVisualizer } from "../MarkovVisualizer";
 import { LexiconExplorer } from "../LexiconExplorer";
 import { type StudioState } from "../../../hooks/useStudioState";
@@ -329,16 +330,27 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
 
             {/* Assemble control */}
             <div className="border-border/40 mt-2 flex items-center gap-2 border-t pt-4">
-              <div className="w-16">
-                <select
-                  value={batchCount}
-                  onChange={(e) => setBatchCount(parseInt(e.target.value))}
-                  className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1 text-xs focus:outline-none"
+              <div className="flex items-center gap-1 border border-border/60 bg-background rounded-lg p-0.5 select-none h-7">
+                <button
+                  type="button"
+                  onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
+                  disabled={batchCount <= 5}
+                  className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs"
                 >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={15}>15</option>
-                </select>
+                  -
+                </button>
+                <NumberFlowDisplay
+                  value={batchCount}
+                  className="text-foreground font-mono text-xs font-semibold px-1 min-w-[20px] text-center"
+                />
+                <button
+                  type="button"
+                  onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
+                  disabled={batchCount >= 50}
+                  className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs"
+                >
+                  +
+                </button>
               </div>
 
               <button

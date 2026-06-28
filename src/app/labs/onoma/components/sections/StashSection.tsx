@@ -26,6 +26,7 @@ import { DictionaryEditModal, type DictEditValue } from "../shared/DictionaryEdi
 import { FacetCard } from "~/components/ui/facet-container";
 import { guessRoleGenderFromFilename } from "~/lib/onoma/name-sets";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 
 interface StashSectionProps {
   onLoadToStudio?: (words: string[], title: string) => void;
@@ -345,6 +346,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                     key={entry.id}
                     name={nameValue}
                     isSaved
+                    allowCustomize
                     onUse={() => setSelectedNameForUse(nameValue)}
                     savedAt={entry.createdAt}
                     originLabel={originLabel}
@@ -512,17 +514,17 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-wrap items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         {/* Expand Button */}
                         <button
                           onClick={() => toggleExpandDict(dict.id)}
-                          className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex items-center gap-0.5 rounded px-2 py-1 text-[11px]"
+                          className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] cursor-pointer"
                           title={isExpanded ? "Hide word list" : "Show word list"}
                         >
                           {isExpanded ? (
-                            <ChevronUp className="h-3 w-3" />
+                            <ChevronUp className="h-3.5 w-3.5" />
                           ) : (
-                            <ChevronDown className="h-3 w-3" />
+                            <ChevronDown className="h-3.5 w-3.5" />
                           )}
                           <span>Words</span>
                         </button>
@@ -531,10 +533,10 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                         {onLoadToStudio && (
                           <button
                             onClick={() => onLoadToStudio(dict.values, dict.title)}
-                            className="flex items-center gap-0.5 rounded bg-[#0091ff]/10 px-2 py-1 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20"
+                            className="flex h-7 items-center gap-1.5 rounded bg-[#0091ff]/10 px-2.5 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20 cursor-pointer"
                             title="Load into Studio Workshop"
                           >
-                            <Wrench className="h-3 w-3" />
+                            <Wrench className="h-3.5 w-3.5" />
                             <span>Load Studio</span>
                           </button>
                         )}
@@ -546,14 +548,15 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                               setStashNameId(null);
                               setStashDictId(isStashingThisDict ? null : dict.id);
                             }}
-                            className={`flex items-center gap-0.5 rounded px-2 py-1 text-[11px] transition-colors ${
+                            className={cn(
+                              "flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] transition-colors cursor-pointer",
                               isStashingThisDict
                                 ? "bg-indigo-500/10 text-indigo-500"
                                 : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-[#0091ff]"
-                            }`}
+                            )}
                             title="Move dictionary to another Stash folder"
                           >
-                            <FolderPlus className="h-3 w-3" />
+                            <FolderPlus className="h-3.5 w-3.5" />
                             <span>Move</span>
                           </button>
 
@@ -620,11 +623,12 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                         {/* Share toggle */}
                         <button
                           onClick={() => handleTogglePublic(dict.id, dict.isPublic)}
-                          className={`flex items-center gap-0.5 rounded px-2 py-1 text-[11px] font-semibold transition-colors ${
+                          className={cn(
+                            "flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] font-semibold transition-colors cursor-pointer",
                             dict.isPublic
                               ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
                               : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-                          }`}
+                          )}
                           title={
                             dict.isPublic
                               ? "Shared publicly (click to make private)"
@@ -632,9 +636,9 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                           }
                         >
                           {dict.isPublic ? (
-                            <Globe className="h-3 w-3" />
+                            <Globe className="h-3.5 w-3.5" />
                           ) : (
-                            <Lock className="h-3 w-3" />
+                            <Lock className="h-3.5 w-3.5" />
                           )}
                           <span>{dict.isPublic ? "Public" : "Private"}</span>
                         </button>
@@ -652,7 +656,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                               setName: (dict as any).setName ?? null,
                             })
                           }
-                          className="bg-secondary/30 text-muted-foreground rounded p-1 transition-colors hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+                          className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-[#0091ff]/10 hover:text-[#0091ff] cursor-pointer"
                           title="Edit dictionary (rename, role, set)"
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -664,7 +668,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                             onClick={() =>
                               setExportDictId(exportDictId === dict.id ? null : dict.id)
                             }
-                            className="bg-secondary/30 text-muted-foreground rounded p-1 transition-colors hover:bg-emerald-500/10 hover:text-emerald-500"
+                            className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-emerald-500/10 hover:text-emerald-500 cursor-pointer"
                             title="Export dictionary"
                           >
                             <Download className="h-3.5 w-3.5" />
@@ -687,7 +691,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                         {/* Delete */}
                         <button
                           onClick={() => handleDelete(dict.id)}
-                          className="bg-secondary/30 text-muted-foreground rounded p-1 transition-colors hover:bg-red-500/10 hover:text-red-500"
+                          className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-red-500/10 hover:text-red-500 cursor-pointer"
                           title="Delete dictionary"
                         >
                           <Trash2 className="h-3.5 w-3.5" />

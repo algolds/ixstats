@@ -46,6 +46,7 @@ interface NameResultCardProps {
   originLabel?: string | null;
   /** Extra action buttons (e.g. move-to-folder, delete) rendered in the header row. */
   headerExtras?: React.ReactNode;
+  allowCustomize?: boolean;
 }
 
 export function NameResultCard({
@@ -58,6 +59,7 @@ export function NameResultCard({
   savedAt,
   originLabel,
   headerExtras,
+  allowCustomize = false,
 }: NameResultCardProps) {
   const notify = useNotify();
   const suggestMutation = api.onoma.suggestPhonemes.useMutation();
@@ -257,14 +259,41 @@ export function NameResultCard({
     }
   };
 
+  const fitColor =
+    typeof naturalness === "number"
+      ? naturalness >= 66
+        ? "emerald"
+        : naturalness >= 33
+          ? "amber"
+          : "rose"
+      : null;
+
   return (
     <FacetCard
       depth={showDetailsModal ? 2 : 1}
       className={cn(
-        "group border-border/40 relative flex flex-col justify-start gap-3.5 overflow-hidden border px-4 py-3.5 transition-all duration-300 ease-in-out",
+        "group relative flex flex-col justify-start gap-3.5 overflow-hidden border px-4 py-3.5 transition-all duration-500 ease-out",
+        // Default border/background colors matching the fit score
+        fitColor === "emerald" && "border-emerald-500/20 bg-emerald-500/[0.01]",
+        fitColor === "amber" && "border-amber-500/20 bg-amber-500/[0.01]",
+        fitColor === "rose" && "border-rose-500/10 bg-rose-500/[0.005]",
+        !fitColor && "border-border/40",
+        // Expanded details modal border styles
         showDetailsModal
-          ? "z-20 col-span-1 border-[#0091ff]/30 bg-[#0091ff]/[0.01] shadow-lg ring-1 shadow-[#0091ff]/5 ring-[#0091ff]/10 sm:col-span-2"
-          : "z-10 col-span-1 hover:border-[#0091ff]/45 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:border-[#0091ff]/35 dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
+          ? cn(
+              "z-20 col-span-1 shadow-lg ring-1 sm:col-span-2",
+              fitColor === "emerald" && "border-emerald-500/35 ring-emerald-500/20 shadow-emerald-500/5",
+              fitColor === "amber" && "border-amber-500/35 ring-amber-500/20 shadow-amber-500/5",
+              fitColor === "rose" && "border-rose-500/25 ring-rose-500/10 shadow-rose-500/5",
+              !fitColor && "border-[#0091ff]/30 bg-[#0091ff]/[0.01] shadow-[#0091ff]/5 ring-[#0091ff]/10"
+            )
+          : cn(
+              "z-10 col-span-1",
+              fitColor === "emerald" && "hover:border-emerald-500/45 hover:shadow-[0_0_14px_rgba(16,185,129,0.12)] dark:hover:border-emerald-500/35 dark:hover:shadow-[0_0_18px_rgba(16,185,129,0.18)]",
+              fitColor === "amber" && "hover:border-amber-500/45 hover:shadow-[0_0_14px_rgba(245,158,11,0.12)] dark:hover:border-amber-500/35 dark:hover:shadow-[0_0_18px_rgba(245,158,11,0.18)]",
+              fitColor === "rose" && "hover:border-rose-500/35 hover:shadow-[0_0_14px_rgba(244,63,94,0.1)] dark:hover:border-rose-500/25 dark:hover:shadow-[0_0_18px_rgba(244,63,94,0.15)]",
+              !fitColor && "hover:border-[#0091ff]/45 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:border-[#0091ff]/35 dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
+            )
       )}
     >
       {/* Texture Overlay */}
@@ -272,11 +301,28 @@ export function NameResultCard({
         <TextureOverlay texture="diamonds" className="mix-blend-overlay" />
       </div>
 
+      {/* Refraction Radial Glow on Hover with microanimations */}
+      {fitColor && (
+        <div
+          className={cn(
+            "pointer-events-none absolute -right-12 -top-12 h-24 w-24 rounded-full blur-2xl opacity-0 transition-all duration-700 ease-in-out group-hover:opacity-25 group-hover:scale-150 animate-pulse",
+            fitColor === "emerald" && "bg-emerald-500",
+            fitColor === "amber" && "bg-amber-500",
+            fitColor === "rose" && "bg-rose-500"
+          )}
+        />
+      )}
+
       {/* Main Top Row */}
       <div className="relative z-10 flex w-full items-start justify-between gap-2">
         {/* Name Display */}
-        <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
-          <span className="text-foreground text-sm font-semibold tracking-wide transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base truncate w-full">
+        <div
+          className={cn(
+            "flex flex-col items-start gap-1 flex-1 min-w-0 pr-6 transition-all duration-300 ease-in-out",
+            allowCustomize ? "group-hover:pr-[170px]" : "group-hover:pr-[135px]"
+          )}
+        >
+          <span className="text-foreground text-sm font-semibold tracking-wide transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base break-words w-full">
             {name}
           </span>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
@@ -288,38 +334,27 @@ export function NameResultCard({
                   onClick={handlePlayPronunciation}
                   title="Click to hear the exact phonetic pronunciation"
                   className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 rounded-l-full border py-0.5 pr-1.5 pl-2 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 border py-0.5 pr-2 pl-2 font-mono text-[9px] transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                    allowCustomize ? "rounded-l-full" : "rounded-full",
                     hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
                   )}
                 >
                   <Volume2 className="h-2.5 w-2.5" />
                   {ipa}
                 </button>
-                <button
-                  type="button"
-                  onClick={openPronEditor}
-                  title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
-                  className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
-                    hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
-                  )}
-                >
-                  <Pencil className="h-2.5 w-2.5" />
-                </button>
-              </span>
-            )}
-            {typeof naturalness === "number" && (
-              <span
-                title="Phonotactic naturalness — how well this name fits the trained style"
-                className={`rounded-full border px-2 py-0.5 font-mono text-[9px] select-none ${
-                  naturalness >= 66
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
-                    : naturalness >= 33
-                      ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                      : "border-rose-500/30 bg-rose-500/10 text-rose-600"
-                }`}
-              >
-                {naturalness}% fit
+                {allowCustomize && (
+                  <button
+                    type="button"
+                    onClick={openPronEditor}
+                    title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
+                    className={cn(
+                      "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                      hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                    )}
+                  >
+                    <Pencil className="h-2.5 w-2.5" />
+                  </button>
+                )}
               </span>
             )}
             {/* Hidden for now: Cyrillic/Greek/Arabic spelling buttons */}
@@ -362,10 +397,10 @@ export function NameResultCard({
         {/* Action Buttons */}
         <div
           className={cn(
-            "relative z-10 flex flex-shrink-0 items-center gap-1 transition-all duration-300 ease-out pt-0.5",
+            "absolute top-2.5 right-3.5 z-20 flex flex-shrink-0 items-center gap-1 rounded-lg border border-border/40 bg-background/85 px-1.5 py-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-out",
             showDetailsModal
-              ? "translate-x-0 opacity-100"
-              : "translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100"
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
           )}
         >
           {/* Linguistic Details Button (Toggles expand/shrink) */}

@@ -1,16 +1,15 @@
 "use client";
 
-// src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx
-// Onoma Custom Studio Lexicon Dictionary View
-
-import { BookOpen, Search, Volume2, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, Search, Volume2, Trash2, Pencil, X, RotateCcw } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { type StudioState } from "../../../hooks/useStudioState";
 import { api } from "~/trpc/react";
 import { speakName } from "~/lib/onoma/browser-speech";
-import { getNameOverride } from "~/lib/onoma/ipa-overrides";
+import { getNameOverride, setNameOverride } from "~/lib/onoma/ipa-overrides";
 import { useNotify } from "~/hooks/useNotify";
+import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
 
 interface StudioLexiconProps {
   state: StudioState;
@@ -23,6 +22,15 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
     staleTime: 600000,
   });
+  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+    staleTime: 600000,
+  });
+  const suggestMutation = api.onoma.suggestPhonemes.useMutation();
+
+  const [editingPron, setEditingPron] = useState(false);
+  const [ipaDraft, setIpaDraft] = useState("");
+  const [voiceDraft, setVoiceDraft] = useState("");
+  const [overridesVersion, setOverridesVersion] = useState(0);
 
   const {
     searchTerm,
@@ -48,6 +56,56 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
     handleSaveLexiconDefinition,
     handleDeleteTerm,
   } = state;
+
+  useEffect(() => {
+    setEditingPron(false);
+    if (selectedTerm) {
+      const over = getNameOverride(selectedTerm);
+      setIpaDraft(over?.ipa || "");
+      setVoiceDraft(over?.voice || "");
+    }
+  }, [selectedTerm, overridesVersion]);
+
+  const hasOverride = selectedTerm ? !!getNameOverride(selectedTerm) : false;
+  const effectiveIpa = selectedTerm
+    ? getNameOverride(selectedTerm)?.ipa || selectedTermIpa
+    : "";
+
+  const savePron = () => {
+    if (!selectedTerm) return;
+    const cleanIpa = ipaDraft.trim();
+    setNameOverride(selectedTerm, { ipa: cleanIpa || undefined, voice: voiceDraft || undefined });
+    setEditingPron(false);
+    setOverridesVersion((v) => v + 1);
+    notify.success("Pronunciation saved successfully!");
+  };
+
+  const previewPron = async () => {
+    if (!selectedTerm) return;
+    try {
+      await speakName({
+        name: selectedTerm,
+        ipa: ipaDraft || selectedTermIpa,
+        culture: classifiedCulture || null,
+        kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
+        voice: voiceDraft,
+        defaultVoice: speechConfig?.kokoro?.voice,
+      });
+    } catch (err) {
+      console.error("Preview failed:", err);
+      notify.error("Preview failed.");
+    }
+  };
+
+  const resetPron = () => {
+    if (!selectedTerm) return;
+    setNameOverride(selectedTerm, {});
+    setIpaDraft("");
+    setVoiceDraft("");
+    setEditingPron(false);
+    setOverridesVersion((v) => v + 1);
+    notify.success("Pronunciation reset to conlang defaults.");
+  };
 
   return (
     <div className="animate-in fade-in grid items-start gap-6 duration-300 lg:grid-cols-12">
@@ -149,29 +207,45 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                   )}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  {selectedTermIpa && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          await speakName({
-                            name: selectedTerm,
-                            ipa: selectedTermIpa,
-                            culture: classifiedCulture || null,
-                            kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
-                            voice: getNameOverride(selectedTerm)?.voice,
-                            defaultVoice: speechConfig?.kokoro?.voice,
-                          });
-                        } catch (err) {
-                          console.error("Pronunciation playback failed:", err);
-                          notify.error("Could not play this pronunciation.");
-                        }
-                      }}
-                      title="Listen to pronunciation"
-                      className="text-muted-foreground border-border/40 bg-background flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[10px] transition-all duration-200 hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
-                    >
-                      <Volume2 className="h-3 w-3" />
-                      <span>{selectedTermIpa}</span>
-                    </button>
+                  {effectiveIpa && (
+                    <span className="flex items-center">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await speakName({
+                              name: selectedTerm,
+                              ipa: effectiveIpa,
+                              culture: classifiedCulture || null,
+                              kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
+                              voice: getNameOverride(selectedTerm)?.voice,
+                              defaultVoice: speechConfig?.kokoro?.voice,
+                            });
+                          } catch (err) {
+                            console.error("Pronunciation playback failed:", err);
+                            notify.error("Could not play this pronunciation.");
+                          }
+                        }}
+                        title="Listen to pronunciation"
+                        className={cn(
+                          "text-muted-foreground border-border/40 bg-background flex cursor-pointer items-center gap-1 rounded-l-full border px-2.5 py-0.5 font-mono text-[10px] transition-all duration-200 hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                          hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                        )}
+                      >
+                        <Volume2 className="h-3 w-3" />
+                        <span>{effectiveIpa}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingPron(!editingPron)}
+                        title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
+                        className={cn(
+                          "text-muted-foreground border-border/40 bg-background flex cursor-pointer items-center rounded-r-full border border-l-0 px-2 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                          hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                        )}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </span>
                   )}
                   <span className="text-muted-foreground text-[10px] font-semibold">
                     Culture: <span className="text-foreground capitalize">{classifiedCulture}</span>
@@ -191,6 +265,116 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 <span>Delete Word</span>
               </button>
             </div>
+
+            {/* Inline Pronunciation Editor */}
+            {editingPron && (
+              <div className="border-border/20 animate-in slide-in-from-top-1 relative z-10 w-full space-y-2.5 rounded-xl border bg-[#0091ff]/[0.02] p-3 text-left duration-200">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
+                    Customize Pronunciation
+                  </h4>
+                  <button
+                    onClick={() => setEditingPron(false)}
+                    title="Close"
+                    className="text-muted-foreground cursor-pointer rounded p-0.5 hover:text-[#0091ff]"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-muted-foreground text-[8px] font-bold uppercase">
+                      IPA (drives Read Naturally phonemes)
+                    </label>
+                    {speechConfig?.kokoro?.enabled &&
+                      speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const res = await suggestMutation.mutateAsync({ text: selectedTerm });
+                              if (res.phonemes) {
+                                setIpaDraft(res.phonemes);
+                                notify.success("Suggested IPA loaded.");
+                              } else {
+                                notify.error("Could not generate IPA suggestion.");
+                              }
+                            } catch (err: any) {
+                              notify.error(err.message || "Failed to fetch suggestion.");
+                            }
+                          }}
+                          disabled={suggestMutation.isPending}
+                          className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
+                        >
+                          {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
+                        </button>
+                      )}
+                  </div>
+                  <input
+                     type="text"
+                     value={ipaDraft}
+                     onChange={(e) => setIpaDraft(e.target.value)}
+                     placeholder="/ˈeksɑːmpl/"
+                     className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
+                  />
+                  {speechConfig?.kokoro?.enabled &&
+                    (() => {
+                      const result = ipaToKokoroPhonemes(ipaDraft);
+                      return (
+                        <div className="text-muted-foreground mt-1 flex flex-wrap gap-1 font-mono text-[9px]">
+                          <span>Phonemes: {result.phonemes || "(empty)"}</span>
+                          {result.dropped.length > 0 && (
+                            <span className="font-semibold text-amber-500">
+                              (dropped: {result.dropped.join(", ")})
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="text-muted-foreground text-[8px] font-bold uppercase">Voice</label>
+                  <select
+                    value={voiceDraft}
+                    onChange={(e) => setVoiceDraft(e.target.value)}
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 text-xs focus:outline-none"
+                  >
+                    <option value="">Default / culture voice</option>
+                    {(voicesData?.voices ?? []).map((v: string) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                  <button
+                    onClick={resetPron}
+                    title="Reset to defaults"
+                    className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="h-3 w-3" /> Reset
+                  </button>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={previewPron}
+                      className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors cursor-pointer"
+                    >
+                      <Volume2 className="h-3 w-3" /> Preview
+                    </button>
+                    <button
+                      onClick={savePron}
+                      className="rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff] cursor-pointer"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Transcriptions Grid */}
             <div className="space-y-2">

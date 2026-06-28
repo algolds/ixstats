@@ -5,7 +5,7 @@
 // (role + gender) via a configurable template, Markov-generating each part.
 
 import { useMemo, useState, useEffect } from "react";
-import { Wand2, Info, Plus, Trash2, Users } from "lucide-react";
+import { Wand2, Info, Plus, Trash2, Users, HelpCircle } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -15,10 +15,12 @@ import {
   NAME_GENDERS,
   defaultTemplate,
   genderMatches,
+  CONVENTION_PRESETS,
   type NameRole,
   type NameGender,
   type NameSlot,
 } from "~/lib/onoma/name-sets";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 interface TaggedDict {
   values: string[];
@@ -33,6 +35,7 @@ export function StudioNameSets() {
   const [slots, setSlots] = useState<NameSlot[]>([]);
   const [batchCount, setBatchCount] = useState(10);
   const [names, setNames] = useState<string[]>([]);
+  const [presetKey, setPresetKey] = useState<string>("custom");
 
   // Group dictionaries by their Name Set tag.
   const sets = useMemo(() => {
@@ -89,6 +92,7 @@ export function StudioNameSets() {
         const tpl = JSON.parse(saved);
         setSlots(tpl.slots ?? []);
         setSeparator(tpl.separator || " ");
+        setPresetKey(tpl.presetKey || "custom");
         return;
       } catch {
         /* fall through to default */
@@ -97,6 +101,7 @@ export function StudioNameSets() {
     const tpl = defaultTemplate(rolesPresent);
     setSlots(tpl.slots);
     setSeparator(tpl.separator);
+    setPresetKey("custom");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSet]);
 
@@ -105,20 +110,29 @@ export function StudioNameSets() {
     if (!selectedSet || typeof window === "undefined") return;
     localStorage.setItem(
       `onoma-nameset-tpl-${selectedSet}`,
-      JSON.stringify({ slots, separator })
+      JSON.stringify({ slots, separator, presetKey })
     );
-  }, [selectedSet, slots, separator]);
+  }, [selectedSet, slots, separator, presetKey]);
+
+  const handlePresetChange = (key: string) => {
+    setPresetKey(key);
+    const preset = CONVENTION_PRESETS.find((p) => p.key === key);
+    if (preset) {
+      setSlots(preset.template.slots);
+      setSeparator(preset.template.separator);
+    }
+  };
 
   const generate = () => {
     if (slots.length === 0 || activeDicts.length === 0) return;
 
     // Build one Markov chain per unique slot (role+gender) for this batch.
     const chainCache = new Map<string, { chain: MarkovChain; words: string[] } | null>();
-    const chainFor = (slot: NameSlot) => {
-      const key = `${slot.role}|${slot.gender}`;
+    const chainFor = (role: NameRole, gender: NameGender) => {
+      const key = `${role}|${gender}`;
       if (chainCache.has(key)) return chainCache.get(key);
       const words = activeDicts
-        .filter((d) => d.role === slot.role && genderMatches(slot.gender, d.gender))
+        .filter((d) => d.role === role && genderMatches(gender, d.gender))
         .flatMap((d) => d.values)
         .flatMap((v) => v.split(/[\r\n,\s]+/))
         .map((v) => v.trim())
@@ -127,7 +141,7 @@ export function StudioNameSets() {
         chainCache.set(key, null);
         return null;
       }
-      const chain = new MarkovChain(3);
+      const chain = new MarkovChain(2);
       chain.addWords(words);
       const entry = { chain, words };
       chainCache.set(key, entry);
@@ -137,21 +151,77 @@ export function StudioNameSets() {
     const out: string[] = [];
     const opts = { minLength: 3, maxLength: 12, allowDuplicates: true };
     for (let i = 0; i < batchCount; i++) {
+      // 1. Roll a unified name gender
+      const nameGender: "male" | "female" = Math.random() > 0.5 ? "male" : "female";
+
       const parts = slots.map((slot) => {
-        const c = chainFor(slot);
-        if (!c) return "";
-        const tok =
-          c.chain.generate(opts) || c.words[Math.floor(Math.random() * c.words.length)];
-        return MarkovChain.capitalize(tok);
+        // 2. Resolve gender
+        const slotGender = slot.genderMode === "aligned" ? nameGender : slot.gender;
+        const targetGender = slotGender === "any" ? nameGender : slotGender;
+
+        let token = "";
+
+        // 3. Matronymic / Patronymic Generation
+        if (slot.role === "matronymic" || slot.role === "patronymic") {
+          if (slot.parentName) {
+            token = slot.parentName;
+          } else {
+            // Generate a random parent name: female for matronymic, male for patronymic
+            const parentGender = slot.role === "matronymic" ? "female" : "male";
+            const c = chainFor("given", parentGender) || chainFor("given", "any");
+            if (c) {
+              token = c.chain.generate(opts) || c.words[Math.floor(Math.random() * c.words.length)];
+            }
+          }
+        } else {
+          // Standard generation
+          const c = chainFor(slot.role, targetGender) || chainFor(slot.role, "any");
+          if (c) {
+            token = c.chain.generate(opts) || c.words[Math.floor(Math.random() * c.words.length)];
+          }
+        }
+
+        if (!token) return "";
+
+        // 4. Apply capitalization
+        token = MarkovChain.capitalize(token);
+
+        // 5. Apply Suffix Rule
+        let finalSuffix = slot.suffix || "";
+        if (slot.suffixRule === "hendalarsk-matronymic") {
+          finalSuffix = targetGender === "male" ? "són" : targetGender === "female" ? "toschter" : "kind";
+        } else if (slot.suffixRule === "yonderian-patronymic") {
+          finalSuffix = targetGender === "male" ? "son" : "daughter";
+        } else if (slot.suffixRule === "caphirian-lineage") {
+          finalSuffix = slot.role === "matronymic" ? "-ramus" : "-proles";
+        }
+
+        return `${slot.prefix || ""}${token}${finalSuffix}`;
       });
+
       const full = parts.filter(Boolean).join(separator);
       if (full) out.push(full);
     }
     setNames(out);
   };
 
-  const updateSlot = (idx: number, patch: Partial<NameSlot>) =>
-    setSlots((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  const updateSlot = (idx: number, patch: Partial<NameSlot>) => {
+    setSlots((prev) => {
+      const next = prev.map((s, i) => (i === idx ? { ...s, ...patch } : s));
+      setPresetKey("custom");
+      return next;
+    });
+  };
+
+  const addSlot = () => {
+    setSlots((prev) => [...prev, { role: "given", gender: "any", genderMode: "aligned" }]);
+    setPresetKey("custom");
+  };
+
+  const removeSlot = (idx: number) => {
+    setSlots((prev) => prev.filter((_, i) => i !== idx));
+    setPresetKey("custom");
+  };
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-12">
@@ -163,17 +233,77 @@ export function StudioNameSets() {
               <Users className="h-3.5 w-3.5" /> Name Set
             </label>
             {setNameKeys.length > 0 ? (
-              <select
-                value={selectedSet}
-                onChange={(e) => setSelectedSet(e.target.value)}
-                className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none"
-              >
-                {setNameKeys.map((s) => (
-                  <option key={s} value={s}>
-                    {s} ({sets.get(s)?.length} dicts)
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={selectedSet}
+                  onChange={(e) => setSelectedSet(e.target.value)}
+                  className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none"
+                >
+                  {setNameKeys.map((s) => (
+                    <option key={s} value={s}>
+                      {s} ({sets.get(s)?.length} dicts)
+                    </option>
+                  ))}
+                </select>
+
+                <div className="space-y-1.5 border-t border-border/40 pt-3">
+                  <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider">
+                    Naming Convention Preset
+                  </label>
+                  <select
+                    value={presetKey}
+                    onChange={(e) => handlePresetChange(e.target.value)}
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none"
+                  >
+                    {CONVENTION_PRESETS.map((p) => (
+                      <option key={p.key} value={p.key}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {presetKey !== "custom" && (
+                  <div className="border border-[#8b5cf6]/20 bg-[#8b5cf6]/5 rounded-xl p-3 flex gap-2 items-start text-xs animate-in fade-in duration-200">
+                    <HelpCircle className="h-4 w-4 text-[#8b5cf6] flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="font-bold text-foreground">Convention Lore & Rules:</span>
+                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        {presetKey === "hendalarsk" && (
+                          <>
+                            Most Hendalarskaren have four names: a first name (<strong>Fornám</strong>), a chosen name (<strong>Kvalnám</strong> selected on their 18th birthday), a matronymic (<strong>Muternám</strong> derived from the mother's name plus suffix based on their gender: <em>-són</em>, <em>-toschter</em>, or <em>-kind</em>), and an inherited surname (<strong>Erbnám</strong>).
+                          </>
+                        )}
+                        {presetKey === "caphiria" && (
+                          <>
+                            Caphiria uses the <strong>Quadranomial system</strong> (<em>quadranomia</em>): <strong>Nomen Inscriptio</strong> (parents' chosen name), <strong>Nomen Electi</strong> (personal name chosen by the individual at age 16), <strong>Proles/Ramus</strong> (parental lineage indicating paternal or maternal branches), and <strong>Cognomina Fluminis</strong> (Estate family river-surname).
+                          </>
+                        )}
+                        {presetKey === "urcea" && (
+                          <>
+                            The <strong>Tria nomina movement</strong> revived classical Levantine naming conventions: <strong>Praenomen</strong> (given name), <strong>Nomen</strong> (Estate name, defaults to <em>Julianus</em> for commoners under the King's patronage), and <strong>Cognomen</strong> (family surname) plus optional honorary <strong>Agnomen</strong> (victory title).
+                          </>
+                        )}
+                        {presetKey === "yonderian-noble" && (
+                          <>
+                            Yonderian nobles carry a geographical surname representing their possessions, prefixed with the particle <strong>von</strong> (e.g. <em>von Willing</em>, <em>von Koop</em>).
+                          </>
+                        )}
+                        {presetKey === "yonderian-peasant" && (
+                          <>
+                            Yonderian peasantry carry simple given names followed by patronymics consisting of the father's given name suffixed with <strong>-son</strong> or <strong>-daughter</strong>.
+                          </>
+                        )}
+                        {presetKey === "khunyer" && (
+                          <>
+                            Khunyer naming conventions reverse standard order, placing the <strong>surname / family name</strong> before the given name (e.g. <em>Szabolcs Anton</em>, where Szabolcs is the surname).
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="border-border/40 text-muted-foreground rounded-lg border border-dashed p-4 text-xs">
                 No Name Sets yet. In <strong>Stash</strong>, upload your name files and tag each
@@ -197,47 +327,108 @@ export function StudioNameSets() {
               </div>
 
               {/* Template slots */}
-              <div className="border-border/40 space-y-2.5 border-t pt-3">
+              <div className="border-border/40 space-y-3 border-t pt-3">
                 <h3 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                  Full-Name Template
+                  Full-Name Template Builder
                 </h3>
-                {slots.map((slot, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <select
-                      value={slot.role}
-                      onChange={(e) => updateSlot(idx, { role: e.target.value as NameRole })}
-                      className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                    >
-                      {NAME_ROLES.map((r) => (
-                        <option key={r.value} value={r.value}>
-                          {r.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={slot.gender}
-                      onChange={(e) => updateSlot(idx, { gender: e.target.value as NameGender })}
-                      className="border-border/60 bg-background text-foreground w-24 rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                    >
-                      {NAME_GENDERS.map((g) => (
-                        <option key={g.value} value={g.value}>
-                          {g.label}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => setSlots((p) => p.filter((_, i) => i !== idx))}
-                      className="text-muted-foreground rounded p-1 hover:bg-red-500/10 hover:text-red-500"
-                      title="Remove slot"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
+                {slots.map((slot, idx) => {
+                  const showParentInput = slot.role === "matronymic" || slot.role === "patronymic";
+                  return (
+                    <div key={idx} className="border border-border/30 rounded-xl bg-background/40 p-2.5 space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground text-[10px] font-bold">#{idx + 1}</span>
+                        <select
+                          value={slot.role}
+                          onChange={(e) => updateSlot(idx, { role: e.target.value as NameRole })}
+                          className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-2 py-1 text-xs focus:outline-none font-semibold"
+                        >
+                          {NAME_ROLES.map((r) => (
+                            <option key={r.value} value={r.value}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={slot.gender}
+                          onChange={(e) => updateSlot(idx, { gender: e.target.value as NameGender })}
+                          className="border-border/60 bg-background text-foreground w-24 rounded-lg border px-2 py-1 text-xs focus:outline-none"
+                        >
+                          {NAME_GENDERS.map((g) => (
+                            <option key={g.value} value={g.value}>
+                              {g.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        <button
+                          onClick={() => removeSlot(idx)}
+                          className="text-muted-foreground hover:text-rose-500 rounded p-1 cursor-pointer"
+                          title="Remove slot"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Advanced Options Sub-Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-[10px] border-t border-border/10 pt-2">
+                        {/* Prefix */}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-muted-foreground font-bold uppercase tracking-wider">Prefix</span>
+                          <input
+                            value={slot.prefix || ""}
+                            onChange={(e) => updateSlot(idx, { prefix: e.target.value })}
+                            placeholder="e.g. von"
+                            className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none font-mono"
+                          />
+                        </div>
+
+                        {/* Suffix Rule */}
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-muted-foreground font-bold uppercase tracking-wider">Suffix Rule</span>
+                          <select
+                            value={slot.suffixRule || "none"}
+                            onChange={(e) => updateSlot(idx, { suffixRule: e.target.value as any })}
+                            className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none"
+                          >
+                            <option value="none">None / Static</option>
+                            <option value="hendalarsk-matronymic">Hendalarsk matronymic</option>
+                            <option value="yonderian-patronymic">Yonderian patronymic</option>
+                            <option value="caphirian-lineage">Caphirian lineage</option>
+                          </select>
+                        </div>
+
+                        {/* Parent Name input (matronymic/patronymic only) */}
+                        {showParentInput && (
+                          <div className="flex flex-col gap-0.5 col-span-2">
+                            <span className="text-muted-foreground font-bold uppercase tracking-wider">Parent Name Lock (Optional)</span>
+                            <input
+                              value={slot.parentName || ""}
+                              onChange={(e) => updateSlot(idx, { parentName: e.target.value })}
+                              placeholder="Leave blank for random Markov parent"
+                              className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none"
+                            />
+                          </div>
+                        )}
+
+                        {/* Gender Mode checkbox */}
+                        <div className="flex flex-col gap-0.5 col-span-2 pt-0.5">
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={slot.genderMode === "aligned"}
+                              onChange={(e) => updateSlot(idx, { genderMode: e.target.checked ? "aligned" : "fixed" })}
+                              className="rounded border-border/60 text-[#8b5cf6] focus:ring-[#8b5cf6]"
+                            />
+                            <span className="text-muted-foreground font-bold uppercase tracking-wider">Align with unified full-name gender</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
                 <button
-                  onClick={() =>
-                    setSlots((p) => [...p, { role: rolesPresent[0] ?? "given", gender: "any" }])
-                  }
+                  onClick={addSlot}
                   className="flex items-center gap-1 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/5 px-2.5 py-1 text-[11px] font-bold text-[#0091ff] hover:bg-[#0091ff]/10"
                 >
                   <Plus className="h-3 w-3" /> Add slot
@@ -257,15 +448,28 @@ export function StudioNameSets() {
 
               {/* Generate */}
               <div className="border-border/40 flex items-center gap-2 border-t pt-3">
-                <select
-                  value={batchCount}
-                  onChange={(e) => setBatchCount(parseInt(e.target.value))}
-                  className="border-border/60 bg-background text-foreground w-16 rounded-md border px-2 py-1 text-xs focus:outline-none"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={15}>15</option>
-                </select>
+                <div className="flex items-center gap-1 border border-border/60 bg-background rounded-lg p-0.5 select-none h-7">
+                  <button
+                    type="button"
+                    onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
+                    disabled={batchCount <= 5}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs"
+                  >
+                    -
+                  </button>
+                  <NumberFlowDisplay
+                    value={batchCount}
+                    className="text-foreground font-mono text-xs font-semibold px-1 min-w-[20px] text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
+                    disabled={batchCount >= 50}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs"
+                  >
+                    +
+                  </button>
+                </div>
                 <button
                   onClick={generate}
                   disabled={slots.length === 0}

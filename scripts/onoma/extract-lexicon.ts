@@ -39,21 +39,31 @@ const INFOBOX_CATEGORY: Array<[string, NameCat]> = [
   ["Infobox_country", "country"],
   ["Infobox_former_country", "country"],
   ["Infobox_settlement", "city"],
+  ["Infobox_city", "city"],
+  ["Infobox_town", "city"],
+  ["Infobox_place", "city"],
   ["Infobox_KirState", "province"],
   ["Infobox_royalty", "person"],
   ["Infobox_officeholder", "person"],
   ["Infobox_person", "person"],
+  ["Infobox_noble", "person"],
+  ["Infobox_biography", "person"],
+  ["Infobox_character", "person"],
   ["Infobox_company", "organization"],
+  ["Infobox_business", "organization"],
   ["Infobox_government_agency", "organization"],
   ["Infobox_military_unit", "organization"],
   ["Infobox_organization", "organization"],
   ["Infobox_political_party", "organization"],
   ["Infobox_legislature", "organization"],
+  ["Infobox_alliance", "organization"],
   ["Infobox_sport", "culture_sports"],
   ["Infobox_game", "culture_sports"],
   ["Infobox_sports_competition_event", "culture_sports"],
   ["Infobox_sports_team", "culture_sports"],
+  ["Infobox_football_club", "culture_sports"],
   ["Infobox_athlete", "culture_sports"],
+  ["Infobox_football_biography", "culture_sports"],
   ["Infobox_food", "culture_cuisine"],
   ["Infobox_drink", "culture_cuisine"],
   ["Infobox_cheese", "culture_cuisine"],
@@ -135,19 +145,25 @@ function extractIxWiki(): RawName[] {
 
 // Allowlisted UA — required to clear Cloudflare on iiwiki (see CLAUDE.md / the
 // existing src/app/api/mediawiki/* proxy routes which all use this string).
-const UA = "IxStats-Builder";
+// Added contact detail suffix to satisfy Wikipedia API User-Agent policy.
+const UA = "IxStats-Builder/2.0 (https://ixwiki.com/; admin@ixwiki.com)";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** fetch with a few retries — large remote wikis throw transient network errors. */
-async function fetchRetry(url: URL, tries = 4): Promise<Response> {
+async function fetchRetry(url: URL, tries = 5): Promise<Response> {
   for (let i = 1; ; i++) {
     try {
       const res = await fetch(url, { headers: { "User-Agent": UA } });
+      if (res.status === 429 && i < tries) {
+        // Wikipedia 429 rate limit backoff: sleep longer
+        await sleep(3000 * i);
+        continue;
+      }
       if (res.status >= 500 && i < tries) throw new Error(`HTTP ${res.status}`);
       return res;
     } catch (e) {
       if (i >= tries) throw e;
-      await sleep(500 * i); // linear backoff
+      await sleep(1000 * i); // linear backoff
     }
   }
 }
@@ -221,8 +237,9 @@ async function fetchTypedNames(
 // External sources. Both are MediaWiki and support list=embeddedin. iiwiki is the
 // high-value conworld corpus; the IxStats-Builder UA is what clears its Cloudflare.
 const EXTERNAL = [
-  { wiki: "iiwiki", api: "https://iiwiki.com/api.php", enabled: true },
-  { wiki: "althistory", api: "https://althistory.fandom.com/api.php", enabled: true },
+  { wiki: "iiwiki", api: "https://iiwiki.com/api.php", enabled: true, cap: 8000 },
+  { wiki: "althistory", api: "https://althistory.fandom.com/api.php", enabled: true, cap: 8000 },
+  { wiki: "wikipedia", api: "https://en.wikipedia.org/w/api.php", enabled: true, cap: 3000 },
 ];
 
 async function main() {
@@ -244,8 +261,8 @@ async function main() {
         continue;
       }
       try {
-        console.log(`Fetching ${src.wiki} (API, infobox-typed)...`);
-        const ext = await fetchTypedNames(src.api, src.wiki);
+        console.log(`Fetching ${src.wiki} (API, infobox-typed with cap ${src.cap})...`);
+        const ext = await fetchTypedNames(src.api, src.wiki, src.cap);
         for (const r of ext) rows.push({ ...r, name: titleToName(r.name) });
         const c = ext.reduce<Record<string, number>>(
           (a, r) => ((a[r.category] = (a[r.category] || 0) + 1), a),
