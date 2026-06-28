@@ -29,6 +29,7 @@ import { SportsLiveDIPlugin } from "~/components/DynamicIsland/plugins/SportsLiv
 import { CalendarLiveDIPlugin } from "~/components/DynamicIsland/plugins/CalendarLiveDIPlugin";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
+import { MediaContextProvider } from "~/components/media/MediaContext";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -131,7 +132,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               signInFallbackRedirectUrl={dashboardPath}
             >
               <AuthProvider>
-                <AppContent />
+                <MediaContextProvider>
+                  <AppContent />
+                </MediaContextProvider>
               </AuthProvider>
             </ClerkProvider>
             {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
