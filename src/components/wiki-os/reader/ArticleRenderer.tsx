@@ -31,7 +31,6 @@ import { CategoryBreadcrumb } from "~/components/wiki-os/reader/CategoryBreadcru
 import { useAnnotationOverlay } from "~/components/wiki-os/reader/AnnotationOverlay";
 import { useCiteTooltips } from "~/components/wiki-os/reader/useCiteTooltips";
 import { useWikiNarrator } from "~/hooks/useWikiNarrator";
-import { WikiOSNarratorPlayer } from "~/components/wiki-os/reader/WikiOSNarratorPlayer";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flag-color-extractor";
@@ -829,8 +828,7 @@ export function ArticleRenderer({
         onTocClick={() => setTocOpen(true)}
       />
 
-      {/* Onoma Voice Narrator Player */}
-      <WikiOSNarratorPlayer />
+      {/* Narrator now lives in the Halo (Dynamic Island → Wiki → Now Playing) */}
 
       {/* External wiki source badge */}
       {wikiSource && wikiSource !== "ixwiki" && WIKI_SOURCE_LABELS[wikiSource] && (

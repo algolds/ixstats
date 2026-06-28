@@ -22,10 +22,14 @@ import {
   Settings,
   Bookmark,
   Loader2,
-  Play,
-  Pause,
+  MoreHorizontal,
+  User,
+  Scroll,
+  Trash2,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { PlayPauseMorph } from "~/components/DynamicIsland/PlayPauseMorph";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
@@ -37,6 +41,22 @@ import { cn } from "~/lib/utils";
 import type { DIViewProps } from "./types";
 
 interface WikiViewProps extends DIViewProps {}
+
+// Narrator accent inside the Halo = wiki plugin blue.
+const NARRATOR_ACCENT = "#3b82f6";
+const NARRATOR_SPEEDS = [0.8, 1.0, 1.25, 1.5, 2.0];
+const NARRATOR_VOICE_LABELS: Record<string, string> = {
+  af_heart: "Female US - Soft",
+  af_bella: "Female US - Bright",
+  af_nicole: "Female US - Whisper",
+  af_sarah: "Female US - Warm",
+  am_adam: "Male US - Clear",
+  am_michael: "Male US - Deep",
+  bf_emma: "Female UK - Noble",
+  bf_isabella: "Female UK - Expressive",
+  bm_george: "Male UK - Gravel",
+  bm_lewis: "Male UK - Mellow",
+};
 
 interface LocalDraft {
   title: string;
@@ -69,6 +89,26 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const [sessionsOpen, setSessionsOpen] = useState(true);
   const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
   const [pausedSessions, setPausedSessions] = useState<PausedSession[]>([]);
+  const [wikiTab, setWikiTab] = useState<"workspace" | "nowplaying">("workspace");
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  const hasNarrator = !!(narratorState && narratorState.totalBlocks > 0 && narratorActions);
+  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+    staleTime: 600000,
+    enabled: hasNarrator,
+  });
+  const voiceOptions: string[] = voicesData?.voices ?? Object.keys(NARRATOR_VOICE_LABELS);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setAutoScroll(localStorage.getItem("onoma-narrator-autoscroll") !== "false");
+    }
+  }, []);
+
+  // Surface the player the moment narration starts.
+  useEffect(() => {
+    if (narratorState?.isPlaying) setWikiTab("nowplaying");
+  }, [narratorState?.isPlaying]);
 
   // Scan drafts and reading sessions
   useEffect(() => {
@@ -272,6 +312,16 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     ? (narratorState.activeBlockIndex / narratorState.totalBlocks) * 100
     : scrollPercent;
 
+  const showNowPlaying = !!articleTitle && wikiTab === "nowplaying";
+  const showWorkspace = !articleTitle || wikiTab === "workspace";
+
+  const handleToggleAutoScroll = () => {
+    const next = !autoScroll;
+    setAutoScroll(next);
+    if (typeof window !== "undefined")
+      localStorage.setItem("onoma-narrator-autoscroll", String(next));
+  };
+
   // Drag / Click handlers for scrubbing
   const handleScrub = useCallback(
     (pct: number) => {
@@ -419,8 +469,32 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         </div>
       </div>
 
+      {/* Workspace / Now Playing tab switcher (articles only) */}
+      {articleTitle && (
+        <div className="mb-3 flex gap-1 rounded-lg border border-white/5 bg-white/5 p-0.5 select-none">
+          {(["workspace", "nowplaying"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setWikiTab(t)}
+              className={cn(
+                "flex-1 rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all duration-200 active:scale-95",
+                wikiTab === t
+                  ? "bg-white/10 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              type="button"
+            >
+              {t === "workspace" ? "Workspace" : "Now Playing"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Now Playing: reading progress + narrator */}
+      {showNowPlaying && (
+        <>
       {/* Progressive Scrubbing Track */}
-      {articleTitle && visibleToc.length > 0 && (
+      {visibleToc.length > 0 && (
         <div className="mb-4 px-1">
           <div className="text-muted-foreground mb-1.5 flex items-center justify-between text-[10px] font-semibold select-none">
             <span className="max-w-[200px] truncate">
@@ -511,6 +585,153 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         </div>
       )}
 
+          {/* Narrator player */}
+          {hasNarrator && (
+            <div className="mb-3">
+              <SectionHeader label="Narrator" />
+              <div className="flex items-center justify-center gap-2 rounded-lg border border-white/5 bg-white/5 px-3 py-3">
+                <button
+                  onClick={narratorActions.skipPrev}
+                  disabled={narratorState.activeBlockIndex <= 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+                  title="Previous"
+                  type="button"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                <button
+                  onClick={() =>
+                    narratorState.isPlaying ? narratorActions.pause() : narratorActions.play()
+                  }
+                  className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md transition-all duration-200 hover:scale-105 active:scale-90"
+                  style={{ backgroundColor: NARRATOR_ACCENT }}
+                  title={narratorState.isPlaying ? "Pause" : "Play"}
+                  type="button"
+                >
+                  <PlayPauseMorph
+                    isPlaying={narratorState.isPlaying}
+                    size={20}
+                    className="fill-current text-white"
+                  />
+                </button>
+
+                <button
+                  onClick={narratorActions.skipNext}
+                  disabled={narratorState.activeBlockIndex >= narratorState.totalBlocks}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+                  title="Next"
+                  type="button"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+
+                <Popover>
+                  <PopoverTrigger
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-90"
+                    title="Narrator settings"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="end"
+                    side="top"
+                    sideOffset={10}
+                    className="w-60 rounded-xl border border-white/10 bg-zinc-950/95 p-3 backdrop-blur-xl dark:bg-black/90"
+                  >
+                    {/* Speed */}
+                    <div className="mb-3">
+                      <span className="text-muted-foreground mb-1.5 block text-[10px] font-semibold tracking-wide uppercase">
+                        Speed
+                      </span>
+                      <div className="flex gap-1">
+                        {NARRATOR_SPEEDS.map((s) => {
+                          const active = Number(narratorState.speed) === s;
+                          return (
+                            <button
+                              key={s}
+                              onClick={() => narratorActions.setSpeed(s)}
+                              className={cn(
+                                "flex-1 rounded-lg py-1 text-[11px] font-semibold transition-all duration-200 active:scale-90",
+                                active
+                                  ? "text-white"
+                                  : "text-muted-foreground hover:text-foreground bg-white/5"
+                              )}
+                              style={active ? { backgroundColor: NARRATOR_ACCENT } : undefined}
+                              type="button"
+                            >
+                              {s}×
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Voice */}
+                    <div className="mb-3">
+                      <span className="text-muted-foreground mb-1.5 flex items-center gap-1 text-[10px] font-semibold tracking-wide uppercase">
+                        <User className="h-3 w-3" /> Voice
+                      </span>
+                      <select
+                        value={narratorState.voice || ""}
+                        onChange={(e) => narratorActions.setVoice(e.target.value)}
+                        className="text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs transition-colors hover:border-white/20 focus:outline-none"
+                      >
+                        <option value="">Default voice</option>
+                        {voiceOptions.map((id) => (
+                          <option key={id} value={id}>
+                            {NARRATOR_VOICE_LABELS[id] || id}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Follow scroll */}
+                    <button
+                      onClick={handleToggleAutoScroll}
+                      className="mb-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium transition-colors hover:bg-white/5"
+                      type="button"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Scroll className="h-3.5 w-3.5" /> Follow scroll
+                      </span>
+                      <span
+                        className={cn(
+                          "relative h-4 w-7 rounded-full transition-colors duration-200",
+                          autoScroll ? "" : "bg-white/15"
+                        )}
+                        style={autoScroll ? { backgroundColor: NARRATOR_ACCENT } : undefined}
+                      >
+                        <span
+                          className={cn(
+                            "absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all duration-200",
+                            autoScroll ? "left-3.5" : "left-0.5"
+                          )}
+                        />
+                      </span>
+                    </button>
+
+                    {/* Clear cache */}
+                    {narratorActions.clearCache && (
+                      <button
+                        onClick={narratorActions.clearCache}
+                        className="text-muted-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors hover:bg-red-500/10 hover:text-red-400"
+                        type="button"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Clear voice cache
+                      </button>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Workspace */}
+      {showWorkspace && (
+        <>
       {/* Search */}
       {!articleTitle && (
         <div className="mb-3">
@@ -696,44 +917,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             </CollapsibleSection>
           )}
 
-          {/* Narrator controls inside Dynamic Island */}
-          {isNarratorActive && narratorActions && (
-            <div className="border-border mb-3 border-b pb-3">
-              <SectionHeader label="Audio Narrator" />
-              <div className="flex items-center justify-between rounded-md border border-white/5 bg-white/5 px-2 py-1.5">
-                <button
-                  onClick={narratorActions.skipPrev}
-                  className="p-1 text-zinc-400 hover:text-white"
-                  title="Previous block"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                {narratorState.isPlaying ? (
-                  <button
-                    onClick={narratorActions.pause}
-                    className="flex items-center gap-1 p-1 text-[11px] font-bold text-white hover:text-blue-400"
-                  >
-                    <Pause className="h-3.5 w-3.5 fill-current" /> Pause
-                  </button>
-                ) : (
-                  <button
-                    onClick={narratorActions.play}
-                    className="flex items-center gap-1 p-1 text-[11px] font-bold text-white hover:text-emerald-400"
-                  >
-                    <Play className="h-3.5 w-3.5 fill-current" /> Resume
-                  </button>
-                )}
-                <button
-                  onClick={narratorActions.skipNext}
-                  className="p-1 text-zinc-400 hover:text-white"
-                  title="Next block"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Page Actions — contextual to current article */}
           {articleTitle && !isMainPage && (
             <div className="border-border mb-3 border-b pb-3">
@@ -782,6 +965,8 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               </div>
             </div>
           )}
+        </>
+      )}
         </>
       )}
     </div>

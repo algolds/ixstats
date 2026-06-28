@@ -11,8 +11,8 @@ export function MiniPlayer() {
     useIxMedia();
   const [isFullOpen, setIsFullOpen] = useState(false);
 
-  // WikiOS narration has its own floating Halo pill (WikiOSNarratorPlayer); don't
-  // double up at the bottom of the screen.
+  // WikiOS narration is controlled from the Halo (Dynamic Island → Wiki → Now Playing),
+  // not this media bar — don't surface it here.
   if (!activeTrack || activeTrack.isDynamicTts) return null;
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;

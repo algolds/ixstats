@@ -8,8 +8,8 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { Play, Pause } from "lucide-react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { PlayPauseMorph } from "~/components/DynamicIsland/PlayPauseMorph";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
 import { WikiView } from "~/components/DynamicIsland/WikiView";
 import { WikiProfileButton } from "~/components/DynamicIsland/WikiProfileButton";
@@ -69,11 +69,14 @@ function WikiBreadcrumb() {
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-white/10 bg-white/5 text-white transition-all duration-200 hover:border-white/20 hover:bg-white/10 active:scale-90"
           title={narratorState.isPlaying ? "Pause Narration" : "Resume Narration"}
         >
-          {narratorState.isPlaying ? (
-            <Pause size={10} className="animate-pulse fill-current text-blue-400" />
-          ) : (
-            <Play size={10} className="fill-current text-zinc-400" />
-          )}
+          <PlayPauseMorph
+            isPlaying={narratorState.isPlaying}
+            size={10}
+            className={cn(
+              "fill-current",
+              narratorState.isPlaying ? "text-blue-400" : "text-zinc-400"
+            )}
+          />
         </button>
       )}
 
