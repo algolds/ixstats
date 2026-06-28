@@ -67,6 +67,7 @@ function CompactViewComponent({
   const router = useRouter();
   const diPathname = usePathname();
   const isOnMapsPage = diPathname?.startsWith("/maps") || false;
+  const isOnOnomaPage = diPathname?.startsWith("/labs/onoma") || false;
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
@@ -352,7 +353,10 @@ function CompactViewComponent({
                           <button
                             onClick={() => onSwitchMode("calendar")}
                             title="Open Calendar"
-                            className="hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 transition-colors"
+                            className={cn(
+                              "hover:bg-accent/50 flex cursor-pointer items-center transition-colors rounded-md",
+                              isOnOnomaPage ? "p-1.5" : "gap-1.5 px-2 py-1"
+                            )}
                           >
                             {/* iOS-style Live Calendar Icon — styled with Facet Glass design */}
                             <div className="relative flex h-3.5 w-3.5 shrink-0 flex-col overflow-hidden rounded-[3px] border border-white/20 bg-white/5 shadow-[0_1px_3px_rgba(0,0,0,0.2)] backdrop-blur-[2px] select-none">
@@ -370,16 +374,18 @@ function CompactViewComponent({
                               </div>
                             </div>
 
-                            <PreText
-                              className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                              whiteSpace="nowrap"
-                            >
-                              {d.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                timeZone: "UTC",
-                              })}
-                            </PreText>
+                            {!isOnOnomaPage && (
+                              <PreText
+                                className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
+                                whiteSpace="nowrap"
+                              >
+                                {d.toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  timeZone: "UTC",
+                                })}
+                              </PreText>
+                            )}
                           </button>
                         );
                       })()}

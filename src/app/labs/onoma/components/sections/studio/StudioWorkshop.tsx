@@ -369,8 +369,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
                 {generatedNames.map((name, idx) => (
                   <NameResultCard
-                    key={idx}
+                    key={`${name}-${idx}`}
                     name={name}
+                    isSaved={bank.nameBank?.some((entry) => entry.type === "saved-name" && entry.title === name)}
                     culture={classifiedCulture}
                     onSave={async (n, stashId) => {
                       await bank.saveEntry({

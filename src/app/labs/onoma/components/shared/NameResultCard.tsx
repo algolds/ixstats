@@ -240,7 +240,7 @@ export function NameResultCard({
   // Sync prop changes to local state
   useEffect(() => {
     setLocalSaved(isSaved);
-  }, [isSaved]);
+  }, [isSaved, name]);
 
   const handleCopy = async () => {
     try {

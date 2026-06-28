@@ -493,8 +493,9 @@ export function GeneratorPanel({
               <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
                 {gen.generatedNames.map((name, idx) => (
                   <NameResultCard
-                    key={idx}
+                    key={`${name}-${idx}`}
                     name={name}
+                    isSaved={bank.nameBank?.some((entry) => entry.type === "saved-name" && entry.title === name)}
                     onSave={handleSaveName}
                     onUse={(n) => setUseName(n)}
                     culture={gen.culture}

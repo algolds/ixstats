@@ -559,6 +559,8 @@ export const onomaRouter = createTRPCRouter({
     const kokoroSpeed =
       kokoroSpeedVal != null && kokoroSpeedVal !== "" ? Number(kokoroSpeedVal) : 1.0;
     const kokoroVoiceMap = parseVoiceMap(map.get("onoma.kokoro.voiceMap"));
+    const kokoroEngine =
+      (map.get("onoma.kokoro.engine") as "kokoro-fastapi" | "kokoro-web") || "kokoro-fastapi";
 
     const brandVariation = map.get("onoma.brand.variation") || "nucleus";
     const brandNucleusSymbol = map.get("onoma.brand.nucleusSymbol") || "ə";
@@ -572,6 +574,7 @@ export const onomaRouter = createTRPCRouter({
         speed: kokoroSpeed,
         model: kokoroModel,
         voiceMap: kokoroVoiceMap,
+        engine: kokoroEngine,
       },
       brand: {
         variation: brandVariation,

@@ -124,7 +124,8 @@ export function OverviewSection() {
       setIsGenerating(true);
       try {
         const chain = new MarkovChain(order);
-        chain.addWords(selectedDict.values);
+        const values = Array.isArray(selectedDict.values) ? (selectedDict.values as string[]) : [];
+        chain.addWords(values);
         const results: string[] = [];
         for (let i = 0; i < batchCount; i++) {
           let name = chain.generate(options);
@@ -150,7 +151,8 @@ export function OverviewSection() {
     try {
       // 1. Instantiate and train Markov Chain
       const chain = new MarkovChain(order);
-      chain.addWords(selectedDict.values);
+      const values = Array.isArray(selectedDict.values) ? (selectedDict.values as string[]) : [];
+      chain.addWords(values);
 
       // 2. Generate batch size
       const results: string[] = [];
@@ -575,8 +577,9 @@ export function OverviewSection() {
               <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
                 {generatedNames.map((name, idx) => (
                   <NameResultCard
-                    key={idx}
+                    key={`${name}-${idx}`}
                     name={name}
+                    isSaved={bank.nameBank?.some((entry) => entry.type === "saved-name" && entry.title === name)}
                     onSave={handleSaveName}
                     onUse={(n) => setUseName(n)}
                   />

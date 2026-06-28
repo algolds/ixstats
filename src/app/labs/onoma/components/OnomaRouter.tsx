@@ -3,7 +3,8 @@
 // src/app/labs/onoma/components/OnomaRouter.tsx
 // Onoma Lab — Unified Workspace & Router (Facet Rebuild)
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import type { OnomaSection, StudioSubTab } from "~/lib/onoma/types";
@@ -165,6 +166,23 @@ export function OnomaRouter() {
   });
 
   const bank = useNameBank();
+
+  const [shouldAnimateStash, setShouldAnimateStash] = useState(false);
+  const prevStashCount = useRef<number | null>(null);
+
+  const bankLength = bank.nameBank?.length ?? 0;
+
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | null = null;
+    if (prevStashCount.current !== null && bankLength > prevStashCount.current) {
+      setShouldAnimateStash(true);
+      t = setTimeout(() => setShouldAnimateStash(false), 600);
+    }
+    prevStashCount.current = bankLength;
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [bankLength]);
 
   // Dynamic lexicon terms count computation
   const lexiconCount = useMemo(() => {
@@ -397,7 +415,9 @@ export function OnomaRouter() {
             >
               <HelpCircle className="h-4 w-4" />
             </button>
-            <button
+            <motion.button
+              animate={shouldAnimateStash ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
               onClick={() => handleNavigate("bank")}
               className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
                 activeSection === "bank"
@@ -405,9 +425,15 @@ export function OnomaRouter() {
                   : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
               }`}
             >
-              <Bookmark className="h-3.5 w-3.5" />
+              <motion.span
+                animate={shouldAnimateStash ? { rotate: [0, -18, 15, -10, 8, 0] } : { rotate: 0 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className="inline-flex"
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+              </motion.span>
               <span>Stash</span>
-            </button>
+            </motion.button>
             <button
               onClick={() => handleNavigate("studio")}
               className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
