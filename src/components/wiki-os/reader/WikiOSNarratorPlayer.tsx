@@ -20,6 +20,7 @@ import {
   Gauge,
   User,
   Scroll,
+  Trash2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
@@ -63,7 +64,7 @@ export function WikiOSNarratorPlayer() {
   }
 
   const { isPlaying, activeBlockIndex, totalBlocks, speed, voice } = narratorState;
-  const { play, pause, stop, skipNext, skipPrev, setSpeed, setVoice } = narratorActions;
+  const { play, pause, stop, skipNext, skipPrev, setSpeed, setVoice, clearCache } = narratorActions;
 
   const voiceOptions = voicesData?.voices ?? Object.keys(VOICE_LABELS);
 
@@ -235,6 +236,21 @@ export function WikiOSNarratorPlayer() {
           <Scroll className="h-3 w-3" />
           <span>Follow Scroll</span>
         </button>
+
+        {/* Clear Cache */}
+        {clearCache && (
+          <button
+            onClick={clearCache}
+            className={cn(
+              "flex items-center gap-1 rounded border px-2 py-1 transition-all active:scale-95",
+              "bg-background/80 text-muted-foreground border-black/10 hover:text-red-500 hover:border-red-500/20 hover:bg-red-500/10 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-red-500/15"
+            )}
+            title="Clear saved voice audio cache"
+          >
+            <Trash2 className="h-3 w-3" />
+            <span>Clear Cache</span>
+          </button>
+        )}
       </div>
 
       {/* Progress track background underlay */}
