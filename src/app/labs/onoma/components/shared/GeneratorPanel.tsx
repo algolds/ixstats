@@ -11,7 +11,10 @@ import { useOnomaGenerator } from "~/hooks/useOnomaGenerator";
 import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 import { FacetCard } from "~/components/ui/facet-container";
-import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { cn } from "~/lib/utils";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { AdvancedConlangSettings } from "./AdvancedConlangSettings";
 
 // "celtic+germanic" → "Celtic + Germanic", "mixed" → "Mixed / Other", "latin" → "Latin"
 function formatBucket(bucket: string): string {
@@ -125,17 +128,18 @@ export function GeneratorPanel({
             {subTypes.length > 0 && (
               <div className="space-y-1.5">
                 <label className="text-muted-foreground text-xs font-bold">Generation Preset</label>
-                <select
-                  value={gen.subType}
-                  onChange={(e) => gen.setSubType(e.target.value)}
-                  className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
-                >
-                  {subTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
+                <Select value={gen.subType} onValueChange={gen.setSubType}>
+                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                    <SelectValue placeholder="Select preset" />
+                  </SelectTrigger>
+                  <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
+                    {subTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
@@ -167,36 +171,39 @@ export function GeneratorPanel({
               <label className="text-muted-foreground text-xs font-bold">
                 Culture / Linguistic Family
               </label>
-              <select
-                value={gen.culture}
-                onChange={(e) => gen.setCulture(e.target.value)}
-                className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:outline-none"
-              >
-                <option value="any">Any / Mixed Culture</option>
-                <optgroup label="Linguistic Families">
-                  <option value="latin">Latin / Romance</option>
-                  <option value="germanic">Germanic / Norse</option>
-                  <option value="celtic">Celtic / Gaelic</option>
-                  <option value="slavic">Slavic / Eastern European</option>
-                  <option value="arabic">Arabic / Semitic</option>
-                  <option value="persian">Persian / Iranian</option>
-                  <option value="turkic">Turkic / Central Asian</option>
-                  <option value="indic">Indic / South Asian</option>
-                  <option value="east-asian">East Asian / Romanized</option>
-                  <option value="austronesian">Austronesian / Polynesian</option>
-                  <option value="african">African / Sub-Saharan</option>
-                  <option value="uralic">Uralic / Finno-Ugric</option>
-                  <option value="constructed">Constructed / Fantasy (Tolkien)</option>
-                </optgroup>
-                <optgroup label="Hybrid Families (places &amp; people)">
-                  <option value="celtic+germanic">Celtic + Germanic</option>
-                  <option value="celtic+latin">Celtic + Latin</option>
-                  <option value="germanic+latin">Germanic + Latin</option>
-                  <option value="germanic+slavic">Germanic + Slavic</option>
-                  <option value="latin+slavic">Latin + Slavic</option>
-                  <option value="arabic+austronesian">Arabic + Austronesian</option>
-                </optgroup>
-              </select>
+              <Select value={gen.culture} onValueChange={gen.setCulture}>
+                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                  <SelectValue placeholder="Select culture" />
+                </SelectTrigger>
+                <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
+                  <SelectItem value="any" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Any / Mixed Culture</SelectItem>
+                  <SelectGroup>
+                    <SelectLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Linguistic Families</SelectLabel>
+                    <SelectItem value="latin" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Latin / Romance</SelectItem>
+                    <SelectItem value="germanic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Germanic / Norse</SelectItem>
+                    <SelectItem value="celtic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Celtic / Gaelic</SelectItem>
+                    <SelectItem value="slavic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Slavic / Eastern European</SelectItem>
+                    <SelectItem value="arabic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Arabic / Semitic</SelectItem>
+                    <SelectItem value="persian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Persian / Iranian</SelectItem>
+                    <SelectItem value="turkic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Turkic / Central Asian</SelectItem>
+                    <SelectItem value="indic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Indic / South Asian</SelectItem>
+                    <SelectItem value="east-asian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">East Asian / Romanized</SelectItem>
+                    <SelectItem value="austronesian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Austronesian / Polynesian</SelectItem>
+                    <SelectItem value="african" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">African / Sub-Saharan</SelectItem>
+                    <SelectItem value="uralic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Uralic / Finno-Ugric</SelectItem>
+                    <SelectItem value="constructed" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Constructed / Fantasy (Tolkien)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Hybrid Families</SelectLabel>
+                    <SelectItem value="celtic+germanic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Celtic + Germanic</SelectItem>
+                    <SelectItem value="celtic+latin" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Celtic + Latin</SelectItem>
+                    <SelectItem value="germanic+latin" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Germanic + Latin</SelectItem>
+                    <SelectItem value="germanic+slavic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Germanic + Slavic</SelectItem>
+                    <SelectItem value="latin+slavic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Latin + Slavic</SelectItem>
+                    <SelectItem value="arabic+austronesian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Arabic + Austronesian</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
               <p className="text-muted-foreground text-[10px]">
                 Markov chains are trained on both curated linguistic presets and classified wiki
                 corpora.
@@ -215,210 +222,37 @@ export function GeneratorPanel({
               </button>
 
               {showAdvanced && (
-                <div className="animate-in fade-in mt-3.5 space-y-3.5 duration-200">
-                  {/* Include Live World Data Toggle */}
-                  <div className="border-border/40 flex items-center justify-between border-b pb-3">
-                    <div className="space-y-0.5 pr-2">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Include Live World Data
-                      </label>
-                      <p className="text-muted-foreground text-[9px] leading-normal">
-                        Blend live database records (cities, leaders) into training seeds.
-                      </p>
-                    </div>
-                    <AppleSwitch
-                      checked={gen.includeWorldData}
-                      onCheckedChange={gen.setIncludeWorldData}
-                      size="sm"
-                    />
-                  </div>
-
-                  {/* Category-aware Prefix Title Select (Person Category only) */}
-                  {category === "person" && (
-                    <div className="border-border/40 space-y-1.5 border-b pb-3">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Title Prefix
-                      </label>
-                      <select
-                        value={gen.selectedPrefix}
-                        onChange={(e) => gen.setSelectedPrefix(e.target.value)}
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                      >
-                        <option value="">None</option>
-                        <option value="King">King</option>
-                        <option value="Queen">Queen</option>
-                        <option value="Prince">Prince</option>
-                        <option value="Princess">Princess</option>
-                        <option value="Lord">Lord</option>
-                        <option value="Lady">Lady</option>
-                        <option value="Sir">Sir</option>
-                        <option value="General">General</option>
-                        <option value="President">President</option>
-                        <option value="Governor">Governor</option>
-                        <option value="Minister">Minister</option>
-                        <option value="Dr.">Dr.</option>
-                        <option value="custom">Custom Prefix...</option>
-                      </select>
-
-                      {gen.selectedPrefix === "custom" && (
-                        <input
-                          type="text"
-                          placeholder="e.g. Grand Duke"
-                          value={gen.customPrefix}
-                          onChange={(e) => gen.setCustomPrefix(e.target.value)}
-                          className="border-border/60 bg-background text-foreground animate-in slide-in-from-top-1 mt-1 w-full rounded-lg border px-2.5 py-1 text-xs duration-150 focus:outline-none"
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Category-aware Suffix Select (Organization, Country, Province categories only) */}
-                  {(category === "organization" ||
-                    category === "country" ||
-                    category === "province") && (
-                    <div className="border-border/40 space-y-1.5 border-b pb-3">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Name Suffix
-                      </label>
-                      <select
-                        value={gen.selectedSuffix}
-                        onChange={(e) => gen.setSelectedSuffix(e.target.value)}
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                      >
-                        <option value="">None</option>
-                        <option value="Association">Association</option>
-                        <option value="Committee">Committee</option>
-                        <option value="Society">Society</option>
-                        <option value="Alliance">Alliance</option>
-                        <option value="Union">Union</option>
-                        <option value="Club">Club</option>
-                        <option value="Company">Company</option>
-                        <option value="Party">Party</option>
-                        <option value="Organization">Organization</option>
-                        <option value="custom">Custom Suffix...</option>
-                      </select>
-
-                      {gen.selectedSuffix === "custom" && (
-                        <input
-                          type="text"
-                          placeholder="e.g. Guild"
-                          value={gen.customSuffix}
-                          onChange={(e) => gen.setCustomSuffix(e.target.value)}
-                          className="border-border/60 bg-background text-foreground animate-in slide-in-from-top-1 mt-1 w-full rounded-lg border px-2.5 py-1 text-xs duration-150 focus:outline-none"
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Min Length
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={20}
-                        value={gen.options.minLength || 4}
-                        onChange={(e) =>
-                          gen.setOptions({
-                            ...gen.options,
-                            minLength: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Max Length
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={30}
-                        value={gen.options.maxLength || 12}
-                        onChange={(e) =>
-                          gen.setOptions({
-                            ...gen.options,
-                            maxLength: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Substring constraint filters */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Starts With
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Ae"
-                        value={gen.options.startsWith || ""}
-                        onChange={(e) =>
-                          gen.setOptions({ ...gen.options, startsWith: e.target.value })
-                        }
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Ends With
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. th"
-                        value={gen.options.endsWith || ""}
-                        onChange={(e) =>
-                          gen.setOptions({ ...gen.options, endsWith: e.target.value })
-                        }
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Markov Order Look-back */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                        Markov Order (Depth)
-                      </label>
-                      <span className="text-[10px] font-bold text-[#0091ff]">{gen.order} char</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={1}
-                      max={4}
-                      step={1}
-                      value={gen.order}
-                      onChange={(e) => gen.setOrder(parseInt(e.target.value))}
-                      className="bg-secondary/80 h-1.5 w-full cursor-pointer rounded-lg accent-[#0091ff]"
-                    />
-                  </div>
-                </div>
+                <AdvancedConlangSettings gen={gen} category={category} />
               )}
             </div>
 
-            {/* Assemble trigger button inside controls */}
             <div className="border-border/40 mt-2 flex items-center gap-2 border-t pt-4">
-              <div className="w-20">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              <div className="space-y-1 select-none">
+                <label className="text-muted-foreground text-[10px] font-bold uppercase block">
                   Batch
                 </label>
-                <select
-                  value={batchCount}
-                  onChange={(e) => setBatchCount(parseInt(e.target.value))}
-                  className="border-border/60 bg-background text-foreground mt-1 w-full rounded-md border px-2 py-1 text-xs focus:outline-none"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={15}>15</option>
-                  <option value={20}>20</option>
-                </select>
+                <div className="flex items-center gap-1 border border-border/60 bg-background rounded-lg p-0.5 select-none h-7 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
+                    disabled={batchCount <= 5}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs h-full flex items-center"
+                  >
+                    -
+                  </button>
+                  <NumberFlowDisplay
+                    value={batchCount}
+                    className="text-foreground font-mono text-xs font-semibold px-1 min-w-[20px] text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
+                    disabled={batchCount >= 50}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs h-full flex items-center"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               <button

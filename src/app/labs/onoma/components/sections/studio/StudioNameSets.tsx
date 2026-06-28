@@ -21,6 +21,8 @@ import {
   type NameSlot,
 } from "~/lib/onoma/name-sets";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
 
 interface TaggedDict {
   values: string[];
@@ -234,33 +236,35 @@ export function StudioNameSets() {
             </label>
             {setNameKeys.length > 0 ? (
               <>
-                <select
-                  value={selectedSet}
-                  onChange={(e) => setSelectedSet(e.target.value)}
-                  className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none"
-                >
-                  {setNameKeys.map((s) => (
-                    <option key={s} value={s}>
-                      {s} ({sets.get(s)?.length} dicts)
-                    </option>
-                  ))}
-                </select>
+                <Select value={selectedSet} onValueChange={setSelectedSet}>
+                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                    <SelectValue placeholder="Select name set" />
+                  </SelectTrigger>
+                  <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                    {setNameKeys.map((s) => (
+                      <SelectItem key={s} value={s} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                        {s} ({sets.get(s)?.length} dicts)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 <div className="space-y-1.5 border-t border-border/40 pt-3">
                   <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider">
                     Naming Convention Preset
                   </label>
-                  <select
-                    value={presetKey}
-                    onChange={(e) => handlePresetChange(e.target.value)}
-                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none"
-                  >
-                    {CONVENTION_PRESETS.map((p) => (
-                      <option key={p.key} value={p.key}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={presetKey} onValueChange={handlePresetChange}>
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-1.5 text-sm focus:border-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                      <SelectValue placeholder="Select preset" />
+                    </SelectTrigger>
+                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                      {CONVENTION_PRESETS.map((p) => (
+                        <SelectItem key={p.key} value={p.key} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {presetKey !== "custom" && (
@@ -337,29 +341,31 @@ export function StudioNameSets() {
                     <div key={idx} className="border border-border/30 rounded-xl bg-background/40 p-2.5 space-y-2">
                       <div className="flex items-center gap-1.5">
                         <span className="text-muted-foreground text-[10px] font-bold">#{idx + 1}</span>
-                        <select
-                          value={slot.role}
-                          onChange={(e) => updateSlot(idx, { role: e.target.value as NameRole })}
-                          className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-2 py-1 text-xs focus:outline-none font-semibold"
-                        >
-                          {NAME_ROLES.map((r) => (
-                            <option key={r.value} value={r.value}>
-                              {r.label}
-                            </option>
-                          ))}
-                        </select>
+                        <Select value={slot.role} onValueChange={(val) => updateSlot(idx, { role: val as NameRole })}>
+                          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex-1 rounded-lg border px-2 py-1 text-xs focus:outline-none font-semibold flex justify-between items-center transition-colors">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                            {NAME_ROLES.map((r) => (
+                              <SelectItem key={r.value} value={r.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                                {r.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
-                        <select
-                          value={slot.gender}
-                          onChange={(e) => updateSlot(idx, { gender: e.target.value as NameGender })}
-                          className="border-border/60 bg-background text-foreground w-24 rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                        >
-                          {NAME_GENDERS.map((g) => (
-                            <option key={g.value} value={g.value}>
-                              {g.label}
-                            </option>
-                          ))}
-                        </select>
+                        <Select value={slot.gender} onValueChange={(val) => updateSlot(idx, { gender: val as NameGender })}>
+                          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-24 rounded-lg border px-2 py-1 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[200px]">
+                            {NAME_GENDERS.map((g) => (
+                              <SelectItem key={g.value} value={g.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                                {g.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
 
                         <button
                           onClick={() => removeSlot(idx)}
@@ -386,16 +392,17 @@ export function StudioNameSets() {
                         {/* Suffix Rule */}
                         <div className="flex flex-col gap-0.5">
                           <span className="text-muted-foreground font-bold uppercase tracking-wider">Suffix Rule</span>
-                          <select
-                            value={slot.suffixRule || "none"}
-                            onChange={(e) => updateSlot(idx, { suffixRule: e.target.value as any })}
-                            className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none"
-                          >
-                            <option value="none">None / Static</option>
-                            <option value="hendalarsk-matronymic">Hendalarsk matronymic</option>
-                            <option value="yonderian-patronymic">Yonderian patronymic</option>
-                            <option value="caphirian-lineage">Caphirian lineage</option>
-                          </select>
+                          <Select value={slot.suffixRule || "none"} onValueChange={(val) => updateSlot(idx, { suffixRule: val as any })}>
+                            <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                              <SelectValue placeholder="None / Static" />
+                            </SelectTrigger>
+                            <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[200px]">
+                              <SelectItem value="none" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">None / Static</SelectItem>
+                              <SelectItem value="hendalarsk-matronymic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Hendalarsk matronymic</SelectItem>
+                              <SelectItem value="yonderian-patronymic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Yonderian patronymic</SelectItem>
+                              <SelectItem value="caphirian-lineage" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Caphirian lineage</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         {/* Parent Name input (matronymic/patronymic only) */}

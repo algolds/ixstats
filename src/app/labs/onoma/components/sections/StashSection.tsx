@@ -5,28 +5,20 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  BookOpen,
   Trash2,
-  Globe,
-  Lock,
-  Wrench,
   Search,
-  ChevronDown,
-  ChevronUp,
   FolderPlus,
   Loader2,
-  Upload,
-  Pencil,
-  Download,
 } from "lucide-react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { NameResultCard } from "../shared/NameResultCard";
 import { UseNameDialog } from "../shared/UseNameDialog";
 import { DictionaryEditModal, type DictEditValue } from "../shared/DictionaryEditModal";
-import { FacetCard } from "~/components/ui/facet-container";
-import { guessRoleGenderFromFilename } from "~/lib/onoma/name-sets";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { ImportStashPanel } from "../stash/ImportStashPanel";
+import { SavedDictionaryCard } from "../stash/SavedDictionaryCard";
 
 interface StashSectionProps {
   onLoadToStudio?: (words: string[], title: string) => void;
@@ -48,14 +40,11 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
   // Name deployment modal
   const [selectedNameForUse, setSelectedNameForUse] = useState<string | null>(null);
 
-  // Dictionary edit modal & upload
+  // Dictionary edit modal & export state
   const [editDict, setEditDict] = useState<DictEditValue | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  const [exportDictId, setExportDictId] = useState<string | null>(null);
 
-  // Stashing popover states
+  // Stashing popover states (for saved names)
   const [stashNameId, setStashNameId] = useState<string | null>(null);
-  const [stashDictId, setStashDictId] = useState<string | null>(null);
   const [stashingFolderId, setStashingFolderId] = useState<string | null>(null);
   const [stashFeedback, setStashFeedback] = useState<string | null>(null);
 
@@ -66,16 +55,15 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
 
   // Close active stashing popovers on click outside
   useEffect(() => {
-    if (stashNameId === null && stashDictId === null) return;
+    if (stashNameId === null) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setStashNameId(null);
-        setStashDictId(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [stashNameId, stashDictId]);
+  }, [stashNameId]);
 
   // Filter entries based on search and folder filter
   const savedNames =
@@ -127,33 +115,6 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
     setExpandedDicts((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Upload multiple .txt files — each file becomes its own tagged dictionary.
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = "";
-    if (files.length === 0) return;
-    setUploadStatus(`Importing ${files.length} file(s)...`);
-    let created = 0;
-    for (const file of files) {
-      try {
-        const text = await file.text();
-        const words = text
-          .split(/[\r\n,\s]+/)
-          .map((w) => w.trim())
-          .filter(Boolean);
-        if (words.length === 0) continue;
-        const title = file.name.replace(/\.[^.]+$/, "");
-        const { role, gender } = guessRoleGenderFromFilename(file.name);
-        await bank.saveEntry({ type: "dictionary", title, values: words, role, gender });
-        created++;
-      } catch (err) {
-        console.error(`Failed to import ${file.name}:`, err);
-      }
-    }
-    setUploadStatus(`Imported ${created} dictionary file(s). Tag them into a Name Set to edit roles.`);
-    setTimeout(() => setUploadStatus(null), 5000);
-  };
-
   const handleEditSave = async (next: DictEditValue) => {
     await bank.saveEntry({
       id: next.id,
@@ -165,6 +126,11 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
       gender: next.gender,
       setName: next.setName,
     });
+
+    const original = dictionaries.find((d) => d.id === next.id);
+    if (original && original.isPublic !== next.isPublic) {
+      await bank.togglePublic(next.id, next.isPublic);
+    }
   };
 
   const handleExport = (
@@ -191,7 +157,6 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
     a.download = `${title.replace(/[^\w.-]+/g, "_")}.${format}`;
     a.click();
     URL.revokeObjectURL(url);
-    setExportDictId(null);
   };
 
   const handleStashName = async (id: string, name: string, stashId: string, stashName: string) => {
@@ -218,36 +183,6 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
     }
   };
 
-  const handleStashDict = async (
-    id: string,
-    dictTitle: string,
-    values: string[],
-    stashId: string,
-    stashName: string
-  ) => {
-    setStashingFolderId(stashId);
-    try {
-      await bank.saveEntry({
-        id,
-        type: "dictionary",
-        title: dictTitle,
-        values,
-        stashId,
-      });
-      setStashFeedback(`Moved to ${stashName}!`);
-      setTimeout(() => {
-        setStashFeedback(null);
-        setStashDictId(null);
-      }, 1500);
-    } catch (err) {
-      console.error("Failed to move dictionary:", err);
-      setStashFeedback("Failed to move");
-      setTimeout(() => setStashFeedback(null), 1500);
-    } finally {
-      setStashingFolderId(null);
-    }
-  };
-
   return (
     <div className="space-y-5">
       {/* Title Header & Search/Filters */}
@@ -262,26 +197,23 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
         {/* Filter Dropdown & Search Input */}
         <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
           {/* Upload .txt files (one dictionary per file) */}
-          <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/10 px-3 py-1.5 text-xs font-bold text-[#0091ff] transition-colors hover:bg-[#0091ff]/20">
-            <Upload className="h-3.5 w-3.5" />
-            <span>Upload .txt</span>
-            <input type="file" multiple accept=".txt" className="hidden" onChange={handleUpload} />
-          </label>
+          <ImportStashPanel />
 
           {/* Folder filter dropdown */}
           <div className="relative w-full sm:w-44">
-            <select
-              value={selectedStashFilterId}
-              onChange={(e) => setSelectedStashFilterId(e.target.value)}
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
-            >
-              <option value="all">📁 All Folders</option>
-              {stashesQuery.data?.map((s) => (
-                <option key={s.id} value={s.id}>
-                  📁 {s.name}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                <SelectValue placeholder="All Folders" />
+              </SelectTrigger>
+              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
+                <SelectItem value="all" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">📁 All Folders</SelectItem>
+                {stashesQuery.data?.map((s) => (
+                  <SelectItem key={s.id} value={s.id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                    📁 {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Search Input */}
@@ -311,17 +243,10 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
         ))}
       </datalist>
 
-      {uploadStatus && (
-        <div className="animate-in fade-in flex items-center gap-1.5 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/10 px-3.5 py-2 text-xs font-medium text-[#0091ff] duration-200">
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-          <span>{uploadStatus}</span>
-        </div>
-      )}
-
       {/* Two-Column Side-by-Side Layout */}
       <div className="grid items-start gap-6 lg:grid-cols-12">
-        {/* Left Column (5/12): Saved Names Badges */}
-        <div className="space-y-3 lg:col-span-5">
+        {/* Left Column (7/12): Saved Names Badges */}
+        <div className="space-y-3 lg:col-span-7">
           <div className="flex items-center justify-between pb-1">
             <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Saved Names ({savedNames.length})
@@ -347,6 +272,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                     name={nameValue}
                     isSaved
                     allowCustomize
+                    expandOnCardClick
                     onUse={() => setSelectedNameForUse(nameValue)}
                     savedAt={entry.createdAt}
                     originLabel={originLabel}
@@ -357,7 +283,6 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                           <button
                             onClick={(ev) => {
                               ev.stopPropagation();
-                              setStashDictId(null);
                               setStashNameId(isStashingThis ? null : entry.id);
                             }}
                             title="Move to another Stash folder"
@@ -446,8 +371,8 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
           )}
         </div>
 
-        {/* Right Column (7/12): Saved Dictionaries */}
-        <div className="space-y-3 lg:col-span-7">
+        {/* Right Column (5/12): Saved Dictionaries */}
+        <div className="space-y-3 lg:col-span-5">
           <div className="flex items-center justify-between pb-1">
             <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Saved Dictionaries ({dictionaries.length})
@@ -458,274 +383,28 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
             <div className="max-h-[600px] space-y-3 overflow-y-auto pr-1">
               {dictionaries.map((dict) => {
                 const isExpanded = !!expandedDicts[dict.id];
-                const wordsCount = dict.values.length;
-                const previewWords = dict.values.slice(0, 12).join(", ");
-                const isStashingThisDict = stashDictId === dict.id;
-
                 return (
-                  <FacetCard
+                  <SavedDictionaryCard
                     key={dict.id}
-                    className="border-border/40 bg-secondary/5 space-y-3 border p-3"
-                  >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <BookOpen className="h-4 w-4 text-[#0091ff]/80" />
-                          <h4 className="text-foreground text-sm font-bold">{dict.title}</h4>
-                        </div>
-                        <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                          <span className="capitalize">Category: {dict.category || "Any"}</span>
-                          <span>•</span>
-                          <span>{wordsCount} seeds</span>
-                          {(dict as any).role && (
-                            <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#0091ff] capitalize">
-                              {(dict as any).role}
-                              {(dict as any).gender && (dict as any).gender !== "any"
-                                ? ` · ${(dict as any).gender}`
-                                : ""}
-                            </span>
-                          )}
-                          {(dict as any).setName && (
-                            <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold text-violet-600 dark:text-violet-400">
-                              ⚇ {(dict as any).setName}
-                            </span>
-                          )}
-                          {dict.clonedFromId && (
-                            <>
-                              <span>•</span>
-                              <span className="font-semibold text-[#0091ff]/80">Cloned</span>
-                            </>
-                          )}
-                          {(dict as any).stashName && (
-                            <>
-                              <span>•</span>
-                              <span
-                                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold select-none"
-                                style={{
-                                  backgroundColor: `${(dict as any).stashColor || "#3b82f6"}20`,
-                                  color: (dict as any).stashColor || "#3b82f6",
-                                }}
-                              >
-                                📁 {(dict as any).stashName}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {/* Expand Button */}
-                        <button
-                          onClick={() => toggleExpandDict(dict.id)}
-                          className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] cursor-pointer"
-                          title={isExpanded ? "Hide word list" : "Show word list"}
-                        >
-                          {isExpanded ? (
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          )}
-                          <span>Words</span>
-                        </button>
-
-                        {/* Load to Studio / Generate */}
-                        {onLoadToStudio && (
-                          <button
-                            onClick={() => onLoadToStudio(dict.values, dict.title)}
-                            className="flex h-7 items-center gap-1.5 rounded bg-[#0091ff]/10 px-2.5 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20 cursor-pointer"
-                            title="Load into Studio Workshop"
-                          >
-                            <Wrench className="h-3.5 w-3.5" />
-                            <span>Load Studio</span>
-                          </button>
-                        )}
-
-                        {/* Stash Export Dropdown (Move Folder) */}
-                        <div className="relative">
-                          <button
-                            onClick={() => {
-                              setStashNameId(null);
-                              setStashDictId(isStashingThisDict ? null : dict.id);
-                            }}
-                            className={cn(
-                              "flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] transition-colors cursor-pointer",
-                              isStashingThisDict
-                                ? "bg-indigo-500/10 text-indigo-500"
-                                : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-[#0091ff]"
-                            )}
-                            title="Move dictionary to another Stash folder"
-                          >
-                            <FolderPlus className="h-3.5 w-3.5" />
-                            <span>Move</span>
-                          </button>
-
-                          {isStashingThisDict && (
-                            <div
-                              ref={popoverRef}
-                              className="bg-popover/85 animate-in fade-in absolute right-0 z-30 mt-1.5 w-52 rounded-xl border border-white/10 p-1.5 shadow-xl shadow-black/20 backdrop-blur-lg duration-100 dark:border-white/5"
-                            >
-                              <div className="text-muted-foreground border-border/40 mb-1 flex items-center justify-between border-b px-2 py-1.5 text-[10px] font-bold uppercase">
-                                <span>Stash Folders</span>
-                                <span className="rounded bg-indigo-500/10 px-1 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
-                                  Global
-                                </span>
-                              </div>
-                              {stashesQuery.isLoading && (
-                                <div className="text-muted-foreground flex items-center gap-1.5 px-2 py-1.5 text-xs">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span>Loading stashes...</span>
-                                </div>
-                              )}
-                              {stashesQuery.data && stashesQuery.data.length === 0 && (
-                                <div className="text-muted-foreground px-2 py-1.5 text-xs italic">
-                                  No stash folders found.
-                                </div>
-                              )}
-                              <div className="max-h-36 space-y-0.5 overflow-y-auto">
-                                {stashesQuery.data?.map((s) => (
-                                  <button
-                                    key={s.id}
-                                    disabled={stashingFolderId !== null}
-                                    onClick={() =>
-                                      handleStashDict(
-                                        dict.id,
-                                        dict.title,
-                                        dict.values,
-                                        s.id,
-                                        s.name
-                                      )
-                                    }
-                                    className="text-foreground flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 disabled:opacity-50 dark:hover:text-indigo-400"
-                                  >
-                                    <span className="flex items-center gap-1.5 truncate">
-                                      <span
-                                        className="h-2 w-2 shrink-0 rounded-full"
-                                        style={{ backgroundColor: s.color }}
-                                      />
-                                      <span className="truncate">{s.name}</span>
-                                    </span>
-                                    {stashingFolderId === s.id && (
-                                      <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
-                                    )}
-                                  </button>
-                                ))}
-                              </div>
-                              {stashFeedback && (
-                                <div className="mt-1.5 rounded bg-indigo-500/10 px-2 py-1 text-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                                  {stashFeedback}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Share toggle */}
-                        <button
-                          onClick={() => handleTogglePublic(dict.id, dict.isPublic)}
-                          className={cn(
-                            "flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] font-semibold transition-colors cursor-pointer",
-                            dict.isPublic
-                              ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
-                              : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-                          )}
-                          title={
-                            dict.isPublic
-                              ? "Shared publicly (click to make private)"
-                              : "Private (click to share publicly)"
-                          }
-                        >
-                          {dict.isPublic ? (
-                            <Globe className="h-3.5 w-3.5" />
-                          ) : (
-                            <Lock className="h-3.5 w-3.5" />
-                          )}
-                          <span>{dict.isPublic ? "Public" : "Private"}</span>
-                        </button>
-
-                        {/* Edit (rename / re-tag) */}
-                        <button
-                          onClick={() =>
-                            setEditDict({
-                              id: dict.id,
-                              title: dict.title,
-                              values: dict.values,
-                              category: dict.category ?? null,
-                              role: (dict as any).role ?? null,
-                              gender: (dict as any).gender ?? null,
-                              setName: (dict as any).setName ?? null,
-                            })
-                          }
-                          className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-[#0091ff]/10 hover:text-[#0091ff] cursor-pointer"
-                          title="Edit dictionary (rename, role, set)"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-
-                        {/* Export */}
-                        <div className="relative">
-                          <button
-                            onClick={() =>
-                              setExportDictId(exportDictId === dict.id ? null : dict.id)
-                            }
-                            className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-emerald-500/10 hover:text-emerald-500 cursor-pointer"
-                            title="Export dictionary"
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                          </button>
-                          {exportDictId === dict.id && (
-                            <div className="bg-popover/95 absolute right-0 z-30 mt-1.5 w-28 rounded-lg border border-white/10 p-1 shadow-xl backdrop-blur-lg dark:border-white/5">
-                              {(["txt", "csv", "json"] as const).map((fmt) => (
-                                <button
-                                  key={fmt}
-                                  onClick={() => handleExport(dict.title, dict.values, fmt)}
-                                  className="text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs"
-                                >
-                                  <span className="uppercase">{fmt}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDelete(dict.id)}
-                          className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-red-500/10 hover:text-red-500 cursor-pointer"
-                          title="Delete dictionary"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Word List Preview (Collapsible) */}
-                    {isExpanded && (
-                      <div className="bg-background border-border/40 animate-in slide-in-from-top-2 space-y-1.5 rounded-lg border p-2.5 duration-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground text-[9px] font-bold tracking-wider uppercase">
-                            Full Word List ({wordsCount})
-                          </span>
-                          <button
-                            onClick={() => handleCopy(dict.id, dict.values.join(", "))}
-                            className="text-[10px] font-semibold text-[#0091ff] hover:opacity-85"
-                          >
-                            {copiedId === dict.id ? "Copied!" : "Copy CSV"}
-                          </button>
-                        </div>
-                        <div className="text-foreground max-h-32 overflow-y-auto pr-1 font-mono text-xs leading-relaxed select-all">
-                          {dict.values.join(", ")}
-                        </div>
-                      </div>
-                    )}
-
-                    {!isExpanded && wordsCount > 0 && (
-                      <div className="text-muted-foreground truncate text-[10px] italic">
-                        Seeds: {previewWords}
-                        {wordsCount > 12 && " ..."}
-                      </div>
-                    )}
-                  </FacetCard>
+                    dict={dict}
+                    isExpanded={isExpanded}
+                    onToggleExpand={() => toggleExpandDict(dict.id)}
+                    onLoadToStudio={onLoadToStudio}
+                    onEdit={(d) =>
+                      setEditDict({
+                        id: d.id,
+                        title: d.title,
+                        values: d.values,
+                        category: d.category ?? null,
+                        role: d.role ?? null,
+                        gender: d.gender ?? null,
+                        setName: d.setName ?? null,
+                        isPublic: d.isPublic,
+                      })
+                    }
+                    onDelete={handleDelete}
+                    handleExport={handleExport}
+                  />
                 );
               })}
             </div>

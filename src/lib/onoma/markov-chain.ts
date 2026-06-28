@@ -35,7 +35,7 @@ export class MarkovNode {
 }
 
 export class MarkovChain {
-  private order = 3;
+  private order = 2;
   private mode: "character" | "syllable" = "character";
   private words = new Set<string>();
 
@@ -43,7 +43,7 @@ export class MarkovChain {
   private starts: Record<number, MarkovNode> = {};
   private maps: Record<number, Record<string, MarkovNode>> = {};
 
-  constructor(order = 3, mode: "character" | "syllable" = "character") {
+  constructor(order = 2, mode: "character" | "syllable" = "character") {
     this.order = order;
     this.mode = mode;
   }
@@ -211,6 +211,13 @@ export class MarkovChain {
     const maxConsonantCluster = options.maxConsonantCluster ?? 3;
     const maxVowelCluster = options.maxVowelCluster ?? 3;
     const allowDoubleLetters = options.allowDoubleLetters ?? true;
+    const minSyllables = options.minSyllables || 0;
+    const maxSyllables = options.maxSyllables || -1;
+    const mustEndWithVowel = options.mustEndWithVowel ?? false;
+    const mustEndWithConsonant = options.mustEndWithConsonant ?? false;
+    const cvTemplate = options.cvTemplate || "";
+    const noInitialClusters = options.noInitialClusters ?? false;
+    const noFinalClusters = options.noFinalClusters ?? false;
 
     const startWithLower = startWith.toLowerCase();
     const endWithLower = endWith.toLowerCase();
@@ -288,6 +295,36 @@ export class MarkovChain {
           if (vowelHarmony === "front" && hasBack) continue;
           if (vowelHarmony === "back" && hasFront) continue;
         }
+
+        // 7. Must end with vowel/consonant checks
+        if (mustEndWithVowel && !VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())) {
+          continue;
+        }
+        if (mustEndWithConsonant && VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())) {
+          continue;
+        }
+
+        // 8. Syllable count range
+        const syllablesCount = tokenizeIntoSyllables(candidate).length;
+        if (minSyllables > 0 && syllablesCount < minSyllables) {
+          continue;
+        }
+        if (maxSyllables >= 0 && syllablesCount > maxSyllables) {
+          continue;
+        }
+
+        // 9. CV template constraint
+        if (cvTemplate && !matchCvTemplate(candidate, cvTemplate)) {
+          continue;
+        }
+
+        // 10. Initial/Final consonant cluster restrictions
+        if (noInitialClusters && startsWithCluster(candidate)) {
+          continue;
+        }
+        if (noFinalClusters && endsWithCluster(candidate)) {
+          continue;
+        }
       }
 
       // Validation checks
@@ -352,4 +389,32 @@ export class MarkovChain {
       }))
       .sort((a, b) => b.count - a.count);
   }
+}
+
+function matchCvTemplate(word: string, template: string): boolean {
+  const vowels = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
+  const cleaned = word.toLowerCase().replace(/[^a-z]/g, "");
+  if (cleaned.length !== template.length) return false;
+  for (let i = 0; i < cleaned.length; i++) {
+    const char = cleaned[i];
+    const isVowel = vowels.includes(char);
+    const templateChar = template[i].toUpperCase();
+    if (templateChar === "V" && !isVowel) return false;
+    if (templateChar === "C" && isVowel) return false;
+  }
+  return true;
+}
+
+function startsWithCluster(word: string): boolean {
+  const vowels = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
+  const cleaned = word.toLowerCase().replace(/[^a-z]/g, "");
+  if (cleaned.length < 2) return false;
+  return !vowels.includes(cleaned[0]) && !vowels.includes(cleaned[1]);
+}
+
+function endsWithCluster(word: string): boolean {
+  const vowels = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
+  const cleaned = word.toLowerCase().replace(/[^a-z]/g, "");
+  if (cleaned.length < 2) return false;
+  return !vowels.includes(cleaned[cleaned.length - 1]) && !vowels.includes(cleaned[cleaned.length - 2]);
 }

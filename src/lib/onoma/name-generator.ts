@@ -58,7 +58,7 @@ export function generateFantasySyllableName(): string {
 export function generateMarkovName(
   trainingNames: string[],
   options: GenerateOptions = {},
-  order = 3
+  order = 2
 ): string | null {
   if (!trainingNames || trainingNames.length === 0) {
     return null;

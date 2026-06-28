@@ -113,7 +113,7 @@ export function useOnomaGenerator() {
   const [category, setCategory] = useState<NameCategory>("city");
   const [gender, setGender] = useState<Gender>("neutral");
   const [subType, setSubType] = useState<string>("generic"); // e.g. "dwarf", "elf", "tavern", "military-unit"
-  const [order, setOrder] = useState<number>(3);
+  const [order, setOrder] = useState<number>(2);
   const [options, setOptions] = useState<GenerateOptions>({
     minLength: 4,
     maxLength: 12,

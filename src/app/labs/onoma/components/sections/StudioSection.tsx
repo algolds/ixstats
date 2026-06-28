@@ -8,6 +8,7 @@ import { StudioWorkshop } from "./studio/StudioWorkshop";
 import { StudioNameSets } from "./studio/StudioNameSets";
 import { StudioLexicon } from "./studio/StudioLexicon";
 import { StudioPhonology } from "./studio/StudioPhonology";
+import { StudioVisualizer } from "./studio/StudioVisualizer";
 import { api } from "~/trpc/react";
 import { applyFlanking } from "~/lib/onoma/branding-utils";
 import type { StudioSubTab } from "~/lib/onoma/types";
@@ -60,6 +61,8 @@ export function StudioSection({
 
       {currentSubTab === "workshop" ? (
         <StudioWorkshop state={state} />
+      ) : currentSubTab === "visualizer" ? (
+        <StudioVisualizer state={state} />
       ) : currentSubTab === "namesets" ? (
         <StudioNameSets />
       ) : currentSubTab === "phonology" ? (

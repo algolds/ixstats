@@ -26,6 +26,7 @@ import {
   SlidersHorizontal,
   BookOpen,
   AudioLines,
+  Network,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
@@ -58,11 +59,13 @@ const SECTION_TITLES: Record<OnomaSection, string> = {
 const studioSubTabLabel = (t: StudioSubTab) =>
   t === "workshop"
     ? "Model Workshop"
-    : t === "namesets"
-      ? "Name Sets"
-      : t === "phonology"
-        ? "IPA Studio"
-        : "Lexicon Dictionary";
+    : t === "visualizer"
+      ? "Path Visualizer"
+      : t === "namesets"
+        ? "Name Sets"
+        : t === "phonology"
+          ? "IPA Studio"
+          : "Lexicon Dictionary";
 
 const SECTION_COLORS: Record<OnomaSection, string> = {
   overview: "#0091ff",
@@ -219,6 +222,17 @@ export function OnomaRouter() {
         id: "workshop",
         label: "Model Workshop",
         icon: SlidersHorizontal,
+        themeColor: "#0091ff",
+        glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+        activeIndicatorClassName:
+          "bg-[#0091ff]/5 border-[#0091ff]/20 text-[#0091ff] dark:text-[#33a7ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]",
+        activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+        activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      },
+      {
+        id: "visualizer",
+        label: "Path Visualizer",
+        icon: Network,
         themeColor: "#0091ff",
         glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
         activeIndicatorClassName:

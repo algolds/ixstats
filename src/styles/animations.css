@@ -366,6 +366,28 @@
   --animate-rainbow: rainbow 2s infinite linear;
 }
 
+@keyframes ripple-underneath {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.06);
+    opacity: 0;
+  }
+}
+
+.animate-ripple-underneath {
+  animation: ripple-underneath 0.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.animate-rainbow-fast {
+  animation: rainbow 0.7s infinite linear;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .marquee-content,
@@ -383,7 +405,9 @@
   .animate-di-pulse,
   .animate-di-critical,
   .animate-di-success,
-  .animate-di-warning {
+  .animate-di-warning,
+  .animate-ripple-underneath,
+  .animate-rainbow-fast {
     animation: none;
   }
   

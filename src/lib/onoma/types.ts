@@ -68,6 +68,20 @@ export interface GenerateOptions {
   maxVowelCluster?: number;
   /** Disallow consecutive identical letters (e.g., "aa", "ss") */
   allowDoubleLetters?: boolean;
+  /** Minimum syllable count */
+  minSyllables?: number;
+  /** Maximum syllable count */
+  maxSyllables?: number;
+  /** Must end with vowel */
+  mustEndWithVowel?: boolean;
+  /** Must end with consonant */
+  mustEndWithConsonant?: boolean;
+  /** Strict CV template format, e.g. "CVCV" */
+  cvTemplate?: string;
+  /** Disallow word-initial consonant clusters */
+  noInitialClusters?: boolean;
+  /** Disallow word-final consonant clusters */
+  noFinalClusters?: boolean;
 }
 
 /**
@@ -236,7 +250,7 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
 }
 
 /** Studio workspace sub-tabs. */
-export type StudioSubTab = "workshop" | "namesets" | "lexicon" | "phonology";
+export type StudioSubTab = "workshop" | "visualizer" | "namesets" | "lexicon" | "phonology";
 
 /**
  * Helper to get studio sub-tab from a pathname.
@@ -244,6 +258,7 @@ export type StudioSubTab = "workshop" | "namesets" | "lexicon" | "phonology";
 export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   const segment = pathname.split("/labs/onoma/studio")[1]?.replace(/^\//, "") || "";
   const subsegment = segment.split("/")[0];
+  if (subsegment === "visualizer") return "visualizer";
   if (subsegment === "namesets") return "namesets";
   if (subsegment === "lexicon") return "lexicon";
   if (subsegment === "phonology") return "phonology";

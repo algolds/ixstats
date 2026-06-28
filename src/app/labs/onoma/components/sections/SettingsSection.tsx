@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
@@ -258,18 +260,19 @@ export function SettingsSection() {
               <label className="text-muted-foreground text-[10px] font-bold uppercase">
                 Personal Default Voice
               </label>
-              <select
-                value={personalVoice}
-                onChange={(e) => savePersonalPreferences(e.target.value, personalSpeed)}
-                className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1.5 text-xs focus:outline-none"
-              >
-                <option value="">Use system default</option>
-                {voiceOptions.map((id) => (
-                  <option key={id} value={id}>
-                    {voiceLabel(id)}
-                  </option>
-                ))}
-              </select>
+              <Select value={personalVoice || "default"} onValueChange={(val) => savePersonalPreferences(val === "default" ? "" : val, personalSpeed)}>
+                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-md border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                  <SelectValue placeholder="Use system default" />
+                </SelectTrigger>
+                <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                  <SelectItem value="default" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Use system default</SelectItem>
+                  {voiceOptions.map((id) => (
+                    <SelectItem key={id} value={id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      {voiceLabel(id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">
@@ -331,18 +334,19 @@ export function SettingsSection() {
                 <label className="text-muted-foreground text-[10px] font-bold uppercase">
                   Select Voice
                 </label>
-                <select
-                  value={sandboxVoice}
-                  onChange={(e) => setSandboxVoice(e.target.value)}
-                  className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1 text-xs focus:outline-none"
-                >
-                  <option value="">Default voice</option>
-                  {voiceOptions.map((id) => (
-                    <option key={id} value={id}>
-                      {voiceLabel(id)}
-                    </option>
-                  ))}
-                </select>
+                <Select value={sandboxVoice || "default"} onValueChange={(val) => setSandboxVoice(val === "default" ? "" : val)}>
+                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-md border px-2 py-1 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                    <SelectValue placeholder="Default voice" />
+                  </SelectTrigger>
+                  <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                    <SelectItem value="default" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Default voice</SelectItem>
+                    {voiceOptions.map((id) => (
+                      <SelectItem key={id} value={id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                        {voiceLabel(id)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

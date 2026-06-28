@@ -7,15 +7,20 @@ import { Wand2, SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucid
 import { NameResultCard } from "../../shared/NameResultCard";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
 import { MarkovVisualizer } from "../MarkovVisualizer";
 import { LexiconExplorer } from "../LexiconExplorer";
+import { useState } from "react";
 import { type StudioState } from "../../../hooks/useStudioState";
+import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
 
 interface StudioWorkshopProps {
   state: StudioState;
 }
 
 export function StudioWorkshop({ state }: StudioWorkshopProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const {
     inputText,
     setInputText,
@@ -83,18 +88,19 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               {/* Load Saved Dictionary Selector */}
               {savedDictionaries.length > 0 && (
                 <div className="pt-0.5 pb-1">
-                  <select
-                    value={selectedDictId}
-                    onChange={(e) => handleLoadSavedDictionary(e.target.value)}
-                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:border-[#0091ff]/50 focus:outline-none"
-                  >
-                    <option value="">-- Load a saved dictionary --</option>
-                    {savedDictionaries.map((dict) => (
-                      <option key={dict.id} value={dict.id}>
-                        {dict.title} ({dict.values.length} words)
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={selectedDictId || "none"} onValueChange={(val) => handleLoadSavedDictionary(val === "none" ? "" : val)}>
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:border-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                      <SelectValue placeholder="-- Load a saved dictionary --" />
+                    </SelectTrigger>
+                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
+                      <SelectItem value="none" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">-- Load a saved dictionary --</SelectItem>
+                      {savedDictionaries.map((dict) => (
+                        <SelectItem key={dict.id} value={dict.id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                          {dict.title} ({dict.values.length} words)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -247,17 +253,16 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   <label className="text-muted-foreground text-[10px] font-bold uppercase">
                     Vowel Harmony
                   </label>
-                  <select
-                    value={options.vowelHarmony || "none"}
-                    onChange={(e) =>
-                      setOptions({ ...options, vowelHarmony: e.target.value as any })
-                    }
-                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
-                  >
-                    <option value="none">None (Standard)</option>
-                    <option value="front">Front Harmony (e, i, y, ä, ö, ü)</option>
-                    <option value="back">Back Harmony (a, o, u)</option>
-                  </select>
+                  <Select value={options.vowelHarmony || "none"} onValueChange={(val) => setOptions({ ...options, vowelHarmony: val as any })}>
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                      <SelectValue placeholder="None (Standard)" />
+                    </SelectTrigger>
+                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                      <SelectItem value="none" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">None (Standard)</SelectItem>
+                      <SelectItem value="front" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Front Harmony (e, i, y, ä, ö, ü)</SelectItem>
+                      <SelectItem value="back" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Back Harmony (a, o, u)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Cluster Size Limits */}
@@ -324,6 +329,147 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     }
                     className="border-border/60 bg-background h-3.5 w-3.5 rounded text-[#0091ff] focus:ring-[#0091ff]"
                   />
+                </div>
+
+                {/* Advanced toggler */}
+                <div className="border-border/20 border-t pt-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-[#0091ff] transition-opacity hover:opacity-85"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span>{showAdvanced ? "Hide Advanced Phonotactics" : "Show Advanced Phonotactics"}</span>
+                  </button>
+
+                  {showAdvanced && (
+                    <div className="animate-in fade-in mt-3.5 space-y-3.5 duration-200">
+                      {/* Syllable Counts */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                            Min Syllables
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={5}
+                            value={options.minSyllables || 0}
+                            onChange={(e) =>
+                              setOptions({
+                                ...options,
+                                minSyllables: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                            Max Syllables
+                          </label>
+                          <input
+                            type="number"
+                            min={-1}
+                            max={10}
+                            placeholder="No limit"
+                            value={options.maxSyllables === undefined || options.maxSyllables === -1 ? "" : options.maxSyllables}
+                            onChange={(e) =>
+                              setOptions({
+                                ...options,
+                                maxSyllables: e.target.value === "" ? -1 : parseInt(e.target.value) || -1,
+                              })
+                            }
+                            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* CV Template Input */}
+                      <div className="space-y-1">
+                        <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                          Strict CV Template
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. CVCV (C=consonant, V=vowel)"
+                          value={options.cvTemplate || ""}
+                          onChange={(e) =>
+                            setOptions({
+                              ...options,
+                              cvTemplate: e.target.value.replace(/[^cvCV]/g, "").toUpperCase(),
+                            })
+                          }
+                          className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none font-mono uppercase"
+                        />
+                      </div>
+
+                      {/* Switches Grid */}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {/* Must End With Vowel */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-muted-foreground">Must End With Vowel</span>
+                          <AppleSwitch
+                            checked={options.mustEndWithVowel || false}
+                            onCheckedChange={(checked) =>
+                              setOptions({
+                                ...options,
+                                mustEndWithVowel: checked,
+                                mustEndWithConsonant: checked ? false : options.mustEndWithConsonant,
+                              })
+                            }
+                            size="sm"
+                          />
+                        </div>
+
+                        {/* Must End With Consonant */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-muted-foreground">Must End With Consonant</span>
+                          <AppleSwitch
+                            checked={options.mustEndWithConsonant || false}
+                            onCheckedChange={(checked) =>
+                              setOptions({
+                                ...options,
+                                mustEndWithConsonant: checked,
+                                mustEndWithVowel: checked ? false : options.mustEndWithVowel,
+                              })
+                            }
+                            size="sm"
+                          />
+                        </div>
+
+                        {/* No Initial Clusters */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-muted-foreground">No Initial CC Clusters</span>
+                          <AppleSwitch
+                            checked={options.noInitialClusters || false}
+                            onCheckedChange={(checked) =>
+                              setOptions({
+                                ...options,
+                                noInitialClusters: checked,
+                              })
+                            }
+                            size="sm"
+                          />
+                        </div>
+
+                        {/* No Final Clusters */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-muted-foreground">No Final CC Clusters</span>
+                          <AppleSwitch
+                            checked={options.noFinalClusters || false}
+                            onCheckedChange={(checked) =>
+                              setOptions({
+                                ...options,
+                                noFinalClusters: checked,
+                              })
+                            }
+                            size="sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -410,44 +556,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
         </div>
       </div>
 
-      {/* Interactive Markov Path Visualizer & Lexicon Explorer Grid */}
-      <div className="border-border/40 mt-4 grid gap-6 border-t pt-6 lg:grid-cols-2">
-        {/* Interactive Markov Path Visualizer Panel */}
-        <div>
-          {visualizerChain ? (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold tracking-tight text-[#0091ff]">
-                  Interactive Path Workshop
-                </h3>
-                <p className="text-muted-foreground text-xs">
-                  Explore the Markov transition tree step-by-step. Click green tokens to grow the
-                  path and click red [End] to finalize name compilation.
-                </p>
-              </div>
-              <MarkovVisualizer
-                chain={visualizerChain}
-                activePrefix={visualizerPrefix}
-                onChangePrefix={setVisualizerPrefix}
-                onCompleteName={handleCompleteName}
-              />
-            </div>
-          ) : (
-            <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex h-full min-h-[300px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">
-              <Info className="mb-3 h-8 w-8 text-[#0091ff]/40" />
-              <p className="font-semibold">Interactive visualizer is inactive</p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Provide training seeds to build the Markov trie.
-              </p>
-            </FacetCard>
-          )}
-        </div>
 
-        {/* Lexicon Explorer & Health Panel */}
-        <div className="h-full">
-          <LexiconExplorer words={trainingWords} />
-        </div>
-      </div>
     </>
   );
 }

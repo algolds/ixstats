@@ -37,6 +37,11 @@ the live working set stays here.
 |------|-------|--------|
 | [mycountry-core-loops-design.md](mycountry-core-loops-design.md) | Exec / Diplomacy / Politics loop closure (Phases 1–5 implemented; narrative+ledger spine) | ACTIVE |
 
+### Onoma Refactoring & Code Quality
+| Plan | Scope | Status |
+|------|-------|--------|
+| [091-onoma-refactor-modularization.md](091-onoma-refactor-modularization.md) | Split and refactor oversized conlang components | ACTIVE |
+
 ### Public Preview
 | Plan | Scope | Status |
 |------|-------|--------|

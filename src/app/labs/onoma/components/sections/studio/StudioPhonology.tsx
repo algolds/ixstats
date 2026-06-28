@@ -13,6 +13,7 @@ import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/p
 import { speakName } from "~/lib/onoma/browser-speech";
 import { ipaToKokoroPhonemes, KOKORO_VALID_TOKENS } from "~/lib/onoma/kokoro-phonemes";
 import { cn } from "~/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import {
   getCultureRuleOverrides,
   setCultureRuleOverrides,
@@ -194,17 +195,18 @@ export function StudioPhonology() {
             placeholder="Type a word…"
             className="border-border/60 bg-background text-foreground w-44 rounded-lg border px-3 py-1.5 text-sm focus:outline-none"
           />
-          <select
-            value={culture}
-            onChange={(e) => setCulture(e.target.value)}
-            className="border-border/60 bg-background text-foreground rounded-lg border px-3 py-1.5 text-sm focus:outline-none"
-          >
-            {CULTURES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <Select value={culture} onValueChange={setCulture}>
+            <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground rounded-lg border px-3 py-1.5 text-sm focus:outline-none flex justify-between items-center transition-colors">
+              <SelectValue placeholder="Select culture" />
+            </SelectTrigger>
+            <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+              {CULTURES.map((c) => (
+                <SelectItem key={c} value={c} className="capitalize text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="text-muted-foreground flex flex-wrap items-center gap-2 font-mono text-sm">
             <span>{previewIpa}</span>
             {speechConfig?.kokoro?.enabled &&

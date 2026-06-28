@@ -10,6 +10,8 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { getNameOverride, setNameOverride } from "~/lib/onoma/ipa-overrides";
 import { useNotify } from "~/hooks/useNotify";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import { LexiconAnalysis } from "./LexiconAnalysis";
+import { LexiconDefinitionForm } from "./LexiconDefinitionForm";
 
 interface StudioLexiconProps {
   state: StudioState;
@@ -56,6 +58,20 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
     handleSaveLexiconDefinition,
     handleDeleteTerm,
   } = state;
+
+  const stashedEntry = state.bank.nameBank?.find(
+    (entry) => entry.type === "saved-name" && entry.title === selectedTerm
+  );
+
+  const originLabel = stashedEntry
+    ? (stashedEntry as any).setName
+      ? `Dictionary: ${(stashedEntry as any).setName}`
+      : stashedEntry.category
+        ? `Category: ${stashedEntry.category}`
+        : "Saved name"
+    : null;
+
+
 
   useEffect(() => {
     setEditingPron(false);
@@ -206,7 +222,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     </span>
                   )}
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground font-semibold">
                   {effectiveIpa && (
                     <span className="flex items-center">
                       <button
@@ -247,9 +263,30 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                       </button>
                     </span>
                   )}
-                  <span className="text-muted-foreground text-[10px] font-semibold">
+                  <span>
                     Culture: <span className="text-foreground capitalize">{classifiedCulture}</span>
                   </span>
+                  {stashedEntry && (
+                    <>
+                      <span>•</span>
+                      {originLabel && (
+                        <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#0091ff] capitalize">
+                          {originLabel}
+                        </span>
+                      )}
+                      <span>•</span>
+                      <span>
+                        Stashed{" "}
+                        <span className="text-foreground font-semibold">
+                          {new Date(stashedEntry.createdAt).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -336,18 +373,19 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
 
                 <div className="space-y-0.5">
                   <label className="text-muted-foreground text-[8px] font-bold uppercase">Voice</label>
-                  <select
-                    value={voiceDraft}
-                    onChange={(e) => setVoiceDraft(e.target.value)}
-                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                  >
-                    <option value="">Default / culture voice</option>
-                    {(voicesData?.voices ?? []).map((v: string) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={voiceDraft || "default"} onValueChange={(val) => setVoiceDraft(val === "default" ? "" : val)}>
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                      <SelectValue placeholder="Default / culture voice" />
+                    </SelectTrigger>
+                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[200px]">
+                      <SelectItem value="default" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Default / culture voice</SelectItem>
+                      {(voicesData?.voices ?? []).map((v: string) => (
+                        <SelectItem key={v} value={v} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex items-center justify-between gap-1.5 pt-0.5">
@@ -451,6 +489,13 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               </div>
             </div>
 
+            {/* Lexical & Phonotactic Analysis */}
+            <LexiconAnalysis
+              selectedTerm={selectedTerm}
+              stashedEntry={stashedEntry}
+              originLabel={originLabel}
+            />
+
             {/* Case Declension Table */}
             {selectedTermMorphology && (
               <div className="space-y-2">
@@ -498,77 +543,17 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             )}
 
             {/* Definition Edit Form */}
-            <div className="border-border/20 border-t pt-5">
-              <h4 className="text-muted-foreground mb-3 text-xs font-bold tracking-wider uppercase">
-                Define Lexicon Meaning
-              </h4>
-              <form onSubmit={handleSaveLexiconDefinition} className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                      Part of Speech
-                    </label>
-                    <select
-                      value={lexEditPos}
-                      onChange={(e) => setLexEditPos(e.target.value)}
-                      className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none"
-                    >
-                      <option value="Noun">Noun</option>
-                      <option value="Adjective">Adjective</option>
-                      <option value="Verb">Verb</option>
-                      <option value="Proper Noun">Proper Noun</option>
-                      <option value="Adverb">Adverb</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                      Etymological Root
-                    </label>
-                    <input
-                      type="text"
-                      value={lexEditRoot}
-                      onChange={(e) => setLexEditRoot(e.target.value)}
-                      placeholder="e.g. rom- (strength)"
-                      className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                    Meaning / Translation
-                  </label>
-                  <input
-                    type="text"
-                    value={lexEditMeaning}
-                    onChange={(e) => setLexEditMeaning(e.target.value)}
-                    placeholder="e.g. Place of strength, capital city"
-                    required
-                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                    Historical Origin & Notes
-                  </label>
-                  <textarea
-                    value={lexEditOrigin}
-                    onChange={(e) => setLexEditOrigin(e.target.value)}
-                    placeholder="e.g. Named after legendary founder Romus, later expanded by Latin tribes..."
-                    className="border-border/60 bg-background text-foreground h-20 w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full rounded-lg bg-[#0091ff] py-2 text-xs font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff]"
-                >
-                  Save Lexicon Definition
-                </button>
-              </form>
-            </div>
+            <LexiconDefinitionForm
+              lexEditPos={lexEditPos}
+              setLexEditPos={setLexEditPos}
+              lexEditRoot={lexEditRoot}
+              setLexEditRoot={setLexEditRoot}
+              lexEditMeaning={lexEditMeaning}
+              setLexEditMeaning={setLexEditMeaning}
+              lexEditOrigin={lexEditOrigin}
+              setLexEditOrigin={setLexEditOrigin}
+              onSubmit={handleSaveLexiconDefinition}
+            />
           </FacetCard>
         ) : (
           <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex min-h-[400px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">

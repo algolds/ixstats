@@ -388,6 +388,12 @@ export const onomaRouter = createTRPCRouter({
         });
       }
 
+      // Nullify references in cloned dictionaries to prevent foreign key failure
+      await db.nameBank.updateMany({
+        where: { clonedFromId: `published_${existing.id}` },
+        data: { clonedFromId: null },
+      });
+
       // Delete public published copy if it exists
       await db.nameBank.deleteMany({
         where: {
@@ -554,6 +560,12 @@ export const onomaRouter = createTRPCRouter({
 
         return published;
       } else {
+        // Nullify references in cloned dictionaries to prevent foreign key failure
+        await db.nameBank.updateMany({
+          where: { clonedFromId: `published_${item.id}` },
+          data: { clonedFromId: null },
+        });
+
         return db.nameBank.deleteMany({
           where: {
             id: `published_${item.id}`,

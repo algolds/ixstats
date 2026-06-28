@@ -13,8 +13,6 @@ import {
   Volume2,
   Languages,
   Pencil,
-  X,
-  RotateCcw,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -30,7 +28,8 @@ import { getMorphologyDetails } from "~/lib/onoma/morphology";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { speakName } from "~/lib/onoma/browser-speech";
-import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import { PronunciationEditor } from "./PronunciationEditor";
+import { LinguisticProfile } from "./LinguisticProfile";
 
 interface NameResultCardProps {
   name: string;
@@ -47,6 +46,7 @@ interface NameResultCardProps {
   /** Extra action buttons (e.g. move-to-folder, delete) rendered in the header row. */
   headerExtras?: React.ReactNode;
   allowCustomize?: boolean;
+  expandOnCardClick?: boolean;
 }
 
 export function NameResultCard({
@@ -60,20 +60,12 @@ export function NameResultCard({
   originLabel,
   headerExtras,
   allowCustomize = false,
+  expandOnCardClick = false,
 }: NameResultCardProps) {
   const notify = useNotify();
-  const suggestMutation = api.onoma.suggestPhonemes.useMutation();
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [localSaved, setLocalSaved] = useState(isSaved);
-  const [animatePulse, setAnimatePulse] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimatePulse(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // const [copiedTextType, setCopiedTextType] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Per-name pronunciation editor (IPA + voice overrides, stored in localStorage)
@@ -88,12 +80,6 @@ export function NameResultCard({
     staleTime: 600000,
   });
 
-  // Voice catalog — only fetched when the editor opens
-  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
-    staleTime: 600000,
-    enabled: editingPron,
-  });
-
   // Apply localStorage overrides only after mount to avoid SSR hydration mismatch,
   // and re-resolve when any override changes (event from ipa-overrides helpers).
   useEffect(() => setMounted(true), []);
@@ -102,18 +88,6 @@ export function NameResultCard({
     window.addEventListener(OVERRIDES_UPDATED_EVENT, bump);
     return () => window.removeEventListener(OVERRIDES_UPDATED_EVENT, bump);
   }, []);
-
-  const [definition, setDefinition] = useState<{
-    partOfSpeech: string;
-    root: string;
-    meaning: string;
-    origin: string;
-  } | null>(null);
-  const [isEditingDef, setIsEditingDef] = useState(false);
-  const [editPos, setEditPos] = useState("Noun");
-  const [editRoot, setEditRoot] = useState("");
-  const [editMeaning, setEditMeaning] = useState("");
-  const [editOrigin, setEditOrigin] = useState("");
 
   const ipa = useMemo(() => {
     // SSR/first render: base translation (no localStorage) so markup matches the server.
@@ -124,65 +98,9 @@ export function NameResultCard({
 
   const hasOverride = mounted ? Boolean(getNameOverride(name)) : false;
 
-  // const cyrillicScript = useMemo(() => transcribeToScript(name, "cyrillic"), [name]);
-  // const greekScript = useMemo(() => transcribeToScript(name, "greek"), [name]);
-  // const arabicScript = useMemo(() => transcribeToScript(name, "arabic"), [name]);
-
   const morphology = useMemo(() => {
     return getMorphologyDetails(name, culture ?? null);
   }, [name, culture]);
-
-  // const handleCopyText = async (text: string, type: string) => {
-  //   try {
-  //     await navigator.clipboard.writeText(text);
-  //     setCopiedTextType(type);
-  //     setTimeout(() => setCopiedTextType(null), 2000);
-  //   } catch (err) {
-  //     console.error("Failed to copy script text:", err);
-  //   }
-  // };
-
-  useEffect(() => {
-    if (showDetailsModal && typeof window !== "undefined") {
-      const defsJson = localStorage.getItem("onoma-lexicon-definitions");
-      if (defsJson) {
-        const defs = JSON.parse(defsJson);
-        const def = defs[name] || null;
-        setDefinition(def);
-        if (def) {
-          setEditPos(def.partOfSpeech || "Noun");
-          setEditRoot(def.root || "");
-          setEditMeaning(def.meaning || "");
-          setEditOrigin(def.origin || "");
-        } else {
-          setEditPos("Noun");
-          setEditRoot("");
-          setEditMeaning("");
-          setEditOrigin("");
-        }
-      }
-    }
-  }, [showDetailsModal, name]);
-
-  const handleSaveDefinition = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (typeof window === "undefined") return;
-    const defsJson = localStorage.getItem("onoma-lexicon-definitions") || "{}";
-    const defs = JSON.parse(defsJson);
-    const newDef = {
-      partOfSpeech: editPos,
-      root: editRoot,
-      meaning: editMeaning,
-      origin: editOrigin,
-    };
-    defs[name] = newDef;
-    localStorage.setItem("onoma-lexicon-definitions", JSON.stringify(defs));
-    setDefinition(newDef);
-    setIsEditingDef(false);
-
-    // Dispatch custom event to notify other subcomponents of updates
-    window.dispatchEvent(new Event("onoma-definitions-updated"));
-  };
 
   // Shared playback: prefer Kokoro (phoneme mode from the resolved IPA), fall back to browser.
   //  - forceDefaultVoice → 🔊 reads exact phonemes in the configured default voice
@@ -242,7 +160,8 @@ export function NameResultCard({
     setLocalSaved(isSaved);
   }, [isSaved, name]);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     try {
       await navigator.clipboard.writeText(name);
       setCopied(true);
@@ -252,7 +171,8 @@ export function NameResultCard({
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!onSave || localSaved || saving) return;
     setSaving(true);
     try {
@@ -294,8 +214,10 @@ export function NameResultCard({
   return (
     <FacetCard
       depth={showDetailsModal ? 2 : 1}
+      onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(
         "group relative flex flex-col justify-start gap-3.5 overflow-hidden border px-4 py-3.5 transition-all duration-500 ease-out",
+        expandOnCardClick && "cursor-pointer select-none",
         // Default border/background colors matching the fit score
         fitColor === "emerald" && "border-emerald-500/20 bg-emerald-500/[0.01]",
         fitColor === "amber" && "border-amber-500/20 bg-amber-500/[0.01]",
@@ -333,9 +255,7 @@ export function NameResultCard({
               fitColor === "emerald" && "bg-emerald-500",
               fitColor === "amber" && "bg-amber-500",
               fitColor === "rose" && "bg-rose-500",
-              animatePulse
-                ? "animate-pulse opacity-25 scale-110"
-                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+              "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
             )}
           />
           <div
@@ -344,9 +264,7 @@ export function NameResultCard({
               fitColor === "emerald" && "bg-emerald-500",
               fitColor === "amber" && "bg-amber-500",
               fitColor === "rose" && "bg-rose-500",
-              animatePulse
-                ? "animate-pulse opacity-25 scale-110"
-                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+              "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
             )}
           />
           <div
@@ -355,9 +273,7 @@ export function NameResultCard({
               fitColor === "emerald" && "bg-emerald-500",
               fitColor === "amber" && "bg-amber-500",
               fitColor === "rose" && "bg-rose-500",
-              animatePulse
-                ? "animate-pulse opacity-25 scale-110"
-                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+              "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
             )}
           />
           <div
@@ -366,9 +282,7 @@ export function NameResultCard({
               fitColor === "emerald" && "bg-emerald-500",
               fitColor === "amber" && "bg-amber-500",
               fitColor === "rose" && "bg-rose-500",
-              animatePulse
-                ? "animate-pulse opacity-25 scale-110"
-                : "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
+              "opacity-[0.04] group-hover:opacity-[0.15] group-hover:scale-125"
             )}
           />
         </>
@@ -485,7 +399,10 @@ export function NameResultCard({
           {/* Use/Redirect Button */}
           {onUse && (
             <button
-              onClick={() => onUse(name)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onUse(name);
+              }}
               title="Deploy name in game"
               className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-all duration-200 hover:bg-amber-500/10 hover:text-amber-500 active:scale-90"
             >
@@ -500,302 +417,28 @@ export function NameResultCard({
 
       {/* Per-name pronunciation editor (IPA + voice override) */}
       {editingPron && (
-        <div className="border-border/20 animate-in slide-in-from-top-1 relative z-10 w-full space-y-2.5 rounded-xl border bg-[#0091ff]/[0.02] p-3 text-left duration-200">
-          <div className="flex items-center justify-between">
-            <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
-              Customize Pronunciation
-            </h4>
-            <button
-              onClick={() => setEditingPron(false)}
-              title="Close"
-              className="text-muted-foreground cursor-pointer rounded p-0.5 hover:text-[#0091ff]"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between">
-              <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                IPA (drives Read Naturally phonemes)
-              </label>
-              {speechConfig?.kokoro?.enabled &&
-                speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const res = await suggestMutation.mutateAsync({ text: name });
-                        if (res.phonemes) {
-                          setIpaDraft(res.phonemes);
-                          notify.success("Suggested IPA loaded.");
-                        } else {
-                          notify.error("Could not generate IPA suggestion.");
-                        }
-                      } catch (err: any) {
-                        notify.error(err.message || "Failed to fetch suggestion.");
-                      }
-                    }}
-                    disabled={suggestMutation.isPending}
-                    className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
-                  >
-                    {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
-                  </button>
-                )}
-            </div>
-            <input
-              type="text"
-              value={ipaDraft}
-              onChange={(e) => setIpaDraft(e.target.value)}
-              placeholder="/ˈeksɑːmpl/"
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
-            />
-            {speechConfig?.kokoro?.enabled &&
-              (() => {
-                const result = ipaToKokoroPhonemes(ipaDraft);
-                return (
-                  <div className="text-muted-foreground mt-1 flex flex-wrap gap-1 font-mono text-[9px]">
-                    <span>Phonemes: {result.phonemes || "(empty)"}</span>
-                    {result.dropped.length > 0 && (
-                      <span className="font-semibold text-amber-500">
-                        (dropped: {result.dropped.join(", ")})
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-          </div>
-
-          <div className="space-y-0.5">
-            <label className="text-muted-foreground text-[8px] font-bold uppercase">Voice</label>
-            <select
-              value={voiceDraft}
-              onChange={(e) => setVoiceDraft(e.target.value)}
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 text-xs focus:outline-none"
-            >
-              <option value="">Default / culture voice</option>
-              {(voicesData?.voices ?? []).map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center justify-between gap-1.5 pt-0.5">
-            <button
-              onClick={resetPron}
-              title="Reset to defaults"
-              className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-            >
-              <RotateCcw className="h-3 w-3" /> Reset
-            </button>
-            <div className="flex gap-1.5">
-              <button
-                onClick={previewPron}
-                className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-              >
-                <Volume2 className="h-3 w-3" /> Preview
-              </button>
-              <button
-                onClick={savePron}
-                className="rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff]"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
+        <PronunciationEditor
+          name={name}
+          ipaDraft={ipaDraft}
+          setIpaDraft={setIpaDraft}
+          voiceDraft={voiceDraft}
+          setVoiceDraft={setVoiceDraft}
+          onSave={savePron}
+          onCancel={() => setEditingPron(false)}
+          onPreview={previewPron}
+          onReset={resetPron}
+        />
       )}
 
       {/* Expanded Inline Morph Area */}
       {showDetailsModal && (
-        <div className="border-border/20 animate-in slide-in-from-top-2 relative z-10 mt-1 w-full space-y-4 border-t pt-3 text-left duration-300">
-          <div className="border-border/10 flex items-center justify-between border-b pb-2">
-            <h3 className="text-foreground flex items-center gap-2 text-xs font-bold">
-              <span>Linguistic Profile:</span>
-              <span className="font-mono text-[#0091ff]">{name}</span>
-            </h3>
-            <p className="text-muted-foreground text-[10px] font-semibold">
-              Grammatical Gender:{" "}
-              <span className="font-bold text-[#0091ff] uppercase">{morphology.gender}</span>
-            </p>
-          </div>
-
-          {/* Stash metadata — word kind + date stashed */}
-          {(originLabel || savedAt) && (
-            <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px]">
-              {originLabel && (
-                <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 font-bold text-[#0091ff] capitalize">
-                  {originLabel}
-                </span>
-              )}
-              {savedAt && (
-                <span>
-                  Stashed{" "}
-                  <span className="text-foreground font-semibold">
-                    {new Date(savedAt).toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Case Declension Table */}
-            <div className="border-border/40 bg-background overflow-hidden rounded-xl border">
-              <div className="bg-secondary/10 border-border/40 text-muted-foreground grid grid-cols-3 border-b px-3 py-2 text-[10px] font-bold tracking-wider uppercase">
-                <span>Case</span>
-                <span>Singular</span>
-                <span>Plural</span>
-              </div>
-
-              <div className="divide-border/20 divide-y text-xs">
-                {Object.entries(morphology.declensionTable).map(([caseName, declCase]) => (
-                  <div key={caseName} className="grid grid-cols-3 items-center px-3 py-2">
-                    <div className="flex flex-col pr-1">
-                      <span className="text-foreground text-[10px] font-bold capitalize">
-                        {caseName}
-                      </span>
-                      <span className="text-muted-foreground mt-0.5 text-[8px] leading-normal">
-                        {declCase.descriptionSingular.split(" (")[0]}
-                      </span>
-                    </div>
-                    <span className="truncate font-mono text-[10px] font-semibold text-[#0091ff]">
-                      {declCase.singular}
-                    </span>
-                    <span className="truncate font-mono text-[10px] font-semibold text-[#0091ff]">
-                      {declCase.plural}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Lexicon Dictionary Entry */}
-            <div className="border-border/40 bg-background space-y-2.5 rounded-xl border p-3">
-              <div className="border-border/20 flex items-center justify-between border-b pb-1.5">
-                <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
-                  Conlang Lexicon Entry
-                </h4>
-                {!isEditingDef && definition && (
-                  <button
-                    onClick={() => setIsEditingDef(true)}
-                    className="cursor-pointer text-[9px] font-bold text-[#0091ff] hover:underline"
-                  >
-                    Edit Definition
-                  </button>
-                )}
-              </div>
-
-              {!localSaved ? (
-                <p className="text-muted-foreground text-[10px] leading-normal italic">
-                  Save this name to your Local Stash to define its root and meaning.
-                </p>
-              ) : isEditingDef || !definition ? (
-                <form onSubmit={handleSaveDefinition} className="space-y-2 text-[10px]">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-0.5">
-                      <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                        Part of Speech
-                      </label>
-                      <select
-                        value={editPos}
-                        onChange={(e) => setEditPos(e.target.value)}
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
-                      >
-                        <option value="Noun">Noun</option>
-                        <option value="Verb">Verb</option>
-                        <option value="Adjective">Adjective</option>
-                        <option value="Adverb">Adverb</option>
-                        <option value="Root">Root</option>
-                        <option value="Proper Noun">Proper Noun</option>
-                      </select>
-                    </div>
-                    <div className="space-y-0.5">
-                      <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                        Conlang Root
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. ver- (water)"
-                        value={editRoot}
-                        onChange={(e) => setEditRoot(e.target.value)}
-                        className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-0.5">
-                    <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                      Definition / Meaning
-                    </label>
-                    <textarea
-                      required
-                      placeholder="Define the term..."
-                      value={editMeaning}
-                      onChange={(e) => setEditMeaning(e.target.value)}
-                      className="border-border/60 bg-background text-foreground h-10 w-full rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-0.5">
-                    <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                      Etymology / Origin
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Derived from ancient caphirian base"
-                      value={editOrigin}
-                      onChange={(e) => setEditOrigin(e.target.value)}
-                      className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-1.5 pt-0.5">
-                    {definition && (
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingDef(false)}
-                        className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                    <button
-                      type="submit"
-                      className="rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff]"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-1.5 text-[10px]">
-                  <div className="flex justify-between">
-                    <span className="py-0.2 rounded bg-[#0091ff]/10 px-1.5 text-[9px] font-bold text-[#0091ff] uppercase">
-                      {definition.partOfSpeech}
-                    </span>
-                    {definition.root && (
-                      <span className="text-muted-foreground font-mono text-[9px]">
-                        Root: {definition.root}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-foreground bg-secondary/5 border-border/20 rounded-lg border p-2 text-xs italic">
-                    "{definition.meaning}"
-                  </p>
-                  {definition.origin && (
-                    <p className="text-muted-foreground text-[9px] leading-normal">
-                      Origin: {definition.origin}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <LinguisticProfile
+          name={name}
+          morphology={morphology}
+          savedAt={savedAt}
+          originLabel={originLabel}
+          localSaved={localSaved}
+        />
       )}
     </FacetCard>
   );

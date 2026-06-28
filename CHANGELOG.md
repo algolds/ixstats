@@ -11,6 +11,21 @@ capability integer. Each release entry below lists which components advanced and
 ## [Unreleased]
 
 ### Added
+- **Project Onoma — Codebase Modularization & Advanced Custom Studio (Onoma System v4)**:
+  - **Overview Section Modularization**: Decomposed the monolithic overview section page into three specialized subcomponents: `OverviewBanner` (welcome text, Greek voice player, animated DNA helix), `QuickGeneratorControls` (presets selects, order sliders, batch flow counters), and `CandidateResultsPanel` (Markov model outputs, glow/refraction styles, save dictionary forms).
+  - **Name Result Card Refinement**: Split the complex card component, extracting `PronunciationEditor` (IPA/Kokoro editor panel) and `LinguisticProfile` (stats display, categories, cultures badge).
+  - **Stash Section Tab Separation**: Extracted `ImportStashPanel` (raw inputs importer) and `SavedDictionaryCard` (collapsible dictionaries list), leaving `StashSection` clean and performant.
+  - **Studio Lexicon Dictionary Modularization**: Extracted `LexiconAnalysis` (entropy parser and n-gram lists) and `LexiconDefinitionForm` (etymological entry form fields).
+  - **Studio Advanced Phonotactics & Constraints Drawer**: Added togglable advanced parameters directly into the conlang studio's `StudioWorkshop` view: Syllable count limit sliders, strict `cvTemplate` orthography parser, and AppleSwitch options mapping for *Must End With Vowel*, *Must End With Consonant*, *No Initial CC Clusters*, and *No Final CC Clusters*.
+- **Rename Almanac to Calendar & Complications Upgrade**:
+  - **Calendar Rebrand**: Renamed all code representations of the global `Almanac` to `Calendar` (`statecraft-calendar.ts`, `CalendarView.tsx`, `CalendarLiveDIPlugin.tsx`, layout bindings) for clarity.
+  - **iOS-style Live Complications**: Added **Term Progress** (tracked against upcoming scheduled elections) and **Next Event** calendar count complications to the expanded complications layout.
+  - **Refraction Glass Complication Icon**: Rendered a miniature iOS-style calendar complication in the Halo (Dynamic Island) compact view, displaying dynamic weekday and date using glass-refraction borders.
+  - **Dynamic Island Actions Grid**: Redesigned the MyCountry quick drawer widget into a 2-column grid of 6 essential country actions, and relocated user profiles to the footer container.
+- **Persistent Cache Optimizations (Plans 087, 088, & 089)**:
+  - **Persistent External API Cache**: Hooked database-backed `externalApiCache` checks into MediaWiki and Unsplash service pipelines, bypassing network requests on a cache hit with a 30-day TTL.
+  - **Cache Telemetry Benchmark Harness**: Ported the cache diagnostics tool (`cache-test.ts`) from legacy node-redis to standard `ioredis` arguments and options with custom retry timeouts.
+  - **Memory Pressure Cache Invalidation**: Exposed memory clearing functions (`clearTrpcMemoryCache()`, `clearAllMediaWikiCaches()`) in the system optimizer to drop maps under high RAM usage and prevent OOM restarts.
 - **Project Onoma — Naming Conventions, Wikipedia Extraction, & UI/UX Upgrades (Onoma System v3)**:
   - **Modular Naming Convention Presets**: Implemented in-world presets for conworld naming conventions: *Hendalarskara (4-name)*, *Caphirian Quadranomial*, *Urcean Tria Nomina*, *Yonderian Noble/Peasantry*, and *Khunyer Reversed* (Surname first, e.g. *Szabolcs Anton*). Supports custom suffix rules (e.g. Hendalarsk `-són`/`-toschter`/`-kind` matronymics/patronymics based on rolled name gender), prefixing rules, and slot locking.
   - **Comprehensive Wiki & Wikipedia API Extraction**: Expanded the dictionary compilation pipeline (`extract-lexicon.ts`) to track more templates (e.g. `Infobox_city`, `Infobox_town`, `Infobox_noble`, `Infobox_biography`, `Infobox_character`, `Infobox_business`, `Infobox_football_club`). Integrated English Wikipedia (`en.wikipedia.org`) with a 3,000-page cap per template, pulling **129,685 raw entries** (99,721 clean) overall. Hardened User-Agent settings with contact details and 429 rate limit sleeps to respect Wikipedia API limits.
@@ -59,6 +74,18 @@ capability integer. Each release entry below lists which components advanced and
   - Added `transitionTimeoutRef` and fetch-state guards to prevent overlapping playback and race conditions when users seek, skip, or change speeds mid-load.
   - Synced speed and voice configurations using mutable refs to eliminate React batching stale closures.
   - Resolved `currentIndex` tracking bugs and delegate detachment states in `MediaContext.tsx`.
+
+### Fixed
+- **Security Hardening (Plan 090)**:
+  - **Middleware Edge Restorations**: Restored global proxy interceptions under `src/proxy.ts` conforming to Next.js 16 conventions to prevent edge router deprecation warnings.
+  - **Script Telemetry CSP Restriction**: Removed `'unsafe-eval'` from production Content Security Policy script templates.
+  - **Secure Time Sync API Endpoint**: Enforced required `IXTIME_BOT_SECRET` token authorizations on the backend POST endpoint to block unauthenticated sync commands.
+- **Activity Feed Display Names**:
+  - Swapped generic "Leader of [Country]" text to use the actual country names (`country.name`) and linked accounts usernames in the global and personal activity feeds.
+- **WikiOS Editor & Page Creation Wizard Stability**:
+  - **Step Decomposition**: Split Step components out of `CreatePageModal.tsx` into Title, Type, and Metadata files, reducing code size by 75%.
+  - **Editor Preference Sync**: Resolved race conditions in the wiki edit page loading flow by deferring page prefill template parsing until URL query parameter parsing and preferred editor preference are fully synced.
+  - **Publish Button Layout**: Fixed circular toolbar class overlaps on the Save & Publish buttons, replacing them with theme-compliant rectangular button bounds.
 
 
 ## [1.1.6 Ogma (Alpha)] - 2026-06-27

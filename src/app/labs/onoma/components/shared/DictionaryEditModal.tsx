@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { X, Loader2, Save } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { cn } from "~/lib/utils";
 import {
   NAME_ROLES,
   NAME_GENDERS,
@@ -33,6 +35,7 @@ export interface DictEditValue {
   role: string | null;
   gender: string | null;
   setName: string | null;
+  isPublic: boolean;
 }
 
 interface Props {
@@ -46,6 +49,7 @@ interface Props {
     role: string | null;
     gender: string | null;
     setName: string | null;
+    isPublic: boolean;
   }) => Promise<void>;
 }
 
@@ -55,6 +59,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
   const [role, setRole] = useState<NameRole>((dict.role as NameRole) ?? "given");
   const [gender, setGender] = useState<NameGender>((dict.gender as NameGender) ?? "any");
   const [setName, setSetName] = useState(dict.setName ?? "");
+  const [isPublic, setIsPublic] = useState(dict.isPublic ?? false);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -69,6 +74,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
         role,
         gender,
         setName: setName.trim() || null,
+        isPublic,
       });
       onClose();
     } catch (err) {
@@ -105,31 +111,33 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <label className="text-muted-foreground text-[10px] font-bold uppercase">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as NameRole)}
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-            >
-              {NAME_ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+            <Select value={role} onValueChange={(val) => setRole(val as NameRole)}>
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                {NAME_ROLES.map((r) => (
+                  <SelectItem key={r.value} value={r.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <label className="text-muted-foreground text-[10px] font-bold uppercase">Gender</label>
-            <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value as NameGender)}
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-            >
-              {NAME_GENDERS.map((g) => (
-                <option key={g.value} value={g.value}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
+            <Select value={gender} onValueChange={(val) => setGender(val as NameGender)}>
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                {NAME_GENDERS.map((g) => (
+                  <SelectItem key={g.value} value={g.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                    {g.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -138,18 +146,19 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
             <label className="text-muted-foreground text-[10px] font-bold uppercase">
               Category
             </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-            >
-              <option value="">Any</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c} className="capitalize">
-                  {c}
-                </option>
-              ))}
-            </select>
+            <Select value={category || "any"} onValueChange={(val) => setCategory(val === "any" ? "" : val)}>
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+                <SelectItem value="any" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Any</SelectItem>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c} className="capitalize text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <label className="text-muted-foreground text-[10px] font-bold uppercase">
@@ -168,6 +177,30 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
         <p className="text-muted-foreground text-[10px]">
           Tag dictionaries into a Name Set with roles to generate full names in Studio.
         </p>
+
+        <div className="border-border/20 flex items-center justify-between border-t pt-3 pb-1">
+          <div className="flex flex-col">
+            <span className="text-foreground text-xs font-semibold">Public Sharing</span>
+            <span className="text-muted-foreground text-[10px]">
+              Allow other players to discover and clone this dictionary.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPublic(!isPublic)}
+            className={cn(
+              "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+              isPublic ? "bg-[#0091ff]" : "bg-secondary"
+            )}
+          >
+            <span
+              className={cn(
+                "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                isPublic ? "translate-x-4" : "translate-x-0"
+              )}
+            />
+          </button>
+        </div>
 
         <div className="flex justify-end gap-2 pt-1">
           <button
