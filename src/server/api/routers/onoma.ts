@@ -73,6 +73,9 @@ export const onomaRouter = createTRPCRouter({
       // Map StashItem to NameBankEntry structure expected by the frontend
       const mapped = userStashItems.map((item) => {
         let category: string | null = null;
+        let role: string | null = null;
+        let gender: string | null = null;
+        let setName: string | null = null;
         let values: string[] = [];
 
         if (item.note) {
@@ -80,6 +83,9 @@ export const onomaRouter = createTRPCRouter({
             const parsed = JSON.parse(item.note);
             if (parsed && typeof parsed === "object") {
               category = parsed.category || null;
+              role = parsed.role || null;
+              gender = parsed.gender || null;
+              setName = parsed.setName || null;
               values = parsed.values || [];
             }
           } catch {
@@ -105,6 +111,9 @@ export const onomaRouter = createTRPCRouter({
           title: item.pageTitle,
           values,
           category,
+          role,
+          gender,
+          setName,
           culturalProfile: null,
           isPublic: false,
           countryId: null,
@@ -201,6 +210,9 @@ export const onomaRouter = createTRPCRouter({
         values: z.array(z.string()),
         category: z.string().nullable().optional(),
         culturalProfile: z.string().nullable().optional(),
+        role: z.string().nullable().optional(),
+        gender: z.string().nullable().optional(),
+        setName: z.string().nullable().optional(),
         isPublic: z.boolean().optional(),
         countryId: z.string().nullable().optional(),
         stashId: z.string().optional(),
@@ -227,6 +239,9 @@ export const onomaRouter = createTRPCRouter({
       // 2. Serialize metadata into JSON note
       const noteData = {
         category: input.category || null,
+        role: input.role || null,
+        gender: input.gender || null,
+        setName: input.setName || null,
         values: input.values,
       };
       const note = JSON.stringify(noteData);
@@ -295,6 +310,9 @@ export const onomaRouter = createTRPCRouter({
         title: item.pageTitle,
         values: input.values,
         category: input.category || null,
+        role: input.role || null,
+        gender: input.gender || null,
+        setName: input.setName || null,
         culturalProfile: null,
         isPublic: false,
         countryId: null,

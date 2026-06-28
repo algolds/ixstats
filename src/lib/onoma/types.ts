@@ -238,7 +238,7 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
 }
 
 /** Studio workspace sub-tabs. */
-export type StudioSubTab = "workshop" | "lexicon" | "phonology";
+export type StudioSubTab = "workshop" | "namesets" | "lexicon" | "phonology";
 
 /**
  * Helper to get studio sub-tab from a pathname.
@@ -246,6 +246,7 @@ export type StudioSubTab = "workshop" | "lexicon" | "phonology";
 export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   const segment = pathname.split("/labs/onoma/studio")[1]?.replace(/^\//, "") || "";
   const subsegment = segment.split("/")[0];
+  if (subsegment === "namesets") return "namesets";
   if (subsegment === "lexicon") return "lexicon";
   if (subsegment === "phonology") return "phonology";
   return "workshop";

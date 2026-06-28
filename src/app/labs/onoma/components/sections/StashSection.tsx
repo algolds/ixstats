@@ -5,7 +5,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  Bookmark,
   BookOpen,
   Trash2,
   Globe,
@@ -19,11 +18,16 @@ import {
   ChevronUp,
   FolderPlus,
   Loader2,
+  Upload,
+  Pencil,
+  Download,
 } from "lucide-react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { UseNameDialog } from "../shared/UseNameDialog";
+import { DictionaryEditModal, type DictEditValue } from "../shared/DictionaryEditModal";
 import { FacetCard } from "~/components/ui/facet-container";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { guessRoleGenderFromFilename } from "~/lib/onoma/name-sets";
 import { api } from "~/trpc/react";
 
 interface StashSectionProps {
@@ -45,6 +49,11 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
 
   // Name deployment modal
   const [selectedNameForUse, setSelectedNameForUse] = useState<string | null>(null);
+
+  // Dictionary edit modal & upload
+  const [editDict, setEditDict] = useState<DictEditValue | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [exportDictId, setExportDictId] = useState<string | null>(null);
 
   // Stashing popover states
   const [stashNameId, setStashNameId] = useState<string | null>(null);
@@ -120,6 +129,73 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
     setExpandedDicts((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // Upload multiple .txt files — each file becomes its own tagged dictionary.
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setUploadStatus(`Importing ${files.length} file(s)...`);
+    let created = 0;
+    for (const file of files) {
+      try {
+        const text = await file.text();
+        const words = text
+          .split(/[\r\n,]+/)
+          .map((w) => w.trim())
+          .filter(Boolean);
+        if (words.length === 0) continue;
+        const title = file.name.replace(/\.[^.]+$/, "");
+        const { role, gender } = guessRoleGenderFromFilename(file.name);
+        await bank.saveEntry({ type: "dictionary", title, values: words, role, gender });
+        created++;
+      } catch (err) {
+        console.error(`Failed to import ${file.name}:`, err);
+      }
+    }
+    setUploadStatus(`Imported ${created} dictionary file(s). Tag them into a Name Set to edit roles.`);
+    setTimeout(() => setUploadStatus(null), 5000);
+  };
+
+  const handleEditSave = async (next: DictEditValue) => {
+    await bank.saveEntry({
+      id: next.id,
+      type: "dictionary",
+      title: next.title,
+      values: next.values,
+      category: next.category as any,
+      role: next.role,
+      gender: next.gender,
+      setName: next.setName,
+    });
+  };
+
+  const handleExport = (
+    title: string,
+    values: string[],
+    format: "txt" | "csv" | "json"
+  ) => {
+    let content: string;
+    let mime: string;
+    if (format === "json") {
+      content = JSON.stringify({ title, values }, null, 2);
+      mime = "application/json";
+    } else if (format === "csv") {
+      content = values.map((v) => `"${v.replace(/"/g, '""')}"`).join("\n");
+      mime = "text/csv";
+    } else {
+      content = values.join("\n");
+      mime = "text/plain";
+    }
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title.replace(/[^\w.-]+/g, "_")}.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportDictId(null);
+  };
+
   const handleStashName = async (id: string, name: string, stashId: string, stashName: string) => {
     setStashingFolderId(stashId);
     try {
@@ -187,6 +263,13 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
 
         {/* Filter Dropdown & Search Input */}
         <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
+          {/* Upload .txt files (one dictionary per file) */}
+          <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/10 px-3 py-1.5 text-xs font-bold text-[#0091ff] transition-colors hover:bg-[#0091ff]/20">
+            <Upload className="h-3.5 w-3.5" />
+            <span>Upload .txt</span>
+            <input type="file" multiple accept=".txt" className="hidden" onChange={handleUpload} />
+          </label>
+
           {/* Folder filter dropdown */}
           <div className="relative w-full sm:w-44">
             <select
@@ -216,6 +299,26 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
           </div>
         </div>
       </div>
+
+      {/* Existing Name Sets for the editor datalist */}
+      <datalist id="onoma-existing-sets">
+        {Array.from(
+          new Set(
+            (bank.nameBank ?? [])
+              .map((e) => (e as any).setName)
+              .filter((s): s is string => !!s)
+          )
+        ).map((s) => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
+
+      {uploadStatus && (
+        <div className="animate-in fade-in flex items-center gap-1.5 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/10 px-3.5 py-2 text-xs font-medium text-[#0091ff] duration-200">
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+          <span>{uploadStatus}</span>
+        </div>
+      )}
 
       {/* Two-Column Side-by-Side Layout */}
       <div className="grid items-start gap-6 lg:grid-cols-12">
@@ -403,6 +506,19 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                           <span className="capitalize">Category: {dict.category || "Any"}</span>
                           <span>•</span>
                           <span>{wordsCount} seeds</span>
+                          {(dict as any).role && (
+                            <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#0091ff] capitalize">
+                              {(dict as any).role}
+                              {(dict as any).gender && (dict as any).gender !== "any"
+                                ? ` · ${(dict as any).gender}`
+                                : ""}
+                            </span>
+                          )}
+                          {(dict as any).setName && (
+                            <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold text-violet-600 dark:text-violet-400">
+                              ⚇ {(dict as any).setName}
+                            </span>
+                          )}
                           {dict.clonedFromId && (
                             <>
                               <span>•</span>
@@ -554,6 +670,51 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                           <span>{dict.isPublic ? "Public" : "Private"}</span>
                         </button>
 
+                        {/* Edit (rename / re-tag) */}
+                        <button
+                          onClick={() =>
+                            setEditDict({
+                              id: dict.id,
+                              title: dict.title,
+                              values: dict.values,
+                              category: dict.category ?? null,
+                              role: (dict as any).role ?? null,
+                              gender: (dict as any).gender ?? null,
+                              setName: (dict as any).setName ?? null,
+                            })
+                          }
+                          className="bg-secondary/30 text-muted-foreground rounded p-1 transition-colors hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+                          title="Edit dictionary (rename, role, set)"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+
+                        {/* Export */}
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setExportDictId(exportDictId === dict.id ? null : dict.id)
+                            }
+                            className="bg-secondary/30 text-muted-foreground rounded p-1 transition-colors hover:bg-emerald-500/10 hover:text-emerald-500"
+                            title="Export dictionary"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
+                          {exportDictId === dict.id && (
+                            <div className="bg-popover/95 absolute right-0 z-30 mt-1.5 w-28 rounded-lg border border-white/10 p-1 shadow-xl backdrop-blur-lg dark:border-white/5">
+                              {(["txt", "csv", "json"] as const).map((fmt) => (
+                                <button
+                                  key={fmt}
+                                  onClick={() => handleExport(dict.title, dict.values, fmt)}
+                                  className="text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs"
+                                >
+                                  <span className="uppercase">{fmt}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
                         {/* Delete */}
                         <button
                           onClick={() => handleDelete(dict.id)}
@@ -610,6 +771,15 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
           onClose={() => setSelectedNameForUse(null)}
           name={selectedNameForUse}
           category="person"
+        />
+      )}
+
+      {/* Edit Dictionary Modal */}
+      {editDict && (
+        <DictionaryEditModal
+          dict={editDict}
+          onClose={() => setEditDict(null)}
+          onSave={handleEditSave}
         />
       )}
     </div>

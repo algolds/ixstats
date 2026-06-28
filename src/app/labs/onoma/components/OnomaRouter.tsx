@@ -56,7 +56,13 @@ const SECTION_TITLES: Record<OnomaSection, string> = {
 
 // Human label for a studio sub-tab (used in document titles).
 const studioSubTabLabel = (t: StudioSubTab) =>
-  t === "workshop" ? "Model Workshop" : t === "phonology" ? "IPA Studio" : "Lexicon Dictionary";
+  t === "workshop"
+    ? "Model Workshop"
+    : t === "namesets"
+      ? "Name Sets"
+      : t === "phonology"
+        ? "IPA Studio"
+        : "Lexicon Dictionary";
 
 const SECTION_COLORS: Record<OnomaSection, string> = {
   overview: "#0091ff",
@@ -230,6 +236,17 @@ export function OnomaRouter() {
           "bg-[#0091ff]/5 border-[#0091ff]/20 text-[#0091ff] dark:text-[#33a7ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]",
         activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
         activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      },
+      {
+        id: "namesets",
+        label: "Name Sets",
+        icon: Users,
+        themeColor: "#8b5cf6",
+        glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
+        activeIndicatorClassName:
+          "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400 shadow-[inset_0_1px_0_rgba(139,92,246,0.15)]",
+        activeTextClassName: "text-violet-600 dark:text-violet-400",
+        activeIconClassName: "text-violet-500 dark:text-violet-400",
       },
       {
         id: "lexicon",

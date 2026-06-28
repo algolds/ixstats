@@ -5,6 +5,7 @@
 
 import { useStudioState } from "../../hooks/useStudioState";
 import { StudioWorkshop } from "./studio/StudioWorkshop";
+import { StudioNameSets } from "./studio/StudioNameSets";
 import { StudioLexicon } from "./studio/StudioLexicon";
 import { StudioPhonology } from "./studio/StudioPhonology";
 import { api } from "~/trpc/react";
@@ -59,6 +60,8 @@ export function StudioSection({
 
       {currentSubTab === "workshop" ? (
         <StudioWorkshop state={state} />
+      ) : currentSubTab === "namesets" ? (
+        <StudioNameSets />
       ) : currentSubTab === "phonology" ? (
         <StudioPhonology />
       ) : (

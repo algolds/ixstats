@@ -64,6 +64,9 @@ export function useNameBank() {
     values: string[];
     category?: NameCategory | null;
     culturalProfile?: CulturalProfile | null;
+    role?: string | null;
+    gender?: string | null;
+    setName?: string | null;
     isPublic?: boolean;
     countryId?: string | null;
     stashId?: string;
@@ -75,6 +78,9 @@ export function useNameBank() {
       values: params.values,
       category: params.category || null,
       culturalProfile: params.culturalProfile || null,
+      role: params.role ?? null,
+      gender: params.gender ?? null,
+      setName: params.setName ?? null,
       isPublic: params.isPublic,
       countryId: params.countryId || null,
       stashId: params.stashId,
