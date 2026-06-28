@@ -1,13 +1,31 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useIxMedia } from "~/hooks/useIxMedia";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function TranscriptViewer() {
   const { activeTrack, currentTime, seekTrack } = useIxMedia();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLDivElement>(null);
 
-  if (!activeTrack?.transcript || activeTrack.transcript.length === 0) {
+  const transcript = activeTrack?.transcript || [];
+
+  // Determine the index of the currently active segment
+  const activeIndex = transcript.findIndex(
+    (seg) => currentTime >= seg.startTime && currentTime < seg.endTime
+  );
+
+  // Smooth scroll to the active segment ONLY when the active index changes
+  useEffect(() => {
+    if (activeIndex !== -1 && activeRef.current) {
+      activeRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [activeIndex]);
+
+  if (transcript.length === 0) {
     return null;
   }
 
@@ -16,25 +34,22 @@ export function TranscriptViewer() {
       <span className="text-muted-foreground px-1 text-[10px] font-bold tracking-wider uppercase">
         Synchronized Transcript
       </span>
-      <div
-        ref={containerRef}
-        className="flex max-h-48 flex-col gap-1 overflow-y-auto p-0.5 scroll-smooth"
-      >
-        {activeTrack.transcript.map((seg, idx) => {
-          const isActive = currentTime >= seg.startTime && currentTime < seg.endTime;
+      <div className="flex max-h-48 flex-col gap-1 overflow-y-auto p-0.5 scroll-smooth">
+        {transcript.map((seg, idx) => {
+          const isActive = idx === activeIndex;
           return (
-            <p
+            <FacetCard
               key={idx}
-              ref={isActive ? (el) => el?.scrollIntoView({ behavior: "smooth", block: "nearest" }) : null}
+              ref={isActive ? activeRef : null}
               onClick={() => seekTrack(seg.startTime)}
-              className={`text-xs leading-relaxed cursor-pointer transition-all duration-300 rounded p-1.5 ${
+              className={`text-xs leading-relaxed cursor-pointer transition-all duration-300 rounded p-1.5 border ${
                 isActive
-                  ? "bg-primary/10 border-l-2 border-primary pl-2 font-semibold text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                  ? "bg-primary/10 border-primary/20 pl-2 font-semibold text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 border-transparent"
               }`}
             >
               {seg.text}
-            </p>
+            </FacetCard>
           );
         })}
       </div>
