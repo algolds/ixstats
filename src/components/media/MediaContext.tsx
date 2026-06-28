@@ -39,13 +39,20 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
   const [speed, setSpeed] = useState(1.0);
   const [queue, setQueue] = useState<Media[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const playTrack = useCallback((track: Media) => {
     if (!engineRef.current) return;
     setActiveTrack(track);
+
+    const idx = queue.findIndex((t) => t.id === track.id);
+    if (idx !== -1) {
+      setCurrentIndex(idx);
+    }
+
     engineRef.current.load(track.audioUrl, speed);
     engineRef.current.play().catch(console.warn);
-  }, [speed]);
+  }, [speed, queue]);
 
   const pauseTrack = useCallback(() => {
     engineRef.current?.pause();
@@ -104,29 +111,78 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
     skipNextRef.current = skipNext;
   }, [skipNext]);
 
+  // Mount effect to initialize engine, listeners, and load settings/session
   useEffect(() => {
     engineRef.current = new IxMediaEngine();
     const engine = engineRef.current;
 
-    engine.addEventListener("statechange", (state: string) => setIsPlaying(state === "playing"));
-    engine.addEventListener("timeupdate", (time: number) => setCurrentTime(time));
-    engine.addEventListener("durationchange", (dur: number) => setDuration(dur));
-    engine.addEventListener("ended", () => skipNextRef.current());
+    const handleStateChange = (state: string) => setIsPlaying(state === "playing");
+    const handleTimeUpdate = (time: number) => setCurrentTime(time);
+    const handleDurationChange = (dur: number) => setDuration(dur);
+    const handleEnded = () => skipNextRef.current();
+
+    engine.addEventListener("statechange", handleStateChange);
+    engine.addEventListener("timeupdate", handleTimeUpdate);
+    engine.addEventListener("durationchange", handleDurationChange);
+    engine.addEventListener("ended", handleEnded);
 
     // Load settings
+    let loadedSpeed = 1.0;
     const savedSettings = localStorage.getItem("ixmedia:settings");
     if (savedSettings) {
       try {
         const { v, s } = JSON.parse(savedSettings);
         setVolume(v ?? 0.8);
         setSpeed(s ?? 1.0);
+        loadedSpeed = s ?? 1.0;
         engine.setVolume(v ?? 0.8);
         engine.setSpeed(s ?? 1.0);
       } catch (e) {
         console.warn("Failed to parse ixmedia settings", e);
       }
     }
+
+    // Load session
+    const savedSession = localStorage.getItem("ixmedia:session");
+    if (savedSession) {
+      try {
+        const { q, idx, active } = JSON.parse(savedSession);
+        if (q) setQueue(q);
+        if (idx !== undefined) setCurrentIndex(idx);
+        if (active) {
+          setActiveTrack(active);
+          engine.load(active.audioUrl, loadedSpeed);
+        }
+      } catch (e) {
+        console.warn("Failed to parse ixmedia session", e);
+      }
+    }
+
+    setHasLoaded(true);
+
+    return () => {
+      engine.pause();
+      engine.removeEventListener("statechange", handleStateChange);
+      engine.removeEventListener("timeupdate", handleTimeUpdate);
+      engine.removeEventListener("durationchange", handleDurationChange);
+      engine.removeEventListener("ended", handleEnded);
+    };
   }, []);
+
+  // Sync session to localStorage whenever queue, currentIndex, or activeTrack changes (after load)
+  useEffect(() => {
+    if (!hasLoaded) return;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "ixmedia:session",
+        JSON.stringify({
+          q: queue,
+          idx: currentIndex,
+          active: activeTrack,
+        })
+      );
+    }
+  }, [queue, currentIndex, activeTrack, hasLoaded]);
 
   return (
     <MediaContext.Provider
