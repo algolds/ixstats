@@ -48,6 +48,63 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const highlightedElementRef = useRef<HTMLElement | null>(null);
   const isPlayingRef = useRef(false);
   const blocksRef = useRef<PlaybackBlock[]>([]);
+  const activeFetchesRef = useRef<Map<string, Promise<Blob>>>(new Map());
+
+  const fetchAudioBlob = useCallback(async (requestUrl: string): Promise<Blob> => {
+    if (activeFetchesRef.current.has(requestUrl)) {
+      return activeFetchesRef.current.get(requestUrl)!;
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        const cache = await caches.open("onoma-voice-cache");
+        const cachedResponse = await cache.match(requestUrl);
+        if (cachedResponse) {
+          return await cachedResponse.blob();
+        }
+
+        const res = await fetch(requestUrl);
+        if (!res.ok) {
+          throw new Error("TTS API returned non-2xx");
+        }
+
+        // Store cloned response in Cache API
+        await cache.put(requestUrl, res.clone());
+        return await res.blob();
+      } finally {
+        activeFetchesRef.current.delete(requestUrl);
+      }
+    })();
+
+    activeFetchesRef.current.set(requestUrl, fetchPromise);
+    return fetchPromise;
+  }, []);
+
+  const preFetchBlocks = useCallback(async (index: number) => {
+    const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
+    if (!isKokoroEnabled) return;
+
+    const activeVoice = voice || undefined;
+    const chosenVoice = activeVoice || config?.kokoro?.voice;
+
+    for (let i = 1; i <= 2; i++) {
+      const nextIdx = index + i;
+      if (nextIdx < blocksRef.current.length) {
+        const block = blocksRef.current[nextIdx];
+        const params = new URLSearchParams({
+          text: block.text,
+          ipa: "",
+        });
+        const finalVoice = chosenVoice;
+        if (finalVoice) params.set("voice", finalVoice);
+        params.set("speed", String(speed));
+
+        const requestUrl = `/api/onoma/tts?${params.toString()}`;
+        // Trigger fetch in background and ignore failures
+        fetchAudioBlob(requestUrl).catch(() => {});
+      }
+    }
+  }, [config, speed, voice, fetchAudioBlob]);
 
   // Local storage personal preferences loading
   useEffect(() => {
@@ -243,20 +300,20 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
       try {
         if (isKokoroEnabled) {
-          // Synthesize via backend route
           const params = new URLSearchParams({
             text: block.text,
-            ipa: "", // segment G2P translation resolved on server for full prose
+            ipa: "",
           });
           const chosenVoice = activeVoice || config?.kokoro?.voice;
           if (chosenVoice) params.set("voice", chosenVoice);
           params.set("speed", String(speed));
 
-          const res = await fetch(`/api/onoma/tts?${params.toString()}`);
-          if (!res.ok) {
-            throw new Error("TTS API returned non-2xx");
-          }
-          const blob = await res.blob();
+          const requestUrl = `/api/onoma/tts?${params.toString()}`;
+
+          // Pre-fetch N+1 and N+2
+          preFetchBlocks(index);
+
+          const blob = await fetchAudioBlob(requestUrl);
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
           audioRef.current = audio;
@@ -264,7 +321,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           audio.onended = () => {
             URL.revokeObjectURL(url);
             if (isPlayingRef.current) {
-              // Read next block after a tiny natural phrasing pause
               setTimeout(
                 () => {
                   if (isPlayingRef.current) {
@@ -316,7 +372,17 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         window.speechSynthesis.speak(utterance);
       }
     },
-    [config, speed, voice, highlightBlock, setNarratorState, setActiveSectionId, notify]
+    [
+      config,
+      speed,
+      voice,
+      highlightBlock,
+      setNarratorState,
+      setActiveSectionId,
+      notify,
+      preFetchBlocks,
+      fetchAudioBlob,
+    ]
   );
 
   // Narrator Control Actions
@@ -417,6 +483,20 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     [playBlock, setNarratorState]
   );
 
+  const clearVoiceCache = useCallback(async () => {
+    try {
+      const deleted = await caches.delete("onoma-voice-cache");
+      if (deleted) {
+        notify.success("Voice narrator cache cleared.");
+      } else {
+        notify.info("Voice narrator cache is already empty.");
+      }
+    } catch (err) {
+      console.warn("Failed to clear voice cache:", err);
+      notify.error("Failed to clear voice narrator cache.");
+    }
+  }, [notify]);
+
   // Register action hooks in global WikiContext
   useEffect(() => {
     registerNarratorActions({
@@ -432,6 +512,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         setIsPlaying(true);
         playBlock(idx);
       },
+      clearCache: clearVoiceCache,
     });
     return () => registerNarratorActions(null);
   }, [
@@ -445,6 +526,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     changeVoice,
     jumpToSection,
     playBlock,
+    clearVoiceCache,
   ]);
 
   return {
@@ -460,5 +542,6 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     skipPrev,
     setSpeed: changeSpeed,
     setVoice: changeVoice,
+    clearCache: clearVoiceCache,
   };
 }
