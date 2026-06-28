@@ -151,33 +151,32 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     return fetchPromise;
   }, []);
 
+  // Single source of truth for the TTS request URL so prefetch and playback always
+  // hit the same cache key. Speed is intentionally omitted — it's applied client-side
+  // via audio.playbackRate, so one cached clip is reused across every speed setting.
+  const buildTtsUrl = useCallback(
+    (text: string) => {
+      const params = new URLSearchParams({ text, ipa: "" });
+      const chosenVoice = voiceRef.current || config?.kokoro?.voice;
+      if (chosenVoice) params.set("voice", chosenVoice);
+      return `/api/onoma/tts?${params.toString()}`;
+    },
+    [config]
+  );
+
   const preFetchBlocks = useCallback(
     async (index: number) => {
-      const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
-      if (!isKokoroEnabled) return;
-
-      const activeVoice = voiceRef.current || undefined;
-      const chosenVoice = activeVoice || config?.kokoro?.voice;
+      if (!config?.kokoro?.enabled) return;
 
       for (let i = 1; i <= 2; i++) {
         const nextIdx = index + i;
         if (nextIdx < blocksRef.current.length) {
-          const block = blocksRef.current[nextIdx];
-          const params = new URLSearchParams({
-            text: block.text,
-            ipa: "",
-          });
-          const finalVoice = chosenVoice;
-          if (finalVoice) params.set("voice", finalVoice);
-          params.set("speed", String(speedRef.current));
-
-          const requestUrl = `/api/onoma/tts?${params.toString()}`;
           // Trigger fetch in background and ignore failures
-          fetchAudioBlob(requestUrl).catch(() => {});
+          fetchAudioBlob(buildTtsUrl(blocksRef.current[nextIdx].text)).catch(() => {});
         }
       }
     },
-    [config, fetchAudioBlob]
+    [config, fetchAudioBlob, buildTtsUrl]
   );
 
   // Local storage personal preferences loading
@@ -432,30 +431,20 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       }
 
       const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
-      const activeVoice = voiceRef.current || undefined;
 
       try {
         if (isKokoroEnabled) {
-          const params = new URLSearchParams({
-            text: block.text,
-            ipa: "",
-          });
-          const chosenVoice = activeVoice || config?.kokoro?.voice;
-          if (chosenVoice) params.set("voice", chosenVoice);
-          params.set("speed", String(speedRef.current));
-
-          const requestUrl = `/api/onoma/tts?${params.toString()}`;
-
           // Pre-fetch N+1 and N+2
           preFetchBlocks(index);
 
-          const blob = await fetchAudioBlob(requestUrl);
+          const blob = await fetchAudioBlob(buildTtsUrl(block.text));
           if (!isPlayingRef.current || activeIdxRef.current !== index) {
             return;
           }
           const url = URL.createObjectURL(blob);
           activeAudioUrlRef.current = url;
           const audio = new Audio(url);
+          audio.playbackRate = speedRef.current; // speed applied client-side, no re-synth
           audioRef.current = audio;
 
           audio.ontimeupdate = () => {
@@ -530,13 +519,12 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     },
     [
       config,
-      speed,
-      voice,
       highlightBlock,
       setNarratorState,
       setActiveSectionId,
       notify,
       preFetchBlocks,
+      buildTtsUrl,
       fetchAudioBlob,
       updatePlaybackState,
       stopPlayback,
@@ -599,12 +587,11 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       speedRef.current = newSpeed;
       localStorage.setItem("onoma-personal-speed", String(newSpeed));
       setNarratorState({ speed: newSpeed });
-      if (isPlayingRef.current) {
-        // Re-trigger current block to apply speed changes
-        playBlock(activeIdxRef.current);
-      }
+      // Apply live to the playing clip — no re-fetch/re-synth.
+      // ponytail: SpeechSynthesis fallback can't retune mid-utterance; next block picks it up.
+      if (audioRef.current) audioRef.current.playbackRate = newSpeed;
     },
-    [playBlock, setNarratorState]
+    [setNarratorState]
   );
 
   const changeVoice = useCallback(

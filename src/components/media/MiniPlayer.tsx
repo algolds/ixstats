@@ -11,7 +11,9 @@ export function MiniPlayer() {
     useIxMedia();
   const [isFullOpen, setIsFullOpen] = useState(false);
 
-  if (!activeTrack) return null;
+  // WikiOS narration has its own floating Halo pill (WikiOSNarratorPlayer); don't
+  // double up at the bottom of the screen.
+  if (!activeTrack || activeTrack.isDynamicTts) return null;
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
