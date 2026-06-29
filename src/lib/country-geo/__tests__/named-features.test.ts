@@ -1,9 +1,11 @@
 import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "../named-features";
+import { validatePolygonContainment } from "~/lib/geo-validation";
 
 jest.mock("~/lib/geo-validation", () => ({
   snapPointToCountryBorder: jest.fn((_db, _countryId, lng, lat) => Promise.resolve([lng, lat])),
   validatePointContainment: jest.fn(() => Promise.resolve()),
   validateGeometryBounds: jest.fn(() => {}),
+  validatePolygonContainment: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock("../spatial", () => ({
@@ -203,6 +205,13 @@ describe("named-features - upsert operations", () => {
         "river-1"
       );
 
+      expect(validatePolygonContainment).toHaveBeenCalledWith(
+        mockDb,
+        countryId,
+        inputData.geometry,
+        "River"
+      );
+
       expect(result.lengthKm).toBeGreaterThan(0);
     });
   });
@@ -259,6 +268,13 @@ describe("named-features - upsert operations", () => {
         expect.stringContaining("UPDATE named_lakes SET geom_postgis"),
         JSON.stringify(inputData.geometry),
         "lake-1"
+      );
+
+      expect(validatePolygonContainment).toHaveBeenCalledWith(
+        mockDb,
+        countryId,
+        inputData.geometry,
+        "Lake"
       );
 
       expect(result.areaSqKm).toBeGreaterThan(0);

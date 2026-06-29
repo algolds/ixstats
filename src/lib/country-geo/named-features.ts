@@ -92,7 +92,7 @@ export async function upsertPeak(db: any, countryId: string, data: any): Promise
 }
 
 export async function upsertNamedRiver(db: any, countryId: string, data: any): Promise<any> {
-  const { validateGeometryBounds } = await import("~/lib/geo-validation");
+  const { validateGeometryBounds, validatePolygonContainment } = await import("~/lib/geo-validation");
   const geometry = data.geometry;
 
   if (geometry) {
@@ -101,6 +101,7 @@ export async function upsertNamedRiver(db: any, countryId: string, data: any): P
     if (coords && coords.length > 0) {
       data.lengthKm = polylineLengthKm(coords);
     }
+    await validatePolygonContainment(db, countryId, geometry, "River");
   }
 
   let river;
@@ -153,12 +154,13 @@ export async function upsertNamedRiver(db: any, countryId: string, data: any): P
 }
 
 export async function upsertNamedLake(db: any, countryId: string, data: any): Promise<any> {
-  const { validateGeometryBounds } = await import("~/lib/geo-validation");
+  const { validateGeometryBounds, validatePolygonContainment } = await import("~/lib/geo-validation");
   const geometry = data.geometry;
 
   if (geometry) {
     validateGeometryBounds(geometry);
     data.areaSqKm = geometryAreaSqKm(geometry);
+    await validatePolygonContainment(db, countryId, geometry, "Lake");
   }
 
   let lake;

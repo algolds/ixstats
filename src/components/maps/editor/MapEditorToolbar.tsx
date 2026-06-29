@@ -96,6 +96,11 @@ const GROUPS_CONFIG: GroupConfig[] = [
     modes: ["lasso-select", "magic-wand"],
     defaultMode: "lasso-select",
   },
+  {
+    id: "geography-features",
+    modes: ["add-peak", "add-river", "add-lake"],
+    defaultMode: "add-peak",
+  },
 ];
 
 export function MapEditorToolbar({

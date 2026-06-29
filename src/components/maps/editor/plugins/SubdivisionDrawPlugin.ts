@@ -22,7 +22,7 @@ export const SubdivisionDrawPlugin: MapEditorPlugin = {
       icon: Droplet,
       label: "Lake",
       shortcut: "J",
-      group: 1,
+      group: 2,
     },
   ],
 

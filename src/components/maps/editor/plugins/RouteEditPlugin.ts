@@ -9,7 +9,7 @@ export const RouteEditPlugin: MapEditorPlugin = {
 
   toolbarItems: [
     { id: "tool-route", mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
-    { id: "tool-river", mode: "add-river", icon: Waves, label: "River", shortcut: "Y", group: 1 },
+    { id: "tool-river", mode: "add-river", icon: Waves, label: "River", shortcut: "Y", group: 2 },
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {

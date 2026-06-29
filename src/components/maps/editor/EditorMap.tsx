@@ -734,9 +734,23 @@ const EditorMap = memo(
         if (spacebarPanActiveRef.current) return;
         if (isPickingLocationRef.current) return;
         if (e.routeClicked) return;
-        if (isVertexEditing) return;
-
         const currentMode = modeRef.current;
+
+        // Skip selection in all drawing and placement modes
+        if (
+          currentMode === "add-city" ||
+          currentMode === "add-poi" ||
+          currentMode === "add-story-pin" ||
+          currentMode === "add-label" ||
+          currentMode === "add-peak" ||
+          currentMode === "add-river" ||
+          currentMode === "add-lake" ||
+          currentMode === "add-subdivision" ||
+          currentMode === "add-route" ||
+          currentMode === "split-subdivision"
+        ) {
+          return;
+        }
 
         const clickBbox = [
           [e.point.x - 6, e.point.y - 6],
@@ -798,6 +812,24 @@ const EditorMap = memo(
         if (isPickingLocationRef.current) return;
         if (e.routeClicked) return;
         if (isVertexEditing) return;
+
+        const currentMode = modeRef.current;
+
+        // Skip selection/context menus in all drawing and placement modes
+        if (
+          currentMode === "add-city" ||
+          currentMode === "add-poi" ||
+          currentMode === "add-story-pin" ||
+          currentMode === "add-label" ||
+          currentMode === "add-peak" ||
+          currentMode === "add-river" ||
+          currentMode === "add-lake" ||
+          currentMode === "add-subdivision" ||
+          currentMode === "add-route" ||
+          currentMode === "split-subdivision"
+        ) {
+          return;
+        }
 
         const contextBbox = [
           [e.point.x - 6, e.point.y - 6],
