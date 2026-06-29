@@ -4,8 +4,17 @@
 import type { ReactNode } from "react";
 import { ConsentDialog, ConsentManagerProvider, ConsentBanner } from "@c15t/nextjs";
 import type { ConsentManagerProps } from "@c15t/nextjs";
-import { DevTools } from "@c15t/dev-tools/react";
+import dynamic from "next/dynamic";
 import { theme } from "./theme";
+
+const DevTools =
+  process.env.NODE_ENV === "production"
+    ? () => null
+    : dynamic(
+        () => import("@c15t/dev-tools/react").then((mod) => mod.DevTools),
+        { ssr: false }
+      );
+
 /**
  * Client-side consent manager provider.
  * @see https://c15t.com/docs/frameworks/nextjs/quickstart
