@@ -30,6 +30,10 @@ the live working set stays here.
 | Plan | Scope | Status |
 |------|-------|--------|
 | [mycountry-core-loops-design.md](mycountry-core-loops-design.md) | Exec / Diplomacy / Politics loop closure (Phases 1–5 implemented; narrative+ledger spine) | ACTIVE |
+| [050-diplomatic-goals-stances.md](050-diplomatic-goals-stances.md) | Obfuscate diplomacy math, add Stances & Goals | TODO |
+| [051-unify-narrative-spine.md](051-unify-narrative-spine.md) | Route actions through `recordCountryEvent` dispatcher | TODO |
+| [052-governance-ledger.md](052-governance-ledger.md) | Country Change Log UI timeline | TODO |
+| [053-executive-inbox-split.md](053-executive-inbox-split.md) | Split Issues into Crises vs Discourse | TODO |
 
 ### Public Preview
 | Plan | Scope | Status |
