@@ -643,52 +643,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
       }
     }, [editor]);
 
-    const handleSelectMention = useCallback(
-      (index: number) => {
-        const item = combinedMentionResults[index];
-        if (!item) return;
-
-        safeFocus();
-
-        const { selection } = editor;
-        if (!selection) return;
-
-        // Characters to select: '@' plus the query string
-        const totalChars = mentionQuery.length + 1;
-        const startPoint = Editor.before(editor, selection.focus, {
-          distance: totalChars,
-          unit: "character",
-        });
-
-        if (startPoint) {
-          Transforms.select(editor, { anchor: startPoint, focus: selection.focus });
-        }
-
-        if (item.type === "user") {
-          // Plain mention string like "@username"
-          Transforms.insertText(editor, `@${item.name} `);
-        } else {
-          // Link node like [League](/myleague/id)
-          Transforms.insertNodes(editor, [
-            {
-              type: "link",
-              url: item.url,
-              children: [{ text: item.name }],
-            },
-            { text: " " },
-          ] as any);
-        }
-
-        // Close menu
-        setShowMentionMenu(false);
-        setMentionCoords(null);
-        setMentionQuery("");
-        setSelectedMentionIndex(0);
-        handleEditorChange();
-      },
-      [editor, combinedMentionResults, mentionQuery, safeFocus, handleEditorChange]
-    );
-
     // Sync Plate content change back to parent
     const handleEditorChange = useCallback(() => {
       setVersion((v) => v + 1);
@@ -739,6 +693,52 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
         console.warn("Failed to serialize Slate content to HTML:", err);
       }
     }, [editor, onChange]);
+
+    const handleSelectMention = useCallback(
+      (index: number) => {
+        const item = combinedMentionResults[index];
+        if (!item) return;
+
+        safeFocus();
+
+        const { selection } = editor;
+        if (!selection) return;
+
+        // Characters to select: '@' plus the query string
+        const totalChars = mentionQuery.length + 1;
+        const startPoint = Editor.before(editor, selection.focus, {
+          distance: totalChars,
+          unit: "character",
+        });
+
+        if (startPoint) {
+          Transforms.select(editor, { anchor: startPoint, focus: selection.focus });
+        }
+
+        if (item.type === "user") {
+          // Plain mention string like "@username"
+          Transforms.insertText(editor, `@${item.name} `);
+        } else {
+          // Link node like [League](/myleague/id)
+          Transforms.insertNodes(editor, [
+            {
+              type: "link",
+              url: item.url,
+              children: [{ text: item.name }],
+            },
+            { text: " " },
+          ] as any);
+        }
+
+        // Close menu
+        setShowMentionMenu(false);
+        setMentionCoords(null);
+        setMentionQuery("");
+        setSelectedMentionIndex(0);
+        handleEditorChange();
+      },
+      [editor, combinedMentionResults, mentionQuery, safeFocus, handleEditorChange]
+    );
 
     const handleKeyDown = useCallback(
       (event: React.KeyboardEvent<HTMLDivElement>) => {
