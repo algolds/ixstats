@@ -2000,52 +2000,62 @@ function MyLeagueInlinePreview({ leagueId, url: _url }: { leagueId: string; url:
   return (
     <Link
       href={withBasePath(`/myleague/${leagueId}`)}
-      className="glass-hierarchy-child group hover:glass-hierarchy-interactive mt-3 block p-3.5 transition-all duration-300 hover:-translate-y-0.5"
+      className="group relative mt-3 block overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/40 p-4 shadow-xs backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-neutral-300 dark:border-white/10 dark:bg-slate-950/20 dark:hover:border-white/15"
     >
-      <div className="flex items-start gap-3">
+      {/* Top-right subtle sport tag */}
+      <div className="absolute top-3.5 right-4 flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-blue-500 uppercase select-none dark:text-blue-400">
+        <span>{league.sportPreset}</span>
+      </div>
+
+      <div className="flex items-start gap-4">
         {league.logo ? (
           <img
             src={league.logo}
             alt={league.name}
-            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 bg-black/20 object-contain"
+            className="h-12 w-12 shrink-0 rounded-xl border border-neutral-200/50 bg-neutral-100/50 object-contain dark:border-white/10 dark:bg-black/20"
           />
         ) : (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-xl text-blue-500">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10 text-xl text-blue-500 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400">
             {emoji}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <span className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-blue-400">
-              {league.name}
-            </span>
-            <Badge
-              variant="outline"
-              className="shrink-0 border-blue-500/30 bg-blue-500/5 text-[9px] text-blue-400"
-            >
-              {league.sportPreset.toUpperCase()}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="shrink-0 border-white/20 bg-white/5 text-[9px] text-neutral-400"
-            >
-              {archetypeLabel}
-            </Badge>
+          <div className="mb-0.5 text-[10px] font-extrabold tracking-widest text-neutral-400 uppercase dark:text-neutral-500">
+            {archetypeLabel}
           </div>
-          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <span>{league.teamCount} Teams</span>
-            <span className="text-white/20">•</span>
-            {currentSeason ? (
-              <span>
-                Season {currentSeason.seasonNumber} ({currentSeason.status.replace(/_/g, " ")})
+          <h4 className="truncate pr-16 text-[15px] leading-snug font-bold text-neutral-800 transition-colors group-hover:text-blue-500 dark:text-slate-200 dark:group-hover:text-blue-400">
+            {league.name}
+          </h4>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 rounded-md border border-neutral-200/50 bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-300">
+              <span className="font-semibold text-neutral-800 dark:text-slate-200">
+                {league.teamCount}
               </span>
+              <span>Teams</span>
+            </div>
+            {currentSeason ? (
+              <div className="flex items-center gap-1.5 rounded-md border border-neutral-200/50 bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-300">
+                <span className="relative flex h-1.5 w-1.5">
+                  {currentSeason.status === "in_progress" && (
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                  )}
+                  <span
+                    className={cn(
+                      "relative inline-flex h-1.5 w-1.5 rounded-full",
+                      currentSeason.status === "in_progress" ? "bg-emerald-500" : "bg-neutral-400"
+                    )}
+                  ></span>
+                </span>
+                <span>Season {currentSeason.seasonNumber}</span>
+                <span className="text-[10px] text-neutral-400 capitalize dark:text-neutral-500">
+                  ({currentSeason.status.replace(/_/g, " ")})
+                </span>
+              </div>
             ) : (
-              <span>No active seasons</span>
+              <div className="flex items-center gap-1 rounded-md border border-neutral-200/50 bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-400 dark:border-white/5 dark:bg-white/5 dark:text-slate-500">
+                <span>No active seasons</span>
+              </div>
             )}
-          </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium text-blue-500/80">
-            <span>View League Workspace</span>
-            <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
           </div>
         </div>
       </div>
@@ -2079,21 +2089,21 @@ function MyClubInlinePreview({ teamId, url: _url }: { teamId: string; url: strin
   return (
     <Link
       href={withBasePath(`/myclub/${teamId}`)}
-      className="glass-hierarchy-child group hover:glass-hierarchy-interactive mt-3 block p-3.5 transition-all duration-300 hover:-translate-y-0.5"
+      className="group relative mt-3 block overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/40 p-4 shadow-xs backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-neutral-300 dark:border-white/10 dark:bg-slate-950/20 dark:hover:border-white/15"
       style={{
-        borderLeft: `3px solid ${teamColor}`,
+        borderLeft: `4px solid ${teamColor}`,
       }}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         {team.logo ? (
           <img
             src={team.logo}
             alt={team.name}
-            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 bg-black/20 object-contain"
+            className="h-12 w-12 shrink-0 rounded-xl border border-neutral-200/50 bg-neutral-100/50 object-contain dark:border-white/10 dark:bg-black/20"
           />
         ) : (
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-xl"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-xl"
             style={{
               borderColor: `${teamColor}40`,
               backgroundColor: `${teamColor}15`,
@@ -2104,52 +2114,54 @@ function MyClubInlinePreview({ teamId, url: _url }: { teamId: string; url: strin
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <span
-              className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-blue-400"
-              style={{
-                color: teamColor,
-              }}
-            >
-              {team.name}
-            </span>
+          <div className="mb-0.5 flex items-center gap-1.5 text-[10px] font-extrabold tracking-widest text-neutral-400 uppercase dark:text-neutral-500">
+            <span>Club Profile</span>
             {team.league && (
-              <Badge
-                variant="outline"
-                className="shrink-0 border-white/20 bg-white/5 text-[9px] text-neutral-400"
-              >
-                {team.league.name}
-              </Badge>
+              <>
+                <span>·</span>
+                <span className="text-blue-500 dark:text-blue-400">{team.league.name}</span>
+              </>
             )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <h4 className="truncate text-[15px] leading-snug font-bold text-neutral-800 transition-colors group-hover:text-blue-500 dark:text-slate-200 dark:group-hover:text-blue-400">
+              {team.name}
+            </h4>
             {flagUrl && (
               <img
                 src={flagUrl}
                 alt={team.nation?.name || "Nation"}
-                className="inline-block h-3 w-4.5 rounded border border-white/10 object-cover align-middle"
+                className="h-3 w-4.5 rounded border border-neutral-200/50 object-cover align-middle shadow-xs dark:border-white/10"
               />
             )}
           </div>
-          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            {team.foundedIxTime && <span>Founded Year: {team.foundedIxTime}</span>}
+
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            {team.foundedIxTime && (
+              <div className="flex items-center gap-1 rounded-md border border-neutral-200/50 bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-300">
+                <span className="text-neutral-400 dark:text-neutral-500">Est.</span>
+                <span className="font-semibold text-neutral-800 dark:text-slate-200">
+                  {team.foundedIxTime}
+                </span>
+              </div>
+            )}
             {budgetFormatted && (
-              <>
-                <span className="text-white/20">•</span>
-                <span>Budget: {budgetFormatted}</span>
-              </>
+              <div className="flex items-center gap-1 rounded-md border border-neutral-200/50 bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-300">
+                <span className="text-neutral-400 dark:text-neutral-500">Budget</span>
+                <span className="font-semibold text-neutral-800 dark:text-slate-200">
+                  {budgetFormatted}
+                </span>
+              </div>
             )}
-            {team.popularity && (
-              <>
-                <span className="text-white/20">•</span>
-                <span>Popularity: {team.popularity.toFixed(0)}%</span>
-              </>
+            {team.popularity !== undefined && team.popularity !== null && (
+              <div className="flex items-center gap-1 rounded-md border border-neutral-200/50 bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:border-white/5 dark:bg-white/5 dark:text-slate-300">
+                <span className="text-neutral-400 dark:text-neutral-500">Popularity</span>
+                <span className="font-semibold text-neutral-800 dark:text-slate-200">
+                  {team.popularity.toFixed(0)}%
+                </span>
+              </div>
             )}
-          </div>
-          <div
-            className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium"
-            style={{ color: teamColor }}
-          >
-            <span>View Club Hub</span>
-            <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
           </div>
         </div>
       </div>
@@ -2294,3 +2306,5 @@ function ForumInlinePreview({ threadId, url }: { threadId: number; url: string }
     </a>
   );
 }
+
+// Touched to trigger Next.js HMR recompilation

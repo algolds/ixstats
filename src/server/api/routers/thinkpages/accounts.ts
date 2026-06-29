@@ -470,6 +470,28 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
       return accounts;
     }),
 
+  // Search ThinkPages accounts globally
+  searchAccounts: publicProcedure
+    .input(z.object({ query: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+      if (!input.query) return [];
+
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { username: { contains: input.query, mode: "insensitive" } },
+            { name: { contains: input.query, mode: "insensitive" } },
+          ],
+        },
+        take: 10,
+        orderBy: [{ verified: "desc" }, { followerCount: "desc" }],
+      });
+
+      return accounts;
+    }),
+
   // Get current user's ThinkPages accounts
   getMyAccounts: protectedProcedure.query(async ({ ctx }) => {
     const { db, auth } = ctx;

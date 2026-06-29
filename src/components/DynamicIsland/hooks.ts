@@ -669,6 +669,48 @@ export function useDynamicIslandState() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, switchMode, searchFilter, searchQuery, isProcessingShortcut]);
 
+  // Tour integration: react to step transitions from HaloTourContext
+  useEffect(() => {
+    const handleTourStep = (e: Event) => {
+      const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
+      if (!customEvent.detail || !customEvent.detail.active) return;
+
+      const { step } = customEvent.detail;
+      switch (step) {
+        case 1:
+          switchMode("compact");
+          break;
+        case 2:
+          switchMode("mycountry");
+          break;
+        case 3:
+          switchMode("compact");
+          // Trigger mock toast via non-hook companion function in useNotify
+          import("~/hooks/useNotify").then(({ notifyFromStore }) => {
+            notifyFromStore({
+              title: "Security Operations Notice",
+              message: "Border patrol units have completed routine defense audits in Sector 7.",
+              type: "warning",
+              priority: "critical",
+              category: "defense",
+            });
+          }).catch(console.error);
+          break;
+        case 4:
+          switchMode("calendar");
+          break;
+        case 5:
+          switchMode("settings");
+          break;
+      }
+    };
+
+    window.addEventListener("ix:halo-tour-step", handleTourStep);
+    return () => {
+      window.removeEventListener("ix:halo-tour-step", handleTourStep);
+    };
+  }, [switchMode]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {

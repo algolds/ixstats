@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Globe, Calendar, Landmark, Activity, Handshake, AlertCircle } from "lucide-react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
+import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
 
 interface DiplomaticRelationsListProps {
   countryId: string;
@@ -152,7 +153,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                   <Handshake className="h-3 w-3" />
                   Relation Strength
                 </span>
-                <span className={`font-bold ${theme.text}`}>{rel.strength}%</span>
+                <span className={`font-bold ${theme.text}`}>{getStrengthLabel(rel.strength)}</span>
               </div>
               <Progress
                 value={rel.strength}

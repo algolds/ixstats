@@ -14,7 +14,7 @@ describe("formatMatchDayBulletin", () => {
       matchDay: 1,
       results: [],
     });
-    expect(content).toBe("⚽ **Premier League** — Matchday 1\n══════════════════════════════\n");
+    expect(content).toBe("**Premier League** — Matchday 1\n\n");
   });
 
   test("formats single result correctly", () => {
@@ -32,7 +32,7 @@ describe("formatMatchDayBulletin", () => {
       ],
     });
     expect(content).toBe(
-      "⚽ **Championship** — Matchday 5\n══════════════════════════════\n🏆 **United** 2 – 1 City"
+      "**Championship** — Matchday 5\n\n🏆 **United** 2 – 1 City"
     );
   });
 
@@ -57,7 +57,7 @@ describe("formatMatchDayBulletin", () => {
       ],
     });
     expect(content).toBe(
-      "🏀 **Slam Dunk League** — Matchday 12\n══════════════════════════════\n🏆 **Lakers** 102 – 99 Celtics\nWarriors 88 – 92 🏆 **Bulls**"
+      "**Slam Dunk League** — Matchday 12\n\n🏆 **Lakers** 102 – 99 Celtics\nWarriors 88 – 92 🏆 **Bulls**"
     );
   });
 });
@@ -94,12 +94,14 @@ describe("formatSeasonChampionBulletin", () => {
   test("formats champion bulletin correctly", () => {
     const content = formatSeasonChampionBulletin({
       leagueName: "La Liga",
+      leagueId: "la-liga-id",
       sportEmoji: "⚽",
       championName: "Real Madrid",
+      championId: "real-madrid-id",
       llmSummary: "A glorious finish to a legendary season.",
     });
     expect(content).toBe(
-      "⚽ 🏆 **La Liga CHAMPION CROWNED!**\n══════════════════════════════\nCongratulations to **Real Madrid** for winning the championship!\n\n📝 **Season Summary**\nA glorious finish to a legendary season."
+      "🏆 **[La Liga](/myleague/la-liga-id) CHAMPION CROWNED!**\n\nCongratulations to [Real Madrid](/myclub/real-madrid-id) for winning the championship!\n\n📝 **Season Summary**\nA glorious finish to a legendary season."
     );
   });
 });
@@ -120,7 +122,7 @@ describe("formatPlayoffBulletin", () => {
       ],
     });
     expect(content).toBe(
-      "🏒 **Stanley Cup Playoffs Playoff Semifinals Results**\n══════════════════════════════\n🏆 **Rangers** 4 – 3 Devils"
+      "**Stanley Cup Playoffs Playoff Semifinals Results**\n\n🏆 **Rangers** 4 – 3 Devils"
     );
   });
 });
@@ -144,7 +146,7 @@ describe("encode and parse sports bulletin", () => {
       llmSummary: "An unexpected turn of events.",
     };
     const markdown =
-      "⚽ **La Liga** — Matchday 5\n══════════════════════════════\n🏆 **United** 2 – 1 City";
+      "**La Liga** — Matchday 5\n\n🏆 **United** 2 – 1 City";
     const encoded = encodeSportsBulletin(data, markdown);
     expect(encoded).toContain("<!-- sports-bulletin:");
     expect(encoded).toContain(markdown);
@@ -186,5 +188,84 @@ describe("encode and parse sports bulletin", () => {
     });
     expect(parsed!.results[1]!.away.name).toBe("Venatores");
     expect(parsed!.movers).toEqual([{ name: "Venatores", oldRank: 6, newRank: 8 }]);
+  });
+
+  test("recovers a bulletin with optional asterisks, standard hyphens, and digits in team names", () => {
+    const rawMarkdown = `⚽ Ligue Yonderre — Matchday 21
+══════════════════════════════
+🏆 Sainte-Jule-du-Mont AS 3 - 0 1. FC Donnebourg
+Lance FC 1 - 1 SC Sainte-Cataline
+Gabion Giants 1 - 2 🏆 Toubourg FC
+Collinebourg Chevaliers 2 - 0 Famichez 16
+
+📈 Table Movers
+• Vallonbourg AS ▲4 (13th → 9th)
+• Artillerie FC ▲2 (5th → 3rd)
+• Lance FC ▼2 (2nd → 4th)`;
+
+    const parsed = parseSportsBulletin(rawMarkdown);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.league.name).toBe("Ligue Yonderre");
+    expect(parsed!.matchDay).toBe(21);
+    expect(parsed!.results.length).toBe(4);
+    expect(parsed!.results[0]).toEqual({
+      home: { name: "Sainte-Jule-du-Mont AS" },
+      away: { name: "1. FC Donnebourg" },
+      homeScore: 3,
+      awayScore: 0,
+    });
+    expect(parsed!.results[3]).toEqual({
+      home: { name: "Collinebourg Chevaliers" },
+      away: { name: "Famichez 16" },
+      homeScore: 2,
+      awayScore: 0,
+    });
+    expect(parsed!.movers).toEqual([
+      { name: "Vallonbourg AS", oldRank: 13, newRank: 9 },
+      { name: "Artillerie FC", oldRank: 5, newRank: 3 },
+      { name: "Lance FC", oldRank: 2, newRank: 4 },
+    ]);
+  });
+
+  test("recovers a champion bulletin from raw text", () => {
+    const rawMarkdown = `🏒 🏆 Orixtal Hockey League CHAMPION CROWNED!
+══════════════════════════════
+Congratulations to Porto Alegre Tubarões for winning the championship!`;
+    const parsed = parseSportsBulletin(rawMarkdown);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.league.name).toBe("Orixtal Hockey League");
+    expect(parsed!.isChampionBulletin).toBe(true);
+    expect(parsed!.championName).toBe("Porto Alegre Tubarões");
+  });
+
+  test("recovers a playoff results bulletin from raw text", () => {
+    const rawMarkdown = `🏒 **Stanley Cup Playoffs Playoff Semifinals Results**
+---
+🏆 Rangers 4 – 3 Devils
+Devils 2 – 5 Rangers`;
+    const parsed = parseSportsBulletin(rawMarkdown);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.league.name).toBe("Stanley Cup Playoffs");
+    expect(parsed!.isPlayoffBulletin).toBe(true);
+    expect(parsed!.roundName).toBe("Semifinals");
+    expect(parsed!.results!.length).toBe(2);
+    expect(parsed!.results![0]).toEqual({
+      home: { name: "Rangers" },
+      away: { name: "Devils" },
+      homeScore: 4,
+      awayScore: 3,
+    });
+  });
+
+  test("parses a champion bulletin from a comment", () => {
+    const rawContent = `<!-- sports-bulletin:{"league":{"name":"Orixtal Hockey League"},"sportEmoji":"🏒","isChampionBulletin":true,"championName":"Porto Alegre Tubarões"} -->
+🏒 🏆 **Orixtal Hockey League CHAMPION CROWNED!**
+══════════════════════════════
+Congratulations to **Porto Alegre Tubarões** for winning the championship!`;
+    const parsed = parseSportsBulletin(rawContent);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.league.name).toBe("Orixtal Hockey League");
+    expect(parsed!.isChampionBulletin).toBe(true);
+    expect(parsed!.championName).toBe("Porto Alegre Tubarões");
   });
 });

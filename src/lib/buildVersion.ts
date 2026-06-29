@@ -28,7 +28,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 1,
-    patch: 7,
+    patch: 8,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },
@@ -55,7 +55,7 @@ export const VERSIONS = {
     achievements: 1, // incl. LoreWards
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 2, // global contextual overlay (was "Dynamic Island"); +Live Activities
+    halo: 3, // global contextual overlay (was "Dynamic Island"); +Live Activities; v3: onboarding tour guided walkthrough and dynamic styling
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 

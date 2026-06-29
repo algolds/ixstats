@@ -22,7 +22,7 @@
 
 /* Radix Portal elements (where most dropdowns render) */
 [data-radix-portal] {
-  z-index: unset !important;
+  z-index: 150000 !important;
 }
 
 /* Ensure dialog overlays are properly layered */

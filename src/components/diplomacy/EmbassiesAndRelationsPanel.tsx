@@ -18,6 +18,7 @@ import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
+import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
 import { AnimatePresence } from "motion/react";
 
 // Hooks
@@ -159,7 +160,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <StatCell
           icon={Globe}
           label="Avg Strength"
-          value={`${stats.avgStrength}%`}
+          value={getStrengthLabel(stats.avgStrength)}
           color="text-emerald-600"
         />
       </div>

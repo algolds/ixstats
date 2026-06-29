@@ -553,6 +553,12 @@ export const sportsLeaguesRouter = createTRPCRouter({
           include: { league: true },
           take: 5,
         });
+        const leagues = await ctx.db.sportLeague.findMany({
+          where: {
+            name: { contains: input.query, mode: "insensitive" },
+          },
+          take: 5,
+        });
         return {
           players: players.map((p: any) => ({
             id: p.id,
@@ -571,6 +577,11 @@ export const sportsLeaguesRouter = createTRPCRouter({
             id: t.id,
             name: t.name,
             leagueName: t.league.name,
+          })),
+          leagues: leagues.map((l: any) => ({
+            id: l.id,
+            name: l.name,
+            sportPreset: l.sportPreset,
           })),
         };
       } catch (error) {

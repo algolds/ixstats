@@ -85,8 +85,10 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         const { getSportEmoji } = await import("./presets");
         const content = formatSeasonChampionBulletin({
           leagueName: season.league.name,
+          leagueId: season.league.id,
           sportEmoji: getSportEmoji(season.league.sportPreset),
           championName: fullSeasonData.champion.name,
+          championId: fullSeasonData.champion.id,
           llmSummary: llmSummary || undefined,
         });
 

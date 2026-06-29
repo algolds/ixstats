@@ -10,6 +10,7 @@ import React, {
   useImperativeHandle,
   forwardRef,
 } from "react";
+import { createPortal } from "react-dom";
 
 import {
   Plate,
@@ -19,7 +20,7 @@ import {
   ParagraphPlugin,
 } from "platejs/react";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { Transforms, Editor, Element as SlateElement } from "slate";
+import { Transforms, Editor, Element as SlateElement, Range } from "slate";
 import { ReactEditor } from "slate-react";
 import {
   Bold,
@@ -356,6 +357,22 @@ function detectWikiUrl(
 // Main Component
 // ---------------------------------------------------------------------------
 
+function getMentionItemIcon(name: string, type: "user" | "league" | "club" | "country"): string {
+  if (type === "user") return "👤";
+  if (type === "country") return "🌐";
+
+  const lower = name.toLowerCase();
+  if (lower.includes("hockey")) return "🏒";
+  if (lower.includes("basketball")) return "🏀";
+  if (lower.includes("football") || lower.includes("gridiron")) return "🏈";
+  if (lower.includes("baseball")) return "⚾";
+  if (lower.includes("f1") || lower.includes("racing") || lower.includes("motorsport")) return "🏎️";
+  if (lower.includes("boxing") || lower.includes("fight")) return "🥊";
+  if (lower.includes("soccer") || lower.includes("football") || lower.includes("fc") || lower.includes("sc")) return "⚽";
+
+  return type === "league" ? "🏆" : "🛡️";
+}
+
 interface GlassPlateEditorProps {
   value?: string;
   onChange: (htmlContent: string, plainText: string) => void;
@@ -496,6 +513,98 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
     );
     const resolvedImages = resolvedImagesQuery.data || {};
 
+    // Mention Autocomplete States
+    const [showMentionMenu, setShowMentionMenu] = useState(false);
+    const [mentionQuery, setMentionQuery] = useState("");
+    const [mentionCoords, setMentionCoords] = useState<{ top: number; left: number } | null>(null);
+    const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+
+    const accountsSearch = api.thinkpages.searchAccounts.useQuery(
+      { query: mentionQuery },
+      { enabled: showMentionMenu && mentionQuery.trim().length > 0, staleTime: 10_000 }
+    );
+
+    const sportsSearch = api.sports.searchSportsEntities.useQuery(
+      { query: mentionQuery },
+      { enabled: showMentionMenu && mentionQuery.trim().length > 0, staleTime: 10_000 }
+    );
+
+    const countriesSearch = api.countries.getSelectList.useQuery(
+      { search: mentionQuery, limit: 5 },
+      { enabled: showMentionMenu && mentionQuery.trim().length > 0, staleTime: 10_000 }
+    );
+
+    const combinedMentionResults = useMemo(() => {
+      const list: {
+        type: "user" | "league" | "club" | "country";
+        id: string;
+        name: string;
+        description: string;
+        icon: string;
+        url: string;
+      }[] = [];
+
+      if (!showMentionMenu) return list;
+
+      // 1. Users (ThinkPages accounts)
+      if (accountsSearch.data) {
+        accountsSearch.data.forEach((acc) => {
+          list.push({
+            type: "user",
+            id: acc.id,
+            name: acc.username,
+            description: `${acc.name} (${acc.accountType || "Citizen"})`,
+            icon: "👤",
+            url: `@${acc.username}`,
+          });
+        });
+      }
+
+      // 2. Sports Leagues
+      if (sportsSearch.data?.leagues) {
+        sportsSearch.data.leagues.forEach((league) => {
+          list.push({
+            type: "league",
+            id: league.id,
+            name: league.name,
+            description: `League · ${league.sportPreset?.toUpperCase() || "SPORTS"}`,
+            icon: getMentionItemIcon(league.name, "league"),
+            url: `/myleague/${league.id}`,
+          });
+        });
+      }
+
+      // 3. Sports Teams (Clubs)
+      if (sportsSearch.data?.teams) {
+        sportsSearch.data.teams.forEach((team) => {
+          list.push({
+            type: "club",
+            id: team.id,
+            name: team.name,
+            description: `Club · ${team.leagueName || "Sports"}`,
+            icon: getMentionItemIcon(team.name, "club"),
+            url: `/myclub/${team.id}`,
+          });
+        });
+      }
+
+      // 4. Countries
+      if (countriesSearch.data) {
+        countriesSearch.data.forEach((country) => {
+          list.push({
+            type: "country",
+            id: country.slug || country.id,
+            name: country.name,
+            description: `Country · ${country.continent || "Global"}`,
+            icon: "🌐",
+            url: `/countries/${country.slug || country.id}`,
+          });
+        });
+      }
+
+      return list;
+    }, [showMentionMenu, accountsSearch.data, sportsSearch.data, countriesSearch.data]);
+
     // Setup PlateJS editor instance
     const editor = useMemo(() => {
       // Deserialize initial HTML string into Slate elements
@@ -534,6 +643,52 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
       }
     }, [editor]);
 
+    const handleSelectMention = useCallback(
+      (index: number) => {
+        const item = combinedMentionResults[index];
+        if (!item) return;
+
+        safeFocus();
+
+        const { selection } = editor;
+        if (!selection) return;
+
+        // Characters to select: '@' plus the query string
+        const totalChars = mentionQuery.length + 1;
+        const startPoint = Editor.before(editor, selection.focus, {
+          distance: totalChars,
+          unit: "character",
+        });
+
+        if (startPoint) {
+          Transforms.select(editor, { anchor: startPoint, focus: selection.focus });
+        }
+
+        if (item.type === "user") {
+          // Plain mention string like "@username"
+          Transforms.insertText(editor, `@${item.name} `);
+        } else {
+          // Link node like [League](/myleague/id)
+          Transforms.insertNodes(editor, [
+            {
+              type: "link",
+              url: item.url,
+              children: [{ text: item.name }],
+            },
+            { text: " " },
+          ] as any);
+        }
+
+        // Close menu
+        setShowMentionMenu(false);
+        setMentionCoords(null);
+        setMentionQuery("");
+        setSelectedMentionIndex(0);
+        handleEditorChange();
+      },
+      [editor, combinedMentionResults, mentionQuery, safeFocus, handleEditorChange]
+    );
+
     // Sync Plate content change back to parent
     const handleEditorChange = useCallback(() => {
       setVersion((v) => v + 1);
@@ -541,6 +696,45 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
         const html = slateNodesToHtml(editor.children as any[]);
         const plainText = Editor.string(editor, []);
         onChange(html, plainText);
+
+        // Mention Trigger Detection
+        const { selection } = editor;
+        if (selection && Range.isCollapsed(selection)) {
+          try {
+            const blockStart = Editor.start(editor, selection.focus.path);
+            const textToCursor = Editor.string(editor, { anchor: blockStart, focus: selection.focus });
+            
+            // Match '@' followed by any letters/numbers/spaces
+            const match = textToCursor.match(/@([a-zA-Z0-9_\s]*)$/);
+            if (match) {
+              const query = match[1] || "";
+              setMentionQuery(query);
+              setShowMentionMenu(true);
+              setSelectedMentionIndex(0);
+              
+              // Get selection bounds for cursor coordinates
+              setTimeout(() => {
+                const domSelection = window.getSelection();
+                if (domSelection && domSelection.rangeCount > 0) {
+                  const domRange = domSelection.getRangeAt(0);
+                  const rect = domRange.getBoundingClientRect();
+                  setMentionCoords({
+                    top: rect.bottom + window.scrollY,
+                    left: rect.left + window.scrollX,
+                  });
+                }
+              }, 0);
+            } else {
+              setShowMentionMenu(false);
+              setMentionCoords(null);
+            }
+          } catch {
+            // Ignore selection out of bounds during init
+          }
+        } else {
+          setShowMentionMenu(false);
+          setMentionCoords(null);
+        }
       } catch (err) {
         console.warn("Failed to serialize Slate content to HTML:", err);
       }
@@ -548,6 +742,32 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
 
     const handleKeyDown = useCallback(
       (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (showMentionMenu && mentionCoords && combinedMentionResults.length > 0) {
+          const resultsCount = combinedMentionResults.length;
+
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setSelectedMentionIndex((prev) => (prev + 1) % resultsCount);
+            return;
+          }
+          if (event.key === "ArrowUp") {
+            event.preventDefault();
+            setSelectedMentionIndex((prev) => (prev - 1 + resultsCount) % resultsCount);
+            return;
+          }
+          if (event.key === "Enter") {
+            event.preventDefault();
+            handleSelectMention(selectedMentionIndex);
+            return;
+          }
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setShowMentionMenu(false);
+            setMentionCoords(null);
+            return;
+          }
+        }
+
         if (!event.ctrlKey && !event.metaKey) return;
 
         const key = event.key.toLowerCase();
@@ -565,7 +785,15 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
           }
         }
       },
-      [editor, handleEditorChange]
+      [
+        showMentionMenu,
+        mentionCoords,
+        combinedMentionResults,
+        selectedMentionIndex,
+        handleSelectMention,
+        editor,
+        handleEditorChange,
+      ]
     );
 
     const handleSelectEmoji = useCallback(
@@ -1372,6 +1600,16 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
             />
           </Plate>
         </div>
+        {showMentionMenu && mentionCoords && (
+          <MentionMenuPortal
+            coords={mentionCoords}
+            results={combinedMentionResults}
+            selectedIndex={selectedMentionIndex}
+            onSelect={handleSelectMention}
+            query={mentionQuery}
+            isLoading={accountsSearch.isLoading || sportsSearch.isLoading || countriesSearch.isLoading}
+          />
+        )}
       </div>
     );
   }
@@ -1415,5 +1653,92 @@ function ToolbarButton({
     >
       {icon}
     </Button>
+  );
+}
+
+function MentionMenuPortal({
+  coords,
+  results,
+  selectedIndex,
+  onSelect,
+  query,
+  isLoading,
+}: {
+  coords: { top: number; left: number };
+  results: any[];
+  selectedIndex: number;
+  onSelect: (index: number) => void;
+  query: string;
+  isLoading: boolean;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      style={{
+        position: "absolute",
+        top: coords.top + 4,
+        left: coords.left,
+        zIndex: 200000,
+      }}
+      className="w-64 rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-800 shadow-2xl backdrop-blur-xl animate-in fade-in-50 slide-in-from-top-1 duration-150 dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-200"
+    >
+      <div className="thin-scrollbar max-h-56 overflow-y-auto">
+        {isLoading && results.length === 0 ? (
+          <div className="flex items-center justify-center py-4 text-xs text-neutral-400 dark:text-slate-500">
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin text-blue-500" />
+            <span>Searching...</span>
+          </div>
+        ) : results.length > 0 ? (
+          <div className="space-y-0.5">
+            {results.map((item, idx) => {
+              const active = idx === selectedIndex;
+              return (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  type="button"
+                  onMouseDown={(e) => {
+                    // Prevent editor from losing focus when clicking items!
+                    e.preventDefault();
+                  }}
+                  onClick={() => onSelect(idx)}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 cursor-pointer select-none",
+                    active
+                      ? "bg-blue-500/10 text-blue-600 border-l-[3px] border-blue-500 dark:bg-blue-500/20 dark:text-blue-300 font-semibold"
+                      : "text-neutral-700 dark:text-slate-300 hover:bg-neutral-500/5 dark:hover:bg-white/5"
+                  )}
+                >
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-neutral-200/50 bg-neutral-100/50 text-[11px] leading-none dark:border-white/5 dark:bg-white/5">
+                    {item.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-bold leading-tight">{item.name}</div>
+                    <div className="truncate text-[9px] text-neutral-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider font-semibold">
+                      {item.description}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-4 text-center text-xs text-neutral-400 dark:text-slate-500">
+            {query.trim().length > 0 ? (
+              <span>No matches found</span>
+            ) : (
+              <span>Type to search citizens, leagues, teams, or countries...</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
   );
 }

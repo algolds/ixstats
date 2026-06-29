@@ -10,7 +10,25 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+## [1.1.8 Ogma (Alpha)] - 2026-06-29
+
 ### Added
+- **Halo Onboarding Walkthrough & On-Page Tour Launch**:
+  - **First-Time User Onboarding Invitation**: Built a session-guarded hook inside [HaloTourContext.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourContext.tsx) that automatically triggers a friendly iOS-style toast invitation banner in the Halo when a new user lands on `/dashboard` or `/mycountry` pages.
+  - **On-Page Guided Tour**: Clicking "Take Tour" launches the guided tour directly on the active page without requiring redirects.
+  - **Glassmorphic Tooltip Card**: Developed a high-end glassmorphic tooltip card ([HaloTourTooltip.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourTooltip.tsx)) that centers in the viewport for compact steps, and moves to the right side of the Halo during expanded steps (2, 4, 5) to avoid blocking content.
+  - **Pulsing Halo Focus Glow**: Added an active pulsing blue focus aura to the Halo container when the tour is active, paired with a page-level backdrop overlay that blurs and dims background content while leaving the Halo fully interactive.
+  - **Decoupled Architecture**: Promoted the tooltip globally to the Command Palette container ([index.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/index.tsx)) using custom window event triggers to decouple states.
+- **Halo Logo Refinement & Dynamic Styling**:
+  - **Circular Brand Emblem**: Replaced the high-contrast text "IX" logo in [CompactView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/CompactView.tsx) with the circular brand emblem (`ix-logo.svg`).
+  - **CSS Mask Rendering**: Used a CSS mask-image structure so the logo automatically renders in solid black in light mode, solid white in dark mode, and transitions to the primary brand color (`var(--primary)` / platform blue) when hovered.
+  - **Apple-style Spring Physics**: Configured dynamic spring transitions (via `motion/react`) for snappier, elastic hover scaling (`scale: 1.15`, `rotate: 8deg`) and press downs (`scale: 0.9`, `rotate: -4deg`).
+  - **Minimized Refraction**: Removed the colorful background refraction glow overlay from the home button to keep the header clean and minimalist.
+  - **Cleanups**: Deleted temporary labs folders `src/app/labs/halo-tour` and `src/app/labs/halo-calendar` from the workspace.
+- **ThinkPages Sports Embed & Mention Popovers (MyLeague & MyClub Links)**:
+  - **Dynamic Entity HoverCards**: Implemented Radix-UI based `MentionPopover` inside [WikiLinkPreview.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki/WikiLinkPreview.tsx) that fetches rich metadata for leagues, clubs, countries, and users when hovered, rendering quick details (sport preset, archetype, stadium capacity, continent, flag) and actions (View Workspace, View Roster, Open Embassy, Message).
+  - **Styled Mention Pills**: Configured relative links to render as beautiful, theme-colored pill badges (Amber for leagues, Blue for clubs, Emerald for countries, Purple for users) with `@` prepended.
+  - **Champion & Playoff Visual Cards**: Designed custom gold celebratory cards for Champion Crowning events and cyan badges for Playoff results inside [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx).
 - **Project Onoma — Codebase Modularization & Advanced Custom Studio (Onoma System v4)**:
   - **Overview Section Modularization**: Decomposed the monolithic overview section page into three specialized subcomponents: `OverviewBanner` (welcome text, Greek voice player, animated DNA helix), `QuickGeneratorControls` (presets selects, order sliders, batch flow counters), and `CandidateResultsPanel` (Markov model outputs, glow/refraction styles, save dictionary forms).
   - **Name Result Card Refinement**: Split the complex card component, extracting `PronunciationEditor` (IPA/Kokoro editor panel) and `LinguisticProfile` (stats display, categories, cultures badge).
@@ -61,6 +79,14 @@ capability integer. Each release entry below lists which components advanced and
   - **Interactive Transcript (`TranscriptViewer.tsx`)**: Implemented a scroll-safe segment visualizer that highlights the active speaking block and centers the view without thrashing the user's manual scroll.
 
 ### Changed
+- **Diplomatic Relations Strength Percentage Labels**:
+  - **Granular 9-Tier Verbal Labels**: Replaced raw percentage (`%`) displays of relationship strength with a 9-tier "Warm & Descriptive" status labeling system (`Deep Alliance`, `Strongly Allied`, `Warmly Friendly`, `Cordial`, `Neutral`, `Strained`, `Tense`, `Bitterly Hostile`, `Cold War`) mapped from relationship strength (`0-100`).
+  - **Comprehensive UI Application**: Integrated the status labels into the diplomacy overview metrics, average strength cards, War Room sidebar panel stats, and individual relationship list items across [DiplomacyOverview.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomacyOverview.tsx), [EmbassiesAndRelationsPanel.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/EmbassiesAndRelationsPanel.tsx), [DiplomacyWarRoom.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomacyWarRoom.tsx), and [DiplomaticRelationsList.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomaticRelationsList.tsx).
+  - **Dynamic Styling**: Styled individual relationship status labels in the War Room relations card with dedicated visual weight and colors based on range (e.g. font-extrabold emerald for Deep Alliance down to bold red for Cold War).
+- **Sports Bulletin Cleanups**:
+  - **Separator Removal**: Replaced legacy double lines (`══════════════════════════════`) and horizontal rules (`---`) with clean spacing (double newlines `\n\n`) across all matchday, champion, and playoff formatters.
+  - **Omitted Emoji prefixes**: Removed the `sportEmoji` prefix from all formatted bulletin headers.
+- **Client Route Interception**: Updated the HTML DOM parser in `WikiHtmlContent` to intercept relative links (like `/wiki/...`) and route them via Next.js client-side navigation instead of triggering full page refreshes.
 - **Project Onoma — Culture generation behavior & cleanup**:
   - **Sports & Cuisine generate from dedicated dictionaries**: each Culture subtype now trains its Markov chain on its own curated per-category lexicon (`culture_sports` / `culture_cuisine`) instead of the ethnonym presets, so generated sports/cuisine names are modelled on real dishes and games rather than peoples. Architecture moved to Places → Landmarks.
   - **Landmarks consolidated**: the duplicate "Architecture & Landmarks" subtype was removed from Culture and folded into the Places → "Landmarks & Features" tab as an "Architecture & Buildings" option — a single landmarks home.
@@ -76,6 +102,12 @@ capability integer. Each release entry below lists which components advanced and
   - Resolved `currentIndex` tracking bugs and delegate detachment states in `MediaContext.tsx`.
 
 ### Fixed
+- **ThinkPages Relative Link Formatting**:
+  - **Markdown Link Parsing**: Corrected the link-masking regex in [text-formatter.ts](file:///home/jxsig/projects/ixstats/src/lib/text-formatter.ts) to parse relative links (starting with `/`) and apply the production `basePath` wrapper `/projects/ixstates`.
+  - **Newline Preservation**: Fixed plain-text formatting in `formatContentEnhanced` to replace raw newlines with HTML `<br />` tags to avoid single-line collapsing.
+  - **HTML Comment Display**: Fixed plain-text formatting to strip structured comment blocks (`<!-- sports-bulletin:... -->`) from display, hiding the raw JSON string from the user.
+  - **Resilient Regex Parser**: Hardened regex matching patterns (`[^\s*]+`) in [feed-bulletins.ts](file:///home/jxsig/projects/ixstats/src/lib/sports/feed-bulletins.ts) to parse headers accurately without getting confused by markdown bold asterisks.
+  - **Database Link Migration**: Upgraded the backfill script to dynamically query `SportLeague` and `SportTeam` models by name, retrieving missing database IDs to populate Markdown links in historical post bodies.
 - **Security Hardening (Plan 090)**:
   - **Middleware Edge Restorations**: Restored global proxy interceptions under `src/proxy.ts` conforming to Next.js 16 conventions to prevent edge router deprecation warnings.
   - **Script Telemetry CSP Restriction**: Removed `'unsafe-eval'` from production Content Security Policy script templates.

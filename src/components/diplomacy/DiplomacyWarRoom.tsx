@@ -18,6 +18,7 @@ import { CommandPanel } from "~/components/executive/CommandPanel";
 import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
 
 const DiplomacyOverview = dynamic(
   () => import("./DiplomacyOverview").then((m) => ({ default: m.DiplomacyOverview })),
@@ -233,7 +234,7 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           stats={[
             { label: "nations", value: relationData.sorted.length },
             ...(relationData.avgStrength > 0
-              ? [{ label: `avg ${relationData.avgStrength}%`, value: "" }]
+              ? [{ label: `avg ${getStrengthLabel(relationData.avgStrength).toLowerCase()}`, value: "" }]
               : []),
           ]}
           ctaLabel="Establish Embassy"
@@ -269,13 +270,25 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
                     : "Diplomatic"
                 }
                 onClick={() => openSheet("relations", rel.targetCountryId ?? rel.id)}
-                trailingText={`${strength}%`}
+                trailingText={getStrengthLabel(strength)}
                 trailingColor={
-                  strength >= 70
-                    ? "text-green-600"
-                    : strength >= 40
-                      ? "text-blue-600"
-                      : "text-amber-600"
+                  strength >= 95
+                    ? "text-emerald-500 font-extrabold"
+                    : strength >= 80
+                      ? "text-emerald-600 font-bold"
+                      : strength >= 65
+                        ? "text-green-600 font-medium"
+                        : strength >= 50
+                          ? "text-blue-500"
+                          : strength >= 40
+                            ? "text-slate-500"
+                            : strength >= 30
+                              ? "text-amber-500"
+                              : strength >= 15
+                                ? "text-amber-600 font-medium"
+                                : strength >= 5
+                                  ? "text-red-500 font-semibold"
+                                  : "text-red-700 font-bold"
                 }
               />
             );

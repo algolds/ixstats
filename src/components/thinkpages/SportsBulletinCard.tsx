@@ -44,8 +44,143 @@ function TeamName({
  * markdown wall-of-text with an organized score table + table movers + deep links.
  */
 export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
+  // Champion Crowned Layout
+  if (data.isChampionBulletin) {
+    return (
+      <Card className="glass-hierarchy-child mt-2 overflow-hidden border-amber-500/30 bg-amber-500/[0.03] p-0 shadow-lg backdrop-blur-md transition-all duration-300 hover:border-amber-500/50">
+        {/* Header */}
+        <div className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/[0.05] px-4 py-2.5">
+          <span className="text-lg">{data.sportEmoji}</span>
+          {data.league.id ? (
+            <Link
+              href={`/myleague/${data.league.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[15px] font-bold text-amber-300 hover:text-amber-200 hover:underline"
+            >
+              {data.league.name}
+            </Link>
+          ) : (
+            <span className="text-[15px] font-bold text-amber-300">{data.league.name}</span>
+          )}
+          <span className="ml-auto rounded-full bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-amber-200 uppercase animate-pulse">
+            CHAMPION
+          </span>
+        </div>
+
+        {/* Celebration Body */}
+        <div className="flex flex-col items-center justify-center px-6 py-8 text-center bg-radial from-amber-500/[0.08] to-transparent">
+          <div className="relative mb-3 flex items-center justify-center">
+            <span className="text-5xl animate-bounce">🏆</span>
+            <span className="absolute -top-1 -right-1 text-lg">✨</span>
+            <span className="absolute -bottom-1 -left-2 text-lg">✨</span>
+          </div>
+          <h3 className="text-lg font-extrabold tracking-tight text-amber-300 uppercase">
+            Season Champion Crowned!
+          </h3>
+          <p className="mt-2 max-w-md text-sm text-slate-300">
+            Congratulations to{" "}
+            {data.championId ? (
+              <Link
+                href={`/myclub/${data.championId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-bold text-white text-[16px] underline decoration-amber-400 decoration-2 underline-offset-4 hover:text-amber-200"
+              >
+                {data.championName}
+              </Link>
+            ) : (
+              <span className="font-bold text-white text-[16px] underline decoration-amber-400 decoration-2 underline-offset-4">
+                {data.championName}
+              </span>
+            )}{" "}
+            for winning the championship!
+          </p>
+        </div>
+
+        {/* LLM narration / Season Summary */}
+        {data.llmSummary && (
+          <div className="border-t border-amber-500/20 bg-amber-950/[0.03] px-4 py-3">
+            <span className="text-[11px] font-semibold tracking-wide text-amber-400 uppercase block mb-1">
+              Season Summary
+            </span>
+            <p className="text-[14px] leading-relaxed text-slate-300 italic">
+              {data.llmSummary}
+            </p>
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  // Playoff Results Layout
+  if (data.isPlayoffBulletin) {
+    return (
+      <Card className="glass-hierarchy-child mt-2 overflow-hidden border-cyan-500/30 bg-cyan-500/[0.02] p-0 shadow-md backdrop-blur-md transition-all duration-300 hover:border-cyan-500/50">
+        {/* Header */}
+        <div className="flex items-center gap-2 border-b border-cyan-500/20 bg-cyan-500/[0.05] px-4 py-2.5">
+          <span className="text-lg">{data.sportEmoji}</span>
+          {data.league.id ? (
+            <Link
+              href={`/myleague/${data.league.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[15px] font-bold text-cyan-300 hover:text-cyan-200 hover:underline"
+            >
+              {data.league.name}
+            </Link>
+          ) : (
+            <span className="text-[15px] font-bold text-cyan-300">{data.league.name}</span>
+          )}
+          <span className="ml-auto rounded-full bg-cyan-500/20 border border-cyan-500/40 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-cyan-200 uppercase">
+            {data.roundName}
+          </span>
+        </div>
+
+        {/* Results table */}
+        {data.results && data.results.length > 0 && (
+          <div className="divide-y divide-white/5 bg-black/10">
+            {data.results.map((r, i) => {
+              const homeWon = r.homeScore > r.awayScore;
+              const awayWon = r.awayScore > r.homeScore;
+              return (
+                <div
+                  key={i}
+                  className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 hover:bg-white/[0.02] transition-colors text-slate-200"
+                >
+                  <TeamName team={r.home} won={homeWon} align="right" />
+                  <div className="flex items-center gap-1.5 font-mono text-[15px] font-semibold tabular-nums">
+                    <span className={homeWon ? "text-cyan-400 font-bold" : "text-slate-400"}>{r.homeScore}</span>
+                    <span className="text-slate-600">–</span>
+                    <span className={awayWon ? "text-cyan-400 font-bold" : "text-slate-400"}>{r.awayScore}</span>
+                    {r.isUpset && (
+                      <span className="ml-0.5 text-[11px]" title="Upset of the day">
+                        ⭐
+                      </span>
+                    )}
+                  </div>
+                  <TeamName team={r.away} won={awayWon} align="left" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* LLM narration / Round Summary */}
+        {data.llmSummary && (
+          <div className="border-t border-cyan-500/20 bg-cyan-950/[0.03] px-4 py-3">
+            <span className="text-[11px] font-semibold tracking-wide text-cyan-400 uppercase block mb-1">
+              Round Summary
+            </span>
+            <p className="text-[14px] leading-relaxed text-slate-300 italic">
+              {data.llmSummary}
+            </p>
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  // Default Matchday Results Layout
   return (
-    <Card className="glass-hierarchy-child mt-2 overflow-hidden border-amber-500/15 bg-amber-950/10 p-0 shadow-md backdrop-blur-md">
+    <Card className="glass-hierarchy-child mt-2 overflow-hidden border-white/10 bg-slate-950/20 p-0 shadow-md backdrop-blur-md transition-all duration-300 hover:border-white/15">
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-white/10 bg-white/[0.03] px-4 py-2.5">
         <span className="text-lg">{data.sportEmoji}</span>
@@ -53,49 +188,51 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
           <Link
             href={`/myleague/${data.league.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="text-[15px] font-bold text-amber-200 hover:underline"
+            className="text-[15px] font-bold text-amber-400 hover:text-amber-300 hover:underline"
           >
             {data.league.name}
           </Link>
         ) : (
-          <span className="text-[15px] font-bold text-amber-200">{data.league.name}</span>
+          <span className="text-[15px] font-bold text-slate-100">{data.league.name}</span>
         )}
-        <span className="ml-auto rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-amber-200 uppercase">
+        <span className="ml-auto rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-amber-300 uppercase">
           Matchday {data.matchDay}
         </span>
       </div>
 
       {/* Results table */}
-      <div className="divide-y divide-white/5">
-        {data.results.map((r, i) => {
-          const homeWon = r.homeScore > r.awayScore;
-          const awayWon = r.awayScore > r.homeScore;
-          return (
-            <div
-              key={i}
-              className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 text-slate-200"
-            >
-              <TeamName team={r.home} won={homeWon} align="right" />
-              <div className="flex items-center gap-1.5 font-mono text-[15px] font-semibold tabular-nums">
-                <span className={homeWon ? "text-amber-200" : "text-slate-400"}>{r.homeScore}</span>
-                <span className="text-slate-500">–</span>
-                <span className={awayWon ? "text-amber-200" : "text-slate-400"}>{r.awayScore}</span>
-                {r.isUpset && (
-                  <span className="ml-0.5 text-[11px]" title="Upset of the day">
-                    ⭐
-                  </span>
-                )}
+      {data.results && data.results.length > 0 && (
+        <div className="divide-y divide-white/5 bg-black/10">
+          {data.results.map((r, i) => {
+            const homeWon = r.homeScore > r.awayScore;
+            const awayWon = r.awayScore > r.homeScore;
+            return (
+              <div
+                key={i}
+                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 hover:bg-white/[0.02] transition-colors text-slate-200"
+              >
+                <TeamName team={r.home} won={homeWon} align="right" />
+                <div className="flex items-center gap-1.5 font-mono text-[15px] font-semibold tabular-nums">
+                  <span className={homeWon ? "text-amber-400 font-bold" : "text-slate-400"}>{r.homeScore}</span>
+                  <span className="text-slate-600">–</span>
+                  <span className={awayWon ? "text-amber-400 font-bold" : "text-slate-400"}>{r.awayScore}</span>
+                  {r.isUpset && (
+                    <span className="ml-0.5 text-[11px]" title="Upset of the day">
+                      ⭐
+                    </span>
+                  )}
+                </div>
+                <TeamName team={r.away} won={awayWon} align="left" />
               </div>
-              <TeamName team={r.away} won={awayWon} align="left" />
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Table movers */}
       {data.movers && data.movers.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-white/10 bg-white/[0.02] px-4 py-2.5">
-          <span className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
+          <span className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase mr-1">
             Table Movers
           </span>
           {data.movers.map((m, i) => {
@@ -104,13 +241,15 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
             const body = (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px]",
-                  up ? "bg-emerald-500/10 text-emerald-300" : "bg-rose-500/10 text-rose-300"
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium transition-all duration-200 hover:scale-[1.02]",
+                  up 
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20" 
+                    : "bg-rose-500/10 border-rose-500/20 text-rose-300 hover:bg-rose-500/20"
                 )}
               >
                 <Icon className="h-3 w-3" />
                 {m.name}{" "}
-                <span className="text-slate-400">
+                <span className="text-slate-400 text-[11px]">
                   ({ordinal(m.oldRank)} → {ordinal(m.newRank)})
                 </span>
               </span>
@@ -128,7 +267,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
 
       {/* LLM narration */}
       {data.llmSummary && (
-        <p className="border-t border-white/10 px-4 py-2.5 text-[14px] leading-relaxed text-slate-300 italic">
+        <p className="border-t border-white/10 bg-white/[0.01] px-4 py-2.5 text-[14px] leading-relaxed text-slate-300 italic">
           {data.llmSummary}
         </p>
       )}

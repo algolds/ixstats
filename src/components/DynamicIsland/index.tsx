@@ -21,6 +21,8 @@ import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
+import { HaloTourTooltip } from "./HaloTourTooltip";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -55,10 +57,12 @@ function CommandPaletteContent({
   isSticky = false,
   scrollY = 0,
   diState,
+  isTourActive = false,
 }: {
   isSticky?: boolean;
   scrollY?: number;
   diState: ReturnType<typeof useDynamicIslandState>;
+  isTourActive?: boolean;
 }) {
   const { state: diSizeState, setSize } = useDynamicIslandSize();
   const [mounted, setMounted] = useState(false);
@@ -379,8 +383,26 @@ function CommandPaletteContent({
           animate={{
             scale: ringActive ? 1.04 : 1,
             y: pillBounce ? -4 : 0,
+            boxShadow: isTourActive
+              ? [
+                  "0 0 0px rgba(59, 130, 246, 0)",
+                  "0 0 15px rgba(59, 130, 246, 0.5)",
+                  "0 0 0px rgba(59, 130, 246, 0)"
+                ]
+              : "0 0 0px rgba(0, 0, 0, 0)",
           }}
-          transition={{ type: "spring", stiffness: 500, damping: 20 }}
+          transition={isTourActive 
+            ? {
+                boxShadow: {
+                  repeat: Infinity,
+                  duration: 2,
+                  ease: "easeInOut",
+                },
+                scale: { type: "spring", stiffness: 500, damping: 20 },
+                y: { type: "spring", stiffness: 500, damping: 20 }
+              }
+            : { type: "spring", stiffness: 500, damping: 20 }
+          }
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.15}
@@ -448,6 +470,9 @@ function CommandPaletteContent({
 
         {/* Nav tray dropdown */}
         <NavTray isOpen={navTrayOpen && !isExpanded} onClose={() => setNavTrayOpen(false)} />
+
+        {/* Walkthrough tooltip overlay */}
+        <HaloTourTooltip />
       </div>
     </>
   );
@@ -460,9 +485,11 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
   if (pathname?.startsWith("/maps")) return null;
 
   return (
-    <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-      <CommandPaletteWrapper className={className} isSticky={isSticky} scrollY={scrollY} />
-    </DynamicIslandProvider>
+    <HaloTourProvider>
+      <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
+        <CommandPaletteWrapper className={className} isSticky={isSticky} scrollY={scrollY} />
+      </DynamicIslandProvider>
+    </HaloTourProvider>
   );
 }
 
@@ -521,6 +548,8 @@ function CommandPaletteWrapper({
     return;
   }, [isExpanded, isInitialized, switchMode]);
 
+  const { isActive: isTourActive } = useHaloTour();
+
   // Don't render until properly initialized
   if (!isInitialized) {
     return null;
@@ -535,7 +564,12 @@ function CommandPaletteWrapper({
       }}
     >
       <div className="pointer-events-auto">
-        <CommandPaletteContent isSticky={isSticky} scrollY={scrollY} diState={diState} />
+        <CommandPaletteContent 
+          isSticky={isSticky} 
+          scrollY={scrollY} 
+          diState={diState} 
+          isTourActive={isTourActive} 
+        />
       </div>
     </div>
   );

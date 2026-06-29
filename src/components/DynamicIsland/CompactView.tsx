@@ -10,7 +10,7 @@ import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { Calendar, Search, Bell, MessageCircle, BookOpen, Settings } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { useUser } from "~/context/auth-context";
-import { useIxTime } from "~/contexts/IxTimeContext";
+import { useIxTimeStore } from "~/stores/ixtime-store";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
@@ -50,7 +50,7 @@ const getGreeting = (ixTime: number): string => {
 function CompactViewComponent({
   mode,
   isSticky,
-  isCollapsed,
+  isCollapsed: _isCollapsed,
   setIsCollapsed,
   setIsUserInteracting,
   onSwitchMode,
@@ -63,18 +63,18 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
+  const { articleTitle: _articleTitle, activeSectionId, tocEntries } = useWikiContext();
   const router = useRouter();
   const diPathname = usePathname();
   const isOnMapsPage = diPathname?.startsWith("/maps") || false;
   const isOnOnomaPage = diPathname?.startsWith("/labs/onoma") || false;
 
-  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
+  const { data: userProfile, isLoading: _profileLoading } = api.users.getProfile.useQuery(
     undefined,
     { enabled: !!user?.id }
   );
 
-  const { ixTimeTimestamp } = useIxTime();
+  const ixTimeTimestamp = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 30000) * 30000);
   const activeSectionName = activeSectionId
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
@@ -202,21 +202,43 @@ function CompactViewComponent({
                         (window.location.href = createAbsoluteUrl(isStandalone ? "/maps" : "/"))
                       }
                       className={cn(
-                        "group relative flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95",
+                        "group relative flex items-center justify-center rounded-xl transition-all duration-300 active:scale-95",
                         isWikiActive
-                          ? "h-9 w-10 flex-col gap-0.5"
+                          ? "h-10 w-11 flex-col gap-0.5"
                           : isSticky
-                            ? "h-6 w-6"
-                            : "h-7 w-7"
+                            ? "h-7 w-7"
+                            : "h-8 w-8"
                       )}
                     >
-                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/20 via-purple-500/30 to-blue-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       {isWikiActive ? (
                         <div className="relative z-10 flex flex-col items-center justify-center gap-0 leading-none">
-                          <img
-                            src={IxLogoV2.src}
-                            alt="IxLogo"
-                            className="h-3 w-auto opacity-95 transition-all duration-300 group-hover:scale-110 dark:brightness-0 dark:invert"
+                          <motion.div
+                            className="relative z-10 w-5 h-5 opacity-85 bg-foreground"
+                            style={{
+                              maskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
+                              WebkitMaskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
+                              maskSize: "contain",
+                              WebkitMaskSize: "contain",
+                              maskRepeat: "no-repeat",
+                              WebkitMaskRepeat: "no-repeat",
+                              maskPosition: "center",
+                              WebkitMaskPosition: "center",
+                            }}
+                            whileHover={{ 
+                              scale: 1.15, 
+                              rotate: 8,
+                              opacity: 1,
+                              backgroundColor: "var(--primary)"
+                            }}
+                            whileTap={{ 
+                              scale: 0.9,
+                              rotate: -4
+                            }}
+                            transition={{ 
+                              type: "spring", 
+                              stiffness: 400, 
+                              damping: 15 
+                            }}
                           />
                           <span
                             className="text-foreground mt-0.5 text-[10px] leading-none font-semibold tracking-[0.1em] antialiased"
@@ -230,13 +252,36 @@ function CompactViewComponent({
                           <MyCountryLogo size="sm" variant="icon-only" animated={false} />
                         </div>
                       ) : (
-                        <img
-                          src={IxLogoV2.src}
-                          alt="IxLogo"
+                        <motion.div
                           className={cn(
-                            "relative z-10 opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert",
-                            isSticky ? "h-4 w-4" : "h-5 w-5"
+                            "relative z-10 opacity-85 bg-foreground",
+                            isSticky ? "h-5 w-5" : "h-6 w-6"
                           )}
+                          style={{
+                            maskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
+                            WebkitMaskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
+                            maskSize: "contain",
+                            WebkitMaskSize: "contain",
+                            maskRepeat: "no-repeat",
+                            WebkitMaskRepeat: "no-repeat",
+                            maskPosition: "center",
+                            WebkitMaskPosition: "center",
+                          }}
+                          whileHover={{ 
+                            scale: 1.15, 
+                            rotate: 8,
+                            opacity: 1,
+                            backgroundColor: "var(--primary)"
+                          }}
+                          whileTap={{ 
+                            scale: 0.9,
+                            rotate: -4
+                          }}
+                          transition={{ 
+                            type: "spring", 
+                            stiffness: 400, 
+                            damping: 15 
+                          }}
                         />
                       )}
                     </button>
@@ -347,46 +392,51 @@ function CompactViewComponent({
                         const weekday = d
                           .toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })
                           .toUpperCase();
-                        const day = d.getUTCDate();
+
+                        const selectedThemeColorClass =
+                          diPathname?.startsWith("/mycountry") ? "text-yellow-400" :
+                          diPathname?.startsWith("/admin") ? "text-indigo-400" :
+                          "text-blue-400";
 
                         return (
-                          <button
+                          <motion.button
+                            layoutId="halo-date-capsule-button"
                             onClick={() => onSwitchMode("calendar")}
                             title="Open Calendar"
                             className={cn(
-                              "hover:bg-accent/50 flex cursor-pointer items-center transition-colors rounded-md",
-                              isOnOnomaPage ? "p-1.5" : "gap-1.5 px-2 py-1"
+                              "hover:bg-white/5 flex cursor-pointer items-center transition-colors rounded-lg border border-white/0 hover:border-white/5",
+                              isOnOnomaPage ? "p-1.5" : "gap-2 px-2.5 py-1"
                             )}
                           >
-                            {/* iOS-style Live Calendar Icon — styled with Facet Glass design */}
-                            <div className="relative flex h-3.5 w-3.5 shrink-0 flex-col overflow-hidden rounded-[3px] border border-white/20 bg-white/5 shadow-[0_1px_3px_rgba(0,0,0,0.2)] backdrop-blur-[2px] select-none">
-                              {/* Glassy Red Header */}
-                              <div className="flex h-[4.5px] w-full items-center justify-center border-b border-red-500/30 bg-red-500/25">
-                                <span className="origin-center scale-[0.8] text-[5px] leading-none font-extrabold tracking-wide text-red-400">
-                                  {weekday}
-                                </span>
-                              </div>
-                              {/* Glassy Day Number Area */}
-                              <div className="flex w-full flex-1 items-center justify-center bg-white/[0.02]">
-                                <span className="origin-center scale-[0.95] text-[8px] leading-none font-bold text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                                  {day}
-                                </span>
-                              </div>
-                            </div>
+                            {/* Minimalist Glassy Date Capsule Badge */}
+                            <motion.div
+                              layoutId="halo-date-capsule-badge"
+                              className="flex items-center justify-center rounded-[4px] border border-white/10 bg-white/5 px-1 py-0.5 shadow-inner backdrop-blur-[2px] shrink-0"
+                            >
+                              <motion.span
+                                layoutId="halo-date-capsule-weekday"
+                                className={cn(
+                                  "origin-center scale-90 text-[8px] font-extrabold tracking-widest antialiased leading-none",
+                                  selectedThemeColorClass
+                                )}
+                              >
+                                {weekday}
+                              </motion.span>
+                            </motion.div>
 
                             {!isOnOnomaPage && (
-                              <PreText
+                              <motion.span
+                                layoutId="halo-date-capsule-text"
                                 className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                                whiteSpace="nowrap"
                               >
                                 {d.toLocaleDateString("en-US", {
                                   month: "short",
                                   day: "numeric",
                                   timeZone: "UTC",
                                 })}
-                              </PreText>
+                              </motion.span>
                             )}
-                          </button>
+                          </motion.button>
                         );
                       })()}
 

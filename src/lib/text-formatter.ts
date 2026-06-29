@@ -41,11 +41,19 @@ export function formatContentEnhanced(content: string): string {
   const maskedLinks: string[] = [];
   let linkPlaceholderIndex = 0;
   formattedContent = formattedContent.replace(
-    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g,
     (_match, label, url) => {
       const placeholder = `\u0001LINK${linkPlaceholderIndex++}\u0001`;
+      let targetUrl = url;
+      if (url.startsWith("/")) {
+        if (!url.startsWith("/projects/ixstates")) {
+          targetUrl = `/projects/ixstates${url}`;
+        }
+      }
+      const isExternal = url.startsWith("http");
+      const targetAttr = isExternal ? 'target="_blank" rel="noopener noreferrer"' : "";
       maskedLinks.push(
-        `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline font-medium">${label}</a>`
+        `<a href="${targetUrl}" ${targetAttr} class="text-blue-500 hover:underline font-medium">${label}</a>`
       );
       return placeholder;
     }
@@ -113,6 +121,9 @@ export function formatContentEnhanced(content: string): string {
     formattedContent = formattedContent.replace(placeholder, imgTag);
   }
 
+  // Replace remaining newlines with HTML line breaks
+  formattedContent = formattedContent.replace(/\n/g, "<br />");
+
   // SECURITY: Final sanitization pass to ensure safe HTML
   return sanitizeUserContent(formattedContent);
 }
@@ -130,7 +141,9 @@ function looksLikeStoredHtml(content: string): boolean {
  */
 export function formatThinkpagesContentForDisplay(content: string): string {
   if (!content) return "";
-  const clean = content.replace(/\s*\[DiscordMsg:\d+\]\s*$/, "");
+  // Strip the sports-bulletin structured comment block first, so it is never displayed as text
+  const stripped = content.replace(/<!-- sports-bulletin:[\s\S]*?-->\n*/gi, "");
+  const clean = stripped.replace(/\s*\[DiscordMsg:\d+\]\s*$/, "");
   const t = clean.trim();
   if (looksLikeStoredHtml(t)) {
     // Convert Discord emoji markup in HTML content before sanitizing
