@@ -20,6 +20,7 @@ import {
 import type { VertexRef } from "~/lib/border-editor";
 import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/province-importer/alignment";
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
+import { buildTopologyIndex, cascadeMoveVertex, vkey } from "~/lib/topology-engine";
 import {
   getGeoJSONSource,
   updateSnapGuide,
@@ -72,6 +73,10 @@ export function useSubdivisionVertexEdit({
   const draggingRef = useRef<VertexRef | null>(null);
   const hoveredVertexRef = useRef<VertexRef | null>(null);
   const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Topology engine: spatial-hash index + neighbor geometry cache for cascade editing
+  const topologyIndexRef = useRef(null);
+  const neighborGeometriesRef = useRef(new Map());
 
   const throttledUpdateRef = useRef<any>(null);
   const lastUpdateRef = useRef(0);
@@ -288,10 +293,19 @@ export function useSubdivisionVertexEdit({
       updateVertexEditVis();
     }
     onGeometryUpdateRef.current(state.featureId, finalGeo);
+
+    // Save cascaded neighbor geometries
+    for (const [fid, geom] of neighborGeometriesRef.current) {
+      if (onGeometryUpdateRef.current) {
+        onGeometryUpdateRef.current(fid, geom);
+      }
+    }
   }, [updateVertexEditVis]);
 
   const cancelVertexEdit = useCallback(() => {
     vertexEditRef.current = null;
+    topologyIndexRef.current = null;
+    neighborGeometriesRef.current = new Map();
     setIsVertexEditing(false);
     clearVertexEditVis();
     if (map) {
@@ -331,6 +345,26 @@ export function useSubdivisionVertexEdit({
         featureId: selectedFeature.id,
         currentGeometry: geo,
       };
+
+      // Build topology index from all subdivision features for cascade editing
+      const subdivisionFeatures = [];
+      for (const feat of featuresRef.current) {
+        if (feat.type === "subdivision" && feat.geometry) {
+          subdivisionFeatures.push({
+            id: feat.id,
+            geometry: feat.id === selectedFeature.id
+              ? geo
+              : feat.geometry,
+          });
+        }
+      }
+      topologyIndexRef.current = buildTopologyIndex(subdivisionFeatures);
+      neighborGeometriesRef.current = new Map(
+        subdivisionFeatures
+          .filter(f => f.id !== selectedFeature.id)
+          .map(f => [f.id, JSON.parse(JSON.stringify(f.geometry))])
+      );
+
       setIsVertexEditing(true);
       updateVertexEditVis();
 
@@ -437,8 +471,44 @@ export function useSubdivisionVertexEdit({
       const didSnap = target[0] !== origTarget[0] || target[1] !== origTarget[1];
       updateSnapGuide(map, didSnap ? origTarget : null, didSnap ? target : null);
 
+      const oldCoord = draggingRef.current.coord;
       const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
       vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
+
+      // Cascade move to neighbors sharing this vertex via topology index
+      if (topologyIndexRef.current && oldCoord) {
+        const oldKey = vkey(oldCoord);
+        const allGeoms = new Map(neighborGeometriesRef.current);
+        allGeoms.set(vertexEditRef.current.featureId, newGeo);
+
+        const cascaded = cascadeMoveVertex(topologyIndexRef.current, allGeoms, oldKey, target);
+
+        // Update neighbor geometries in our tracking map + visual source
+        for (const [fid, updatedGeom] of cascaded) {
+          if (fid !== vertexEditRef.current.featureId) {
+            neighborGeometriesRef.current.set(fid, updatedGeom);
+            // Update the neighbor's visual on the map subdivisions source
+            try {
+              const src = map?.getSource("editor-subdivisions");
+              if (src && typeof src.serialize === "function") {
+                const data = src._data || src._options?.data;
+                if (data?.features) {
+                  const idx = data.features.findIndex((f) => f.properties?.id === fid);
+                  if (idx >= 0) {
+                    data.features[idx].geometry = updatedGeom;
+                    src.setData(data);
+                  }
+                }
+              }
+            } catch (_e) {
+              // Non-critical: visual-only feedback, server save is authoritative
+            }
+          }
+        }
+        // Update dragging ref coord to the new position for next frame
+        draggingRef.current = { ...draggingRef.current, coord: target };
+      }
+
       updateVertexEditVis(true);
       scheduleThrottledUpdate();
     };

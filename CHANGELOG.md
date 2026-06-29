@@ -10,6 +10,15 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+## [1.1.9 Ogma (Alpha)] - 2026-06-29
+
+### Added
+- **Shared-Edge Topology Editor (Atlas Engine v3, Builder System v2)**:
+  - **Pure Topology Engine**: Added [topology-engine.ts](file:///home/jxsig/projects/ixstats/src/lib/topology-engine.ts) containing pure geometric spatial indexing functions (`vkey`, `buildTopologyIndex`, `cascadeMoveVertex`) to allow dragging a shared boundary vertex to propagate dynamically to neighbor subdivisions in O(1) time.
+  - **Live Client-Side Drag Cascades**: Connected the topology index to [useSubdivisionVertexEdit.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts) to update neighbor boundaries visually on MapLibre in real-time as the user drags shared vertices.
+  - **Multi-Feature Undo/Redo**: Upgraded [useMapEditor.ts](file:///home/jxsig/projects/ixstats/src/hooks/useMapEditor.ts) to track `cascadedUpdates` inside `EditorAction`, enabling atomic undo/redo of multi-feature topology edits.
+  - **Transactional Server Writes**: Extended `updateSubdivision` in [subdivisions.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/geo/features/subdivisions.ts) to transactionally write neighbor updates via a Prisma `$transaction`.
+
 ## [1.1.8 Ogma (Alpha)] - 2026-06-29
 
 ### Added

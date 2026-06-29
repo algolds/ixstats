@@ -281,6 +281,15 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         geometry: z.record(z.string(), z.unknown()).optional(),
         capital: z.string().optional(),
         population: z.number().int().min(0).optional(),
+        /** Topology-cascaded neighbor geometries to write transactionally */
+        cascadedNeighbors: z
+          .array(
+            z.object({
+              subdivisionId: z.string(),
+              geometry: z.record(z.string(), z.unknown()),
+            })
+          )
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -334,6 +343,18 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
           ...(input.population !== undefined && { population: input.population }),
         },
       });
+
+      // Save cascaded neighbor geometries in a transaction
+      if (input.cascadedNeighbors && input.cascadedNeighbors.length > 0) {
+        await ctx.db.$transaction(
+          input.cascadedNeighbors.map((neighbor) =>
+            ctx.db.subdivision.update({
+              where: { id: neighbor.subdivisionId },
+              data: { geometry: neighbor.geometry },
+            })
+          )
+        );
+      }
 
       await invalidateCache(["geoCore.getAllMapFeatures"]);
       broadcastMapUpdate("subdivision", input.countryId);

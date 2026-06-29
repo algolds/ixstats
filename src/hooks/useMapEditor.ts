@@ -157,6 +157,13 @@ interface EditorAction {
   previousData?: Record<string, unknown>;
   /** Data needed to redo (new state for update/create) */
   newData?: Record<string, unknown>;
+  /** For topology-cascaded updates: additional features changed in the same action */
+  cascadedUpdates?: Array<{
+    featureId: string;
+    featureType: FeatureType;
+    previousData: Record<string, unknown>;
+    newData: Record<string, unknown>;
+  }>;
 }
 
 interface EditorHistory {
@@ -720,6 +727,20 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           }
           break;
       }
+      // Reverse cascaded topology updates (neighbor subdivisions)
+      if (action.cascadedUpdates) {
+        for (const cu of action.cascadedUpdates) {
+          if (cu.featureType === "subdivision" && cu.previousData?.geometry) {
+            await m.updateSubdivision?.mutateAsync(
+              cleanNulls({
+                countryId,
+                subdivisionId: cu.featureId,
+                geometry: cu.previousData.geometry,
+              })
+            );
+          }
+        }
+      }
       m.refetchFeatures?.();
     },
     [countryId]
@@ -932,6 +953,20 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             }
           }
           break;
+      }
+      // Apply cascaded topology updates (neighbor subdivisions)
+      if (action.cascadedUpdates) {
+        for (const cu of action.cascadedUpdates) {
+          if (cu.featureType === "subdivision" && cu.newData?.geometry) {
+            await m.updateSubdivision?.mutateAsync(
+              cleanNulls({
+                countryId,
+                subdivisionId: cu.featureId,
+                geometry: cu.newData.geometry,
+              })
+            );
+          }
+        }
       }
       m.refetchFeatures?.();
     },
