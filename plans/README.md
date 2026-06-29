@@ -26,21 +26,12 @@ the live working set stays here.
 |------|----------|--------|
 | [map-editor-improvements-overview.md](map-editor-improvements-overview.md) | — | ACTIVE (index) |
 | [045-map-topology-engine.md](045-map-topology-engine.md) | P1 | ACTIVE |
-| [046-map-overlay-registry.md](046-map-overlay-registry.md) | P1 | ACTIVE |
-| [047-territory-painting-brush.md](047-territory-painting-brush.md) | P2 (needs 045) | ACTIVE |
 | [map-editor-geography-analyzer.md](map-editor-geography-analyzer.md) | P1 | BLOCKED |
-| [map-editor-routes-foundation.md](map-editor-routes-foundation.md) | P3 | ACTIVE |
-| [050-wiki-import-performance.md](050-wiki-import-performance.md) | P1 | ACTIVE (perf) |
 
 ### MyCountry Core Loops
 | Plan | Scope | Status |
 |------|-------|--------|
 | [mycountry-core-loops-design.md](mycountry-core-loops-design.md) | Exec / Diplomacy / Politics loop closure (Phases 1–5 implemented; narrative+ledger spine) | ACTIVE |
-
-### Onoma Refactoring & Code Quality
-| Plan | Scope | Status |
-|------|-------|--------|
-| [091-onoma-refactor-modularization.md](091-onoma-refactor-modularization.md) | Split and refactor oversized conlang components | ACTIVE |
 
 ### Public Preview
 | Plan | Scope | Status |
@@ -67,13 +58,14 @@ the live working set stays here.
 |-----|---------|
 | [local-dev-windows-setup.md](local-dev-windows-setup.md) | WSL2 / Windows local-dev setup walkthrough (linked from root `README.md`) |
 | [src-monolith-candidates.md](src-monolith-candidates.md) | Ongoing refactor backlog — large files that are split candidates |
+| [st.md](st.md) | Game loops and design conceptual framework |
 
 ---
 
 ## Archive
 
-25 completed/realized/superseded plans live in [`archive/`](archive/) — kept for context, not maintained.
-Highlights: builder auto-sync (Plan 052), map layer panel memoization (Plan 053), map feature grouping (Plan 054), map progressive zoom filtering (Plan 051), Exchange Phase 1 (built), MyCountry executive/builder/UX audits (shipped), versioning
+99 completed/realized/superseded plans live in [`archive/`](archive/) — kept for context, not maintained.
+Highlights: conlang modularization (Plan 091), security hardening (Plan 090), cache invalidation (Plan 089), routes overhaul (Plans 046-050), territory brush (Plan 029/047), builder auto-sync (Plan 052), map layer panel memoization (Plan 053), map feature grouping (Plan 054), map progressive zoom filtering (Plan 051), Exchange Phase 1 (built), MyCountry executive/builder/UX audits (shipped), versioning
 architecture (→ `docs/reference/revision.md`), geo-core + country-geo-service splits (done),
 WikiOS core-boundary + workstream C (done), VPS stabilization/memory audits (done), the June 2026
 codebase audit, and map-topology-engine v1 (superseded by Plan 045).
