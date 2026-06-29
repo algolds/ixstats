@@ -37,7 +37,7 @@ const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT 
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
   const now = IxTime.getCurrentIxTime();
-  const [country, structure, components, pendingRecon, allocations] = await Promise.all([
+  const [country, structure, components, pendingRecon, allocations, activePoliciesSum, dismissedIssuesCount] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
       select: { currentPopulation: true, governmentalEfficiency: true },
@@ -60,6 +60,17 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
         budgetYear: new Date().getFullYear(),
       },
       include: { department: { select: { category: true } } },
+    }),
+    db.policy.aggregate({
+      where: { countryId, status: "active" },
+      _sum: { civCapCost: true },
+    }),
+    db.nationalIssue.count({
+      where: {
+        countryId,
+        status: "dismissed",
+        respondedIxTime: { gte: now - 5 },
+      },
     }),
   ]);
 
@@ -84,7 +95,9 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
 
   // Apply 15% domestic policy upkeep Capacity relief if satisfied
   const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
-  const used = effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST;
+  const policyCivCap = activePoliciesSum._sum.civCapCost ?? 0;
+  const dismissedCivCap = dismissedIssuesCount * 15;
+  const used = effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
 
   return {
     componentTypes: components.map((c) => String(c.componentType)),
@@ -538,7 +551,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({
         where: { id: input.id },
-        select: { status: true, deadlineIxTime: true },
+        select: { status: true, deadlineIxTime: true, severity: true, urgency: true, countryId: true },
       });
 
       if (!issue) {
@@ -555,6 +568,19 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         });
       }
 
+      if (
+        issue.severity === "critical" ||
+        issue.severity === "CRITICAL" ||
+        issue.severity === "high" ||
+        issue.severity === "HIGH" ||
+        issue.urgency > 70
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot delegate urgent crises or high-priority issues",
+        });
+      }
+
       if (issue.status !== "pending" && issue.status !== "viewed") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -562,9 +588,23 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         });
       }
 
+      const cx = await loadReconContext(ctx.db as PrismaClient, issue.countryId);
+      if (cx.available < 15) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Insufficient Civil Capacity to delegate this issue. You need at least 15 available CivCap.",
+        });
+      }
+
+      const currentIxTime = IxTime.getCurrentIxTime();
+
       await ctx.db.nationalIssue.update({
         where: { id: input.id },
-        data: { status: "dismissed" },
+        data: {
+          status: "dismissed",
+          respondedAt: new Date(),
+          respondedIxTime: currentIxTime,
+        },
       });
 
       return { success: true };

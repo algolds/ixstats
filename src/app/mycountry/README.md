@@ -53,7 +53,7 @@ Verified `api.*` calls used by this route:
 
 - **Country / economy:** `api.countries.getByIdWithEconomicData`, `getActivityRingsData`, `getLoreScore`, `getWikiSections`
 - **Overview / canon:** `api.mycountry.getComplianceSummary`, `getNewsFeed`, `getCanonFeed`; `api.notifications.getCountryAlerts`
-- **Executive:** `api.nationalIssues.getMyIssues` / `respond`, `api.meetings.getMeetings`, `api.policies.getPolicies`, `api.quickActions.getMeetings` / `getPolicies`, `api.crisisEvents.getActive`, `api.scheduledChanges.getPendingChanges`
+- **Executive:** `api.nationalIssues.getMyIssues` / `respond` / `dismiss`, `api.meetings.getMeetings`, `api.policies.getPolicies`, `api.quickActions.getMeetings` / `getPolicies` / `completeMeeting` / `implementDecision` / `createDecision`, `api.crisisEvents.getActive`, `api.scheduledChanges.getPendingChanges`
 - **Diplomacy:** `api.diplomaticEmbassies.getEmbassies`, `api.diplomaticCore.getRelationships` / `getRecentChanges`, `api.diplomaticPolicies.getActiveForeignPolicies`, `api.diplomaticScenarios.getAllScenarios` / `recordChoice`, `api.diplomaticIntelligence.getIntelligenceBriefing`
 - **Intelligence:** `api.intelligence.getExecutiveDashboard`, `api.unifiedIntelligence.getCommandView` / `getModules`, `api.intelCore.getOverview` / `getKeyFindings`, `api.intelAlerts.getAlertThresholds` / `updateAlertThreshold` / `deleteAlertThreshold`
 - **Defense:** `api.security.getDefenseOverview` / `getSecurityAssessment` / `getThreatStatus` / `getMilitaryBranches`

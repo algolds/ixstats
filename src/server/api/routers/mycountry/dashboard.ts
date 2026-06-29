@@ -288,4 +288,28 @@ export const myCountryDashboardRouter = createTRPCRouter({
         return [];
       }
     }),
+
+  /**
+   * Get CountryChangeLog ledger entries
+   */
+  getChangeLog: publicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().min(1).max(100).default(30),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const logs = await db.countryChangeLog.findMany({
+          where: { countryId: input.countryId },
+          orderBy: { appliedIxTime: "desc" },
+          take: input.limit,
+        });
+        return logs;
+      } catch (error) {
+        console.error("[MyCountry ChangeLog] Error:", error);
+        return [];
+      }
+    }),
 });

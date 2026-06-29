@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { calculateRealTimePolicyEffects } from "~/lib/policy-effects-sync";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 
 export const policiesIntegrationRouter = createTRPCRouter({
@@ -238,30 +239,4 @@ export const policiesIntegrationRouter = createTRPCRouter({
     }),
 });
 
-// Helper function to calculate real-time policy effects
-async function calculateRealTimePolicyEffects(policy: any, countryId: string, db: any) {
-  // Get current country data
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-  });
 
-  if (!country) {
-    return {};
-  }
-
-  // Calculate effects based on current country metrics
-  const effects = {
-    gdpMultiplier: 1 + policy.gdpEffect / 100,
-    employmentMultiplier: 1 + policy.employmentEffect / 100,
-    inflationMultiplier: 1 + policy.inflationEffect / 100,
-    taxRevenueMultiplier: 1 + policy.taxRevenueEffect / 100,
-    calculatedAt: new Date().toISOString(),
-    baseValues: {
-      currentGdp: country.currentTotalGdp,
-      currentPopulation: country.currentPopulation,
-      currentTaxRevenue: country.taxRevenueGDPPercent,
-    },
-  };
-
-  return effects;
-}

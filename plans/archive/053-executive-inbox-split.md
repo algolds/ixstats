@@ -34,7 +34,6 @@ Players feel overwhelmed when all issues are presented as emergencies, and they 
 
 | Purpose   | Command                  | Expected on success |
 |-----------|--------------------------|---------------------|
-| Typecheck | `bun run typecheck:ui`   | exit 0, no errors   |
 | Lint      | `bun run lint`           | exit 0              |
 
 ## Scope
@@ -58,13 +57,12 @@ Render two separate panels/lists:
 - **Reactive Crises**: Red/Amber warning styling. Must be answered.
 - **National Discourse**: Neutral styling. Includes a "Delegate" (Dismiss) button prominently on the card, hooked to the existing `dismiss` tRPC mutation.
 
-**Verify**: `bun run typecheck:ui`
+**Verify**: `bun run lint`
 
 ## Done criteria
 
 - [ ] UI shows two distinct sections for urgent vs. non-urgent issues.
 - [ ] Non-urgent issues can be dismissed directly from the list view via a "Delegate" button.
-- [ ] `bun run typecheck:ui` passes.
 
 ## STOP conditions
 

@@ -16,6 +16,8 @@ export interface DiplomaticRelationDto {
   recentIncidents: string[];
   flagUrl?: string | null;
   establishedAt?: string;
+  goalSelf?: string | null;
+  goalTarget?: string | null;
 }
 
 export interface EmbassyDto {

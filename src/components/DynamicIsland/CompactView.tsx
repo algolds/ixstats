@@ -191,9 +191,9 @@ function CompactViewComponent({
               const isWikiActive = activePlugin?.id === "wiki";
               if (isWikiActive) return null;
 
-              // Hide on root and dashboard pages
-              const isRootOrDashboard = diPathname === "/" || diPathname === "/dashboard";
-              if (isRootOrDashboard) return null;
+              // Hide on root, dashboard, and mycountry pages
+              const isHiddenPage = diPathname === "/" || diPathname === "/dashboard" || diPathname.startsWith("/mycountry");
+              if (isHiddenPage) return null;
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -385,8 +385,8 @@ function CompactViewComponent({
                     className="flex items-center gap-1"
                   >
                     {/* Time/Date — hidden when plugin is active */}
-                    {/* Time/Date — hidden when plugin is active */}
-                    {!activePlugin &&
+                    {/* Time/Date — hidden when plugin is active (except MyCountry) */}
+                    {(!activePlugin || activePlugin?.id === "mycountry") &&
                       (() => {
                         const d = new Date(ixTimeTimestamp);
                         const weekday = d
@@ -440,8 +440,8 @@ function CompactViewComponent({
                         );
                       })()}
 
-                    {/* Separator — only if no active plugin and user is authenticated/loaded */}
-                    {!activePlugin && user && (
+                    {/* Separator — only if no active plugin (or mycountry) and user is authenticated/loaded */}
+                    {(!activePlugin || activePlugin?.id === "mycountry") && user && (
                       <span className="bg-border mx-0.5 h-3 w-px shrink-0" />
                     )}
 

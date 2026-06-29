@@ -68,7 +68,7 @@ const FIELD_BOUNDS: Record<string, [number, number]> = {
 };
 
 /** Clamp a value to the field's defined bounds */
-function clampField(field: string, value: number): number {
+function _clampField(field: string, value: number): number {
   const bounds = FIELD_BOUNDS[field];
   if (!bounds) return value;
   return Math.max(bounds[0], Math.min(bounds[1], value));
@@ -77,7 +77,7 @@ function clampField(field: string, value: number): number {
 // ==================== MODEL FIELD MAPPING ====================
 
 /** Maps targetModel values to their Prisma model name and lookup strategy */
-const MODEL_CONFIG: Record<string, { prismaModel: string; lookupField: string }> = {
+const _MODEL_CONFIG: Record<string, { prismaModel: string; lookupField: string }> = {
   Country: { prismaModel: "country", lookupField: "id" },
   GovernmentStructure: {
     prismaModel: "governmentStructure",
@@ -167,22 +167,90 @@ export class NationalIssuesConsequences {
       const currentIxTime = IxTime.getCurrentIxTime();
 
       // Apply consequences
-      if (chosenOption.consequences && chosenOption.consequences.length > 0) {
-        for (const consequence of chosenOption.consequences) {
-          try {
-            const applied = await this.applyConsequence(
-              consequence,
-              issue.countryId,
-              db,
-              issueId,
-              currentIxTime
-            );
-            if (applied) {
-              result.consequences.push(applied);
+      let failedGamble = false;
+      if (chosenOption.isRisky && !isAutoResolve) {
+        // 40% chance of failure on risky choices
+        failedGamble = Math.random() < 0.4;
+      }
+
+      if (failedGamble) {
+        // Gamble backfired! Apply penalties instead of normal consequences
+        try {
+          const stabilityHit = await this.applyConsequence(
+            {
+              targetModel: "InternalStabilityMetrics",
+              targetField: "stabilityScore",
+              operation: "subtract",
+              value: 6,
+            },
+            issue.countryId,
+            db,
+            issueId,
+            currentIxTime
+          );
+          if (stabilityHit) result.consequences.push(stabilityHit);
+
+          const approvalHit = await this.applyConsequence(
+            {
+              targetModel: "Country",
+              targetField: "publicApproval",
+              operation: "subtract",
+              value: 8,
+            },
+            issue.countryId,
+            db,
+            issueId,
+            currentIxTime
+          );
+          if (approvalHit) result.consequences.push(approvalHit);
+        } catch (err) {
+          console.error("Failed to apply gamble failure consequences:", err);
+        }
+      } else {
+        // Normal consequence application
+        if (chosenOption.consequences && chosenOption.consequences.length > 0) {
+          for (const consequence of chosenOption.consequences) {
+            try {
+              const applied = await this.applyConsequence(
+                consequence,
+                issue.countryId,
+                db,
+                issueId,
+                currentIxTime
+              );
+              if (applied) {
+                result.consequences.push(applied);
+              }
+            } catch (err) {
+              console.error(`Failed to apply consequence for ${consequence.targetField}:`, err);
             }
-          } catch (err) {
-            console.error(`Failed to apply consequence for ${consequence.targetField}:`, err);
           }
+        }
+      }
+
+      // Apply party alignment support modifications
+      if (chosenOption.partyAlignment && !isAutoResolve) {
+        try {
+          const alignedParty = await (db as any).politicalParty.findFirst({
+            where: {
+              countryId: issue.countryId,
+              OR: [
+                { name: { contains: chosenOption.partyAlignment, mode: "insensitive" } },
+                { shortName: { contains: chosenOption.partyAlignment, mode: "insensitive" } },
+                { ideology: { contains: chosenOption.partyAlignment, mode: "insensitive" } },
+              ],
+            },
+          });
+          if (alignedParty) {
+            await (db as any).politicalParty.update({
+              where: { id: alignedParty.id },
+              data: {
+                currentSupport: Math.min(100, alignedParty.currentSupport + 3.0),
+              },
+            });
+          }
+        } catch (err) {
+          console.error("Failed to update party support:", err);
         }
       }
 
@@ -193,7 +261,8 @@ export class NationalIssuesConsequences {
       result.consequenceLog = this.buildConsequenceLog(
         chosenOption,
         result.consequences,
-        isAutoResolve
+        isAutoResolve,
+        failedGamble
       );
 
       // Update the issue
@@ -383,7 +452,8 @@ export class NationalIssuesConsequences {
   private static buildConsequenceLog(
     option: ResponseOptionTemplate,
     consequences: AppliedConsequence[],
-    isAutoResolve: boolean
+    isAutoResolve: boolean,
+    failedGamble: boolean = false
   ): string {
     const lines: string[] = [];
 
@@ -391,6 +461,16 @@ export class NationalIssuesConsequences {
       lines.push(
         "⚠ This issue was auto-resolved due to inaction. The default outcome was applied."
       );
+      lines.push("");
+    }
+
+    if (failedGamble) {
+      lines.push("❌ THE RISKY CHOICE BACKFIRED!");
+      lines.push("Your gamble went wrong, causing instability and public backlash.");
+      lines.push("");
+    } else if (option.isRisky && !isAutoResolve) {
+      lines.push("✅ THE RISKY CHOICE PAID OFF!");
+      lines.push("Your gamble succeeded, establishing order and avoiding backlash.");
       lines.push("");
     }
 

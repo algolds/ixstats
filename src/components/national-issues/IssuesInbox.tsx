@@ -3,10 +3,11 @@
 import { useState, useCallback, memo } from "react";
 import { Bell, AlertTriangle, History, Inbox, Flame, CheckCircle } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { useNationalIssues } from "~/hooks/useNationalIssues";
 import { IssueCard } from "./IssueCard";
 import { IssueDetailModal } from "./IssueDetailModal";
+import { FacetTabs } from "~/components/facet-ui";
 
 interface IssuesInboxProps {
   countryId: string;
@@ -30,16 +31,18 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
     urgentCount,
     isLoadingActive,
     isResponding,
-    lastResponse,
     respond,
+    dismiss,
     openIssue,
     closeIssue,
   } = useNationalIssues(countryId, domain);
 
-  const urgentIssues = activeIssues.filter((i) => i.deadlineIxTime != null);
+  const crises = activeIssues.filter((i) => i.urgency > 70 || i.deadlineIxTime != null);
+  const discourse = activeIssues.filter((i) => !(i.urgency > 70 || i.deadlineIxTime != null));
 
   const displayActive = maxVisible ? activeIssues.slice(0, maxVisible) : activeIssues;
-  const displayUrgent = maxVisible ? urgentIssues.slice(0, maxVisible) : urgentIssues;
+  const displayCrises = maxVisible ? crises.slice(0, maxVisible) : crises;
+  const displayDiscourse = maxVisible ? discourse.slice(0, maxVisible) : discourse;
   const displayHistory = maxVisible ? historyIssues.slice(0, maxVisible) : historyIssues;
 
   const handleRespond = useCallback(
@@ -74,7 +77,13 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
         ) : (
           <div className="space-y-1.5">
             {displayActive.map((issue) => (
-              <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="compact" />
+              <IssueCard
+                key={issue.id}
+                issue={issue}
+                onView={openIssue}
+                onDismiss={dismiss}
+                variant="compact"
+              />
             ))}
             {activeIssues.length > (maxVisible ?? Infinity) && (
               <p className="text-muted-foreground pt-1 text-center text-xs">
@@ -89,6 +98,7 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
           isOpen={!!selectedIssue}
           onClose={closeIssue}
           onRespond={handleRespond}
+          onDismiss={dismiss}
           isResponding={isResponding}
           countryId={countryId}
         />
@@ -97,6 +107,42 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
   }
 
   // Full variant
+  const tabItems = [
+    {
+      id: "active",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <span>Active</span>
+          {pendingCount > 0 && (
+            <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-white/10 text-white border-none shrink-0">
+              {pendingCount}
+            </Badge>
+          )}
+        </span>
+      ),
+      icon: Inbox,
+    },
+    {
+      id: "urgent",
+      label: (
+        <span className="flex items-center gap-1.5">
+          <span>Crises</span>
+          {urgentCount > 0 && (
+            <Badge variant="destructive" className="h-4 px-1 text-[10px] bg-red-500/25 border-none text-red-400 font-semibold shrink-0">
+              {urgentCount}
+            </Badge>
+          )}
+        </span>
+      ),
+      icon: AlertTriangle,
+    },
+    {
+      id: "history",
+      label: <span>History</span>,
+      icon: History,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -126,51 +172,77 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as InboxTab)}>
-        <TabsList className="grid h-8 w-full grid-cols-3">
-          <TabsTrigger value="active" className="gap-1 text-xs">
-            <Inbox className="h-3 w-3" />
-            Active
-            {pendingCount > 0 && (
-              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-                {pendingCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="urgent" className="gap-1 text-xs">
-            <AlertTriangle className="h-3 w-3" />
-            Crises
-            {urgentCount > 0 && (
-              <Badge variant="destructive" className="h-4 px-1 text-[10px]">
-                {urgentCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-1 text-xs">
-            <History className="h-3 w-3" />
-            History
-          </TabsTrigger>
-        </TabsList>
+        <div className="w-full">
+          <FacetTabs
+            tabs={tabItems}
+            activeTab={activeTab}
+            onChange={(tabId) => setActiveTab(tabId as InboxTab)}
+            tone="mycountry"
+            size="sm"
+            className="mb-4"
+          />
+        </div>
 
         <TabsContent value="active" className="mt-3">
           {isLoadingActive ? (
             <LoadingState />
-          ) : displayActive.length === 0 ? (
+          ) : activeIssues.length === 0 ? (
             <EmptyState
               icon={<CheckCircle className="h-8 w-8 text-green-400/50" />}
               title="All clear"
               description="No pending national issues. Your country is running smoothly."
             />
           ) : (
-            <div className="space-y-2">
-              {displayActive.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="full" />
-              ))}
+            <div className="space-y-5">
+              {/* Crises Section */}
+              {displayCrises.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 px-1 text-red-400">
+                    <Flame className="h-3.5 w-3.5 animate-pulse" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Crises</span>
+                    <Badge variant="destructive" className="h-4 px-1 text-[9px] font-semibold bg-red-500/25 border-red-500/40 text-red-400 shrink-0">
+                      Must Answer
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {displayCrises.map((issue) => (
+                      <IssueCard
+                        key={issue.id}
+                        issue={issue}
+                        onView={openIssue}
+                        variant="full"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Discourse Section */}
+              {displayDiscourse.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 px-1 text-slate-400">
+                    <Inbox className="h-3.5 w-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">National Discourse</span>
+                  </div>
+                  <div className="space-y-2">
+                    {displayDiscourse.map((issue) => (
+                      <IssueCard
+                        key={issue.id}
+                        issue={issue}
+                        onView={openIssue}
+                        onDismiss={dismiss}
+                        variant="full"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="urgent" className="mt-3">
-          {displayUrgent.length === 0 ? (
+          {displayCrises.length === 0 ? (
             <EmptyState
               icon={<Shield className="h-8 w-8 text-green-400/50" />}
               title="No active crises"
@@ -178,7 +250,7 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
             />
           ) : (
             <div className="space-y-2">
-              {displayUrgent.map((issue) => (
+              {displayCrises.map((issue) => (
                 <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="full" />
               ))}
             </div>
@@ -207,6 +279,7 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
         isOpen={!!selectedIssue}
         onClose={closeIssue}
         onRespond={handleRespond}
+        onDismiss={dismiss}
         isResponding={isResponding}
         countryId={countryId}
       />

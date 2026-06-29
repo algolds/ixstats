@@ -30,6 +30,7 @@ interface IssueCardProps {
     createdAt: string | Date;
   };
   onView: (id: string) => void;
+  onDismiss?: (id: string) => void;
   variant?: "compact" | "full";
 }
 
@@ -85,19 +86,19 @@ const SEVERITY_BADGE: Record<string, string> = {
   LOW: "bg-slate-500/20 text-slate-400 border-slate-500/30",
 };
 
-function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
+function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCardProps) {
   const domainConfig = DOMAIN_CONFIG[issue.domain] ?? DOMAIN_CONFIG.economic!;
   const DomainIcon = domainConfig.icon;
   const severityStyle = SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.medium!;
   const badgeStyle = SEVERITY_BADGE[issue.severity] ?? SEVERITY_BADGE.medium!;
 
   const hasDeadline = issue.deadlineIxTime != null;
-  const currentIxTime = IxTime.getCurrentIxTime();
-
   let timeRemainingText = "";
   let isUrgent = false;
   if (hasDeadline) {
-    const remaining = issue.deadlineIxTime! - currentIxTime;
+    const deadlineReal = IxTime.convertFromIxTime(issue.deadlineIxTime!);
+    const nowReal = Date.now();
+    const remaining = deadlineReal - nowReal;
     const daysRemaining = remaining / (24 * 60 * 60 * 1000);
     if (daysRemaining <= 0) {
       timeRemainingText = "EXPIRED";
@@ -113,7 +114,7 @@ function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
   const isNew = issue.status === "pending";
 
   return (
-    <button
+    <div
       onClick={() => onView(issue.id)}
       className={`group w-full cursor-pointer rounded-lg border border-l-4 border-white/10 p-3 text-left transition-all hover:border-white/20 hover:bg-white/5 ${severityStyle}`}
     >
@@ -124,7 +125,7 @@ function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
 
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <h4 className="truncate text-sm font-medium transition-colors group-hover:text-white">
+            <h4 className="truncate text-sm font-medium transition-colors group-hover:text-foreground">
               {issue.title}
             </h4>
             {isNew && (
@@ -155,6 +156,18 @@ function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
                 {timeRemainingText}
               </span>
             )}
+
+            {onDismiss && !hasDeadline && issue.severity !== "critical" && issue.severity !== "CRITICAL" && issue.severity !== "high" && issue.severity !== "HIGH" && issue.urgency <= 70 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDismiss(issue.id);
+                }}
+                className="ml-auto rounded border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-slate-300 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer"
+              >
+                Delegate (-15 CivCap)
+              </button>
+            )}
           </div>
         </div>
 
@@ -162,7 +175,7 @@ function IssueCardInner({ issue, onView, variant = "full" }: IssueCardProps) {
           <AlertTriangle className="h-4 w-4 shrink-0 animate-pulse text-red-400" />
         )}
       </div>
-    </button>
+    </div>
   );
 }
 

@@ -193,10 +193,16 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   // ── Helpers ──
   const formatDeadline = (deadlineIxTime: number | null) => {
     if (!deadlineIxTime) return null;
-    const now = IxTime.getCurrentIxTime();
-    const hoursLeft = Math.floor((deadlineIxTime - now) / 3600);
+    const deadlineReal = IxTime.convertFromIxTime(deadlineIxTime);
+    const nowReal = Date.now();
+    const msLeft = deadlineReal - nowReal;
+    const hoursLeft = Math.floor(msLeft / (3600 * 1000));
     const daysLeft = Math.floor(hoursLeft / 24);
-    if (hoursLeft < 0) return { text: "EXPIRED", color: "text-red-600" };
+    if (msLeft < 0) return { text: "EXPIRED", color: "text-red-600" };
+    if (hoursLeft < 1) {
+      const minutesLeft = Math.floor(msLeft / (60 * 1000));
+      return { text: `${minutesLeft}m left`, color: "text-red-600" };
+    }
     if (daysLeft < 1) return { text: `${hoursLeft}h left`, color: "text-red-600" };
     if (daysLeft < 3) return { text: `${daysLeft}d left`, color: "text-amber-600" };
     return { text: `${daysLeft}d left`, color: "text-muted-foreground" };
@@ -392,7 +398,17 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
             <DialogDescription>All meetings, decisions, and action items</DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <MeetingsAndDecisionsPanel countryId={countryId} />
+            <MeetingsAndDecisionsPanel
+              countryId={countryId}
+              onSelectMeeting={(id) => {
+                setSelectedMeetingId(id);
+                setActiveSheet(null);
+              }}
+              onScheduleMeeting={() => {
+                setActiveSheet(null);
+                setMeetingSchedulerOpen(true);
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>

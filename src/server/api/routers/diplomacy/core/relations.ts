@@ -54,6 +54,10 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
             relation.country1 === input.countryId ? relation.country2 : relation.country1;
           const targetInfo = countryMap.get(targetId);
 
+          const isCountry1 = relation.country1 === input.countryId;
+          const goalSelf = isCountry1 ? relation.goalCountry1 : relation.goalCountry2;
+          const goalTarget = isCountry1 ? relation.goalCountry2 : relation.goalCountry1;
+
           return {
             id: relation.id,
             targetCountry: targetInfo?.name ?? targetId,
@@ -76,6 +80,8 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
             activePolicies: [],
             recentIncidents: incidentsByCountry.get(targetId) ?? [],
             establishedAt: relation.establishedAt.toISOString(),
+            goalSelf,
+            goalTarget,
           };
         });
 
@@ -313,6 +319,56 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
       if (input.treaties) updateData.treaties = JSON.stringify(input.treaties);
       if (input.diplomaticChannels)
         updateData.diplomaticChannels = JSON.stringify(input.diplomaticChannels);
+
+      return await ctx.db.diplomaticRelation.update({
+        where: { id: input.relationId },
+        data: updateData,
+      });
+    }),
+
+  // Set diplomatic goal (Stance)
+  setDiplomaticGoal: protectedProcedure
+    .input(
+      z.object({
+        relationId: z.string(),
+        goal: z.enum(["ALLY", "COEXIST", "HEGEMONY", "RIVAL"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be associated with a country to update diplomatic goals.",
+        });
+      }
+
+      const relation = await ctx.db.diplomaticRelation.findUnique({
+        where: { id: input.relationId },
+      });
+
+      if (!relation) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Diplomatic relationship not found.",
+        });
+      }
+
+      const isCountry1 = relation.country1 === ctx.user.countryId;
+      const isCountry2 = relation.country2 === ctx.user.countryId;
+
+      if (!isCountry1 && !isCountry2) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this relationship's goals.",
+        });
+      }
+
+      const updateData: any = {};
+      if (isCountry1) {
+        updateData.goalCountry1 = input.goal;
+      } else {
+        updateData.goalCountry2 = input.goal;
+      }
 
       return await ctx.db.diplomaticRelation.update({
         where: { id: input.relationId },

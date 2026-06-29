@@ -10,6 +10,31 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+## [1.1.12 Ogma (Alpha)] - 2026-06-29
+
+### Added
+- **Proactive Policies & Reactive National Issues Integration (MyCountry System v6 & Government System v5)**:
+  - **Dynamic Policy Attributes & Derivation**: Custom policies now automatically derive `riskRating` (Stable/Volatile/High-Risk) and `civCapCost` (5 to 25 CivCap) based on their `priority` selection (Low/Medium/High/Critical). Predefined decretals retain their registry presets.
+  - **Reactive Upkeep & Maintenance Discounts**: Policies launched from `"crisis_response"` or `"broker_request"` origins automatically receive a **25% Civil Capacity upkeep discount** and a **15% maintenance cost discount** (also recalculated dynamically on custom policy priority updates).
+  - **Policies Information Fog**: Introduced a "Fog of Information" layer. If Civil Service Capacity is over-extended or Government Efficiency is low (<45%), estimated preview values and active metrics are qualitatively masked (e.g. *"Mild Positive"*, *"Strong Negative"*) instead of displaying precise figures.
+  - **Active Department Presence Verification**: Integrated active department categories validation. Custom policies require an active matching department in Politics (e.g., Department of Defense for defense policies) to be drafted, submitted, or activated; otherwise, warnings are shown and submission is disabled.
+  - **Issue Delegation Upkeeps**: Added a temporary Civil Capacity cost (`-15 CivCap` for 5 game days post-dismissal) to delegated issues, and blocked delegation entirely on Urgent/Crisis/High-severity issues.
+  - **Risky Choices & Party Platform Alignment**: Integrated a 40% failure gamble chance on "Red/Risky" response choices inside `national-issues-consequences.ts` (dropping Stability and Approval on failure) and added coalition party support polling boosts (+3.0%) for choices aligned with their platform.
+  - **Policy Risk rolls**: Configured `policy-maintenance-cron.ts` to run risk rolls on active volatile (8% chance) and high-risk (15% chance) policies, generating matching domain national issues on roll failure.
+
+## [1.1.11 Ogma (Alpha)] - 2026-06-29
+
+### Added
+- **MyCountry Decisions-to-Effects Bridge & Agenda Management (MyCountry System v5)**:
+  - **Cabinet Meetings Finalization Flow**: Added a **Complete & Finalize Meeting** dialog flow in [MeetingDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/MeetingDetailModal.tsx) to submit final notes and transition cabinet meetings to completed.
+  - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in [meetings.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/quickactions/meetings.ts) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
+  - **Decision Implementation & Stat Effects**: Integrated **Implement** buttons next to pending meeting decisions in [MeetingDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/MeetingDetailModal.tsx) to invoke the tRPC `implementDecision` mutation, which runs narrative effects, updates stats in the database, logs the event in the country ledger, and creates ThinkPages news.
+  - **Custom Decision Recording & Metric Selectors**: Added a **Record New Decision** form to let players record custom decisions with precise percentage adjustments on national metrics (e.g. Political Stability +2% or Poverty Rate -1%), serialized as `estimatedEffect` JSON fields.
+  - **Card Navigation Shortcuts**: Configured click actions in [MeetingsAndDecisionsPanel.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/MeetingsAndDecisionsPanel.tsx) to automatically open the details modal for pending and upcoming meetings.
+- **Active Policy Maintenance Costs (Economy System v4)**:
+  - **Policy Maintenance Cron**: Developed [policy-maintenance-cron.ts](file:///home/jxsig/projects/ixstats/src/lib/policy-maintenance-cron.ts) to scan all active policies, sum the `maintenanceCost` for each country, subtract the cost from `GovernmentStructure.totalBudget` using `CountryEventSpine.recordCountryEvent`, and record the transactions in the country's change log ledger.
+  - **Server Integration**: Hooked the new job into [server.mjs](file:///home/jxsig/projects/ixstats/server.mjs) to run as a background task every 6 hours.
+
 ## [1.1.10 Ogma (Alpha)] - 2026-06-29
 
 ### Added
@@ -36,7 +61,7 @@ capability integer. Each release entry below lists which components advanced and
 - **Halo Onboarding Walkthrough & On-Page Tour Launch**:
   - **First-Time User Onboarding Invitation**: Built a session-guarded hook inside [HaloTourContext.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourContext.tsx) that automatically triggers a friendly iOS-style toast invitation banner in the Halo when a new user lands on `/dashboard` or `/mycountry` pages.
   - **On-Page Guided Tour**: Clicking "Take Tour" launches the guided tour directly on the active page without requiring redirects.
-  - **Glassmorphic Tooltip Card**: Developed a high-end glassmorphic tooltip card ([HaloTourTooltip.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourTooltip.tsx)) that centers in the viewport for compact steps, and moves to the right side of the Halo during expanded steps (2, 4, 5) to avoid blocking content.
+  - **Glassmorphic Tooltip Card**: Developed a high-end glassmorphic tooltip card ([HaloTourTooltip.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourTooltip.tsx)) that centers in the viewport for compact steps, and moves to the right side of the Halo during expanded steps (2, 4, 5) with a lowered responsive vertical offset (`lg:top-[220px]` on desktop and `top-[320px]` on mobile/tablet) to prevent overlapping layout modules.
   - **Pulsing Halo Focus Glow**: Added an active pulsing blue focus aura to the Halo container when the tour is active, paired with a page-level backdrop overlay that blurs and dims background content while leaving the Halo fully interactive.
   - **Decoupled Architecture**: Promoted the tooltip globally to the Command Palette container ([index.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/index.tsx)) using custom window event triggers to decouple states.
 - **Halo Logo Refinement & Dynamic Styling**:

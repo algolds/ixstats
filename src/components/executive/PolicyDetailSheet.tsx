@@ -27,10 +27,31 @@ import {
   Play,
   Pause,
   Sliders,
+  AlertTriangle,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
+import { cn } from "~/lib/utils";
+
+function getMatchingDepartmentCategory(policyCategory: string): string {
+  const mapping: Record<string, string> = {
+    fiscal: "finance",
+    monetary: "finance",
+    trade: "commerce",
+    defense: "defense",
+    education: "education",
+    healthcare: "health",
+    infrastructure: "interior",
+    environment: "interior",
+    governance: "interior",
+    security: "interior",
+    social: "interior",
+    foreign: "foreign",
+    diplomatic: "foreign",
+  };
+  return mapping[policyCategory.toLowerCase()] || "interior";
+}
 
 const METRIC_OPTIONS = [
   { value: "gdpGrowth", label: "GDP Growth", unit: "%", lowerIsBetter: false },
@@ -62,7 +83,15 @@ function formatDate(dateString: string | Date | null | undefined): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-function EffectBadge({ label, value }: { label: string; value: number | null | undefined }) {
+function EffectBadge({
+  label,
+  value,
+  mask,
+}: {
+  label: string;
+  value: number | null | undefined;
+  mask?: boolean;
+}) {
   if (value == null || value === 0) return null;
   const isPositive = value > 0;
   const Icon = isPositive ? TrendingUp : value < 0 ? TrendingDown : Minus;
@@ -70,14 +99,20 @@ function EffectBadge({ label, value }: { label: string; value: number | null | u
     ? "bg-green-50 text-green-700 dark:bg-green-950/20"
     : "bg-red-50 text-red-700 dark:bg-red-950/20";
 
+  let valueDisplay = `${isPositive ? "+" : ""}${value}%`;
+  if (mask) {
+    if (Math.abs(value) > 4) {
+      valueDisplay = isPositive ? "Strong Positive" : "Strong Negative";
+    } else {
+      valueDisplay = isPositive ? "Mild Positive" : "Mild Negative";
+    }
+  }
+
   return (
     <div className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs ${colorClass}`}>
       <Icon className="h-3 w-3" />
       <span className="font-medium">{label}</span>
-      <span>
-        {isPositive ? "+" : ""}
-        {value}%
-      </span>
+      <span>{valueDisplay}</span>
     </div>
   );
 }
@@ -146,6 +181,11 @@ export function PolicyDetailSheet({
     { enabled: !!policyId }
   );
 
+  const { data: reconContext } = api.policies.getPolicyReconContext.useQuery(
+    { countryId: policy?.countryId || _countryId },
+    { enabled: isOpen }
+  );
+
   // Parse policy settings
   let decretalKey: string | undefined;
   let settings: Record<string, number> | undefined;
@@ -159,10 +199,14 @@ export function PolicyDetailSheet({
         settings = parsed.settings;
         stabilityEffect = parsed.stabilityEffect;
       }
-    } catch (e) {
+    } catch (_e) {
       // Ignore
     }
   }
+
+  const reqDept = policy?.category ? getMatchingDepartmentCategory(policy.category) : "interior";
+  const hasDepartment = !policy || !reconContext || reconContext.departmentCategories.includes(reqDept);
+  const maskEffects = !!reconContext?.lowEfficiency && !decretalKey;
 
   const activatePolicy = api.policies.activatePolicy.useMutation({
     onSuccess: () => {
@@ -309,6 +353,36 @@ export function PolicyDetailSheet({
                 countryId={policy.countryId}
               />
 
+              {/* Recon Context Fog Warnings */}
+              {reconContext && (
+                <div className="space-y-2">
+                  {!hasDepartment && (
+                    <div className="flex gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                      <div>
+                        <span className="font-semibold">Tracking Unavailable:</span> No active department manages this policy domain. You must establish an active Department of {reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} in Politics to restore tracking.
+                      </div>
+                    </div>
+                  )}
+                  {reconContext.overCapacity && (
+                    <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                      <div>
+                        <span className="font-semibold">Capacity Warning:</span> Detail estimates may be inaccurate due to overloaded Civil Service capacity.
+                      </div>
+                    </div>
+                  )}
+                  {reconContext.lowEfficiency && (
+                    <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                      <div>
+                        <span className="font-semibold">Detail Tracking Obscured:</span> Government efficiency is too low ({"<"}45%). Precise metrics are masked.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Description */}
               {policy.description && (
                 <div>
@@ -406,6 +480,45 @@ export function PolicyDetailSheet({
                     />
                   </>
                 )}
+                <InfoRow
+                  label="Risk Level"
+                  value={
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px] font-semibold px-2 py-0.5 border-none",
+                        policy.riskRating === "high-risk"
+                          ? "bg-red-500/10 text-red-500 dark:text-red-400"
+                          : policy.riskRating === "volatile"
+                          ? "bg-amber-500/10 text-amber-500 dark:text-amber-400"
+                          : "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400"
+                      )}
+                    >
+                      {policy.riskRating ? policy.riskRating.toUpperCase() : "STABLE"}
+                    </Badge>
+                  }
+                />
+                <InfoRow
+                  label="Origin Source"
+                  value={
+                    <Badge variant="secondary" className="text-[10px] font-semibold">
+                      {policy.origin
+                        ? policy.origin.toUpperCase().replace("_", " ")
+                        : "PERSONAL INITIATIVE"}
+                    </Badge>
+                  }
+                />
+                {policy.civCapCost !== undefined && policy.civCapCost > 0 && (
+                  <InfoRow
+                    label="Reserved Civil Capacity"
+                    value={
+                      <span className="flex items-center gap-1 text-xs text-amber-500 font-semibold">
+                        <Sliders className="h-3 w-3" />
+                        -{policy.civCapCost} CivCap
+                      </span>
+                    }
+                  />
+                )}
                 {policy.targetMetrics && (
                   <InfoRow
                     label="Target Metrics"
@@ -477,10 +590,10 @@ export function PolicyDetailSheet({
                       Economic Effects
                     </h4>
                     <div className="grid grid-cols-2 gap-2">
-                      <EffectBadge label="GDP" value={policy.gdpEffect} />
-                      <EffectBadge label="Employment" value={policy.employmentEffect} />
-                      <EffectBadge label="Inflation" value={policy.inflationEffect} />
-                      <EffectBadge label="Tax Revenue" value={policy.taxRevenueEffect} />
+                      <EffectBadge label="GDP" value={policy.gdpEffect} mask={maskEffects} />
+                      <EffectBadge label="Employment" value={policy.employmentEffect} mask={maskEffects} />
+                      <EffectBadge label="Inflation" value={policy.inflationEffect} mask={maskEffects} />
+                      <EffectBadge label="Tax Revenue" value={policy.taxRevenueEffect} mask={maskEffects} />
                     </div>
                   </div>
                 </>
@@ -533,7 +646,7 @@ export function PolicyDetailSheet({
                   size="sm"
                   className="gap-1.5"
                   onClick={() => activatePolicy.mutate({ id: policy.id })}
-                  disabled={activatePolicy.isPending}
+                  disabled={activatePolicy.isPending || !hasDepartment}
                 >
                   <Play className="h-3 w-3" />
                   {activatePolicy.isPending ? "Activating..." : "Activate Policy"}

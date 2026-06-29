@@ -56,3 +56,27 @@ export async function clearPolicyEffect(db: PrismaClient, policyId: string): Pro
     data: { isActive: false },
   });
 }
+
+/** Helper function to calculate real-time policy effects */
+export async function calculateRealTimePolicyEffects(policy: any, countryId: string, db: PrismaClient) {
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+  });
+
+  if (!country) {
+    return {};
+  }
+
+  return {
+    gdpMultiplier: 1 + (policy.gdpEffect ?? 0) / 100,
+    employmentMultiplier: 1 + (policy.employmentEffect ?? 0) / 100,
+    inflationMultiplier: 1 + (policy.inflationEffect ?? 0) / 100,
+    taxRevenueMultiplier: 1 + (policy.taxRevenueEffect ?? 0) / 100,
+    calculatedAt: new Date().toISOString(),
+    baseValues: {
+      currentGdp: country.currentTotalGdp,
+      currentPopulation: country.currentPopulation,
+      currentTaxRevenue: country.taxRevenueGDPPercent,
+    },
+  };
+}

@@ -30,10 +30,13 @@ the live working set stays here.
 | Plan | Scope | Status |
 |------|-------|--------|
 | [mycountry-core-loops-design.md](mycountry-core-loops-design.md) | Exec / Diplomacy / Politics loop closure (Phases 1–5 implemented; narrative+ledger spine) | ACTIVE |
-| [050-diplomatic-goals-stances.md](050-diplomatic-goals-stances.md) | Obfuscate diplomacy math, add Stances & Goals | TODO |
-| [051-unify-narrative-spine.md](051-unify-narrative-spine.md) | Route actions through `recordCountryEvent` dispatcher | TODO |
-| [052-governance-ledger.md](052-governance-ledger.md) | Country Change Log UI timeline | TODO |
-| [053-executive-inbox-split.md](053-executive-inbox-split.md) | Split Issues into Crises vs Discourse | TODO |
+| [050-diplomatic-goals-stances.md](archive/050-diplomatic-goals-stances.md) | Obfuscate diplomacy math, add Stances & Goals | DONE (Verified) |
+| [051-unify-narrative-spine.md](archive/051-unify-narrative-spine.md) | Route actions through `recordCountryEvent` dispatcher | DONE (Verified) |
+| [052-governance-ledger.md](archive/052-governance-ledger.md) | Country Change Log UI timeline | DONE (Verified) |
+| [053-executive-inbox-split.md](archive/053-executive-inbox-split.md) | Split Issues into Crises vs Discourse | DONE (Verified) |
+| [054-decisions-effects-bridge.md](archive/054-decisions-effects-bridge.md) | complete meeting flow + implement decisions + record metrics decisions | DONE (Verified) |
+| [055-policy-treasury-debits.md](archive/055-policy-treasury-debits.md) | background cron deducting active policy maintenance costs from budget | DONE (Verified) |
+| [056-proactive-policies-reactive-issues.md](056-proactive-policies-reactive-issues.md) | Proactive Policies & Reactive Issues Integration (Risk, Origin, CivCap) | ACTIVE (planning) |
 
 ### Public Preview
 | Plan | Scope | Status |

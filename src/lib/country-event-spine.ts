@@ -168,7 +168,9 @@ export class CountryEventSpine {
         }
 
         // Clamp
+        const rawNewValue = newValue;
         newValue = clampField(consequence.targetField, newValue);
+        const wasClamped = Math.abs(newValue - rawNewValue) > 0.0001;
 
         // Update database
         await dbTable.update({
@@ -177,12 +179,15 @@ export class CountryEventSpine {
         });
 
         const delta = newValue - previousValue;
-        const consDescription = this.describeConsequence(
+        let consDescription = this.describeConsequence(
           consequence.targetField,
           previousValue,
           newValue,
           delta
         );
+        if (wasClamped) {
+          consDescription += ` [clamped from ${rawNewValue.toFixed(1)} by guardrail]`;
+        }
 
         appliedConsequences.push({
           targetModel: consequence.targetModel,

@@ -53,7 +53,7 @@ export function CountryChangeLogTimeline({
   countryId,
   countryName,
 }: CountryChangeLogTimelineProps) {
-  const [limit, setLimit] = useState(25);
+  const [limit] = useState(25);
   const [offset, setOffset] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<GroupedEvent | null>(null);
   const [copied, setCopied] = useState(false);
@@ -299,16 +299,24 @@ export function CountryChangeLogTimeline({
                     <div className="mt-2 flex flex-wrap gap-2 pt-1">
                       {event.consequences.map((c, idx) => {
                         const isPositive = c.delta > 0;
+                        const isClamped = c.description.toLowerCase().includes("clamped");
+                        const clampMatch = c.description.match(/\[clamped from ([^\]]+)\]/);
+                        const clampTooltip = clampMatch ? `Clamped from ${clampMatch[1]}` : undefined;
                         return (
                           <div
                             key={idx}
-                            className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${
-                              isPositive
+                            title={clampTooltip || c.description}
+                            className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-all ${
+                              isClamped
+                                ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                                : isPositive
                                 ? "border-green-500/20 bg-green-500/10 text-green-400"
                                 : "border-red-500/20 bg-red-500/10 text-red-400"
                             }`}
                           >
-                            {isPositive ? (
+                            {isClamped ? (
+                              <span className="text-[10px] font-bold">⚠</span>
+                            ) : isPositive ? (
                               <TrendingUp className="h-3 w-3" />
                             ) : (
                               <TrendingDown className="h-3 w-3" />
@@ -320,6 +328,11 @@ export function CountryChangeLogTimeline({
                               {isPositive ? "+" : ""}
                               {c.delta.toFixed(1)}
                             </span>
+                            {isClamped && (
+                              <span className="text-[9px] opacity-75 font-sans">
+                                (clamped)
+                              </span>
+                            )}
                           </div>
                         );
                       })}

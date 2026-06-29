@@ -41,7 +41,7 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 | Group | Subsystems | Pages/Routes |
 |-------|-----------|-------------|
 | **Military & Security** | Defense, Security, Small Arms & Manufacturers | `/mycountry/defense` |
-| **Governance & Politics** | Government, Elections, Policies | `/mycountry/executive` (planned: `/mycountry/government`) |
+| **Governance & Politics** | Government, Elections, Policies | `/mycountry/executive`, `/mycountry/politics` |
 | **Economy & Resources** | Economy, Tax System, Resources & Transport | (planned: `/mycountry/economy`) |
 | **Intelligence & Diplomacy** | Intelligence, Diplomacy, Diplomatic WebSocket | `/mycountry/intelligence`, `/mycountry/diplomacy` |
 | **National Management** | National Issues, Crisis Events, National Identity, Meetings | Executive command suite |
@@ -302,11 +302,55 @@ The snapshots serve as an auditable time-series of national vitality.
 **Last Major Update:** June 2026
 **Status:** Production-ready with single-page router and clear separation of concerns
 
-## National Issues Engine
+## Cabinet Meetings & Decisions Subsystem
+
+The Cabinet Meetings & Decisions subsystem coordinates executive-level deliberations, schedules agendas, and implements concrete policy/metric adjustments with audited storyteller consequences.
+
+### Overview
+
+| Feature | Description |
+|---|---|
+| Meeting Scheduling | Players schedule or request cabinet meetings with specific agendas and categories. |
+| Meeting Completion | Scheduled meetings are finalized by adding notes, moving them from upcoming schedules to past records. |
+| Agenda & Calendar Sync | Finalizing a meeting automatically marks the related `ActivitySchedule` as `"completed"`, clearing it from the user's upcoming daily agenda. |
+| Decision Recording | Completed meetings allow recording specific decisions (Strategic, Budget, Policy, Personnel) with estimated metric effects. |
+| Decision Implementation | Pending decisions are executed, applying their modifier rules directly to the nation's stats. |
+| Audited Consequence Logging | Implementation applies changes via the unified `CountryEventSpine` to log transactions to the ledger timeline and post news. |
+
+### Key Files
+
+**Routers & Engines:**
+- `src/server/api/routers/quickactions/meetings.ts` — Core quickactions sub-router managing meeting lifecycles (`completeMeeting`, `createDecision`, `implementDecision`).
+- `src/server/api/routers/meetings/proceedings.ts` — Proceedings sub-router managing recorded decisions and outcomes.
+- `src/lib/country-event-spine.ts` — Bounded dispatcher applying stats changes, logging to the ledger, and posting news.
+
+**Components:**
+- `src/components/executive/MeetingsAndDecisionsPanel.tsx` — Command panel display of scheduled, pending, and past meetings.
+- `src/components/executive/MeetingDetailModal.tsx` — Dialog displaying agendas, attendees, and decisions; hosts meeting finalization, custom decision recording forms with metric selectors, and implementation triggers.
+
+### Policy Upkeep, Recalculation, & Reactive Advantages
+
+Active policies consume Civil Service Capacity (CivCap) and accrue ongoing maintenance costs:
+- **Dynamic Attribute Derivation**: Custom policies dynamically derive their attributes from their selected **Priority**:
+  - Low Priority: Stable risk, consumes `5` CivCap.
+  - Medium Priority: Stable risk, consumes `10` CivCap.
+  - High Priority: Volatile risk, consumes `15` CivCap.
+  - Critical Priority: High-Risk, consumes `25` CivCap.
+- **Reactive Policy Advantages**: Policies created in response to an Issue (`crisis_response` or `broker_request` origins) receive a **25% CivCap upkeep discount** and a **15% maintenance cost discount** compared to whole-cloth personal initiatives.
+- **Department Verification**: Launching or activating a custom policy requires an active matching department in Politics (e.g. Department of Finance for a fiscal policy).
+- **Policy Information Fog**: If Civil Service capacity is over-extended or Government Efficiency is low (<45%), the UI renders warning alerts, and exact numeric effects on custom policies are masked and displayed as qualitative bands (e.g. "Mild Positive", "Strong Negative").
+- **Policy Maintenance & Risk Cron**: Running every 6 hours, it debits active policy maintenance costs from the treasury and rolls risk checks for active volatile (8% chance) and high-risk (15% chance) policies to spawn matching domain issues.
+
+## National Issues & Delegation Engine
 
 > **Merged from:** docs/systems/national-issues.md
 
-The National Issues system generates dynamic decisions and events for country owners. Issues appear in a player's inbox based on their country's economic, political, and social conditions. Responding to issues triggers consequences that modify country metrics.
+The National Issues system generates dynamic decisions and events for country owners. Issues appear in a player's inbox based on their country's conditions.
+
+### Key Integration Mechanics
+- **Issue Delegation (Don't Intervene)**: Players can delegate non-urgent issues to the civil service. This consumes **15 CivCap** as a temporary reservation cost for **5 game days** (`respondedIxTime` tracking). Urgent/Crisis/High-severity issues cannot be delegated.
+- **Risky Response Gambles**: Response options marked as "Red/Risky" carry a **40% failure chance**. Failing the gamble triggers severe Stability and Public Approval penalties, logged directly in the outcome summary.
+- **Party Platform Alignment**: Selecting choices aligned with a political party's ideology increments their polling support by **+3.0%**.
 
 ### Overview
 

@@ -41,6 +41,10 @@ interface ResponseOption {
   };
   outcomeText: string;
   isAutoResolveDefault?: boolean;
+  isRisky?: boolean;
+  partyAlignment?: string;
+  brokerAlignment?: string;
+  costMessage?: string;
 }
 
 interface IssueDetailModalProps {
@@ -64,6 +68,7 @@ interface IssueDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRespond?: (issueId: string, optionId: string) => Promise<any>;
+  onDismiss?: (issueId: string) => Promise<any>;
   isResponding?: boolean;
   countryId?: string;
   onDraftPolicy?: (issue: any) => void;
@@ -96,6 +101,7 @@ function IssueDetailModalInner({
   isOpen,
   onClose,
   onRespond,
+  onDismiss,
   isResponding,
   countryId,
   onDraftPolicy,
@@ -104,6 +110,7 @@ function IssueDetailModalInner({
   const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
   const [localOutcome, setLocalOutcome] = useState<string | null>(null);
+  const [isDismissing, setIsDismissing] = useState(false);
   const notify = useNotify();
 
   // Statecraft recon (S1.D): cabinet research that reveals the hard numbers with fog.
@@ -161,6 +168,20 @@ function IssueDetailModalInner({
     setShowOutcome(false);
     onClose();
   }, [onClose]);
+
+  const handleDismiss = useCallback(async () => {
+    if (!issue || !onDismiss) return;
+    setIsDismissing(true);
+    try {
+      await onDismiss(issue.id);
+      notify.success("Issue delegated to civil service.");
+      handleClose();
+    } catch (err: any) {
+      notify.error("Failed to delegate issue", err?.message);
+    } finally {
+      setIsDismissing(false);
+    }
+  }, [issue, onDismiss, notify, handleClose]);
 
   if (!issue) return null;
 
@@ -402,10 +423,23 @@ function IssueDetailModalInner({
         {/* Response Options (only if not resolved) */}
         {!isResolved && !showOutcome && (
           <div className="mt-4 space-y-3">
-            <h3 className="flex items-center gap-2 text-sm font-medium">
-              <AlertTriangle className="h-4 w-4 text-amber-400" />
-              Your Response
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-sm font-medium">
+                <AlertTriangle className="h-4 w-4 text-amber-400" />
+                Your Response
+              </h3>
+              {onDismiss && !hasDeadline && issue.severity !== "critical" && issue.severity !== "CRITICAL" && issue.severity !== "high" && issue.severity !== "HIGH" && issue.urgency <= 70 && (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="h-7 text-xs border-white/10 text-muted-foreground hover:text-white"
+                  onClick={handleDismiss}
+                  disabled={isDismissing}
+                >
+                  {isDismissing ? "Delegating..." : "Delegate (-15 CivCap)"}
+                </Button>
+              )}
+            </div>
 
             {options.map((option) => {
               const isConfirming = confirmingOptionId === option.id;
@@ -431,14 +465,18 @@ function IssueDetailModalInner({
                   key={option.id}
                   className={`rounded-lg border p-3 transition-all ${
                     isConfirming
-                      ? "border-amber-500/50 bg-amber-500/10"
+                      ? option.isRisky
+                        ? "border-red-500/50 bg-red-500/10"
+                        : "border-amber-500/50 bg-amber-500/10"
+                      : option.isRisky
+                      ? "border-red-500/20 bg-red-500/5 hover:border-red-500/40 hover:bg-red-500/10"
                       : "border-white/10 hover:border-white/20 hover:bg-white/5"
                   } ${!isPolicyActive ? "opacity-75" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <h4
-                        className={`mb-1 text-sm font-medium ${!isPolicyActive ? "text-muted-foreground" : ""}`}
+                        className={`mb-1 text-sm font-medium ${!isPolicyActive ? "text-muted-foreground" : ""} ${option.isRisky ? "text-red-400" : ""}`}
                       >
                         {option.label}
                       </h4>
@@ -474,6 +512,36 @@ function IssueDetailModalInner({
                         )}
                       </div>
 
+                      {/* Alignment and Cost indicators */}
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {option.partyAlignment && (
+                          <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-none text-[9px] font-semibold">
+                            ⚖️ Aligns: {option.partyAlignment}
+                          </Badge>
+                        )}
+                        {option.brokerAlignment && (
+                          <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border-none text-[9px] font-semibold">
+                            💼 Aligns: {option.brokerAlignment}
+                          </Badge>
+                        )}
+                        {option.costMessage && (
+                          <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-[9px] font-semibold">
+                            ⚡ Cost: {option.costMessage}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Risky Warning */}
+                      {option.isRisky && (
+                        <div className="mt-2 flex items-start gap-1.5 rounded border border-red-500/20 bg-red-500/5 p-2 text-xs text-red-400">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400 animate-pulse" />
+                          <div>
+                            <span className="font-semibold uppercase tracking-wider text-[10px]">Risky Choice:</span>
+                            <p className="mt-0.5 text-[11px] leading-snug">Taking this gamble carries a risk of negative outcomes, military operations, or stability backlash.</p>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Policy Requirement Warning */}
                       {requiredPolicyKey && !isPolicyActive && (
                         <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-400">
@@ -502,7 +570,7 @@ function IssueDetailModalInner({
                           </Button>
                           <Button
                             size="sm"
-                            className="h-7 bg-amber-600 px-3 text-xs hover:bg-amber-700"
+                            className={`h-7 px-3 text-xs text-white ${option.isRisky ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"}`}
                             onClick={() => handleRespond(option.id)}
                             disabled={(isResponding ?? false) || !isPolicyActive}
                           >
@@ -513,7 +581,7 @@ function IssueDetailModalInner({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs"
+                          className={`h-7 text-xs ${option.isRisky ? "border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300" : ""}`}
                           onClick={() => setConfirmingOptionId(option.id)}
                           disabled={!isPolicyActive}
                         >

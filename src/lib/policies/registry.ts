@@ -18,6 +18,9 @@ export interface PolicyDecretal {
   category: string; // e.g. "fiscal", "trade", "labor", "healthcare", "defense", "infrastructure"
   policyType: string; // e.g. "economic", "social", "diplomatic", "governance"
   sliders: DecretalSlider[];
+  riskRating?: string;
+  origin?: string;
+  civCapCost?: number;
   calculate: (
     settings: Record<string, number>,
     countryMetrics: any
@@ -40,6 +43,9 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       "Provide a regular, unconditional cash transfer to all citizens to eradicate poverty and support consumer demand.",
     category: "fiscal",
     policyType: "economic",
+    riskRating: "volatile",
+    origin: "personal",
+    civCapCost: 15,
     sliders: [
       {
         key: "stipend",
@@ -125,6 +131,9 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       "Levy import duties on foreign products to protect domestic manufacturing and raise customs revenue.",
     category: "trade",
     policyType: "economic",
+    riskRating: "stable",
+    origin: "personal",
+    civCapCost: 5,
     sliders: [
       {
         key: "tariffRate",
@@ -203,6 +212,9 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       "Authorize broad telecommunication monitoring to counter internal security threats and espionage.",
     category: "defense",
     policyType: "social",
+    riskRating: "high-risk",
+    origin: "personal",
+    civCapCost: 20,
     sliders: [
       {
         key: "surveillance",
@@ -275,6 +287,9 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
         description: template.description,
         category: template.category,
         policyType: "economic",
+        riskRating: "stable",
+        origin: "personal",
+        civCapCost: 0,
         sliders: [
           {
             key: "funding",

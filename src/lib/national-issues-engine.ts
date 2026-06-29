@@ -138,6 +138,10 @@ export interface ResponseOptionTemplate {
   outcomeText: string;
   isAutoResolveDefault?: boolean;
   triggersFollowUp?: string[];
+  isRisky?: boolean;
+  partyAlignment?: string;
+  brokerAlignment?: string;
+  costMessage?: string;
 }
 
 export interface ConsequenceDefinition {

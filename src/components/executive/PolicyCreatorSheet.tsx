@@ -32,12 +32,30 @@ import {
   ChevronRight,
   Sliders,
   Sparkles,
-  AlertCircle,
   X,
-  Plus,
+  AlertTriangle,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
+
+function getMatchingDepartmentCategory(policyCategory: string): string {
+  const mapping: Record<string, string> = {
+    fiscal: "finance",
+    monetary: "finance",
+    trade: "commerce",
+    defense: "defense",
+    education: "education",
+    healthcare: "health",
+    infrastructure: "interior",
+    environment: "interior",
+    governance: "interior",
+    security: "interior",
+    social: "interior",
+    foreign: "foreign",
+    diplomatic: "foreign",
+  };
+  return mapping[policyCategory.toLowerCase()] || "interior";
+}
 
 interface PolicyCreatorSheetProps {
   countryId: string;
@@ -173,6 +191,10 @@ export function PolicyCreatorSheet({
     { id: countryId },
     { enabled: !!countryId && open }
   ) || { data: null };
+  const { data: reconContext } = api.policies.getPolicyReconContext.useQuery(
+    { countryId },
+    { enabled: !!countryId && open }
+  );
 
   // Form state
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>("custom");
@@ -187,6 +209,9 @@ export function PolicyCreatorSheet({
   const [formImplCost, setFormImplCost] = useState("");
   const [formMaintCost, setFormMaintCost] = useState("");
   const [formTargetMetrics, setFormTargetMetrics] = useState("");
+
+  const reqDept = getMatchingDepartmentCategory(formCategory);
+  const hasDepartment = selectedTemplateKey !== "custom" || !reconContext || reconContext.departmentCategories.includes(reqDept);
 
   // Target metrics structured state
   const [targetMetrics, setTargetMetrics] = useState<
@@ -317,6 +342,10 @@ export function PolicyCreatorSheet({
       notify.error("You must be signed in to create a policy");
       return;
     }
+    if (!hasDepartment) {
+      notify.error(`You must establish an active Department of ${reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} first.`);
+      return;
+    }
 
     setIsPending(true);
     try {
@@ -362,6 +391,10 @@ export function PolicyCreatorSheet({
     }
     if (!user?.id) {
       notify.error("You must be signed in to create a policy");
+      return;
+    }
+    if (!hasDepartment) {
+      notify.error(`You must establish an active Department of ${reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} first.`);
       return;
     }
 
@@ -450,6 +483,36 @@ export function PolicyCreatorSheet({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Recon Context Fog Warnings */}
+            {reconContext && (
+              <div className="space-y-2">
+                {!hasDepartment && (
+                  <div className="flex gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                    <div>
+                      <span className="font-semibold">Tracking Unavailable:</span> No active department manages this policy domain. You must establish an active Department of {reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} in Politics before launching custom policies in this category.
+                    </div>
+                  </div>
+                )}
+                {reconContext.overCapacity && (
+                  <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                    <div>
+                      <span className="font-semibold">Capacity Warning:</span> Preview estimates may be inaccurate due to overloaded Civil Service capacity.
+                    </div>
+                  </div>
+                )}
+                {reconContext.lowEfficiency && (
+                  <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                    <div>
+                      <span className="font-semibold">Detail Tracking Obscured:</span> Government efficiency is too low ({"<"}45%). Estimates are highly speculative.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Basic Info — read-only for templates, editable for custom */}
             <div className="space-y-3">
@@ -808,7 +871,7 @@ export function PolicyCreatorSheet({
               type="submit"
               variant="outline"
               size="sm"
-              disabled={isPending || !formTitle.trim() || !formDescription.trim()}
+              disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
             >
               {isPending ? "Creating..." : "Save Draft"}
             </Button>
@@ -816,7 +879,7 @@ export function PolicyCreatorSheet({
               type="button"
               variant="default"
               size="sm"
-              disabled={isPending || !formTitle.trim() || !formDescription.trim()}
+              disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
               onClick={handleCreateAndLaunch}
               className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
             >

@@ -28,7 +28,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 1,
-    patch: 10,
+    patch: 12,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },
@@ -42,14 +42,14 @@ export const VERSIONS = {
 
   // Engines — internal-only simulation cores (surfaced in the Dev panel).
   engines: {
-    mycountry: 2, // nation-scoped deterministic sim
+    mycountry: 3, // nation-scoped deterministic sim
     concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
     atlas: 3, // spatial foundation (worldgen, geo, maps) — powers IxWorld
   },
 
   // UI / feature systems — independent, user-facing.
   systems: {
-    mycountry: 2, // public-facing executive command UI
+    mycountry: 3, // public-facing executive command UI
     builder: 2,
     thinkpages: 1,
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load

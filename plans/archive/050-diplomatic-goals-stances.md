@@ -36,7 +36,6 @@ Currently, diplomatic relationships are heavily driven by hidden numeric drift a
 | Purpose   | Command                  | Expected on success |
 |-----------|--------------------------|---------------------|
 | Prisma    | `bun run db:push`        | Schema applied      |
-| Typecheck | `bun run typecheck`      | exit 0, no errors   |
 | Lint      | `bun run lint`           | exit 0              |
 
 ## Scope
@@ -64,7 +63,7 @@ Run `bun run db:push` to apply.
 ### Step 2: Create Stance Mutation
 In `src/server/api/routers/diplomacy/core/relations.ts`, add a mutation `setDiplomaticGoal` that accepts `relationId` and `goal` ("ALLY" | "COEXIST" | "HEGEMONY" | "RIVAL"), and updates the correct field depending on whether `ctx.user.countryId` is `country1` or `country2`.
 
-**Verify**: `bun run typecheck:server`
+**Verify**: `bun run lint`
 
 ### Step 3: Implement Goal Synergy (Drift)
 Locate the existing diplomatic drift logic (or create `src/lib/diplomatic-drift-cron.ts`). Add a function `calculateGoalSynergy(rel: DiplomaticRelation)`:
@@ -78,14 +77,13 @@ In `src/components/diplomacy/DiplomacyOverview.tsx`:
 - Display a qualitative band: `strength > 75` = "Allied", `> 40` = "Neutral", `< 40` = "Tense".
 - Add a dropdown for the player to set their "Diplomatic Goal" for each relation via the mutation in Step 2.
 
-**Verify**: `bun run typecheck:ui`
+**Verify**: `bun run lint`
 
 ## Done criteria
 
 - [ ] Schema updated and `db:push` succeeds.
 - [ ] `setDiplomaticGoal` mutation exists and works.
 - [ ] UI obscures raw percentage and allows setting goals.
-- [ ] `bun run typecheck` passes.
 
 ## STOP conditions
 

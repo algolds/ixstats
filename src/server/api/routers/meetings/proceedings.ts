@@ -106,6 +106,7 @@ export const meetingsProceedingsRouter = createTRPCRouter({
         votesAgainst: z.number().optional(),
         votesAbstain: z.number().optional(),
         outcome: z.enum(["approved", "rejected", "deferred", "requires_review"]),
+        estimatedEffect: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

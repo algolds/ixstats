@@ -351,6 +351,38 @@ app
         }
       });
 
+      // 11.5 Diplomatic drift — relation strength adjust based on goals (every 6 hours)
+      scheduleCron("Diplomatic drift", "0 */6 * * *", async () => {
+        try {
+          const { runDiplomaticDrift } = await import("./src/lib/diplomatic-drift-cron.js");
+          const r = await runDiplomaticDrift();
+          if (r.relationsUpdated > 0) {
+            console.log(
+              `[Cron] Diplomatic: ${r.relationsUpdated} relations drifted of ${r.relationsProcessed} processed`
+            );
+          }
+        } catch (error) {
+          console.error("[Cron] Diplomatic drift failed:", error.message);
+        }
+      });
+
+      // 11.6 Policy Maintenance Cost — deduct active policy maintenance costs from treasury (every 6 hours)
+      scheduleCron("Policy Maintenance Cost", "0 */6 * * *", async () => {
+        try {
+          const { runPolicyMaintenanceDebits } = await import(
+            "./src/lib/policy-maintenance-cron.js"
+          );
+          const r = await runPolicyMaintenanceDebits();
+          if (r.policiesProcessed > 0) {
+            console.log(
+              `[Cron] Policy Maintenance: debited ${r.totalCostDebited.toLocaleString()} from ${r.countriesProcessed} countries for ${r.policiesProcessed} active policies`
+            );
+          }
+        } catch (error) {
+          console.error("[Cron] Policy Maintenance Cost failed:", error.message);
+        }
+      });
+
       // 12. WikiOS recentchanges sync (every 10 min default; captures edits made
       //     directly on MediaWiki into the local WikiRevision history)
       scheduleCron("WikiOS recentchanges sync", cronSchedule_wikiRecentChanges, async () => {

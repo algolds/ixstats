@@ -4,7 +4,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { useUser } from "~/context/auth-context";
@@ -29,116 +28,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { IxTimePicker } from "~/components/ui/ixtime-picker";
+
 import {
   Calendar,
-  Users,
   Plus,
   X,
-  FileText,
-  CheckCircle2,
-  AlertCircle,
-  Tag,
-  ChevronDown,
-  ChevronRight,
-  Settings2,
+  Layers,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 
-interface MeetingSchedulerProps {
-  countryId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  defaultMeeting?: {
-    title?: string;
-    description?: string;
-    ixTime?: number;
-    officialIds?: string[];
-    prefilledAgenda?: {
-      title: string;
-      description: string;
-      category: string;
-      linkedIssueId?: string;
-      linkedPolicyId?: string;
-    };
-  };
-  defaultTargetCountryId?: string;
-}
-
-interface AgendaItem {
-  title: string;
-  description: string;
-  duration: number;
-  category: string;
-  tags: string[];
-  presenter: string;
-  linkedIssueId?: string;
-  linkedPolicyId?: string;
-}
-
-const AGENDA_CATEGORIES = [
-  { value: "economic", label: "Economic Affairs", color: "bg-blue-500" },
-  { value: "social", label: "Social Policy", color: "bg-green-500" },
-  { value: "infrastructure", label: "Infrastructure", color: "bg-orange-500" },
-  { value: "diplomatic", label: "Diplomatic Relations", color: "bg-purple-500" },
-  { value: "governance", label: "Governance & Administration", color: "bg-indigo-500" },
-  { value: "other", label: "Other", color: "bg-gray-500" },
-];
-
-const COMMON_TAGS = [
-  "urgent",
-  "budget",
-  "policy",
-  "review",
-  "appointment",
-  "quarterly",
-  "annual",
-  "strategic",
-  "operational",
-  "reform",
-];
-
-function CollapsibleSection({
-  title,
-  icon: Icon,
-  badge,
-  defaultOpen = true,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  badge?: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  return (
-    <div className="border-border/50 rounded-lg border">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg p-3 text-sm font-medium transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Icon className="text-muted-foreground h-4 w-4" />
-          <span>{title}</span>
-          {badge && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-[0.65rem]">
-              {badge}
-            </Badge>
-          )}
-        </div>
-        {isOpen ? (
-          <ChevronDown className="text-muted-foreground h-4 w-4" />
-        ) : (
-          <ChevronRight className="text-muted-foreground h-4 w-4" />
-        )}
-      </button>
-      {isOpen && <div className="px-3 pb-3">{children}</div>}
-    </div>
-  );
-}
+import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-types";
+import { AGENDA_CATEGORIES, INTENT_TEMPLATES } from "./meeting-scheduler-intents";
 
 export function MeetingScheduler({
   countryId,
@@ -150,103 +50,100 @@ export function MeetingScheduler({
   const notify = useNotify();
   const { user } = useUser();
 
-  // Form state
-  const [title, setTitle] = useState(defaultMeeting?.title ?? "");
-  const [description, setDescription] = useState(defaultMeeting?.description ?? "");
-  const [scheduledIxTime, setScheduledIxTime] = useState(
-    defaultMeeting?.ixTime ?? IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000
-  );
+  // Redesign state
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("routine");
+  const [timePreset, setTimePreset] = useState<"immediately" | "tomorrow" | "custom">("immediately");
+  const [isChangingIntent, setIsChangingIntent] = useState(false);
+
+  // Core Form state
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [scheduledIxTime, setScheduledIxTime] = useState(0);
   const [duration, setDuration] = useState(60);
-  const [selectedOfficials, setSelectedOfficials] = useState<string[]>(
-    defaultMeeting?.officialIds ?? []
-  );
+  const [selectedOfficials, setSelectedOfficials] = useState<string[]>([]);
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
+  const [meetingType, setMeetingType] = useState<"cabinet" | "bilateral">("cabinet");
+  const [targetCountryId, setTargetCountryId] = useState<string>("");
 
-  // Meeting Type states
-  const [meetingType, setMeetingType] = useState<"cabinet" | "bilateral">(
-    defaultTargetCountryId ? "bilateral" : "cabinet"
-  );
-  const [targetCountryId, setTargetCountryId] = useState<string>(defaultTargetCountryId ?? "");
-
-  // Agenda item form
+  // Agenda and UI state
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
-  const [newAgendaDuration, setNewAgendaDuration] = useState(15);
-  const [showAdvancedAgenda, setShowAdvancedAgenda] = useState(false);
-  const [newAgendaDesc, setNewAgendaDesc] = useState("");
-  const [newAgendaCategory, setNewAgendaCategory] = useState("economic");
-  const [newAgendaTags, setNewAgendaTags] = useState<string[]>([]);
-  const [newAgendaPresenter, setNewAgendaPresenter] = useState("");
-  const [tagInput, setTagInput] = useState("");
-  const [newAgendaLinkedIssueId, setNewAgendaLinkedIssueId] = useState<string | undefined>(
-    undefined
-  );
-  const [newAgendaLinkedPolicyId, setNewAgendaLinkedPolicyId] = useState<string | undefined>(
-    undefined
-  );
+  const [expandedAgendaIndex, setExpandedAgendaIndex] = useState<number | null>(null);
 
-  // Get simple list of countries for Bilateral meetings selection
+  // Queries
   const { data: selectCountries } = api.countries.getSelectList.useQuery(
     { limit: 100 },
     { enabled: open }
   );
 
-  // Get government officials (host country)
   const { data: officials, isLoading: officialsLoading } = api.quickActions.getOfficials.useQuery(
     { countryId, activeOnly: true },
     { enabled: open }
   );
 
-  // Get government officials (target country)
   const { data: targetOfficials, isLoading: targetOfficialsLoading } =
     api.quickActions.getOfficials.useQuery(
       { countryId: targetCountryId, activeOnly: true },
       { enabled: open && meetingType === "bilateral" && !!targetCountryId }
     );
 
-  // Get active national issues (player mode)
-  const { data: activeIssuesData } = api.nationalIssues.getMyIssues.useQuery(
-    { countryId, status: "active" },
-    { enabled: open }
-  );
-  const activeIssues = activeIssuesData?.issues ?? [];
-
-  // Get draft policies
-  const { data: draftPolicies = [] } = api.policies.getPolicies.useQuery(
-    { countryId, status: "draft" },
-    { enabled: open }
-  );
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  // Mutations
   const createMeeting = api.meetings.createMeeting.useMutation();
   const addAgendaItemMutation = api.meetings.addAgendaItem.useMutation();
   const recordAttendance = api.meetings.recordAttendance.useMutation();
 
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000);
-    setDuration(60);
-    setSelectedOfficials([]);
-    setAgendaItems([]);
-    setMeetingType(defaultTargetCountryId ? "bilateral" : "cabinet");
-    setTargetCountryId(defaultTargetCountryId ?? "");
-    resetAgendaForm();
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const resetAgendaForm = () => {
-    setNewAgendaTitle("");
-    setNewAgendaDuration(15);
-    setShowAdvancedAgenda(false);
-    setNewAgendaDesc("");
-    setNewAgendaCategory("economic");
-    setNewAgendaTags([]);
-    setNewAgendaPresenter("");
-    setTagInput("");
-    setNewAgendaLinkedIssueId(undefined);
-    setNewAgendaLinkedPolicyId(undefined);
-  };
+  // Keep scheduledIxTime in sync with presets
+  React.useEffect(() => {
+    if (open) {
+      if (timePreset === "immediately") {
+        setScheduledIxTime(IxTime.getCurrentIxTime());
+      } else if (timePreset === "tomorrow") {
+        setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000);
+      } else if (timePreset === "custom") {
+        const tomorrowIx = IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000;
+        const tomorrowDate = new Date(tomorrowIx);
+        const defaultCustomTime = Date.UTC(
+          tomorrowDate.getUTCFullYear(),
+          tomorrowDate.getUTCMonth(),
+          tomorrowDate.getUTCDate(),
+          9,
+          0,
+          0,
+          0
+        );
+        setScheduledIxTime(defaultCustomTime);
+      }
+    }
+  }, [timePreset, open]);
 
+  // Handle template selection and configuration
+  const handleSelectTemplate = React.useCallback((tpl: typeof INTENT_TEMPLATES[0]) => {
+    setSelectedTemplateId(tpl.id);
+    setMeetingType(tpl.meetingType);
+    setTitle(tpl.defaultTitle);
+    setDuration(tpl.defaultDuration);
+    setAgendaItems(tpl.agenda.map((item) => ({ ...item })));
+
+    if (officials && officials.length > 0) {
+      if (tpl.recommendedRoles.length === 0) {
+        // Invite all by default for routine review
+        setSelectedOfficials(officials.map((o) => o.id));
+      } else {
+        const matching = officials.filter((o) =>
+          tpl.recommendedRoles.some((role) =>
+            o.title.toLowerCase().includes(role) ||
+            o.role?.toLowerCase().includes(role)
+          )
+        );
+        setSelectedOfficials(matching.map((o) => o.id));
+      }
+    } else {
+      setSelectedOfficials([]);
+    }
+  }, [officials]);
+
+  // Load prefills / defaults on open
   React.useEffect(() => {
     if (open) {
       if (defaultMeeting) {
@@ -254,10 +151,18 @@ export function MeetingScheduler({
         setDescription(defaultMeeting.description ?? "");
         if (defaultMeeting.ixTime) {
           setScheduledIxTime(defaultMeeting.ixTime);
+          setTimePreset("custom");
         }
         if (defaultMeeting.officialIds) {
           setSelectedOfficials(defaultMeeting.officialIds);
         }
+        
+        if (defaultTargetCountryId) {
+          setTargetCountryId(defaultTargetCountryId);
+          setMeetingType("bilateral");
+          setSelectedTemplateId("bilateral");
+        }
+
         if (defaultMeeting.prefilledAgenda) {
           const item = defaultMeeting.prefilledAgenda;
           setAgendaItems([
@@ -272,21 +177,26 @@ export function MeetingScheduler({
               linkedPolicyId: item.linkedPolicyId,
             },
           ]);
-        } else {
-          setAgendaItems([]);
+
+          if (item.linkedIssueId) {
+            setSelectedTemplateId("crisis");
+            setMeetingType("cabinet");
+          } else if (item.linkedPolicyId) {
+            setSelectedTemplateId("economic");
+            setMeetingType("cabinet");
+          }
         }
+        setIsChangingIntent(false);
       } else {
-        setTitle("");
-        setDescription("");
-        setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000);
-        setDuration(60);
-        setSelectedOfficials([]);
-        setAgendaItems([]);
-        setMeetingType(defaultTargetCountryId ? "bilateral" : "cabinet");
-        setTargetCountryId(defaultTargetCountryId ?? "");
+        // Default to routine review
+        const defaultTpl = INTENT_TEMPLATES.find((t) => t.id === "routine");
+        if (defaultTpl) {
+          handleSelectTemplate(defaultTpl);
+        }
+        setIsChangingIntent(true);
       }
     }
-  }, [open, defaultMeeting, defaultTargetCountryId]);
+  }, [open, defaultMeeting, defaultTargetCountryId, handleSelectTemplate]);
 
   const toggleOfficial = (officialId: string) => {
     setSelectedOfficials((prev) =>
@@ -314,43 +224,26 @@ export function MeetingScheduler({
     return [...hostList, ...targetList];
   }, [officials, targetOfficials, targetCountryId, selectCountries]);
 
-  const addAgendaItem = () => {
-    if (!newAgendaTitle.trim()) {
-      notify.error("Agenda item title is required");
-      return;
-    }
-
-    setAgendaItems([
-      ...agendaItems,
-      {
-        title: newAgendaTitle,
-        description: newAgendaDesc,
-        duration: newAgendaDuration,
-        category: newAgendaCategory,
-        tags: newAgendaTags,
-        presenter: newAgendaPresenter,
-        linkedIssueId: newAgendaLinkedIssueId,
-        linkedPolicyId: newAgendaLinkedPolicyId,
-      },
-    ]);
-
-    resetAgendaForm();
+  const handleAddQuickAgendaTopic = () => {
+    if (!newAgendaTitle.trim()) return;
+    const newItem: AgendaItem = {
+      title: newAgendaTitle.trim(),
+      description: "",
+      duration: 15,
+      category: "governance",
+      tags: [],
+      presenter: "Ruler",
+    };
+    setAgendaItems([...agendaItems, newItem]);
+    setNewAgendaTitle("");
+    setExpandedAgendaIndex(agendaItems.length); // Auto-expand new item
   };
 
   const removeAgendaItem = (index: number) => {
     setAgendaItems(agendaItems.filter((_, i) => i !== index));
-  };
-
-  const addTag = (tag: string) => {
-    const trimmed = tag.trim().toLowerCase();
-    if (trimmed && !newAgendaTags.includes(trimmed)) {
-      setNewAgendaTags([...newAgendaTags, trimmed]);
+    if (expandedAgendaIndex === index) {
+      setExpandedAgendaIndex(null);
     }
-    setTagInput("");
-  };
-
-  const removeTag = (tag: string) => {
-    setNewAgendaTags(newAgendaTags.filter((t) => t !== tag));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -394,7 +287,6 @@ export function MeetingScheduler({
         scheduledIxTime,
       });
 
-      // Persist agenda items and attendances against the new meeting.
       const attendancePromises =
         selectedOfficials.length > 0
           ? selectedOfficials.map((officialId) => {
@@ -442,7 +334,14 @@ export function MeetingScheduler({
         successMsg
       );
       onOpenChange(false);
-      resetForm();
+      
+      // Reset form variables
+      setSelectedTemplateId("routine");
+      setTimePreset("immediately");
+      setTitle("");
+      setDescription("");
+      setAgendaItems([]);
+      setSelectedOfficials([]);
     } catch (error: any) {
       notify.error("Failed to schedule meeting", error?.message);
     } finally {
@@ -455,511 +354,484 @@ export function MeetingScheduler({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-lg"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          padding: 0,
-          maxHeight: "85vh",
-          overflow: "hidden",
-        }}
+        className="max-w-[450px] md:max-w-[830px] p-0 gap-0 overflow-visible bg-transparent border-none shadow-none"
       >
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-amber-500" />
-            {meetingType === "bilateral" ? "Request Bilateral Summit" : "Schedule Cabinet Meeting"}
-          </DialogTitle>
-          <DialogDescription>
-            {meetingType === "bilateral"
-              ? "Request a bilateral meeting with another country's ruler and cabinet."
-              : "Create a cabinet meeting with agenda items and attendees."}
-          </DialogDescription>
-        </DialogHeader>
+        <div className="flex flex-col md:flex-row items-start gap-3 w-full h-[85vh] max-h-[85vh] overflow-visible">
+          {/* Card 1: Setup Details */}
+          <div className="flex-1 min-w-[320px] md:min-w-[450px] h-[85vh] max-h-[85vh] bg-background border-border rounded-xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-md">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/5 shrink-0">
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-amber-500" />
+                Schedule Meeting
+              </DialogTitle>
+              <DialogDescription>
+                Assemble your cabinet and foreign delegates to deliberate on national crises, draft policy reforms, or coordinate diplomatic summits.
+              </DialogDescription>
+            </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-            {/* Meeting Type Selection */}
-            <div className="bg-muted grid grid-cols-2 gap-2 rounded-lg p-1">
-              <button
-                type="button"
-                onClick={() => setMeetingType("cabinet")}
-                className={cn(
-                  "rounded-md py-1.5 text-xs font-medium transition-all",
-                  meetingType === "cabinet"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
+                
+                {/* Linked Prefill Indicator */}
+                {defaultMeeting?.prefilledAgenda && (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200/90">
+                    <span className="font-semibold block text-[10px] uppercase tracking-wider text-amber-500 mb-0.5">Linked Reference</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">{defaultMeeting.prefilledAgenda.title}</span>
+                      <Badge variant="outline" className="border-amber-500/35 text-[9px] text-amber-400 bg-amber-500/10 py-0 px-1.5 font-semibold">
+                        {defaultMeeting.prefilledAgenda.linkedIssueId ? "CRISIS ISSUE" : "DRAFT POLICY"}
+                      </Badge>
+                    </div>
+                  </div>
                 )}
-              >
-                Cabinet Meeting
-              </button>
-              <button
-                type="button"
-                onClick={() => setMeetingType("bilateral")}
-                className={cn(
-                  "rounded-md py-1.5 text-xs font-medium transition-all",
-                  meetingType === "bilateral"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Bilateral Summit
-              </button>
-            </div>
 
-            {/* Target Country Selector (Bilateral only) */}
-            {meetingType === "bilateral" && (
-              <div>
-                <Label htmlFor="targetCountry" className="text-xs">
-                  Target Country *
-                </Label>
-                <Select
-                  value={targetCountryId}
-                  onValueChange={setTargetCountryId}
-                  disabled={!!defaultTargetCountryId}
-                >
-                  <SelectTrigger id="targetCountry" className="mt-1 h-9 text-xs">
-                    <SelectValue placeholder="Select invited country..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectCountries
-                      ?.filter((c) => c.id !== countryId)
-                      .map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          <span className="flex items-center gap-2">
-                            {c.flagUrl && (
-                              <img
-                                src={c.flagUrl}
-                                alt=""
-                                className="h-3 w-4 rounded object-cover"
-                              />
+                {/* Intent Selector */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground uppercase font-semibold">Select Agenda Intent</Label>
+                    {!isChangingIntent && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setIsChangingIntent(true)}
+                        className="h-5 px-1.5 text-[10px] text-amber-500 font-bold hover:text-amber-600 hover:bg-amber-500/10 cursor-pointer"
+                      >
+                        Change Intent
+                      </Button>
+                    )}
+                  </div>
+
+                  {!isChangingIntent ? (
+                    (() => {
+                      const activeTpl = INTENT_TEMPLATES.find((t) => t.id === selectedTemplateId) || INTENT_TEMPLATES[0];
+                      return (
+                        <div className="flex flex-col items-start text-left rounded-lg border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 p-3 transition-all duration-300">
+                          <span className="font-semibold text-xs text-amber-900 dark:text-amber-100">{activeTpl.name}</span>
+                          <span className="text-[10px] mt-0.5 leading-snug text-amber-800/80 dark:text-amber-300/80">{activeTpl.description}</span>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      {INTENT_TEMPLATES.map((tpl) => {
+                        const isSelected = selectedTemplateId === tpl.id;
+                        return (
+                          <button
+                            key={tpl.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectTemplate(tpl);
+                              setIsChangingIntent(false);
+                            }}
+                            className={cn(
+                              "flex flex-col items-start text-left rounded-lg border p-2.5 transition-all text-xs cursor-pointer select-none",
+                              isSelected
+                                ? "border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15 shadow-sm"
+                                : "border-white/5 hover:border-white/10 hover:bg-white/[0.02] text-muted-foreground hover:text-foreground"
                             )}
-                            {c.name}
-                          </span>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Basic Info — always visible */}
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="title" className="text-xs">
-                  Title *
-                </Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={
-                    meetingType === "bilateral"
-                      ? "e.g., Bilateral Trade Summit"
-                      : "e.g., Weekly Cabinet Meeting"
-                  }
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description" className="text-xs">
-                  Description
-                </Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Brief description of the meeting purpose..."
-                  rows={2}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <IxTimePicker
-                  id="ixtime"
-                  label="Date & Time (IxTime) *"
-                  value={scheduledIxTime}
-                  onChange={setScheduledIxTime}
-                  required
-                  showRealWorldTime={false}
-                />
-                <div>
-                  <Label htmlFor="duration" className="text-xs">
-                    Duration (min)
-                  </Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    min={15}
-                    max={480}
-                    value={duration}
-                    onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
-                  />
-                  {totalAgendaDuration > 0 && (
-                    <p className="text-muted-foreground mt-1 text-[0.65rem]">
-                      Agenda total: {totalAgendaDuration} min
-                    </p>
+                          >
+                            <span className={cn(
+                              "font-semibold",
+                              isSelected ? "text-amber-900 dark:text-amber-100" : "text-foreground"
+                            )}>{tpl.name}</span>
+                            <span className={cn(
+                              "text-[10px] mt-0.5 leading-snug line-clamp-1",
+                              isSelected ? "text-amber-800/80 dark:text-amber-300/80" : "text-muted-foreground"
+                            )}>{tpl.description}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-              </div>
-            </div>
 
-            {/* Attendees — collapsible */}
-            <CollapsibleSection
-              title="Attendees"
-              icon={Users}
-              badge={`${selectedOfficials.length} selected`}
-            >
-              {officialsLoading || (meetingType === "bilateral" && targetOfficialsLoading) ? (
-                <div className="text-muted-foreground text-sm">Loading officials...</div>
-              ) : allOfficials && allOfficials.length > 0 ? (
-                <div className="grid max-h-36 grid-cols-2 gap-1.5 overflow-y-auto">
-                  {allOfficials.map((official) => (
-                    <div
-                      key={official.id}
-                      onClick={() => toggleOfficial(official.id)}
-                      className={cn(
-                        "cursor-pointer rounded-md border p-2 text-xs transition-all",
-                        selectedOfficials.includes(official.id)
-                          ? "border-amber-400/50 bg-amber-50 dark:bg-amber-950/30"
-                          : "hover:bg-muted border-border/40"
-                      )}
+                {/* Bilateral Target selector */}
+                {meetingType === "bilateral" && (
+                  <div>
+                    <Label htmlFor="targetCountry" className="text-xs">
+                      Foreign Guest Country *
+                    </Label>
+                    <Select
+                      value={targetCountryId}
+                      onValueChange={setTargetCountryId}
+                      disabled={!!defaultTargetCountryId}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{official.name}</p>
-                          <p className="text-muted-foreground flex items-center gap-1 truncate text-[10px]">
-                            <span>{official.title}</span>
-                            <span className="text-[9px] opacity-60">· {official.countryLabel}</span>
-                          </p>
-                        </div>
-                        {selectedOfficials.includes(official.id) && (
-                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-amber-600" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  No officials found. Add officials in Government Management.
-                </div>
-              )}
-            </CollapsibleSection>
+                      <SelectTrigger id="targetCountry" className="mt-1 h-9 text-xs">
+                        <SelectValue placeholder="Select invited country..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectCountries
+                          ?.filter((c) => c.id !== countryId)
+                          .map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              <span className="flex items-center gap-2">
+                                {c.flagUrl && (
+                                  <img
+                                    src={c.flagUrl}
+                                    alt=""
+                                    className="h-3 w-4 rounded object-cover"
+                                  />
+                                )}
+                                {c.name}
+                              </span>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-            {/* Agenda — collapsible */}
-            <CollapsibleSection
-              title="Agenda"
-              icon={FileText}
-              badge={
-                agendaItems.length > 0
-                  ? `${agendaItems.length} items · ${totalAgendaDuration} min`
-                  : undefined
-              }
-            >
-              <div className="space-y-3">
-                {/* Existing items */}
-                {agendaItems.length > 0 && (
-                  <div className="space-y-1.5">
-                    {agendaItems.map((item, index) => {
-                      const categoryConfig = AGENDA_CATEGORIES.find(
-                        (c) => c.value === item.category
-                      );
+                {/* Basic Metadata */}
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="title" className="text-xs">
+                      Session Title *
+                    </Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="E.g., Emergency Cabinet Session"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="description" className="text-xs">
+                      Context Notes
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Optional brief notes about the session objectives..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                {/* Scheduling Date presets */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground uppercase font-semibold">Scheduled Date & Time</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "immediately", label: "Immediately" },
+                      { id: "tomorrow", label: "Tomorrow" },
+                      { id: "custom", label: "Custom Date..." },
+                    ].map((preset) => {
+                      const isActive = timePreset === preset.id;
                       return (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="border-border/40 bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-2.5 py-2"
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => setTimePreset(preset.id as any)}
+                          className={cn(
+                            "rounded-md py-2 text-xs font-semibold border transition-all cursor-pointer",
+                            isActive
+                              ? "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/25 text-amber-900 dark:text-amber-400 font-bold"
+                              : "border-white/5 hover:border-white/10 hover:bg-white/[0.02] text-muted-foreground hover:text-foreground"
+                          )}
                         >
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <div
-                              className={`h-2 w-2 shrink-0 rounded-full ${categoryConfig?.color ?? "bg-gray-500"}`}
-                            />
-                            <span className="truncate text-xs font-medium">{item.title}</span>
-                            <Badge variant="outline" className="shrink-0 px-1 py-0 text-[0.6rem]">
-                              {item.duration}m
-                            </Badge>
-                            {item.linkedIssueId && (
-                              <Badge
-                                variant="outline"
-                                className="shrink-0 border-yellow-500/20 bg-yellow-500/10 px-1 py-0 text-[0.55rem] text-yellow-400"
-                              >
-                                Issue
-                              </Badge>
-                            )}
-                            {item.linkedPolicyId && (
-                              <Badge
-                                variant="outline"
-                                className="shrink-0 border-indigo-500/20 bg-indigo-500/10 px-1 py-0 text-[0.55rem] text-indigo-400"
-                              >
-                                Policy
-                              </Badge>
-                            )}
-                            {item.tags.length > 0 && (
-                              <div className="hidden gap-0.5 sm:flex">
-                                {item.tags.slice(0, 2).map((tag) => (
-                                  <Badge
-                                    key={tag}
-                                    variant="secondary"
-                                    className="px-1 py-0 text-[0.6rem]"
-                                  >
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => removeAgendaItem(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </motion.div>
+                          {preset.label}
+                        </button>
                       );
                     })}
                   </div>
-                )}
 
-                {/* Add new item form */}
-                <div className="border-border/50 space-y-2 rounded-lg border-2 border-dashed p-3">
-                  <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
-                    <Plus className="h-3.5 w-3.5" />
-                    Add Item
-                  </div>
-
-                  {/* Basic: Title + Duration */}
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Item title *"
-                      value={newAgendaTitle}
-                      onChange={(e) => setNewAgendaTitle(e.target.value)}
-                      className="h-8 flex-1 text-xs"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !showAdvancedAgenda) {
-                          e.preventDefault();
-                          addAgendaItem();
-                        }
-                      }}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Min"
-                      value={newAgendaDuration}
-                      onChange={(e) => setNewAgendaDuration(parseInt(e.target.value) || 15)}
-                      min={5}
-                      max={180}
-                      className="h-8 w-16 text-xs"
-                    />
-                  </div>
-
-                  {/* Advanced toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setShowAdvancedAgenda(!showAdvancedAgenda)}
-                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[0.65rem] transition-colors"
-                  >
-                    <Settings2 className="h-3 w-3" />
-                    {showAdvancedAgenda ? "Hide" : "Show"} advanced options
-                    {showAdvancedAgenda ? (
-                      <ChevronDown className="h-3 w-3" />
-                    ) : (
-                      <ChevronRight className="h-3 w-3" />
-                    )}
-                  </button>
-
-                  {/* Advanced fields */}
-                  {showAdvancedAgenda && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      className="space-y-2"
-                    >
-                      <Textarea
-                        placeholder="Description (optional)"
-                        value={newAgendaDesc}
-                        onChange={(e) => setNewAgendaDesc(e.target.value)}
-                        rows={2}
-                        className="text-xs"
+                  {timePreset === "custom" && (
+                    <div className="mt-2.5 rounded-lg border border-white/5 bg-white/[0.01] p-3 space-y-2.5">
+                      <Label htmlFor="custom-date" className="text-xs font-semibold text-muted-foreground uppercase">
+                        Select Date
+                      </Label>
+                      <Input
+                        id="custom-date"
+                        type="date"
+                        value={(() => {
+                          const d = new Date(scheduledIxTime);
+                          const y = d.getUTCFullYear();
+                          const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+                          const day = String(d.getUTCDate()).padStart(2, "0");
+                          return `${y}-${m}-${day}`;
+                        })()}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!val) return;
+                          const [y, m, d] = val.split("-").map(Number);
+                          const newTime = Date.UTC(y, m - 1, d, 9, 0, 0, 0);
+                          setScheduledIxTime(newTime);
+                        }}
+                        required
+                        className="max-w-[180px] bg-background border-white/10 text-xs py-1.5 focus:border-amber-500/50"
                       />
+                      <div className="flex items-center gap-1.5 text-xs text-amber-500/90 font-medium bg-amber-500/5 border border-amber-500/10 rounded px-2.5 py-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>Scheduled Date:</span>
+                        <span className="text-foreground">{IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}</span>
+                        <span className="text-[10px] text-muted-foreground font-normal ml-auto">(09:00)</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <Select value={newAgendaCategory} onValueChange={setNewAgendaCategory}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
+                {/* Attendees Smart Badges removed from Card 1 */}
+              </div>
+
+              <DialogFooter className="border-t border-white/5 px-6 py-4 mt-auto shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)} className="cursor-pointer">
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold cursor-pointer"
+                  disabled={
+                    isSubmitting ||
+                    agendaItems.length === 0 ||
+                    (allOfficials.length > 0 && selectedOfficials.length === 0)
+                  }
+                >
+                  {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
+
+          {/* Card 2: Attached Agenda & Roster Panel */}
+          <div className="w-full md:w-[350px] max-h-[85vh] bg-background border-border rounded-xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-right-2 duration-300">
+            <div className="px-5 pt-5 pb-3 border-b border-white/5 shrink-0">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+                <Layers className="h-4 w-4 text-amber-500" />
+                Roster & Agenda
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {selectedOfficials.length} invited · {agendaItems.length} topics
+              </p>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {/* Section 1: Attendees */}
+              <div className="space-y-2.5">
+                <Label className="text-xs text-muted-foreground uppercase font-semibold">
+                  Ministers & Attendees ({selectedOfficials.length} invited)
+                </Label>
+
+                {officialsLoading || (meetingType === "bilateral" && targetOfficialsLoading) ? (
+                  <div className="text-muted-foreground text-xs py-2 animate-pulse">Loading officials...</div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedOfficials.map((id) => {
+                        const official = allOfficials.find((o) => o.id === id);
+                        if (!official) return null;
+                        const isRecommended = selectedTemplateId && INTENT_TEMPLATES.find(t => t.id === selectedTemplateId)?.recommendedRoles.some(role =>
+                          official.title.toLowerCase().includes(role) ||
+                          official.role?.toLowerCase().includes(role)
+                        );
+                        return (
+                          <div
+                            key={id}
+                            className={cn(
+                              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] transition-all",
+                              isRecommended
+                                ? "bg-amber-500/10 border-amber-500/20 text-amber-500/90 dark:text-amber-400"
+                                : "bg-white/5 border-white/5 text-slate-300"
+                            )}
+                          >
+                            <div className="flex flex-col min-w-0 max-w-[100px] text-left leading-tight">
+                              <span className="font-semibold truncate">{official.name}</span>
+                              <span className="text-[8px] opacity-60 truncate">{official.title}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleOfficial(id)}
+                              className="text-muted-foreground hover:text-white shrink-0 cursor-pointer ml-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {selectedOfficials.length === 0 && (
+                        <span className="text-muted-foreground/60 text-xs italic py-1">No attendees selected.</span>
+                      )}
+                    </div>
+
+                    {allOfficials && allOfficials.length > selectedOfficials.length && (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value=""
+                          onValueChange={(val) => {
+                            if (val && !selectedOfficials.includes(val)) {
+                              setSelectedOfficials([...selectedOfficials, val]);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs border-white/10 w-fit min-w-[150px] bg-white/5 cursor-pointer py-1">
+                            <Plus className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                            <span>Add Invitees...</span>
                           </SelectTrigger>
                           <SelectContent>
-                            {AGENDA_CATEGORIES.map((cat) => (
-                              <SelectItem key={cat.value} value={cat.value}>
-                                {cat.label}
-                              </SelectItem>
-                            ))}
+                            {allOfficials
+                              .filter((o) => !selectedOfficials.includes(o.id))
+                              .map((o) => (
+                                <SelectItem key={o.id} value={o.id}>
+                                  {o.name} ({o.title})
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
-
-                        <Input
-                          placeholder="Presenter"
-                          value={newAgendaPresenter}
-                          onChange={(e) => setNewAgendaPresenter(e.target.value)}
-                          className="h-8 text-xs"
-                        />
                       </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label className="text-muted-foreground text-[10px]">
-                            Link National Issue
-                          </Label>
-                          <Select
-                            value={newAgendaLinkedIssueId || "none"}
-                            onValueChange={(v) =>
-                              setNewAgendaLinkedIssueId(v === "none" ? undefined : v)
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {activeIssues.map((issue: any) => (
-                                <SelectItem key={issue.id} value={issue.id}>
-                                  ⚠️ {issue.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-muted-foreground text-[10px]">
-                            Link Policy Proposal
-                          </Label>
-                          <Select
-                            value={newAgendaLinkedPolicyId || "none"}
-                            onValueChange={(v) =>
-                              setNewAgendaLinkedPolicyId(v === "none" ? undefined : v)
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {draftPolicies.map((policy: any) => (
-                                <SelectItem key={policy.id} value={policy.id}>
-                                  📜 {policy.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+              <div className="border-t border-white/5" />
 
-                      {/* Tags */}
-                      <div>
-                        <div className="flex gap-1.5">
-                          <Input
-                            placeholder="Add tag... (press Enter)"
-                            value={tagInput}
-                            onChange={(e) => setTagInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                addTag(tagInput);
-                              }
-                            }}
-                            onBlur={() => {
-                              if (tagInput.trim()) addTag(tagInput);
-                            }}
-                            className="h-8 text-xs"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => addTag(tagInput)}
-                          >
-                            <Tag className="h-3 w-3" />
-                          </Button>
+              {/* Section 2: Agenda Topics */}
+              <div className="space-y-3">
+                <Label className="text-xs text-muted-foreground uppercase font-semibold">
+                  Agenda Topics ({agendaItems.length} items · {totalAgendaDuration} min)
+                </Label>
+
+                <div className="space-y-2">
+                  {agendaItems.map((item, index) => {
+                    const isExpanded = expandedAgendaIndex === index;
+                    const categoryConfig = AGENDA_CATEGORIES.find((c) => c.value === item.category);
+
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-lg border border-white/5 bg-white/[0.01] overflow-hidden transition-all"
+                      >
+                        <div
+                          onClick={() => setExpandedAgendaIndex(isExpanded ? null : index)}
+                          className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] select-none"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", categoryConfig?.color ?? "bg-gray-500")} />
+                            <span className="font-semibold text-xs truncate text-foreground/90">{item.title}</span>
+                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 border-white/10 text-muted-foreground bg-white/5 font-mono">
+                              {item.duration}m
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeAgendaItem(index);
+                              }}
+                              className="text-muted-foreground hover:text-white p-1 hover:bg-white/5 rounded cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Common tag chips */}
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {COMMON_TAGS.filter((t) => !newAgendaTags.includes(t))
-                            .slice(0, 6)
-                            .map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="outline"
-                                className="hover:bg-muted cursor-pointer px-1.5 py-0 text-[0.6rem]"
-                                onClick={() => addTag(tag)}
-                              >
-                                + {tag}
-                              </Badge>
-                            ))}
-                        </div>
+                        {isExpanded && (
+                          <div className="p-3 border-t border-white/5 bg-white/[0.02] space-y-3 text-xs">
+                            <div>
+                              <Label className="text-[10px] text-muted-foreground uppercase">Topic Title</Label>
+                              <Input
+                                value={item.title}
+                                onChange={(e) => {
+                                  const newItems = [...agendaItems];
+                                  newItems[index]!.title = e.target.value;
+                                  setAgendaItems(newItems);
+                                }}
+                                className="h-8 mt-1 text-xs"
+                              />
+                            </div>
 
-                        {/* Selected tags */}
-                        {newAgendaTags.length > 0 && (
-                          <div className="mt-1.5 flex flex-wrap gap-1">
-                            {newAgendaTags.map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="secondary"
-                                className="flex items-center gap-0.5 px-1.5 py-0 text-[0.6rem]"
-                              >
-                                {tag}
-                                <X
-                                  className="h-2.5 w-2.5 cursor-pointer"
-                                  onClick={() => removeTag(tag)}
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div>
+                                <Label className="text-[10px] text-muted-foreground uppercase">Duration (mins)</Label>
+                                <Input
+                                  type="number"
+                                  value={item.duration}
+                                  onChange={(e) => {
+                                    const newItems = [...agendaItems];
+                                    newItems[index]!.duration = parseInt(e.target.value) || 15;
+                                    setAgendaItems(newItems);
+                                  }}
+                                  className="h-8 mt-1 text-xs"
                                 />
-                              </Badge>
-                            ))}
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-muted-foreground uppercase">Category</Label>
+                                <Select
+                                  value={item.category}
+                                  onValueChange={(val) => {
+                                    const newItems = [...agendaItems];
+                                    newItems[index]!.category = val;
+                                    setAgendaItems(newItems);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 mt-1 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {AGENDA_CATEGORIES.map((cat) => (
+                                      <SelectItem key={cat.value} value={cat.value}>
+                                        {cat.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label className="text-[10px] text-muted-foreground uppercase">Description</Label>
+                              <Textarea
+                                value={item.description}
+                                onChange={(e) => {
+                                  const newItems = [...agendaItems];
+                                  newItems[index]!.description = e.target.value;
+                                  setAgendaItems(newItems);
+                                }}
+                                placeholder="Describe this agenda topic's purpose..."
+                                rows={2}
+                                className="mt-1 text-xs"
+                              />
+                            </div>
                           </div>
                         )}
                       </div>
-                    </motion.div>
-                  )}
+                    );
+                  })}
+                </div>
 
+                {/* Add Quick Agenda Topic input */}
+                <div className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Type a new topic and press Enter..."
+                    value={newAgendaTitle}
+                    onChange={(e) => setNewAgendaTitle(e.target.value)}
+                    className="h-8 text-xs flex-1 bg-white/5 border-white/10"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddQuickAgendaTopic();
+                      }
+                    }}
+                  />
                   <Button
                     type="button"
-                    variant="secondary"
                     size="sm"
-                    onClick={addAgendaItem}
-                    className="h-7 w-full text-xs"
+                    onClick={handleAddQuickAgendaTopic}
+                    className="h-8 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs px-3 cursor-pointer"
                   >
-                    <Plus className="mr-1 h-3 w-3" />
-                    Add to Agenda
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-            </CollapsibleSection>
+            </div>
           </div>
 
-          {/* Sticky footer */}
-          <DialogFooter className="border-border/50 border-t px-6 py-4">
-            <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={
-                isSubmitting ||
-                agendaItems.length === 0 ||
-                (allOfficials.length > 0 && selectedOfficials.length === 0)
-              }
-            >
-              {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
-            </Button>
-          </DialogFooter>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

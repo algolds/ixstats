@@ -23,9 +23,15 @@ import { useNotify } from "~/hooks/useNotify";
 
 interface MeetingsAndDecisionsPanelProps {
   countryId: string;
+  onSelectMeeting?: (id: string) => void;
+  onScheduleMeeting?: () => void;
 }
 
-export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPanelProps) {
+export function MeetingsAndDecisionsPanel({
+  countryId,
+  onSelectMeeting,
+  onScheduleMeeting,
+}: MeetingsAndDecisionsPanelProps) {
   const notify = useNotify();
   const [meetingSchedulerOpen, setMeetingSchedulerOpen] = useState(false);
   const [expandedMeetings, setExpandedMeetings] = useState<Set<string>>(new Set());
@@ -198,6 +204,7 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                     icon={Calendar}
                     title={meeting.title}
                     description={meeting.description}
+                    onClick={() => onSelectMeeting?.(meeting.id)}
                     subtitle={
                       <span className="flex flex-wrap items-center gap-1.5">
                         <IxTimeDate
@@ -274,7 +281,13 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setMeetingSchedulerOpen(true)}
+              onClick={() => {
+                if (onScheduleMeeting) {
+                  onScheduleMeeting();
+                } else {
+                  setMeetingSchedulerOpen(true);
+                }
+              }}
               className="h-6 gap-1 px-2 text-xs"
             >
               <Plus className="h-3 w-3" /> Schedule
@@ -302,6 +315,7 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
                   }
                   badges={[getStatusBadge(meeting.status)]}
                   isLocal={meeting._isLocal}
+                  onClick={() => onSelectMeeting?.(meeting.id)}
                   metrics={[
                     ...(meeting.attendances?.length > 0
                       ? [{ icon: Users, label: "Attendees", value: meeting.attendances.length }]
@@ -334,7 +348,13 @@ export function MeetingsAndDecisionsPanel({ countryId }: MeetingsAndDecisionsPan
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setMeetingSchedulerOpen(true)}
+                onClick={() => {
+                  if (onScheduleMeeting) {
+                    onScheduleMeeting();
+                  } else {
+                    setMeetingSchedulerOpen(true);
+                  }
+                }}
                 className="h-7 gap-1.5 text-xs"
               >
                 <Plus className="h-3 w-3" /> Schedule first meeting

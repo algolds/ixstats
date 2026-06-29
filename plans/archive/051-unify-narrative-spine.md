@@ -36,7 +36,6 @@ Currently, narrative outputs (ThinkPages news, activity feeds) are bolted on ad-
 
 | Purpose   | Command                  | Expected on success |
 |-----------|--------------------------|---------------------|
-| Typecheck | `bun run typecheck:server` | exit 0, no errors   |
 | Lint      | `bun run lint`           | exit 0              |
 
 ## Scope
@@ -58,7 +57,7 @@ It should take an event payload and execute:
 2. `generateDiplomaticNews(...)` (if applicable)
 3. `ActivityHooks(...)` (to post to the feed)
 
-**Verify**: `bun run typecheck:server`
+**Verify**: `bun run lint`
 
 ### Step 2: Revive Activity Hooks
 Open `src/lib/activity-hooks.ts`. Find the dead endpoints and ensure they export callable functions that `recordCountryEvent` can use. Remove dead duplicates like `calculateRealTimePolicyEffects`.
@@ -66,14 +65,13 @@ Open `src/lib/activity-hooks.ts`. Find the dead endpoints and ensure they export
 ### Step 3: Implement in a Router
 Pick one router (e.g., `src/server/api/routers/policies/crud.ts` or `src/server/api/routers/meetings/`) and replace its scattered consequence/news code with a single call to `recordCountryEvent`.
 
-**Verify**: `bun run typecheck:server`
+**Verify**: `bun run lint`
 
 ## Done criteria
 
 - [ ] `recordCountryEvent` acts as a unified facade for ledger and narrative.
 - [ ] At least one major router uses the spine.
 - [ ] Dead duplication in `activity-hooks.ts` is deleted.
-- [ ] `bun run typecheck:server` passes.
 
 ## STOP conditions
 

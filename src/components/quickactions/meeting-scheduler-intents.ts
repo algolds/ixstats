@@ -1,0 +1,252 @@
+// src/components/quickactions/meeting-scheduler-intents.ts
+
+import type { IntentTemplate } from "./meeting-scheduler-types";
+
+export const AGENDA_CATEGORIES = [
+  { value: "economic", label: "Economic Affairs", color: "bg-blue-500" },
+  { value: "social", label: "Social Policy", color: "bg-pink-500" },
+  { value: "infrastructure", label: "Infrastructure", color: "bg-orange-500" },
+  { value: "diplomatic", label: "Diplomatic Relations", color: "bg-cyan-500" },
+  { value: "governance", label: "Governance & Administration", color: "bg-indigo-500" },
+  { value: "other", label: "Other", color: "bg-gray-500" },
+];
+
+export const INTENT_TEMPLATES: IntentTemplate[] = [
+  {
+    id: "crisis",
+    name: "Resolve Crisis",
+    description: "Convene to address an urgent national issue or emergency.",
+    meetingType: "cabinet",
+    defaultTitle: "Emergency Cabinet Session",
+    defaultDuration: 45,
+    recommendedRoles: ["chief", "security", "defense", "interior", "prime"],
+    agenda: [
+      {
+        title: "Situation Briefing",
+        description: "Assess the immediate threat and core parameters of the crisis.",
+        duration: 15,
+        category: "governance",
+        tags: ["urgent", "crisis"],
+        presenter: "Ruler",
+      },
+      {
+        title: "Mitigation Options Evaluation",
+        description: "Review proposed response strategies and public impact projections.",
+        duration: 20,
+        category: "governance",
+        tags: ["strategic"],
+        presenter: "Cabinet Chief",
+      },
+      {
+        title: "Executive Action Declaration",
+        description: "Final vote on crisis response and communication strategy.",
+        duration: 10,
+        category: "governance",
+        tags: ["reform"],
+        presenter: "Ruler",
+      }
+    ]
+  },
+  {
+    id: "economic",
+    name: "Economic Policy Briefing",
+    description: "Draft policies, review budget status, and tax reform proposals.",
+    meetingType: "cabinet",
+    defaultTitle: "Economic Planning Summit",
+    defaultDuration: 60,
+    recommendedRoles: ["finance", "treasury", "commerce", "economy"],
+    agenda: [
+      {
+        title: "Treasury & Reserves Audit",
+        description: "Review active policy maintenance costs and national liquidity.",
+        duration: 20,
+        category: "economic",
+        tags: ["budget", "quarterly"],
+        presenter: "Finance Minister",
+      },
+      {
+        title: "Reform Proposal Review",
+        description: "Evaluate target economic sector indicators and draft policies.",
+        duration: 30,
+        category: "economic",
+        tags: ["policy", "reform"],
+        presenter: "Commerce Minister",
+      },
+      {
+        title: "Implementation Timeline",
+        description: "Authorize next-step resource disbursements.",
+        duration: 10,
+        category: "economic",
+        tags: ["strategic"],
+        presenter: "Ruler",
+      }
+    ]
+  },
+  {
+    id: "social",
+    name: "Social Welfare Policy",
+    description: "Discuss education, healthcare, and demographic/population growth programs.",
+    meetingType: "cabinet",
+    defaultTitle: "Social Policy Review",
+    defaultDuration: 60,
+    recommendedRoles: ["health", "education", "social", "labor"],
+    agenda: [
+      {
+        title: "Demographic Trends Assessment",
+        description: "Examine birth rates, demographic health stats, and growth programs.",
+        duration: 15,
+        category: "social",
+        tags: ["quarterly", "review"],
+        presenter: "Health Minister",
+      },
+      {
+        title: "Welfare & Education Budget Allocation",
+        description: "Determine education and healthcare grants and system funding.",
+        duration: 25,
+        category: "social",
+        tags: ["budget", "policy"],
+        presenter: "Education Minister",
+      },
+      {
+        title: "Social Wellbeing Targets",
+        description: "Set timeline for national approval and wellbeing objectives.",
+        duration: 10,
+        category: "social",
+        tags: ["strategic"],
+        presenter: "Ruler",
+      }
+    ]
+  },
+  {
+    id: "infrastructure",
+    name: "Infrastructure & Development",
+    description: "Plan national transport, energy grids, and environmental preservation.",
+    meetingType: "cabinet",
+    defaultTitle: "Infrastructure Council Session",
+    defaultDuration: 60,
+    recommendedRoles: ["infrastructure", "transport", "environment", "energy"],
+    agenda: [
+      {
+        title: "Capital Project Audits",
+        description: "Evaluate pipeline, transit network, and public utilities efficiency.",
+        duration: 20,
+        category: "infrastructure",
+        tags: ["operational", "budget"],
+        presenter: "Infrastructure Minister",
+      },
+      {
+        title: "Environmental Preservation Initiatives",
+        description: "Implement climate compliance guidelines and clean energy transitions.",
+        duration: 20,
+        category: "infrastructure",
+        tags: ["policy", "reform"],
+        presenter: "Environment Minister",
+      },
+      {
+        title: "Treasury Funding Clearances",
+        description: "Approve long-term infrastructural investment funds.",
+        duration: 10,
+        category: "economic",
+        tags: ["budget"],
+        presenter: "Finance Minister",
+      }
+    ]
+  },
+  {
+    id: "governance",
+    name: "Legislative & Civil Strategy",
+    description: "Appoint cabinet positions, prepare elections, and review civil efficiency.",
+    meetingType: "cabinet",
+    defaultTitle: "Governance Strategy Briefing",
+    defaultDuration: 60,
+    recommendedRoles: ["chief", "interior", "prime", "justice"],
+    agenda: [
+      {
+        title: "Ministerial Synergy Review",
+        description: "Review cabinet minister performance metrics and departmental efficiency.",
+        duration: 20,
+        category: "governance",
+        tags: ["review", "operational"],
+        presenter: "Cabinet Chief",
+      },
+      {
+        title: "Legislative Calendar Alignment",
+        description: "Plan draft law rollouts and parliament/senate coordination.",
+        duration: 15,
+        category: "governance",
+        tags: ["policy"],
+        presenter: "Interior Minister",
+      },
+      {
+        title: "Election Security & Prep",
+        description: "Confirm constituency boundaries, voting logs, and security protocols.",
+        duration: 15,
+        category: "governance",
+        tags: ["strategic"],
+        presenter: "Interior Minister",
+      }
+    ]
+  },
+  {
+    id: "bilateral",
+    name: "Bilateral Trade & Diplomacy",
+    description: "Request a summit with another nation's leadership.",
+    meetingType: "bilateral",
+    defaultTitle: "Bilateral Summit",
+    defaultDuration: 90,
+    recommendedRoles: ["foreign", "diplomacy", "ambassador"],
+    agenda: [
+      {
+        title: "Bilateral Alignment Review",
+        description: "Assess diplomatic stance, embassy statuses, and treaty records.",
+        duration: 30,
+        category: "diplomatic",
+        tags: ["strategic", "review"],
+        presenter: "Foreign Minister",
+      },
+      {
+        title: "Joint Venture Proposals",
+        description: "Negotiate trade corridors, security pacts, or territorial access.",
+        duration: 45,
+        category: "diplomatic",
+        tags: ["strategic"],
+        presenter: "Guest Delegate",
+      },
+      {
+        title: "Treaty Approvals & Handshakes",
+        description: "Execute treaty drafts and plan public press releases.",
+        duration: 15,
+        category: "diplomatic",
+        tags: ["urgent"],
+        presenter: "Ruler",
+      }
+    ]
+  },
+  {
+    id: "routine",
+    name: "Routine Cabinet Review",
+    description: "General administration review and progress synchronization.",
+    meetingType: "cabinet",
+    defaultTitle: "Weekly Cabinet Review",
+    defaultDuration: 30,
+    recommendedRoles: [],
+    agenda: [
+      {
+        title: "Department Status Reports",
+        description: "Brief updates from all active ministries.",
+        duration: 15,
+        category: "governance",
+        tags: ["operational"],
+        presenter: "Cabinet Chief",
+      },
+      {
+        title: "Agenda Priorities Alignment",
+        description: "Identify next target issues and schedule future proceedings.",
+        duration: 15,
+        category: "governance",
+        tags: ["strategic"],
+        presenter: "Ruler",
+      }
+    ]
+  }
+];

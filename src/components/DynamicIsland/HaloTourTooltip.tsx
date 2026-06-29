@@ -100,7 +100,7 @@ export function HaloTourTooltip() {
             className={cn(
               "fixed z-[10002] pointer-events-auto transition-all duration-500 ease-in-out",
               isExpandedStep
-                ? "top-[100px] left-1/2 -translate-x-1/2 w-[340px] lg:top-[120px] lg:left-[calc(50%+250px)] lg:translate-x-0 lg:translate-y-0 lg:w-[320px]"
+                ? "top-[320px] left-1/2 -translate-x-1/2 w-[340px] lg:top-[220px] lg:left-[calc(50%+250px)] lg:translate-x-0 lg:translate-y-0 lg:w-[320px]"
                 : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px]"
             )}
           >

@@ -437,6 +437,17 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
         },
       });
 
+      // Update related activity schedule
+      await ctx.db.activitySchedule.updateMany({
+        where: {
+          relatedIds: { contains: input.meetingId },
+          activityType: "meeting",
+        },
+        data: {
+          status: "completed",
+        },
+      });
+
       // Notify about meeting completion
       try {
         const discussedCount = meeting.agendaItems.filter((i) => i.status === "discussed").length;

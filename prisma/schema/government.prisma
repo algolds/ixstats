@@ -356,6 +356,9 @@ model Policy {
   category                    String
   status                      String            @default("draft")
   priority                    String            @default("medium")
+  riskRating                  String            @default("stable")
+  origin                      String            @default("personal")
+  civCapCost                  Float             @default(0)
   objectives                  String?
   targetMetrics               String?
   implementationCost          Float             @default(0)
