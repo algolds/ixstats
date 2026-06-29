@@ -143,7 +143,7 @@ export function useSubdivisionDraw({
 
     const onClick = (e: any) => {
       if (e.routeClicked || e.defaultPrevented) return;
-      if (mode !== "add-subdivision") return;
+      if (mode !== "add-subdivision" && mode !== "add-lake") return;
 
       let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
@@ -183,7 +183,7 @@ export function useSubdivisionDraw({
     };
 
     const onDblClick = (e: any) => {
-      if (mode !== "add-subdivision") return;
+      if (mode !== "add-subdivision" && mode !== "add-lake") return;
       if (drawVerticesRef.current.length >= 3) {
         e.preventDefault();
         saveDraw();
@@ -194,7 +194,6 @@ export function useSubdivisionDraw({
     map.on("dblclick", onDblClick);
 
     return () => {
-      map.on("click", onClick);
       map.off("click", onClick);
       map.off("dblclick", onDblClick);
     };
@@ -216,7 +215,7 @@ export function useSubdivisionDraw({
   // Keyboard undo listener (Backspace/Delete/Ctrl+Z)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (mode !== "add-subdivision") return;
+      if (mode !== "add-subdivision" && mode !== "add-lake") return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
@@ -234,7 +233,7 @@ export function useSubdivisionDraw({
 
   // Clear draw state when mode changes away from add-subdivision
   useEffect(() => {
-    if (mode !== "add-subdivision") {
+    if (mode !== "add-subdivision" && mode !== "add-lake") {
       clearDraw();
     }
   }, [mode, clearDraw]);

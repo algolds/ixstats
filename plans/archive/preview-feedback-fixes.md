@@ -15,6 +15,8 @@ work)**, and **expected/out-of-scope**.
 | 5 | **"Get Started" checklist reappears when conditions unmet** (e.g. no policies) | Only hid on full 4/4 completion; no manual dismissal. | Added a persistent dismiss (X button → `localStorage` per country). [SetupChecklist.tsx](../src/components/mycountry/SetupChecklist.tsx) |
 | 6 | **Alert threshold wording confusing** (alert fired for going *outside* the bound) | Labels said "Minimum"/"Maximum" with no statement of fire direction. | Relabelled to **"Alert if below"/"Alert if above"** + rewrote the info text to state alerts fire when the metric goes outside the range; blank = skip that side. (Comparison logic was already correct.) [AlertThresholdSettings.tsx](../src/app/mycountry/intelligence/_components/AlertThresholdSettings.tsx) |
 | 7 | **Achievement notification re-fires every login** (max population) | A **second, client-side** achiever (`AchievementNotificationService`) deduped via an **in-memory `Set`** that resets each session. Distinct from the DB-backed `achievementService`. | Persist the dedup set to `localStorage`. [DiplomaticNotificationService.ts](../src/services/DiplomaticNotificationService.ts) |
+| 8 | **Acquired achievements don't "light up" in the tab** | Achievements page only loaded existing unlocks from `userAchievement` but never ran the evaluation check on load. The `syncMyCollectorAchievements` mutation existed but was never triggered by the UI. | Automatically trigger `syncMyCollectorAchievements` mutation on page mount, invalidating `getAllWithStatus` on success to dynamically evaluate and light up earned achievements. [page.tsx](../src/app/achievements/page.tsx) |
+| 9 | **Editor Economy components: solid backgrounds** | Builder's demographics and geography section indicators had solid bg-muted/50 and bg-blue-50 backgrounds instead of the transparent glassmorphic style matching the Policy graphics. | Swept PopulationSection and GeographicSection to replace solid styles with `border-white/10 bg-white/[0.02]` and `border-emerald-500/50 bg-emerald-500/[0.04]` respectively. [PopulationSection.tsx](../src/app/builder/components/enhanced/tabs/demographics/PopulationSection.tsx) |
 
 ## ✅ Follow-up pass (2026-06-20b)
 
@@ -43,7 +45,7 @@ tiers stay meaningful — zero numbers to maintain.
   `SCALE_METRIC_BY_ID` (single source of truth), `getScaleThresholds(db)` (cached 10-min snapshot of
   country pop/GDP/GDP-per-capita percentiles), `meetsScale()`, `percentileOf()`.
 - **Eliminated the duplicate threshold source.** `determineCondition()` in
-  [achievement-sync.ts](../src/lib/achievement-sync.ts) hardcoded a *second* copy of every threshold
+  [achievement-sync.ts](../src/achievement-sync.ts) hardcoded a *second* copy of every threshold
   (the authoritative one — `evaluateCondition` uses the DB `conditionJson` it produces, not the
   definitions' `condition` fns). Now it emits `{ metric, operator, percentile }` rules derived from
   rarity. Definitions' fallback conditions use `meetsScale()` against the same percentiles.
@@ -60,24 +62,7 @@ tiers stay meaningful — zero numbers to maintain.
 
 ## ⏳ Deferred — needs DB/runtime confirmation or larger work
 
-- **Acquired achievements don't "light up" in the tab.** The achievements tab reads
-  `getAllWithStatus` → `isUnlocked = !!UserAchievement row`. The DB write/read paths are
-  consistent (both keyed by `clerkUserId` + `achievement.key`), so the row simply isn't
-  being created for these. Two parallel achievement systems exist:
-  - DB-backed `achievementService.checkAndUnlock` (writes `UserAchievement`, lights up the tab) —
-    triggered via `syncMyCollectorAchievements` mutation + the event queue. **Cadence during
-    normal play is unconfirmed.**
-  - Client-side `AchievementNotificationService` (notification-only, hardcoded GDP/growth/security
-    conditions in `LiveDataIntegration.tsx:271`) — **never writes `UserAchievement`.**
-  - **Likely real fix:** wire the achievements page (and/or overview) to call the DB-backed check
-    so genuinely-earned achievements persist and light up; consider deleting the redundant
-    hardcoded client-side checker (ponytail rung 1 — it duplicates the real system and is the
-    source of the dupe-notification class of bugs). **Do not guess-code a schema migration** — first
-    confirm against the live DB whether `UserAchievement` rows exist for the test user.
-
-- **Editor Economy components: transparent backgrounds** (design note, match Policy graphics).
-  CSS polish spanning several section components under `EconomyBuilderPage`; low risk but needs a
-  visual pass to find the solid-bg classes. Defer to a focused styling sweep.
+- *None* (All deferred tasks successfully resolved or audited out)
 
 ## 🚫 Expected / out-of-scope (per user's own "(expected)" tags + design notes)
 

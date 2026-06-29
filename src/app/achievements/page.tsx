@@ -84,6 +84,20 @@ export default function AchievementsPage() {
     { enabled: !!userProfile?.countryId }
   );
 
+  const utils = api.useUtils();
+  const { mutate: syncAchievements } = api.achievements.syncMyCollectorAchievements.useMutation({
+    onSuccess: () => {
+      void utils.achievements.getAllWithStatus.invalidate();
+    },
+  });
+
+  // Automatically trigger sync on mount if country context is ready
+  useEffect(() => {
+    if (userProfile?.countryId) {
+      syncAchievements();
+    }
+  }, [userProfile?.countryId, syncAchievements]);
+
   // Get global leaderboard
   const { data: leaderboard } = api.achievements.getLeaderboard.useQuery({
     limit: 20,

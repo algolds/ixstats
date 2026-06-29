@@ -914,6 +914,7 @@ const EditorMap = memo(
           currentMode === "add-poi" ||
           currentMode === "add-story-pin" ||
           currentMode === "add-label" ||
+          currentMode === "add-peak" ||
           currentMode === "split-subdivision"
         ) {
           const snapped = snapPoint([e.lngLat.lng, e.lngLat.lat]);
@@ -933,7 +934,7 @@ const EditorMap = memo(
               onApplyPaintFill(hitId);
             }
           }
-        } else if (currentMode === "add-route") {
+        } else if (currentMode === "add-route" || currentMode === "add-river") {
           let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
           const snapLayers = ["editor-points-capital", "editor-points-city", "editor-points-poi"];

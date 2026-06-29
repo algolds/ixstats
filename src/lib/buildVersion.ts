@@ -28,7 +28,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 1,
-    patch: 9,
+    patch: 10,
     release: "Ogma",
     channel: "Alpha" as ReleaseChannel,
   },
@@ -52,7 +52,7 @@ export const VERSIONS = {
     mycountry: 2, // public-facing executive command UI
     builder: 2,
     thinkpages: 1,
-    achievements: 1, // incl. LoreWards
+    achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
     halo: 3, // global contextual overlay (was "Dynamic Island"); +Live Activities; v3: onboarding tour guided walkthrough and dynamic styling

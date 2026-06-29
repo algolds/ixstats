@@ -1,12 +1,11 @@
-// @ts-nocheck
-import { Hexagon } from "lucide-react";
+import { Hexagon, Droplet } from "lucide-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const SubdivisionDrawPlugin: MapEditorPlugin = {
   id: "subdivision-draw",
   name: "Subdivision Drawing",
-  global: true, // Keydown listens globally to R key
-  modes: ["add-subdivision"],
+  global: true, // Keydown listens globally to R/J keys
+  modes: ["add-subdivision", "add-lake"],
 
   toolbarItems: [
     {
@@ -17,11 +16,24 @@ export const SubdivisionDrawPlugin: MapEditorPlugin = {
       shortcut: "R",
       group: 1,
     },
+    {
+      id: "tool-lake",
+      mode: "add-lake",
+      icon: Droplet,
+      label: "Lake",
+      shortcut: "J",
+      group: 1,
+    },
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    if (e.key.toLowerCase() === "r") {
+    const key = e.key.toLowerCase();
+    if (key === "r") {
       context.onModeChange("add-subdivision");
+      return true;
+    }
+    if (key === "j") {
+      context.onModeChange("add-lake");
       return true;
     }
     return false;

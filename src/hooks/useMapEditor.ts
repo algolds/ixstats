@@ -425,7 +425,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [routeWaypoints, setRouteWaypoints] = useState<[number, number][]>([]);
 
   useEffect(() => {
-    if (mode !== "add-route" && mode !== "split-subdivision") {
+    if (mode !== "add-route" && mode !== "add-river" && mode !== "split-subdivision") {
       setRouteWaypoints([]);
     }
   }, [mode]);
@@ -1737,7 +1737,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         mode === "add-peak"
       ) {
         setPendingCoordinates(point);
-      } else if (mode === "add-route" || mode === "split-subdivision") {
+      } else if (mode === "add-route" || mode === "add-river" || mode === "split-subdivision") {
         setRouteWaypoints((prev) => [...prev, [lng, lat]]);
       }
     },

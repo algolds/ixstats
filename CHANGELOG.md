@@ -10,6 +10,17 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+## [1.1.10 Ogma (Alpha)] - 2026-06-29
+
+### Added
+- **Map Geography Report & Analyzer (Atlas Engine v3)**:
+  - **Named Feature Toolbar & Shortcuts**: Integrated Peaks (shortcut `K`, icon `Mountain`), Rivers (shortcut `Y`, icon `Waves`), and Lakes (shortcut `J`, icon `Droplet`) toolbar items via their respective editor plugins ([PointPlacementPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/PointPlacementPlugin.ts), [RouteEditPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/RouteEditPlugin.ts), [SubdivisionDrawPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/SubdivisionDrawPlugin.ts)).
+  - **Drawing & Placement Canvas Integration**: Updated [EditorMap.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/editor/EditorMap.tsx), [useSubdivisionDraw.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionDraw.ts), and [useMapEditor.ts](file:///home/jxsig/projects/ixstats/src/hooks/useMapEditor.ts) to support polygon drawing for Lakes, click placement coordinates for Peaks, and route waypoints path construction for Rivers.
+- **Achievements Auto-Resync (Achievements System v2)**:
+  - **On-Mount Collector Resync**: Modified the achievements page ([page.tsx](file:///home/jxsig/projects/ixstats/src/app/achievements/page.tsx)) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
+- **Editor Economy Styling Polish**:
+  - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators ([PopulationSection.tsx](file:///home/jxsig/projects/ixstats/src/app/builder/components/enhanced/tabs/demographics/PopulationSection.tsx)) and geographic region rows ([GeographicSection.tsx](file:///home/jxsig/projects/ixstats/src/app/builder/components/enhanced/tabs/demographics/GeographicSection.tsx)) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
+
 ## [1.1.9 Ogma (Alpha)] - 2026-06-29
 
 ### Added

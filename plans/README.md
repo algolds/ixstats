@@ -25,8 +25,6 @@ the live working set stays here.
 | Plan | Priority | Status |
 |------|----------|--------|
 | [map-editor-improvements-overview.md](map-editor-improvements-overview.md) | — | ACTIVE (index) |
-| [045-map-topology-engine.md](045-map-topology-engine.md) | P1 | ACTIVE |
-| [map-editor-geography-analyzer.md](map-editor-geography-analyzer.md) | P1 | BLOCKED |
 
 ### MyCountry Core Loops
 | Plan | Scope | Status |
@@ -36,7 +34,6 @@ the live working set stays here.
 ### Public Preview
 | Plan | Scope | Status |
 |------|-------|--------|
-| [preview-feedback-fixes.md](preview-feedback-fixes.md) | Live-preview feedback fix tracker (open items remain) | ACTIVE |
 | [ixstates-community-feedback-analysis.md](ixstates-community-feedback-analysis.md) | Discord community feedback analysis (roadmap input) | REFERENCE |
 
 ---
@@ -64,8 +61,8 @@ the live working set stays here.
 
 ## Archive
 
-99 completed/realized/superseded plans live in [`archive/`](archive/) — kept for context, not maintained.
-Highlights: conlang modularization (Plan 091), security hardening (Plan 090), cache invalidation (Plan 089), routes overhaul (Plans 046-050), territory brush (Plan 029/047), builder auto-sync (Plan 052), map layer panel memoization (Plan 053), map feature grouping (Plan 054), map progressive zoom filtering (Plan 051), Exchange Phase 1 (built), MyCountry executive/builder/UX audits (shipped), versioning
+102 completed/realized/superseded plans live in [`archive/`](archive/) — kept for context, not maintained.
+Highlights: live-preview feedback fixes (Plan C-3), geography report analyzer (Plan C-2), shared-edge topology engine (Plan 045), conlang modularization (Plan 091), security hardening (Plan 090), cache invalidation (Plan 089), routes overhaul (Plans 046-050), territory brush (Plan 029/047), builder auto-sync (Plan 052), map layer panel memoization (Plan 053), map feature grouping (Plan 054), map progressive zoom filtering (Plan 051), Exchange Phase 1 (built), MyCountry executive/builder/UX audits (shipped), versioning
 architecture (→ `docs/reference/revision.md`), geo-core + country-geo-service splits (done),
 WikiOS core-boundary + workstream C (done), VPS stabilization/memory audits (done), the June 2026
 codebase audit, and map-topology-engine v1 (superseded by Plan 045).

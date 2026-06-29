@@ -72,10 +72,10 @@ export function GeographicSection({
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`rounded-lg border p-3 ${
+            className={`rounded-lg border p-3 transition-colors ${
               editingRegion === index.toString()
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                : "border-gray-200 dark:border-gray-700"
+                ? "border-emerald-500/50 bg-emerald-500/[0.04]"
+                : "border-white/10 bg-white/[0.01]"
             }`}
           >
             <div className="mb-2 flex items-center justify-between">
