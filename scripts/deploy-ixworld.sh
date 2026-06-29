@@ -120,7 +120,7 @@ export NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/
 export NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=""
 export NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=""
 export NODE_ENV=production
-export NODE_OPTIONS="--max-old-space-size=2560"
+export NODE_OPTIONS="--max-old-space-size=4096"
 
 if ! bunx next build --webpack; then
     log "ERROR: Build failed! IxStats .next will be restored on exit."
