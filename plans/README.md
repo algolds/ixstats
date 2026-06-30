@@ -32,7 +32,6 @@ the live working set stays here.
 |------|----------|--------|
 | [064-myleague-myclub-consolidated.md](064-myleague-myclub-consolidated.md) | High | ACTIVE (planning) |
 | [065-myleague-emotional-layer.md](065-myleague-emotional-layer.md) | High | DONE |
-| [066-myclub-ui-refactor.md](066-myclub-ui-refactor.md) | High | DONE |
 
 ### MyCountry Core Loops
 | Plan | Scope | Status |

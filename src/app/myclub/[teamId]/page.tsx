@@ -108,60 +108,34 @@ function PlayerCard({
   onTrained?: () => void;
 }) {
   const ratings = (player.ratings as Record<string, number>) ?? {};
-  const overall = ratings.overall ?? 50;
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Physical Folder dossier tab */}
-      <div className="w-[320px] pl-2 text-left">
-        <div className="inline-block rounded-t-lg border-x border-t border-[#c2b7a4] bg-[#dfd5c6] px-3 py-1 font-mono text-[10px] font-bold text-slate-800 shadow-sm">
-          📁 FILE // {player.position}
+    <div className="flex flex-col items-center gap-3">
+      <SportyPlayerCard player={player} team={team} />
+      {onList && (
+        <div className="relative z-10 flex w-[320px] gap-1 px-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-border bg-muted/40 text-foreground hover:bg-muted/80 h-8 w-full text-[10px]"
+            onClick={() => onList(player)}
+          >
+            Manage Listing
+          </Button>
+          {teamId && attributes && (
+            <div className="relative">
+              <PlayerTrainingButton
+                playerId={player.id}
+                playerName={`${player.firstName} ${player.lastName}`}
+                teamId={teamId}
+                attributes={attributes}
+                currentRatings={ratings}
+                onTrained={onTrained}
+              />
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Folder body */}
-      <div className="relative flex w-[320px] flex-col items-center gap-3 overflow-hidden rounded-tr-2xl rounded-b-2xl border border-[#c2b7a4] bg-[#eae3d2] p-3 pt-4 text-slate-900 shadow-md">
-        {/* Ink stamp OVR */}
-        <div className="absolute top-2 right-2 rotate-12 rounded border-2 border-dashed border-red-700/60 px-2 py-0.5 font-mono text-xs font-black tracking-wider text-red-700/80 uppercase select-none">
-          OVR {overall}
-        </div>
-
-        {/* Typed name */}
-        <div className="mb-1 w-full border-b border-dashed border-slate-400/80 px-1 pb-2 font-mono text-[10px] text-slate-700 uppercase">
-          NAME: {player.firstName} {player.lastName} <br />
-          STATUS: {player.careerStage || "ACTIVE"}
-        </div>
-
-        {/* Tucked player photo/card */}
-        <div className="rounded-xl border border-slate-800/20 bg-slate-950/95 p-1.5 shadow-inner">
-          <SportyPlayerCard player={player} team={team} />
-        </div>
-
-        {onList && (
-          <div className="relative z-10 flex w-full gap-1 pt-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 w-full border-slate-400/40 bg-white/50 font-mono text-[10px] font-bold text-slate-800 hover:bg-white/80"
-              onClick={() => onList(player)}
-            >
-              [MANAGE LISTING]
-            </Button>
-            {teamId && attributes && (
-              <div className="relative">
-                <PlayerTrainingButton
-                  playerId={player.id}
-                  playerName={`${player.firstName} ${player.lastName}`}
-                  teamId={teamId}
-                  attributes={attributes}
-                  currentRatings={ratings}
-                  onTrained={onTrained}
-                />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
@@ -511,7 +485,7 @@ export default function MyClubTeamDetailPage() {
                   {/* Record widgets */}
                   {currentStandings && (
                     <div className="grid gap-4 sm:grid-cols-3">
-                      <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                      <Card className="facet-hierarchy-child bg-card/45 border-border">
                         <CardContent className="pt-6 text-center">
                           <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                             Record
@@ -522,7 +496,7 @@ export default function MyClubTeamDetailPage() {
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                      <Card className="facet-hierarchy-child bg-card/45 border-border">
                         <CardContent className="pt-6 text-center">
                           <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                             League Points
@@ -532,7 +506,7 @@ export default function MyClubTeamDetailPage() {
                           </p>
                         </CardContent>
                       </Card>
-                      <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                      <Card className="facet-hierarchy-child bg-card/45 border-border">
                         <CardContent className="pt-6 text-center">
                           <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                             Scored / Conceded
@@ -547,7 +521,7 @@ export default function MyClubTeamDetailPage() {
                 </>
               ) : (
                 <>
-                  <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                  <Card className="facet-hierarchy-child bg-card/45 border-border">
                     <CardHeader className="pb-4">
                       <div className="flex items-center gap-3">
                         <div
@@ -568,7 +542,7 @@ export default function MyClubTeamDetailPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-2xl border border-emerald-500/10 bg-slate-950/45 p-4 transition-all duration-300 hover:border-emerald-500/30 hover:bg-emerald-950/20">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
                         <div className="mb-2 flex items-center gap-2">
                           <Users className="h-4 w-4" style={{ color: team.color }} />
                           <h4 className="text-foreground text-sm font-semibold">Train Roster</h4>
@@ -579,7 +553,7 @@ export default function MyClubTeamDetailPage() {
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-emerald-500/10 bg-slate-950/45 p-4 transition-all duration-300 hover:border-emerald-500/30 hover:bg-emerald-950/20">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
                         <div className="mb-2 flex items-center gap-2">
                           <ArrowLeftRight className="h-4 w-4" style={{ color: team.color }} />
                           <h4 className="text-foreground text-sm font-semibold">Scout Transfers</h4>
@@ -590,7 +564,7 @@ export default function MyClubTeamDetailPage() {
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-emerald-500/10 bg-slate-950/45 p-4 transition-all duration-300 hover:border-emerald-500/30 hover:bg-emerald-950/20">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
                         <div className="mb-2 flex items-center gap-2">
                           <BarChart3 className="h-4 w-4" style={{ color: team.color }} />
                           <h4 className="text-foreground text-sm font-semibold">Tweak Tactics</h4>
@@ -601,7 +575,7 @@ export default function MyClubTeamDetailPage() {
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-emerald-500/10 bg-slate-950/45 p-4 transition-all duration-300 hover:border-emerald-500/30 hover:bg-emerald-950/20">
+                      <div className="border-border bg-muted/30 hover:bg-muted/50 rounded-2xl border p-4 transition-all duration-300">
                         <div className="mb-2 flex items-center gap-2">
                           <DollarSign className="h-4 w-4" style={{ color: team.color }} />
                           <h4 className="text-foreground text-sm font-semibold">Collect Revenue</h4>
@@ -616,7 +590,7 @@ export default function MyClubTeamDetailPage() {
 
                   {/* Club Statistics Grid */}
                   <div className="grid gap-4 sm:grid-cols-3">
-                    <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                    <Card className="facet-hierarchy-child bg-card/45 border-border">
                       <CardContent className="pt-6 text-center">
                         <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Squad Members
@@ -626,7 +600,7 @@ export default function MyClubTeamDetailPage() {
                         </p>
                       </CardContent>
                     </Card>
-                    <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                    <Card className="facet-hierarchy-child bg-card/45 border-border">
                       <CardContent className="pt-6 text-center">
                         <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Avg Roster OVR
@@ -643,7 +617,7 @@ export default function MyClubTeamDetailPage() {
                         </p>
                       </CardContent>
                     </Card>
-                    <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                    <Card className="facet-hierarchy-child bg-card/45 border-border">
                       <CardContent className="pt-6 text-center">
                         <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Available Budget
@@ -666,7 +640,7 @@ export default function MyClubTeamDetailPage() {
                 onTrained={refetchOverview}
               />
               {upcomingMatches && upcomingMatches.length > 0 && (
-                <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                <Card className="facet-hierarchy-child bg-card/45 border-border">
                   <CardHeader>
                     <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
                       <Calendar className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
@@ -710,7 +684,7 @@ export default function MyClubTeamDetailPage() {
               )}
 
               {/* History list */}
-              <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/45 border-border">
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
                     <BarChart3 className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
@@ -831,7 +805,7 @@ export default function MyClubTeamDetailPage() {
 
             {/* Coaching Staff */}
             {team.coaches && team.coaches.length > 0 && (
-              <Card className="facet-hierarchy-child mt-6 border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/40 border-border mt-6">
                 <CardHeader>
                   <CardTitle className="text-base font-bold">Coaching & Strategy Staff</CardTitle>
                 </CardHeader>
@@ -866,7 +840,7 @@ export default function MyClubTeamDetailPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Tactical shapes */}
             <div className="lg:col-span-2">
-              <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/45 border-border">
                 <CardHeader>
                   <CardTitle>Team Tactics & Strategy</CardTitle>
                   <CardDescription className="text-muted-foreground">
@@ -978,7 +952,7 @@ export default function MyClubTeamDetailPage() {
 
             {/* Apple Watch style radial control panel */}
             <div>
-              <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/40 border-border">
                 <CardHeader>
                   <CardTitle className="text-base font-bold">Strategic Weighting</CardTitle>
                 </CardHeader>
@@ -1213,7 +1187,7 @@ export default function MyClubTeamDetailPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Left Column: search and bid action */}
             <div className="space-y-6 lg:col-span-2">
-              <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/45 border-border">
                 <CardHeader>
                   <CardTitle>Transfer Marketplace Search</CardTitle>
                   <CardDescription className="text-muted-foreground">
@@ -1302,7 +1276,7 @@ export default function MyClubTeamDetailPage() {
               </Card>
 
               {/* Active Marketplace Listings */}
-              <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/45 border-border">
                 <CardHeader>
                   <CardTitle>Active Transfer Listings</CardTitle>
                   <CardDescription className="text-muted-foreground">
@@ -1389,7 +1363,7 @@ export default function MyClubTeamDetailPage() {
             {/* Right Column: Inbound/Outbound bid list */}
             <div className="space-y-6">
               {comparePlayer && squadComparePlayer && (
-                <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+                <Card className="facet-hierarchy-child bg-card/45 border-border">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
                       Comparison Detail
@@ -1431,7 +1405,7 @@ export default function MyClubTeamDetailPage() {
                 </Card>
               )}
               {/* Inbound Bids */}
-              <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/40 border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base font-bold">
                     <ArrowLeftRight className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
@@ -1489,7 +1463,7 @@ export default function MyClubTeamDetailPage() {
               </Card>
 
               {/* Outbound Bids */}
-              <Card className="facet-hierarchy-child border border-emerald-500/10 bg-[#040c06]/70 shadow-[0_4px_20px_rgba(16,185,129,0.05)] backdrop-blur-md">
+              <Card className="facet-hierarchy-child bg-card/40 border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base font-bold">
                     <ArrowLeftRight className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
@@ -1559,224 +1533,185 @@ export default function MyClubTeamDetailPage() {
   };
 
   return (
-    <div
-      className="min-h-screen w-full px-3 py-6 sm:px-6 sm:py-10"
-      style={{
-        background: "radial-gradient(ellipse at center, #2f1708 0%, #170a01 100%)",
-        boxShadow: "inset 0 0 100px rgba(0,0,0,0.8)",
-      }}
-    >
-      <div className="relative mx-auto max-w-7xl rounded-[2.5rem] border-2 border-dashed border-amber-800/40 bg-[#0c2417] p-3 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),inset_0_2px_4px_rgba(255,255,255,0.05)] sm:p-6 md:p-8">
-        {/* Brass corner brackets/rivets */}
-        <div className="absolute top-4 left-4 flex h-6 w-6 items-center justify-center rounded-full border border-amber-700/20 bg-gradient-to-br from-amber-500 to-amber-700 text-[8px] font-bold text-amber-950 shadow-[0_2px_4px_rgba(0,0,0,0.4)] select-none">
-          🔩
-        </div>
-        <div className="absolute top-4 right-4 flex h-6 w-6 items-center justify-center rounded-full border border-amber-700/20 bg-gradient-to-br from-amber-500 to-amber-700 text-[8px] font-bold text-amber-950 shadow-[0_2px_4px_rgba(0,0,0,0.4)] select-none">
-          🔩
-        </div>
-        <div className="absolute bottom-4 left-4 flex h-6 w-6 items-center justify-center rounded-full border border-amber-700/20 bg-gradient-to-br from-amber-500 to-amber-700 text-[8px] font-bold text-amber-950 shadow-[0_2px_4px_rgba(0,0,0,0.4)] select-none">
-          🔩
-        </div>
-        <div className="absolute right-4 bottom-4 flex h-6 w-6 items-center justify-center rounded-full border border-amber-700/20 bg-gradient-to-br from-amber-500 to-amber-700 text-[8px] font-bold text-amber-950 shadow-[0_2px_4px_rgba(0,0,0,0.4)] select-none">
-          🔩
-        </div>
+    <>
+      <MyLeagueSidebarLayout
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+        teamColor={team.color}
+        heroSection={
+          <div className="facet-hierarchy-parent border-border bg-card relative mb-4 overflow-hidden rounded-xl border">
+            {team.coverImage && (
+              <div className="absolute inset-0 z-0">
+                <img
+                  src={withBasePath(team.coverImage)}
+                  alt=""
+                  className="h-full w-full object-cover opacity-45 blur-[1px] filter"
+                />
+                <div className="from-card via-card/50 absolute inset-0 bg-gradient-to-t to-transparent" />
+              </div>
+            )}
+            <div className="relative z-10 p-4 sm:p-5">
+              <Button
+                variant="ghost"
+                onClick={() => router.push(withBasePath("/myclub"))}
+                className="text-muted-foreground hover:text-foreground mb-4 h-8 px-2"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to MyClub
+              </Button>
 
-        {/* Embedded Tablet Viewport */}
-        <div className="overflow-hidden rounded-[1.8rem] border-[10px] border-slate-900 bg-[#030704]/98 p-1 shadow-[0_15px_35px_rgba(0,0,0,0.7),inset_0_0_20px_rgba(0,0,0,0.9)] sm:p-3">
-          <MyLeagueSidebarLayout
-            activeSection={activeSection}
-            onNavigate={setActiveSection}
-            teamColor={team.color}
-            heroSection={
-              <div className="facet-hierarchy-parent relative mb-4 overflow-hidden rounded-2xl border-2 border-amber-900/50 bg-gradient-to-b from-[#25160d] to-[#120803] shadow-[inset_0_2px_10px_rgba(0,0,0,0.8),0_4px_15px_rgba(0,0,0,0.5)]">
-                {/* Plaque screw rivets */}
-                <div className="absolute top-2 left-2 flex h-2.5 w-2.5 items-center justify-center rounded-full border border-amber-800/40 bg-gradient-to-br from-amber-400 to-amber-600 text-[5px] text-amber-950/80 shadow-inner select-none">
-                  ⚙️
-                </div>
-                <div className="absolute top-2 right-2 flex h-2.5 w-2.5 items-center justify-center rounded-full border border-amber-800/40 bg-gradient-to-br from-amber-400 to-amber-600 text-[5px] text-amber-950/80 shadow-inner select-none">
-                  ⚙️
-                </div>
-                <div className="absolute bottom-2 left-2 flex h-2.5 w-2.5 items-center justify-center rounded-full border border-amber-800/40 bg-gradient-to-br from-amber-400 to-amber-600 text-[5px] text-amber-950/80 shadow-inner select-none">
-                  ⚙️
-                </div>
-                <div className="absolute right-2 bottom-2 flex h-2.5 w-2.5 items-center justify-center rounded-full border border-amber-800/40 bg-gradient-to-br from-amber-400 to-amber-600 text-[5px] text-amber-950/80 shadow-inner select-none">
-                  ⚙️
-                </div>
-                {team.coverImage && (
-                  <div className="absolute inset-0 z-0">
+              <div className="flex flex-wrap items-center gap-4">
+                <div
+                  className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl"
+                  style={{
+                    backgroundColor: `${team.color}20`,
+                    border: `1px solid ${team.color}40`,
+                  }}
+                >
+                  {team.logo ? (
                     <img
-                      src={withBasePath(team.coverImage)}
-                      alt=""
-                      className="h-full w-full object-cover opacity-45 blur-[1px] filter"
+                      src={withBasePath(team.logo)}
+                      alt="Club logo"
+                      className="h-full w-full object-cover"
                     />
-                    <div className="from-card via-card/50 absolute inset-0 bg-gradient-to-t to-transparent" />
-                  </div>
-                )}
-                <div className="relative z-10 p-4 sm:p-5">
-                  <Button
-                    variant="ghost"
-                    onClick={() => router.push(withBasePath("/myclub"))}
-                    className="text-muted-foreground hover:text-foreground mb-4 h-8 px-2"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to MyClub
-                  </Button>
-
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl"
-                      style={{
-                        backgroundColor: `${team.color}20`,
-                        border: `1px solid ${team.color}40`,
-                      }}
+                  ) : (
+                    emoji
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    {team.logo && (
+                      <img
+                        src={withBasePath(team.logo)}
+                        alt=""
+                        className="h-8 w-8 rounded-lg border object-cover"
+                      />
+                    )}
+                    <h1 className="text-foreground truncate text-2xl font-bold">{team.name}</h1>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted/50 h-8 w-8 rounded-full"
+                      onClick={() => setSettingsOpen(true)}
+                      title="Club Settings"
                     >
-                      {team.logo ? (
-                        <img
-                          src={withBasePath(team.logo)}
-                          alt="Club logo"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        emoji
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        {team.logo && (
-                          <img
-                            src={withBasePath(team.logo)}
-                            alt=""
-                            className="h-8 w-8 rounded-lg border object-cover"
-                          />
-                        )}
-                        <h1 className="text-foreground truncate text-2xl font-bold">{team.name}</h1>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-foreground hover:bg-muted/50 h-8 w-8 rounded-full"
-                          onClick={() => setSettingsOpen(true)}
-                          title="Club Settings"
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-muted-foreground mt-0.5 text-xs">
-                        {team.league && (
-                          <Link
-                            href={withBasePath(`/myleague/${team.leagueId}`)}
-                            className="hover:text-foreground inline-flex items-center gap-1 hover:underline"
-                          >
-                            <span>{team.league.name}</span>
-                            <ExternalLink className="h-2.5 w-2.5" />
-                          </Link>
-                        )}
-                      </p>
-                    </div>
+                      <Settings className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {team.city && (
-                      <Badge
-                        variant="outline"
-                        className="border-border text-muted-foreground flex items-center gap-1"
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {team.league && (
+                      <Link
+                        href={withBasePath(`/myleague/${team.leagueId}`)}
+                        className="hover:text-foreground inline-flex items-center gap-1 hover:underline"
                       >
-                        <MapPin className="h-2.5 w-2.5" />
-                        {team.city}
-                      </Badge>
+                        <span>{team.league.name}</span>
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </Link>
                     )}
-                    {team.nation && (
-                      <Badge
-                        variant="outline"
-                        className="border-border text-muted-foreground flex items-center gap-1"
-                      >
-                        <Flag className="h-2.5 w-2.5" />
-                        {(team.nation as Record<string, string>).name}
-                      </Badge>
-                    )}
-                    <Badge
-                      variant="secondary"
-                      className="border-border bg-muted/60 text-muted-foreground flex items-center gap-1"
-                    >
-                      <Trophy className="h-2.5 w-2.5 text-amber-500" />
-                      {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
-                    </Badge>
-                    {championships > 0 && (
-                      <Badge
-                        variant="default"
-                        className="flex items-center gap-1 bg-amber-500 font-bold text-white hover:bg-amber-500"
-                      >
-                        <Trophy className="h-2.5 w-2.5" />
-                        {championships}x Champion
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Quick Stats Grid */}
-                  <div className="border-border/20 mt-5 grid grid-cols-2 gap-4 border-t pt-4 sm:grid-cols-4">
-                    <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
-                      <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                        Current Record
-                      </span>
-                      <span className="text-foreground mt-1 block text-lg font-black">
-                        {currentStandings
-                          ? `${currentStandings.wins}W - ${currentStandings.losses}L${
-                              currentStandings.draws > 0 ? ` - ${currentStandings.draws}D` : ""
-                            }`
-                          : "0W - 0L (Offseason)"}
-                      </span>
-                      {currentStandings?.rank && (
-                        <span className="text-muted-foreground/80 mt-1 block text-[10px]">
-                          League Rank: #{currentStandings.rank}
-                          {currentStandings.points !== undefined &&
-                            ` (${currentStandings.points} pts)`}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
-                      <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                        Championships
-                      </span>
-                      <span className="text-foreground mt-1 block flex items-center gap-1 text-lg font-black">
-                        <Trophy className="inline h-4 w-4 text-amber-500" /> {championships}
-                      </span>
-                      <span className="text-muted-foreground/80 mt-1 block text-[10px]">
-                        Over {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-
-                    <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
-                      <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                        Club Budget
-                      </span>
-                      <span className="text-foreground mt-1 block text-lg font-black">
-                        ₷{team.budget?.toLocaleString() ?? "0"}
-                      </span>
-                      <span className="text-muted-foreground/80 mt-1 block truncate text-[10px]">
-                        Sponsor: {(team.sponsor as any)?.name ?? "None"}
-                      </span>
-                    </div>
-
-                    <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
-                      <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                        Stadium & Fans
-                      </span>
-                      <span className="text-foreground mt-1 block text-lg font-black">
-                        {team.stadiumCapacity?.toLocaleString() ?? "5,000"} cap
-                      </span>
-                      <span className="text-muted-foreground/80 mt-1 block text-[10px]">
-                        Popularity: {team.popularity ?? 50}%
-                      </span>
-                    </div>
-                  </div>
+                  </p>
                 </div>
               </div>
-            }
-          >
-            {renderSectionContent()}
-          </MyLeagueSidebarLayout>
-        </div>
-      </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {team.city && (
+                  <Badge
+                    variant="outline"
+                    className="border-border text-muted-foreground flex items-center gap-1"
+                  >
+                    <MapPin className="h-2.5 w-2.5" />
+                    {team.city}
+                  </Badge>
+                )}
+                {team.nation && (
+                  <Badge
+                    variant="outline"
+                    className="border-border text-muted-foreground flex items-center gap-1"
+                  >
+                    <Flag className="h-2.5 w-2.5" />
+                    {(team.nation as Record<string, string>).name}
+                  </Badge>
+                )}
+                <Badge
+                  variant="secondary"
+                  className="border-border bg-muted/60 text-muted-foreground flex items-center gap-1"
+                >
+                  <Trophy className="h-2.5 w-2.5 text-amber-500" />
+                  {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
+                </Badge>
+                {championships > 0 && (
+                  <Badge
+                    variant="default"
+                    className="flex items-center gap-1 bg-amber-500 font-bold text-white hover:bg-amber-500"
+                  >
+                    <Trophy className="h-2.5 w-2.5" />
+                    {championships}x Champion
+                  </Badge>
+                )}
+              </div>
+
+              {/* Quick Stats Grid */}
+              <div className="border-border/20 mt-5 grid grid-cols-2 gap-4 border-t pt-4 sm:grid-cols-4">
+                <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
+                  <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                    Current Record
+                  </span>
+                  <span className="text-foreground mt-1 block text-lg font-black">
+                    {currentStandings
+                      ? `${currentStandings.wins}W - ${currentStandings.losses}L${
+                          currentStandings.draws > 0 ? ` - ${currentStandings.draws}D` : ""
+                        }`
+                      : "0W - 0L (Offseason)"}
+                  </span>
+                  {currentStandings?.rank && (
+                    <span className="text-muted-foreground/80 mt-1 block text-[10px]">
+                      League Rank: #{currentStandings.rank}
+                      {currentStandings.points !== undefined && ` (${currentStandings.points} pts)`}
+                    </span>
+                  )}
+                </div>
+
+                <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
+                  <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                    Championships
+                  </span>
+                  <span className="text-foreground mt-1 block flex items-center gap-1 text-lg font-black">
+                    <Trophy className="inline h-4 w-4 text-amber-500" /> {championships}
+                  </span>
+                  <span className="text-muted-foreground/80 mt-1 block text-[10px]">
+                    Over {seasonsCount} season{seasonsCount !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
+                  <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                    Club Budget
+                  </span>
+                  <span className="text-foreground mt-1 block text-lg font-black">
+                    ₷{team.budget?.toLocaleString() ?? "0"}
+                  </span>
+                  <span className="text-muted-foreground/80 mt-1 block truncate text-[10px]">
+                    Sponsor: {(team.sponsor as any)?.name ?? "None"}
+                  </span>
+                </div>
+
+                <div className="border-border/30 bg-muted/20 relative overflow-hidden rounded-xl border p-3 backdrop-blur-md">
+                  <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                    Stadium & Fans
+                  </span>
+                  <span className="text-foreground mt-1 block text-lg font-black">
+                    {team.stadiumCapacity?.toLocaleString() ?? "5,000"} cap
+                  </span>
+                  <span className="text-muted-foreground/80 mt-1 block text-[10px]">
+                    Popularity: {team.popularity ?? 50}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      >
+        {renderSectionContent()}
+      </MyLeagueSidebarLayout>
 
       <TeamSettingsModal
         team={{
@@ -1789,6 +1724,6 @@ export default function MyClubTeamDetailPage() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />
-    </div>
+    </>
   );
 }
