@@ -109,6 +109,7 @@ export function useCountryMapEmbedLayers({
       center: initialCenter,
       zoom: 3,
       interactive,
+      projectionMode: "mercator",
       onReady: (map) => {
         if (released) return;
         state.mapRef.current = map;
@@ -410,8 +411,10 @@ export function useCountryMapEmbedLayers({
 
             // Capital star icon
             if (state.capital) {
-              const starImg = createStarImage(24, "#d4a017", "#7a5c00");
-              map.addImage("capital-star", starImg, { sdf: false });
+              if (!map.hasImage("capital-star")) {
+                const starImg = createStarImage(24, "#d4a017", "#7a5c00");
+                map.addImage("capital-star", starImg, { sdf: false });
+              }
 
               map.addLayer({
                 id: "capital-star",
