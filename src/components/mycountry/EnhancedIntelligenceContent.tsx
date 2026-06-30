@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCountryData, SectionShell, InlineWiki } from "./primitives";
+import { useCountryData, SectionShell } from "./primitives";
 import { api } from "~/trpc/react";
 import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { IntelligenceSidebarWidget } from "./sidebar-widgets/IntelligenceSidebarWidget";
@@ -67,9 +67,6 @@ export function EnhancedIntelligenceContent({
     >
       {/* 3-panel command dashboard (matching executive/diplomacy war room layouts) */}
       <IntelligenceWarRoom countryId={country.id} countryName={country.name} />
-
-      {/* Wiki woven inline */}
-      <InlineWiki context="intelligence" accent="blue" maxSections={1} />
     </SectionShell>
   );
 }

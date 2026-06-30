@@ -1,21 +1,18 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { TrendingUp, Activity, Loader2, BookOpen, ChevronDown, ExternalLink } from "lucide-react";
+import { TrendingUp, Activity } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
 import { smartNormalizeGrowthRate } from "~/lib/growth-calculations";
+import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
 import {
   extractWikiIntroHtml,
   findCoatOfArmsUrl,
-  getCountryWikiUrl,
   type WikiIntro,
 } from "~/lib/wiki-integration";
-import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
-import { WikiSectionRow } from "./WikiSectionRow";
 
 type MetricView = {
   gdp: "perCapita" | "total";
@@ -25,35 +22,22 @@ type MetricView = {
 
 /**
  * Inner content of the "At a Glance" overview tab: metric toggle grid, growth
- * footer, identity & lore (wiki intro + coat of arms + identity pills), and the
- * collapsible wiki sections list.
- *
- * Extracted from MyCountryTabSystem during modular decomposition.
- * Behavior preserved exactly. The keyed `<TabsContent value="overview">`
- * wrapper remains in the orchestrator; this renders its inner Card.
+ * footer, identity details & wiki introduction, and identity pills.
  */
 export function OverviewTab({
   country,
   wikiIntro,
   wikiImages,
   wikiLoading,
-  wikiSections,
-  sectionsLoading,
   metricView,
   setMetricViewAction,
-  wikiSectionsOpen,
-  setWikiSectionsOpenAction,
 }: {
   country: any;
   wikiIntro: unknown;
   wikiImages: Array<{ title: string; url: string }> | null | undefined;
   wikiLoading: boolean;
-  wikiSections: any[] | null | undefined;
-  sectionsLoading: boolean;
   metricView: MetricView;
   setMetricViewAction: React.Dispatch<React.SetStateAction<MetricView>>;
-  wikiSectionsOpen: boolean;
-  setWikiSectionsOpenAction: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <Card className="glass-surface glass-refraction bg-gradient-overview border-border overflow-hidden">
@@ -299,88 +283,6 @@ export function OverviewTab({
               );
             })()}
         </div>
-
-        {/* ── Wiki Sections (collapsible) ── */}
-        {(() => {
-          const wikiSource = (country as any).wikiSource;
-          const wikiUrl = getCountryWikiUrl(country.name, wikiSource);
-          const sections = (wikiSections ?? [])
-            .filter((s: any) => s.level === 2)
-            .map((s: any, i: number) => ({
-              title: s.line || s.title || "",
-              key: `${i}-${s.anchor || s.line || i}`,
-            }));
-
-          if (sectionsLoading)
-            return (
-              <div className="border-border/30 flex items-center gap-2 border-t py-2 pt-3">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-500" />
-                <span className="text-muted-foreground text-xs">Loading wiki sections...</span>
-              </div>
-            );
-
-          if (sections.length === 0) return null;
-
-          return (
-            <div className="border-border/30 border-t pt-3">
-              <button
-                onClick={() => setWikiSectionsOpenAction(!wikiSectionsOpen)}
-                className="flex w-full items-center gap-2 text-left"
-              >
-                <BookOpen className="h-3.5 w-3.5 shrink-0 text-purple-600 dark:text-purple-400" />
-                <span className="text-foreground text-xs font-semibold">Wiki Sections</span>
-                <span className="text-muted-foreground text-[10px]">
-                  {sections.length} sections
-                </span>
-                <a
-                  href={wikiUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mr-1 ml-auto flex items-center gap-0.5 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-medium text-purple-600 hover:bg-purple-500/20 dark:text-purple-400"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Wiki <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-                <ChevronDown
-                  className={cn(
-                    "text-muted-foreground h-3.5 w-3.5 shrink-0 transition-transform",
-                    !wikiSectionsOpen && "-rotate-90"
-                  )}
-                />
-              </button>
-              <AnimatePresence initial={false}>
-                {wikiSectionsOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-2 space-y-1">
-                      {sections.map((section) => (
-                        <WikiSectionRow
-                          key={section.key}
-                          title={section.title}
-                          countryName={country.name}
-                          wikiUrl={wikiUrl}
-                        />
-                      ))}
-                    </div>
-                    <a
-                      href={wikiUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 flex items-center justify-center gap-1 text-xs font-medium text-purple-600 hover:underline dark:text-purple-400"
-                    >
-                      Read full article on IxWiki <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })()}
       </CardContent>
     </Card>
   );

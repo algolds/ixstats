@@ -1,6 +1,6 @@
 "use client";
 
-import { useCountryData, SectionShell, InlineWiki } from "./primitives";
+import { useCountryData, SectionShell } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { api } from "~/trpc/react";
 import { useSectionDensity } from "~/hooks/useSectionDensity";
@@ -56,9 +56,6 @@ export function EnhancedExecutiveContent({
 
       {/* War Room — 3-panel command center */}
       <ExecutiveWarRoom countryId={country.id} />
-
-      {/* Wiki woven inline */}
-      <InlineWiki context="executive" accent="amber" maxSections={1} />
     </SectionShell>
   );
 }

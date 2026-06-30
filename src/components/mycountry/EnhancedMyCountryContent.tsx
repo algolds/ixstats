@@ -3,7 +3,7 @@
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { useCountryData, SectionShell, InlineWiki } from "./primitives";
+import { useCountryData, SectionShell } from "./primitives";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { OverviewHero } from "./OverviewHero";
 import { OverviewSidebarWidget } from "./sidebar-widgets/OverviewSidebarWidget";
@@ -77,9 +77,6 @@ export function EnhancedMyCountryContent({
       <div id="tabs">
         <MyCountryTabSystem variant={variant} />
       </div>
-
-      {/* Inline Wiki woven at the bottom */}
-      <InlineWiki context="overview" accent="amber" maxSections={1} />
     </SectionShell>
   );
 }

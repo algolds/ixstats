@@ -1,6 +1,6 @@
 "use client";
 
-import { useCountryData, SectionShell, InlineWiki } from "./primitives";
+import { useCountryData, SectionShell } from "./primitives";
 import { api } from "~/trpc/react";
 import { useSectionDensity } from "~/hooks/useSectionDensity";
 import { PoliticsSidebarWidget } from "./sidebar-widgets/PoliticsSidebarWidget";
@@ -77,9 +77,6 @@ export function EnhancedPoliticsContent({
       <div className="glass-hierarchy-child border-border rounded-xl border p-4">
         <IssuesInbox countryId={country.id} domain="political" variant="compact" maxVisible={4} />
       </div>
-
-      {/* Wiki woven inline */}
-      <InlineWiki context="politics" accent="indigo" maxSections={1} />
     </SectionShell>
   );
 }

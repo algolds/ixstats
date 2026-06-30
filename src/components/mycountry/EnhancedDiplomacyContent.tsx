@@ -4,7 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { CountryFeatureSheet } from "./CountryFeatureSheet";
 import type { CountryMapFeature } from "~/components/maps/widgets/CountryMapEmbed";
-import { useCountryData, SectionShell, InlineWiki } from "./primitives";
+import { useCountryData, SectionShell } from "./primitives";
 import { api } from "~/trpc/react";
 import { CrossPillarBanner } from "./primitives/CrossPillarBanner";
 import { DiplomacySidebarWidget } from "./sidebar-widgets/DiplomacySidebarWidget";
@@ -77,9 +77,6 @@ export function EnhancedDiplomacyContent({
 
       {/* War Room — 3-panel command center (leads; carries the guided empty-state CTAs) */}
       <DiplomacyWarRoom countryId={country.id} />
-
-      {/* Wiki woven inline */}
-      <InlineWiki context="diplomacy" accent="cyan" maxSections={1} />
 
       {/* Click-to-manage feature sheet (city / subdivision attributes) */}
       <CountryFeatureSheet

@@ -187,10 +187,10 @@ export function PolicyCreatorSheet({
   const { data: catalog = [] } = api.policies.getPolicyCatalog.useQuery(undefined, {
     enabled: open,
   });
-  const { data: country } = api.countries.getCountry?.useQuery(
+  const { data: country } = api.countries.getByIdBasic.useQuery(
     { id: countryId },
     { enabled: !!countryId && open }
-  ) || { data: null };
+  );
   const { data: reconContext } = api.policies.getPolicyReconContext.useQuery(
     { countryId },
     { enabled: !!countryId && open }

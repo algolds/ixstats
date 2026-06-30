@@ -42,13 +42,9 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
     governmentStructure,
     metricView,
     setMetricView,
-    wikiSectionsOpen,
-    setWikiSectionsOpen,
     wikiIntro,
     wikiLoading,
     wikiImages,
-    wikiSections,
-    sectionsLoading,
     imageUploadModal,
     setImageUploadModal,
     isMetricModalOpen,
@@ -79,12 +75,8 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
             wikiIntro={wikiIntro}
             wikiImages={wikiImages}
             wikiLoading={wikiLoading}
-            wikiSections={wikiSections}
-            sectionsLoading={sectionsLoading}
             metricView={metricView}
             setMetricViewAction={setMetricView}
-            wikiSectionsOpen={wikiSectionsOpen}
-            setWikiSectionsOpenAction={setWikiSectionsOpen}
           />
         </TabsContent>
 

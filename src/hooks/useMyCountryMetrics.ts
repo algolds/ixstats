@@ -53,9 +53,6 @@ export function useMyCountryMetrics(activeTab: string) {
     debt: "total" as "total" | "ratio",
   });
 
-  // Wiki sections collapse state (overview tab)
-  const [wikiSectionsOpen, setWikiSectionsOpen] = useState(false);
-
   // Wiki data for overview tab (fetched by country name, no wikiPageTitle gate)
   const { data: wikiIntro, isLoading: wikiLoading } = api.countries.getWikiRichIntro.useQuery(
     { countryName: country?.name || "" },
@@ -64,10 +61,6 @@ export function useMyCountryMetrics(activeTab: string) {
   const { data: wikiImages } = api.countries.getWikiPageImages.useQuery(
     { countryName: country?.name || "" },
     { staleTime: 24 * 60 * 60_000, enabled: !!country?.name }
-  );
-  const { data: wikiSections, isLoading: sectionsLoading } = api.countries.getWikiSections.useQuery(
-    { countryName: country?.name || "" },
-    { staleTime: 60 * 60_000, enabled: !!country?.name && activeTab === "overview" }
   );
 
   // Card image upload modal state
@@ -96,15 +89,10 @@ export function useMyCountryMetrics(activeTab: string) {
     // At a Glance metric view toggles
     metricView,
     setMetricView,
-    // Wiki sections collapse
-    wikiSectionsOpen,
-    setWikiSectionsOpen,
     // Wiki queries
     wikiIntro,
     wikiLoading,
     wikiImages,
-    wikiSections,
-    sectionsLoading,
     // Card image upload modal
     imageUploadModal,
     setImageUploadModal,

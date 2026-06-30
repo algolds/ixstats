@@ -10,7 +10,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { SectorBreakdownCard, MetricCardGrid, type CardImageType, InlineWiki } from "../primitives";
+import { SectorBreakdownCard, MetricCardGrid, type CardImageType } from "../primitives";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
@@ -724,8 +724,6 @@ export function GovernmentTab({
             </motion.div>
           </div>
         </div>
-
-        <InlineWiki context="government" accent="amber" maxSections={1} />
       </CardContent>
     </Card>
   );
