@@ -28,6 +28,7 @@ import { getMorphologyDetails } from "~/lib/onoma/morphology";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { speakName } from "~/lib/onoma/browser-speech";
+import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { PronunciationEditor } from "./PronunciationEditor";
 import { LinguisticProfile } from "./LinguisticProfile";
 
@@ -89,18 +90,25 @@ export function NameResultCard({
     return () => window.removeEventListener(OVERRIDES_UPDATED_EVENT, bump);
   }, []);
 
+  const resolvedCulture = useMemo(() => {
+    if (!culture || culture === "any") {
+      return classifyCulture(name).culture;
+    }
+    return culture;
+  }, [name, culture]);
+
   const ipa = useMemo(() => {
     // SSR/first render: base translation (no localStorage) so markup matches the server.
-    return mounted ? resolveIpa(name, culture ?? null) : translateToIPA(name, culture ?? null);
+    return mounted ? resolveIpa(name, resolvedCulture) : translateToIPA(name, resolvedCulture);
     // overridesVersion bumps when a localStorage override changes, forcing a re-resolve.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, culture, mounted, overridesVersion]);
+  }, [name, resolvedCulture, mounted, overridesVersion]);
 
   const hasOverride = mounted ? Boolean(getNameOverride(name)) : false;
 
   const morphology = useMemo(() => {
-    return getMorphologyDetails(name, culture ?? null);
-  }, [name, culture]);
+    return getMorphologyDetails(name, resolvedCulture);
+  }, [name, resolvedCulture]);
 
   // Shared playback: prefer Kokoro (phoneme mode from the resolved IPA), fall back to browser.
   //  - forceDefaultVoice → 🔊 reads exact phonemes in the configured default voice
@@ -110,18 +118,18 @@ export function NameResultCard({
     speakName({
       name,
       ipa: opts?.ipaText ?? ipa,
-      culture: culture ?? null,
+      culture: resolvedCulture,
       kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
       voice: opts?.voice ?? getNameOverride(name)?.voice,
       defaultVoice: speechConfig?.kokoro?.voice,
       forceDefaultVoice: opts?.forceDefaultVoice,
     });
 
-  // 🔊 Pronounce — exact phonemes in the default voice.
+  // 🔊 Pronounce — exact phonemes.
   const handlePlayPronunciation = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await playName({ forceDefaultVoice: true });
+      await playName({ forceDefaultVoice: false });
     } catch (err) {
       console.error("Pronunciation playback failed:", err);
       notify.error("Could not play this pronunciation.");
