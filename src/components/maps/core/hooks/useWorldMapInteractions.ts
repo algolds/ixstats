@@ -269,38 +269,37 @@ export function useWorldMapInteractions({
         layers: ["fill-political"],
       });
 
-      if (hoveredFeatureIdRef.current !== null && map.getSource("source-political")) {
-        map.setFeatureState(
-          { source: "source-political", id: hoveredFeatureIdRef.current },
-          { hover: false }
-        );
-      }
+      const nextFeature = features[0] || null;
+      const nextFeatureId = nextFeature?.id != null ? (nextFeature.id as number) : null;
 
-      if (features.length > 0) {
-        const feature = features[0];
-        const featureId = feature.id as number;
-        hoveredFeatureIdRef.current = featureId;
-
-        if (map.getSource("source-political")) {
-          map.setFeatureState({ source: "source-political", id: featureId }, { hover: true });
+      if (hoveredFeatureIdRef.current !== nextFeatureId) {
+        if (hoveredFeatureIdRef.current !== null && map.getSource("source-political")) {
+          map.setFeatureState(
+            { source: "source-political", id: hoveredFeatureIdRef.current },
+            { hover: false }
+          );
         }
 
-        if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
+        hoveredFeatureIdRef.current = nextFeatureId;
 
-        onCountryHoverRef.current?.({
-          featureId: feature.properties?._id || "",
-          displayName: feature.properties?._displayName || "Unknown",
-          fillColor: feature.properties?._fillColor || "#e8e5da",
-          centroidLng: feature.properties?._centroidLng || 0,
-          centroidLat: feature.properties?._centroidLat || 0,
-          countryId: (feature.properties?._countryId as string) || null,
-          screenX: e.point.x,
-          screenY: e.point.y,
-        });
-      } else {
-        hoveredFeatureIdRef.current = null;
-        onCountryHoverRef.current?.(null);
-        if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "";
+        if (nextFeatureId !== null) {
+          if (map.getSource("source-political")) {
+            map.setFeatureState({ source: "source-political", id: nextFeatureId }, { hover: true });
+          }
+          if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
+
+          onCountryHoverRef.current?.({
+            featureId: nextFeature.properties?._id || "",
+            displayName: nextFeature.properties?._displayName || "Unknown",
+            fillColor: nextFeature.properties?._fillColor || "#e8e5da",
+            centroidLng: nextFeature.properties?._centroidLng || 0,
+            centroidLat: nextFeature.properties?._centroidLat || 0,
+            countryId: (nextFeature.properties?._countryId as string) || null,
+          });
+        } else {
+          onCountryHoverRef.current?.(null);
+          if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "";
+        }
       }
     },
     [map, isOutsideGlobe, isMeasuring, tooltipPopupRef]

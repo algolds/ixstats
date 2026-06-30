@@ -19,6 +19,7 @@ import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 import { Suspense } from "react";
+import { useSharedMap } from "./SharedMapContext";
 
 // Overlay components + their wiring
 import { OVERLAY_LIST } from "~/lib/overlay-registry";
@@ -63,8 +64,8 @@ export interface SelectedFeature {
 }
 
 export interface HoveredCountry extends SelectedCountry {
-  screenX: number;
-  screenY: number;
+  screenX?: number;
+  screenY?: number;
 }
 
 export interface CapitalsGeoJson {
@@ -158,6 +159,7 @@ const IxWorldMap = memo(
     },
     ref
   ) {
+    const { acquireMap } = useSharedMap();
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -240,67 +242,54 @@ const IxWorldMap = memo(
       map.setStyle(newStyle as any, { diff: true });
     }, [theme, isLoaded, projectionMode]);
 
-    // Initialize MapLibre Map instance
+    // Initialize MapLibre Map instance using global shared map provider
     useEffect(() => {
-      if (!containerRef.current || mapRef.current) return;
+      if (!containerRef.current) return;
 
-      let cancelled = false;
+      let released = false;
+      let cleanup: (() => void) | null = null;
 
-      async function initMap() {
-        try {
-          const mod = await import("maplibre-gl");
-          const maplibregl = (
-            "Map" in mod ? mod : (mod as Record<string, unknown>).default
-          ) as typeof mod;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        setDebugError(`Container has zero size: ${rect.width}x${rect.height}`);
+        return;
+      }
 
-          if (cancelled || !containerRef.current) return;
-
-          const rect = containerRef.current.getBoundingClientRect();
-
-          if (rect.width === 0 || rect.height === 0) {
-            setDebugError(`Container has zero size: ${rect.width}x${rect.height}`);
-            return;
-          }
-
-          const map = new maplibregl.Map({
-            container: containerRef.current,
-            style: buildBaseStyle(theme, projectionMode) as maplibregl.StyleSpecification,
-            center: initialCenter || MAP_DEFAULTS.center,
-            zoom: initialZoom ?? MAP_DEFAULTS.zoom,
-            minZoom: MAP_DEFAULTS.minZoom,
-            maxZoom: MAP_DEFAULTS.maxZoom,
-            attributionControl: false,
-            dragRotate: false,
-            touchPitch: false,
-            projection: (projectionMode === "mercator" ? { type: "mercator" } : undefined) as any,
-          });
-
-          map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-
+      cleanup = acquireMap("world-map", {
+        container: containerRef.current,
+        center: initialCenter || MAP_DEFAULTS.center,
+        zoom: initialZoom ?? MAP_DEFAULTS.zoom,
+        theme,
+        projectionMode,
+        onReady: async (map) => {
+          if (released) return;
           mapRef.current = map;
 
-          // Progressive feature loading based on zoom
-          let lastFilterZoom = -1;
-          const dataRef = fullLayerDataRef;
-          map.on("zoomend", () => {
-            const zoom = map.getZoom();
+          try {
+            const mod = await import("maplibre-gl");
+            const maplibregl = (
+              "Map" in mod ? mod : (mod as Record<string, unknown>).default
+            ) as typeof mod;
 
-            const zoomBucket = Math.floor(zoom);
-            if (zoomBucket !== lastFilterZoom) {
-              lastFilterZoom = zoomBucket;
-              for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
-                const sourceId = `source-${layerType}`;
-                const source = map.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
-                const fullData = dataRef.current.get(layerType);
-                if (!source || !fullData) continue;
-                const minArea = getMinArea(layerType, zoom);
-                source.setData(filterByArea(fullData, minArea));
+            // Progressive feature loading based on zoom
+            let lastFilterZoom = -1;
+            const dataRef = fullLayerDataRef;
+            map.on("zoomend", () => {
+              const zoom = map.getZoom();
+
+              const zoomBucket = Math.floor(zoom);
+              if (zoomBucket !== lastFilterZoom) {
+                lastFilterZoom = zoomBucket;
+                for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
+                  const sourceId = `source-${layerType}`;
+                  const source = map.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
+                  const fullData = dataRef.current.get(layerType);
+                  if (!source || !fullData) continue;
+                  const minArea = getMinArea(layerType, zoom);
+                  source.setData(filterByArea(fullData, minArea));
+                }
               }
-            }
-          });
-
-          map.on("load", () => {
-            if (cancelled) return;
+            });
 
             tooltipPopupRef.current = new maplibregl.Popup({
               closeButton: false,
@@ -312,26 +301,17 @@ const IxWorldMap = memo(
 
             setIsLoaded(true);
             onReady?.();
-          });
-
-          map.on("error", (e: any) => {
-            const msg = e?.error?.message || e?.message || "";
-            if (msg) console.warn("[IxWorldMap] map error:", msg);
-          });
-        } catch (err) {
-          console.error("[IxWorldMap] initMap error:", err);
-          setDebugError(`Init error: ${err instanceof Error ? err.message : String(err)}`);
-        }
-      }
-
-      initMap();
+          } catch (err) {
+            console.error("[IxWorldMap] onReady error:", err);
+            setDebugError(`Load error: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        },
+      });
 
       return () => {
-        cancelled = true;
-        if (mapRef.current) {
-          mapRef.current.remove();
-          mapRef.current = null;
-        }
+        released = true;
+        if (cleanup) cleanup();
+        mapRef.current = null;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

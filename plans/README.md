@@ -25,6 +25,7 @@ the live working set stays here.
 | Plan | Priority | Status |
 |------|----------|--------|
 | [map-editor-improvements-overview.md](map-editor-improvements-overview.md) | — | ACTIVE (index) |
+| [103-shared-map-instance.md](103-shared-map-instance.md) | High | ACTIVE (planning) |
 
 ### MyCountry Core Loops
 | Plan | Scope | Status |

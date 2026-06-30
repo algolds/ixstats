@@ -37,7 +37,15 @@ const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT 
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
   const now = IxTime.getCurrentIxTime();
-  const [country, structure, components, pendingRecon, allocations, activePoliciesSum, dismissedIssuesCount] = await Promise.all([
+  const [
+    country,
+    structure,
+    components,
+    pendingRecon,
+    allocations,
+    activePoliciesSum,
+    dismissedIssuesCount,
+  ] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
       select: { currentPopulation: true, governmentalEfficiency: true },
@@ -97,7 +105,8 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
   const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
   const policyCivCap = activePoliciesSum._sum.civCapCost ?? 0;
   const dismissedCivCap = dismissedIssuesCount * 15;
-  const used = effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
+  const used =
+    effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
 
   return {
     componentTypes: components.map((c) => String(c.componentType)),
@@ -551,7 +560,13 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({
         where: { id: input.id },
-        select: { status: true, deadlineIxTime: true, severity: true, urgency: true, countryId: true },
+        select: {
+          status: true,
+          deadlineIxTime: true,
+          severity: true,
+          urgency: true,
+          countryId: true,
+        },
       });
 
       if (!issue) {
@@ -592,7 +607,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       if (cx.available < 15) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "Insufficient Civil Capacity to delegate this issue. You need at least 15 available CivCap.",
+          message:
+            "Insufficient Civil Capacity to delegate this issue. You need at least 15 available CivCap.",
         });
       }
 

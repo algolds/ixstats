@@ -125,7 +125,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
 
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <h4 className="truncate text-sm font-medium transition-colors group-hover:text-foreground">
+            <h4 className="group-hover:text-foreground truncate text-sm font-medium transition-colors">
               {issue.title}
             </h4>
             {isNew && (
@@ -157,17 +157,23 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
               </span>
             )}
 
-            {onDismiss && !hasDeadline && issue.severity !== "critical" && issue.severity !== "CRITICAL" && issue.severity !== "high" && issue.severity !== "HIGH" && issue.urgency <= 70 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDismiss(issue.id);
-                }}
-                className="ml-auto rounded border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-slate-300 hover:bg-white/10 hover:border-white/30 transition-all cursor-pointer"
-              >
-                Delegate (-15 CivCap)
-              </button>
-            )}
+            {onDismiss &&
+              !hasDeadline &&
+              issue.severity !== "critical" &&
+              issue.severity !== "CRITICAL" &&
+              issue.severity !== "high" &&
+              issue.severity !== "HIGH" &&
+              issue.urgency <= 70 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDismiss(issue.id);
+                  }}
+                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-slate-300 transition-all hover:border-white/30 hover:bg-white/10"
+                >
+                  Delegate (-15 CivCap)
+                </button>
+              )}
           </div>
         </div>
 

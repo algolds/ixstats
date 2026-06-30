@@ -71,8 +71,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
         : "Saved name"
     : null;
 
-
-
   useEffect(() => {
     setEditingPron(false);
     if (selectedTerm) {
@@ -83,9 +81,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
   }, [selectedTerm, overridesVersion]);
 
   const hasOverride = selectedTerm ? !!getNameOverride(selectedTerm) : false;
-  const effectiveIpa = selectedTerm
-    ? getNameOverride(selectedTerm)?.ipa || selectedTermIpa
-    : "";
+  const effectiveIpa = selectedTerm ? getNameOverride(selectedTerm)?.ipa || selectedTermIpa : "";
 
   const savePron = () => {
     if (!selectedTerm) return;
@@ -222,7 +218,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     </span>
                   )}
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground font-semibold">
+                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-[10px] font-semibold">
                   {effectiveIpa && (
                     <span className="flex items-center">
                       <button
@@ -349,11 +345,11 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                       )}
                   </div>
                   <input
-                     type="text"
-                     value={ipaDraft}
-                     onChange={(e) => setIpaDraft(e.target.value)}
-                     placeholder="/ˈeksɑːmpl/"
-                     className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
+                    type="text"
+                    value={ipaDraft}
+                    onChange={(e) => setIpaDraft(e.target.value)}
+                    placeholder="/ˈeksɑːmpl/"
+                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
                   />
                   {speechConfig?.kokoro?.enabled &&
                     (() => {
@@ -372,15 +368,29 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 </div>
 
                 <div className="space-y-0.5">
-                  <label className="text-muted-foreground text-[8px] font-bold uppercase">Voice</label>
-                  <Select value={voiceDraft || "default"} onValueChange={(val) => setVoiceDraft(val === "default" ? "" : val)}>
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                  <label className="text-muted-foreground text-[8px] font-bold uppercase">
+                    Voice
+                  </label>
+                  <Select
+                    value={voiceDraft || "default"}
+                    onValueChange={(val) => setVoiceDraft(val === "default" ? "" : val)}
+                  >
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1 text-xs transition-colors focus:outline-none">
                       <SelectValue placeholder="Default / culture voice" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[200px]">
-                      <SelectItem value="default" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Default / culture voice</SelectItem>
+                    <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
+                      <SelectItem
+                        value="default"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
+                        Default / culture voice
+                      </SelectItem>
                       {(voicesData?.voices ?? []).map((v: string) => (
-                        <SelectItem key={v} value={v} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                        <SelectItem
+                          key={v}
+                          value={v}
+                          className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        >
                           {v}
                         </SelectItem>
                       ))}
@@ -392,20 +402,20 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                   <button
                     onClick={resetPron}
                     title="Reset to defaults"
-                    className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors cursor-pointer"
+                    className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
                   >
                     <RotateCcw className="h-3 w-3" /> Reset
                   </button>
                   <div className="flex gap-1.5">
                     <button
                       onClick={previewPron}
-                      className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors cursor-pointer"
+                      className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
                     >
                       <Volume2 className="h-3 w-3" /> Preview
                     </button>
                     <button
                       onClick={savePron}
-                      className="rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff] cursor-pointer"
+                      className="cursor-pointer rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff]"
                     >
                       Save
                     </button>

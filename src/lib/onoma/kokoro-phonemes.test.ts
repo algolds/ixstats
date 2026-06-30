@@ -29,7 +29,9 @@ describe("anglicizeForSpeech", () => {
   });
 
   it("output still normalizes to valid kokoro tokens", () => {
-    const { phonemes } = ipaToKokoroPhonemes(anglicizeForSpeech(translateToIPA("Delepas", "latin")));
+    const { phonemes } = ipaToKokoroPhonemes(
+      anglicizeForSpeech(translateToIPA("Delepas", "latin"))
+    );
     const allowed = new Set<string>();
     for (const t of KOKORO_VALID_TOKENS) for (const ch of t) allowed.add(ch);
     for (const ch of phonemes) expect(allowed.has(ch)).toBe(true);

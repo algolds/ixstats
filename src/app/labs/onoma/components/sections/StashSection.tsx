@@ -4,19 +4,20 @@
 // Onoma Lab — Stash Section (Facet Rebuild — Side-by-Side)
 
 import { useState, useRef, useEffect } from "react";
-import {
-  Trash2,
-  Search,
-  FolderPlus,
-  Loader2,
-} from "lucide-react";
+import { Trash2, Search, FolderPlus, Loader2 } from "lucide-react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { NameResultCard } from "../shared/NameResultCard";
 import { UseNameDialog } from "../shared/UseNameDialog";
 import { DictionaryEditModal, type DictEditValue } from "../shared/DictionaryEditModal";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { ImportStashPanel } from "../stash/ImportStashPanel";
 import { SavedDictionaryCard } from "../stash/SavedDictionaryCard";
 
@@ -133,11 +134,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
     }
   };
 
-  const handleExport = (
-    title: string,
-    values: string[],
-    format: "txt" | "csv" | "json"
-  ) => {
+  const handleExport = (title: string, values: string[], format: "txt" | "csv" | "json") => {
     let content: string;
     let mime: string;
     if (format === "json") {
@@ -202,13 +199,22 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
           {/* Folder filter dropdown */}
           <div className="relative w-full sm:w-44">
             <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none">
                 <SelectValue placeholder="All Folders" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
-                <SelectItem value="all" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">📁 All Folders</SelectItem>
+              <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
+                <SelectItem
+                  value="all"
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
+                  📁 All Folders
+                </SelectItem>
                 {stashesQuery.data?.map((s) => (
-                  <SelectItem key={s.id} value={s.id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                  <SelectItem
+                    key={s.id}
+                    value={s.id}
+                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  >
                     📁 {s.name}
                   </SelectItem>
                 ))}
@@ -234,9 +240,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
       <datalist id="onoma-existing-sets">
         {Array.from(
           new Set(
-            (bank.nameBank ?? [])
-              .map((e) => (e as any).setName)
-              .filter((s): s is string => !!s)
+            (bank.nameBank ?? []).map((e) => (e as any).setName).filter((s): s is string => !!s)
           )
         ).map((s) => (
           <option key={s} value={s} />
@@ -322,7 +326,9 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                                   <button
                                     key={s.id}
                                     disabled={stashingFolderId !== null}
-                                    onClick={() => handleStashName(entry.id, nameValue, s.id, s.name)}
+                                    onClick={() =>
+                                      handleStashName(entry.id, nameValue, s.id, s.name)
+                                    }
                                     className="text-foreground flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 disabled:opacity-50 dark:hover:text-indigo-400"
                                   >
                                     <span className="flex items-center gap-1.5 truncate">

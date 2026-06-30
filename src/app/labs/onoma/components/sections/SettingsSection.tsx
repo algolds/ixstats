@@ -19,7 +19,13 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { translateToIPA } from "~/lib/onoma/phonology";
@@ -260,14 +266,28 @@ export function SettingsSection() {
               <label className="text-muted-foreground text-[10px] font-bold uppercase">
                 Personal Default Voice
               </label>
-              <Select value={personalVoice || "default"} onValueChange={(val) => savePersonalPreferences(val === "default" ? "" : val, personalSpeed)}>
-                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-md border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+              <Select
+                value={personalVoice || "default"}
+                onValueChange={(val) =>
+                  savePersonalPreferences(val === "default" ? "" : val, personalSpeed)
+                }
+              >
+                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-md border px-2 py-1.5 text-xs transition-colors focus:outline-none">
                   <SelectValue placeholder="Use system default" />
                 </SelectTrigger>
-                <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
-                  <SelectItem value="default" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Use system default</SelectItem>
+                <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+                  <SelectItem
+                    value="default"
+                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  >
+                    Use system default
+                  </SelectItem>
                   {voiceOptions.map((id) => (
-                    <SelectItem key={id} value={id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                    <SelectItem
+                      key={id}
+                      value={id}
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
                       {voiceLabel(id)}
                     </SelectItem>
                   ))}
@@ -334,14 +354,26 @@ export function SettingsSection() {
                 <label className="text-muted-foreground text-[10px] font-bold uppercase">
                   Select Voice
                 </label>
-                <Select value={sandboxVoice || "default"} onValueChange={(val) => setSandboxVoice(val === "default" ? "" : val)}>
-                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-md border px-2 py-1 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                <Select
+                  value={sandboxVoice || "default"}
+                  onValueChange={(val) => setSandboxVoice(val === "default" ? "" : val)}
+                >
+                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-md border px-2 py-1 text-xs transition-colors focus:outline-none">
                     <SelectValue placeholder="Default voice" />
                   </SelectTrigger>
-                  <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
-                    <SelectItem value="default" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Default voice</SelectItem>
+                  <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+                    <SelectItem
+                      value="default"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Default voice
+                    </SelectItem>
                     {voiceOptions.map((id) => (
-                      <SelectItem key={id} value={id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      <SelectItem
+                        key={id}
+                        value={id}
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         {voiceLabel(id)}
                       </SelectItem>
                     ))}

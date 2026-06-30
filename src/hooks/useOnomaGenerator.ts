@@ -279,7 +279,8 @@ export function useOnomaGenerator() {
         else if (subType === "religious-order")
           name = generateReligiousOrderName(characterChain, genOptions);
       } else if (category === "military" && subType !== "generic") {
-        if (subType === "military-unit") name = generateMilitaryUnitName(characterChain, genOptions);
+        if (subType === "military-unit")
+          name = generateMilitaryUnitName(characterChain, genOptions);
         else if (subType === "mercenary-band")
           name = generateMercenaryBandName(characterChain, genOptions);
       } else if (category === "dynasty" && subType !== "generic") {

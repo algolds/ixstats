@@ -31,11 +31,11 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
             Interactive Path Workshop
           </h3>
           <p className="text-muted-foreground text-xs leading-normal">
-            Explore the Markov transition tree step-by-step. Click green tokens to grow the
-            path and click red [End] to finalize name compilation.
+            Explore the Markov transition tree step-by-step. Click green tokens to grow the path and
+            click red [End] to finalize name compilation.
           </p>
         </div>
-        
+
         {visualizerChain ? (
           <MarkovVisualizer
             chain={visualizerChain}
@@ -55,13 +55,14 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
       </div>
 
       {/* Lexicon Explorer & Health Panel */}
-      <div className="space-y-4 h-full">
+      <div className="h-full space-y-4">
         <div className="space-y-1">
           <h3 className="text-sm font-bold tracking-tight text-[#10b981]">
             Lexicon & Syllable Analysis
           </h3>
           <p className="text-muted-foreground text-xs leading-normal">
-            Verify the distinct syllable structure, entropy, and phonotactic naturalness of your active conlang seed lists.
+            Verify the distinct syllable structure, entropy, and phonotactic naturalness of your
+            active conlang seed lists.
           </p>
         </div>
         <LexiconExplorer words={trainingWords} />

@@ -13,7 +13,15 @@ import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { AdvancedConlangSettings } from "./AdvancedConlangSettings";
 
 // "celtic+germanic" → "Celtic + Germanic", "mixed" → "Mixed / Other", "latin" → "Latin"
@@ -129,12 +137,16 @@ export function GeneratorPanel({
               <div className="space-y-1.5">
                 <label className="text-muted-foreground text-xs font-bold">Generation Preset</label>
                 <Select value={gen.subType} onValueChange={gen.setSubType}>
-                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none">
                     <SelectValue placeholder="Select preset" />
                   </SelectTrigger>
-                  <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
+                  <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
                     {subTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      <SelectItem
+                        key={type.value}
+                        value={type.value}
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         {type.label}
                       </SelectItem>
                     ))}
@@ -172,35 +184,139 @@ export function GeneratorPanel({
                 Culture / Linguistic Family
               </label>
               <Select value={gen.culture} onValueChange={gen.setCulture}>
-                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors focus:border-[#0091ff]/50 focus:outline-none">
                   <SelectValue placeholder="Select culture" />
                 </SelectTrigger>
-                <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
-                  <SelectItem value="any" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Any / Mixed Culture</SelectItem>
+                <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
+                  <SelectItem
+                    value="any"
+                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  >
+                    Any / Mixed Culture
+                  </SelectItem>
                   <SelectGroup>
-                    <SelectLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Linguistic Families</SelectLabel>
-                    <SelectItem value="latin" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Latin / Romance</SelectItem>
-                    <SelectItem value="germanic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Germanic / Norse</SelectItem>
-                    <SelectItem value="celtic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Celtic / Gaelic</SelectItem>
-                    <SelectItem value="slavic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Slavic / Eastern European</SelectItem>
-                    <SelectItem value="arabic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Arabic / Semitic</SelectItem>
-                    <SelectItem value="persian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Persian / Iranian</SelectItem>
-                    <SelectItem value="turkic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Turkic / Central Asian</SelectItem>
-                    <SelectItem value="indic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Indic / South Asian</SelectItem>
-                    <SelectItem value="east-asian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">East Asian / Romanized</SelectItem>
-                    <SelectItem value="austronesian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Austronesian / Polynesian</SelectItem>
-                    <SelectItem value="african" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">African / Sub-Saharan</SelectItem>
-                    <SelectItem value="uralic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Uralic / Finno-Ugric</SelectItem>
-                    <SelectItem value="constructed" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Constructed / Fantasy (Tolkien)</SelectItem>
+                    <SelectLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      Linguistic Families
+                    </SelectLabel>
+                    <SelectItem
+                      value="latin"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Latin / Romance
+                    </SelectItem>
+                    <SelectItem
+                      value="germanic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Germanic / Norse
+                    </SelectItem>
+                    <SelectItem
+                      value="celtic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Celtic / Gaelic
+                    </SelectItem>
+                    <SelectItem
+                      value="slavic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Slavic / Eastern European
+                    </SelectItem>
+                    <SelectItem
+                      value="arabic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Arabic / Semitic
+                    </SelectItem>
+                    <SelectItem
+                      value="persian"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Persian / Iranian
+                    </SelectItem>
+                    <SelectItem
+                      value="turkic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Turkic / Central Asian
+                    </SelectItem>
+                    <SelectItem
+                      value="indic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Indic / South Asian
+                    </SelectItem>
+                    <SelectItem
+                      value="east-asian"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      East Asian / Romanized
+                    </SelectItem>
+                    <SelectItem
+                      value="austronesian"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Austronesian / Polynesian
+                    </SelectItem>
+                    <SelectItem
+                      value="african"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      African / Sub-Saharan
+                    </SelectItem>
+                    <SelectItem
+                      value="uralic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Uralic / Finno-Ugric
+                    </SelectItem>
+                    <SelectItem
+                      value="constructed"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Constructed / Fantasy (Tolkien)
+                    </SelectItem>
                   </SelectGroup>
                   <SelectGroup>
-                    <SelectLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Hybrid Families</SelectLabel>
-                    <SelectItem value="celtic+germanic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Celtic + Germanic</SelectItem>
-                    <SelectItem value="celtic+latin" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Celtic + Latin</SelectItem>
-                    <SelectItem value="germanic+latin" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Germanic + Latin</SelectItem>
-                    <SelectItem value="germanic+slavic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Germanic + Slavic</SelectItem>
-                    <SelectItem value="latin+slavic" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Latin + Slavic</SelectItem>
-                    <SelectItem value="arabic+austronesian" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Arabic + Austronesian</SelectItem>
+                    <SelectLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                      Hybrid Families
+                    </SelectLabel>
+                    <SelectItem
+                      value="celtic+germanic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Celtic + Germanic
+                    </SelectItem>
+                    <SelectItem
+                      value="celtic+latin"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Celtic + Latin
+                    </SelectItem>
+                    <SelectItem
+                      value="germanic+latin"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Germanic + Latin
+                    </SelectItem>
+                    <SelectItem
+                      value="germanic+slavic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Germanic + Slavic
+                    </SelectItem>
+                    <SelectItem
+                      value="latin+slavic"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Latin + Slavic
+                    </SelectItem>
+                    <SelectItem
+                      value="arabic+austronesian"
+                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    >
+                      Arabic + Austronesian
+                    </SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -221,34 +337,32 @@ export function GeneratorPanel({
                 <span>{showAdvanced ? "Hide Advanced Options" : "Show Advanced Options"}</span>
               </button>
 
-              {showAdvanced && (
-                <AdvancedConlangSettings gen={gen} category={category} />
-              )}
+              {showAdvanced && <AdvancedConlangSettings gen={gen} category={category} />}
             </div>
 
             <div className="border-border/40 mt-2 flex items-center gap-2 border-t pt-4">
               <div className="space-y-1 select-none">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase block">
+                <label className="text-muted-foreground block text-[10px] font-bold uppercase">
                   Batch
                 </label>
-                <div className="flex items-center gap-1 border border-border/60 bg-background rounded-lg p-0.5 select-none h-7 mt-1">
+                <div className="border-border/60 bg-background mt-1 flex h-7 items-center gap-1 rounded-lg border p-0.5 select-none">
                   <button
                     type="button"
                     onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
                     disabled={batchCount <= 5}
-                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs h-full flex items-center"
+                    className="text-muted-foreground hover:text-foreground flex h-full cursor-pointer items-center px-2 text-xs font-bold disabled:opacity-30"
                   >
                     -
                   </button>
                   <NumberFlowDisplay
                     value={batchCount}
-                    className="text-foreground font-mono text-xs font-semibold px-1 min-w-[20px] text-center"
+                    className="text-foreground min-w-[20px] px-1 text-center font-mono text-xs font-semibold"
                   />
                   <button
                     type="button"
                     onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
                     disabled={batchCount >= 50}
-                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs h-full flex items-center"
+                    className="text-muted-foreground hover:text-foreground flex h-full cursor-pointer items-center px-2 text-xs font-bold disabled:opacity-30"
                   >
                     +
                   </button>
@@ -344,7 +458,9 @@ export function GeneratorPanel({
                   <NameResultCard
                     key={`${name}-${idx}`}
                     name={name}
-                    isSaved={bank.nameBank?.some((entry) => entry.type === "saved-name" && entry.title === name)}
+                    isSaved={bank.nameBank?.some(
+                      (entry) => entry.type === "saved-name" && entry.title === name
+                    )}
                     onSave={handleSaveName}
                     onUse={(n) => setUseName(n)}
                     culture={gen.culture}

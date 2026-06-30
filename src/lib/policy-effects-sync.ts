@@ -58,7 +58,11 @@ export async function clearPolicyEffect(db: PrismaClient, policyId: string): Pro
 }
 
 /** Helper function to calculate real-time policy effects */
-export async function calculateRealTimePolicyEffects(policy: any, countryId: string, db: PrismaClient) {
+export async function calculateRealTimePolicyEffects(
+  policy: any,
+  countryId: string,
+  db: PrismaClient
+) {
   const country = await db.country.findUnique({
     where: { id: countryId },
   });

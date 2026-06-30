@@ -4,7 +4,13 @@
 // Onoma Custom Studio Workshop — Pronunciation Editor Component
 
 import { X, RotateCcw, Volume2, Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
@@ -66,29 +72,28 @@ export function PronunciationEditor({
           <label className="text-muted-foreground text-[8px] font-bold uppercase">
             IPA (drives Read Naturally phonemes)
           </label>
-          {speechConfig?.kokoro?.enabled &&
-            speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const res = await suggestMutation.mutateAsync({ text: name });
-                    if (res.phonemes) {
-                      setIpaDraft(res.phonemes);
-                      notify.success("Suggested IPA loaded.");
-                    } else {
-                      notify.error("Could not generate IPA suggestion.");
-                    }
-                  } catch (err: any) {
-                    notify.error(err.message || "Failed to fetch suggestion.");
+          {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await suggestMutation.mutateAsync({ text: name });
+                  if (res.phonemes) {
+                    setIpaDraft(res.phonemes);
+                    notify.success("Suggested IPA loaded.");
+                  } else {
+                    notify.error("Could not generate IPA suggestion.");
                   }
-                }}
-                disabled={suggestMutation.isPending}
-                className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
-              >
-                {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
-              </button>
-            )}
+                } catch (err: any) {
+                  notify.error(err.message || "Failed to fetch suggestion.");
+                }
+              }}
+              disabled={suggestMutation.isPending}
+              className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
+            >
+              {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
+            </button>
+          )}
         </div>
         <input
           type="text"
@@ -119,18 +124,21 @@ export function PronunciationEditor({
           value={voiceDraft || "default"}
           onValueChange={(val) => setVoiceDraft(val === "default" ? "" : val)}
         >
-          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1 text-xs focus:outline-none flex justify-between items-center transition-colors">
+          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1 text-xs transition-colors focus:outline-none">
             <SelectValue placeholder="Default / culture voice" />
           </SelectTrigger>
-          <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[200px]">
-            <SelectItem value="default" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+          <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
+            <SelectItem
+              value="default"
+              className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+            >
               Default / culture voice
             </SelectItem>
             {(voicesData?.voices ?? []).map((v) => (
               <SelectItem
                 key={v}
                 value={v}
-                className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground"
+                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
               >
                 {v}
               </SelectItem>

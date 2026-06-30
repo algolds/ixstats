@@ -234,7 +234,12 @@ export function DiplomacyWarRoom({ countryId }: DiplomacyWarRoomProps) {
           stats={[
             { label: "nations", value: relationData.sorted.length },
             ...(relationData.avgStrength > 0
-              ? [{ label: `avg ${getStrengthLabel(relationData.avgStrength).toLowerCase()}`, value: "" }]
+              ? [
+                  {
+                    label: `avg ${getStrengthLabel(relationData.avgStrength).toLowerCase()}`,
+                    value: "",
+                  },
+                ]
               : []),
           ]}
           ctaLabel="Establish Embassy"

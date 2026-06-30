@@ -114,7 +114,10 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
         <span className="flex items-center gap-1.5">
           <span>Active</span>
           {pendingCount > 0 && (
-            <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-white/10 text-white border-none shrink-0">
+            <Badge
+              variant="secondary"
+              className="h-4 shrink-0 border-none bg-white/10 px-1 text-[10px] text-white"
+            >
               {pendingCount}
             </Badge>
           )}
@@ -128,7 +131,10 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
         <span className="flex items-center gap-1.5">
           <span>Crises</span>
           {urgentCount > 0 && (
-            <Badge variant="destructive" className="h-4 px-1 text-[10px] bg-red-500/25 border-none text-red-400 font-semibold shrink-0">
+            <Badge
+              variant="destructive"
+              className="h-4 shrink-0 border-none bg-red-500/25 px-1 text-[10px] font-semibold text-red-400"
+            >
               {urgentCount}
             </Badge>
           )}
@@ -199,19 +205,17 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 px-1 text-red-400">
                     <Flame className="h-3.5 w-3.5 animate-pulse" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Crises</span>
-                    <Badge variant="destructive" className="h-4 px-1 text-[9px] font-semibold bg-red-500/25 border-red-500/40 text-red-400 shrink-0">
+                    <span className="text-[10px] font-bold tracking-wider uppercase">Crises</span>
+                    <Badge
+                      variant="destructive"
+                      className="h-4 shrink-0 border-red-500/40 bg-red-500/25 px-1 text-[9px] font-semibold text-red-400"
+                    >
                       Must Answer
                     </Badge>
                   </div>
                   <div className="space-y-2">
                     {displayCrises.map((issue) => (
-                      <IssueCard
-                        key={issue.id}
-                        issue={issue}
-                        onView={openIssue}
-                        variant="full"
-                      />
+                      <IssueCard key={issue.id} issue={issue} onView={openIssue} variant="full" />
                     ))}
                   </div>
                 </div>
@@ -222,7 +226,9 @@ function IssuesInboxInner({ countryId, maxVisible, variant = "full", domain }: I
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 px-1 text-slate-400">
                     <Inbox className="h-3.5 w-3.5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">National Discourse</span>
+                    <span className="text-[10px] font-bold tracking-wider uppercase">
+                      National Discourse
+                    </span>
                   </div>
                   <div className="space-y-2">
                     {displayDiscourse.map((issue) => (

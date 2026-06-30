@@ -211,7 +211,10 @@ export function PolicyCreatorSheet({
   const [formTargetMetrics, setFormTargetMetrics] = useState("");
 
   const reqDept = getMatchingDepartmentCategory(formCategory);
-  const hasDepartment = selectedTemplateKey !== "custom" || !reconContext || reconContext.departmentCategories.includes(reqDept);
+  const hasDepartment =
+    selectedTemplateKey !== "custom" ||
+    !reconContext ||
+    reconContext.departmentCategories.includes(reqDept);
 
   // Target metrics structured state
   const [targetMetrics, setTargetMetrics] = useState<
@@ -343,7 +346,9 @@ export function PolicyCreatorSheet({
       return;
     }
     if (!hasDepartment) {
-      notify.error(`You must establish an active Department of ${reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} first.`);
+      notify.error(
+        `You must establish an active Department of ${reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} first.`
+      );
       return;
     }
 
@@ -394,7 +399,9 @@ export function PolicyCreatorSheet({
       return;
     }
     if (!hasDepartment) {
-      notify.error(`You must establish an active Department of ${reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} first.`);
+      notify.error(
+        `You must establish an active Department of ${reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} first.`
+      );
       return;
     }
 
@@ -491,7 +498,10 @@ export function PolicyCreatorSheet({
                   <div className="flex gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
                     <div>
-                      <span className="font-semibold">Tracking Unavailable:</span> No active department manages this policy domain. You must establish an active Department of {reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} in Politics before launching custom policies in this category.
+                      <span className="font-semibold">Tracking Unavailable:</span> No active
+                      department manages this policy domain. You must establish an active Department
+                      of {reqDept.charAt(0).toUpperCase() + reqDept.slice(1)} in Politics before
+                      launching custom policies in this category.
                     </div>
                   </div>
                 )}
@@ -499,7 +509,8 @@ export function PolicyCreatorSheet({
                   <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
                     <div>
-                      <span className="font-semibold">Capacity Warning:</span> Preview estimates may be inaccurate due to overloaded Civil Service capacity.
+                      <span className="font-semibold">Capacity Warning:</span> Preview estimates may
+                      be inaccurate due to overloaded Civil Service capacity.
                     </div>
                   </div>
                 )}
@@ -507,7 +518,8 @@ export function PolicyCreatorSheet({
                   <div className="flex gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
                     <div>
-                      <span className="font-semibold">Detail Tracking Obscured:</span> Government efficiency is too low ({"<"}45%). Estimates are highly speculative.
+                      <span className="font-semibold">Detail Tracking Obscured:</span> Government
+                      efficiency is too low ({"<"}45%). Estimates are highly speculative.
                     </div>
                   </div>
                 )}

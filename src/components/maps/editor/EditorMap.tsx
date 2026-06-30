@@ -37,6 +37,7 @@ import { usePointDrag } from "./hooks/usePointDrag";
 
 import { useMapEditorContext } from "~/components/maps/editor/plugins/context";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
+import { useSharedMap } from "~/components/maps/core/SharedMapContext";
 
 import { DrawingToolbar } from "./toolbars/DrawingToolbar";
 import { VertexEditingToolbar } from "./toolbars/VertexEditingToolbar";
@@ -179,6 +180,7 @@ const EditorMap = memo(
     },
     ref
   ) {
+    const { acquireMap } = useSharedMap();
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -523,56 +525,49 @@ const EditorMap = memo(
       }
     }, [isLoaded, theme]);
 
-    // ── Initialize map ──
+    // ── Initialize map using global shared map provider ──
     useEffect(() => {
-      if (!containerRef.current || mapRef.current) return;
-      let cancelled = false;
+      if (!containerRef.current) return;
+      let released = false;
+      let cleanup: (() => void) | null = null;
 
-      async function initMap() {
-        const mod = await import("maplibre-gl");
-        const maplibregl = (
-          "Map" in mod ? mod : (mod as Record<string, unknown>).default
-        ) as typeof mod;
+      const center: [number, number] = countryCentroid
+        ? [countryCentroid.lng, countryCentroid.lat]
+        : MAP_DEFAULTS.center;
 
-        if (cancelled || !containerRef.current) return;
+      cleanup = acquireMap("map-editor", {
+        container: containerRef.current,
+        center,
+        zoom: 4,
+        theme,
+        projectionMode: "mercator",
+        onReady: async (map) => {
+          if (released) return;
+          mapRef.current = map;
 
-        const center: [number, number] = countryCentroid
-          ? [countryCentroid.lng, countryCentroid.lat]
-          : MAP_DEFAULTS.center;
+          const mod = await import("maplibre-gl");
+          const maplibregl = (
+            "Map" in mod ? mod : (mod as Record<string, unknown>).default
+          ) as typeof mod;
 
-        const map = new maplibregl.Map({
-          container: containerRef.current,
-          style: buildBaseStyle(theme) as maplibregl.StyleSpecification,
-          center,
-          zoom: 4,
-          minZoom: 1,
-          maxZoom: 14,
-          attributionControl: false,
-          projection: { type: "mercator" } as any,
-        });
+          // Add control only if not already present
+          const hasNav = map.getContainer().querySelector(".maplibregl-ctrl-group");
+          if (!hasNav) {
+            map.addControl(
+              new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
+              "top-right"
+            );
+          }
 
-        map.addControl(
-          new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
-          "top-right"
-        );
-
-        mapRef.current = map;
-
-        map.on("load", () => {
-          if (cancelled) return;
           setIsLoaded(true);
           context.setMap(map);
-        });
-      }
-
-      initMap();
+        },
+      });
 
       return () => {
-        cancelled = true;
-        if (mapRef.current) {
-          mapRef.current.remove();
-          mapRef.current = null;
-        }
+        released = true;
+        if (cleanup) cleanup();
+        mapRef.current = null;
         context.setMap(null);
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -14,8 +14,6 @@ import { OverviewBanner } from "./OverviewBanner";
 import { QuickGeneratorControls } from "./QuickGeneratorControls";
 import { CandidateResultsPanel } from "./CandidateResultsPanel";
 
-
-
 export function OverviewSection() {
   const bank = useNameBank();
 

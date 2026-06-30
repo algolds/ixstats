@@ -55,9 +55,12 @@ export function buildTopologyIndex(
     for (let ri = 0; ri < rings.length; ri++) {
       const ring = rings[ri]!;
       // Skip the closing vertex (same as ring[0])
-      const len = ring.length > 0 && ring[0]![0] === ring[ring.length - 1]![0] && ring[0]![1] === ring[ring.length - 1]![1]
-        ? ring.length - 1
-        : ring.length;
+      const len =
+        ring.length > 0 &&
+        ring[0]![0] === ring[ring.length - 1]![0] &&
+        ring[0]![1] === ring[ring.length - 1]![1]
+          ? ring.length - 1
+          : ring.length;
       for (let vi = 0; vi < len; vi++) {
         const key = vkey(ring[vi]!);
         let bucket = index.get(key);

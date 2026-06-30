@@ -297,10 +297,16 @@ export class MarkovChain {
         }
 
         // 7. Must end with vowel/consonant checks
-        if (mustEndWithVowel && !VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())) {
+        if (
+          mustEndWithVowel &&
+          !VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())
+        ) {
           continue;
         }
-        if (mustEndWithConsonant && VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())) {
+        if (
+          mustEndWithConsonant &&
+          VOWELS_CLASS.includes(candidate[candidate.length - 1].toLowerCase())
+        ) {
           continue;
         }
 
@@ -416,5 +422,7 @@ function endsWithCluster(word: string): boolean {
   const vowels = "aeiouyáàâäǎăāãåǻąæǽǣéèėêëěĕēęẹǝəɛíìiîïǐĭīĩįịĳóòôöǒŏōõőọøǿơœúùûüǔŭūũűůųụưýỳŷÿȳỹƴ";
   const cleaned = word.toLowerCase().replace(/[^a-z]/g, "");
   if (cleaned.length < 2) return false;
-  return !vowels.includes(cleaned[cleaned.length - 1]) && !vowels.includes(cleaned[cleaned.length - 2]);
+  return (
+    !vowels.includes(cleaned[cleaned.length - 1]) && !vowels.includes(cleaned[cleaned.length - 2])
+  );
 }

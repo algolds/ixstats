@@ -493,97 +493,97 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
       {/* Now Playing: reading progress + narrator */}
       {showNowPlaying && (
         <>
-      {/* Progressive Scrubbing Track */}
-      {visibleToc.length > 0 && (
-        <div className="mb-4 px-1">
-          <div className="text-muted-foreground mb-1.5 flex items-center justify-between text-[10px] font-semibold select-none">
-            <span className="max-w-[200px] truncate">
-              {isNarratorActive
-                ? `Narrating: ${narratorState.activeSectionTitle || "Overview"}`
-                : activeSectionTitle
-                  ? `Reading: ${activeSectionTitle}`
-                  : "Overview"}
-            </span>
-            <span className="tabular-nums">{Math.round(displayPercent)}%</span>
-          </div>
+          {/* Progressive Scrubbing Track */}
+          {visibleToc.length > 0 && (
+            <div className="mb-4 px-1">
+              <div className="text-muted-foreground mb-1.5 flex items-center justify-between text-[10px] font-semibold select-none">
+                <span className="max-w-[200px] truncate">
+                  {isNarratorActive
+                    ? `Narrating: ${narratorState.activeSectionTitle || "Overview"}`
+                    : activeSectionTitle
+                      ? `Reading: ${activeSectionTitle}`
+                      : "Overview"}
+                </span>
+                <span className="tabular-nums">{Math.round(displayPercent)}%</span>
+              </div>
 
-          <div
-            ref={trackRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            className="group relative flex h-3 w-full cursor-pointer touch-none items-center select-none"
-            style={{ touchAction: "none" }}
-          >
-            {/* Background Track Line */}
-            <div className="absolute left-0 h-1 w-full rounded-full bg-white/10" />
+              <div
+                ref={trackRef}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                className="group relative flex h-3 w-full cursor-pointer touch-none items-center select-none"
+                style={{ touchAction: "none" }}
+              >
+                {/* Background Track Line */}
+                <div className="absolute left-0 h-1 w-full rounded-full bg-white/10" />
 
-            {/* Active Progress Fill Line */}
-            <div
-              className="absolute left-0 h-1 rounded-full bg-blue-500"
-              style={{
-                width: `${displayPercent}%`,
-                backgroundColor: themeColors?.primary ?? undefined,
-              }}
-            />
-
-            {/* Section Ticks (Dots) */}
-            {visibleToc.map((entry: any) => {
-              const offset = sectionOffsets[entry.id] ?? 0;
-              const isActive = activeSectionId === entry.id;
-              return (
+                {/* Active Progress Fill Line */}
                 <div
-                  key={entry.id}
-                  className="group/tick absolute top-1/2 z-20 flex h-3 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
-                  style={{ left: `${offset}%` }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isNarratorActive && narratorActions) {
-                      narratorActions.jumpToSection(entry.id);
-                    } else {
-                      handleScrub(offset);
-                    }
+                  className="absolute left-0 h-1 rounded-full bg-blue-500"
+                  style={{
+                    width: `${displayPercent}%`,
+                    backgroundColor: themeColors?.primary ?? undefined,
                   }}
-                >
-                  <div
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full border transition-all duration-200",
-                      isActive && !themeColors
-                        ? "scale-125 border-blue-400 bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
-                        : isActive
-                          ? "scale-125"
-                          : "border-white/20 bg-zinc-950 group-hover/tick:scale-110 group-hover/tick:border-white"
-                    )}
-                    style={
-                      isActive && themeColors
-                        ? {
-                            borderColor: themeColors.secondary,
-                            backgroundColor: themeColors.primary,
-                            boxShadow: `0 0 8px ${themeColors.primary}`,
-                          }
-                        : undefined
-                    }
-                  />
-                  {/* Tooltip */}
-                  <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded border border-white/10 bg-zinc-950/95 px-2 py-1 text-[9px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity duration-150 group-hover/tick:opacity-100">
-                    {entry.text}
-                  </span>
-                </div>
-              );
-            })}
+                />
 
-            {/* Glowing Scrubber Playhead Handle */}
-            <div
-              className="absolute z-30 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border border-blue-500 bg-white shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-transform hover:scale-115 active:cursor-grabbing"
-              style={{
-                left: `${displayPercent}%`,
-                borderColor: themeColors?.primary ?? undefined,
-                boxShadow: themeColors ? `0 0 8px ${themeColors.primary}` : undefined,
-              }}
-            />
-          </div>
-        </div>
-      )}
+                {/* Section Ticks (Dots) */}
+                {visibleToc.map((entry: any) => {
+                  const offset = sectionOffsets[entry.id] ?? 0;
+                  const isActive = activeSectionId === entry.id;
+                  return (
+                    <div
+                      key={entry.id}
+                      className="group/tick absolute top-1/2 z-20 flex h-3 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+                      style={{ left: `${offset}%` }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isNarratorActive && narratorActions) {
+                          narratorActions.jumpToSection(entry.id);
+                        } else {
+                          handleScrub(offset);
+                        }
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full border transition-all duration-200",
+                          isActive && !themeColors
+                            ? "scale-125 border-blue-400 bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
+                            : isActive
+                              ? "scale-125"
+                              : "border-white/20 bg-zinc-950 group-hover/tick:scale-110 group-hover/tick:border-white"
+                        )}
+                        style={
+                          isActive && themeColors
+                            ? {
+                                borderColor: themeColors.secondary,
+                                backgroundColor: themeColors.primary,
+                                boxShadow: `0 0 8px ${themeColors.primary}`,
+                              }
+                            : undefined
+                        }
+                      />
+                      {/* Tooltip */}
+                      <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded border border-white/10 bg-zinc-950/95 px-2 py-1 text-[9px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity duration-150 group-hover/tick:opacity-100">
+                        {entry.text}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* Glowing Scrubber Playhead Handle */}
+                <div
+                  className="absolute z-30 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border border-blue-500 bg-white shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-transform hover:scale-115 active:cursor-grabbing"
+                  style={{
+                    left: `${displayPercent}%`,
+                    borderColor: themeColors?.primary ?? undefined,
+                    boxShadow: themeColors ? `0 0 8px ${themeColors.primary}` : undefined,
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Narrator player */}
           {hasNarrator && (
@@ -732,241 +732,247 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
       {/* Workspace */}
       {showWorkspace && (
         <>
-      {/* Search */}
-      {!articleTitle && (
-        <div className="mb-3">
-          <div className="border-border bg-accent/5 flex items-center gap-2 rounded-lg border px-3">
-            <Search className="text-muted-foreground h-4 w-4 shrink-0" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search wiki articles..."
-              className="text-foreground placeholder:text-muted-foreground w-full bg-transparent py-2 text-sm outline-none"
-              data-command-palette-search="true"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Search Results — full-text with snippets */}
-      {!articleTitle && searchQuery.length >= 2 && (
-        <div className="border-border mb-3 border-b pb-3">
-          <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
-            <PreText className="text-inherit" whiteSpace="nowrap">
-              {`Results${searchData?.totalHits ? ` (${searchData.totalHits})` : ""}`}
-            </PreText>
-            {isSearching && (
-              <PreText
-                className="text-muted-foreground/80 animate-pulse text-[10px]"
-                whiteSpace="nowrap"
-              >
-                searching...
-              </PreText>
-            )}
-          </div>
-          {searchResults.length > 0 ? (
-            searchResults.map((result) => (
-              <button
-                key={result.title}
-                onClick={() => handleNavigateToArticle(result.title)}
-                className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full flex-col rounded-md px-2 py-1.5 text-left transition-colors"
-              >
-                <span className="flex items-center gap-2 text-sm">
-                  <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">
-                    {result.title}
-                  </PreText>
-                </span>
-                {result.snippet && (
-                  <span
-                    className="text-muted-foreground [&_.searchmatch]:text-foreground mt-0.5 line-clamp-1 pl-[22px] text-[11px] [&_.searchmatch]:font-semibold"
-                    dangerouslySetInnerHTML={{ __html: result.snippet }}
-                  />
-                )}
-              </button>
-            ))
-          ) : !isSearching ? (
-            <PreText className="text-muted-foreground/75 px-2 py-1 text-xs" whiteSpace="nowrap">
-              No results
-            </PreText>
-          ) : null}
-        </div>
-      )}
-
-      {!searchQuery && (
-        <>
-          {/* Local Drafts Section */}
-          {localDrafts.length > 0 && (
-            <CollapsibleSection
-              label="Local Drafts"
-              icon={<FileEdit className="h-3 w-3 text-blue-400" />}
-              count={localDrafts.length}
-              open={draftsOpen}
-              onToggle={() => setDraftsOpen(!draftsOpen)}
-            >
-              <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
-                {localDrafts.map((draft, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      onClose();
-                      navigateWithBasePath(
-                        `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
-                        router
-                      );
-                    }}
-                    className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col pr-2">
-                      <PreText
-                        className="truncate text-[13px] font-medium text-inherit"
-                        whiteSpace="nowrap"
-                      >
-                        {draft.title}
-                      </PreText>
-                      <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
-                        {draft.type === "visual"
-                          ? "Visual Editor (Canvas) Draft"
-                          : "Source Editor Draft"}
-                      </PreText>
-                    </div>
-                    <span className="shrink-0 text-[10px] font-semibold text-blue-400">
-                      Resume ›
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Reading Progress / Paused Sessions Section */}
-          {pausedSessions.length > 0 && (
-            <CollapsibleSection
-              label="Reading Progress"
-              icon={<Clock className="h-3 w-3 text-emerald-400" />}
-              count={pausedSessions.length}
-              open={sessionsOpen}
-              onToggle={() => setSessionsOpen(!sessionsOpen)}
-            >
-              <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
-                {pausedSessions.map((session, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleNavigateToArticle(session.title)}
-                    className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col pr-2">
-                      <PreText
-                        className="truncate text-[13px] font-medium text-inherit"
-                        whiteSpace="nowrap"
-                      >
-                        {session.title}
-                      </PreText>
-                      <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
-                        {`Last read ${formatTimeAgo(session.updatedAt)}`}
-                      </PreText>
-                    </div>
-                    <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
-                      {session.scrollPercent}%
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* Recent Activity — collapsible feed (removed on articles) */}
+          {/* Search */}
           {!articleTitle && (
-            <CollapsibleSection
-              label="Recent Activity"
-              icon={<Clock className="h-3 w-3" />}
-              open={recentOpen}
-              onToggle={() => setRecentOpen(!recentOpen)}
-            >
-              {recentChanges && recentChanges.length > 0 ? (
-                <div className="space-y-0.5">
-                  {recentChanges.map((rc, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleNavigateToArticle(rc.title ?? "")}
-                      className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
-                    >
-                      <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
-                        {rc.title}
-                      </PreText>
-                      <PreText className="text-muted-foreground text-[10px]" whiteSpace="nowrap">
-                        {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
-                      </PreText>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <PreText className="text-muted-foreground px-2 text-xs" whiteSpace="nowrap">
-                  Loading...
-                </PreText>
-              )}
-            </CollapsibleSection>
-          )}
-
-          {/* Page Actions — contextual to current article */}
-          {articleTitle && !isMainPage && (
-            <div className="border-border mb-3 border-b pb-3">
-              <SectionHeader label="This Page" />
-              <div className="space-y-0.5">
-                {isSignedIn && (
-                  <QuickAction
-                    icon={<FileEdit />}
-                    label="Edit"
-                    shortcut="Tab Tab"
-                    onClick={() => {
-                      onClose();
-                      navigateWithBasePath(`/wiki/${slug}/edit`, router);
-                    }}
-                  />
+            <div className="mb-3">
+              <div className="border-border bg-accent/5 flex items-center gap-2 rounded-lg border px-3">
+                <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search wiki articles..."
+                  className="text-foreground placeholder:text-muted-foreground w-full bg-transparent py-2 text-sm outline-none"
+                  data-command-palette-search="true"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 )}
-                <QuickAction
-                  icon={<History />}
-                  label="History"
-                  onClick={() => {
-                    onClose();
-                    navigateWithBasePath(`/wiki/history/${slug}`, router);
-                  }}
-                />
-                <QuickAction
-                  icon={<Link2 />}
-                  label="What links here"
-                  onClick={() => {
-                    onClose();
-                    navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
-                  }}
-                />
-                <QuickAction
-                  icon={<ExternalLink />}
-                  label="View on Original Wiki"
-                  onClick={() => {
-                    onClose();
-                    if (articleTitle) {
-                      const mwBaseUrl =
-                        process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
-                      const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
-                      window.open(targetUrl, "_blank", "noopener,noreferrer");
-                    }
-                  }}
-                />
               </div>
             </div>
           )}
-        </>
-      )}
+
+          {/* Search Results — full-text with snippets */}
+          {!articleTitle && searchQuery.length >= 2 && (
+            <div className="border-border mb-3 border-b pb-3">
+              <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
+                <PreText className="text-inherit" whiteSpace="nowrap">
+                  {`Results${searchData?.totalHits ? ` (${searchData.totalHits})` : ""}`}
+                </PreText>
+                {isSearching && (
+                  <PreText
+                    className="text-muted-foreground/80 animate-pulse text-[10px]"
+                    whiteSpace="nowrap"
+                  >
+                    searching...
+                  </PreText>
+                )}
+              </div>
+              {searchResults.length > 0 ? (
+                searchResults.map((result) => (
+                  <button
+                    key={result.title}
+                    onClick={() => handleNavigateToArticle(result.title)}
+                    className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full flex-col rounded-md px-2 py-1.5 text-left transition-colors"
+                  >
+                    <span className="flex items-center gap-2 text-sm">
+                      <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">
+                        {result.title}
+                      </PreText>
+                    </span>
+                    {result.snippet && (
+                      <span
+                        className="text-muted-foreground [&_.searchmatch]:text-foreground mt-0.5 line-clamp-1 pl-[22px] text-[11px] [&_.searchmatch]:font-semibold"
+                        dangerouslySetInnerHTML={{ __html: result.snippet }}
+                      />
+                    )}
+                  </button>
+                ))
+              ) : !isSearching ? (
+                <PreText className="text-muted-foreground/75 px-2 py-1 text-xs" whiteSpace="nowrap">
+                  No results
+                </PreText>
+              ) : null}
+            </div>
+          )}
+
+          {!searchQuery && (
+            <>
+              {/* Local Drafts Section */}
+              {localDrafts.length > 0 && (
+                <CollapsibleSection
+                  label="Local Drafts"
+                  icon={<FileEdit className="h-3 w-3 text-blue-400" />}
+                  count={localDrafts.length}
+                  open={draftsOpen}
+                  onToggle={() => setDraftsOpen(!draftsOpen)}
+                >
+                  <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
+                    {localDrafts.map((draft, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          onClose();
+                          navigateWithBasePath(
+                            `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
+                            router
+                          );
+                        }}
+                        className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                      >
+                        <div className="flex min-w-0 flex-1 flex-col pr-2">
+                          <PreText
+                            className="truncate text-[13px] font-medium text-inherit"
+                            whiteSpace="nowrap"
+                          >
+                            {draft.title}
+                          </PreText>
+                          <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
+                            {draft.type === "visual"
+                              ? "Visual Editor (Canvas) Draft"
+                              : "Source Editor Draft"}
+                          </PreText>
+                        </div>
+                        <span className="shrink-0 text-[10px] font-semibold text-blue-400">
+                          Resume ›
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {/* Reading Progress / Paused Sessions Section */}
+              {pausedSessions.length > 0 && (
+                <CollapsibleSection
+                  label="Reading Progress"
+                  icon={<Clock className="h-3 w-3 text-emerald-400" />}
+                  count={pausedSessions.length}
+                  open={sessionsOpen}
+                  onToggle={() => setSessionsOpen(!sessionsOpen)}
+                >
+                  <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
+                    {pausedSessions.map((session, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleNavigateToArticle(session.title)}
+                        className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                      >
+                        <div className="flex min-w-0 flex-1 flex-col pr-2">
+                          <PreText
+                            className="truncate text-[13px] font-medium text-inherit"
+                            whiteSpace="nowrap"
+                          >
+                            {session.title}
+                          </PreText>
+                          <PreText className="text-muted-foreground text-[9px]" whiteSpace="nowrap">
+                            {`Last read ${formatTimeAgo(session.updatedAt)}`}
+                          </PreText>
+                        </div>
+                        <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
+                          {session.scrollPercent}%
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {/* Recent Activity — collapsible feed (removed on articles) */}
+              {!articleTitle && (
+                <CollapsibleSection
+                  label="Recent Activity"
+                  icon={<Clock className="h-3 w-3" />}
+                  open={recentOpen}
+                  onToggle={() => setRecentOpen(!recentOpen)}
+                >
+                  {recentChanges && recentChanges.length > 0 ? (
+                    <div className="space-y-0.5">
+                      {recentChanges.map((rc, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleNavigateToArticle(rc.title ?? "")}
+                          className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
+                        >
+                          <PreText
+                            className="truncate text-[13px] text-inherit"
+                            whiteSpace="nowrap"
+                          >
+                            {rc.title}
+                          </PreText>
+                          <PreText
+                            className="text-muted-foreground text-[10px]"
+                            whiteSpace="nowrap"
+                          >
+                            {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
+                          </PreText>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <PreText className="text-muted-foreground px-2 text-xs" whiteSpace="nowrap">
+                      Loading...
+                    </PreText>
+                  )}
+                </CollapsibleSection>
+              )}
+
+              {/* Page Actions — contextual to current article */}
+              {articleTitle && !isMainPage && (
+                <div className="border-border mb-3 border-b pb-3">
+                  <SectionHeader label="This Page" />
+                  <div className="space-y-0.5">
+                    {isSignedIn && (
+                      <QuickAction
+                        icon={<FileEdit />}
+                        label="Edit"
+                        shortcut="Tab Tab"
+                        onClick={() => {
+                          onClose();
+                          navigateWithBasePath(`/wiki/${slug}/edit`, router);
+                        }}
+                      />
+                    )}
+                    <QuickAction
+                      icon={<History />}
+                      label="History"
+                      onClick={() => {
+                        onClose();
+                        navigateWithBasePath(`/wiki/history/${slug}`, router);
+                      }}
+                    />
+                    <QuickAction
+                      icon={<Link2 />}
+                      label="What links here"
+                      onClick={() => {
+                        onClose();
+                        navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
+                      }}
+                    />
+                    <QuickAction
+                      icon={<ExternalLink />}
+                      label="View on Original Wiki"
+                      onClick={() => {
+                        onClose();
+                        if (articleTitle) {
+                          const mwBaseUrl =
+                            process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+                          const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
+                          window.open(targetUrl, "_blank", "noopener,noreferrer");
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </>
       )}
     </div>

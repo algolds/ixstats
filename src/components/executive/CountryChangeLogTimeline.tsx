@@ -301,7 +301,9 @@ export function CountryChangeLogTimeline({
                         const isPositive = c.delta > 0;
                         const isClamped = c.description.toLowerCase().includes("clamped");
                         const clampMatch = c.description.match(/\[clamped from ([^\]]+)\]/);
-                        const clampTooltip = clampMatch ? `Clamped from ${clampMatch[1]}` : undefined;
+                        const clampTooltip = clampMatch
+                          ? `Clamped from ${clampMatch[1]}`
+                          : undefined;
                         return (
                           <div
                             key={idx}
@@ -310,8 +312,8 @@ export function CountryChangeLogTimeline({
                               isClamped
                                 ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
                                 : isPositive
-                                ? "border-green-500/20 bg-green-500/10 text-green-400"
-                                : "border-red-500/20 bg-red-500/10 text-red-400"
+                                  ? "border-green-500/20 bg-green-500/10 text-green-400"
+                                  : "border-red-500/20 bg-red-500/10 text-red-400"
                             }`}
                           >
                             {isClamped ? (
@@ -329,9 +331,7 @@ export function CountryChangeLogTimeline({
                               {c.delta.toFixed(1)}
                             </span>
                             {isClamped && (
-                              <span className="text-[9px] opacity-75 font-sans">
-                                (clamped)
-                              </span>
+                              <span className="font-sans text-[9px] opacity-75">(clamped)</span>
                             )}
                           </div>
                         );

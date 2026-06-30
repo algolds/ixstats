@@ -7,7 +7,13 @@ import { Wand2, SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucid
 import { NameResultCard } from "../../shared/NameResultCard";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { MarkovVisualizer } from "../MarkovVisualizer";
 import { LexiconExplorer } from "../LexiconExplorer";
@@ -88,14 +94,26 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               {/* Load Saved Dictionary Selector */}
               {savedDictionaries.length > 0 && (
                 <div className="pt-0.5 pb-1">
-                  <Select value={selectedDictId || "none"} onValueChange={(val) => handleLoadSavedDictionary(val === "none" ? "" : val)}>
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:border-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+                  <Select
+                    value={selectedDictId || "none"}
+                    onValueChange={(val) => handleLoadSavedDictionary(val === "none" ? "" : val)}
+                  >
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:border-[#0091ff]/50 focus:outline-none">
                       <SelectValue placeholder="-- Load a saved dictionary --" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
-                      <SelectItem value="none" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">-- Load a saved dictionary --</SelectItem>
+                    <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
+                      <SelectItem
+                        value="none"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
+                        -- Load a saved dictionary --
+                      </SelectItem>
                       {savedDictionaries.map((dict) => (
-                        <SelectItem key={dict.id} value={dict.id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                        <SelectItem
+                          key={dict.id}
+                          value={dict.id}
+                          className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        >
                           {dict.title} ({dict.values.length} words)
                         </SelectItem>
                       ))}
@@ -253,14 +271,32 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   <label className="text-muted-foreground text-[10px] font-bold uppercase">
                     Vowel Harmony
                   </label>
-                  <Select value={options.vowelHarmony || "none"} onValueChange={(val) => setOptions({ ...options, vowelHarmony: val as any })}>
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                  <Select
+                    value={options.vowelHarmony || "none"}
+                    onValueChange={(val) => setOptions({ ...options, vowelHarmony: val as any })}
+                  >
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs transition-colors focus:outline-none">
                       <SelectValue placeholder="None (Standard)" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
-                      <SelectItem value="none" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">None (Standard)</SelectItem>
-                      <SelectItem value="front" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Front Harmony (e, i, y, ä, ö, ü)</SelectItem>
-                      <SelectItem value="back" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Back Harmony (a, o, u)</SelectItem>
+                    <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+                      <SelectItem
+                        value="none"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
+                        None (Standard)
+                      </SelectItem>
+                      <SelectItem
+                        value="front"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
+                        Front Harmony (e, i, y, ä, ö, ü)
+                      </SelectItem>
+                      <SelectItem
+                        value="back"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
+                        Back Harmony (a, o, u)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -339,7 +375,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     className="flex items-center gap-1.5 text-xs font-bold text-[#0091ff] transition-opacity hover:opacity-85"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
-                    <span>{showAdvanced ? "Hide Advanced Phonotactics" : "Show Advanced Phonotactics"}</span>
+                    <span>
+                      {showAdvanced ? "Hide Advanced Phonotactics" : "Show Advanced Phonotactics"}
+                    </span>
                   </button>
 
                   {showAdvanced && (
@@ -373,11 +411,16 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                             min={-1}
                             max={10}
                             placeholder="No limit"
-                            value={options.maxSyllables === undefined || options.maxSyllables === -1 ? "" : options.maxSyllables}
+                            value={
+                              options.maxSyllables === undefined || options.maxSyllables === -1
+                                ? ""
+                                : options.maxSyllables
+                            }
                             onChange={(e) =>
                               setOptions({
                                 ...options,
-                                maxSyllables: e.target.value === "" ? -1 : parseInt(e.target.value) || -1,
+                                maxSyllables:
+                                  e.target.value === "" ? -1 : parseInt(e.target.value) || -1,
                               })
                             }
                             className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
@@ -400,7 +443,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                               cvTemplate: e.target.value.replace(/[^cvCV]/g, "").toUpperCase(),
                             })
                           }
-                          className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none font-mono uppercase"
+                          className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 font-mono text-xs uppercase focus:outline-none"
                         />
                       </div>
 
@@ -408,14 +451,18 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       <div className="grid gap-3 sm:grid-cols-2">
                         {/* Must End With Vowel */}
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-semibold text-muted-foreground">Must End With Vowel</span>
+                          <span className="text-muted-foreground text-[10px] font-semibold">
+                            Must End With Vowel
+                          </span>
                           <AppleSwitch
                             checked={options.mustEndWithVowel || false}
                             onCheckedChange={(checked) =>
                               setOptions({
                                 ...options,
                                 mustEndWithVowel: checked,
-                                mustEndWithConsonant: checked ? false : options.mustEndWithConsonant,
+                                mustEndWithConsonant: checked
+                                  ? false
+                                  : options.mustEndWithConsonant,
                               })
                             }
                             size="sm"
@@ -424,7 +471,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
 
                         {/* Must End With Consonant */}
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-semibold text-muted-foreground">Must End With Consonant</span>
+                          <span className="text-muted-foreground text-[10px] font-semibold">
+                            Must End With Consonant
+                          </span>
                           <AppleSwitch
                             checked={options.mustEndWithConsonant || false}
                             onCheckedChange={(checked) =>
@@ -440,7 +489,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
 
                         {/* No Initial Clusters */}
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-semibold text-muted-foreground">No Initial CC Clusters</span>
+                          <span className="text-muted-foreground text-[10px] font-semibold">
+                            No Initial CC Clusters
+                          </span>
                           <AppleSwitch
                             checked={options.noInitialClusters || false}
                             onCheckedChange={(checked) =>
@@ -455,7 +506,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
 
                         {/* No Final Clusters */}
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-semibold text-muted-foreground">No Final CC Clusters</span>
+                          <span className="text-muted-foreground text-[10px] font-semibold">
+                            No Final CC Clusters
+                          </span>
                           <AppleSwitch
                             checked={options.noFinalClusters || false}
                             onCheckedChange={(checked) =>
@@ -476,24 +529,24 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
 
             {/* Assemble control */}
             <div className="border-border/40 mt-2 flex items-center gap-2 border-t pt-4">
-              <div className="flex items-center gap-1 border border-border/60 bg-background rounded-lg p-0.5 select-none h-7">
+              <div className="border-border/60 bg-background flex h-7 items-center gap-1 rounded-lg border p-0.5 select-none">
                 <button
                   type="button"
                   onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
                   disabled={batchCount <= 5}
-                  className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs"
+                  className="text-muted-foreground hover:text-foreground cursor-pointer px-2 text-xs font-bold disabled:opacity-30"
                 >
                   -
                 </button>
                 <NumberFlowDisplay
                   value={batchCount}
-                  className="text-foreground font-mono text-xs font-semibold px-1 min-w-[20px] text-center"
+                  className="text-foreground min-w-[20px] px-1 text-center font-mono text-xs font-semibold"
                 />
                 <button
                   type="button"
                   onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
                   disabled={batchCount >= 50}
-                  className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-2 cursor-pointer font-bold text-xs"
+                  className="text-muted-foreground hover:text-foreground cursor-pointer px-2 text-xs font-bold disabled:opacity-30"
                 >
                   +
                 </button>
@@ -529,7 +582,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   <NameResultCard
                     key={`${name}-${idx}`}
                     name={name}
-                    isSaved={bank.nameBank?.some((entry) => entry.type === "saved-name" && entry.title === name)}
+                    isSaved={bank.nameBank?.some(
+                      (entry) => entry.type === "saved-name" && entry.title === name
+                    )}
                     culture={classifiedCulture}
                     onSave={async (n, stashId) => {
                       await bank.saveEntry({
@@ -555,8 +610,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
           )}
         </div>
       </div>
-
-
     </>
   );
 }

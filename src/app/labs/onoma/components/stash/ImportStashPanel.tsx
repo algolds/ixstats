@@ -16,10 +16,10 @@ export function ImportStashPanel() {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     if (files.length === 0) return;
-    
+
     setUploadStatus(`Importing ${files.length} file(s)...`);
     let created = 0;
-    
+
     for (const file of files) {
       try {
         const text = await file.text();
@@ -28,10 +28,10 @@ export function ImportStashPanel() {
           .map((w) => w.trim())
           .filter(Boolean);
         if (words.length === 0) continue;
-        
+
         const title = file.name.replace(/\.[^.]+$/, "");
         const { role, gender } = guessRoleGenderFromFilename(file.name);
-        
+
         await bank.saveEntry({
           type: "dictionary",
           title,
@@ -44,8 +44,10 @@ export function ImportStashPanel() {
         console.error(`Failed to import ${file.name}:`, err);
       }
     }
-    
-    setUploadStatus(`Imported ${created} dictionary file(s). Tag them into a Name Set to edit roles.`);
+
+    setUploadStatus(
+      `Imported ${created} dictionary file(s). Tag them into a Name Set to edit roles.`
+    );
     setTimeout(() => setUploadStatus(null), 5000);
   };
 
@@ -53,22 +55,16 @@ export function ImportStashPanel() {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         {/* Upload .txt files (one dictionary per file) */}
-        <label className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold select-none transition-colors active:scale-95">
+        <label className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors select-none active:scale-95">
           <Upload className="h-3.5 w-3.5" />
           <span>Upload .txt</span>
-          <input
-            type="file"
-            multiple
-            accept=".txt"
-            className="hidden"
-            onChange={handleUpload}
-          />
+          <input type="file" multiple accept=".txt" className="hidden" onChange={handleUpload} />
         </label>
       </div>
 
       {uploadStatus && (
         <div className="border-border/20 bg-secondary/15 flex items-center gap-2 rounded-xl border p-3 text-xs leading-normal">
-          <Loader2 className="text-[#0091ff] h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin text-[#0091ff]" />
           <span>{uploadStatus}</span>
         </div>
       )}

@@ -9,11 +9,7 @@ interface LexiconAnalysisProps {
   originLabel?: string | null;
 }
 
-export function LexiconAnalysis({
-  selectedTerm,
-  stashedEntry,
-  originLabel,
-}: LexiconAnalysisProps) {
+export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: LexiconAnalysisProps) {
   const getCvPattern = (word: string) => {
     const vowels = "aeiouyáéíóúäëïöüæœāēīōūăěĭŏŭ";
     return word
@@ -70,7 +66,7 @@ export function LexiconAnalysis({
 
         {/* Stash Folder */}
         {stashedEntry && (stashedEntry as any).stashName && (
-          <div className="border-border/40 bg-background rounded-xl border p-3 text-center flex flex-col items-center justify-center">
+          <div className="border-border/40 bg-background flex flex-col items-center justify-center rounded-xl border p-3 text-center">
             <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
               Stash Folder
             </span>
@@ -88,11 +84,11 @@ export function LexiconAnalysis({
 
         {/* Origin / Name Set */}
         {originLabel && (
-          <div className="border-border/40 bg-background rounded-xl border p-3 text-center flex flex-col items-center justify-center">
+          <div className="border-border/40 bg-background flex flex-col items-center justify-center rounded-xl border p-3 text-center">
             <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
               Origin / Name Set
             </span>
-            <span className="text-foreground text-xs font-bold truncate block px-1 w-full">
+            <span className="text-foreground block w-full truncate px-1 text-xs font-bold">
               {originLabel}
             </span>
           </div>

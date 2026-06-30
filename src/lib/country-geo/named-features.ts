@@ -92,7 +92,8 @@ export async function upsertPeak(db: any, countryId: string, data: any): Promise
 }
 
 export async function upsertNamedRiver(db: any, countryId: string, data: any): Promise<any> {
-  const { validateGeometryBounds, validatePolygonContainment } = await import("~/lib/geo-validation");
+  const { validateGeometryBounds, validatePolygonContainment } =
+    await import("~/lib/geo-validation");
   const geometry = data.geometry;
 
   if (geometry) {
@@ -154,7 +155,8 @@ export async function upsertNamedRiver(db: any, countryId: string, data: any): P
 }
 
 export async function upsertNamedLake(db: any, countryId: string, data: any): Promise<any> {
-  const { validateGeometryBounds, validatePolygonContainment } = await import("~/lib/geo-validation");
+  const { validateGeometryBounds, validatePolygonContainment } =
+    await import("~/lib/geo-validation");
   const geometry = data.geometry;
 
   if (geometry) {

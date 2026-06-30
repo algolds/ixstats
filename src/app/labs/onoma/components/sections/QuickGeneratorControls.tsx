@@ -6,7 +6,13 @@
 import { BookOpen, SlidersHorizontal, Wand2, Loader2 } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import type { GenerateOptions } from "~/lib/onoma/types";
 
 interface QuickGeneratorControlsProps {
@@ -58,12 +64,16 @@ export function QuickGeneratorControls({
           Dictionary Profile
         </label>
         <Select value={selectedDictId} onValueChange={setSelectedDictId}>
-          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none">
             <SelectValue placeholder="Select a dictionary profile" />
           </SelectTrigger>
-          <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[300px]">
+          <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
             {publicDicts.map((dict) => (
-              <SelectItem key={dict.id} value={dict.id} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+              <SelectItem
+                key={dict.id}
+                value={dict.id}
+                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+              >
                 {dict.title}
               </SelectItem>
             ))}
@@ -74,24 +84,24 @@ export function QuickGeneratorControls({
       {/* Batch Count Select */}
       <div className="space-y-1.5">
         <label className="text-muted-foreground text-xs font-bold">Generated Batch Size</label>
-        <div className="flex items-center justify-between border border-border/60 bg-background rounded-lg p-1 select-none h-9 w-full">
+        <div className="border-border/60 bg-background flex h-9 w-full items-center justify-between rounded-lg border p-1 select-none">
           <button
             type="button"
             onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
             disabled={batchCount <= 5}
-            className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-3 cursor-pointer font-bold text-sm h-full flex items-center"
+            className="text-muted-foreground hover:text-foreground flex h-full cursor-pointer items-center px-3 text-sm font-bold disabled:opacity-30"
           >
             -
           </button>
           <div className="flex items-center gap-1 font-mono text-sm font-semibold">
             <NumberFlowDisplay value={batchCount} className="text-foreground" />
-            <span className="text-muted-foreground text-xs font-sans">names</span>
+            <span className="text-muted-foreground font-sans text-xs">names</span>
           </div>
           <button
             type="button"
             onClick={() => setBatchCount((c) => Math.min(100, c + 5))}
             disabled={batchCount >= 100}
-            className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-3 cursor-pointer font-bold text-sm h-full flex items-center"
+            className="text-muted-foreground hover:text-foreground flex h-full cursor-pointer items-center px-3 text-sm font-bold disabled:opacity-30"
           >
             +
           </button>
@@ -114,7 +124,9 @@ export function QuickGeneratorControls({
             {/* Min / Max Length */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">Min Length</label>
+                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                  Min Length
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -127,7 +139,9 @@ export function QuickGeneratorControls({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">Max Length</label>
+                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                  Max Length
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -144,7 +158,9 @@ export function QuickGeneratorControls({
             {/* Starts / Ends With */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">Starts With</label>
+                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                  Starts With
+                </label>
                 <input
                   type="text"
                   placeholder="Prefix"
@@ -154,7 +170,9 @@ export function QuickGeneratorControls({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">Ends With</label>
+                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                  Ends With
+                </label>
                 <input
                   type="text"
                   placeholder="Suffix"
@@ -168,7 +186,9 @@ export function QuickGeneratorControls({
             {/* Contains / Excludes */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">Contains</label>
+                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                  Contains
+                </label>
                 <input
                   type="text"
                   placeholder="Substring"
@@ -178,7 +198,9 @@ export function QuickGeneratorControls({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">Excludes</label>
+                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                  Excludes
+                </label>
                 <input
                   type="text"
                   placeholder="Substring"
@@ -192,7 +214,9 @@ export function QuickGeneratorControls({
             {/* Markov Order */}
             <div className="space-y-1">
               <div className="flex justify-between">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">Markov Order</label>
+                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                  Markov Order
+                </label>
                 <span className="text-[10px] font-bold text-[#0091ff]">{order} char</span>
               </div>
               <input
@@ -228,7 +252,11 @@ export function QuickGeneratorControls({
         disabled={isGenerating || !selectedDictId}
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] active:scale-[0.98] disabled:opacity-50"
       >
-        {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+        {isGenerating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Wand2 className="h-4 w-4" />
+        )}
         <span>Assemble Names</span>
       </button>
     </FacetCard>

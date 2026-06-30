@@ -129,21 +129,23 @@ export function CalendarView({ onClose }: DIViewProps) {
   const resolvedTermProgress = useMemo(() => {
     const currentYearDecimal = gameYear;
     const cycle = govStructure?.electionCycle ?? 4;
-    
+
     if (!elections || elections.length === 0) {
       const elapsed = currentYearDecimal % cycle;
       return `Yr ${(elapsed + 1).toFixed(1)} / ${cycle}`;
     }
-    
+
     const upcomingElection = [...elections]
-      .filter((e) => e.status === "upcoming" || e.status === "scheduled" || e.status === "campaigning")
+      .filter(
+        (e) => e.status === "upcoming" || e.status === "scheduled" || e.status === "campaigning"
+      )
       .sort((a, b) => a.scheduledIxTime - b.scheduledIxTime)[0];
-      
+
     if (!upcomingElection) {
       const elapsed = currentYearDecimal % cycle;
       return `Yr ${(elapsed + 1).toFixed(1)} / ${cycle}`;
     }
-    
+
     const termEnd = upcomingElection.scheduledIxTime;
     const TERM_LENGTH_MS = cycle * 365.25 * 24 * 60 * 60 * 1000;
     const termStart = termEnd - TERM_LENGTH_MS;
@@ -156,7 +158,13 @@ export function CalendarView({ onClose }: DIViewProps) {
     if (!govStructure) return "democracy";
     const type = govStructure.governmentType?.toLowerCase() || "democracy";
     if (type.includes("monarch")) return "monarchy";
-    if (type.includes("dictator") || type.includes("authoritarian") || type.includes("junta") || type.includes("single-party")) return "dictatorship";
+    if (
+      type.includes("dictator") ||
+      type.includes("authoritarian") ||
+      type.includes("junta") ||
+      type.includes("single-party")
+    )
+      return "dictatorship";
     return "democracy";
   }, [govStructure]);
 
@@ -190,7 +198,10 @@ export function CalendarView({ onClose }: DIViewProps) {
         if (govStructure) {
           const demIndex = govStructure.democracyIndex ?? 50;
           const stability = govStructure.politicalStability ?? 0.5;
-          grip = Math.min(100, Math.max(10, Math.round((1 - (demIndex / 100)) * 50 + (stability * 50))));
+          grip = Math.min(
+            100,
+            Math.max(10, Math.round((1 - demIndex / 100) * 50 + stability * 50))
+          );
         }
         return {
           label: "Regime Grip",
@@ -217,7 +228,10 @@ export function CalendarView({ onClose }: DIViewProps) {
   return (
     <div className="p-4">
       {/* ── Hero clock ─────────────────────────────────────────────────── */}
-      <TickingClock greetingText={greeting.text} selectedThemeColorClass={selectedThemeColorClass} />
+      <TickingClock
+        greetingText={greeting.text}
+        selectedThemeColorClass={selectedThemeColorClass}
+      />
 
       {/* ── Complications (watchOS smart-stack row) ────────────────────── */}
       <div className="mt-2 grid grid-cols-3 gap-2">
@@ -298,7 +312,7 @@ function Complication({
   tooltip?: string;
 }) {
   const content = (
-    <div className="glass-hierarchy-child flex flex-col items-center justify-center rounded-xl p-2.5 text-center h-full w-full">
+    <div className="glass-hierarchy-child flex h-full w-full flex-col items-center justify-center rounded-xl p-2.5 text-center">
       <div className="text-muted-foreground/80 flex items-center justify-center">{icon}</div>
       <div className="text-muted-foreground mt-1 text-[9px] font-medium tracking-wider uppercase">
         {label}
@@ -312,7 +326,7 @@ function Complication({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="cursor-help h-full w-full">{content}</div>
+        <div className="h-full w-full cursor-help">{content}</div>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-[200px] text-center text-xs leading-normal">
         {tooltip}
@@ -356,8 +370,8 @@ function TickingClock({ greetingText, selectedThemeColorClass }: TickingClockPro
       />
 
       {/* Top-right Weather badge */}
-      <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2 py-0.5 select-none text-[8px] font-extrabold text-muted-foreground/80 tracking-wider">
-        <Sun className="h-2.5 w-2.5 text-amber-400 animate-pulse" />
+      <div className="text-muted-foreground/80 absolute top-3 right-3 flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[8px] font-extrabold tracking-wider select-none">
+        <Sun className="h-2.5 w-2.5 animate-pulse text-amber-400" />
         <span>{seasonFor(d.getUTCMonth())}</span>
       </div>
 
@@ -365,12 +379,12 @@ function TickingClock({ greetingText, selectedThemeColorClass }: TickingClockPro
         <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium">
           <motion.div
             layoutId="halo-date-capsule-badge"
-            className="flex items-center justify-center rounded-[4px] border border-white/10 bg-white/5 px-1 py-0.5 shadow-inner backdrop-blur-[2px] shrink-0"
+            className="flex shrink-0 items-center justify-center rounded-[4px] border border-white/10 bg-white/5 px-1 py-0.5 shadow-inner backdrop-blur-[2px]"
           >
             <motion.span
               layoutId="halo-date-capsule-weekday"
               className={cn(
-                "origin-center scale-90 text-[8px] font-extrabold tracking-widest antialiased leading-none",
+                "origin-center scale-90 text-[8px] leading-none font-extrabold tracking-widest antialiased",
                 selectedThemeColorClass
               )}
             >

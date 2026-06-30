@@ -78,7 +78,9 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
   // Detect Champion Bulletin
   const lines = content.split(/\r?\n/);
   const firstLine = lines[0] || "";
-  const champHeaderMatch = firstLine.match(/^(?:([^\s*]+)\s+)?🏆\s+(?:\*\*)?(.+?)\s+CHAMPION CROWNED!(?:\*\*)?/i);
+  const champHeaderMatch = firstLine.match(
+    /^(?:([^\s*]+)\s+)?🏆\s+(?:\*\*)?(.+?)\s+CHAMPION CROWNED!(?:\*\*)?/i
+  );
   if (champHeaderMatch) {
     const sportEmoji = champHeaderMatch[1] || "";
     const leagueInfo = cleanNameAndId(champHeaderMatch[2]!);
@@ -128,7 +130,9 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
   }
 
   // Detect Playoff Bulletin
-  const playoffHeaderMatch = firstLine.match(/^(?:([^\s*]+)\s+)?(?:\*\*)?(.+?)\s+Playoff\s+(.+?)\s+Results(?:\*\*)?/i);
+  const playoffHeaderMatch = firstLine.match(
+    /^(?:([^\s*]+)\s+)?(?:\*\*)?(.+?)\s+Playoff\s+(.+?)\s+Results(?:\*\*)?/i
+  );
   if (playoffHeaderMatch) {
     const sportEmoji = playoffHeaderMatch[1] || "";
     const leagueInfo = cleanNameAndId(playoffHeaderMatch[2]!.replace(/\s+Playoff$/i, "").trim());
@@ -209,7 +213,9 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
  */
 function parseMarkdownBulletin(content: string): SportsBulletinData | null {
   const lines = content.split(/\r?\n/);
-  const header = lines[0]?.match(/^(?:([^\s*]+)\s+)?(?:\*\*)?([^*]+?)(?:\*\*)?\s+—\s+Matchday\s+(\d+)/);
+  const header = lines[0]?.match(
+    /^(?:([^\s*]+)\s+)?(?:\*\*)?([^*]+?)(?:\*\*)?\s+—\s+Matchday\s+(\d+)/
+  );
   if (!header) return null;
 
   const leagueInfo = cleanNameAndId(header[2]!);
@@ -255,7 +261,8 @@ function parseMarkdownBulletin(content: string): SportsBulletinData | null {
     const homeInfo = cleanNameAndId(leftPart);
     const awayInfo = cleanNameAndId(rightPart);
 
-    if (Number.isNaN(homeScore) || Number.isNaN(awayScore) || !homeInfo.name || !awayInfo.name) continue;
+    if (Number.isNaN(homeScore) || Number.isNaN(awayScore) || !homeInfo.name || !awayInfo.name)
+      continue;
     results.push({
       home: { name: homeInfo.name, id: homeInfo.id },
       away: { name: awayInfo.name, id: awayInfo.id },
@@ -378,7 +385,9 @@ export function formatSeasonChampionBulletin(args: {
   const { leagueName, leagueId, sportEmoji, championName, championId, llmSummary } = args;
   const leagueFormatted = leagueId ? `[${leagueName}](/myleague/${leagueId})` : leagueName;
   const header = `🏆 **${leagueFormatted} CHAMPION CROWNED!**`;
-  const championFormatted = championId ? `[${championName}](/myclub/${championId})` : `**${championName}**`;
+  const championFormatted = championId
+    ? `[${championName}](/myclub/${championId})`
+    : `**${championName}**`;
   const body = `Congratulations to ${championFormatted} for winning the championship!`;
   const summarySection = llmSummary ? `\n\n📝 **Season Summary**\n${llmSummary}` : "";
   return `${header}\n\n${body}${summarySection}`;

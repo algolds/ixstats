@@ -104,5 +104,3 @@ export const policiesTemplatesRouter = createTRPCRouter({
 
   // Recalculate all policy effects
 });
-
-

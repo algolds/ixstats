@@ -69,8 +69,8 @@ export function OverviewBanner({
               A Markov chain is a procedural algorithm used to make coherent chains of values.
             </TooltipContent>
           </Tooltip>{" "}
-          name generator for worldbuilding. Instantly create names from public name banks, or
-          create your own set of data to generate any kind of name.
+          name generator for worldbuilding. Instantly create names from public name banks, or create
+          your own set of data to generate any kind of name.
         </p>
         <div className="text-muted-foreground/60 flex items-center gap-1.5 pt-1 text-[11px] select-none">
           <Info className="h-3.5 w-3.5 shrink-0 text-[#0091ff]/50" />

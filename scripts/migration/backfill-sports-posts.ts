@@ -15,7 +15,7 @@ import {
   encodeSportsBulletin,
   formatMatchDayBulletin,
   formatSeasonChampionBulletin,
-  formatPlayoffBulletin
+  formatPlayoffBulletin,
 } from "../../src/lib/sports/feed-bulletins";
 
 const db = new PrismaClient();
@@ -23,7 +23,9 @@ const db = new PrismaClient();
 async function main() {
   const writeMode = process.argv.includes("--write");
 
-  console.log(`🔍 Sports Post Backfill & ID Link Lookup Tool (${writeMode ? "WRITE MODE" : "DRY RUN MODE"})`);
+  console.log(
+    `🔍 Sports Post Backfill & ID Link Lookup Tool (${writeMode ? "WRITE MODE" : "DRY RUN MODE"})`
+  );
   console.log("--------------------------------------------------");
 
   const account = await db.thinkpagesAccount.findUnique({
@@ -49,7 +51,9 @@ async function main() {
     try {
       const data = parseSportsBulletin(post.content);
       if (!data) {
-        console.log(`[SKIP] Could not parse post ${post.id}: ${JSON.stringify(post.content.slice(0, 80))}...`);
+        console.log(
+          `[SKIP] Could not parse post ${post.id}: ${JSON.stringify(post.content.slice(0, 80))}...`
+        );
         skippedCount++;
         continue;
       }
@@ -113,15 +117,16 @@ async function main() {
           llmSummary: data.llmSummary,
         });
       } else if (data.isPlayoffBulletin) {
-        const results = data.results?.map(r => ({
-          homeName: r.home.name,
-          homeId: r.home.id,
-          awayName: r.away.name,
-          awayId: r.away.id,
-          homeScore: r.homeScore,
-          awayScore: r.awayScore,
-          isUpset: r.isUpset,
-        })) || [];
+        const results =
+          data.results?.map((r) => ({
+            homeName: r.home.name,
+            homeId: r.home.id,
+            awayName: r.away.name,
+            awayId: r.away.id,
+            homeScore: r.homeScore,
+            awayScore: r.awayScore,
+            isUpset: r.isUpset,
+          })) || [];
         cleanContent = formatPlayoffBulletin({
           leagueName: data.league.name,
           leagueId: data.league.id,
@@ -131,16 +136,17 @@ async function main() {
           llmSummary: data.llmSummary,
         });
       } else {
-        const results = data.results?.map(r => ({
-          homeName: r.home.name,
-          homeId: r.home.id,
-          awayName: r.away.name,
-          awayId: r.away.id,
-          homeScore: r.homeScore,
-          awayScore: r.awayScore,
-          isUpset: r.isUpset,
-        })) || [];
-        const movers = data.movers?.map(m => ({
+        const results =
+          data.results?.map((r) => ({
+            homeName: r.home.name,
+            homeId: r.home.id,
+            awayName: r.away.name,
+            awayId: r.away.id,
+            homeScore: r.homeScore,
+            awayScore: r.awayScore,
+            isUpset: r.isUpset,
+          })) || [];
+        const movers = data.movers?.map((m) => ({
           name: m.name,
           id: m.id,
           oldRank: m.oldRank,
@@ -165,9 +171,13 @@ async function main() {
       }
 
       console.log(`[UPDATE REQUIRED] Post ${post.id} (${post.ixTimeTimestamp.toISOString()}):`);
-      console.log(`  - League: ${data.league.name}${data.matchDay ? ` (Matchday ${data.matchDay})` : ""}`);
+      console.log(
+        `  - League: ${data.league.name}${data.matchDay ? ` (Matchday ${data.matchDay})` : ""}`
+      );
       if (data.isChampionBulletin) {
-        console.log(`  - Champion: ${data.championName} (${data.championId ? `Linked: ${data.championId}` : "Not Found"})`);
+        console.log(
+          `  - Champion: ${data.championName} (${data.championId ? `Linked: ${data.championId}` : "Not Found"})`
+        );
       } else if (data.isPlayoffBulletin) {
         console.log(`  - Playoff Round: ${data.roundName}`);
       } else {
@@ -198,7 +208,9 @@ async function main() {
   console.log(`- Errors: ${errorCount}`);
 
   if (!writeMode && parsedCount > 0) {
-    console.log("\n💡 Run with --write to write changes to the database: bunx tsx scripts/migration/backfill-sports-posts.ts --write");
+    console.log(
+      "\n💡 Run with --write to write changes to the database: bunx tsx scripts/migration/backfill-sports-posts.ts --write"
+    );
   }
 }
 

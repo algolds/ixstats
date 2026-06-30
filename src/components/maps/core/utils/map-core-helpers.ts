@@ -41,16 +41,30 @@ export function getMinArea(layerType: string, zoom: number): number {
   return minArea;
 }
 
+const filterCache = new WeakMap<any, Map<number, FeatureCollection>>();
+
 /** Filter a FeatureCollection by minimum area */
 export function filterByArea(data: FeatureCollection, minArea: number): FeatureCollection {
   if (minArea <= 0) return data;
-  return {
-    ...data,
-    features: data.features.filter((f) => {
-      const area = (f.properties?._areaSqKm as number) ?? 0;
-      return area >= minArea;
-    }),
-  };
+
+  let areaCache = filterCache.get(data);
+  if (!areaCache) {
+    areaCache = new Map();
+    filterCache.set(data, areaCache);
+  }
+
+  let cached = areaCache.get(minArea);
+  if (!cached) {
+    cached = {
+      ...data,
+      features: data.features.filter((f) => {
+        const area = (f.properties?._areaSqKm as number) ?? 0;
+        return area >= minArea;
+      }),
+    };
+    areaCache.set(minArea, cached);
+  }
+  return cached;
 }
 
 /**

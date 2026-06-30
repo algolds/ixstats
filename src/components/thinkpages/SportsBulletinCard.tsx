@@ -62,15 +62,15 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
           ) : (
             <span className="text-[15px] font-bold text-amber-300">{data.league.name}</span>
           )}
-          <span className="ml-auto rounded-full bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-amber-200 uppercase animate-pulse">
+          <span className="ml-auto animate-pulse rounded-full border border-amber-500/40 bg-amber-500/20 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-amber-200 uppercase">
             CHAMPION
           </span>
         </div>
 
         {/* Celebration Body */}
-        <div className="flex flex-col items-center justify-center px-6 py-8 text-center bg-radial from-amber-500/[0.08] to-transparent">
+        <div className="flex flex-col items-center justify-center bg-radial from-amber-500/[0.08] to-transparent px-6 py-8 text-center">
           <div className="relative mb-3 flex items-center justify-center">
-            <span className="text-5xl animate-bounce">🏆</span>
+            <span className="animate-bounce text-5xl">🏆</span>
             <span className="absolute -top-1 -right-1 text-lg">✨</span>
             <span className="absolute -bottom-1 -left-2 text-lg">✨</span>
           </div>
@@ -83,12 +83,12 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
               <Link
                 href={`/myclub/${data.championId}`}
                 onClick={(e) => e.stopPropagation()}
-                className="font-bold text-white text-[16px] underline decoration-amber-400 decoration-2 underline-offset-4 hover:text-amber-200"
+                className="text-[16px] font-bold text-white underline decoration-amber-400 decoration-2 underline-offset-4 hover:text-amber-200"
               >
                 {data.championName}
               </Link>
             ) : (
-              <span className="font-bold text-white text-[16px] underline decoration-amber-400 decoration-2 underline-offset-4">
+              <span className="text-[16px] font-bold text-white underline decoration-amber-400 decoration-2 underline-offset-4">
                 {data.championName}
               </span>
             )}{" "}
@@ -99,12 +99,10 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
         {/* LLM narration / Season Summary */}
         {data.llmSummary && (
           <div className="border-t border-amber-500/20 bg-amber-950/[0.03] px-4 py-3">
-            <span className="text-[11px] font-semibold tracking-wide text-amber-400 uppercase block mb-1">
+            <span className="mb-1 block text-[11px] font-semibold tracking-wide text-amber-400 uppercase">
               Season Summary
             </span>
-            <p className="text-[14px] leading-relaxed text-slate-300 italic">
-              {data.llmSummary}
-            </p>
+            <p className="text-[14px] leading-relaxed text-slate-300 italic">{data.llmSummary}</p>
           </div>
         )}
       </Card>
@@ -129,7 +127,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
           ) : (
             <span className="text-[15px] font-bold text-cyan-300">{data.league.name}</span>
           )}
-          <span className="ml-auto rounded-full bg-cyan-500/20 border border-cyan-500/40 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-cyan-200 uppercase">
+          <span className="ml-auto rounded-full border border-cyan-500/40 bg-cyan-500/20 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-cyan-200 uppercase">
             {data.roundName}
           </span>
         </div>
@@ -143,13 +141,17 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
               return (
                 <div
                   key={i}
-                  className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 hover:bg-white/[0.02] transition-colors text-slate-200"
+                  className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 text-slate-200 transition-colors hover:bg-white/[0.02]"
                 >
                   <TeamName team={r.home} won={homeWon} align="right" />
                   <div className="flex items-center gap-1.5 font-mono text-[15px] font-semibold tabular-nums">
-                    <span className={homeWon ? "text-cyan-400 font-bold" : "text-slate-400"}>{r.homeScore}</span>
+                    <span className={homeWon ? "font-bold text-cyan-400" : "text-slate-400"}>
+                      {r.homeScore}
+                    </span>
                     <span className="text-slate-600">–</span>
-                    <span className={awayWon ? "text-cyan-400 font-bold" : "text-slate-400"}>{r.awayScore}</span>
+                    <span className={awayWon ? "font-bold text-cyan-400" : "text-slate-400"}>
+                      {r.awayScore}
+                    </span>
                     {r.isUpset && (
                       <span className="ml-0.5 text-[11px]" title="Upset of the day">
                         ⭐
@@ -166,12 +168,10 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
         {/* LLM narration / Round Summary */}
         {data.llmSummary && (
           <div className="border-t border-cyan-500/20 bg-cyan-950/[0.03] px-4 py-3">
-            <span className="text-[11px] font-semibold tracking-wide text-cyan-400 uppercase block mb-1">
+            <span className="mb-1 block text-[11px] font-semibold tracking-wide text-cyan-400 uppercase">
               Round Summary
             </span>
-            <p className="text-[14px] leading-relaxed text-slate-300 italic">
-              {data.llmSummary}
-            </p>
+            <p className="text-[14px] leading-relaxed text-slate-300 italic">{data.llmSummary}</p>
           </div>
         )}
       </Card>
@@ -195,7 +195,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
         ) : (
           <span className="text-[15px] font-bold text-slate-100">{data.league.name}</span>
         )}
-        <span className="ml-auto rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-amber-300 uppercase">
+        <span className="ml-auto rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-amber-300 uppercase">
           Matchday {data.matchDay}
         </span>
       </div>
@@ -209,13 +209,17 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
             return (
               <div
                 key={i}
-                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 hover:bg-white/[0.02] transition-colors text-slate-200"
+                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 text-slate-200 transition-colors hover:bg-white/[0.02]"
               >
                 <TeamName team={r.home} won={homeWon} align="right" />
                 <div className="flex items-center gap-1.5 font-mono text-[15px] font-semibold tabular-nums">
-                  <span className={homeWon ? "text-amber-400 font-bold" : "text-slate-400"}>{r.homeScore}</span>
+                  <span className={homeWon ? "font-bold text-amber-400" : "text-slate-400"}>
+                    {r.homeScore}
+                  </span>
                   <span className="text-slate-600">–</span>
-                  <span className={awayWon ? "text-amber-400 font-bold" : "text-slate-400"}>{r.awayScore}</span>
+                  <span className={awayWon ? "font-bold text-amber-400" : "text-slate-400"}>
+                    {r.awayScore}
+                  </span>
                   {r.isUpset && (
                     <span className="ml-0.5 text-[11px]" title="Upset of the day">
                       ⭐
@@ -232,7 +236,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
       {/* Table movers */}
       {data.movers && data.movers.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-white/10 bg-white/[0.02] px-4 py-2.5">
-          <span className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase mr-1">
+          <span className="mr-1 text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
             Table Movers
           </span>
           {data.movers.map((m, i) => {
@@ -242,14 +246,14 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium transition-all duration-200 hover:scale-[1.02]",
-                  up 
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20" 
-                    : "bg-rose-500/10 border-rose-500/20 text-rose-300 hover:bg-rose-500/20"
+                  up
+                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                    : "border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
                 )}
               >
                 <Icon className="h-3 w-3" />
                 {m.name}{" "}
-                <span className="text-slate-400 text-[11px]">
+                <span className="text-[11px] text-slate-400">
                   ({ordinal(m.oldRank)} → {ordinal(m.newRank)})
                 </span>
               </span>

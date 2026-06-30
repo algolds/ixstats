@@ -428,17 +428,23 @@ function IssueDetailModalInner({
                 <AlertTriangle className="h-4 w-4 text-amber-400" />
                 Your Response
               </h3>
-              {onDismiss && !hasDeadline && issue.severity !== "critical" && issue.severity !== "CRITICAL" && issue.severity !== "high" && issue.severity !== "HIGH" && issue.urgency <= 70 && (
-                <Button
-                  size="xs"
-                  variant="outline"
-                  className="h-7 text-xs border-white/10 text-muted-foreground hover:text-white"
-                  onClick={handleDismiss}
-                  disabled={isDismissing}
-                >
-                  {isDismissing ? "Delegating..." : "Delegate (-15 CivCap)"}
-                </Button>
-              )}
+              {onDismiss &&
+                !hasDeadline &&
+                issue.severity !== "critical" &&
+                issue.severity !== "CRITICAL" &&
+                issue.severity !== "high" &&
+                issue.severity !== "HIGH" &&
+                issue.urgency <= 70 && (
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    className="text-muted-foreground h-7 border-white/10 text-xs hover:text-white"
+                    onClick={handleDismiss}
+                    disabled={isDismissing}
+                  >
+                    {isDismissing ? "Delegating..." : "Delegate (-15 CivCap)"}
+                  </Button>
+                )}
             </div>
 
             {options.map((option) => {
@@ -469,8 +475,8 @@ function IssueDetailModalInner({
                         ? "border-red-500/50 bg-red-500/10"
                         : "border-amber-500/50 bg-amber-500/10"
                       : option.isRisky
-                      ? "border-red-500/20 bg-red-500/5 hover:border-red-500/40 hover:bg-red-500/10"
-                      : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                        ? "border-red-500/20 bg-red-500/5 hover:border-red-500/40 hover:bg-red-500/10"
+                        : "border-white/10 hover:border-white/20 hover:bg-white/5"
                   } ${!isPolicyActive ? "opacity-75" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -515,17 +521,26 @@ function IssueDetailModalInner({
                       {/* Alignment and Cost indicators */}
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {option.partyAlignment && (
-                          <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-none text-[9px] font-semibold">
+                          <Badge
+                            variant="secondary"
+                            className="border-none bg-blue-500/10 text-[9px] font-semibold text-blue-400 hover:bg-blue-500/20"
+                          >
                             ⚖️ Aligns: {option.partyAlignment}
                           </Badge>
                         )}
                         {option.brokerAlignment && (
-                          <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border-none text-[9px] font-semibold">
+                          <Badge
+                            variant="secondary"
+                            className="border-none bg-purple-500/10 text-[9px] font-semibold text-purple-400 hover:bg-purple-500/20"
+                          >
                             💼 Aligns: {option.brokerAlignment}
                           </Badge>
                         )}
                         {option.costMessage && (
-                          <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-[9px] font-semibold">
+                          <Badge
+                            variant="outline"
+                            className="border-amber-500/30 bg-amber-500/10 text-[9px] font-semibold text-amber-400"
+                          >
                             ⚡ Cost: {option.costMessage}
                           </Badge>
                         )}
@@ -534,10 +549,15 @@ function IssueDetailModalInner({
                       {/* Risky Warning */}
                       {option.isRisky && (
                         <div className="mt-2 flex items-start gap-1.5 rounded border border-red-500/20 bg-red-500/5 p-2 text-xs text-red-400">
-                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400 animate-pulse" />
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse text-red-400" />
                           <div>
-                            <span className="font-semibold uppercase tracking-wider text-[10px]">Risky Choice:</span>
-                            <p className="mt-0.5 text-[11px] leading-snug">Taking this gamble carries a risk of negative outcomes, military operations, or stability backlash.</p>
+                            <span className="text-[10px] font-semibold tracking-wider uppercase">
+                              Risky Choice:
+                            </span>
+                            <p className="mt-0.5 text-[11px] leading-snug">
+                              Taking this gamble carries a risk of negative outcomes, military
+                              operations, or stability backlash.
+                            </p>
                           </div>
                         </div>
                       )}

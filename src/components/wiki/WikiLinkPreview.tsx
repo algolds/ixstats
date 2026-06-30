@@ -353,7 +353,7 @@ export function MentionPopover({
           side="top"
           align="center"
           sideOffset={6}
-          className="animate-in fade-in-0 zoom-in-95 z-50 w-64 rounded-xl border border-border bg-popover/95 p-4 text-popover-foreground shadow-xl backdrop-blur-md"
+          className="animate-in fade-in-0 zoom-in-95 border-border bg-popover/95 text-popover-foreground z-50 w-64 rounded-xl border p-4 shadow-xl backdrop-blur-md"
         >
           {isLoading ? (
             <div className="flex flex-col gap-2 py-1">

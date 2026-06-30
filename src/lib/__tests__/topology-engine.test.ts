@@ -1,20 +1,32 @@
 import type { Polygon } from "geojson";
-import {
-  vkey,
-  buildTopologyIndex,
-  cascadeMoveVertex,
-} from "../topology-engine";
+import { vkey, buildTopologyIndex, cascadeMoveVertex } from "../topology-engine";
 
 // Two adjacent unit squares sharing the edge at x=1:
 //   A: (0,0)-(1,0)-(1,1)-(0,1)
 //   B: (1,0)-(2,0)-(2,1)-(1,1)
 const SQUARE_A: Polygon = {
   type: "Polygon",
-  coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+  coordinates: [
+    [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [0, 1],
+      [0, 0],
+    ],
+  ],
 };
 const SQUARE_B: Polygon = {
   type: "Polygon",
-  coordinates: [[[1, 0], [2, 0], [2, 1], [1, 1], [1, 0]]],
+  coordinates: [
+    [
+      [1, 0],
+      [2, 0],
+      [2, 1],
+      [1, 1],
+      [1, 0],
+    ],
+  ],
 };
 
 describe("vkey", () => {
@@ -34,9 +46,7 @@ describe("vkey", () => {
 
 describe("buildTopologyIndex", () => {
   it("indexes all vertices (excluding ring closures)", () => {
-    const index = buildTopologyIndex([
-      { id: "a", geometry: SQUARE_A },
-    ]);
+    const index = buildTopologyIndex([{ id: "a", geometry: SQUARE_A }]);
     // 4 unique vertices (ring closure skipped)
     expect(index.size).toBe(4);
   });
@@ -69,9 +79,7 @@ describe("buildTopologyIndex", () => {
   });
 
   it("returns correct ring and vertex indices", () => {
-    const index = buildTopologyIndex([
-      { id: "a", geometry: SQUARE_A },
-    ]);
+    const index = buildTopologyIndex([{ id: "a", geometry: SQUARE_A }]);
 
     // (1,0) is vertex index 1 in square A's ring 0
     const key10 = vkey([1, 0]);
@@ -121,12 +129,8 @@ describe("cascadeMoveVertex", () => {
   });
 
   it("returns empty map when oldKey has no refs", () => {
-    const index = buildTopologyIndex([
-      { id: "a", geometry: SQUARE_A },
-    ]);
-    const geometries = new Map([
-      ["a", JSON.parse(JSON.stringify(SQUARE_A)) as Polygon],
-    ]);
+    const index = buildTopologyIndex([{ id: "a", geometry: SQUARE_A }]);
+    const geometries = new Map([["a", JSON.parse(JSON.stringify(SQUARE_A)) as Polygon]]);
 
     const updated = cascadeMoveVertex(index, geometries, vkey([99, 99]), [100, 100]);
     expect(updated.size).toBe(0);

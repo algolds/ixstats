@@ -88,10 +88,16 @@ export const onomaRouter = createTRPCRouter({
               setName = parsed.setName || null;
               const rawValues = parsed.values || [];
               values = Array.isArray(rawValues)
-                ? rawValues.flatMap((v: string) => v.split(/[\r\n,\s]+/)).map((v: string) => v.trim()).filter(Boolean)
+                ? rawValues
+                    .flatMap((v: string) => v.split(/[\r\n,\s]+/))
+                    .map((v: string) => v.trim())
+                    .filter(Boolean)
                 : typeof rawValues === "string"
-                ? rawValues.split(/[\r\n,\s]+/).map((v: string) => v.trim()).filter(Boolean)
-                : [];
+                  ? rawValues
+                      .split(/[\r\n,\s]+/)
+                      .map((v: string) => v.trim())
+                      .filter(Boolean)
+                  : [];
             }
           } catch {
             // Fallback for legacy comma-separated values

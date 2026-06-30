@@ -387,21 +387,22 @@ function CommandPaletteContent({
               ? [
                   "0 0 0px rgba(59, 130, 246, 0)",
                   "0 0 15px rgba(59, 130, 246, 0.5)",
-                  "0 0 0px rgba(59, 130, 246, 0)"
+                  "0 0 0px rgba(59, 130, 246, 0)",
                 ]
               : "0 0 0px rgba(0, 0, 0, 0)",
           }}
-          transition={isTourActive 
-            ? {
-                boxShadow: {
-                  repeat: Infinity,
-                  duration: 2,
-                  ease: "easeInOut",
-                },
-                scale: { type: "spring", stiffness: 500, damping: 20 },
-                y: { type: "spring", stiffness: 500, damping: 20 }
-              }
-            : { type: "spring", stiffness: 500, damping: 20 }
+          transition={
+            isTourActive
+              ? {
+                  boxShadow: {
+                    repeat: Infinity,
+                    duration: 2,
+                    ease: "easeInOut",
+                  },
+                  scale: { type: "spring", stiffness: 500, damping: 20 },
+                  y: { type: "spring", stiffness: 500, damping: 20 },
+                }
+              : { type: "spring", stiffness: 500, damping: 20 }
           }
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
@@ -564,11 +565,11 @@ function CommandPaletteWrapper({
       }}
     >
       <div className="pointer-events-auto">
-        <CommandPaletteContent 
-          isSticky={isSticky} 
-          scrollY={scrollY} 
-          diState={diState} 
-          isTourActive={isTourActive} 
+        <CommandPaletteContent
+          isSticky={isSticky}
+          scrollY={scrollY}
+          diState={diState}
+          isTourActive={isTourActive}
         />
       </div>
     </div>

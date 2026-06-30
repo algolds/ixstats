@@ -29,12 +29,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-import {
-  Calendar,
-  Plus,
-  X,
-  Layers,
-} from "lucide-react";
+import { Calendar, Plus, X, Layers } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 
 import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-types";
@@ -52,7 +47,9 @@ export function MeetingScheduler({
 
   // Redesign state
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("routine");
-  const [timePreset, setTimePreset] = useState<"immediately" | "tomorrow" | "custom">("immediately");
+  const [timePreset, setTimePreset] = useState<"immediately" | "tomorrow" | "custom">(
+    "immediately"
+  );
   const [isChangingIntent, setIsChangingIntent] = useState(false);
 
   // Core Form state
@@ -118,30 +115,32 @@ export function MeetingScheduler({
   }, [timePreset, open]);
 
   // Handle template selection and configuration
-  const handleSelectTemplate = React.useCallback((tpl: typeof INTENT_TEMPLATES[0]) => {
-    setSelectedTemplateId(tpl.id);
-    setMeetingType(tpl.meetingType);
-    setTitle(tpl.defaultTitle);
-    setDuration(tpl.defaultDuration);
-    setAgendaItems(tpl.agenda.map((item) => ({ ...item })));
+  const handleSelectTemplate = React.useCallback(
+    (tpl: (typeof INTENT_TEMPLATES)[0]) => {
+      setSelectedTemplateId(tpl.id);
+      setMeetingType(tpl.meetingType);
+      setTitle(tpl.defaultTitle);
+      setDuration(tpl.defaultDuration);
+      setAgendaItems(tpl.agenda.map((item) => ({ ...item })));
 
-    if (officials && officials.length > 0) {
-      if (tpl.recommendedRoles.length === 0) {
-        // Invite all by default for routine review
-        setSelectedOfficials(officials.map((o) => o.id));
+      if (officials && officials.length > 0) {
+        if (tpl.recommendedRoles.length === 0) {
+          // Invite all by default for routine review
+          setSelectedOfficials(officials.map((o) => o.id));
+        } else {
+          const matching = officials.filter((o) =>
+            tpl.recommendedRoles.some(
+              (role) => o.title.toLowerCase().includes(role) || o.role?.toLowerCase().includes(role)
+            )
+          );
+          setSelectedOfficials(matching.map((o) => o.id));
+        }
       } else {
-        const matching = officials.filter((o) =>
-          tpl.recommendedRoles.some((role) =>
-            o.title.toLowerCase().includes(role) ||
-            o.role?.toLowerCase().includes(role)
-          )
-        );
-        setSelectedOfficials(matching.map((o) => o.id));
+        setSelectedOfficials([]);
       }
-    } else {
-      setSelectedOfficials([]);
-    }
-  }, [officials]);
+    },
+    [officials]
+  );
 
   // Load prefills / defaults on open
   React.useEffect(() => {
@@ -156,7 +155,7 @@ export function MeetingScheduler({
         if (defaultMeeting.officialIds) {
           setSelectedOfficials(defaultMeeting.officialIds);
         }
-        
+
         if (defaultTargetCountryId) {
           setTargetCountryId(defaultTargetCountryId);
           setMeetingType("bilateral");
@@ -334,7 +333,7 @@ export function MeetingScheduler({
         successMsg
       );
       onOpenChange(false);
-      
+
       // Reset form variables
       setSelectedTemplateId("routine");
       setTimePreset("immediately");
@@ -353,33 +352,40 @@ export function MeetingScheduler({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-[450px] md:max-w-[830px] p-0 gap-0 overflow-visible bg-transparent border-none shadow-none"
-      >
-        <div className="flex flex-col md:flex-row items-start gap-3 w-full h-[85vh] max-h-[85vh] overflow-visible">
+      <DialogContent className="max-w-[450px] gap-0 overflow-visible border-none bg-transparent p-0 shadow-none md:max-w-[830px]">
+        <div className="flex h-[85vh] max-h-[85vh] w-full flex-col items-start gap-3 overflow-visible md:flex-row">
           {/* Card 1: Setup Details */}
-          <div className="flex-1 min-w-[320px] md:min-w-[450px] h-[85vh] max-h-[85vh] bg-background border-border rounded-xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-md">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/5 shrink-0">
+          <div className="bg-background border-border flex h-[85vh] max-h-[85vh] min-w-[320px] flex-1 flex-col overflow-hidden rounded-xl shadow-2xl backdrop-blur-md md:min-w-[450px]">
+            <DialogHeader className="shrink-0 border-b border-white/5 px-6 pt-6 pb-4">
               <DialogTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-amber-500" />
                 Schedule Meeting
               </DialogTitle>
               <DialogDescription>
-                Assemble your cabinet and foreign delegates to deliberate on national crises, draft policy reforms, or coordinate diplomatic summits.
+                Assemble your cabinet and foreign delegates to deliberate on national crises, draft
+                policy reforms, or coordinate diplomatic summits.
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
               <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
-                
                 {/* Linked Prefill Indicator */}
                 {defaultMeeting?.prefilledAgenda && (
                   <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200/90">
-                    <span className="font-semibold block text-[10px] uppercase tracking-wider text-amber-500 mb-0.5">Linked Reference</span>
+                    <span className="mb-0.5 block text-[10px] font-semibold tracking-wider text-amber-500 uppercase">
+                      Linked Reference
+                    </span>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{defaultMeeting.prefilledAgenda.title}</span>
-                      <Badge variant="outline" className="border-amber-500/35 text-[9px] text-amber-400 bg-amber-500/10 py-0 px-1.5 font-semibold">
-                        {defaultMeeting.prefilledAgenda.linkedIssueId ? "CRISIS ISSUE" : "DRAFT POLICY"}
+                      <span className="text-foreground font-medium">
+                        {defaultMeeting.prefilledAgenda.title}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/35 bg-amber-500/10 px-1.5 py-0 text-[9px] font-semibold text-amber-400"
+                      >
+                        {defaultMeeting.prefilledAgenda.linkedIssueId
+                          ? "CRISIS ISSUE"
+                          : "DRAFT POLICY"}
                       </Badge>
                     </div>
                   </div>
@@ -388,13 +394,15 @@ export function MeetingScheduler({
                 {/* Intent Selector */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground uppercase font-semibold">Select Agenda Intent</Label>
+                    <Label className="text-muted-foreground text-xs font-semibold uppercase">
+                      Select Agenda Intent
+                    </Label>
                     {!isChangingIntent && (
                       <Button
                         type="button"
                         variant="ghost"
                         onClick={() => setIsChangingIntent(true)}
-                        className="h-5 px-1.5 text-[10px] text-amber-500 font-bold hover:text-amber-600 hover:bg-amber-500/10 cursor-pointer"
+                        className="h-5 cursor-pointer px-1.5 text-[10px] font-bold text-amber-500 hover:bg-amber-500/10 hover:text-amber-600"
                       >
                         Change Intent
                       </Button>
@@ -403,16 +411,22 @@ export function MeetingScheduler({
 
                   {!isChangingIntent ? (
                     (() => {
-                      const activeTpl = INTENT_TEMPLATES.find((t) => t.id === selectedTemplateId) || INTENT_TEMPLATES[0];
+                      const activeTpl =
+                        INTENT_TEMPLATES.find((t) => t.id === selectedTemplateId) ||
+                        INTENT_TEMPLATES[0];
                       return (
-                        <div className="flex flex-col items-start text-left rounded-lg border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 p-3 transition-all duration-300">
-                          <span className="font-semibold text-xs text-amber-900 dark:text-amber-100">{activeTpl.name}</span>
-                          <span className="text-[10px] mt-0.5 leading-snug text-amber-800/80 dark:text-amber-300/80">{activeTpl.description}</span>
+                        <div className="flex flex-col items-start rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-all duration-300 dark:bg-amber-500/10">
+                          <span className="text-xs font-semibold text-amber-900 dark:text-amber-100">
+                            {activeTpl.name}
+                          </span>
+                          <span className="mt-0.5 text-[10px] leading-snug text-amber-800/80 dark:text-amber-300/80">
+                            {activeTpl.description}
+                          </span>
                         </div>
                       );
                     })()
                   ) : (
-                    <div className="grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="animate-in fade-in slide-in-from-top-1 grid grid-cols-2 gap-2 duration-200">
                       {INTENT_TEMPLATES.map((tpl) => {
                         const isSelected = selectedTemplateId === tpl.id;
                         return (
@@ -424,20 +438,32 @@ export function MeetingScheduler({
                               setIsChangingIntent(false);
                             }}
                             className={cn(
-                              "flex flex-col items-start text-left rounded-lg border p-2.5 transition-all text-xs cursor-pointer select-none",
+                              "flex cursor-pointer flex-col items-start rounded-lg border p-2.5 text-left text-xs transition-all select-none",
                               isSelected
-                                ? "border-amber-500/40 bg-amber-500/10 dark:bg-amber-500/15 shadow-sm"
-                                : "border-white/5 hover:border-white/10 hover:bg-white/[0.02] text-muted-foreground hover:text-foreground"
+                                ? "border-amber-500/40 bg-amber-500/10 shadow-sm dark:bg-amber-500/15"
+                                : "text-muted-foreground hover:text-foreground border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
                             )}
                           >
-                            <span className={cn(
-                              "font-semibold",
-                              isSelected ? "text-amber-900 dark:text-amber-100" : "text-foreground"
-                            )}>{tpl.name}</span>
-                            <span className={cn(
-                              "text-[10px] mt-0.5 leading-snug line-clamp-1",
-                              isSelected ? "text-amber-800/80 dark:text-amber-300/80" : "text-muted-foreground"
-                            )}>{tpl.description}</span>
+                            <span
+                              className={cn(
+                                "font-semibold",
+                                isSelected
+                                  ? "text-amber-900 dark:text-amber-100"
+                                  : "text-foreground"
+                              )}
+                            >
+                              {tpl.name}
+                            </span>
+                            <span
+                              className={cn(
+                                "mt-0.5 line-clamp-1 text-[10px] leading-snug",
+                                isSelected
+                                  ? "text-amber-800/80 dark:text-amber-300/80"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              {tpl.description}
+                            </span>
                           </button>
                         );
                       })}
@@ -512,7 +538,9 @@ export function MeetingScheduler({
 
                 {/* Scheduling Date presets */}
                 <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground uppercase font-semibold">Scheduled Date & Time</Label>
+                  <Label className="text-muted-foreground text-xs font-semibold uppercase">
+                    Scheduled Date & Time
+                  </Label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { id: "immediately", label: "Immediately" },
@@ -526,10 +554,10 @@ export function MeetingScheduler({
                           type="button"
                           onClick={() => setTimePreset(preset.id as any)}
                           className={cn(
-                            "rounded-md py-2 text-xs font-semibold border transition-all cursor-pointer",
+                            "cursor-pointer rounded-md border py-2 text-xs font-semibold transition-all",
                             isActive
-                              ? "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/25 text-amber-900 dark:text-amber-400 font-bold"
-                              : "border-white/5 hover:border-white/10 hover:bg-white/[0.02] text-muted-foreground hover:text-foreground"
+                              ? "border-amber-500/25 bg-amber-500/10 font-bold text-amber-900 dark:bg-amber-500/15 dark:text-amber-400"
+                              : "text-muted-foreground hover:text-foreground border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
                           )}
                         >
                           {preset.label}
@@ -539,8 +567,11 @@ export function MeetingScheduler({
                   </div>
 
                   {timePreset === "custom" && (
-                    <div className="mt-2.5 rounded-lg border border-white/5 bg-white/[0.01] p-3 space-y-2.5">
-                      <Label htmlFor="custom-date" className="text-xs font-semibold text-muted-foreground uppercase">
+                    <div className="mt-2.5 space-y-2.5 rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                      <Label
+                        htmlFor="custom-date"
+                        className="text-muted-foreground text-xs font-semibold uppercase"
+                      >
                         Select Date
                       </Label>
                       <Input
@@ -561,13 +592,17 @@ export function MeetingScheduler({
                           setScheduledIxTime(newTime);
                         }}
                         required
-                        className="max-w-[180px] bg-background border-white/10 text-xs py-1.5 focus:border-amber-500/50"
+                        className="bg-background max-w-[180px] border-white/10 py-1.5 text-xs focus:border-amber-500/50"
                       />
-                      <div className="flex items-center gap-1.5 text-xs text-amber-500/90 font-medium bg-amber-500/5 border border-amber-500/10 rounded px-2.5 py-1">
+                      <div className="flex items-center gap-1.5 rounded border border-amber-500/10 bg-amber-500/5 px-2.5 py-1 text-xs font-medium text-amber-500/90">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>Scheduled Date:</span>
-                        <span className="text-foreground">{IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}</span>
-                        <span className="text-[10px] text-muted-foreground font-normal ml-auto">(09:00)</span>
+                        <span className="text-foreground">
+                          {IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}
+                        </span>
+                        <span className="text-muted-foreground ml-auto text-[10px] font-normal">
+                          (09:00)
+                        </span>
                       </div>
                     </div>
                   )}
@@ -576,14 +611,20 @@ export function MeetingScheduler({
                 {/* Attendees Smart Badges removed from Card 1 */}
               </div>
 
-              <DialogFooter className="border-t border-white/5 px-6 py-4 mt-auto shrink-0">
-                <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)} className="cursor-pointer">
+              <DialogFooter className="mt-auto shrink-0 border-t border-white/5 px-6 py-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  className="cursor-pointer"
+                >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold cursor-pointer"
+                  className="cursor-pointer bg-amber-600 font-semibold text-white hover:bg-amber-700"
                   disabled={
                     isSubmitting ||
                     agendaItems.length === 0 ||
@@ -597,54 +638,63 @@ export function MeetingScheduler({
           </div>
 
           {/* Card 2: Attached Agenda & Roster Panel */}
-          <div className="w-full md:w-[350px] max-h-[85vh] bg-background border-border rounded-xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-right-2 duration-300">
-            <div className="px-5 pt-5 pb-3 border-b border-white/5 shrink-0">
-              <h3 className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+          <div className="bg-background border-border animate-in fade-in slide-in-from-right-2 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-xl shadow-2xl backdrop-blur-md duration-300 md:w-[350px]">
+            <div className="shrink-0 border-b border-white/5 px-5 pt-5 pb-3">
+              <h3 className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
                 <Layers className="h-4 w-4 text-amber-500" />
                 Roster & Agenda
               </h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-muted-foreground mt-0.5 text-[11px]">
                 {selectedOfficials.length} invited · {agendaItems.length} topics
               </p>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+            <div className="flex-1 space-y-5 overflow-y-auto p-5">
               {/* Section 1: Attendees */}
               <div className="space-y-2.5">
-                <Label className="text-xs text-muted-foreground uppercase font-semibold">
+                <Label className="text-muted-foreground text-xs font-semibold uppercase">
                   Ministers & Attendees ({selectedOfficials.length} invited)
                 </Label>
 
                 {officialsLoading || (meetingType === "bilateral" && targetOfficialsLoading) ? (
-                  <div className="text-muted-foreground text-xs py-2 animate-pulse">Loading officials...</div>
+                  <div className="text-muted-foreground animate-pulse py-2 text-xs">
+                    Loading officials...
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-1.5">
                       {selectedOfficials.map((id) => {
                         const official = allOfficials.find((o) => o.id === id);
                         if (!official) return null;
-                        const isRecommended = selectedTemplateId && INTENT_TEMPLATES.find(t => t.id === selectedTemplateId)?.recommendedRoles.some(role =>
-                          official.title.toLowerCase().includes(role) ||
-                          official.role?.toLowerCase().includes(role)
-                        );
+                        const isRecommended =
+                          selectedTemplateId &&
+                          INTENT_TEMPLATES.find(
+                            (t) => t.id === selectedTemplateId
+                          )?.recommendedRoles.some(
+                            (role) =>
+                              official.title.toLowerCase().includes(role) ||
+                              official.role?.toLowerCase().includes(role)
+                          );
                         return (
                           <div
                             key={id}
                             className={cn(
                               "flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] transition-all",
                               isRecommended
-                                ? "bg-amber-500/10 border-amber-500/20 text-amber-500/90 dark:text-amber-400"
-                                : "bg-white/5 border-white/5 text-slate-300"
+                                ? "border-amber-500/20 bg-amber-500/10 text-amber-500/90 dark:text-amber-400"
+                                : "border-white/5 bg-white/5 text-slate-300"
                             )}
                           >
-                            <div className="flex flex-col min-w-0 max-w-[100px] text-left leading-tight">
-                              <span className="font-semibold truncate">{official.name}</span>
-                              <span className="text-[8px] opacity-60 truncate">{official.title}</span>
+                            <div className="flex max-w-[100px] min-w-0 flex-col text-left leading-tight">
+                              <span className="truncate font-semibold">{official.name}</span>
+                              <span className="truncate text-[8px] opacity-60">
+                                {official.title}
+                              </span>
                             </div>
                             <button
                               type="button"
                               onClick={() => toggleOfficial(id)}
-                              className="text-muted-foreground hover:text-white shrink-0 cursor-pointer ml-0.5"
+                              className="text-muted-foreground ml-0.5 shrink-0 cursor-pointer hover:text-white"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -653,7 +703,9 @@ export function MeetingScheduler({
                       })}
 
                       {selectedOfficials.length === 0 && (
-                        <span className="text-muted-foreground/60 text-xs italic py-1">No attendees selected.</span>
+                        <span className="text-muted-foreground/60 py-1 text-xs italic">
+                          No attendees selected.
+                        </span>
                       )}
                     </div>
 
@@ -667,8 +719,8 @@ export function MeetingScheduler({
                             }
                           }}
                         >
-                          <SelectTrigger className="h-7 text-xs border-white/10 w-fit min-w-[150px] bg-white/5 cursor-pointer py-1">
-                            <Plus className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                          <SelectTrigger className="h-7 w-fit min-w-[150px] cursor-pointer border-white/10 bg-white/5 py-1 text-xs">
+                            <Plus className="text-muted-foreground mr-1 h-3.5 w-3.5" />
                             <span>Add Invitees...</span>
                           </SelectTrigger>
                           <SelectContent>
@@ -691,7 +743,7 @@ export function MeetingScheduler({
 
               {/* Section 2: Agenda Topics */}
               <div className="space-y-3">
-                <Label className="text-xs text-muted-foreground uppercase font-semibold">
+                <Label className="text-muted-foreground text-xs font-semibold uppercase">
                   Agenda Topics ({agendaItems.length} items · {totalAgendaDuration} min)
                 </Label>
 
@@ -703,16 +755,26 @@ export function MeetingScheduler({
                     return (
                       <div
                         key={index}
-                        className="rounded-lg border border-white/5 bg-white/[0.01] overflow-hidden transition-all"
+                        className="overflow-hidden rounded-lg border border-white/5 bg-white/[0.01] transition-all"
                       >
                         <div
                           onClick={() => setExpandedAgendaIndex(isExpanded ? null : index)}
-                          className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] select-none"
+                          className="flex cursor-pointer items-center justify-between p-3 select-none hover:bg-white/[0.02]"
                         >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", categoryConfig?.color ?? "bg-gray-500")} />
-                            <span className="font-semibold text-xs truncate text-foreground/90">{item.title}</span>
-                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 border-white/10 text-muted-foreground bg-white/5 font-mono">
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <div
+                              className={cn(
+                                "h-2.5 w-2.5 shrink-0 rounded-full",
+                                categoryConfig?.color ?? "bg-gray-500"
+                              )}
+                            />
+                            <span className="text-foreground/90 truncate text-xs font-semibold">
+                              {item.title}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className="text-muted-foreground border-white/10 bg-white/5 px-1.5 py-0 font-mono text-[9px]"
+                            >
                               {item.duration}m
                             </Badge>
                           </div>
@@ -723,7 +785,7 @@ export function MeetingScheduler({
                                 e.stopPropagation();
                                 removeAgendaItem(index);
                               }}
-                              className="text-muted-foreground hover:text-white p-1 hover:bg-white/5 rounded cursor-pointer"
+                              className="text-muted-foreground cursor-pointer rounded p-1 hover:bg-white/5 hover:text-white"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -731,9 +793,11 @@ export function MeetingScheduler({
                         </div>
 
                         {isExpanded && (
-                          <div className="p-3 border-t border-white/5 bg-white/[0.02] space-y-3 text-xs">
+                          <div className="space-y-3 border-t border-white/5 bg-white/[0.02] p-3 text-xs">
                             <div>
-                              <Label className="text-[10px] text-muted-foreground uppercase">Topic Title</Label>
+                              <Label className="text-muted-foreground text-[10px] uppercase">
+                                Topic Title
+                              </Label>
                               <Input
                                 value={item.title}
                                 onChange={(e) => {
@@ -741,13 +805,15 @@ export function MeetingScheduler({
                                   newItems[index]!.title = e.target.value;
                                   setAgendaItems(newItems);
                                 }}
-                                className="h-8 mt-1 text-xs"
+                                className="mt-1 h-8 text-xs"
                               />
                             </div>
 
                             <div className="grid grid-cols-2 gap-2.5">
                               <div>
-                                <Label className="text-[10px] text-muted-foreground uppercase">Duration (mins)</Label>
+                                <Label className="text-muted-foreground text-[10px] uppercase">
+                                  Duration (mins)
+                                </Label>
                                 <Input
                                   type="number"
                                   value={item.duration}
@@ -756,11 +822,13 @@ export function MeetingScheduler({
                                     newItems[index]!.duration = parseInt(e.target.value) || 15;
                                     setAgendaItems(newItems);
                                   }}
-                                  className="h-8 mt-1 text-xs"
+                                  className="mt-1 h-8 text-xs"
                                 />
                               </div>
                               <div>
-                                <Label className="text-[10px] text-muted-foreground uppercase">Category</Label>
+                                <Label className="text-muted-foreground text-[10px] uppercase">
+                                  Category
+                                </Label>
                                 <Select
                                   value={item.category}
                                   onValueChange={(val) => {
@@ -769,7 +837,7 @@ export function MeetingScheduler({
                                     setAgendaItems(newItems);
                                   }}
                                 >
-                                  <SelectTrigger className="h-8 mt-1 text-xs">
+                                  <SelectTrigger className="mt-1 h-8 text-xs">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -784,7 +852,9 @@ export function MeetingScheduler({
                             </div>
 
                             <div>
-                              <Label className="text-[10px] text-muted-foreground uppercase">Description</Label>
+                              <Label className="text-muted-foreground text-[10px] uppercase">
+                                Description
+                              </Label>
                               <Textarea
                                 value={item.description}
                                 onChange={(e) => {
@@ -805,12 +875,12 @@ export function MeetingScheduler({
                 </div>
 
                 {/* Add Quick Agenda Topic input */}
-                <div className="flex gap-2 items-center">
+                <div className="flex items-center gap-2">
                   <Input
                     placeholder="Type a new topic and press Enter..."
                     value={newAgendaTitle}
                     onChange={(e) => setNewAgendaTitle(e.target.value)}
-                    className="h-8 text-xs flex-1 bg-white/5 border-white/10"
+                    className="h-8 flex-1 border-white/10 bg-white/5 text-xs"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -822,7 +892,7 @@ export function MeetingScheduler({
                     type="button"
                     size="sm"
                     onClick={handleAddQuickAgendaTopic}
-                    className="h-8 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs px-3 cursor-pointer"
+                    className="h-8 cursor-pointer bg-amber-600 px-3 text-xs font-semibold text-white hover:bg-amber-700"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -830,7 +900,6 @@ export function MeetingScheduler({
               </div>
             </div>
           </div>
-
         </div>
       </DialogContent>
     </Dialog>

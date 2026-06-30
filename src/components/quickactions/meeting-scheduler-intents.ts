@@ -44,8 +44,8 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         category: "governance",
         tags: ["reform"],
         presenter: "Ruler",
-      }
-    ]
+      },
+    ],
   },
   {
     id: "economic",
@@ -79,8 +79,8 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         category: "economic",
         tags: ["strategic"],
         presenter: "Ruler",
-      }
-    ]
+      },
+    ],
   },
   {
     id: "social",
@@ -114,8 +114,8 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         category: "social",
         tags: ["strategic"],
         presenter: "Ruler",
-      }
-    ]
+      },
+    ],
   },
   {
     id: "infrastructure",
@@ -149,8 +149,8 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         category: "economic",
         tags: ["budget"],
         presenter: "Finance Minister",
-      }
-    ]
+      },
+    ],
   },
   {
     id: "governance",
@@ -184,8 +184,8 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         category: "governance",
         tags: ["strategic"],
         presenter: "Interior Minister",
-      }
-    ]
+      },
+    ],
   },
   {
     id: "bilateral",
@@ -219,8 +219,8 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         category: "diplomatic",
         tags: ["urgent"],
         presenter: "Ruler",
-      }
-    ]
+      },
+    ],
   },
   {
     id: "routine",
@@ -246,7 +246,7 @@ export const INTENT_TEMPLATES: IntentTemplate[] = [
         category: "governance",
         tags: ["strategic"],
         presenter: "Ruler",
-      }
-    ]
-  }
+      },
+    ],
+  },
 ];

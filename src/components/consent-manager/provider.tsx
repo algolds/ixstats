@@ -10,10 +10,7 @@ import { theme } from "./theme";
 const DevTools =
   process.env.NODE_ENV === "production"
     ? () => null
-    : dynamic(
-        () => import("@c15t/dev-tools/react").then((mod) => mod.DevTools),
-        { ssr: false }
-      );
+    : dynamic(() => import("@c15t/dev-tools/react").then((mod) => mod.DevTools), { ssr: false });
 
 /**
  * Client-side consent manager provider.

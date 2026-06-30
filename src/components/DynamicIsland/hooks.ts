@@ -686,15 +686,17 @@ export function useDynamicIslandState() {
         case 3:
           switchMode("compact");
           // Trigger mock toast via non-hook companion function in useNotify
-          import("~/hooks/useNotify").then(({ notifyFromStore }) => {
-            notifyFromStore({
-              title: "Security Operations Notice",
-              message: "Border patrol units have completed routine defense audits in Sector 7.",
-              type: "warning",
-              priority: "critical",
-              category: "defense",
-            });
-          }).catch(console.error);
+          import("~/hooks/useNotify")
+            .then(({ notifyFromStore }) => {
+              notifyFromStore({
+                title: "Security Operations Notice",
+                message: "Border patrol units have completed routine defense audits in Sector 7.",
+                type: "warning",
+                priority: "critical",
+                category: "defense",
+              });
+            })
+            .catch(console.error);
           break;
         case 4:
           switchMode("calendar");

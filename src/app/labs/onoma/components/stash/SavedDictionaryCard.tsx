@@ -49,7 +49,7 @@ export function SavedDictionaryCard({
   handleExport,
 }: SavedDictionaryCardProps) {
   const bank = useNameBank();
-  
+
   // Popover State
   const [showStashPopover, setShowStashPopover] = useState(false);
   const [showExportPopover, setShowExportPopover] = useState(false);
@@ -76,10 +76,7 @@ export function SavedDictionaryCard({
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const handleStashDict = async (
-    stashId: string,
-    stashName: string
-  ) => {
+  const handleStashDict = async (stashId: string, stashName: string) => {
     setStashingFolderId(stashId);
     try {
       await bank.saveEntry({
@@ -111,8 +108,8 @@ export function SavedDictionaryCard({
       <div className="space-y-3">
         <div>
           <div className="flex items-center gap-1.5">
-            <BookOpen className="h-4 w-4 text-[#0091ff]/80 flex-shrink-0" />
-            <h4 className="text-foreground text-sm font-bold truncate">{dict.title}</h4>
+            <BookOpen className="h-4 w-4 flex-shrink-0 text-[#0091ff]/80" />
+            <h4 className="text-foreground truncate text-sm font-bold">{dict.title}</h4>
           </div>
           <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
             <span className="capitalize">Category: {dict.category || "Any"}</span>
@@ -123,11 +120,11 @@ export function SavedDictionaryCard({
               {dict.isPublic ? (
                 <>
                   <Globe className="h-3 w-3 text-emerald-500" />
-                  <span className="text-emerald-500 font-semibold">Public</span>
+                  <span className="font-semibold text-emerald-500">Public</span>
                 </>
               ) : (
                 <>
-                  <Lock className="h-3 w-3 text-muted-foreground" />
+                  <Lock className="text-muted-foreground h-3 w-3" />
                   <span>Private</span>
                 </>
               )}
@@ -169,13 +166,13 @@ export function SavedDictionaryCard({
         </div>
 
         {/* Actions Bar */}
-        <div className="border-t border-border/10 pt-2.5 flex flex-wrap items-center justify-between gap-2">
+        <div className="border-border/10 flex flex-wrap items-center justify-between gap-2 border-t pt-2.5">
           {/* Primary Buttons */}
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Expand Button */}
             <button
               onClick={onToggleExpand}
-              className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] cursor-pointer"
+              className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px]"
               title={isExpanded ? "Hide word list" : "Show word list"}
             >
               {isExpanded ? (
@@ -190,7 +187,7 @@ export function SavedDictionaryCard({
             {onLoadToStudio && (
               <button
                 onClick={() => onLoadToStudio(dict.values, dict.title)}
-                className="flex h-7 items-center gap-1.5 rounded bg-[#0091ff]/10 px-2.5 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20 cursor-pointer"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-[#0091ff]/10 px-2.5 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20"
                 title="Load into Studio Workshop"
               >
                 <Wrench className="h-3.5 w-3.5" />
@@ -205,7 +202,7 @@ export function SavedDictionaryCard({
                   setShowStashPopover(!showStashPopover);
                 }}
                 className={cn(
-                  "flex h-7 items-center gap-1.5 rounded px-2.5 text-[11px] transition-colors cursor-pointer",
+                  "flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] transition-colors",
                   showStashPopover
                     ? "bg-indigo-500/10 text-indigo-500"
                     : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-[#0091ff]"
@@ -274,7 +271,7 @@ export function SavedDictionaryCard({
             {/* Edit (rename / re-tag) */}
             <button
               onClick={() => onEdit(dict)}
-              className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-[#0091ff]/10 hover:text-[#0091ff] cursor-pointer"
+              className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
               title="Edit dictionary (rename, role, set)"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -284,7 +281,7 @@ export function SavedDictionaryCard({
             <div className="relative" ref={exportRef}>
               <button
                 onClick={() => setShowExportPopover(!showExportPopover)}
-                className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-emerald-500/10 hover:text-emerald-500 cursor-pointer"
+                className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-emerald-500/10 hover:text-emerald-500"
                 title="Export dictionary"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -298,7 +295,7 @@ export function SavedDictionaryCard({
                         handleExport(dict.title, dict.values, fmt);
                         setShowExportPopover(false);
                       }}
-                      className="text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs"
+                      className="text-foreground flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
                     >
                       <span className="uppercase">{fmt}</span>
                     </button>
@@ -310,7 +307,7 @@ export function SavedDictionaryCard({
             {/* Delete */}
             <button
               onClick={() => onDelete(dict.id)}
-              className="bg-secondary/30 text-muted-foreground rounded flex h-7 w-7 items-center justify-center transition-colors hover:bg-red-500/10 hover:text-red-500 cursor-pointer"
+              className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-red-500/10 hover:text-red-500"
               title="Delete dictionary"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -321,8 +318,8 @@ export function SavedDictionaryCard({
 
       {/* Expanded list of words */}
       {isExpanded && (
-        <div className="border-t border-border/10 pt-2.5 text-xs">
-          <p className="text-muted-foreground font-mono leading-normal line-clamp-3">
+        <div className="border-border/10 border-t pt-2.5 text-xs">
+          <p className="text-muted-foreground line-clamp-3 font-mono leading-normal">
             {previewWords || "No words inside."}
             {wordsCount > 12 && " ..."}
           </p>

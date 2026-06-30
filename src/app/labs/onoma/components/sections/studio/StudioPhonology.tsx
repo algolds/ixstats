@@ -13,7 +13,13 @@ import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/p
 import { speakName } from "~/lib/onoma/browser-speech";
 import { ipaToKokoroPhonemes, KOKORO_VALID_TOKENS } from "~/lib/onoma/kokoro-phonemes";
 import { cn } from "~/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   getCultureRuleOverrides,
   setCultureRuleOverrides,
@@ -41,13 +47,72 @@ const CULTURES = [
 
 const ACCENT = "#8b5cf6";
 
-const IPA_VOWELS = ["i", "ɪ", "e", "ɛ", "æ", "a", "ɑ", "ɒ", "ɔ", "o", "ʊ", "u", "ʌ", "ə", "ø", "y", "œ"];
+const IPA_VOWELS = [
+  "i",
+  "ɪ",
+  "e",
+  "ɛ",
+  "æ",
+  "a",
+  "ɑ",
+  "ɒ",
+  "ɔ",
+  "o",
+  "ʊ",
+  "u",
+  "ʌ",
+  "ə",
+  "ø",
+  "y",
+  "œ",
+];
 const IPA_CONSONANTS = [
-  "p", "b", "t", "d", "k", "ɡ", "f", "v", "θ", "ð", "s", "z", "ʃ", "ʒ", "h", "x", "ɣ", "ɬ", "ɮ",
-  "m", "n", "ŋ", "l", "ɹ", "j", "w", "r", "ɾ", "tʃ", "dʒ", "ts"
+  "p",
+  "b",
+  "t",
+  "d",
+  "k",
+  "ɡ",
+  "f",
+  "v",
+  "θ",
+  "ð",
+  "s",
+  "z",
+  "ʃ",
+  "ʒ",
+  "h",
+  "x",
+  "ɣ",
+  "ɬ",
+  "ɮ",
+  "m",
+  "n",
+  "ŋ",
+  "l",
+  "ɹ",
+  "j",
+  "w",
+  "r",
+  "ɾ",
+  "tʃ",
+  "dʒ",
+  "ts",
 ];
 const IPA_DIPHTHONGS = [
-  "aɪ", "eɪ", "aʊ", "ɔɪ", "oʊ", "əʊ", "iː", "uː", "ɑː", "ɔː", "ɜː", "əː", "ː"
+  "aɪ",
+  "eɪ",
+  "aʊ",
+  "ɔɪ",
+  "oʊ",
+  "əʊ",
+  "iː",
+  "uː",
+  "ɑː",
+  "ɔː",
+  "ɜː",
+  "əː",
+  "ː",
 ];
 
 export function StudioPhonology() {
@@ -61,7 +126,9 @@ export function StudioPhonology() {
   const [previewText, setPreviewText] = useState("Imperia");
   const [nameOverrides, setNameOverrides] = useState<Record<string, NameOverride>>({});
   const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | null>(null);
-  const [soundboardTab, setSoundboardTab] = useState<"vowels" | "consonants" | "diphthongs">("vowels");
+  const [soundboardTab, setSoundboardTab] = useState<"vowels" | "consonants" | "diphthongs">(
+    "vowels"
+  );
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
 
   // Load this culture's saved rule overrides into editable state when it changes.
@@ -91,7 +158,11 @@ export function StudioPhonology() {
   );
 
   const segments = useMemo(() => {
-    return segmentGraphemes(previewText, culture, rows.filter(([g]) => g.trim().length > 0));
+    return segmentGraphemes(
+      previewText,
+      culture,
+      rows.filter(([g]) => g.trim().length > 0)
+    );
   }, [previewText, culture, rows]);
 
   // Clean active popover if previewText changes length/segments
@@ -196,12 +267,16 @@ export function StudioPhonology() {
             className="border-border/60 bg-background text-foreground w-44 rounded-lg border px-3 py-1.5 text-sm focus:outline-none"
           />
           <Select value={culture} onValueChange={setCulture}>
-            <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground rounded-lg border px-3 py-1.5 text-sm focus:outline-none flex justify-between items-center transition-colors">
+            <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:outline-none">
               <SelectValue placeholder="Select culture" />
             </SelectTrigger>
-            <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+            <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
               {CULTURES.map((c) => (
-                <SelectItem key={c} value={c} className="capitalize text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                <SelectItem
+                  key={c}
+                  value={c}
+                  className="focus:text-foreground text-xs capitalize focus:bg-[#0091ff]/10"
+                >
                   {c}
                 </SelectItem>
               ))}
@@ -236,7 +311,7 @@ export function StudioPhonology() {
 
         {/* Interactive Grapheme Mapper Timeline */}
         {previewText.trim().length > 0 && (
-          <div className="border-border/30 border-t pt-3.5 mt-3 space-y-2.5 animate-in fade-in duration-200">
+          <div className="border-border/30 animate-in fade-in mt-3 space-y-2.5 border-t pt-3.5 duration-200">
             <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
               Interactive Grapheme Mapper (click segment to customize sound)
             </h4>
@@ -258,24 +333,27 @@ export function StudioPhonology() {
                         }
                       }}
                       className={cn(
-                        "flex flex-col items-center justify-center min-w-10 h-14 rounded-xl border px-3 py-1.5 text-center transition-all duration-200 cursor-pointer active:scale-95",
+                        "flex h-14 min-w-10 cursor-pointer flex-col items-center justify-center rounded-xl border px-3 py-1.5 text-center transition-all duration-200 active:scale-95",
                         isOverridden
-                          ? "border-[#8b5cf6]/40 bg-[#8b5cf6]/10 text-foreground hover:bg-[#8b5cf6]/20"
+                          ? "text-foreground border-[#8b5cf6]/40 bg-[#8b5cf6]/10 hover:bg-[#8b5cf6]/20"
                           : "border-border/50 bg-background text-foreground hover:bg-secondary/40",
-                        isActive && "ring-2 ring-[#8b5cf6] border-transparent"
+                        isActive && "border-transparent ring-2 ring-[#8b5cf6]"
                       )}
                     >
                       <span className="font-mono text-sm font-bold capitalize">{seg.grapheme}</span>
-                      <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      <span className="text-muted-foreground mt-0.5 font-mono text-[10px]">
                         /{seg.ipa || "∅"}/
                       </span>
                     </button>
 
                     {isActive && (
-                      <div className="absolute left-0 mt-2.5 z-30 w-72 rounded-2xl border border-white/10 bg-popover/95 p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200 dark:border-white/5">
-                        <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-white/10">
-                          <span className="text-[10px] font-bold text-foreground uppercase">
-                            Map segment: <span className="font-mono text-[#8b5cf6] font-bold">"{seg.grapheme}"</span>
+                      <div className="bg-popover/95 animate-in fade-in slide-in-from-top-2 absolute left-0 z-30 mt-2.5 w-72 rounded-2xl border border-white/10 p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl duration-200 dark:border-white/5">
+                        <div className="mb-2.5 flex items-center justify-between border-b border-white/10 pb-2">
+                          <span className="text-foreground text-[10px] font-bold uppercase">
+                            Map segment:{" "}
+                            <span className="font-mono font-bold text-[#8b5cf6]">
+                              "{seg.grapheme}"
+                            </span>
                           </span>
                           <button
                             onClick={() => setActiveSegmentIndex(null)}
@@ -286,13 +364,13 @@ export function StudioPhonology() {
                         </div>
 
                         {/* Popover Tabs */}
-                        <div className="flex gap-1 mb-3 bg-secondary/15 rounded-lg p-0.5">
+                        <div className="bg-secondary/15 mb-3 flex gap-1 rounded-lg p-0.5">
                           {(["vowels", "consonants", "diphthongs"] as const).map((tab) => (
                             <button
                               key={tab}
                               onClick={() => setSoundboardTab(tab)}
                               className={cn(
-                                "flex-1 py-1 text-[9px] font-bold uppercase rounded-md transition-all cursor-pointer capitalize",
+                                "flex-1 cursor-pointer rounded-md py-1 text-[9px] font-bold capitalize uppercase transition-all",
                                 soundboardTab === tab
                                   ? "bg-[#8b5cf6] text-white"
                                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/10"
@@ -304,7 +382,7 @@ export function StudioPhonology() {
                         </div>
 
                         {/* Tab Content (IPA Grid) */}
-                        <div className="grid grid-cols-5 gap-1.5 max-h-36 overflow-y-auto pr-0.5">
+                        <div className="grid max-h-36 grid-cols-5 gap-1.5 overflow-y-auto pr-0.5">
                           {(soundboardTab === "vowels"
                             ? IPA_VOWELS
                             : soundboardTab === "consonants"
@@ -320,13 +398,17 @@ export function StudioPhonology() {
                                   setSelectedSound(sym);
                                   await playPhoneme(sym);
                                 }}
-                                title={isKokoro ? `${sym} (Kokoro high-fidelity native)` : `${sym} (fallback/synthesized)`}
+                                title={
+                                  isKokoro
+                                    ? `${sym} (Kokoro high-fidelity native)`
+                                    : `${sym} (fallback/synthesized)`
+                                }
                                 className={cn(
-                                  "relative flex h-8 items-center justify-center rounded-lg border font-mono text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer",
+                                  "relative flex h-8 cursor-pointer items-center justify-center rounded-lg border font-mono text-xs font-bold transition-all hover:scale-105 active:scale-95",
                                   isSelected
-                                    ? "border-[#8b5cf6] bg-[#8b5cf6]/20 text-foreground ring-1 ring-[#8b5cf6]"
+                                    ? "text-foreground border-[#8b5cf6] bg-[#8b5cf6]/20 ring-1 ring-[#8b5cf6]"
                                     : isKokoro
-                                      ? "border-[#0091ff]/30 bg-[#0091ff]/5 hover:bg-[#0091ff]/15 text-[#0091ff]"
+                                      ? "border-[#0091ff]/30 bg-[#0091ff]/5 text-[#0091ff] hover:bg-[#0091ff]/15"
                                       : "border-border/60 bg-background hover:bg-secondary/30 text-foreground"
                                 )}
                               >
@@ -341,17 +423,17 @@ export function StudioPhonology() {
 
                         {/* Popover Footer (Preview & Confirm) */}
                         {selectedSound && (
-                          <div className="flex items-center justify-between gap-2 mt-3.5 pt-2.5 border-t border-white/10 animate-in fade-in duration-200">
+                          <div className="animate-in fade-in mt-3.5 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5 duration-200">
                             <button
                               onClick={() => playPhoneme(selectedSound)}
                               title="Listen to selected sound again"
-                              className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground cursor-pointer"
+                              className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 text-[10px] font-bold"
                             >
                               <Volume2 className="h-3.5 w-3.5" /> Hear again
                             </button>
                             <button
                               onClick={() => mapGrapheme(seg.grapheme, selectedSound)}
-                              className="rounded-lg bg-[#8b5cf6] px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
+                              className="cursor-pointer rounded-lg bg-[#8b5cf6] px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
                             >
                               Confirm Map
                             </button>

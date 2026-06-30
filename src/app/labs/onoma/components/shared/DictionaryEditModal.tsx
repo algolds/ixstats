@@ -6,14 +6,15 @@
 import { useState } from "react";
 import { X, Loader2, Save } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import {
-  NAME_ROLES,
-  NAME_GENDERS,
-  type NameRole,
-  type NameGender,
-} from "~/lib/onoma/name-sets";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { cn } from "~/lib/utils";
+import { NAME_ROLES, NAME_GENDERS, type NameRole, type NameGender } from "~/lib/onoma/name-sets";
 
 const CATEGORIES = [
   "city",
@@ -112,12 +113,16 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
           <div className="space-y-1">
             <label className="text-muted-foreground text-[10px] font-bold uppercase">Role</label>
             <Select value={role} onValueChange={(val) => setRole(val as NameRole)}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1.5 text-xs transition-colors focus:outline-none">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+              <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
                 {NAME_ROLES.map((r) => (
-                  <SelectItem key={r.value} value={r.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                  <SelectItem
+                    key={r.value}
+                    value={r.value}
+                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  >
                     {r.label}
                   </SelectItem>
                 ))}
@@ -127,12 +132,16 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
           <div className="space-y-1">
             <label className="text-muted-foreground text-[10px] font-bold uppercase">Gender</label>
             <Select value={gender} onValueChange={(val) => setGender(val as NameGender)}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1.5 text-xs transition-colors focus:outline-none">
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
+              <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
                 {NAME_GENDERS.map((g) => (
-                  <SelectItem key={g.value} value={g.value} className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                  <SelectItem
+                    key={g.value}
+                    value={g.value}
+                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  >
                     {g.label}
                   </SelectItem>
                 ))}
@@ -146,14 +155,26 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
             <label className="text-muted-foreground text-[10px] font-bold uppercase">
               Category
             </label>
-            <Select value={category || "any"} onValueChange={(val) => setCategory(val === "any" ? "" : val)}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+            <Select
+              value={category || "any"}
+              onValueChange={(val) => setCategory(val === "any" ? "" : val)}
+            >
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1.5 text-xs transition-colors focus:outline-none">
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[250px]">
-                <SelectItem value="any" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">Any</SelectItem>
+              <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+                <SelectItem
+                  value="any"
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
+                  Any
+                </SelectItem>
                 {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c} className="capitalize text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                  <SelectItem
+                    key={c}
+                    value={c}
+                    className="focus:text-foreground text-xs capitalize focus:bg-[#0091ff]/10"
+                  >
                     {c}
                   </SelectItem>
                 ))}
@@ -214,7 +235,11 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
             disabled={saving || !title.trim()}
             className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#33a7ff] disabled:opacity-50"
           >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {saving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
             Save
           </button>
         </div>

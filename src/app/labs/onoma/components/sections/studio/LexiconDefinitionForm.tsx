@@ -3,7 +3,13 @@
 // src/app/labs/onoma/components/sections/studio/LexiconDefinitionForm.tsx
 // Onoma Custom Studio Workshop — Lexicon Definition Form Component
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface LexiconDefinitionFormProps {
   lexEditPos: string;
@@ -40,23 +46,38 @@ export function LexiconDefinitionForm({
               Part of Speech
             </label>
             <Select value={lexEditPos} onValueChange={setLexEditPos}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none flex justify-between items-center transition-colors">
+              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs transition-colors focus:border-[#0091ff]/50 focus:outline-none">
                 <SelectValue placeholder="Select POS" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[200px]">
-                <SelectItem value="Noun" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+              <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
+                <SelectItem
+                  value="Noun"
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
                   Noun
                 </SelectItem>
-                <SelectItem value="Adjective" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                <SelectItem
+                  value="Adjective"
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
                   Adjective
                 </SelectItem>
-                <SelectItem value="Verb" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                <SelectItem
+                  value="Verb"
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
                   Verb
                 </SelectItem>
-                <SelectItem value="Proper Noun" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                <SelectItem
+                  value="Proper Noun"
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
                   Proper Noun
                 </SelectItem>
-                <SelectItem value="Adverb" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                <SelectItem
+                  value="Adverb"
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
                   Adverb
                 </SelectItem>
               </SelectContent>

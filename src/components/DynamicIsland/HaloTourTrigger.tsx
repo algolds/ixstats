@@ -16,7 +16,7 @@ export function HaloTourTrigger({ className }: HaloTourTriggerProps) {
 
   useEffect(() => {
     setMounted(true);
-    
+
     // Check initial completed status from localStorage
     try {
       setCompleted(localStorage.getItem("ixstats:halo-tour-completed") === "true");
@@ -29,7 +29,7 @@ export function HaloTourTrigger({ className }: HaloTourTriggerProps) {
       const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
       if (customEvent.detail) {
         setIsActive(customEvent.detail.active);
-        
+
         // Also update completed status dynamically if the tour just completed
         if (!customEvent.detail.active) {
           try {
@@ -63,27 +63,27 @@ export function HaloTourTrigger({ className }: HaloTourTriggerProps) {
     <button
       onClick={handleStart}
       className={cn(
-        "pointer-events-auto transition-transform hover:scale-105 active:scale-95 group focus:outline-none focus:ring-1 focus:ring-primary rounded-full",
+        "group focus:ring-primary pointer-events-auto rounded-full transition-transform hover:scale-105 focus:ring-1 focus:outline-none active:scale-95",
         className
       )}
       aria-label="Start Halo Onboarding Tour"
     >
       <FacetMaterial
         material="satin"
-        className="flex items-center gap-2 border border-border bg-card/60 px-3.5 py-1.5 rounded-full backdrop-blur-md shadow-lg"
+        className="border-border bg-card/60 flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-lg backdrop-blur-md"
       >
         <div className="relative flex items-center justify-center">
-          <HelpCircle className="h-4 w-4 text-primary group-hover:text-primary/80 transition-colors" />
-          
+          <HelpCircle className="text-primary group-hover:text-primary/80 h-4 w-4 transition-colors" />
+
           {/* Pulsing notification dot to show they haven't run it yet */}
           {!completed && (
             <span className="absolute -top-1.5 -right-1.5 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+              <span className="bg-primary relative inline-flex h-2 w-2 rounded-full"></span>
             </span>
           )}
         </div>
-        <span className="text-xs font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
+        <span className="text-foreground/90 group-hover:text-foreground text-xs font-semibold transition-colors">
           Halo Tour
         </span>
       </FacetMaterial>

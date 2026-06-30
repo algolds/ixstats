@@ -51,11 +51,13 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
 
   const [notes, setNotes] = useState("");
   const [showNotesForm, setShowNotesForm] = useState(false);
-  
+
   const [isRecordingDecision, setIsRecordingDecision] = useState(false);
   const [newDecisionTitle, setNewDecisionTitle] = useState("");
   const [newDecisionDesc, setNewDecisionDesc] = useState("");
-  const [newDecisionType, setNewDecisionType] = useState<"policy" | "budget" | "personnel" | "strategic" | "other">("strategic");
+  const [newDecisionType, setNewDecisionType] = useState<
+    "policy" | "budget" | "personnel" | "strategic" | "other"
+  >("strategic");
   const [selectedMetric, setSelectedMetric] = useState("politicalStability");
   const [metricValue, setMetricValue] = useState(1);
   const [metricOp, setMetricOp] = useState<"add" | "subtract">("add");
@@ -73,7 +75,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
     },
     onError: (err) => {
       notify.error(`Failed to complete meeting: ${err.message}`);
-    }
+    },
   });
 
   const implementMutation = api.quickActions.implementDecision.useMutation({
@@ -85,7 +87,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
     },
     onError: (err) => {
       notify.error(`Failed to implement decision: ${err.message}`);
-    }
+    },
   });
 
   const recordDecisionMutation = api.quickActions.createDecision.useMutation({
@@ -99,11 +101,18 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
     },
     onError: (err) => {
       notify.error(`Failed to record decision: ${err.message}`);
-    }
+    },
   });
 
   const getTargetModel = (field: string): string => {
-    const govFields = ["politicalStability", "governmentEffectiveness", "democracyIndex", "ruleOfLaw", "corruptionIndex", "politicalPolarization"];
+    const govFields = [
+      "politicalStability",
+      "governmentEffectiveness",
+      "democracyIndex",
+      "ruleOfLaw",
+      "corruptionIndex",
+      "politicalPolarization",
+    ];
     const stabilityFields = ["stabilityScore", "crimeRate", "socialCohesion", "trustInGovernment"];
     if (govFields.includes(field)) return "GovernmentStructure";
     if (stabilityFields.includes(field)) return "InternalStabilityMetrics";
@@ -293,7 +302,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                   Decisions
                 </h3>
               </div>
-              
+
               {meeting.decisions && meeting.decisions.length > 0 ? (
                 <div className="space-y-2">
                   {meeting.decisions.map((dec) => (
@@ -321,14 +330,17 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                         description={dec.description}
                         countryId={meeting.countryId}
                       />
-                      <p className="text-muted-foreground mb-2 whitespace-pre-line mt-1.5">
+                      <p className="text-muted-foreground mt-1.5 mb-2 whitespace-pre-line">
                         {dec.description}
                       </p>
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2 mt-2">
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2">
                         <div className="flex flex-wrap gap-2 text-[10px]">
                           <Badge variant="outline">{dec.decisionType.toUpperCase()}</Badge>
                           {dec.estimatedEffect && (
-                            <Badge variant="outline" className="border-blue-500/25 text-blue-400 bg-blue-500/5">
+                            <Badge
+                              variant="outline"
+                              className="border-blue-500/25 bg-blue-500/5 text-blue-400"
+                            >
                               Has Consequences
                             </Badge>
                           )}
@@ -336,7 +348,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                         {dec.implementationStatus === "pending" && (
                           <Button
                             size="xs"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[10px] h-6 px-2.5 py-0.5"
+                            className="h-6 bg-blue-600 px-2.5 py-0.5 text-[10px] font-semibold text-white hover:bg-blue-700"
                             onClick={() => implementMutation.mutate({ decisionId: dec.id })}
                             disabled={implementMutation.isPending}
                           >
@@ -356,50 +368,64 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
 
               {/* Record custom decisions if meeting is completed */}
               {meeting.status === "completed" && (
-                <div className="mt-4 pt-3 border-t border-white/5">
+                <div className="mt-4 border-t border-white/5 pt-3">
                   {!isRecordingDecision ? (
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setIsRecordingDecision(true)}
-                      className="w-full text-xs font-semibold gap-1.5 h-8"
+                      className="h-8 w-full gap-1.5 text-xs font-semibold"
                     >
                       <Plus className="h-3.5 w-3.5" /> Record New Decision
                     </Button>
                   ) : (
                     <div className="space-y-3 rounded-lg border border-white/10 bg-white/5 p-3 text-xs">
-                      <h4 className="font-semibold text-xs text-blue-400 uppercase tracking-wider">Record New Decision</h4>
+                      <h4 className="text-xs font-semibold tracking-wider text-blue-400 uppercase">
+                        Record New Decision
+                      </h4>
                       <div className="space-y-1.5">
-                        <Label htmlFor="dec-title" className="text-[10px] text-muted-foreground uppercase font-medium">Title</Label>
+                        <Label
+                          htmlFor="dec-title"
+                          className="text-muted-foreground text-[10px] font-medium uppercase"
+                        >
+                          Title
+                        </Label>
                         <Input
                           id="dec-title"
                           value={newDecisionTitle}
                           onChange={(e) => setNewDecisionTitle(e.target.value)}
                           placeholder="e.g. Expand Infrastructure Budget"
-                          className="h-8 text-xs bg-black/20 border-white/10"
+                          className="h-8 border-white/10 bg-black/20 text-xs"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="dec-desc" className="text-[10px] text-muted-foreground uppercase font-medium">Description</Label>
+                        <Label
+                          htmlFor="dec-desc"
+                          className="text-muted-foreground text-[10px] font-medium uppercase"
+                        >
+                          Description
+                        </Label>
                         <Textarea
                           id="dec-desc"
                           value={newDecisionDesc}
                           onChange={(e) => setNewDecisionDesc(e.target.value)}
                           placeholder="Describe the decision and its context..."
-                          className="text-xs bg-black/20 border-white/10 min-h-[60px]"
+                          className="min-h-[60px] border-white/10 bg-black/20 text-xs"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1.5">
-                          <Label className="text-[10px] text-muted-foreground uppercase font-medium">Type</Label>
+                          <Label className="text-muted-foreground text-[10px] font-medium uppercase">
+                            Type
+                          </Label>
                           <Select
                             value={newDecisionType}
                             onValueChange={(v) => setNewDecisionType(v as any)}
                           >
-                            <SelectTrigger className="h-8 text-xs bg-black/20 border-white/10">
+                            <SelectTrigger className="h-8 border-white/10 bg-black/20 text-xs">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-slate-900 border-white/10">
+                            <SelectContent className="border-white/10 bg-slate-900">
                               <SelectItem value="strategic">Strategic Directive</SelectItem>
                               <SelectItem value="budget">Budget Allocation</SelectItem>
                               <SelectItem value="policy">Policy Approval</SelectItem>
@@ -409,17 +435,20 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                           </Select>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-[10px] text-muted-foreground uppercase font-medium">Impacted Metric</Label>
-                          <Select
-                            value={selectedMetric}
-                            onValueChange={setSelectedMetric}
-                          >
-                            <SelectTrigger className="h-8 text-xs bg-black/20 border-white/10">
+                          <Label className="text-muted-foreground text-[10px] font-medium uppercase">
+                            Impacted Metric
+                          </Label>
+                          <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+                            <SelectTrigger className="h-8 border-white/10 bg-black/20 text-xs">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-slate-900 border-white/10">
-                              <SelectItem value="politicalStability">Political Stability</SelectItem>
-                              <SelectItem value="governmentEffectiveness">Gov Effectiveness</SelectItem>
+                            <SelectContent className="border-white/10 bg-slate-900">
+                              <SelectItem value="politicalStability">
+                                Political Stability
+                              </SelectItem>
+                              <SelectItem value="governmentEffectiveness">
+                                Gov Effectiveness
+                              </SelectItem>
                               <SelectItem value="publicApproval">Public Approval</SelectItem>
                               <SelectItem value="povertyRate">Poverty Rate</SelectItem>
                               <SelectItem value="unemploymentRate">Unemployment</SelectItem>
@@ -432,30 +461,31 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                           </Select>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1.5">
-                          <Label className="text-[10px] text-muted-foreground uppercase font-medium">Operation</Label>
-                          <Select
-                            value={metricOp}
-                            onValueChange={(v) => setMetricOp(v as any)}
-                          >
-                            <SelectTrigger className="h-8 text-xs bg-black/20 border-white/10">
+                          <Label className="text-muted-foreground text-[10px] font-medium uppercase">
+                            Operation
+                          </Label>
+                          <Select value={metricOp} onValueChange={(v) => setMetricOp(v as any)}>
+                            <SelectTrigger className="h-8 border-white/10 bg-black/20 text-xs">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-slate-900 border-white/10">
+                            <SelectContent className="border-white/10 bg-slate-900">
                               <SelectItem value="add">Improve (+)</SelectItem>
                               <SelectItem value="subtract">Worsen (-)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-[10px] text-muted-foreground uppercase font-medium">Value Change (%)</Label>
+                          <Label className="text-muted-foreground text-[10px] font-medium uppercase">
+                            Value Change (%)
+                          </Label>
                           <Input
                             type="number"
                             value={metricValue}
                             onChange={(e) => setMetricValue(parseFloat(e.target.value) || 0)}
-                            className="h-8 text-xs bg-black/20 border-white/10"
+                            className="h-8 border-white/10 bg-black/20 text-xs"
                             min="0.1"
                             max="50"
                             step="0.1"
@@ -463,7 +493,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                         </div>
                       </div>
 
-                      <div className="flex gap-2 justify-end pt-2">
+                      <div className="flex justify-end gap-2 pt-2">
                         <Button
                           size="xs"
                           variant="ghost"
@@ -474,17 +504,23 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                         </Button>
                         <Button
                           size="xs"
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-7"
-                          disabled={recordDecisionMutation.isPending || !newDecisionTitle || !newDecisionDesc}
+                          className="h-7 bg-blue-600 font-semibold text-white hover:bg-blue-700"
+                          disabled={
+                            recordDecisionMutation.isPending ||
+                            !newDecisionTitle ||
+                            !newDecisionDesc
+                          }
                           onClick={() => {
                             const targetModel = getTargetModel(selectedMetric);
-                            const serialized = JSON.stringify([{
-                              targetModel,
-                              targetField: selectedMetric,
-                              operation: metricOp,
-                              value: metricValue,
-                              effectType: "DECISION_EFFECT"
-                            }]);
+                            const serialized = JSON.stringify([
+                              {
+                                targetModel,
+                                targetField: selectedMetric,
+                                operation: metricOp,
+                                value: metricValue,
+                                effectType: "DECISION_EFFECT",
+                              },
+                            ]);
                             recordDecisionMutation.mutate({
                               meetingId: meeting.id,
                               title: newDecisionTitle,
@@ -557,56 +593,59 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
           </div>
         )}
 
-        <DialogFooter className="border-t border-white/5 pt-4 flex flex-col gap-3">
-          {meeting && (showNotesForm ? (
-            <div className="w-full space-y-2 rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-left">
-              <Label htmlFor="meeting-notes" className="text-[10px] text-muted-foreground uppercase font-medium">Final Meeting Notes</Label>
-              <Textarea
-                id="meeting-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Enter meeting notes, outcomes, or summaries..."
-                className="text-xs bg-black/20 border-white/10"
-              />
-              <div className="flex gap-2 justify-end">
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => setShowNotesForm(false)}
+        <DialogFooter className="flex flex-col gap-3 border-t border-white/5 pt-4">
+          {meeting &&
+            (showNotesForm ? (
+              <div className="w-full space-y-2 rounded-lg border border-white/10 bg-white/5 p-3 text-left text-xs">
+                <Label
+                  htmlFor="meeting-notes"
+                  className="text-muted-foreground text-[10px] font-medium uppercase"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  size="xs"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-                  disabled={completeMutation.isPending}
-                  onClick={() => {
-                    completeMutation.mutate({
-                      meetingId: meeting.id,
-                      notes,
-                    });
-                    setShowNotesForm(false);
-                  }}
-                >
-                  {completeMutation.isPending ? (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  ) : null}
-                  Complete Meeting
-                </Button>
+                  Final Meeting Notes
+                </Label>
+                <Textarea
+                  id="meeting-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Enter meeting notes, outcomes, or summaries..."
+                  className="border-white/10 bg-black/20 text-xs"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button size="xs" variant="ghost" onClick={() => setShowNotesForm(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="xs"
+                    className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
+                    disabled={completeMutation.isPending}
+                    onClick={() => {
+                      completeMutation.mutate({
+                        meetingId: meeting.id,
+                        notes,
+                      });
+                      setShowNotesForm(false);
+                    }}
+                  >
+                    {completeMutation.isPending ? (
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    ) : null}
+                    Complete Meeting
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            meeting.status !== "completed" && meeting.status !== "cancelled" && (
-              <Button
-                size="sm"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium mb-2"
-                onClick={() => setShowNotesForm(true)}
-              >
-                Complete & Finalize Meeting
-              </Button>
-            )
-          ))}
-          
+            ) : (
+              meeting.status !== "completed" &&
+              meeting.status !== "cancelled" && (
+                <Button
+                  size="sm"
+                  className="mb-2 w-full bg-emerald-600 font-medium text-white hover:bg-emerald-700"
+                  onClick={() => setShowNotesForm(true)}
+                >
+                  Complete & Finalize Meeting
+                </Button>
+              )
+            ))}
+
           <div className="flex w-full justify-end">
             <Button id="btn-close-meeting-modal" variant="outline" size="sm" onClick={onClose}>
               Close

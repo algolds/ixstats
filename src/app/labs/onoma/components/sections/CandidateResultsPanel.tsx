@@ -41,26 +41,26 @@ export function CandidateResultsPanel({
 }: CandidateResultsPanelProps) {
   return (
     <div className="space-y-4 lg:col-span-7">
-      <div className="relative rounded-xl w-full">
+      <div className="relative w-full rounded-xl">
         {/* Apple Intelligence inspired outer glow layers */}
         <div
           style={{ filter: "blur(6px)" }}
           className={cn(
-            "absolute -inset-1.5 rounded-xl bg-[linear-gradient(90deg,#0091ff,#0052cc,#00d2ff,#1a2035,#0091ff)] bg-[length:200%] transition-opacity duration-300 pointer-events-none z-0",
+            "pointer-events-none absolute -inset-1.5 z-0 rounded-xl bg-[linear-gradient(90deg,#0091ff,#0052cc,#00d2ff,#1a2035,#0091ff)] bg-[length:200%] transition-opacity duration-300",
             isGenerating ? "animate-rainbow-fast opacity-25" : "opacity-0"
           )}
         />
         {/* The 1px animated gradient border layer */}
         <div
           className={cn(
-            "absolute -inset-[1px] rounded-xl bg-[linear-gradient(90deg,#0091ff,#0052cc,#00d2ff,#1a2035,#0091ff)] bg-[length:200%] transition-opacity duration-300 pointer-events-none z-0",
+            "pointer-events-none absolute -inset-[1px] z-0 rounded-xl bg-[linear-gradient(90deg,#0091ff,#0052cc,#00d2ff,#1a2035,#0091ff)] bg-[length:200%] transition-opacity duration-300",
             isGenerating ? "animate-rainbow-fast opacity-55" : "opacity-0"
           )}
         />
         {/* Ripple Underneath Animation */}
         <div
           className={cn(
-            "absolute -inset-3.5 rounded-xl bg-[linear-gradient(90deg,#0091ff,#0052cc,#00d2ff,#1a2035,#0091ff)] transition-opacity duration-300 pointer-events-none z-0 blur-[12px]",
+            "pointer-events-none absolute -inset-3.5 z-0 rounded-xl bg-[linear-gradient(90deg,#0091ff,#0052cc,#00d2ff,#1a2035,#0091ff)] blur-[12px] transition-opacity duration-300",
             isGenerating ? "animate-ripple-underneath opacity-100" : "opacity-0"
           )}
         />
@@ -70,14 +70,14 @@ export function CandidateResultsPanel({
             className={cn(
               "relative z-10 space-y-4 p-4 transition-all duration-300",
               isGenerating
-                ? "border-transparent bg-secondary/[0.04] backdrop-blur-md shadow-[0_0_15px_rgba(0,145,255,0.15)]"
+                ? "bg-secondary/[0.04] border-transparent shadow-[0_0_15px_rgba(0,145,255,0.15)] backdrop-blur-md"
                 : "border-border/40 bg-secondary/5 border"
             )}
           >
             <div
               className={cn(
                 "space-y-4 transition-all duration-300 ease-in-out",
-                isGenerating ? "blur-sm opacity-40 scale-[0.98]" : "blur-none opacity-100 scale-100"
+                isGenerating ? "scale-[0.98] opacity-40 blur-sm" : "scale-100 opacity-100 blur-none"
               )}
             >
               <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
@@ -133,7 +133,11 @@ export function CandidateResultsPanel({
                     disabled={isSavingDict}
                     className="flex items-center gap-1.5 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#33a7ff] disabled:opacity-50"
                   >
-                    {isSavingDict ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                    {isSavingDict ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
                     <span>Save</span>
                   </button>
                 </form>
@@ -145,7 +149,9 @@ export function CandidateResultsPanel({
                   <NameResultCard
                     key={`${name}-${idx}`}
                     name={name}
-                    isSaved={nameBank.some((entry) => entry.type === "saved-name" && entry.title === name)}
+                    isSaved={nameBank.some(
+                      (entry) => entry.type === "saved-name" && entry.title === name
+                    )}
                     onSave={handleSaveName}
                     onUse={onUseName}
                   />
@@ -156,23 +162,23 @@ export function CandidateResultsPanel({
         ) : (
           <FacetCard
             className={cn(
-              "border-border/40 bg-secondary/5 text-muted-foreground border border-dashed p-8 text-center text-sm transition-all duration-300 relative",
+              "border-border/40 bg-secondary/5 text-muted-foreground relative border border-dashed p-8 text-center text-sm transition-all duration-300",
               isGenerating
-                ? "border-transparent bg-secondary/[0.04] backdrop-blur-md z-10 shadow-[0_0_15px_rgba(0,145,255,0.15)]"
+                ? "bg-secondary/[0.04] z-10 border-transparent shadow-[0_0_15px_rgba(0,145,255,0.15)] backdrop-blur-md"
                 : ""
             )}
           >
             <div
               className={cn(
                 "transition-all duration-300 ease-in-out",
-                isGenerating ? "blur-sm opacity-40 scale-[0.98]" : "blur-none opacity-100 scale-100"
+                isGenerating ? "scale-[0.98] opacity-40 blur-sm" : "scale-100 opacity-100 blur-none"
               )}
             >
               <Wand2 className="mx-auto mb-3 h-8 w-8 animate-pulse text-[#0091ff]/40" />
               <p className="font-semibold">Assemble names to start</p>
               <p className="text-muted-foreground mt-1 text-xs">
-                Configure your dictionary and generation constraints, then click Assemble to generate
-                names.
+                Configure your dictionary and generation constraints, then click Assemble to
+                generate names.
               </p>
             </div>
           </FacetCard>

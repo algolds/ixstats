@@ -4,7 +4,13 @@
 // Onoma Custom Studio Workshop — Linguistic Profile Details Component
 
 import { useState, useEffect } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface LinguisticProfileProps {
   name: string;
@@ -190,26 +196,44 @@ export function LinguisticProfile({
                     Part of Speech
                   </label>
                   <Select value={editPos} onValueChange={setEditPos}>
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground w-full rounded-lg border px-2 py-0.5 text-xs focus:outline-none flex justify-between items-center transition-colors">
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-0.5 text-xs transition-colors focus:outline-none">
                       <SelectValue placeholder="Select POS" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-background/95 backdrop-blur-md max-h-[200px]">
-                      <SelectItem value="Noun" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                    <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
+                      <SelectItem
+                        value="Noun"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         Noun
                       </SelectItem>
-                      <SelectItem value="Verb" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      <SelectItem
+                        value="Verb"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         Verb
                       </SelectItem>
-                      <SelectItem value="Adjective" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      <SelectItem
+                        value="Adjective"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         Adjective
                       </SelectItem>
-                      <SelectItem value="Adverb" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      <SelectItem
+                        value="Adverb"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         Adverb
                       </SelectItem>
-                      <SelectItem value="Root" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      <SelectItem
+                        value="Root"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         Root
                       </SelectItem>
-                      <SelectItem value="Proper Noun" className="text-xs focus:bg-[#0091ff]/10 focus:text-foreground">
+                      <SelectItem
+                        value="Proper Noun"
+                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      >
                         Proper Noun
                       </SelectItem>
                     </SelectContent>

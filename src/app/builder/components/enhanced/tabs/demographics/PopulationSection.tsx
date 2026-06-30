@@ -20,7 +20,7 @@ export function PopulationSection({
   return (
     <div className="space-y-4">
       {/* Total Population - Read Only */}
-      <div className="border-white/10 bg-white/[0.02] rounded-lg border p-4">
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="text-muted-foreground h-4 w-4" />
@@ -33,7 +33,7 @@ export function PopulationSection({
       </div>
 
       {/* Population Growth Rate - Read Only */}
-      <div className="border-white/10 bg-white/[0.02] rounded-lg border p-4">
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TrendingUp className="text-muted-foreground h-4 w-4" />

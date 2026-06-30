@@ -10,6 +10,18 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+## [1.1.13 Ogma (Alpha)] - 2026-06-29
+
+### Added
+- **Shared Map Instance & WebGL Context Conservation**:
+  - **Single Shared Canvas**: Implemented [SharedMapContext.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/SharedMapContext.tsx) and registered `SharedMapProvider` globally to reuse a single persistent MapLibre instance across `/maps`, the map editor, and all dashboard/mycountry country widgets.
+  - **Slot-Based Dom Re-parenting**: Replaced standalone map instances in `IxWorldMap.tsx`, `EditorMap.tsx`, and `useCountryMapEmbedLayers.ts` with slot-based acquisition (`acquireMap`) and dynamic canvas container re-parenting.
+  - **Dynamic Layer State Hiding & Cleanup**: Modified the widget embed hook to set base world layers to invisible upon acquisition, append its custom GeoJSON layers (neighbors, subdivisions, cities), and safely restore base layers and clean up custom layers upon release.
+- **Map Interaction & Performance Optimizations**:
+  - **Throttled Hover State & Re-renders**: Refactored mousemove interaction events in `useWorldMapInteractions.ts` to execute hover callbacks (`onCountryHover`) and set MapLibre feature hover states only when the hovered feature ID actually changes (crossing boundaries), rather than on every pixel. Removed unused `screenX`/`screenY` coordinate state updates.
+  - **WeakMap progressive GeoJSON Caching**: Added transparent `WeakMap` caching to the progressive geometry filter `filterByArea` inside `map-core-helpers.ts` to skip re-running filter arrays during zoom level adjustments.
+  - **Flicker-Free Zoom Transitions**: Configured TanStack Query `placeholderData` in `useMapDataBatched.ts` to return the previous successful data during loading transitions, keeping existing layers on screen while fetching background details.
+
 ## [1.1.12 Ogma (Alpha)] - 2026-06-29
 
 ### Added

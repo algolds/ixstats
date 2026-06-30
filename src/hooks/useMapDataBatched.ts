@@ -98,9 +98,11 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number)
     { layers: CRITICAL_LAYERS, zoom: zoomParam },
     {
       ...MAP_QUERY_OPTIONS,
-      placeholderData: idbData
-        ? ({ worldMap: idbData, features: undefined, capitals: undefined } as any)
-        : undefined,
+      placeholderData: (prev) =>
+        prev ||
+        (idbData
+          ? ({ worldMap: idbData, features: undefined, capitals: undefined } as any)
+          : undefined),
     }
   );
 

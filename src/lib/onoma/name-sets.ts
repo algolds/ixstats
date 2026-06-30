@@ -4,7 +4,15 @@
 // role (given/surname/...) and gender, combined via a template to Markov-generate
 // full names (e.g. "{given:male} {surname}").
 
-export type NameRole = "given" | "surname" | "particle" | "patronymic" | "matronymic" | "nomen" | "agnomen" | "other";
+export type NameRole =
+  | "given"
+  | "surname"
+  | "particle"
+  | "patronymic"
+  | "matronymic"
+  | "nomen"
+  | "agnomen"
+  | "other";
 export type NameGender = "any" | "male" | "female";
 
 export const NAME_ROLES: { value: NameRole; label: string }[] = [
@@ -61,14 +69,20 @@ export const CONVENTION_PRESETS: ConventionPreset[] = [
   {
     key: "hendalarsk",
     name: "Hendalarskara (4-name)",
-    description: "Fornám (given), Kvalnám (chosen), Muternám (matronymic with child-gender suffix -són/-toschter/-kind), and Erbnám (surname).",
+    description:
+      "Fornám (given), Kvalnám (chosen), Muternám (matronymic with child-gender suffix -són/-toschter/-kind), and Erbnám (surname).",
     template: {
       separator: " ",
       presetKey: "hendalarsk",
       slots: [
         { role: "given", gender: "any", genderMode: "aligned" },
         { role: "given", gender: "any", genderMode: "aligned" },
-        { role: "matronymic", gender: "any", genderMode: "aligned", suffixRule: "hendalarsk-matronymic" },
+        {
+          role: "matronymic",
+          gender: "any",
+          genderMode: "aligned",
+          suffixRule: "hendalarsk-matronymic",
+        },
         { role: "surname", gender: "any", genderMode: "aligned" },
       ],
     },
@@ -76,14 +90,20 @@ export const CONVENTION_PRESETS: ConventionPreset[] = [
   {
     key: "caphiria",
     name: "Caphirian Quadranomial",
-    description: "Inscriptio (given), Electi (personal name chosen at 16), Proles/Ramus (patronymic/matronymic), and Cognomina Fluminis (Estate river-surname).",
+    description:
+      "Inscriptio (given), Electi (personal name chosen at 16), Proles/Ramus (patronymic/matronymic), and Cognomina Fluminis (Estate river-surname).",
     template: {
       separator: " ",
       presetKey: "caphiria",
       slots: [
         { role: "given", gender: "any", genderMode: "aligned" },
         { role: "given", gender: "any", genderMode: "aligned" },
-        { role: "patronymic", gender: "any", genderMode: "aligned", suffixRule: "caphirian-lineage" },
+        {
+          role: "patronymic",
+          gender: "any",
+          genderMode: "aligned",
+          suffixRule: "caphirian-lineage",
+        },
         { role: "surname", gender: "any", genderMode: "aligned" },
       ],
     },
@@ -91,7 +111,8 @@ export const CONVENTION_PRESETS: ConventionPreset[] = [
   {
     key: "urcea",
     name: "Urcean Tria Nomina",
-    description: "Praenomen (given), Nomen (Estate name, defaults to 'Julianus' for commoners), and Cognomen (family name) + optional Agnomen (victory title).",
+    description:
+      "Praenomen (given), Nomen (Estate name, defaults to 'Julianus' for commoners), and Cognomen (family name) + optional Agnomen (victory title).",
     template: {
       separator: " ",
       presetKey: "urcea",
@@ -106,7 +127,8 @@ export const CONVENTION_PRESETS: ConventionPreset[] = [
   {
     key: "yonderian-noble",
     name: "Yonderian Noble",
-    description: "Noble naming pattern: Given name followed by family surname prefixed with 'von' (e.g. von Willing).",
+    description:
+      "Noble naming pattern: Given name followed by family surname prefixed with 'von' (e.g. von Willing).",
     template: {
       separator: " ",
       presetKey: "yonderian-noble",
@@ -119,20 +141,27 @@ export const CONVENTION_PRESETS: ConventionPreset[] = [
   {
     key: "yonderian-peasant",
     name: "Yonderian Peasantry",
-    description: "Peasant naming pattern: Given name followed by patronymic (father's name + child-gender suffix -son/-daughter).",
+    description:
+      "Peasant naming pattern: Given name followed by patronymic (father's name + child-gender suffix -son/-daughter).",
     template: {
       separator: " ",
       presetKey: "yonderian-peasant",
       slots: [
         { role: "given", gender: "any", genderMode: "aligned" },
-        { role: "patronymic", gender: "any", genderMode: "aligned", suffixRule: "yonderian-patronymic" },
+        {
+          role: "patronymic",
+          gender: "any",
+          genderMode: "aligned",
+          suffixRule: "yonderian-patronymic",
+        },
       ],
     },
   },
   {
     key: "khunyer",
     name: "Khunyer Reversed",
-    description: "Reversed order naming: Surname / Family name comes first, followed by the Given name.",
+    description:
+      "Reversed order naming: Surname / Family name comes first, followed by the Given name.",
     template: {
       separator: " ",
       presetKey: "khunyer",

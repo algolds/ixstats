@@ -5,7 +5,15 @@ import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { Globe, Calendar, Landmark, Activity, Handshake, AlertCircle, Sparkles } from "lucide-react";
+import {
+  Globe,
+  Calendar,
+  Landmark,
+  Activity,
+  Handshake,
+  AlertCircle,
+  Sparkles,
+} from "lucide-react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
 import { useUser } from "~/context/auth-context";
@@ -64,7 +72,10 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   useScrollToFocus(focusId, [relations]);
 
-  const handleGoalChange = (relationId: string, goal: "ALLY" | "COEXIST" | "HEGEMONY" | "RIVAL") => {
+  const handleGoalChange = (
+    relationId: string,
+    goal: "ALLY" | "COEXIST" | "HEGEMONY" | "RIVAL"
+  ) => {
     setGoalMutation.mutate({ relationId, goal });
   };
 
@@ -179,7 +190,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
             </div>
 
             {/* Stance Selection & Partner Stance */}
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border/10 pt-3 text-[10px]">
+            <div className="border-border/10 mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-[10px]">
               <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground font-medium">Your Stance</span>
                 {isOwner ? (
@@ -187,7 +198,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                     value={rel.goalSelf || ""}
                     onChange={(e) => handleGoalChange(rel.id, e.target.value as any)}
                     disabled={setGoalMutation.isPending}
-                    className="bg-background border-border/40 text-foreground rounded border px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="bg-background border-border/40 text-foreground rounded border px-1.5 py-0.5 text-[10px] focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="">Choose Stance...</option>
                     <option value="ALLY">Ally (Alliance Pursuit)</option>
@@ -201,7 +212,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground font-medium">Their Stance</span>
-                <Badge variant="outline" className="w-fit text-[9px] px-1 py-0 border-border/30">
+                <Badge variant="outline" className="border-border/30 w-fit px-1 py-0 text-[9px]">
                   {rel.goalTarget || "NOT DECLARED"}
                 </Badge>
               </div>
@@ -209,13 +220,13 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Synergy & Conflict Badges */}
             {rel.goalSelf === "ALLY" && rel.goalTarget === "ALLY" && (
-              <div className="mt-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded px-2 py-1 text-[9px] font-semibold flex items-center gap-1">
+              <div className="mt-2 flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-semibold text-emerald-600">
                 <Sparkles className="h-3 w-3 text-emerald-500" />
                 Goals aligned! Reaching Allied status significantly faster.
               </div>
             )}
             {rel.goalSelf && rel.goalTarget && rel.goalSelf !== rel.goalTarget && (
-              <div className="mt-2 bg-red-500/10 border border-red-500/20 text-red-600 rounded px-2 py-1 text-[9px] font-semibold flex items-center gap-1">
+              <div className="mt-2 flex items-center gap-1 rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-[9px] font-semibold text-red-600">
                 <AlertCircle className="h-3 w-3 text-red-500" />
                 Stance conflict: Relations degradation expected.
               </div>
@@ -223,7 +234,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Recent Activity / Pain Points */}
             {rel.recentActivity && (
-              <div className="mt-2 bg-muted/40 border border-border/20 text-muted-foreground rounded px-2 py-1 text-[9px] italic">
+              <div className="bg-muted/40 border-border/20 text-muted-foreground mt-2 rounded border px-2 py-1 text-[9px] italic">
                 Status: {rel.recentActivity}
               </div>
             )}

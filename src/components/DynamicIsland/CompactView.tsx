@@ -192,7 +192,10 @@ function CompactViewComponent({
               if (isWikiActive) return null;
 
               // Hide on root, dashboard, and mycountry pages
-              const isHiddenPage = diPathname === "/" || diPathname === "/dashboard" || diPathname.startsWith("/mycountry");
+              const isHiddenPage =
+                diPathname === "/" ||
+                diPathname === "/dashboard" ||
+                diPathname.startsWith("/mycountry");
               if (isHiddenPage) return null;
               return (
                 <Tooltip>
@@ -213,7 +216,7 @@ function CompactViewComponent({
                       {isWikiActive ? (
                         <div className="relative z-10 flex flex-col items-center justify-center gap-0 leading-none">
                           <motion.div
-                            className="relative z-10 w-5 h-5 opacity-85 bg-foreground"
+                            className="bg-foreground relative z-10 h-5 w-5 opacity-85"
                             style={{
                               maskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
                               WebkitMaskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
@@ -224,20 +227,20 @@ function CompactViewComponent({
                               maskPosition: "center",
                               WebkitMaskPosition: "center",
                             }}
-                            whileHover={{ 
-                              scale: 1.15, 
+                            whileHover={{
+                              scale: 1.15,
                               rotate: 8,
                               opacity: 1,
-                              backgroundColor: "var(--primary)"
+                              backgroundColor: "var(--primary)",
                             }}
-                            whileTap={{ 
+                            whileTap={{
                               scale: 0.9,
-                              rotate: -4
+                              rotate: -4,
                             }}
-                            transition={{ 
-                              type: "spring", 
-                              stiffness: 400, 
-                              damping: 15 
+                            transition={{
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 15,
                             }}
                           />
                           <span
@@ -254,7 +257,7 @@ function CompactViewComponent({
                       ) : (
                         <motion.div
                           className={cn(
-                            "relative z-10 opacity-85 bg-foreground",
+                            "bg-foreground relative z-10 opacity-85",
                             isSticky ? "h-5 w-5" : "h-6 w-6"
                           )}
                           style={{
@@ -267,20 +270,20 @@ function CompactViewComponent({
                             maskPosition: "center",
                             WebkitMaskPosition: "center",
                           }}
-                          whileHover={{ 
-                            scale: 1.15, 
+                          whileHover={{
+                            scale: 1.15,
                             rotate: 8,
                             opacity: 1,
-                            backgroundColor: "var(--primary)"
+                            backgroundColor: "var(--primary)",
                           }}
-                          whileTap={{ 
+                          whileTap={{
                             scale: 0.9,
-                            rotate: -4
+                            rotate: -4,
                           }}
-                          transition={{ 
-                            type: "spring", 
-                            stiffness: 400, 
-                            damping: 15 
+                          transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 15,
                           }}
                         />
                       )}
@@ -393,10 +396,11 @@ function CompactViewComponent({
                           .toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })
                           .toUpperCase();
 
-                        const selectedThemeColorClass =
-                          diPathname?.startsWith("/mycountry") ? "text-yellow-400" :
-                          diPathname?.startsWith("/admin") ? "text-indigo-400" :
-                          "text-blue-400";
+                        const selectedThemeColorClass = diPathname?.startsWith("/mycountry")
+                          ? "text-yellow-400"
+                          : diPathname?.startsWith("/admin")
+                            ? "text-indigo-400"
+                            : "text-blue-400";
 
                         return (
                           <motion.button
@@ -404,19 +408,19 @@ function CompactViewComponent({
                             onClick={() => onSwitchMode("calendar")}
                             title="Open Calendar"
                             className={cn(
-                              "hover:bg-white/5 flex cursor-pointer items-center transition-colors rounded-lg border border-white/0 hover:border-white/5",
+                              "flex cursor-pointer items-center rounded-lg border border-white/0 transition-colors hover:border-white/5 hover:bg-white/5",
                               isOnOnomaPage ? "p-1.5" : "gap-2 px-2.5 py-1"
                             )}
                           >
                             {/* Minimalist Glassy Date Capsule Badge */}
                             <motion.div
                               layoutId="halo-date-capsule-badge"
-                              className="flex items-center justify-center rounded-[4px] border border-white/10 bg-white/5 px-1 py-0.5 shadow-inner backdrop-blur-[2px] shrink-0"
+                              className="flex shrink-0 items-center justify-center rounded-[4px] border border-white/10 bg-white/5 px-1 py-0.5 shadow-inner backdrop-blur-[2px]"
                             >
                               <motion.span
                                 layoutId="halo-date-capsule-weekday"
                                 className={cn(
-                                  "origin-center scale-90 text-[8px] font-extrabold tracking-widest antialiased leading-none",
+                                  "origin-center scale-90 text-[8px] leading-none font-extrabold tracking-widest antialiased",
                                   selectedThemeColorClass
                                 )}
                               >

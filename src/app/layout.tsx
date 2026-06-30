@@ -31,6 +31,7 @@ import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
+import { SharedMapProvider } from "~/components/maps/core/SharedMapContext";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -80,27 +81,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                         <SportsLiveDIPlugin />
                         <CalendarLiveDIPlugin />
                         <WikiContextProvider>
-                          <WebGLErrorHandler />
-                          <MapPrefetcher />
-                          <NavigationTransitionHandler />
-                          {isStandalone ? (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                            </div>
-                          ) : (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              {/* <GlobalActivityMarquee /> */}
-                              <SetupRedirect />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                              <MiniPlayer />
-                            </div>
-                          )}
+                          <SharedMapProvider>
+                            <WebGLErrorHandler />
+                            <MapPrefetcher />
+                            <NavigationTransitionHandler />
+                            {isStandalone ? (
+                              <div className="flex min-h-screen flex-col">
+                                <Navigation />
+                                <main className="flex flex-1 flex-col">
+                                  <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                                </main>
+                              </div>
+                            ) : (
+                              <div className="flex min-h-screen flex-col">
+                                <Navigation />
+                                {/* <GlobalActivityMarquee /> */}
+                                <SetupRedirect />
+                                <main className="flex flex-1 flex-col">
+                                  <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                                </main>
+                                <MiniPlayer />
+                              </div>
+                            )}
+                          </SharedMapProvider>
                         </WikiContextProvider>
                       </DIPluginProvider>
                     </GlobalNotificationSystem>

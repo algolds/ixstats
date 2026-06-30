@@ -352,17 +352,15 @@ export function useSubdivisionVertexEdit({
         if (feat.type === "subdivision" && feat.geometry) {
           subdivisionFeatures.push({
             id: feat.id,
-            geometry: feat.id === selectedFeature.id
-              ? geo
-              : feat.geometry,
+            geometry: feat.id === selectedFeature.id ? geo : feat.geometry,
           });
         }
       }
       topologyIndexRef.current = buildTopologyIndex(subdivisionFeatures);
       neighborGeometriesRef.current = new Map(
         subdivisionFeatures
-          .filter(f => f.id !== selectedFeature.id)
-          .map(f => [f.id, JSON.parse(JSON.stringify(f.geometry))])
+          .filter((f) => f.id !== selectedFeature.id)
+          .map((f) => [f.id, JSON.parse(JSON.stringify(f.geometry))])
       );
 
       setIsVertexEditing(true);

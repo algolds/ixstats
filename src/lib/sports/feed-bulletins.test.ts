@@ -31,9 +31,7 @@ describe("formatMatchDayBulletin", () => {
         },
       ],
     });
-    expect(content).toBe(
-      "**Championship** — Matchday 5\n\n🏆 **United** 2 – 1 City"
-    );
+    expect(content).toBe("**Championship** — Matchday 5\n\n🏆 **United** 2 – 1 City");
   });
 
   test("formats multiple results preserving order and format", () => {
@@ -145,8 +143,7 @@ describe("encode and parse sports bulletin", () => {
       movers: [{ name: "United", id: "team-home", oldRank: 5, newRank: 3 }],
       llmSummary: "An unexpected turn of events.",
     };
-    const markdown =
-      "**La Liga** — Matchday 5\n\n🏆 **United** 2 – 1 City";
+    const markdown = "**La Liga** — Matchday 5\n\n🏆 **United** 2 – 1 City";
     const encoded = encodeSportsBulletin(data, markdown);
     expect(encoded).toContain("<!-- sports-bulletin:");
     expect(encoded).toContain(markdown);

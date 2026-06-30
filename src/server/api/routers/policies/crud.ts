@@ -11,14 +11,25 @@ import { CountryEventSpine } from "~/lib/country-event-spine";
 import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 import { IxTime } from "~/lib/ixtime";
-import { calculateCivilServiceCapacity, calculateTotalConsumedStaff } from "~/lib/atomic-government-utils";
+import {
+  calculateCivilServiceCapacity,
+  calculateTotalConsumedStaff,
+} from "~/lib/atomic-government-utils";
 import { deriveBrokers } from "~/lib/statecraft-power-brokers";
 
 const RECON_CAPACITY_COST = 20;
 
 async function loadPolicyReconContext(db: any, countryId: string) {
   const now = IxTime.getCurrentIxTime();
-  const [country, structure, components, pendingRecon, allocations, activePoliciesSum, dismissedIssuesCount] = await Promise.all([
+  const [
+    country,
+    structure,
+    components,
+    pendingRecon,
+    allocations,
+    activePoliciesSum,
+    dismissedIssuesCount,
+  ] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
       select: { currentPopulation: true, governmentalEfficiency: true },
@@ -63,7 +74,9 @@ async function loadPolicyReconContext(db: any, countryId: string) {
 
   const activeComponentTypes = components.map((c: any) => c.componentType);
   const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
-  const isTechnocratsSatisfied = activeBrokers.some((b: any) => b.id === "technocrats" && b.satisfied);
+  const isTechnocratsSatisfied = activeBrokers.some(
+    (b: any) => b.id === "technocrats" && b.satisfied
+  );
 
   const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
   const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
@@ -77,7 +90,8 @@ async function loadPolicyReconContext(db: any, countryId: string) {
   const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
   const policyCivCap = activePoliciesSum._sum.civCapCost ?? 0;
   const dismissedCivCap = dismissedIssuesCount * 15;
-  const used = effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
+  const used =
+    effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
 
   return {
     componentTypes: components.map((c: any) => String(c.componentType)),
@@ -164,7 +178,10 @@ export const policiesCrudRouter = createTRPCRouter({
       // Custom policy attributes derivation (default)
       const customAttrs = getCustomPolicyAttributes(baseInput.priority);
       let policyRiskRating = customAttrs.riskRating as "stable" | "volatile" | "high-risk";
-      let policyOrigin = (origin || customAttrs.origin) as "personal" | "crisis_response" | "broker_request";
+      let policyOrigin = (origin || customAttrs.origin) as
+        | "personal"
+        | "crisis_response"
+        | "broker_request";
       let policyCivCapCost = customAttrs.civCapCost;
 
       if (!decretalKey) {
@@ -200,8 +217,14 @@ export const policiesCrudRouter = createTRPCRouter({
           inflationEffect = results.inflationEffect;
           taxRevenueEffect = results.taxRevenueEffect;
 
-          policyRiskRating = (decretal.riskRating ?? "stable") as "stable" | "volatile" | "high-risk";
-          policyOrigin = (origin ?? decretal.origin ?? "personal") as "personal" | "crisis_response" | "broker_request";
+          policyRiskRating = (decretal.riskRating ?? "stable") as
+            | "stable"
+            | "volatile"
+            | "high-risk";
+          policyOrigin = (origin ?? decretal.origin ?? "personal") as
+            | "personal"
+            | "crisis_response"
+            | "broker_request";
           policyCivCapCost = decretal.civCapCost ?? 0;
 
           calculatedEffectsJson = JSON.stringify({
@@ -214,7 +237,10 @@ export const policiesCrudRouter = createTRPCRouter({
 
       // Apply discounts if reactively-born (crisis response or broker request)
       if (policyOrigin === "crisis_response" || policyOrigin === "broker_request") {
-        policyCivCapCost = Math.max(policyCivCapCost > 0 ? 1 : 0, Math.round(policyCivCapCost * 0.75));
+        policyCivCapCost = Math.max(
+          policyCivCapCost > 0 ? 1 : 0,
+          Math.round(policyCivCapCost * 0.75)
+        );
         maintenanceCost = Math.round(maintenanceCost * 0.85);
       }
 
@@ -696,5 +722,3 @@ export const policiesCrudRouter = createTRPCRouter({
       return await loadPolicyReconContext(ctx.db, input.countryId);
     }),
 });
-
-

@@ -23,11 +23,21 @@ export function PlayPauseMorph({
     >
       <Play
         className={cn("absolute transition-all duration-300 ease-out", className)}
-        style={{ width: size, height: size, opacity: isPlaying ? 0 : 1, transform: `scale(${isPlaying ? 0.4 : 1})` }}
+        style={{
+          width: size,
+          height: size,
+          opacity: isPlaying ? 0 : 1,
+          transform: `scale(${isPlaying ? 0.4 : 1})`,
+        }}
       />
       <Pause
         className={cn("absolute transition-all duration-300 ease-out", className)}
-        style={{ width: size, height: size, opacity: isPlaying ? 1 : 0, transform: `scale(${isPlaying ? 1 : 0.4})` }}
+        style={{
+          width: size,
+          height: size,
+          opacity: isPlaying ? 1 : 0,
+          transform: `scale(${isPlaying ? 1 : 0.4})`,
+        }}
       />
     </span>
   );

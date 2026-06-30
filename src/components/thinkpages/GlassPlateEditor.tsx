@@ -368,7 +368,13 @@ function getMentionItemIcon(name: string, type: "user" | "league" | "club" | "co
   if (lower.includes("baseball")) return "⚾";
   if (lower.includes("f1") || lower.includes("racing") || lower.includes("motorsport")) return "🏎️";
   if (lower.includes("boxing") || lower.includes("fight")) return "🥊";
-  if (lower.includes("soccer") || lower.includes("football") || lower.includes("fc") || lower.includes("sc")) return "⚽";
+  if (
+    lower.includes("soccer") ||
+    lower.includes("football") ||
+    lower.includes("fc") ||
+    lower.includes("sc")
+  )
+    return "⚽";
 
   return type === "league" ? "🏆" : "🛡️";
 }
@@ -656,8 +662,11 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
         if (selection && Range.isCollapsed(selection)) {
           try {
             const blockStart = Editor.start(editor, selection.focus.path);
-            const textToCursor = Editor.string(editor, { anchor: blockStart, focus: selection.focus });
-            
+            const textToCursor = Editor.string(editor, {
+              anchor: blockStart,
+              focus: selection.focus,
+            });
+
             // Match '@' followed by any letters/numbers/spaces
             const match = textToCursor.match(/@([a-zA-Z0-9_\s]*)$/);
             if (match) {
@@ -665,7 +674,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
               setMentionQuery(query);
               setShowMentionMenu(true);
               setSelectedMentionIndex(0);
-              
+
               // Get selection bounds for cursor coordinates
               setTimeout(() => {
                 const domSelection = window.getSelection();
@@ -1607,7 +1616,9 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
             selectedIndex={selectedMentionIndex}
             onSelect={handleSelectMention}
             query={mentionQuery}
-            isLoading={accountsSearch.isLoading || sportsSearch.isLoading || countriesSearch.isLoading}
+            isLoading={
+              accountsSearch.isLoading || sportsSearch.isLoading || countriesSearch.isLoading
+            }
           />
         )}
       </div>
@@ -1687,7 +1698,7 @@ function MentionMenuPortal({
         left: coords.left,
         zIndex: 200000,
       }}
-      className="w-64 rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-800 shadow-2xl backdrop-blur-xl animate-in fade-in-50 slide-in-from-top-1 duration-150 dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-200"
+      className="animate-in fade-in-50 slide-in-from-top-1 w-64 rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-800 shadow-2xl backdrop-blur-xl duration-150 dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-200"
     >
       <div className="thin-scrollbar max-h-56 overflow-y-auto">
         {isLoading && results.length === 0 ? (
@@ -1709,18 +1720,18 @@ function MentionMenuPortal({
                   }}
                   onClick={() => onSelect(idx)}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 cursor-pointer select-none",
+                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-all duration-150 select-none",
                     active
-                      ? "bg-blue-500/10 text-blue-600 border-l-[3px] border-blue-500 dark:bg-blue-500/20 dark:text-blue-300 font-semibold"
-                      : "text-neutral-700 dark:text-slate-300 hover:bg-neutral-500/5 dark:hover:bg-white/5"
+                      ? "border-l-[3px] border-blue-500 bg-blue-500/10 font-semibold text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"
+                      : "text-neutral-700 hover:bg-neutral-500/5 dark:text-slate-300 dark:hover:bg-white/5"
                   )}
                 >
                   <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-neutral-200/50 bg-neutral-100/50 text-[11px] leading-none dark:border-white/5 dark:bg-white/5">
                     {item.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-bold leading-tight">{item.name}</div>
-                    <div className="truncate text-[9px] text-neutral-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider font-semibold">
+                    <div className="truncate text-xs leading-tight font-bold">{item.name}</div>
+                    <div className="mt-0.5 truncate text-[9px] font-semibold tracking-wider text-neutral-400 uppercase dark:text-slate-500">
                       {item.description}
                     </div>
                   </div>
