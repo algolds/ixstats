@@ -49,33 +49,6 @@ fi
 
 log "=== Starting IxWorld Deployment ==="
 
-# --- Temporarily disable IDE tsserver to reclaim swap/RAM ---
-TEMP_BAK_FILES=()
-
-disable_tsserver() {
-    log "Temporarily disabling IDE TypeScript servers to free memory..."
-    # Find active tsserver paths in Cursor or VS Code server directories
-    while IFS= read -r file; do
-        if [ -f "$file" ]; then
-            log "Disabling: $file"
-            mv "$file" "${file}.bak"
-            TEMP_BAK_FILES+=("$file")
-        fi
-    done < <(find /root/.cursor-server /root/.vscode-server -name "tsserver.js" 2>/dev/null || true)
-    
-    # Kill running tsservers to reclaim memory
-    pkill -9 -f tsserver || true
-}
-
-restore_tsserver() {
-    for file in "${TEMP_BAK_FILES[@]}"; do
-        if [ -f "${file}.bak" ]; then
-            log "Restoring: $file"
-            mv "${file}.bak" "$file"
-        fi
-    done
-}
-
 # --- Restore the saved IxStats .next if a previous run died mid-deploy ---
 restore_next() {
     if [ -d "$SAVED_NEXT" ]; then
@@ -83,7 +56,6 @@ restore_next() {
         rm -rf "$IXSTATS_DIR/.next"
         mv "$SAVED_NEXT" "$IXSTATS_DIR/.next"
     fi
-    restore_tsserver
 }
 trap 'restore_next' EXIT
 
@@ -135,8 +107,6 @@ if [ -d ".next" ]; then
     mv ".next" "$SAVED_NEXT"
 fi
 
-disable_tsserver
-
 log "[2/4] Building Next.js application (IxWorld standalone)..."
 export BASE_PATH=""
 export NEXT_PUBLIC_BASE_PATH=""
@@ -150,9 +120,8 @@ export NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/
 export NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=""
 export NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=""
 export NODE_ENV=production
-export NODE_OPTIONS="--max-old-space-size=4096"
 
-if ! bunx next build --webpack; then
+if ! bunx next build; then
     log "ERROR: Build failed! IxStats .next will be restored on exit."
     exit 1
 fi

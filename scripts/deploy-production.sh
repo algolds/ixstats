@@ -32,33 +32,6 @@ if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
     fi
 fi
 
-# --- Temporarily disable IDE tsserver to reclaim swap/RAM ---
-TEMP_BAK_FILES=()
-
-disable_tsserver() {
-    echo "Temporarily disabling IDE TypeScript servers to free memory..."
-    while IFS= read -r file; do
-        if [ -f "$file" ]; then
-            echo "Disabling: $file"
-            mv "$file" "${file}.bak"
-            TEMP_BAK_FILES+=("$file")
-        fi
-    done < <(find /root/.cursor-server /root/.vscode-server -name "tsserver.js" 2>/dev/null || true)
-    
-    pkill -9 -f tsserver || true
-}
-
-restore_tsserver() {
-    for file in "${TEMP_BAK_FILES[@]}"; do
-        if [ -f "${file}.bak" ]; then
-            echo "Restoring: $file"
-            mv "${file}.bak" "$file"
-        fi
-    done
-}
-
-trap 'restore_tsserver' EXIT
-
 # Set production environment
 export NODE_ENV=production
 
@@ -179,7 +152,6 @@ else
 fi
 
 # Build the application
-disable_tsserver
 echo "🔨 Building application..."
 bun run build
 
