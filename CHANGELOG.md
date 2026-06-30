@@ -22,6 +22,9 @@ capability integer. Each release entry below lists which components advanced and
   - **WeakMap progressive GeoJSON Caching**: Added transparent `WeakMap` caching to the progressive geometry filter `filterByArea` inside `map-core-helpers.ts` to skip re-running filter arrays during zoom level adjustments.
   - **Flicker-Free Zoom Transitions**: Configured TanStack Query `placeholderData` in `useMapDataBatched.ts` to return the previous successful data during loading transitions, keeping existing layers on screen while fetching background details.
 
+### Fixed
+- **Flicker & Blank Canvas Race Condition on Map Reclaiming**: Wrapped the slot-based view setup and `onReady` callbacks inside `SharedMapContext.tsx` to wait until MapLibre completes style load transitions (`style.load`). This prevents race conditions where components attempted to call `map.addSource` or `map.addLayer` before style updates finished loading, which triggered fatal exceptions and left the canvas blank.
+
 ## [1.1.12 Ogma (Alpha)] - 2026-06-29
 
 ### Added

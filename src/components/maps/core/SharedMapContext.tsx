@@ -119,44 +119,57 @@ export function SharedMapProvider({ children }: { children: React.ReactNode }) {
       const currentTheme = options.theme ?? "standard";
       const currentProj = options.projectionMode ?? "dynamic";
       const newStyle = buildBaseStyle(currentTheme, currentProj);
+
+      const applyViewAndReady = () => {
+        if (activeSlotIdRef.current !== slotId) return;
+
+        // Handle viewport options
+        if (options.bbox) {
+          mapInstance.fitBounds(
+            [
+              [options.bbox.minLng, options.bbox.minLat],
+              [options.bbox.maxLng, options.bbox.maxLat],
+            ],
+            { padding: options.zoom !== undefined ? options.zoom : 40, duration: 0 }
+          );
+        } else if (options.center) {
+          mapInstance.setCenter(options.center);
+          if (options.zoom !== undefined) {
+            mapInstance.setZoom(options.zoom);
+          }
+        }
+
+        // Configure interactivity
+        if (options.interactive !== undefined) {
+          if (options.interactive) {
+            mapInstance.boxZoom.enable();
+            mapInstance.doubleClickZoom.enable();
+            mapInstance.dragPan.enable();
+            mapInstance.keyboard.enable();
+            mapInstance.scrollZoom.enable();
+            mapInstance.touchZoomRotate.enable();
+          } else {
+            mapInstance.boxZoom.disable();
+            mapInstance.doubleClickZoom.disable();
+            mapInstance.dragPan.disable();
+            mapInstance.keyboard.disable();
+            mapInstance.scrollZoom.disable();
+            mapInstance.touchZoomRotate.disable();
+          }
+        }
+
+        options.onReady?.(mapInstance);
+      };
+
       mapInstance.setStyle(newStyle as any, { diff: true });
 
-      // Handle viewport options
-      if (options.bbox) {
-        mapInstance.fitBounds(
-          [
-            [options.bbox.minLng, options.bbox.minLat],
-            [options.bbox.maxLng, options.bbox.maxLat],
-          ],
-          { padding: options.zoom !== undefined ? options.zoom : 40, duration: 0 }
-        );
-      } else if (options.center) {
-        mapInstance.setCenter(options.center);
-        if (options.zoom !== undefined) {
-          mapInstance.setZoom(options.zoom);
-        }
+      if (mapInstance.isStyleLoaded()) {
+        applyViewAndReady();
+      } else {
+        mapInstance.once("style.load", () => {
+          applyViewAndReady();
+        });
       }
-
-      // Configure interactivity
-      if (options.interactive !== undefined) {
-        if (options.interactive) {
-          mapInstance.boxZoom.enable();
-          mapInstance.doubleClickZoom.enable();
-          mapInstance.dragPan.enable();
-          mapInstance.keyboard.enable();
-          mapInstance.scrollZoom.enable();
-          mapInstance.touchZoomRotate.enable();
-        } else {
-          mapInstance.boxZoom.disable();
-          mapInstance.doubleClickZoom.disable();
-          mapInstance.dragPan.disable();
-          mapInstance.keyboard.disable();
-          mapInstance.scrollZoom.disable();
-          mapInstance.touchZoomRotate.disable();
-        }
-      }
-
-      options.onReady?.(mapInstance);
     };
 
     if (mapRef.current && mapRef.current.isStyleLoaded()) {
