@@ -13,6 +13,7 @@ import { api } from "~/trpc/react";
 import { OverviewBanner } from "./OverviewBanner";
 import { QuickGeneratorControls } from "./QuickGeneratorControls";
 import { CandidateResultsPanel } from "./CandidateResultsPanel";
+import { speakName } from "~/lib/onoma/browser-speech";
 
 export function OverviewSection() {
   const bank = useNameBank();
@@ -23,7 +24,24 @@ export function OverviewSection() {
   });
 
   // Smart SpeechSynthesis handler for "Onoma" pronunciation
-  const playPronunciation = () => {
+  const playPronunciation = async () => {
+    const kokoroEnabled = Boolean(speechConfig?.kokoro?.enabled);
+    if (kokoroEnabled) {
+      try {
+        await speakName({
+          name: "Onoma",
+          ipa: "ˈɒnəmə",
+          culture: "constructed",
+          kokoroEnabled: true,
+          defaultVoice: speechConfig?.kokoro?.voice,
+        });
+        return;
+      } catch (err) {
+        console.error("Kokoro TTS failed for hero, falling back to browser speech:", err);
+      }
+    }
+
+    // Custom browser fallback
     if (typeof window === "undefined" || !window.speechSynthesis) return;
 
     window.speechSynthesis.cancel();

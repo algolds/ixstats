@@ -159,6 +159,10 @@ async function handleTts(request: NextRequest) {
     let culture = "";
     let speed = defaultSpeed;
     let model = defaultModel;
+    let anglicize = true;
+    let phonemePrefix = "";
+    let stripStress = false;
+    let prosody = "neutral";
 
     if (request.method === "POST") {
       try {
@@ -172,6 +176,10 @@ async function handleTts(request: NextRequest) {
         if (body.culture) culture = body.culture;
         if (body.speed != null) speed = Number(body.speed);
         if (body.model) model = body.model;
+        if (body.anglicize !== undefined) anglicize = Boolean(body.anglicize);
+        if (body.phonemePrefix !== undefined) phonemePrefix = body.phonemePrefix;
+        if (body.stripStress !== undefined) stripStress = Boolean(body.stripStress);
+        if (body.prosody !== undefined) prosody = body.prosody;
 
         // Allow overrides for baseUrl and apiKey only if Admin
         if (isAdmin) {
@@ -195,6 +203,10 @@ async function handleTts(request: NextRequest) {
       culture = searchParams.get("culture") || "";
       if (searchParams.get("speed")) speed = Number(searchParams.get("speed"));
       if (searchParams.get("model")) model = searchParams.get("model")!;
+      if (searchParams.get("anglicize")) anglicize = searchParams.get("anglicize") !== "false";
+      if (searchParams.get("phonemePrefix")) phonemePrefix = searchParams.get("phonemePrefix")!;
+      if (searchParams.get("stripStress")) stripStress = searchParams.get("stripStress") === "true";
+      if (searchParams.get("prosody")) prosody = searchParams.get("prosody")!;
     }
 
     if (!text) {
@@ -235,7 +247,7 @@ async function handleTts(request: NextRequest) {
       "onoma:tts:" +
       crypto
         .createHash("sha1")
-        .update(`${engine}|${text}|${ipa}|${voice}|${speed}|${model}`)
+        .update(`${engine}|${text}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`)
         .digest("hex");
 
     // Only skip cache if we are testing overrides explicitly
@@ -281,7 +293,7 @@ async function handleTts(request: NextRequest) {
         "onoma:tts:segment:" +
         crypto
           .createHash("sha1")
-          .update(`${engine}|${sentence}|${ipa}|${voice}|${speed}|${model}`)
+          .update(`${engine}|${sentence}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`)
           .digest("hex");
 
       let sentenceBuf: Buffer | null = null;
@@ -301,7 +313,26 @@ async function handleTts(request: NextRequest) {
       // 2. Synthesize segment if cache miss
       if (!sentenceBuf) {
         if (engine === "kokoro-fastapi" && ipa && normalizedFastApiUrl) {
-          const { phonemes } = ipaToKokoroPhonemes(anglicizeForSpeech(ipa));
+          let processedIpa = ipa;
+          if (anglicize) {
+            processedIpa = anglicizeForSpeech(processedIpa);
+          }
+          if (stripStress) {
+            processedIpa = processedIpa.replace(/[ˈˌ]/g, "");
+          }
+          let { phonemes } = ipaToKokoroPhonemes(processedIpa);
+          
+          // Apply prosody inflection to phonemes
+          if (phonemes) {
+            if (prosody === "exclamatory") phonemes += "!";
+            else if (prosody === "inquisitive") phonemes += "?";
+            else if (prosody === "mysterious") phonemes += "...";
+          }
+
+          if (phonemePrefix && phonemes) {
+            phonemes = phonemePrefix + phonemes;
+          }
+
           if (phonemes) {
             try {
               const fastApiBase = normalizedFastApiUrl.replace(/\/$/, "");
@@ -340,7 +371,12 @@ async function handleTts(request: NextRequest) {
             engine === "kokoro-fastapi"
               ? `${cleanBaseUrl}/v1/audio/speech`
               : `${cleanBaseUrl}/api/v1/audio/speech`;
-          const input = ipaToSpokenText(ipa) || sentence;
+          
+          let input = ipaToSpokenText(ipa) || sentence;
+          if (prosody === "exclamatory") input += "!";
+          else if (prosody === "inquisitive") input += "?";
+          else if (prosody === "mysterious") input += "...";
+
           const reqBody = { model, voice, input, response_format: "mp3", speed };
 
           const response = await fetch(ttsUrl, {

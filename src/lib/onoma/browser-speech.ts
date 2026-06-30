@@ -33,7 +33,13 @@ export function speakBrowserNative(
     try {
       window.speechSynthesis.cancel();
 
-      const phoneticSpelling = ipaToSpeechSpelling(ipa) || name;
+      const personalProsody =
+        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-prosody") || "neutral" : "neutral";
+      let phoneticSpelling = ipaToSpeechSpelling(ipa) || name;
+      if (personalProsody === "exclamatory") phoneticSpelling += "!";
+      else if (personalProsody === "inquisitive") phoneticSpelling += "?";
+      else if (personalProsody === "mysterious") phoneticSpelling += "...";
+
       const utterance = new SpeechSynthesisUtterance(phoneticSpelling);
 
       // Determine voice lang from naming culture
@@ -61,7 +67,16 @@ export function speakBrowserNative(
       const personalSpeed =
         typeof window !== "undefined" ? localStorage.getItem("onoma-personal-speed") : null;
       utterance.rate = personalSpeed ? Number(personalSpeed) : 0.82; // slightly slower for clean syllable articulation
-      utterance.pitch = 1.05;
+
+      const personalPitch =
+        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-pitch") : null;
+      utterance.pitch = personalPitch ? Number(personalPitch) : 1.05;
+
+      const personalVolume =
+        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-volume") : null;
+      if (personalVolume) {
+        utterance.volume = Number(personalVolume);
+      }
 
       utterance.onend = () => resolve();
       utterance.onerror = (e) => reject(new Error(`SpeechSynthesis error: ${e.error}`));
@@ -92,7 +107,10 @@ export async function speakName(opts: {
 }): Promise<void> {
   const { name, ipa, culture, kokoroEnabled, voice, defaultVoice, forceDefaultVoice } = opts;
 
-  if (kokoroEnabled) {
+  const forceNative = typeof window !== "undefined" && localStorage.getItem("onoma-personal-force-native") === "true";
+  const useKokoro = kokoroEnabled && !forceNative;
+
+  if (useKokoro) {
     try {
       const params = new URLSearchParams({ text: name, ipa });
       if (culture) params.set("culture", culture);
@@ -100,14 +118,66 @@ export async function speakName(opts: {
       // Read client personal overrides from localStorage
       let personalVoice = "";
       let personalSpeed = "";
+      let personalModel = "";
+      let personalVolume = "";
+      let personalVoiceMap = "";
+      let personalAnglicize = "";
+      let personalPhonemePrefix = "";
+      let personalStripStress = "";
+      let personalProsody = "";
+      let voiceBlendActive = "";
+      let voiceBlendPrimary = "";
+      let voiceBlendSecondary = "";
+
       if (typeof window !== "undefined") {
         personalVoice = localStorage.getItem("onoma-personal-voice") || "";
         personalSpeed = localStorage.getItem("onoma-personal-speed") || "";
+        personalModel = localStorage.getItem("onoma-personal-model") || "";
+        personalVolume = localStorage.getItem("onoma-personal-volume") || "";
+        personalVoiceMap = localStorage.getItem("onoma-personal-voice-map") || "";
+        personalAnglicize = localStorage.getItem("onoma-personal-anglicize") || "";
+        personalPhonemePrefix = localStorage.getItem("onoma-personal-phoneme-prefix") || "";
+        personalStripStress = localStorage.getItem("onoma-personal-strip-stress") || "";
+        personalProsody = localStorage.getItem("onoma-personal-prosody") || "";
+        voiceBlendActive = localStorage.getItem("onoma-personal-voice-blend-active") || "";
+        voiceBlendPrimary = localStorage.getItem("onoma-personal-voice-blend-primary") || "";
+        voiceBlendSecondary = localStorage.getItem("onoma-personal-voice-blend-secondary") || "";
       }
 
-      const chosen = forceDefaultVoice ? defaultVoice : voice || personalVoice || undefined;
+      // Determine the resolved default/fallback voice for the user
+      let resolvedUserDefaultVoice = personalVoice;
+      if (voiceBlendActive === "true" && voiceBlendPrimary && voiceBlendSecondary) {
+        resolvedUserDefaultVoice = `${voiceBlendPrimary}+${voiceBlendSecondary}`;
+      }
+
+      // Resolve the actual chosen voice
+      let chosen = "";
+      if (forceDefaultVoice) {
+        chosen = resolvedUserDefaultVoice || defaultVoice || "";
+      } else if (voice) {
+        chosen = voice;
+      } else {
+        // Check per-culture mappings override first
+        let cultureMappedVoice = "";
+        if (culture) {
+          try {
+            const cultureMap = JSON.parse(personalVoiceMap || "{}");
+            const primaryCulture = culture.split("+")[0].toLowerCase().trim();
+            if (cultureMap[primaryCulture]) {
+              cultureMappedVoice = cultureMap[primaryCulture];
+            }
+          } catch {}
+        }
+        chosen = cultureMappedVoice || resolvedUserDefaultVoice || "";
+      }
+
       if (chosen) params.set("voice", chosen); // explicit/personal voice -> server skips culture map
       if (personalSpeed) params.set("speed", personalSpeed); // personal speed override
+      if (personalModel) params.set("model", personalModel); // personal model override
+      if (personalAnglicize === "false") params.set("anglicize", "false");
+      if (personalPhonemePrefix) params.set("phonemePrefix", personalPhonemePrefix);
+      if (personalStripStress === "true") params.set("stripStress", "true");
+      if (personalProsody && personalProsody !== "neutral") params.set("prosody", personalProsody);
 
       const res = await fetch(`/api/onoma/tts?${params.toString()}`);
       if (!res.ok) {
@@ -117,6 +187,7 @@ export async function speakName(opts: {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      if (personalVolume) audio.volume = Number(personalVolume);
       audio.onended = () => URL.revokeObjectURL(url);
       await audio.play();
       return;

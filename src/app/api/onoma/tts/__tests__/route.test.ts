@@ -312,7 +312,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
       "http://fastapi-service:8880/dev/generate_from_phonemes",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ phonemes: "ɪmˈpɛɾia", voice: "af_heart" }),
+        body: JSON.stringify({ phonemes: "ɪmˈpɛɾiə", voice: "af_heart" }),
       })
     );
   });
