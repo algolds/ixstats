@@ -18,6 +18,8 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (exchangeService.spend as any).mockResolvedValue({ success: true, newBalance: 1000 });
+    (exchangeService.earn as any).mockResolvedValue({ success: true, newBalance: 1000 });
 
     mockPrisma = {
       $transaction: jest.fn((cb: any) => cb(mockPrisma)),
@@ -204,6 +206,28 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
         where: { id: "team_123" },
         data: { ticketPrice: 25 },
       });
+    });
+
+    it("throws TRPCError when exchangeService.spend returns failure on claimTeam", async () => {
+      (exchangeService.spend as any).mockResolvedValue({ success: false, message: "Insufficient Sovereigns" });
+      mockPrisma.sportTeam.findUnique.mockResolvedValue({
+        id: "team_123",
+        ownerUserId: null,
+      });
+      mockPrisma.vaultTransaction.findMany.mockResolvedValue([
+        { metadata: { itemId: "upgrade_myclub_license" } },
+      ]);
+
+      await expect(
+        caller.claimTeam({
+          teamId: "team_123",
+        })
+      ).rejects.toThrow(
+        expect.objectContaining({
+          code: "BAD_REQUEST",
+          message: "Insufficient Sovereigns",
+        })
+      );
     });
   });
 
@@ -461,10 +485,13 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
           ticketPrice: 30,
         },
       ]);
-      mockPrisma.sportSeason.findFirst = jest.fn().mockResolvedValue({
-        id: "season_1",
-        seasonNumber: 1,
-      });
+      mockPrisma.sportSeason.findMany = jest.fn().mockResolvedValue([
+        {
+          id: "season_1",
+          leagueId: "league_1",
+          seasonNumber: 1,
+        },
+      ]);
       mockPrisma.sportStanding.findMany.mockResolvedValue([
         {
           id: "standing_2",
@@ -487,7 +514,12 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
           rank: 2,
         },
       ]);
-      mockPrisma.sportSeason.count = jest.fn().mockResolvedValue(3);
+      mockPrisma.sportSeason.groupBy = jest.fn().mockResolvedValue([
+        {
+          championTeamId: "team_1",
+          _count: { championTeamId: 3 },
+        },
+      ]);
 
       const result = await caller.getMyClubs();
 
@@ -496,12 +528,12 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
           where: { ownerUserId: "test-manager-id" },
         })
       );
-      expect(mockPrisma.sportSeason.findFirst).toHaveBeenCalledWith({
-        where: { leagueId: "league_1", status: "in_progress" },
-        select: { id: true, seasonNumber: true },
+      expect(mockPrisma.sportSeason.findMany).toHaveBeenCalledWith({
+        where: { leagueId: { in: ["league_1"] }, status: "in_progress" },
+        select: { id: true, leagueId: true, seasonNumber: true },
       });
       expect(mockPrisma.sportStanding.findMany).toHaveBeenCalledWith({
-        where: { seasonId: "season_1" },
+        where: { seasonId: { in: ["season_1"] } },
         orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
         select: {
           teamId: true,
@@ -514,8 +546,10 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
           seasonId: true,
         },
       });
-      expect(mockPrisma.sportSeason.count).toHaveBeenCalledWith({
-        where: { championTeamId: "team_1", status: "completed" },
+      expect(mockPrisma.sportSeason.groupBy).toHaveBeenCalledWith({
+        by: ["championTeamId"],
+        where: { championTeamId: { in: ["team_1"] }, status: "completed" },
+        _count: { championTeamId: true },
       });
 
       expect(result).toHaveLength(1);
@@ -537,6 +571,93 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
           }),
         })
       );
+    });
+  });
+
+  describe("Phase 5: Emotional Layer (Morale & Rivalries)", () => {
+    it("adjusts home advantage on rivalry and updates player morale in simulateMatchDay", async () => {
+      mockPrisma.sportSeason.findUnique.mockResolvedValue({
+        id: "season_123",
+        activeStage: 1,
+        league: {
+          sportPreset: "soccer",
+          archetype: "league",
+        },
+      });
+
+      mockPrisma.sportMatch.findMany.mockResolvedValue([
+        {
+          id: "match_123",
+          homeTeamId: "team_home",
+          awayTeamId: "team_away",
+          homeTeam: {
+            id: "team_home",
+            name: "Home FC",
+            players: [
+              {
+                id: "p_home_1",
+                firstName: "Home",
+                lastName: "One",
+                position: "FW",
+                ratings: { overall: 60 },
+              },
+            ],
+            coaches: [],
+            tacticalIntent: "neutral",
+            lineup: {},
+          },
+          awayTeam: {
+            id: "team_away",
+            name: "Away FC",
+            players: [
+              {
+                id: "p_away_1",
+                firstName: "Away",
+                lastName: "One",
+                position: "FW",
+                ratings: { overall: 60 },
+              },
+            ],
+            coaches: [],
+            tacticalIntent: "neutral",
+            lineup: {},
+          },
+        },
+      ]);
+
+      mockPrisma.sportRivalry = {
+        findFirst: jest.fn().mockResolvedValue({ intensity: 85 }),
+      };
+      mockPrisma.sportPlayer.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+
+      mockPrisma.sportMatch.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      mockPrisma.sportMatch.findUnique = jest.fn().mockResolvedValue({ matchStats: {} });
+      mockPrisma.sportMatchStat = {
+        create: jest.fn().mockResolvedValue({}),
+      };
+      mockPrisma.storytellerEffect = {
+        findMany: jest.fn().mockResolvedValue([]),
+      };
+      mockPrisma.sportTeamSeason.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      mockPrisma.sportStanding.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+
+      await caller.simulateMatchDay({
+        seasonId: "season_123",
+        matchDay: 1,
+      });
+
+      expect(mockPrisma.sportRivalry.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            OR: [
+              { team1Id: "team_home", team2Id: "team_away" },
+              { team1Id: "team_away", team2Id: "team_home" },
+            ],
+          },
+        })
+      );
+
+      expect(mockPrisma.sportPlayer.updateMany).toHaveBeenCalled();
     });
   });
 });

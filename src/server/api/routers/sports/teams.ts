@@ -179,13 +179,19 @@ export const sportsTeamsRouter = createTRPCRouter({
           }
         }
 
-        await exchangeService.spend(
+        const spend = await exchangeService.spend(
           ctx.user.id,
           50,
           "CHARTER_FEE",
           `TEAM_CLAIM:${input.teamId}`,
           ctx.db as any
         );
+        if (!spend.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: spend.message ?? "Insufficient balance to claim team",
+          });
+        }
 
         return ctx.db.sportTeam.update({
           where: { id: input.teamId },
@@ -285,13 +291,19 @@ export const sportsTeamsRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
-        await exchangeService.spend(
+        const spend = await exchangeService.spend(
           ctx.user.id,
           25,
           "TRAINING_FEE",
           `PLAYER:${input.playerId}`,
           ctx.db as any
         );
+        if (!spend.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: spend.message ?? "Insufficient balance to train player",
+          });
+        }
 
         const ratings = (player.ratings as Record<string, number>) ?? {};
         const current = ratings[input.attributeFocus] ?? 50;
@@ -318,21 +330,28 @@ export const sportsTeamsRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
-        await exchangeService.spend(
+        const spend = await exchangeService.spend(
           ctx.user.id,
           100,
           "TEAM_TRAINING",
           `TEAM:${input.teamId}`,
           ctx.db as any
         );
+        if (!spend.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: spend.message ?? "Insufficient balance to train team",
+          });
+        }
 
         const players = await ctx.db.sportPlayer.findMany({
           where: { teamId: input.teamId, isActive: true },
         });
-        for (const player of players) {
+
+        const updatePromises = players.map(async (player) => {
           const ratings = (player.ratings as Record<string, number>) ?? {};
           const keys = Object.keys(ratings).filter((k) => k !== "overall");
-          if (keys.length === 0) continue;
+          if (keys.length === 0) return;
           const attr = keys[Math.floor(Math.random() * keys.length)];
           const gain = Math.random() < 0.3 ? 1 : 0;
           if (gain > 0) {
@@ -341,7 +360,9 @@ export const sportsTeamsRouter = createTRPCRouter({
               data: { ratings: { ...ratings, [attr]: Math.min(99, (ratings[attr] ?? 50) + gain) } },
             });
           }
-        }
+        });
+        await Promise.all(updatePromises);
+
         return { trained: players.length };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -530,56 +551,84 @@ export const sportsTeamsRouter = createTRPCRouter({
         orderBy: { name: "asc" },
       });
 
-      const teamsWithDetails = await Promise.all(
-        teams.map(async (t) => {
-          const activeSeason = await ctx.db.sportSeason.findFirst({
-            where: { leagueId: t.leagueId, status: "in_progress" },
-            select: { id: true, seasonNumber: true },
-          });
+      if (teams.length === 0) return [];
 
-          let currentStandings = null;
-          if (activeSeason) {
-            const allStandings = await ctx.db.sportStanding.findMany({
-              where: { seasonId: activeSeason.id },
-              orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
-              select: {
-                teamId: true,
-                wins: true,
-                losses: true,
-                draws: true,
-                points: true,
-                rank: true,
-                id: true,
-                seasonId: true,
-              },
-            });
+      const leagueIds = Array.from(new Set(teams.map((t) => t.leagueId)));
+      const teamIds = teams.map((t) => t.id);
 
-            const index = allStandings.findIndex((s) => s.teamId === t.id);
-            if (index !== -1) {
-              const standing = allStandings[index]!;
-              currentStandings = {
-                ...standing,
-                position: index + 1,
-                rank: standing.rank ?? index + 1,
-              };
-            }
-          }
+      // Batch query active seasons
+      const activeSeasons = await ctx.db.sportSeason.findMany({
+        where: { leagueId: { in: leagueIds }, status: "in_progress" },
+        select: { id: true, leagueId: true, seasonNumber: true },
+      });
+      const activeSeasonMap = new Map(activeSeasons.map((s) => [s.leagueId, s]));
 
-          const championships = await ctx.db.sportSeason.count({
-            where: { championTeamId: t.id, status: "completed" },
-          });
-
-          return {
-            ...t,
-            activeSeason,
-            currentStandings,
-            championships,
-          };
-        })
+      // Batch query championship counts
+      const champCounts = await ctx.db.sportSeason.groupBy({
+        by: ["championTeamId"],
+        where: { championTeamId: { in: teamIds }, status: "completed" },
+        _count: { championTeamId: true },
+      });
+      const champCountMap = new Map(
+        champCounts.map((c) => [c.championTeamId!, c._count.championTeamId])
       );
 
-      return teamsWithDetails;
-    } catch (_error) {
+      // Fetch standings for all active seasons of interest
+      const activeSeasonIds = activeSeasons.map((s) => s.id);
+      const standings = activeSeasonIds.length > 0
+        ? await ctx.db.sportStanding.findMany({
+            where: { seasonId: { in: activeSeasonIds } },
+            orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
+            select: {
+              teamId: true,
+              wins: true,
+              losses: true,
+              draws: true,
+              points: true,
+              rank: true,
+              id: true,
+              seasonId: true,
+            },
+          })
+        : [];
+
+      // Group standings by seasonId to calculate rank/position
+      const standingsBySeason = new Map<string, typeof standings>();
+      for (const s of standings) {
+        const list = standingsBySeason.get(s.seasonId) ?? [];
+        list.push(s);
+        standingsBySeason.set(s.seasonId, list);
+      }
+
+      return teams.map((t) => {
+        const activeSeason = activeSeasonMap.get(t.leagueId) ?? null;
+        let currentStandings = null;
+
+        if (activeSeason) {
+          const seasonStandings = standingsBySeason.get(activeSeason.id) ?? [];
+          const index = seasonStandings.findIndex((s) => s.teamId === t.id);
+          if (index !== -1) {
+            const standing = seasonStandings[index]!;
+            currentStandings = {
+              ...standing,
+              position: index + 1,
+              rank: standing.rank ?? index + 1,
+            };
+          }
+        }
+
+        const championships = champCountMap.get(t.id) ?? 0;
+
+        return {
+          ...t,
+          activeSeason: activeSeason
+            ? { id: activeSeason.id, seasonNumber: activeSeason.seasonNumber }
+            : null,
+          currentStandings,
+          championships,
+        };
+      });
+    } catch (error) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch my clubs",

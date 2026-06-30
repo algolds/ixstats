@@ -225,6 +225,17 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                     effectsMap
                   );
 
+                  const rivalry = await (ctx.db as any).sportRivalry.findFirst({
+                    where: {
+                      OR: [
+                        { team1Id: match.homeTeamId, team2Id: match.awayTeamId },
+                        { team1Id: match.awayTeamId, team2Id: match.homeTeamId },
+                      ],
+                    },
+                  });
+                  const rivalryIntensity = rivalry?.intensity ?? 0;
+                  const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
+
                   const result = resolveMatch({
                     sport: currentSeason.league.sportPreset,
                     homeTeam: homeRatings,
@@ -235,6 +246,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                     awayTeamModifiers,
                     homeRoster: match.homeTeam.players as any,
                     awayRoster: match.awayTeam.players as any,
+                    context: { homeAdvantage },
                   });
 
                   const resRec = result as any;
@@ -352,6 +364,40 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                       },
                     });
                   }
+
+                  // Update player morale
+                  const homePlayerIds = (match.homeTeam.players as any[]).map((p) => p.id);
+                  const awayPlayerIds = (match.awayTeam.players as any[]).map((p) => p.id);
+
+                  if (status === "home_win") {
+                    await (ctx.db as any).sportPlayer.updateMany({
+                      where: { id: { in: homePlayerIds } },
+                      data: { morale: { increment: 5 } },
+                    });
+                    await (ctx.db as any).sportPlayer.updateMany({
+                      where: { id: { in: awayPlayerIds } },
+                      data: { morale: { decrement: 5 } },
+                    });
+                  } else if (status === "away_win") {
+                    await (ctx.db as any).sportPlayer.updateMany({
+                      where: { id: { in: awayPlayerIds } },
+                      data: { morale: { increment: 5 } },
+                    });
+                    await (ctx.db as any).sportPlayer.updateMany({
+                      where: { id: { in: homePlayerIds } },
+                      data: { morale: { decrement: 5 } },
+                    });
+                  }
+
+                  // Cap morale at [0, 100]
+                  await (ctx.db as any).sportPlayer.updateMany({
+                    where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { gt: 100 } },
+                    data: { morale: 100 },
+                  });
+                  await (ctx.db as any).sportPlayer.updateMany({
+                    where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { lt: 0 } },
+                    data: { morale: 0 },
+                  });
                 }
               }
             }

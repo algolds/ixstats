@@ -116,6 +116,17 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           const homeTeamModifiers = await getTeamModifiers(match.homeTeam, ctx.db, effectsMap);
           const awayTeamModifiers = await getTeamModifiers(match.awayTeam, ctx.db, effectsMap);
 
+          const rivalry = await (ctx.db as any).sportRivalry.findFirst({
+            where: {
+              OR: [
+                { team1Id: match.homeTeamId, team2Id: match.awayTeamId },
+                { team1Id: match.awayTeamId, team2Id: match.homeTeamId },
+              ],
+            },
+          });
+          const rivalryIntensity = rivalry?.intensity ?? 0;
+          const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
+
           const result = resolveMatch({
             sport: season.league.sportPreset,
             homeTeam: homeRatings,
@@ -130,6 +141,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
             awayTacticalIntent: match.awayTeam.tacticalIntent,
             homeLineup: match.homeTeam.lineup,
             awayLineup: match.awayTeam.lineup,
+            context: { homeAdvantage },
           });
 
           const resRec = result as any;
@@ -180,7 +192,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
 
           void (async () => {
             try {
-              const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
+              const { narrateEvents, generateAudioBroadcast } = await import("~/lib/sports/commentary/narrator");
               const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
               const dbConfig = await getGlobalLLMConfig(ctx.db);
               const commentary = await narrateEvents(result.trace as any[], {
@@ -188,6 +200,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
                 config: dbConfig,
               });
               if (commentary && commentary.length > 0) {
+                const broadcastAudio = await generateAudioBroadcast(commentary, dbConfig);
                 const latestMatch = await ctx.db.sportMatch.findUnique({
                   where: { id: match.id },
                   select: { matchStats: true },
@@ -199,6 +212,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
                     matchStats: {
                       ...existingStats,
                       commentary,
+                      ...(broadcastAudio && { broadcastAudio }),
                     } as any,
                   },
                 });
@@ -276,6 +290,40 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
               },
             });
           }
+
+          // Update player morale
+          const homePlayerIds = (match.homeTeam.players as any[]).map((p) => p.id);
+          const awayPlayerIds = (match.awayTeam.players as any[]).map((p) => p.id);
+
+          if (status === "home_win") {
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: homePlayerIds } },
+              data: { morale: { increment: 5 } },
+            });
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: awayPlayerIds } },
+              data: { morale: { decrement: 5 } },
+            });
+          } else if (status === "away_win") {
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: awayPlayerIds } },
+              data: { morale: { increment: 5 } },
+            });
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: homePlayerIds } },
+              data: { morale: { decrement: 5 } },
+            });
+          }
+
+          // Cap morale at [0, 100]
+          await (ctx.db as any).sportPlayer.updateMany({
+            where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { gt: 100 } },
+            data: { morale: 100 },
+          });
+          await (ctx.db as any).sportPlayer.updateMany({
+            where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { lt: 0 } },
+            data: { morale: 0 },
+          });
 
           // Create match stats for key player performances
           let playerStats = resRec.playerStats as Array<Record<string, unknown>> | undefined;
@@ -490,6 +538,17 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           const homeTeamModifiers = await getTeamModifiers(fighter1Team, ctx.db, effectsMap);
           const awayTeamModifiers = await getTeamModifiers(fighter2Team, ctx.db, effectsMap);
 
+          const rivalry = await (ctx.db as any).sportRivalry.findFirst({
+            where: {
+              OR: [
+                { team1Id: bm.fighter1Id, team2Id: bm.fighter2Id },
+                { team1Id: bm.fighter2Id, team2Id: bm.fighter1Id },
+              ],
+            },
+          });
+          const rivalryIntensity = rivalry?.intensity ?? 0;
+          const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
+
           const result = resolveMatch({
             sport: season.league.sportPreset,
             homeTeam: f1Ratings,
@@ -504,6 +563,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
             awayTacticalIntent: fighter2Team.tacticalIntent,
             homeLineup: fighter1Team.lineup,
             awayLineup: fighter2Team.lineup,
+            context: { homeAdvantage },
           });
 
           const resRec = result as any;
@@ -511,7 +571,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           const f2Score = (resRec.awayScore as number) ?? 0;
           const winnerId = f1Score > f2Score ? bm.fighter1Id : bm.fighter2Id;
 
-          const claimedBracket = await (ctx.db as any).sportBracket.updateMany({
+           const claimedBracket = await (ctx.db as any).sportBracket.updateMany({
             where: { id: bm.id, status: "scheduled" },
             data: {
               winnerId,
@@ -522,31 +582,67 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           });
           if (claimedBracket.count === 0) continue; // already simulated by another call
 
+          // Update player morale for bracket matches
+          const f1PlayerIds = (fighter1Team.players as any[]).map((p) => p.id);
+          const f2PlayerIds = (fighter2Team.players as any[]).map((p) => p.id);
+
+          if (f1Score > f2Score) {
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: f1PlayerIds } },
+              data: { morale: { increment: 5 } },
+            });
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: f2PlayerIds } },
+              data: { morale: { decrement: 5 } },
+            });
+          } else if (f2Score > f1Score) {
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: f2PlayerIds } },
+              data: { morale: { increment: 5 } },
+            });
+            await (ctx.db as any).sportPlayer.updateMany({
+              where: { id: { in: f1PlayerIds } },
+              data: { morale: { decrement: 5 } },
+            });
+          }
+
+          // Cap morale at [0, 100]
+          await (ctx.db as any).sportPlayer.updateMany({
+            where: { id: { in: [...f1PlayerIds, ...f2PlayerIds] }, morale: { gt: 100 } },
+            data: { morale: 100 },
+          });
+          await (ctx.db as any).sportPlayer.updateMany({
+            where: { id: { in: [...f1PlayerIds, ...f2PlayerIds] }, morale: { lt: 0 } },
+            data: { morale: 0 },
+          });
+
           void (async () => {
             try {
-              const { narrateEvents } = await import("~/lib/sports/commentary/narrator");
-              const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
-              const dbConfig = await getGlobalLLMConfig(ctx.db);
-              const commentary = await narrateEvents(result.trace as any[], {
-                sport: season.league.sportPreset,
-                config: dbConfig,
-              });
-              if (commentary && commentary.length > 0) {
-                const latestBracket = await (ctx.db as any).sportBracket.findUnique({
-                  where: { id: bm.id },
-                  select: { result: true },
-                });
-                const existingResult = (latestBracket?.result as any) || {};
-                await (ctx.db as any).sportBracket.update({
-                  where: { id: bm.id },
-                  data: {
-                    result: {
-                      ...existingResult,
-                      commentary,
-                    } as any,
-                  },
-                });
-              }
+               const { narrateEvents, generateAudioBroadcast } = await import("~/lib/sports/commentary/narrator");
+               const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
+               const dbConfig = await getGlobalLLMConfig(ctx.db);
+               const commentary = await narrateEvents(result.trace as any[], {
+                 sport: season.league.sportPreset,
+                 config: dbConfig,
+               });
+               if (commentary && commentary.length > 0) {
+                 const broadcastAudio = await generateAudioBroadcast(commentary, dbConfig);
+                 const latestBracket = await (ctx.db as any).sportBracket.findUnique({
+                   where: { id: bm.id },
+                   select: { result: true },
+                 });
+                 const existingResult = (latestBracket?.result as any) || {};
+                 await (ctx.db as any).sportBracket.update({
+                   where: { id: bm.id },
+                   data: {
+                     result: {
+                       ...existingResult,
+                       commentary,
+                       ...(broadcastAudio && { broadcastAudio }),
+                     } as any,
+                   },
+                 });
+               }
             } catch (err) {
               console.error("[simulatePlayoffRound] background commentary failed:", err);
             }

@@ -70,6 +70,8 @@ model SportTeam {
   awayMatches     SportMatch[]      @relation("AwayMatches")
   standings       SportStanding[]   @relation("StandingTeam")
   draftPicks      SportDraftPick[]  @relation("DraftTeam")
+  rivalryTeam1    SportRivalry[]    @relation("RivalryTeam1")
+  rivalryTeam2    SportRivalry[]    @relation("RivalryTeam2")
 
   @@index([leagueId])
   @@index([nationId])
@@ -89,6 +91,8 @@ model SportPlayer {
   ratings               Json?
   contractExpiresIxTime Float?
   isActive              Boolean         @default(true)
+  morale                Int             @default(50)
+  traits                Json?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
@@ -386,4 +390,20 @@ model SportTransferBid {
   listing      SportTransferListing @relation("ListingBids", fields: [listingId], references: [id], onDelete: Cascade)
 
   @@map("sport_transfer_bids")
+}
+
+model SportRivalry {
+  id          String      @id @default(cuid())
+  team1Id     String
+  team2Id     String
+  intensity   Int         @default(50) // 0-100 scale
+  history     Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  team1       SportTeam   @relation("RivalryTeam1", fields: [team1Id], references: [id], onDelete: Cascade)
+  team2       SportTeam   @relation("RivalryTeam2", fields: [team2Id], references: [id], onDelete: Cascade)
+  
+  @@unique([team1Id, team2Id])
+  @@map("sport_rivalries")
 }

@@ -39,13 +39,19 @@ export const sportsClubRouter = createTRPCRouter({
         if (team.ownerUserId !== ctx.user.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
         }
-        await exchangeService.spend(
+        const spend = await exchangeService.spend(
           ctx.user.id,
           1000,
           "ADMIN_ADJUSTMENT",
           `STADIUM_UPGRADE:${input.teamId}`,
           ctx.db as any
         );
+        if (!spend.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: spend.message ?? "Insufficient balance to upgrade stadium",
+          });
+        }
         return (ctx.db as any).sportTeam.update({
           where: { id: input.teamId },
           data: { stadiumCapacity: { increment: 1000 } },
@@ -117,13 +123,19 @@ export const sportsClubRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
         }
         // Spend fee
-        await exchangeService.spend(
+        const spend = await exchangeService.spend(
           ctx.user.id,
           100,
           "CHARTER_FEE",
           `SAINT_INVOCATION:${input.teamId}:${input.saintName}`,
           ctx.db as any
         );
+        if (!spend.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: spend.message ?? "Insufficient balance to invoke patron saint",
+          });
+        }
 
         // Update the team's saint
         await ctx.db.sportTeam.update({

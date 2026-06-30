@@ -195,6 +195,25 @@ async function queryLLM(
     reasoning?: boolean;
   }
 ): Promise<string> {
+  // Prevent SSRF and API key exfiltration
+  if (config?.apiUrl) {
+    if (!config?.apiKey) {
+      console.warn("[sports-narrator] Custom API URL provided without matching API key.");
+      return "";
+    }
+    try {
+      const parsedUrl = new URL(config.apiUrl);
+      const allowedDomains = ["integrate.api.nvidia.com", "openrouter.ai", "api.openai.com"];
+      if (!allowedDomains.includes(parsedUrl.hostname)) {
+        console.warn(`[sports-narrator] Custom API URL host not allowed: ${parsedUrl.hostname}`);
+        return "";
+      }
+    } catch {
+      console.warn("[sports-narrator] Invalid custom API URL.");
+      return "";
+    }
+  }
+
   const isEnabled = config?.apiKey ? true : process.env.SPORTS_LLM_COMMENTARY === "true";
   if (!isEnabled) {
     return "";
@@ -433,3 +452,61 @@ Champion: ${championName}`;
 
   return queryLLM(systemPrompt, userPrompt, false, config);
 }
+
+/**
+ * generateAudioBroadcast converts commentary text into speech.
+ * Queries a Kokoro TTS Hugging Face Inference Endpoint or Space.
+ * Falls back to null on failure.
+ */
+export async function generateAudioBroadcast(
+  commentary: string[],
+  config?: {
+    apiKey?: string;
+    apiUrl?: string;
+  }
+): Promise<string | null> {
+  const isEnabled = process.env.SPORTS_TTS_ENABLED === "true" || !!config?.apiUrl;
+  if (!isEnabled || commentary.length === 0) {
+    return null;
+  }
+
+  const apiUrl = config?.apiUrl || process.env.SPORTS_TTS_API_URL;
+  const apiKey = config?.apiKey || process.env.SPORTS_TTS_API_KEY;
+
+  if (!apiUrl) {
+    console.warn("[sports-narrator] SPORTS_TTS_API_URL is not configured.");
+    return null;
+  }
+
+  try {
+    const text = commentary.join(" ... ");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for TTS
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
+      },
+      body: JSON.stringify({
+        inputs: text,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`TTS API response error status ${response.status}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const base64Audio = Buffer.from(arrayBuffer).toString("base64");
+    return `data:audio/wav;base64,${base64Audio}`;
+  } catch (err) {
+    console.error(`[sports-narrator] TTS generation failed:`, err);
+    return null;
+  }
+}
+

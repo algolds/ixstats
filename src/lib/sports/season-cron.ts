@@ -275,12 +275,24 @@ async function advanceLeagueMatchDay(
     const awayRatings = ratingMap.get(m.awayTeamId) ?? defaultRatingVector();
     const matchSeed = hashString(m.id) + targetMatchDay * 7919;
 
+    const rivalry = await (prisma as any).sportRivalry.findFirst({
+      where: {
+        OR: [
+          { team1Id: m.homeTeamId, team2Id: m.awayTeamId },
+          { team1Id: m.awayTeamId, team2Id: m.homeTeamId },
+        ],
+      },
+    });
+    const rivalryIntensity = rivalry?.intensity ?? 0;
+    const homeAdvantage = rivalryIntensity > 70 ? 65 : 55;
+
     const result = resolveMatch({
       sport: season.league.sportPreset,
       homeTeam: homeRatings,
       awayTeam: awayRatings,
       archetype: season.league.archetype,
       seed: matchSeed,
+      context: { homeAdvantage },
     });
 
     const ixNow = IxTime.getCurrentIxTime();
@@ -376,6 +388,48 @@ async function advanceLeagueMatchDay(
         opponentScore: result.homeScore,
       });
     }
+
+    // Update player morale
+    const homePlayers = await prisma.sportPlayer.findMany({
+      where: { teamId: m.homeTeamId, isActive: true },
+      select: { id: true },
+    });
+    const awayPlayers = await prisma.sportPlayer.findMany({
+      where: { teamId: m.awayTeamId, isActive: true },
+      select: { id: true },
+    });
+    const homePlayerIds = homePlayers.map((p) => p.id);
+    const awayPlayerIds = awayPlayers.map((p) => p.id);
+
+    if (result.winner === "home") {
+      await (prisma as any).sportPlayer.updateMany({
+        where: { id: { in: homePlayerIds } },
+        data: { morale: { increment: 5 } },
+      });
+      await (prisma as any).sportPlayer.updateMany({
+        where: { id: { in: awayPlayerIds } },
+        data: { morale: { decrement: 5 } },
+      });
+    } else if (result.winner === "away") {
+      await (prisma as any).sportPlayer.updateMany({
+        where: { id: { in: awayPlayerIds } },
+        data: { morale: { increment: 5 } },
+      });
+      await (prisma as any).sportPlayer.updateMany({
+        where: { id: { in: homePlayerIds } },
+        data: { morale: { decrement: 5 } },
+      });
+    }
+
+    // Cap morale at [0, 100]
+    await (prisma as any).sportPlayer.updateMany({
+      where: { id: { in: homePlayerIds.concat(awayPlayerIds) }, morale: { gt: 100 } },
+      data: { morale: 100 },
+    });
+    await (prisma as any).sportPlayer.updateMany({
+      where: { id: { in: homePlayerIds.concat(awayPlayerIds) }, morale: { lt: 0 } },
+      data: { morale: 0 },
+    });
 
     // Settle any matchday predictions on this match.
     await resolveMatchPredictions(

@@ -74,13 +74,19 @@ export const sportsTransfersRouter = createTRPCRouter({
         if (!bidderTeam || bidderTeam.ownerUserId !== ctx.user.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own the bidding team" });
         }
-        await exchangeService.spend(
+        const spend = await exchangeService.spend(
           ctx.user.id,
           input.amount,
           "SHARE_BUY",
           `TRANSFER_BID_ESCROW:${input.listingId}`,
           ctx.db as any
         );
+        if (!spend.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: spend.message ?? "Insufficient balance to place bid",
+          });
+        }
         return await (ctx.db as any).sportTransferBid.create({
           data: {
             listingId: input.listingId,
@@ -126,61 +132,91 @@ export const sportsTransfersRouter = createTRPCRouter({
           });
         }
         if (input.action === "accept") {
-          // Pay out seller
-          await exchangeService.earn(
-            ctx.user.id,
-            bid.amount,
-            "SHARE_SELL",
-            `TRANSFER_ACCEPT:${bid.id}`,
-            ctx.db as any
-          );
-          // Transfer player ownership
-          await ctx.db.sportPlayer.update({
-            where: { id: bid.listing.playerId },
-            data: { teamId: bid.bidderTeamId },
-          });
-          // Update listing status
-          await (ctx.db as any).sportTransferListing.update({
-            where: { id: bid.listingId },
-            data: { status: "completed" },
-          });
-          // Accept the bid
-          await (ctx.db as any).sportTransferBid.update({
-            where: { id: bid.id },
-            data: { status: "accepted" },
-          });
-          // Reject other bids and refund escrow
-          const otherBids = await (ctx.db as any).sportTransferBid.findMany({
-            where: { listingId: bid.listingId, id: { not: bid.id }, status: "pending" },
-          });
-          for (const other of otherBids) {
-            await exchangeService.earn(
-              other.bidderUserId,
-              other.amount,
-              "ADMIN_ADJUSTMENT",
-              `TRANSFER_BID_REFUND:${other.id}`,
-              ctx.db as any
+          return await ctx.db.$transaction(async (tx) => {
+            // Pay out seller
+            const earnResult = await exchangeService.earn(
+              ctx.user.id,
+              bid.amount,
+              "SHARE_SELL",
+              `TRANSFER_ACCEPT:${bid.id}`,
+              tx as any
             );
-            await (ctx.db as any).sportTransferBid.update({
-              where: { id: other.id },
+            if (!earnResult.success) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: earnResult.message ?? "Failed to pay out seller",
+              });
+            }
+
+            // Transfer player ownership
+            await tx.sportPlayer.update({
+              where: { id: bid.listing.playerId },
+              data: { teamId: bid.bidderTeamId },
+            });
+
+            // Update listing status
+            await (tx as any).sportTransferListing.update({
+              where: { id: bid.listingId },
+              data: { status: "completed" },
+            });
+
+            // Accept the bid
+            await (tx as any).sportTransferBid.update({
+              where: { id: bid.id },
+              data: { status: "accepted" },
+            });
+
+            // Reject other bids and refund escrow
+            const otherBids = await (tx as any).sportTransferBid.findMany({
+              where: { listingId: bid.listingId, id: { not: bid.id }, status: "pending" },
+            });
+
+            for (const other of otherBids) {
+              const refundResult = await exchangeService.earn(
+                other.bidderUserId,
+                other.amount,
+                "ADMIN_ADJUSTMENT",
+                `TRANSFER_BID_REFUND:${other.id}`,
+                tx as any
+              );
+              if (!refundResult.success) {
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: refundResult.message ?? `Failed to refund bid ${other.id}`,
+                });
+              }
+              await (tx as any).sportTransferBid.update({
+                where: { id: other.id },
+                data: { status: "rejected" },
+              });
+            }
+
+            return { success: true, message: "Transfer completed successfully." };
+          });
+        } else {
+          return await ctx.db.$transaction(async (tx) => {
+            // Reject bid and refund bidder
+            await (tx as any).sportTransferBid.update({
+              where: { id: bid.id },
               data: { status: "rejected" },
             });
-          }
-          return { success: true, message: "Transfer completed successfully." };
-        } else {
-          // Reject bid and refund bidder
-          await (ctx.db as any).sportTransferBid.update({
-            where: { id: bid.id },
-            data: { status: "rejected" },
+
+            const refundResult = await exchangeService.earn(
+              bid.bidderUserId,
+              bid.amount,
+              "ADMIN_ADJUSTMENT",
+              `TRANSFER_BID_REFUND:${bid.id}`,
+              tx as any
+            );
+            if (!refundResult.success) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: refundResult.message ?? "Failed to refund bidder",
+              });
+            }
+
+            return { success: true, message: "Bid rejected and bidder refunded." };
           });
-          await exchangeService.earn(
-            bid.bidderUserId,
-            bid.amount,
-            "ADMIN_ADJUSTMENT",
-            `TRANSFER_BID_REFUND:${bid.id}`,
-            ctx.db as any
-          );
-          return { success: true, message: "Bid rejected and bidder refunded." };
         }
       } catch (error) {
         if (error instanceof TRPCError) throw error;

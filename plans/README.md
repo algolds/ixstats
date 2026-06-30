@@ -27,6 +27,13 @@ the live working set stays here.
 | [map-editor-improvements-overview.md](map-editor-improvements-overview.md) | — | ACTIVE (index) |
 | [103-shared-map-instance.md](103-shared-map-instance.md) | High | ACTIVE (planning) |
 
+### MyLeague & MyClub Core Improvements — secure & optimize simulation platform
+| Plan | Priority | Status |
+|------|----------|--------|
+| [064-myleague-myclub-consolidated.md](064-myleague-myclub-consolidated.md) | High | ACTIVE (planning) |
+| [065-myleague-emotional-layer.md](065-myleague-emotional-layer.md) | High | DONE |
+| [066-myclub-ui-refactor.md](066-myclub-ui-refactor.md) | High | ACTIVE (planning) |
+
 ### MyCountry Core Loops
 | Plan | Scope | Status |
 |------|-------|--------|

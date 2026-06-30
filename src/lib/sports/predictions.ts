@@ -63,13 +63,19 @@ export async function resolveMatchPredictions(
 
     for (const s of settlements) {
       if (s.payout > 0) {
-        await exchangeService.earn(
+        const earnResult = await exchangeService.earn(
           userById.get(s.id)!,
           s.payout,
           "PREDICTION_PAYOUT",
           `PREDICTION_${s.status === "void" ? "REFUND" : "WIN"}:${s.id}`,
           prisma
         );
+        if (!earnResult.success) {
+          throw new Error(
+            earnResult.message ??
+              `Failed to credit prediction payout for user ${userById.get(s.id)!}`
+          );
+        }
       }
       await prisma.sportPrediction.update({
         where: { id: s.id },
