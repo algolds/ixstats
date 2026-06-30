@@ -34,7 +34,9 @@ export function speakBrowserNative(
       window.speechSynthesis.cancel();
 
       const personalProsody =
-        typeof window !== "undefined" ? localStorage.getItem("onoma-personal-prosody") || "neutral" : "neutral";
+        typeof window !== "undefined"
+          ? localStorage.getItem("onoma-personal-prosody") || "neutral"
+          : "neutral";
       let phoneticSpelling = ipaToSpeechSpelling(ipa) || name;
       if (personalProsody === "exclamatory") phoneticSpelling += "!";
       else if (personalProsody === "inquisitive") phoneticSpelling += "?";
@@ -107,7 +109,8 @@ export async function speakName(opts: {
 }): Promise<void> {
   const { name, ipa, culture, kokoroEnabled, voice, defaultVoice, forceDefaultVoice } = opts;
 
-  const forceNative = typeof window !== "undefined" && localStorage.getItem("onoma-personal-force-native") === "true";
+  const forceNative =
+    typeof window !== "undefined" && localStorage.getItem("onoma-personal-force-native") === "true";
   const useKokoro = kokoroEnabled && !forceNative;
 
   if (useKokoro) {

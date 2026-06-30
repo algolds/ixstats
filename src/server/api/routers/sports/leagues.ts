@@ -423,9 +423,10 @@ export const sportsLeaguesRouter = createTRPCRouter({
         }
 
         // Only system owners can modify isCanonical
-        const isCanonical = input.isCanonical !== undefined 
-          ? (input.isCanonical && isSystemOwner(ctx.auth.userId))
-          : league.isCanonical;
+        const isCanonical =
+          input.isCanonical !== undefined
+            ? input.isCanonical && isSystemOwner(ctx.auth.userId)
+            : league.isCanonical;
 
         return ctx.db.sportLeague.update({
           where: { id },
@@ -663,7 +664,10 @@ export const sportsLeaguesRouter = createTRPCRouter({
           include: { season: { include: { league: true } } },
         });
         if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
-        if (match.season.league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
+        if (
+          match.season.league.createdByUserId !== ctx.user.id &&
+          !isSystemOwner(ctx.auth.userId)
+        ) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
         }
 
@@ -1139,7 +1143,8 @@ export const sportsLeaguesRouter = createTRPCRouter({
           return { commentary: [] };
         }
 
-        const { narrateEvents, generateAudioBroadcast } = await import("~/lib/sports/commentary/narrator");
+        const { narrateEvents, generateAudioBroadcast } =
+          await import("~/lib/sports/commentary/narrator");
         const commentary = await narrateEvents(events, {
           sport: match.season.league.sportPreset,
           config: input.config,

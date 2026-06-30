@@ -391,7 +391,10 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
 
                   // Cap morale at [0, 100]
                   await (ctx.db as any).sportPlayer.updateMany({
-                    where: { id: { in: [...homePlayerIds, ...awayPlayerIds] }, morale: { gt: 100 } },
+                    where: {
+                      id: { in: [...homePlayerIds, ...awayPlayerIds] },
+                      morale: { gt: 100 },
+                    },
                     data: { morale: 100 },
                   });
                   await (ctx.db as any).sportPlayer.updateMany({

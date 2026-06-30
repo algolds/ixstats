@@ -209,7 +209,10 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
     });
 
     it("throws TRPCError when exchangeService.spend returns failure on claimTeam", async () => {
-      (exchangeService.spend as any).mockResolvedValue({ success: false, message: "Insufficient Sovereigns" });
+      (exchangeService.spend as any).mockResolvedValue({
+        success: false,
+        message: "Insufficient Sovereigns",
+      });
       mockPrisma.sportTeam.findUnique.mockResolvedValue({
         id: "team_123",
         ownerUserId: null,

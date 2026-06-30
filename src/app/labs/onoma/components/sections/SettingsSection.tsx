@@ -200,8 +200,12 @@ export function SettingsSection() {
 
       // Blending
       setVoiceBlendActive(localStorage.getItem("onoma-personal-voice-blend-active") === "true");
-      setVoiceBlendPrimary(localStorage.getItem("onoma-personal-voice-blend-primary") || "af_heart");
-      setVoiceBlendSecondary(localStorage.getItem("onoma-personal-voice-blend-secondary") || "am_michael");
+      setVoiceBlendPrimary(
+        localStorage.getItem("onoma-personal-voice-blend-primary") || "af_heart"
+      );
+      setVoiceBlendSecondary(
+        localStorage.getItem("onoma-personal-voice-blend-secondary") || "am_michael"
+      );
 
       // Culture Voice Map
       try {
@@ -227,30 +231,33 @@ export function SettingsSection() {
     localStorage.setItem("onoma-personal-speed", String(speed));
     setPersonalVoice(voice);
     setPersonalSpeed(speed);
-    
+
     // Set preset to custom since user directly adjusted main controls
     localStorage.setItem("onoma-personal-preset", "custom");
     setSelectedPreset("custom");
-    
+
     notify.success("Voice preferences updated successfully.");
   };
 
   const handleUpdateAdvancedSetting = (key: string, value: any) => {
     if (typeof window === "undefined") return;
     localStorage.setItem(key, String(value));
-    
+
     if (key === "onoma-personal-force-native") setForceNative(value === "true" || value === true);
     if (key === "onoma-personal-volume") setPersonalVolume(Number(value));
     if (key === "onoma-personal-pitch") setPersonalPitch(Number(value));
-    if (key === "onoma-personal-anglicize") setPersonalAnglicize(value === "true" || value === true);
+    if (key === "onoma-personal-anglicize")
+      setPersonalAnglicize(value === "true" || value === true);
     if (key === "onoma-personal-phoneme-prefix") setPersonalPhonemePrefix(value);
-    if (key === "onoma-personal-strip-stress") setPersonalStripStress(value === "true" || value === true);
+    if (key === "onoma-personal-strip-stress")
+      setPersonalStripStress(value === "true" || value === true);
     if (key === "onoma-personal-model") setPersonalModel(value);
     if (key === "onoma-personal-prosody") setPersonalProsody(value);
-    if (key === "onoma-personal-voice-blend-active") setVoiceBlendActive(value === "true" || value === true);
+    if (key === "onoma-personal-voice-blend-active")
+      setVoiceBlendActive(value === "true" || value === true);
     if (key === "onoma-personal-voice-blend-primary") setVoiceBlendPrimary(value);
     if (key === "onoma-personal-voice-blend-secondary") setVoiceBlendSecondary(value);
-    
+
     if (key !== "onoma-personal-preset") {
       localStorage.setItem("onoma-personal-preset", "custom");
       setSelectedPreset("custom");
@@ -296,7 +303,9 @@ export function SettingsSection() {
       setPersonalProsody(preset.prosody);
       setVoiceBlendActive(preset.blendActive);
 
-      notify.success(`Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} species voice preset.`);
+      notify.success(
+        `Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} species voice preset.`
+      );
     }
   };
 
@@ -441,7 +450,9 @@ export function SettingsSection() {
           }
           if (backup.personalForceNative !== undefined) {
             localStorage.setItem("onoma-personal-force-native", String(backup.personalForceNative));
-            setForceNative(backup.personalForceNative === "true" || backup.personalForceNative === true);
+            setForceNative(
+              backup.personalForceNative === "true" || backup.personalForceNative === true
+            );
           }
           if (backup.personalVolume !== undefined) {
             localStorage.setItem("onoma-personal-volume", String(backup.personalVolume));
@@ -453,15 +464,26 @@ export function SettingsSection() {
           }
           if (backup.personalAnglicize !== undefined) {
             localStorage.setItem("onoma-personal-anglicize", String(backup.personalAnglicize));
-            setPersonalAnglicize(backup.personalAnglicize === "true" || backup.personalAnglicize === true || backup.personalAnglicize === "false" ? backup.personalAnglicize !== "false" : true);
+            setPersonalAnglicize(
+              backup.personalAnglicize === "true" ||
+                backup.personalAnglicize === true ||
+                backup.personalAnglicize === "false"
+                ? backup.personalAnglicize !== "false"
+                : true
+            );
           }
           if (backup.personalPhonemePrefix !== undefined) {
-            localStorage.setItem("onoma-personal-phoneme-prefix", String(backup.personalPhonemePrefix));
+            localStorage.setItem(
+              "onoma-personal-phoneme-prefix",
+              String(backup.personalPhonemePrefix)
+            );
             setPersonalPhonemePrefix(backup.personalPhonemePrefix);
           }
           if (backup.personalStripStress !== undefined) {
             localStorage.setItem("onoma-personal-strip-stress", String(backup.personalStripStress));
-            setPersonalStripStress(backup.personalStripStress === "true" || backup.personalStripStress === true);
+            setPersonalStripStress(
+              backup.personalStripStress === "true" || backup.personalStripStress === true
+            );
           }
           if (backup.personalModel !== undefined) {
             localStorage.setItem("onoma-personal-model", String(backup.personalModel));
@@ -472,15 +494,26 @@ export function SettingsSection() {
             setPersonalProsody(backup.personalProsody);
           }
           if (backup.voiceBlendActive !== undefined) {
-            localStorage.setItem("onoma-personal-voice-blend-active", String(backup.voiceBlendActive));
-            setVoiceBlendActive(backup.voiceBlendActive === "true" || backup.voiceBlendActive === true);
+            localStorage.setItem(
+              "onoma-personal-voice-blend-active",
+              String(backup.voiceBlendActive)
+            );
+            setVoiceBlendActive(
+              backup.voiceBlendActive === "true" || backup.voiceBlendActive === true
+            );
           }
           if (backup.voiceBlendPrimary !== undefined) {
-            localStorage.setItem("onoma-personal-voice-blend-primary", String(backup.voiceBlendPrimary));
+            localStorage.setItem(
+              "onoma-personal-voice-blend-primary",
+              String(backup.voiceBlendPrimary)
+            );
             setVoiceBlendPrimary(backup.voiceBlendPrimary);
           }
           if (backup.voiceBlendSecondary !== undefined) {
-            localStorage.setItem("onoma-personal-voice-blend-secondary", String(backup.voiceBlendSecondary));
+            localStorage.setItem(
+              "onoma-personal-voice-blend-secondary",
+              String(backup.voiceBlendSecondary)
+            );
             setVoiceBlendSecondary(backup.voiceBlendSecondary);
           }
           if (backup.personalVoiceMap !== undefined) {
@@ -610,220 +643,285 @@ export function SettingsSection() {
             </div>
 
             {/* Collapsible: Advanced Playback & Inflection Options */}
-            <div className="border-t border-border/20 pt-3">
+            <div className="border-border/20 border-t pt-3">
               <button
                 type="button"
                 onClick={() => setShowAdvancedVoice(!showAdvancedVoice)}
-                className="text-foreground hover:text-[#0091ff] flex w-full items-center justify-between py-1 text-xs font-bold transition-colors"
+                className="text-foreground flex w-full items-center justify-between py-1 text-xs font-bold transition-colors hover:text-[#0091ff]"
               >
                 <span className="flex items-center gap-1.5">
                   <Sliders className="h-3.5 w-3.5 text-[#0091ff]" /> Advanced Playback & Inflection
                 </span>
                 {showAdvancedVoice ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
                 )}
               </button>
 
               {showAdvancedVoice && (
-                <div className="mt-3 space-y-3.5 pl-1 text-[11px] text-muted-foreground">
-                   {/* Preset Selection */}
-                   <div className="space-y-1">
-                     <label className="text-[10px] font-bold uppercase text-foreground">Species Preset</label>
-                     <select
-                       value={selectedPreset}
-                       onChange={(e) => handleApplyPreset(e.target.value)}
-                       className="border-border/60 bg-background w-full rounded-md border px-2 py-1.5 text-[11px] text-foreground focus:outline-none"
-                     >
-                       <option value="custom">Custom (No preset)</option>
-                       <option value="elven">Elven (Soft & Magical)</option>
-                       <option value="dwarven">Dwarven (Deep & Stout)</option>
-                       <option value="orcish">Orcish (Rough & Energetic)</option>
-                       <option value="wraith">Wraith (Whispered & Mysterious)</option>
-                       <option value="celestial">Celestial (Bright & Divine)</option>
-                     </select>
-                   </div>
+                <div className="text-muted-foreground mt-3 space-y-3.5 pl-1 text-[11px]">
+                  {/* Preset Selection */}
+                  <div className="space-y-1">
+                    <label className="text-foreground text-[10px] font-bold uppercase">
+                      Species Preset
+                    </label>
+                    <select
+                      value={selectedPreset}
+                      onChange={(e) => handleApplyPreset(e.target.value)}
+                      className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1.5 text-[11px] focus:outline-none"
+                    >
+                      <option value="custom">Custom (No preset)</option>
+                      <option value="elven">Elven (Soft & Magical)</option>
+                      <option value="dwarven">Dwarven (Deep & Stout)</option>
+                      <option value="orcish">Orcish (Rough & Energetic)</option>
+                      <option value="wraith">Wraith (Whispered & Mysterious)</option>
+                      <option value="celestial">Celestial (Bright & Divine)</option>
+                    </select>
+                  </div>
 
-                   {/* Force Native Bypass */}
-                   <div className="flex items-center justify-between py-1 text-foreground">
-                     <span className="font-semibold text-[10px] uppercase">Force Native Browser TTS</span>
-                     <input
-                       type="checkbox"
-                       checked={forceNative}
-                       onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-force-native", String(e.target.checked))}
-                       className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
-                     />
-                   </div>
+                  {/* Force Native Bypass */}
+                  <div className="text-foreground flex items-center justify-between py-1">
+                    <span className="text-[10px] font-semibold uppercase">
+                      Force Native Browser TTS
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={forceNative}
+                      onChange={(e) =>
+                        handleUpdateAdvancedSetting(
+                          "onoma-personal-force-native",
+                          String(e.target.checked)
+                        )
+                      }
+                      className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                    />
+                  </div>
 
-                   {/* Local Playback Volume */}
-                   <div className="space-y-1">
-                     <div className="flex justify-between">
-                       <span className="font-bold text-[10px] uppercase">Local Playback Volume</span>
-                       <span className="font-mono text-xs font-semibold text-[#0091ff]">{Math.round(personalVolume * 100)}%</span>
-                     </div>
-                     <input
-                       type="range"
-                       min={0}
-                       max={1}
-                       step={0.05}
-                       value={personalVolume}
-                       onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-volume", e.target.value)}
-                       className="w-full cursor-pointer accent-[#0091ff]"
-                     />
-                   </div>
+                  {/* Local Playback Volume */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-[10px] font-bold uppercase">Local Playback Volume</span>
+                      <span className="font-mono text-xs font-semibold text-[#0091ff]">
+                        {Math.round(personalVolume * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={personalVolume}
+                      onChange={(e) =>
+                        handleUpdateAdvancedSetting("onoma-personal-volume", e.target.value)
+                      }
+                      className="w-full cursor-pointer accent-[#0091ff]"
+                    />
+                  </div>
 
-                   {/* Browser Pitch Override */}
-                   <div className="space-y-1">
-                     <div className="flex justify-between">
-                       <span className="font-bold text-[10px] uppercase">Browser Speech Pitch</span>
-                       <span className="font-mono text-xs font-semibold text-[#0091ff]">{personalPitch}x</span>
-                     </div>
-                     <input
-                       type="range"
-                       min={0.5}
-                       max={2.0}
-                       step={0.05}
-                       value={personalPitch}
-                       onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-pitch", e.target.value)}
-                       className="w-full cursor-pointer accent-[#0091ff]"
-                     />
-                   </div>
+                  {/* Browser Pitch Override */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-[10px] font-bold uppercase">Browser Speech Pitch</span>
+                      <span className="font-mono text-xs font-semibold text-[#0091ff]">
+                        {personalPitch}x
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={2.0}
+                      step={0.05}
+                      value={personalPitch}
+                      onChange={(e) =>
+                        handleUpdateAdvancedSetting("onoma-personal-pitch", e.target.value)
+                      }
+                      className="w-full cursor-pointer accent-[#0091ff]"
+                    />
+                  </div>
 
-                   {/* Voice Blending Options */}
-                   <div className="border-t border-border/10 pt-2.5 space-y-2">
-                     <div className="flex items-center justify-between text-foreground">
-                       <span className="font-bold text-[10px] uppercase">Voice Blending</span>
-                       <input
-                         type="checkbox"
-                         checked={voiceBlendActive}
-                         onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-voice-blend-active", String(e.target.checked))}
-                         className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
-                       />
-                     </div>
-                     {voiceBlendActive && (
-                       <div className="grid grid-cols-2 gap-2">
-                         <div className="space-y-1">
-                           <label className="text-[9px] font-semibold">Primary Voice</label>
-                           <select
-                             value={voiceBlendPrimary}
-                             onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-voice-blend-primary", e.target.value)}
-                             className="border-border/60 bg-background w-full rounded border px-2 py-1 text-[11px] text-foreground focus:outline-none"
-                           >
-                             {voiceOptions.map((id) => (
-                               <option key={id} value={id}>{voiceLabel(id)}</option>
-                             ))}
-                           </select>
-                         </div>
-                         <div className="space-y-1">
-                           <label className="text-[9px] font-semibold">Secondary Voice</label>
-                           <select
-                             value={voiceBlendSecondary}
-                             onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-voice-blend-secondary", e.target.value)}
-                             className="border-border/60 bg-background w-full rounded border px-2 py-1 text-[11px] text-foreground focus:outline-none"
-                           >
-                             {voiceOptions.map((id) => (
-                               <option key={id} value={id}>{voiceLabel(id)}</option>
-                             ))}
-                           </select>
-                         </div>
-                       </div>
-                     )}
-                   </div>
+                  {/* Voice Blending Options */}
+                  <div className="border-border/10 space-y-2 border-t pt-2.5">
+                    <div className="text-foreground flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase">Voice Blending</span>
+                      <input
+                        type="checkbox"
+                        checked={voiceBlendActive}
+                        onChange={(e) =>
+                          handleUpdateAdvancedSetting(
+                            "onoma-personal-voice-blend-active",
+                            String(e.target.checked)
+                          )
+                        }
+                        className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                      />
+                    </div>
+                    {voiceBlendActive && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-semibold">Primary Voice</label>
+                          <select
+                            value={voiceBlendPrimary}
+                            onChange={(e) =>
+                              handleUpdateAdvancedSetting(
+                                "onoma-personal-voice-blend-primary",
+                                e.target.value
+                              )
+                            }
+                            className="border-border/60 bg-background text-foreground w-full rounded border px-2 py-1 text-[11px] focus:outline-none"
+                          >
+                            {voiceOptions.map((id) => (
+                              <option key={id} value={id}>
+                                {voiceLabel(id)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-semibold">Secondary Voice</label>
+                          <select
+                            value={voiceBlendSecondary}
+                            onChange={(e) =>
+                              handleUpdateAdvancedSetting(
+                                "onoma-personal-voice-blend-secondary",
+                                e.target.value
+                              )
+                            }
+                            className="border-border/60 bg-background text-foreground w-full rounded border px-2 py-1 text-[11px] focus:outline-none"
+                          >
+                            {voiceOptions.map((id) => (
+                              <option key={id} value={id}>
+                                {voiceLabel(id)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                   {/* Emotional Prosody Inflections */}
-                   <div className="space-y-1 border-t border-border/10 pt-2.5">
-                     <label className="text-[10px] font-bold uppercase text-foreground">Emotional Prosody</label>
-                     <select
-                       value={personalProsody}
-                       onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-prosody", e.target.value)}
-                       className="border-border/60 bg-background w-full rounded-md border px-2 py-1.5 text-[11px] text-foreground focus:outline-none"
-                     >
-                       <option value="neutral">Neutral (Standard)</option>
-                       <option value="exclamatory">Energetic / Exclamatory (!)</option>
-                       <option value="inquisitive">Inquisitive / Questioning (?)</option>
-                       <option value="mysterious">Mysterious / Hesitant (...)</option>
-                     </select>
-                   </div>
+                  {/* Emotional Prosody Inflections */}
+                  <div className="border-border/10 space-y-1 border-t pt-2.5">
+                    <label className="text-foreground text-[10px] font-bold uppercase">
+                      Emotional Prosody
+                    </label>
+                    <select
+                      value={personalProsody}
+                      onChange={(e) =>
+                        handleUpdateAdvancedSetting("onoma-personal-prosody", e.target.value)
+                      }
+                      className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1.5 text-[11px] focus:outline-none"
+                    >
+                      <option value="neutral">Neutral (Standard)</option>
+                      <option value="exclamatory">Energetic / Exclamatory (!)</option>
+                      <option value="inquisitive">Inquisitive / Questioning (?)</option>
+                      <option value="mysterious">Mysterious / Hesitant (...)</option>
+                    </select>
+                  </div>
 
-                   {/* Inflection & Aspiration Tweaks */}
-                   <div className="border-t border-border/10 pt-2.5 space-y-2.5">
-                     <span className="font-bold text-[10px] uppercase text-foreground">Inflection & Phoneme Tweaks</span>
-                     
-                     <div className="flex items-center justify-between text-foreground">
-                       <span className="font-medium">Anglicize Vowels (Soft/English tones)</span>
-                       <input
-                         type="checkbox"
-                         checked={personalAnglicize}
-                         onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-anglicize", String(e.target.checked))}
-                         className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
-                       />
-                     </div>
+                  {/* Inflection & Aspiration Tweaks */}
+                  <div className="border-border/10 space-y-2.5 border-t pt-2.5">
+                    <span className="text-foreground text-[10px] font-bold uppercase">
+                      Inflection & Phoneme Tweaks
+                    </span>
 
-                     <div className="flex items-center justify-between text-foreground">
-                       <span className="font-medium">Strip Stress Marks (Flatter pitch)</span>
-                       <input
-                         type="checkbox"
-                         checked={personalStripStress}
-                         onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-strip-stress", String(e.target.checked))}
-                         className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
-                       />
-                     </div>
+                    <div className="text-foreground flex items-center justify-between">
+                      <span className="font-medium">Anglicize Vowels (Soft/English tones)</span>
+                      <input
+                        type="checkbox"
+                        checked={personalAnglicize}
+                        onChange={(e) =>
+                          handleUpdateAdvancedSetting(
+                            "onoma-personal-anglicize",
+                            String(e.target.checked)
+                          )
+                        }
+                        className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                      />
+                    </div>
 
-                     <div className="space-y-1">
-                       <label className="text-[9px] font-semibold text-foreground">Initial Breath/Aspiration Prefix</label>
-                       <select
-                         value={personalPhonemePrefix}
-                         onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-phoneme-prefix", e.target.value)}
-                         className="border-border/60 bg-background w-full rounded border px-2 py-1 text-[11px] text-foreground focus:outline-none"
-                       >
-                         <option value="">None (Standard start)</option>
-                         <option value="h">Soft H (h) - breathy aspiration</option>
-                         <option value=".">Pause (.) - small initial silence</option>
-                         <option value="ə">Schwa (ə) - neutral vowel start</option>
-                       </select>
-                     </div>
+                    <div className="text-foreground flex items-center justify-between">
+                      <span className="font-medium">Strip Stress Marks (Flatter pitch)</span>
+                      <input
+                        type="checkbox"
+                        checked={personalStripStress}
+                        onChange={(e) =>
+                          handleUpdateAdvancedSetting(
+                            "onoma-personal-strip-stress",
+                            String(e.target.checked)
+                          )
+                        }
+                        className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                      />
+                    </div>
 
-                     <div className="space-y-1">
-                       <label className="text-[9px] font-semibold text-foreground">Custom Model Override</label>
-                       <input
-                         type="text"
-                         placeholder="e.g. model_q8f16"
-                         value={personalModel}
-                         onChange={(e) => handleUpdateAdvancedSetting("onoma-personal-model", e.target.value)}
-                         className="border-border/60 bg-background text-foreground w-full rounded border px-2 py-1 text-[11px] focus:outline-none focus:border-[#0091ff]"
-                       />
-                     </div>
-                   </div>
+                    <div className="space-y-1">
+                      <label className="text-foreground text-[9px] font-semibold">
+                        Initial Breath/Aspiration Prefix
+                      </label>
+                      <select
+                        value={personalPhonemePrefix}
+                        onChange={(e) =>
+                          handleUpdateAdvancedSetting(
+                            "onoma-personal-phoneme-prefix",
+                            e.target.value
+                          )
+                        }
+                        className="border-border/60 bg-background text-foreground w-full rounded border px-2 py-1 text-[11px] focus:outline-none"
+                      >
+                        <option value="">None (Standard start)</option>
+                        <option value="h">Soft H (h) - breathy aspiration</option>
+                        <option value=".">Pause (.) - small initial silence</option>
+                        <option value="ə">Schwa (ə) - neutral vowel start</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-foreground text-[9px] font-semibold">
+                        Custom Model Override
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. model_q8f16"
+                        value={personalModel}
+                        onChange={(e) =>
+                          handleUpdateAdvancedSetting("onoma-personal-model", e.target.value)
+                        }
+                        className="border-border/60 bg-background text-foreground w-full rounded border px-2 py-1 text-[11px] focus:border-[#0091ff] focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Collapsible: Culture-Specific Mappings */}
-            <div className="border-t border-border/20 pt-3">
+            <div className="border-border/20 border-t pt-3">
               <button
                 type="button"
                 onClick={() => setShowCultureMap(!showCultureMap)}
-                className="text-foreground hover:text-[#0091ff] flex w-full items-center justify-between py-1 text-xs font-bold transition-colors"
+                className="text-foreground flex w-full items-center justify-between py-1 text-xs font-bold transition-colors hover:text-[#0091ff]"
               >
                 <span className="flex items-center gap-1.5">
                   <Volume2 className="h-3.5 w-3.5 text-[#0091ff]" /> Culture-Specific Voices
                 </span>
                 {showCultureMap ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
                 )}
               </button>
 
               {showCultureMap && (
-                <div className="mt-3 space-y-2.5 pl-1 max-h-[220px] overflow-y-auto pr-1">
+                <div className="mt-3 max-h-[220px] space-y-2.5 overflow-y-auto pr-1 pl-1">
                   <p className="text-muted-foreground text-[10px]">
                     Override the default voice for specific naming cultures during generation.
                   </p>
                   {CULTURES.map((c) => (
                     <div key={c} className="flex items-center justify-between gap-2 text-[10px]">
-                      <span className="text-muted-foreground font-semibold capitalize truncate">{c}</span>
+                      <span className="text-muted-foreground truncate font-semibold capitalize">
+                        {c}
+                      </span>
                       <select
                         value={personalVoiceMap[c] || ""}
                         onChange={(e) => handleUpdateCultureMap(c, e.target.value)}
@@ -831,7 +929,9 @@ export function SettingsSection() {
                       >
                         <option value="">Inherit Default</option>
                         {voiceOptions.map((vId) => (
-                          <option key={vId} value={vId}>{voiceLabel(vId)}</option>
+                          <option key={vId} value={vId}>
+                            {voiceLabel(vId)}
+                          </option>
                         ))}
                       </select>
                     </div>

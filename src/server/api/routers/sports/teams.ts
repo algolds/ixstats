@@ -575,22 +575,23 @@ export const sportsTeamsRouter = createTRPCRouter({
 
       // Fetch standings for all active seasons of interest
       const activeSeasonIds = activeSeasons.map((s) => s.id);
-      const standings = activeSeasonIds.length > 0
-        ? await ctx.db.sportStanding.findMany({
-            where: { seasonId: { in: activeSeasonIds } },
-            orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
-            select: {
-              teamId: true,
-              wins: true,
-              losses: true,
-              draws: true,
-              points: true,
-              rank: true,
-              id: true,
-              seasonId: true,
-            },
-          })
-        : [];
+      const standings =
+        activeSeasonIds.length > 0
+          ? await ctx.db.sportStanding.findMany({
+              where: { seasonId: { in: activeSeasonIds } },
+              orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
+              select: {
+                teamId: true,
+                wins: true,
+                losses: true,
+                draws: true,
+                points: true,
+                rank: true,
+                id: true,
+                seasonId: true,
+              },
+            })
+          : [];
 
       // Group standings by seasonId to calculate rank/position
       const standingsBySeason = new Map<string, typeof standings>();

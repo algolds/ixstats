@@ -192,7 +192,8 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
 
           void (async () => {
             try {
-              const { narrateEvents, generateAudioBroadcast } = await import("~/lib/sports/commentary/narrator");
+              const { narrateEvents, generateAudioBroadcast } =
+                await import("~/lib/sports/commentary/narrator");
               const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
               const dbConfig = await getGlobalLLMConfig(ctx.db);
               const commentary = await narrateEvents(result.trace as any[], {
@@ -571,7 +572,7 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
           const f2Score = (resRec.awayScore as number) ?? 0;
           const winnerId = f1Score > f2Score ? bm.fighter1Id : bm.fighter2Id;
 
-           const claimedBracket = await (ctx.db as any).sportBracket.updateMany({
+          const claimedBracket = await (ctx.db as any).sportBracket.updateMany({
             where: { id: bm.id, status: "scheduled" },
             data: {
               winnerId,
@@ -618,31 +619,32 @@ export const sportsSeasonsMatchesRouter = createTRPCRouter({
 
           void (async () => {
             try {
-               const { narrateEvents, generateAudioBroadcast } = await import("~/lib/sports/commentary/narrator");
-               const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
-               const dbConfig = await getGlobalLLMConfig(ctx.db);
-               const commentary = await narrateEvents(result.trace as any[], {
-                 sport: season.league.sportPreset,
-                 config: dbConfig,
-               });
-               if (commentary && commentary.length > 0) {
-                 const broadcastAudio = await generateAudioBroadcast(commentary, dbConfig);
-                 const latestBracket = await (ctx.db as any).sportBracket.findUnique({
-                   where: { id: bm.id },
-                   select: { result: true },
-                 });
-                 const existingResult = (latestBracket?.result as any) || {};
-                 await (ctx.db as any).sportBracket.update({
-                   where: { id: bm.id },
-                   data: {
-                     result: {
-                       ...existingResult,
-                       commentary,
-                       ...(broadcastAudio && { broadcastAudio }),
-                     } as any,
-                   },
-                 });
-               }
+              const { narrateEvents, generateAudioBroadcast } =
+                await import("~/lib/sports/commentary/narrator");
+              const { getGlobalLLMConfig } = await import("~/lib/sports/commentary/db-config");
+              const dbConfig = await getGlobalLLMConfig(ctx.db);
+              const commentary = await narrateEvents(result.trace as any[], {
+                sport: season.league.sportPreset,
+                config: dbConfig,
+              });
+              if (commentary && commentary.length > 0) {
+                const broadcastAudio = await generateAudioBroadcast(commentary, dbConfig);
+                const latestBracket = await (ctx.db as any).sportBracket.findUnique({
+                  where: { id: bm.id },
+                  select: { result: true },
+                });
+                const existingResult = (latestBracket?.result as any) || {};
+                await (ctx.db as any).sportBracket.update({
+                  where: { id: bm.id },
+                  data: {
+                    result: {
+                      ...existingResult,
+                      commentary,
+                      ...(broadcastAudio && { broadcastAudio }),
+                    } as any,
+                  },
+                });
+              }
             } catch (err) {
               console.error("[simulatePlayoffRound] background commentary failed:", err);
             }

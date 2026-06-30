@@ -247,7 +247,9 @@ async function handleTts(request: NextRequest) {
       "onoma:tts:" +
       crypto
         .createHash("sha1")
-        .update(`${engine}|${text}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`)
+        .update(
+          `${engine}|${text}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`
+        )
         .digest("hex");
 
     // Only skip cache if we are testing overrides explicitly
@@ -293,7 +295,9 @@ async function handleTts(request: NextRequest) {
         "onoma:tts:segment:" +
         crypto
           .createHash("sha1")
-          .update(`${engine}|${sentence}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`)
+          .update(
+            `${engine}|${sentence}|${ipa}|${voice}|${speed}|${model}|${anglicize}|${phonemePrefix}|${stripStress}|${prosody}`
+          )
           .digest("hex");
 
       let sentenceBuf: Buffer | null = null;
@@ -321,7 +325,7 @@ async function handleTts(request: NextRequest) {
             processedIpa = processedIpa.replace(/[ˈˌ]/g, "");
           }
           let { phonemes } = ipaToKokoroPhonemes(processedIpa);
-          
+
           // Apply prosody inflection to phonemes
           if (phonemes) {
             if (prosody === "exclamatory") phonemes += "!";
@@ -371,7 +375,7 @@ async function handleTts(request: NextRequest) {
             engine === "kokoro-fastapi"
               ? `${cleanBaseUrl}/v1/audio/speech`
               : `${cleanBaseUrl}/api/v1/audio/speech`;
-          
+
           let input = ipaToSpokenText(ipa) || sentence;
           if (prosody === "exclamatory") input += "!";
           else if (prosody === "inquisitive") input += "?";
