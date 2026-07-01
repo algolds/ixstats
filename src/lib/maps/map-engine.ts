@@ -38,7 +38,7 @@ export interface AcquireOpts {
   theme?: MapTheme;
   projectionMode?: ProjectionMode;
   interactive?: boolean;
-  /** Runs ONCE when the role's instance is first created (add controls, projection, etc.). */
+  /** Runs ONCE after the role's instance is created AND its style has loaded (add controls, etc.). */
   onCreate?: (map: any, maplibregl: any) => void;
   /** Runs on every successful acquire, after attach + style ready + resize. */
   onReady?: (map: any) => void;
@@ -119,9 +119,16 @@ function ensureRole(role: MapRole, opts: AcquireOpts): RoleState {
     st!.styleKey = styleKeyOf(theme, proj);
     liveContexts++;
 
-    opts.onCreate?.(map, maplibregl);
-
+    // Wait for the style to load BEFORE onCreate — style-dependent calls (e.g.
+    // setProjection) throw "Style is not done loading" if run any earlier.
     await new Promise<void>((res) => map.once("load", () => res()));
+    // A throwing onCreate must not reject the shared base promise (would blank every
+    // acquire of this role). Log and continue.
+    try {
+      opts.onCreate?.(map, maplibregl);
+    } catch (err) {
+      console.error(`[map-engine] onCreate for role "${role}" threw:`, err);
+    }
     st!.createdMs = typeof performance !== "undefined" ? performance.now() - t0 : 0;
 
     if (isDev && typeof window !== "undefined") {
@@ -217,4 +224,29 @@ export function getMapEngineStats(): MapEngineStats {
       createdMs: st.createdMs,
     })),
   };
+}
+
+/** Tear down every persistent instance (used on HMR dispose to avoid orphaned canvases). */
+export function destroyAllSurfaces() {
+  for (const st of roles.values()) {
+    try {
+      st.map?.remove();
+    } catch {
+      /* ignore */
+    }
+    try {
+      st.holder?.remove();
+    } catch {
+      /* ignore */
+    }
+  }
+  roles.clear();
+  liveContexts = 0;
+  acquireCounter = 0;
+}
+
+// Dev-only: dispose the singleton on hot reload so old parked instances/holders don't
+// orphan and collide with the freshly-evaluated module.
+if (isDev && typeof module !== "undefined" && (module as any).hot) {
+  (module as any).hot.dispose(() => destroyAllSurfaces());
 }

@@ -540,9 +540,6 @@ const EditorMap = memo(
         projectionMode: "mercator",
         interactive: true,
         onCreate: (map, maplibregl) => {
-          if ("setProjection" in map) {
-            (map as any).setProjection({ type: "mercator" });
-          }
           map.addControl(
             new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
             "top-right"
@@ -550,6 +547,7 @@ const EditorMap = memo(
         },
         onReady: (map) => {
           mapRef.current = map;
+          // Style is loaded here (engine resolves ready post style.load), so this is safe.
           if ("setProjection" in map) {
             (map as any).setProjection({ type: "mercator" });
           }
