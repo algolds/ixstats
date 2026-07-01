@@ -34,6 +34,7 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 | [prevent_ts_graph_explosion.md](prevent_ts_graph_explosion.md) | TypeScript graph isolation (modular tsconfigs, cross-router import ban). Resolved in 1.0.6; enforced by `scripts/audit/audit-arch.ts` |
 | [AUTOSAVE_ARCHITECTURE.md](AUTOSAVE_ARCHITECTURE.md) | Autosave system architecture (map editor) |
 | [FRAMEWORK_SPEC.md](FRAMEWORK_SPEC.md) | IxWorld framework specification |
+| [SHARED_MAP_INSTANCE.md](SHARED_MAP_INSTANCE.md) | Shared Map instance architecture, DOM re-parenting, and performance optimizations |
 
 > Root-level [`arch.md`](../arch.md) is the agent-facing condensed version of the TS-graph architecture rules (referenced by `CLAUDE.md`).
 
