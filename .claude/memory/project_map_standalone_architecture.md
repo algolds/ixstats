@@ -1,11 +1,21 @@
 ---
 name: project_map_standalone_architecture
-description: Maps are standalone per-component MapLibre instances; the shared singleton + snapshot approach was ripped out — do not reintroduce
+description: Map instance strategy — per-role persistent Map Engine for world+editor (P1 done); embeds still standalone; the OLD single-canvas SharedMapContext stays dead
 metadata: 
   node_type: memory
   type: project
   originSessionId: 45c4a18a-9ed9-4ef9-a137-1f87d2e9457a
 ---
+
+**UPDATE 2026-07-01 (P0+P1 Map Engine done, supersedes "everything standalone"):**
+`src/lib/maps/map-engine.ts` — module singleton keeping ONE persistent MapLibre instance PER ROLE
+(`world`, `editor`), parked in a hidden holder on unmount (not destroyed) → nav away+back re-attaches a
+warm instance ("loads once"). `IxWorldMap`→`acquireSurface("world")`, `EditorMap`→`acquireSurface("editor")`.
+Differs from the dead SharedMapContext: separate instance per role (no single-canvas contention),
+awaited `ready` promise (no poller), unique-id acquires (StrictMode-safe), style-reset-on-reacquire,
+dev HUD `window.__mapEngine.getStats()`. Embeds + wiki maps STILL standalone (P2 = bounded embed pool,
+not built). Plan: `plans/shared-map-engine-plan.md`. The single-canvas re-parent model stays dead. Below
+is the original rip-out context.
 
 On v2 (2026-07-01) the user said "undo all shared map stuff completely, start from scratch."
 We removed BOTH the shared-map singleton AND the snapshot-preview layer. **Current model: every map

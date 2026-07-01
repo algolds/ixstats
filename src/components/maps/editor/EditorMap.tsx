@@ -27,6 +27,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
+import { acquireSurface } from "~/lib/maps/map-engine";
 
 // Hooks & Sub-components
 import { useMapLayers } from "./hooks/useMapLayers";
@@ -523,7 +524,7 @@ const EditorMap = memo(
       }
     }, [isLoaded, theme]);
 
-    // ── Initialize a standalone MapLibre instance for the editor ──
+    // ── Borrow the persistent "editor" instance (kept warm across navigation) ──
     useEffect(() => {
       if (!containerRef.current) return;
 
@@ -531,45 +532,38 @@ const EditorMap = memo(
         ? [countryCentroid.lng, countryCentroid.lat]
         : MAP_DEFAULTS.center;
 
-      let released = false;
-      let map: MapLibreMap | null = null;
-
-      (async () => {
-        const mod = await import("maplibre-gl");
-        const maplibregl = (
-          "Map" in mod ? mod : (mod as Record<string, unknown>).default
-        ) as typeof mod;
-        if (released || !containerRef.current) return;
-
-        map = new maplibregl.Map({
-          container: containerRef.current,
-          style: buildBaseStyle(theme) as any,
-          center,
-          zoom: 4,
-          attributionControl: false,
-          dragRotate: false,
-        });
-        mapRef.current = map;
-        if ("setProjection" in map) {
-          (map as any).setProjection({ type: "mercator" });
-        }
-        map.addControl(
-          new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
-          "top-right"
-        );
-
-        map.on("load", () => {
-          if (released || !map) return;
+      const handle = acquireSurface("editor", {
+        container: containerRef.current,
+        initialCenter: center,
+        initialZoom: 4,
+        theme,
+        projectionMode: "mercator",
+        interactive: true,
+        onCreate: (map, maplibregl) => {
+          if ("setProjection" in map) {
+            (map as any).setProjection({ type: "mercator" });
+          }
+          map.addControl(
+            new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
+            "top-right"
+          );
+        },
+        onReady: (map) => {
+          mapRef.current = map;
+          if ("setProjection" in map) {
+            (map as any).setProjection({ type: "mercator" });
+          }
           setIsLoaded(true);
           context.setMap(map);
-        });
-      })().catch((err) => {
+        },
+      });
+
+      handle.ready.catch((err) => {
         console.error("[EditorMap] init error:", err);
       });
 
       return () => {
-        released = true;
-        if (map) map.remove();
+        handle.release();
         mapRef.current = null;
         context.setMap(null);
       };

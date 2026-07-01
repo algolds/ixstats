@@ -19,6 +19,7 @@ import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 import { Suspense } from "react";
+import { acquireSurface } from "~/lib/maps/map-engine";
 
 // Overlay components + their wiring
 import { OVERLAY_LIST } from "~/lib/overlay-registry";
@@ -250,71 +251,71 @@ const IxWorldMap = memo(
         return;
       }
 
-      let released = false;
-      let map: MapLibreMap | null = null;
+      // Borrow the persistent "world" instance (kept warm across navigation).
+      const handle = acquireSurface("world", {
+        container: containerRef.current,
+        initialCenter: initialCenter || MAP_DEFAULTS.center,
+        initialZoom: initialZoom ?? MAP_DEFAULTS.zoom,
+        minZoom: MAP_DEFAULTS.minZoom,
+        maxZoom: MAP_DEFAULTS.maxZoom,
+        theme,
+        projectionMode,
+        interactive: true,
+        onCreate: (map, maplibregl) => {
+          map.__mlgl = maplibregl;
+          map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+        },
+        onReady: (map) => {
+          mapRef.current = map;
 
-      (async () => {
-        const mod = await import("maplibre-gl");
-        const maplibregl = (
-          "Map" in mod ? mod : (mod as Record<string, unknown>).default
-        ) as typeof mod;
-        if (released || !containerRef.current) return;
-
-        map = new maplibregl.Map({
-          container: containerRef.current,
-          style: buildBaseStyle(theme, projectionMode) as any,
-          center: initialCenter || MAP_DEFAULTS.center,
-          zoom: initialZoom ?? MAP_DEFAULTS.zoom,
-          minZoom: MAP_DEFAULTS.minZoom,
-          maxZoom: MAP_DEFAULTS.maxZoom,
-          attributionControl: false,
-          dragRotate: false,
-        });
-        mapRef.current = map;
-        map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-
-        map.on("load", () => {
-          if (released || !map) return;
-
-          // Progressive feature loading based on zoom
+          // Progressive feature loading by zoom — rebind to THIS mount's data ref,
+          // replacing any handler left by a previous mount of the persistent instance.
+          if (map.__ixZoomHandler) map.off("zoomend", map.__ixZoomHandler);
           let lastFilterZoom = -1;
           const dataRef = fullLayerDataRef;
-          map.on("zoomend", () => {
-            if (!map) return;
+          const zoomHandler = () => {
             const zoom = map.getZoom();
             const zoomBucket = Math.floor(zoom);
             if (zoomBucket !== lastFilterZoom) {
               lastFilterZoom = zoomBucket;
               for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
                 const sourceId = `source-${layerType}`;
-                const source = map.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
+                const source = map.getSource(sourceId) as
+                  | import("maplibre-gl").GeoJSONSource
+                  | undefined;
                 const fullData = dataRef.current.get(layerType);
                 if (!source || !fullData) continue;
-                const minArea = getMinArea(layerType, zoom);
-                source.setData(filterByArea(fullData, minArea));
+                source.setData(filterByArea(fullData, getMinArea(layerType, zoom)));
               }
             }
-          });
+          };
+          map.on("zoomend", zoomHandler);
+          map.__ixZoomHandler = zoomHandler;
 
-          tooltipPopupRef.current = new maplibregl.Popup({
-            closeButton: false,
-            closeOnClick: false,
-            className: "ixmap-feature-tooltip",
-            offset: 12,
-            maxWidth: "220px",
-          });
+          // Tooltip popup lives on the persistent instance; reuse across mounts.
+          if (!map.__ixTooltip) {
+            map.__ixTooltip = new map.__mlgl.Popup({
+              closeButton: false,
+              closeOnClick: false,
+              className: "ixmap-feature-tooltip",
+              offset: 12,
+              maxWidth: "220px",
+            });
+          }
+          tooltipPopupRef.current = map.__ixTooltip;
 
           setIsLoaded(true);
           onReady?.();
-        });
-      })().catch((err) => {
+        },
+      });
+
+      handle.ready.catch((err) => {
         console.error("[IxWorldMap] init error:", err);
         setDebugError(`Load error: ${err instanceof Error ? err.message : String(err)}`);
       });
 
       return () => {
-        released = true;
-        if (map) map.remove();
+        handle.release();
         mapRef.current = null;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
