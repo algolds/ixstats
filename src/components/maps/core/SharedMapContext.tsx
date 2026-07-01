@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { buildBaseStyle, MAP_DEFAULTS, type ProjectionMode } from "~/lib/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
@@ -97,7 +105,10 @@ export function SharedMapProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const acquireMap = (slotId: string, options: AcquireOptions) => {
+  // Stable across renders — only touches refs, never props/state. A new identity
+  // here would make every embed's acquire effect release+re-acquire the shared
+  // singleton on every ancestor re-render, which endless-loops the embeds.
+  const acquireMap = useCallback((slotId: string, options: AcquireOptions) => {
     activeSlotIdRef.current = slotId;
 
     const setup = () => {
@@ -196,19 +207,14 @@ export function SharedMapProvider({ children }: { children: React.ReactNode }) {
         }
       }
     };
-  };
+  }, []);
 
-  return (
-    <SharedMapContext.Provider
-      value={{
-        map,
-        container: containerRef.current,
-        acquireMap,
-      }}
-    >
-      {children}
-    </SharedMapContext.Provider>
+  const value = useMemo(
+    () => ({ map, container: containerRef.current, acquireMap }),
+    [map, acquireMap]
   );
+
+  return <SharedMapContext.Provider value={value}>{children}</SharedMapContext.Provider>;
 }
 
 export function useSharedMap() {

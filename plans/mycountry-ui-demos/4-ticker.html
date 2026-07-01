@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCountry · The Ticker</title>
+<link rel="stylesheet" href="facet.css">
+<style>
+  :root { --accent: var(--facet-global); --accent-rgb: 37,99,235; }
+  .feed-grid { display: grid; grid-template-columns: 240px 1fr 260px; gap: 16px; }
+  @media (max-width: 1000px){ .feed-grid{ grid-template-columns: 1fr; } }
+  .compose { padding: 14px; position: sticky; top: 70px; }
+  .compose input { width:100%; background: rgba(0,0,0,0.25); border:1px solid var(--border-strong); border-radius:10px; color:var(--text); font:inherit; padding:10px 12px; }
+  .compose input:focus{ outline:none; border-color: rgba(var(--accent-rgb),0.6); }
+  .post { padding: 16px; margin-bottom: 14px; }
+  .post .head { display:flex; gap:10px; align-items:center; margin-bottom:8px; }
+  .av { width:38px; height:38px; border-radius:10px; display:grid; place-items:center; font-weight:800; color:#fff; }
+  .av.gov { background: linear-gradient(135deg,#2563eb,#1d4ed8); }
+  .av.press { background: linear-gradient(135deg,#64748b,#475569); }
+  .av.world { background: linear-gradient(135deg,#a855f7,#7c3aed); }
+  .post h4 { font-size:14px; } .post .when { font-size:11px; color:var(--muted); }
+  .post .text { font-size:14px; line-height:1.6; color:#d4d4d8; }
+  .post .text b { color:#fff; }
+  .post .actions { display:flex; gap:8px; margin-top:12px; }
+  .react { font-size:11px; color:var(--muted); margin-top:10px; display:flex; gap:14px; }
+  .kicker { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:800; padding:2px 8px; border-radius:6px; }
+  .kicker.gov{ color:#93c5fd; background:rgba(37,99,235,.14);} .kicker.press{ color:#cbd5e1; background:rgba(148,163,184,.14);} .kicker.world{ color:#d8b4fe; background:rgba(168,85,247,.14);}
+  .rail-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px;}
+  .rail-item:last-child{border:0;}
+</style></head>
+<body>
+<div class="demo-topbar">
+  <span class="variant-name">The <b>Ticker</b></span>
+  <span class="pill">Variant 4 · narrative-first · your actions are the headlines · the world answers</span>
+  <a class="btn ghost" href="index.html">← all variants</a>
+</div>
+
+<div class="wrap feed-grid">
+  <!-- LEFT: compose intent -->
+  <aside>
+    <div class="facet facet-accent compose col fade-in">
+      <div class="eyebrow">Govern out loud</div>
+      <input id="intent" placeholder="Declare an intent…" onkeydown="if(event.key==='Enter')post()">
+      <div class="tiny dim">One action → one headline → the world reacts. No table editing.</div>
+      <button class="btn primary" onclick="post()"><span class="lbl">Publish decision</span></button>
+      <div class="divider"></div>
+      <div class="eyebrow">Filters</div>
+      <div class="tiny"><span class="kicker gov">Government</span> <span class="kicker press">Press</span> <span class="kicker world">World</span></div>
+    </div>
+  </aside>
+
+  <!-- CENTER: the living feed -->
+  <main id="feed">
+    <article class="facet post fade-in">
+      <div class="head"><div class="av gov">V</div><div><h4>Government of Valehaven <span class="kicker gov">Government</span></h4><div class="when">just now · official channel</div></div></div>
+      <div class="text">The First Minister opens the session. On the agenda: the harbour budget and the northern accord with <b>Meridia</b>.</div>
+      <div class="react"><span>◆ 12 nations following</span><span>↺ 4 quoted</span></div>
+    </article>
+    <article class="facet post fade-in">
+      <div class="head"><div class="av press">IX</div><div><h4>IxPress Wire <span class="kicker press">Press</span></h4><div class="when">7m · analysis</div></div></div>
+      <div class="text">Harbour unions signal a slowdown unless heard before the budget. Analysts read Valehaven's public mood as <b>restless</b> but its economy <b>expanding</b>.</div>
+      <div class="actions">
+        <button class="btn primary" onclick="respond(this,'Grant the unions a hearing','Approval','Valehaven grants the harbour unions a formal hearing; the docks stay open.')"><span class="lbl">Respond: grant hearing</span></button>
+        <button class="btn" onclick="respond(this,'Hold the line on the budget','Stability','Valehaven declines the union demand and holds its budget line.')"><span class="lbl">Hold firm</span></button>
+      </div>
+    </article>
+    <article class="facet post fade-in">
+      <div class="head"><div class="av world">M</div><div><h4>Republic of Meridia <span class="kicker world">World</span></h4><div class="when">22m · foreign ministry</div></div></div>
+      <div class="text">Meridia proposes a fishing accord in the contested northern waters. Relations with Valehaven read <span class="band good" style="padding:0 8px">Cooperative</span>.</div>
+      <div class="actions">
+        <button class="btn primary" onclick="respond(this,'Sign the fishing accord','Standing','Valehaven and Meridia sign a northern fishing accord — a quiet win for both harbours.')"><span class="lbl">Sign accord</span></button>
+        <button class="btn" onclick="respond(this,'Set a Cautious stance toward Meridia','Standing','Valehaven adopts a cautious posture toward Meridia, keeping options open.')"><span class="lbl">Set stance: Cautious</span></button>
+      </div>
+    </article>
+  </main>
+
+  <!-- RIGHT: standing (bands) -->
+  <aside>
+    <div class="facet pad col fade-in" style="position:sticky; top:70px">
+      <div class="between"><h3>Valehaven</h3><span class="tiny dim">bands only</span></div>
+      <div class="tiny dim">Maritime Trading Republic</div>
+      <div class="divider"></div>
+      <div id="rail"></div>
+      <div class="divider"></div>
+      <div class="eyebrow">Standing with</div>
+      <div class="rail-item"><span>Meridia</span><span class="band good">Cooperative</span></div>
+      <div class="rail-item"><span>Karth Union</span><span class="band mid">Tense</span></div>
+      <div class="rail-item"><span>Sable Coast</span><span class="band info">Neutral</span></div>
+    </div>
+  </aside>
+</div>
+
+<script src="demo.js"></script>
+<script>
+  function renderRail(){
+    document.getElementById("rail").innerHTML = Object.entries(NATION.standing).slice(0,5)
+      .map(([k,v])=>`<div class="rail-item"><span>${k}</span><span class="band ${v.band}">${v.label}</span></div>`).join("");
+  }
+  renderRail();
+  const feed = document.getElementById("feed");
+  function prepend(html){ const w=document.createElement("div"); w.innerHTML=html; feed.prepend(w.firstElementChild); }
+  function govPost(title, text){
+    prepend(`<article class="facet post fade-in"><div class="head"><div class="av gov">V</div><div><h4>Government of Valehaven <span class="kicker gov">Government</span></h4><div class="when">just now · decision</div></div></div><div class="text">${text}</div><div class="react"><span>◆ world notified</span><span>↺ ThinkPages + wiki paragraph ready</span></div></article>`);
+  }
+  function worldReact(text){
+    setTimeout(()=>prepend(`<article class="facet post fade-in"><div class="head"><div class="av world">↻</div><div><h4>World reaction <span class="kicker world">World</span></h4><div class="when">moments later</div></div></div><div class="text">${text}</div></article>`), 900);
+  }
+  function post(){
+    const v = document.getElementById("intent").value.trim(); if(!v) return;
+    bumpBand(NATION.standing,"Capacity",false); renderRail();
+    govPost(v, `Valehaven's government commits to <b>${v}</b>. Ministries begin work; the world takes note.`);
+    worldReact(`Neighbouring capitals weigh Valehaven's move on "${v}". Some approve; the Karth Union watches warily.`);
+    recordEvent({ title:"Intent: "+v, effect:"Capacity", dir:"down" });
+    document.getElementById("intent").value="";
+  }
+  function respond(btn, title, key, narrative){
+    const post = btn.closest(".post"); post.querySelector(".actions").remove();
+    bumpBand(NATION.standing, key, true); renderRail();
+    govPost(title, narrative);
+    worldReact(`Observers log Valehaven's decision — the ledger updates, and the story moves on.`);
+    recordEvent({ title, effect:key, dir:"up" });
+  }
+</script>
+</body></html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCountry v2 — UI/UX Variants</title>
+<link rel="stylesheet" href="facet.css">
+<style>
+  :root { --accent: var(--facet-mycountry); --accent-rgb: 202,138,4; }
+  .hero { padding: 32px; text-align:center; }
+  .hero h1 { font-size: 30px; }
+  .hero p { max-width: 640px; margin: 12px auto 0; color: var(--muted); font-size: 15px; line-height:1.6; }
+  .cards { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap:16px; margin-top:22px; }
+  .vcard { padding: 20px; text-decoration:none; display:flex; flex-direction:column; gap:10px; transition: all .22s cubic-bezier(.16,1,.3,1); border-top: 3px solid var(--vc); }
+  .vcard:hover { transform: translateY(-4px); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+  .vcard .n { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color: var(--vc); font-weight:800; }
+  .vcard h3 { font-size:19px; }
+  .vcard .who { font-size:12px; color: var(--muted); }
+  .vcard p { font-size:13px; color:#cbd5e1; line-height:1.55; margin:0; }
+  .vcard .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+  .tag { font-size:10px; padding:3px 9px; border-radius:999px; background: rgba(255,255,255,.05); color: var(--muted); }
+  .core { margin-top:26px; padding: 20px 24px; }
+  .core ul { margin:10px 0 0; padding-left:18px; color:#cbd5e1; font-size:13px; line-height:1.9; }
+  .core b { color: var(--text); }
+</style></head>
+<body>
+<div class="wrap">
+  <section class="facet facet-accent hero fade-in">
+    <div class="eyebrow">MyCountry · Design Bible v2 · Facet</div>
+    <h1 class="serif">Five ways to be the government.</h1>
+    <p>The same nation, the same engine, five personalities. Every variant preserves the core — <b>you play the government, not the country</b>: declare intent → the world pushes back → a bounded change → an in-world headline. All use Facet glass, all are one navigator, all show <b>bands, never raw numbers</b>. Pick the feel; the plumbing is shared.</p>
+  </section>
+
+  <div class="cards">
+    <a class="vcard facet" style="--vc:var(--facet-mycountry)" href="1-briefing.html">
+      <span class="n">Variant 1</span><h3>The Briefing</h3>
+      <span class="who">for the executive who wants a daily read · gold</span>
+      <p>An editorial “presidential daily brief.” The AI morning report is the hero; every card below demands a decision (Decide/Review/Monitor/Celebrate). Calm, literary, authoritative.</p>
+      <div class="tags"><span class="tag">situation room</span><span class="tag">attention model</span><span class="tag">fog-aware</span></div>
+    </a>
+    <a class="vcard facet" style="--vc:var(--facet-mycountry)" href="2-desk.html">
+      <span class="n">Variant 2</span><h3>The Desk</h3>
+      <span class="who">for the “fewer clicks” purist (Urcea) · gold</span>
+      <p>One surface, no page loads. In-tray → The Pen → The Record. Declare in plain language and commit instantly; a cooldown ring paces you. Meetings are an opt-in checkbox, not a wall.</p>
+      <div class="tags"><span class="tag">single-screen</span><span class="tag">instant + cooldown</span><span class="tag">opt-in depth</span></div>
+    </a>
+    <a class="vcard facet" style="--vc:var(--facet-overview)" href="3-situation-table.html">
+      <span class="n">Variant 3</span><h3>The Situation Table</h3>
+      <span class="who">for the map-thinker · indigo</span>
+      <p>The map is the interface. Click a province to declare a regional intent; respond to live pins; unsurveyed provinces sit under literal fog until you spend capacity to see them. Grounds intent in place.</p>
+      <div class="tags"><span class="tag">geography-first</span><span class="tag">fog of information</span><span class="tag">spatial intent</span></div>
+    </a>
+    <a class="vcard facet" style="--vc:var(--facet-global)" href="4-ticker.html">
+      <span class="n">Variant 4</span><h3>The Ticker</h3>
+      <span class="who">for the storyteller (Urcea’s “system serves story”) · blue</span>
+      <p>A living feed. Your decisions are headlines; the press and other nations answer in real time. Govern inline from the stream — one action, one narrative, zero table editing.</p>
+      <div class="tags"><span class="tag">narrative-first</span><span class="tag">ThinkPages-native</span><span class="tag">world reacts</span></div>
+    </a>
+    <a class="vcard facet" style="--vc:var(--facet-overview)" href="5-console.html">
+      <span class="n">Variant 5</span><h3>The Console</h3>
+      <span class="who">for the power user · indigo</span>
+      <p>A ⌘K intent bar. Type a fuzzy goal — “make housing affordable” — and the government proposes Plan A/B/C from a bounded registry, or just commit instantly. Keyboard-fast, progressively disclosed.</p>
+      <div class="tags"><span class="tag">command palette</span><span class="tag">fuzzy intent</span><span class="tag">expert-fast</span></div>
+    </a>
+
+    <div class="vcard facet-2" style="--vc:var(--border-strong); cursor:default">
+      <span class="n">Not variants</span><h3>The shared core</h3>
+      <p class="dim">Whichever skin wins, these are constant — the bible’s resolved conflicts made visible.</p>
+      <div class="tags"><span class="tag">canonical loop</span><span class="tag">bands not numbers</span><span class="tag">legible ledger</span><span class="tag">Stances</span></div>
+    </div>
+  </div>
+
+  <section class="facet core fade-in">
+    <div class="eyebrow">What every variant demonstrates (from bible v2)</div>
+    <ul>
+      <li><b>Executive, not nation.</b> You act as the government; the country is what you steer.</li>
+      <li><b>Intent-first, instant by default.</b> Declare a goal in plain words; commit in one click; cooldown (not scheduling) paces you. Deliberation is opt-in.</li>
+      <li><b>The canonical loop, always closed.</b> Every action → a bounded stat change → an in-world headline (toast) → a ledger row. No open loops.</li>
+      <li><b>Bands, never numbers.</b> Standing and relations read “Cooperative / Restless / Unclear,” and P2P relations are player-overridable.</li>
+      <li><b>Fog of information.</b> Under-staffed ministries mask estimates (Treasury reads “Unclear”; provinces sit under fog) until you spend capacity.</li>
+      <li><b>Governance is legible.</b> The record shows what changed and why — Burg’s guarantee, for free.</li>
+    </ul>
+  </section>
+</div>
+</body></html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCountry · The Desk</title>
+<link rel="stylesheet" href="facet.css">
+<style>
+  :root { --accent: var(--facet-mycountry); --accent-rgb: 202,138,4; }
+  body { background:
+    radial-gradient(1200px 700px at 50% -10%, rgba(202,138,4,0.10), transparent 60%),
+    linear-gradient(180deg, #14130f, #0f1114); }
+  .desk { display: grid; grid-template-columns: 320px 1fr 320px; gap: 16px; height: calc(100vh - 54px); padding: 16px; }
+  @media (max-width: 1000px){ .desk{ grid-template-columns: 1fr; height:auto; } }
+  .stack { display: flex; flex-direction: column; min-height: 0; }
+  .stack > header { padding: 14px 16px; }
+  .stack > .body { flex: 1; overflow: auto; padding: 0 12px 12px; }
+  /* IN-TRAY */
+  .tray-item { padding: 12px; border-radius: 12px; margin: 8px 0; cursor: pointer; border: 1px solid var(--border); background: rgba(255,255,255,0.02); transition: all .18s; }
+  .tray-item:hover { border-color: rgba(var(--accent-rgb),0.4); transform: translateX(3px); }
+  .tray-item h4 { font-size: 13px; } .tray-item p { margin: 3px 0 0; font-size: 11px; color: var(--muted); }
+  /* THE PEN — center */
+  .pen { display: flex; flex-direction: column; gap: 14px; }
+  .pen textarea { width: 100%; resize: none; background: rgba(0,0,0,0.25); border: 1px solid var(--border-strong); border-radius: 14px; color: var(--text); font: inherit; font-size: 18px; padding: 18px; min-height: 90px; }
+  .pen textarea:focus { outline: none; border-color: rgba(var(--accent-rgb),0.6); box-shadow: 0 0 0 4px rgba(var(--accent-rgb),0.08); }
+  .suggest { display:flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); cursor: pointer; color: var(--muted); }
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+  .nation-crest { width: 46px; height: 46px; border-radius: 12px; display:grid; place-items:center; font-weight:800; font-size:20px; color:#14130f; background: linear-gradient(135deg,#eab308,var(--accent)); }
+  .plaque { display:flex; gap:12px; align-items:center; }
+  .depth-toggle { font-size: 11px; color: var(--muted); cursor: pointer; user-select: none; }
+  .depth-toggle input { accent-color: var(--accent); }
+  .deliberation { display:none; }
+  .deliberation.on { display: block; }
+  .opt { padding: 10px 12px; border-radius: 10px; border:1px solid var(--border); margin: 6px 0; font-size: 12px; cursor: pointer; }
+  .opt:hover { border-color: var(--accent); }
+  .opt b { color: var(--text); }
+</style></head>
+<body>
+<div class="demo-topbar">
+  <span class="variant-name">The <b>Desk</b></span>
+  <span class="pill">Variant 2 · one surface · zero page loads · instant + cooldown</span>
+  <a class="btn ghost" href="index.html">← all variants</a>
+</div>
+
+<div class="desk">
+  <!-- LEFT: IN-TRAY (issues come in) -->
+  <section class="facet stack fade-in">
+    <header class="between"><h3>In-tray</h3><span class="att decide" id="tray-count">2</span></header>
+    <div class="body" id="tray">
+      <div class="tray-item" onclick="pickIssue(this,'Harbour unions want a hearing','Approval')">
+        <h4>Harbour unions want a hearing</h4><p>Reactive · docks · grant or refuse</p></div>
+      <div class="tray-item" onclick="pickIssue(this,'Meridia proposes a fishing accord','Standing')">
+        <h4>Meridia proposes a fishing accord</h4><p>Reactive · foreign · needs a target</p></div>
+    </div>
+  </section>
+
+  <!-- CENTER: THE PEN (declare intent, instant) -->
+  <section class="facet facet-accent stack pad pen fade-in">
+    <div class="plaque">
+      <div class="nation-crest">V</div>
+      <div>
+        <div style="font-weight:800; font-size:16px">Valehaven</div>
+        <div class="tiny dim">First Minister Aldwin Roe · <span class="band mid" style="padding:0 8px">Capacity: Stretched</span></div>
+      </div>
+    </div>
+    <div class="eyebrow">The Pen — what is your government trying to do?</div>
+    <textarea id="pen" placeholder="Type an intent in plain language…  e.g. Secure the northern sea lanes"></textarea>
+    <div class="suggest" id="suggest">
+      <span class="chip" onclick="fill(this)">Make housing affordable</span>
+      <span class="chip" onclick="fill(this)">Modernize the navy</span>
+      <span class="chip" onclick="fill(this)">Court Meridia as an ally</span>
+      <span class="chip" onclick="fill(this)">Cool inflation</span>
+    </div>
+    <div class="between">
+      <label class="depth-toggle"><input type="checkbox" id="depth" onchange="toggleDepth()"> hold a meeting first (opt-in depth)</label>
+      <button class="btn primary" id="commit" onclick="commit()"><span class="lbl">Commit intent →</span></button>
+    </div>
+    <div class="deliberation facet-3" id="delib" style="border-radius:12px; padding:12px">
+      <div class="eyebrow" style="margin-bottom:6px">Cabinet options — pick a course</div>
+      <div class="opt" onclick="chooseOpt('State-led')"><b>State-led.</b> Fast, expensive, high capacity cost. Treasury objects.</div>
+      <div class="opt" onclick="chooseOpt('Market-led')"><b>Market-led.</b> Cheap, slower, magnates pleased, unions wary.</div>
+      <div class="opt" onclick="chooseOpt('Balanced')"><b>Balanced.</b> Moderate cost, broad support.</div>
+    </div>
+  </section>
+
+  <!-- RIGHT: THE RECORD (ledger + narrative, always visible) -->
+  <section class="facet stack fade-in">
+    <header class="between"><h3>The record</h3><span class="tiny dim">bounded &amp; logged</span></header>
+    <div class="body" id="record">
+      <p class="tiny dim" style="padding:8px 4px">Everything you commit lands here as a bounded change and an in-world headline — no table editing, no separate wiki.</p>
+    </div>
+  </section>
+</div>
+
+<script src="demo.js"></script>
+<script>
+  const pen = document.getElementById("pen");
+  function fill(chip){ pen.value = chip.textContent; pen.focus(); }
+  function toggleDepth(){ document.getElementById("delib").classList.toggle("on", document.getElementById("depth").checked); }
+  let pendingCourse = null;
+  function chooseOpt(name){ pendingCourse = name; commit(); }
+
+  function pushRecord(r){
+    const el = document.getElementById("record");
+    const div = document.createElement("div"); div.className = "tray-item fade-in"; div.style.cursor="default";
+    div.innerHTML = `<div class="between"><h4>${r.title}</h4><span class="delta ${r.dir}">${r.dir==='up'?'▲':'▼'} ${r.effect}</span></div>
+      <p style="color:#c7c7cd">${r.narrative}</p><p class="mono">${r.t}</p>`;
+    el.prepend(div);
+  }
+  document.addEventListener("ledger", e => pushRecord(e.detail[0]));
+
+  function pickIssue(node, title, key){
+    node.style.opacity=".35"; setTimeout(()=>node.remove(),300);
+    document.getElementById("tray-count").textContent = Math.max(0, document.querySelectorAll("#tray .tray-item").length - 1);
+    bumpBand(NATION.standing, key, true);
+    recordEvent({ title:"Resolved: "+title, effect:key, dir:"up",
+      narrative:`Valehaven acts on ${title.toLowerCase()} — handled from the executive desk in one stroke.` });
+  }
+
+  function commit(){
+    const goal = (pen.value || "").trim();
+    if(!goal){ pen.focus(); return; }
+    const withMeeting = document.getElementById("depth").checked;
+    if(withMeeting && !pendingCourse){ document.getElementById("delib").classList.add("on"); return; }
+    commitWithCooldown(document.getElementById("commit"), 6, ()=>{
+      bumpBand(NATION.standing,"Capacity",false);
+      const course = pendingCourse ? ` (${pendingCourse} course)` : "";
+      recordEvent({ title:"Intent: "+goal, effect:"Capacity", dir:"down",
+        narrative:`The Valehaven government commits to <b>${goal}</b>${course}. The world will push back — watch the in-tray.` });
+      pen.value=""; pendingCourse=null;
+      document.getElementById("depth").checked=false; toggleDepth();
+    });
+  }
+  pen.addEventListener("keydown", e => { if(e.key==="Enter" && (e.metaKey||e.ctrlKey)) commit(); });
+</script>
+</body></html>

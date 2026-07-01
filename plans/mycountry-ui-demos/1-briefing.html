@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCountry · The Briefing</title>
+<link rel="stylesheet" href="facet.css">
+<style>
+  :root { --accent: var(--facet-mycountry); --accent-rgb: 202,138,4; }
+  .brief-hero { padding: 26px 28px; }
+  .brief-hero h1 { font-size: 26px; line-height: 1.2; }
+  .brief-body { columns: 2; column-gap: 30px; font-size: 14px; line-height: 1.7; color: #d4d4d8; }
+  .brief-body p { margin: 0 0 12px; break-inside: avoid; }
+  .brief-body .drop::first-letter { font-size: 40px; float: left; line-height: .8; padding: 4px 8px 0 0; color: var(--accent); font-weight: 800; }
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 900px){ .grid{ grid-template-columns: 1fr; } .brief-body{ columns: 1; } }
+  .matter { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 14px; border-bottom: 1px solid var(--border); }
+  .matter:last-child { border-bottom: 0; }
+  .matter h4 { font-size: 14px; }
+  .matter p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  .agenda-item { padding: 12px 14px; }
+  .prog { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; margin-top: 8px; }
+  .prog > i { display:block; height: 100%; background: linear-gradient(90deg, var(--accent), #eab308); border-radius: 999px; }
+  .standing { display: flex; flex-wrap: wrap; gap: 8px; }
+  .masthead { border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 4px; }
+</style></head>
+<body>
+<div class="demo-topbar">
+  <span class="variant-name">The <b>Briefing</b></span>
+  <span class="pill">Variant 1 · editorial situation room · gold</span>
+  <a class="btn ghost" href="index.html">← all variants</a>
+</div>
+
+<div class="wrap col">
+
+  <!-- HERO: the AI morning briefing is the protagonist -->
+  <section class="facet facet-accent brief-hero fade-in">
+    <div class="between masthead">
+      <div>
+        <div class="eyebrow">Executive Morning Brief · <span id="date"></span></div>
+        <h1 class="serif">Valehaven at a glance, First Minister.</h1>
+      </div>
+      <div style="text-align:right">
+        <div class="eyebrow">Government of</div>
+        <div style="font-weight:700">Valehaven</div>
+        <div class="tiny dim">Maritime Trading Republic</div>
+      </div>
+    </div>
+    <div class="brief-body" style="margin-top:16px">
+      <p class="drop"><b>Since your last session,</b> the Coastal Development Act cleared its second reading and Parliament's shipbuilding subsidy entered Phase II. The northern fisheries dispute cooled after your envoy's visit — relations with <b>Meridia</b> read <span class="band good" style="padding:0 8px">Cooperative</span> this morning.</p>
+      <p><b>Assessment.</b> The economy is <b>expanding</b>, but public mood is <b>restless</b> — the harbour unions want to be heard before the budget. Your civil service is <b>stretched</b>; committing to more than one major effort this week will cloud your reporting.</p>
+      <p><b>Today's priority.</b> One matter needs your signature, one your review. Treasury figures are <span class="band fog" style="padding:0 8px">still unclear</span> — the finance ministry is under-staffed, so cost estimates below are shown as ranges, not numbers.</p>
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- URGENT MATTERS: every card demands a decision -->
+    <section class="facet pad col fade-in">
+      <div class="between"><h3>What needs you today</h3><span class="tiny dim">2 open</span></div>
+      <div class="facet-3" style="border-radius:12px" id="matters">
+        <div class="matter">
+          <span class="att decide">Decide</span>
+          <div><h4>Harbour unions request a hearing</h4><p>Refuse and risk a slowdown, or grant it and spend capacity.</p></div>
+          <button class="btn primary" onclick="resolve(this,'Union hearing granted','Approval','up','Valehaven grants harbour unions a formal budget hearing; docks stay open.')"><span class="lbl">Sign</span></button>
+        </div>
+        <div class="matter">
+          <span class="att review">Review</span>
+          <div><h4>Shipbuilding subsidy · Phase II</h4><p>Government requests oversight before funds release.</p></div>
+          <button class="btn" onclick="resolve(this,'Subsidy Phase II approved','Economy','up','Valehaven greenlights Phase II of its naval shipbuilding drive.')"><span class="lbl">Review</span></button>
+        </div>
+      </div>
+      <div class="between" style="margin-top:4px">
+        <span class="tiny dim">Declare something new instead —</span>
+        <button class="btn" onclick="declare(this)"><span class="lbl">✦ Declare intent</span></button>
+      </div>
+    </section>
+
+    <!-- AGENDA + STANDING -->
+    <section class="col">
+      <div class="facet pad col fade-in">
+        <h3>Government agenda</h3>
+        <div class="facet-3 agenda-item" style="border-radius:10px">
+          <div class="between"><b>Become a maritime power</b><span class="tiny dim">Vision</span></div>
+          <div class="prog"><i style="width:54%"></i></div>
+        </div>
+        <div class="facet-3 agenda-item" style="border-radius:10px">
+          <div class="between"><span>Modernize the navy</span><span class="att monitor">Monitor</span></div>
+          <div class="prog"><i style="width:38%"></i></div>
+        </div>
+      </div>
+      <div class="facet pad col fade-in">
+        <div class="between"><h3>National standing</h3><span class="tiny dim">bands, not numbers</span></div>
+        <div class="standing" id="standing"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- WHAT CHANGED: the ledger (governance legible) -->
+  <section class="facet pad col fade-in">
+    <div class="between"><h3>What changed — the record</h3><span class="tiny dim">every change is bounded &amp; logged</span></div>
+    <div class="facet-3" style="border-radius:12px" id="ledger">
+      <div class="ledger-row"><span class="tiny dim mono">—</span><span class="dim">Your decisions will appear here, with what moved and why.</span><span></span></div>
+    </div>
+  </section>
+</div>
+
+<script src="demo.js"></script>
+<script>
+  document.getElementById("date").textContent = new Date().toLocaleDateString([], {weekday:"long", month:"long", day:"numeric"});
+  function renderStanding(){
+    document.getElementById("standing").innerHTML = Object.entries(NATION.standing)
+      .map(([k,v]) => `<span class="band ${v.band}">${k}: ${v.label}</span>`).join("");
+  }
+  renderStanding();
+  document.addEventListener("ledger", e => {
+    document.getElementById("ledger").innerHTML = e.detail.map(r => `
+      <div class="ledger-row fade-in">
+        <span class="tiny dim mono">${r.t}</span>
+        <span><b>${r.title}</b> <span class="dim tiny">— ${r.effect}</span></span>
+        <span class="delta ${r.dir}">${r.dir==="up"?"▲":"▼"} ${r.effect}</span>
+      </div>`).join("");
+  });
+  function resolve(btn, title, key, dir, narrative){
+    const card = btn.closest(".matter"); card.style.transition="all .3s"; card.style.opacity=".3";
+    setTimeout(()=>card.remove(), 320);
+    bumpBand(NATION.standing, key, dir==="up"); renderStanding();
+    recordEvent({ title, effect: key, dir, narrative });
+    const open = document.querySelectorAll("#matters .matter").length - 1;
+    document.querySelector(".between .tiny.dim").textContent = Math.max(0,open)+" open";
+  }
+  function declare(btn){
+    const goal = prompt("What is your government trying to accomplish?\n(e.g. 'Make housing affordable', 'Secure the northern sea lanes')");
+    if(!goal) return;
+    commitWithCooldown(btn, 6, ()=>{
+      bumpBand(NATION.standing,"Capacity",false); renderStanding();
+      recordEvent({ title: "Intent declared: " + goal, effect: "Capacity", dir: "down",
+        narrative: `The Valehaven government commits to a new national effort: <b>${goal}</b>. Ministries begin drawing up options.` });
+    });
+  }
+</script>
+</body></html>

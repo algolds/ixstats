@@ -110,6 +110,24 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
         throw new Error("You can only establish embassies for your own country.");
       }
 
+      // One embassy per guest↔host pair (enforced by a composite unique). Guard here
+      // so a re-try / double-submit returns a clear message instead of a raw P2002.
+      const existing = await ctx.db.embassy.findUnique({
+        where: {
+          hostCountryId_guestCountryId: {
+            hostCountryId: input.hostCountryId,
+            guestCountryId: input.guestCountryId,
+          },
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "You already have an embassy in this country.",
+        });
+      }
+
       const embassy = await ctx.db.embassy.create({
         data: {
           hostCountryId: input.hostCountryId,

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCountry · The Console</title>
+<link rel="stylesheet" href="facet.css">
+<style>
+  :root { --accent: var(--facet-overview); --accent-rgb: 99,102,241; }
+  body { background: radial-gradient(900px 500px at 50% -5%, rgba(99,102,241,0.12), transparent 60%), #0b0c10; }
+  .console-wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .prompt-line { text-align:center; margin-bottom: 18px; }
+  .prompt-line .eyebrow { font-size: 11px; }
+  .prompt-line h1 { font-size: 22px; margin-top: 6px; }
+  .cmd { display:flex; align-items:center; gap:12px; padding: 16px 18px; }
+  .cmd .k { font-size: 12px; color: var(--muted); border:1px solid var(--border); border-radius:6px; padding:2px 7px; }
+  .cmd input { flex:1; background:transparent; border:0; outline:0; color:var(--text); font:inherit; font-size:18px; }
+  .cmd input::placeholder{ color:#52525b; }
+  .results { margin-top: 12px; }
+  .res-group .eyebrow { padding: 12px 6px 6px; }
+  .res { display:flex; align-items:center; gap:12px; padding: 11px 14px; border-radius:10px; cursor:pointer; border:1px solid transparent; }
+  .res:hover, .res.active { background: rgba(var(--accent-rgb),0.08); border-color: rgba(var(--accent-rgb),0.3); }
+  .res .ic { width:26px; height:26px; border-radius:7px; display:grid; place-items:center; font-size:13px; background: rgba(255,255,255,0.05); }
+  .res .body { flex:1; } .res h4 { font-size:13px; } .res p { margin:1px 0 0; font-size:11px; color:var(--muted); }
+  .res .meta { font-size:10px; color:var(--muted); font-family:ui-monospace,monospace; text-align:right; }
+  .plan { padding: 13px 14px; border-radius:10px; border:1px solid var(--border); margin:8px 0; cursor:pointer; }
+  .plan:hover{ border-color: var(--accent); background: rgba(var(--accent-rgb),0.05); }
+  .plan .between h4 { font-size:13px; }
+  .plan .tags { display:flex; gap:6px; margin-top:7px; flex-wrap:wrap; }
+  .tag { font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,0.05); color:var(--muted); font-family:ui-monospace,monospace; }
+  .state-strip{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:20px; }
+  .log { margin-top:18px; }
+  .log .eyebrow{ margin-bottom:6px; }
+  .hint { text-align:center; margin-top:16px; font-size:11px; color:#52525b; }
+  kbd{ font-family:ui-monospace,monospace; border:1px solid var(--border); border-radius:5px; padding:1px 5px; font-size:10px; }
+</style></head>
+<body>
+<div class="demo-topbar">
+  <span class="variant-name">The <b>Console</b></span>
+  <span class="pill">Variant 5 · ⌘K intent bar · fuzzy goals → government proposes · expert-fast</span>
+  <a class="btn ghost" href="index.html">← all variants</a>
+</div>
+
+<div class="console-wrap">
+  <div class="prompt-line">
+    <div class="eyebrow">Government of Valehaven · Maritime Trading Republic</div>
+    <h1 class="serif">What are you trying to accomplish?</h1>
+  </div>
+
+  <div class="facet facet-accent">
+    <div class="cmd">
+      <span style="color:var(--accent);font-size:18px">✦</span>
+      <input id="cmd" autofocus placeholder="Type a goal in plain language…  try “make housing affordable”">
+      <span class="k">⏎ commit</span>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="res-group">
+      <div class="eyebrow">Suggested — from the state of your nation</div>
+      <div class="res" onclick="pick('Cool the housing market')"><span class="ic">🏘</span><div class="body"><h4>Cool the housing market</h4><p>Approval is restless — housing is the loudest complaint.</p></div><div class="meta">domestic<br>~2 capacity</div></div>
+      <div class="res" onclick="pick('Modernize the navy')"><span class="ic">⚓</span><div class="body"><h4>Modernize the navy</h4><p>Advances your standing vision: maritime power.</p></div><div class="meta">defense<br>~3 capacity</div></div>
+      <div class="res" onclick="pick('Court Meridia as an ally')"><span class="ic">🤝</span><div class="body"><h4>Court Meridia as an ally</h4><p>Relations Cooperative — a stance shift could lock it in.</p></div><div class="meta">foreign<br>~1 capacity</div></div>
+    </div>
+  </div>
+
+  <div class="state-strip" id="strip"></div>
+  <div class="hint"><kbd>↑</kbd><kbd>↓</kbd> to move · <kbd>⏎</kbd> to commit instantly · advanced options appear only if you want them</div>
+
+  <div class="facet pad log" id="logwrap" style="display:none">
+    <div class="eyebrow">The record — bounded &amp; logged</div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script src="demo.js"></script>
+<script>
+  const input = document.getElementById("cmd");
+  function renderStrip(){
+    document.getElementById("strip").innerHTML = Object.entries(NATION.standing)
+      .map(([k,v])=>`<span class="band ${v.band}">${k}: ${v.label}</span>`).join("");
+  }
+  renderStrip();
+
+  // fuzzy: any typed goal yields government-proposed plans (from a bounded registry, not invented by the UI)
+  function pick(goal){
+    input.value = goal;
+    showPlans(goal);
+  }
+  function showPlans(goal){
+    const g = goal.replace(/\\/g,"\\\\").replace(/'/g,"\\'"); // ponytail: escape for inline handlers; a real build would use listeners
+    document.getElementById("results").innerHTML = `
+      <div class="res-group">
+        <div class="eyebrow">“${goal}” — your government proposes</div>
+        <div class="plan" onclick="commit('${g}','State-led','Approval')">
+          <div class="between"><h4>Plan A · State-led</h4><span class="band bad">Treasury objects</span></div>
+          <p class="tiny dim" style="margin-top:4px">Direct public program. Fast and visible; heavy on capacity and budget.</p>
+          <div class="tags"><span class="tag">fast</span><span class="tag">high capacity</span><span class="tag">unions ▲</span></div>
+        </div>
+        <div class="plan" onclick="commit('${g}','Market-led','Economy')">
+          <div class="between"><h4>Plan B · Market-led</h4><span class="band mid">Slower payoff</span></div>
+          <p class="tiny dim" style="margin-top:4px">Incentivize private actors. Cheap; magnates pleased, public approval slower.</p>
+          <div class="tags"><span class="tag">cheap</span><span class="tag">magnates ▲</span><span class="tag">approval ▽</span></div>
+        </div>
+        <div class="plan" onclick="commit('${g}','Balanced','Stability')">
+          <div class="between"><h4>Plan C · Balanced</h4><span class="band good">Broad support</span></div>
+          <p class="tiny dim" style="margin-top:4px">Targeted mix. Moderate cost and timing, widest coalition.</p>
+          <div class="tags"><span class="tag">moderate</span><span class="tag">coalition ▲</span></div>
+        </div>
+        <div class="res" onclick="commit('${g}','','Capacity')" style="margin-top:8px"><span class="ic">⚡</span><div class="body"><h4>Just commit — pick for me</h4><p>Skip deliberation. Instant, cooldown-gated.</p></div><div class="meta">⏎</div></div>
+      </div>`;
+  }
+  function commit(goal, plan, key){
+    const label = plan ? `${goal} — ${plan}` : goal;
+    bumpBand(NATION.standing,"Capacity",false);
+    if(key!=="Capacity") bumpBand(NATION.standing,key,true);
+    renderStrip();
+    recordEvent({ title:"Committed: "+label, effect:(key==="Capacity"?"Capacity":key), dir:(key==="Capacity"?"down":"up"),
+      narrative:`Valehaven commits to <b>${goal}</b>${plan?` via a ${plan.toLowerCase()} course`:""}. Ministries move; expect pushback.` });
+    // log
+    const lw = document.getElementById("logwrap"); lw.style.display="block";
+    const l = document.getElementById("log");
+    const d = document.createElement("div"); d.className="ledger-row fade-in";
+    d.innerHTML = `<span class="tiny dim mono">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><span><b>${label}</b></span><span class="delta ${key==='Capacity'?'down':'up'}">${key}</span>`;
+    l.prepend(d);
+    // reset console
+    input.value=""; input.focus();
+    document.getElementById("results").innerHTML = `<div class="res-group"><div class="eyebrow">Committed — what next?</div>
+      <div class="res" onclick="pick('Cool the housing market')"><span class="ic">🏘</span><div class="body"><h4>Cool the housing market</h4><p>Continue governing.</p></div><div class="meta">domestic</div></div>
+      <div class="res" onclick="pick('Secure the northern sea lanes')"><span class="ic">🌊</span><div class="body"><h4>Secure the northern sea lanes</h4><p>New front.</p></div><div class="meta">defense</div></div></div>`;
+  }
+  // keyboard: Enter commits fuzzy goal instantly (expert path)
+  input.addEventListener("keydown", e => {
+    if(e.key==="Enter"){
+      const v = input.value.trim(); if(!v) return;
+      // if plans already shown, quick-commit balanced; else show plans
+      if(document.querySelector(".plan")) commit(v,"Balanced","Stability");
+      else showPlans(v);
+    }
+  });
+</script>
+</body></html>

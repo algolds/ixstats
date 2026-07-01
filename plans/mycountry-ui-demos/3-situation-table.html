@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyCountry · The Situation Table</title>
+<link rel="stylesheet" href="facet.css">
+<style>
+  :root { --accent: var(--facet-overview); --accent-rgb: 99,102,241; }
+  body { background: radial-gradient(1000px 700px at 50% 120%, rgba(37,99,235,0.10), transparent 60%), #0b0d12; }
+  .table-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; padding: 16px; height: calc(100vh - 54px); }
+  @media (max-width: 1000px){ .table-grid{ grid-template-columns: 1fr; height:auto; } }
+  .map-wrap { position: relative; overflow: hidden; }
+  svg { width: 100%; height: 100%; display: block; }
+  .region { cursor: pointer; transition: all .25s; }
+  .region path { transition: all .25s; }
+  .region:hover path { filter: brightness(1.35); }
+  .region.sel path { stroke: var(--accent); stroke-width: 2.5; }
+  .rlabel { font-size: 11px; fill: #cbd5e1; font-weight: 600; pointer-events: none; text-anchor: middle; }
+  .fog-region path { filter: url(#fog); opacity: .55; }
+  .fog-region .rlabel { fill: #64748b; }
+  .pin { cursor: pointer; }
+  .pin circle { animation: ping 1.8s ease-out infinite; }
+  @keyframes ping { 0%{ r: 5; opacity: 1 } 100%{ r: 16; opacity: 0 } }
+  .legend { position:absolute; left:14px; bottom:14px; display:flex; gap:14px; font-size:11px; color: var(--muted); }
+  .legend span::before { content:"●"; margin-right:5px; }
+  .ticker { position:absolute; top:14px; left:14px; right:14px; display:flex; gap:8px; align-items:center; padding:8px 12px; }
+  .ticker .live { color:#f87171; font-weight:800; font-size:10px; letter-spacing:.1em; }
+  .ticker .msg { font-size:12px; color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .side h3 { margin-bottom: 4px; }
+  .region-card { padding: 14px; }
+  .op { padding: 10px 12px; border-radius: 10px; border:1px solid var(--border); margin:8px 0; font-size:12px; }
+  .op h4 { font-size:12px; } .op p { margin:2px 0 0; font-size:11px; color:var(--muted); }
+</style></head>
+<body>
+<div class="demo-topbar">
+  <span class="variant-name">The <b>Situation Table</b></span>
+  <span class="pill">Variant 3 · map-first · intent is spatial · fog masks the unsurveyed</span>
+  <a class="btn ghost" href="index.html">← all variants</a>
+</div>
+
+<div class="table-grid">
+  <!-- THE MAP IS THE INTERFACE -->
+  <section class="facet map-wrap fade-in">
+    <div class="facet-3 ticker" style="border-radius:10px">
+      <span class="live">● LIVE</span><span class="msg" id="ticker">Valehaven situation table — click a province to act on it. Distant provinces are unsurveyed until you spend capacity.</span>
+    </div>
+    <svg viewBox="0 0 640 460" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <filter id="fog"><feGaussianBlur stdDeviation="3"/></filter>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a5f"/><stop offset="1" stop-color="#16283f"/></linearGradient>
+        <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b2f5c"/><stop offset="1" stop-color="#241d3a"/></linearGradient>
+      </defs>
+      <!-- sea -->
+      <rect x="0" y="0" width="640" height="460" fill="#0a1420"/>
+      <g class="region" data-name="Capital Harbour" data-key="Economy" onclick="selectRegion(this)">
+        <path d="M60,300 Q120,240 220,260 Q280,275 260,340 Q200,410 120,390 Q60,360 60,300 Z" fill="url(#g1)" stroke="rgba(255,255,255,.12)"/>
+        <text class="rlabel" x="160" y="330">Capital Harbour</text>
+      </g>
+      <g class="region" data-name="Eastern Reach" data-key="Stability" onclick="selectRegion(this)">
+        <path d="M280,180 Q380,150 460,190 Q490,250 430,300 Q350,320 300,270 Q270,220 280,180 Z" fill="url(#g2)" stroke="rgba(255,255,255,.12)"/>
+        <text class="rlabel" x="380" y="240">Eastern Reach</text>
+      </g>
+      <g class="region fog-region" data-name="Northern Basin" data-key="Treasury" data-fog="1" onclick="selectRegion(this)">
+        <path d="M330,60 Q440,40 540,80 Q580,130 520,160 Q420,175 350,140 Q320,100 330,60 Z" fill="url(#g1)" stroke="rgba(255,255,255,.10)"/>
+        <text class="rlabel" x="440" y="110">Northern Basin</text>
+      </g>
+      <!-- issue pins -->
+      <g class="pin" onclick="pinAct('Smuggling in the Capital Harbour','Stability')">
+        <circle cx="150" cy="330" fill="#ef4444"/><circle cx="150" cy="330" r="5" fill="#ef4444"/>
+      </g>
+      <g class="pin" onclick="pinAct('Border tension in the Eastern Reach','Standing')">
+        <circle cx="400" cy="240" fill="#f59e0b"/><circle cx="400" cy="240" r="5" fill="#f59e0b"/>
+      </g>
+    </svg>
+    <div class="legend"><span style="color:#ef4444">crisis pin</span><span style="color:#f59e0b">tension pin</span><span style="color:#64748b">unsurveyed (fog)</span></div>
+  </section>
+
+  <!-- SIDE: selected region + ops -->
+  <section class="col">
+    <div class="facet facet-accent region-card fade-in" id="region-panel">
+      <div class="eyebrow">No province selected</div>
+      <h3 style="margin-top:6px">Pick a province</h3>
+      <p class="tiny dim">Click any province on the table to declare a regional intent, or a pin to respond to a live situation.</p>
+    </div>
+    <div class="facet pad col fade-in" style="flex:1; min-height:0">
+      <div class="between"><h3>Active operations</h3><span class="tiny dim">the record</span></div>
+      <div class="scroll" id="ops" style="flex:1"><p class="tiny dim">Regional commitments and responses log here.</p></div>
+    </div>
+  </section>
+</div>
+
+<script src="demo.js"></script>
+<script>
+  let selected = null;
+  function setTicker(t){ document.getElementById("ticker").textContent = t; }
+  function selectRegion(g){
+    document.querySelectorAll(".region").forEach(r=>r.classList.remove("sel"));
+    g.classList.add("sel"); selected = g;
+    const name = g.dataset.name, fog = g.dataset.fog, key = g.dataset.key;
+    const panel = document.getElementById("region-panel");
+    if(fog){
+      panel.innerHTML = `<div class="eyebrow">Province · unsurveyed</div><h3 style="margin-top:6px">${name} <span class="band fog" style="padding:0 8px">Unclear</span></h3>
+        <p class="tiny dim">Your administration has little presence here. Spend capacity to survey it before you can read its economy or act precisely.</p>
+        <button class="btn primary" style="margin-top:10px" onclick="survey('${name}')"><span class="lbl">◎ Survey province</span></button>`;
+    } else {
+      panel.innerHTML = `<div class="eyebrow">Province</div><h3 style="margin-top:6px">${name}</h3>
+        <p class="tiny dim">Declare a development intent focused on this place. Effects are re-priced by the province's own conditions.</p>
+        <div class="suggest" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+          <button class="btn" onclick="regionIntent('${name}','Develop the ${name}','${key}')"><span class="lbl">Develop</span></button>
+          <button class="btn" onclick="regionIntent('${name}','Fortify the ${name}','Stability')"><span class="lbl">Fortify</span></button>
+          <button class="btn" onclick="regionIntent('${name}','Trade hub in the ${name}','Economy')"><span class="lbl">Trade hub</span></button>
+        </div>`;
+    }
+    setTicker("Province selected: " + name);
+  }
+  function pushOp(title, sub){
+    const el = document.getElementById("ops");
+    if(el.querySelector("p.dim")) el.innerHTML = "";
+    const d = document.createElement("div"); d.className="op fade-in";
+    d.innerHTML = `<h4>${title}</h4><p>${sub}</p>`; el.prepend(d);
+  }
+  function regionIntent(region, title, key){
+    bumpBand(NATION.standing, key, true);
+    recordEvent({ title, effect:key, dir:"up", narrative:`Valehaven directs national effort into the ${region}.` });
+    pushOp(title, "regional commitment · capacity reserved");
+    setTicker("New commitment in " + region);
+  }
+  function survey(name){
+    const g = selected;
+    recordEvent({ title:"Survey: "+name, effect:"Capacity", dir:"down", narrative:`Valehaven's civil service establishes a presence in the ${name}; the fog lifts.` });
+    if(g){ g.classList.remove("fog-region"); g.dataset.fog=""; selectRegion(g); }
+    pushOp("Surveyed "+name, "fog lifted · province readable");
+  }
+  function pinAct(title, key){
+    bumpBand(NATION.standing, key, true);
+    recordEvent({ title:"Responded: "+title, effect:key, dir:"up", narrative:`Valehaven dispatches resources to address ${title.toLowerCase()}.` });
+    pushOp(title, "situation handled on the map");
+    setTicker("Responded — " + title);
+    event.stopPropagation();
+  }
+</script>
+</body></html>
