@@ -84,8 +84,8 @@ const DASHBOARD_HELP_STEPS: HeroHelpStep[] = [
 
 const CountryMapEmbed = dynamic(
   () =>
-    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
-      default: m.CountryMapEmbed,
+    import("~/components/maps/widgets/CountryMapPreview").then((m) => ({
+      default: m.CountryMapPreview,
     })),
   { ssr: false, loading: () => <div className="bg-muted h-52 animate-pulse rounded-xl" /> }
 );
@@ -869,7 +869,6 @@ function DashboardHero({
             showNeighbors={true}
             showCities={true}
             showSubdivisions={true}
-            interactive={true}
             boundsPadding={30}
           />
         </div>

@@ -100,6 +100,7 @@
 - [MyCountry Core Loops Design](project_mycountry_core_loops.md) — exec/diplomacy/politics: engines built but loops open; close via one narrative+ledger spine (recordCountryEvent reusing applyConsequence + generateDiplomaticNews + activity-hooks); only National Issues & Foreign Policy are closed loops today. Doc: plans/mycountry-core-loops-design.md
 - [Map Editor Improvements](project_map_editor_improvements.md) — audit + 3 plans (contextual toolbar / geography analyzer / routes foundation); ToolOptionsBar is dead code, getCountryGeoProfile invisible + hydro bug, decisions: Geoman + named features. Plans in `plans/map-editor-*.md`
 - [Maps↔MyCountry Integration](project_maps_mycountry_integration.md) — tier-0 single-source-of-truth (geography drives the sim); on v2, **all phases A–F complete**, remaining = runtime smoke-test + polish
+- [Map Snapshot Architecture](project_map_snapshot_architecture.md) — single live map instance + snapshot-PNG previews for all passive embeds (2 WebGL contexts total); origin changes propagate via dataUpdatedAt + mapDataVersion. Fixed embed infinite-loops/context exhaustion (impl 2026-07-01, v2)
 - [WikiOS Initiative](project_wikios_initiative.md) — Modern Next.js frontend replacing MediaWiki UI, lives within IxStats, PlateJS editor, Parsoid backend
 - [Forum Integration](project_forum_integration.md) — Native XenForo forum in IxStats, orange theme, hybrid routing, IxnayID SSO planned
 

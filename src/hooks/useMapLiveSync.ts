@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
+import { bumpMapDataVersion } from "~/stores/map-data-version";
 
 const SSE_ENDPOINT = "/api/sse/map-updates";
 const RECONNECT_BASE_MS = 1000;
@@ -30,6 +31,8 @@ function invalidateMapCaches(utils: ReturnType<typeof api.useUtils>) {
   utils.geoCore.getCapitalCities.invalidate();
   utils.countryGeo.getCountryGeoBundle.invalidate();
   utils.geoCore.getCountryGeometry.invalidate();
+  // Force snapshot previews to re-render from the refreshed origin data.
+  bumpMapDataVersion();
 }
 
 export function useMapLiveSync() {

@@ -111,7 +111,16 @@ export function SharedMapProvider({ children }: { children: React.ReactNode }) {
   const acquireMap = useCallback((slotId: string, options: AcquireOptions) => {
     activeSlotIdRef.current = slotId;
 
+    // Per-acquire teardown state. On a cold first load the map isn't style-loaded
+    // yet, so we poll below; if the slot re-acquires (query data streams in) or
+    // unmounts before the map is ready, the pending interval/listener must be
+    // torn down — otherwise every leaked poller fires setup() once the map loads
+    // and the embed churns (setStyle/onReady/refits) until the next hard refresh.
+    let released = false;
+    let checkInterval: ReturnType<typeof setInterval> | null = null;
+
     const setup = () => {
+      if (released) return;
       const containerEl = containerRef.current;
       const mapInstance = mapRef.current;
       if (!containerEl || !mapInstance) return;
@@ -132,7 +141,7 @@ export function SharedMapProvider({ children }: { children: React.ReactNode }) {
       const newStyle = buildBaseStyle(currentTheme, currentProj);
 
       const applyViewAndReady = () => {
-        if (activeSlotIdRef.current !== slotId) return;
+        if (released || activeSlotIdRef.current !== slotId) return;
 
         // Handle viewport options
         if (options.bbox) {
@@ -186,10 +195,15 @@ export function SharedMapProvider({ children }: { children: React.ReactNode }) {
     if (mapRef.current && mapRef.current.isStyleLoaded()) {
       setup();
     } else {
-      // If map is not loaded or style is not loaded, check
-      const checkInterval = setInterval(() => {
+      // Map/style not ready yet (cold first load): poll until it is.
+      checkInterval = setInterval(() => {
+        if (released) {
+          if (checkInterval) clearInterval(checkInterval);
+          return;
+        }
         if (mapRef.current && mapRef.current.isStyleLoaded()) {
-          clearInterval(checkInterval);
+          if (checkInterval) clearInterval(checkInterval);
+          checkInterval = null;
           if (activeSlotIdRef.current === slotId) {
             setup();
           }
@@ -199,6 +213,11 @@ export function SharedMapProvider({ children }: { children: React.ReactNode }) {
 
     // Return release function
     return () => {
+      released = true;
+      if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+      }
       if (activeSlotIdRef.current === slotId) {
         activeSlotIdRef.current = null;
         // Move container back to hidden area

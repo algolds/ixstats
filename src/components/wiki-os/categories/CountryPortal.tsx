@@ -9,8 +9,8 @@ import { ExternalLink, TrendingUp, Users, Coins, BarChart3 } from "lucide-react"
 
 const CountryMapEmbed = dynamic(
   () =>
-    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
-      default: m.CountryMapEmbed,
+    import("~/components/maps/widgets/CountryMapPreview").then((m) => ({
+      default: m.CountryMapPreview,
     })),
   {
     ssr: false,
@@ -196,7 +196,6 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               height="h-56"
               showNeighbors
               showCities
-              interactive
             />
           </div>
 
