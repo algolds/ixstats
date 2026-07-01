@@ -41,8 +41,8 @@ import Link from "next/link";
 
 const CountryMapEmbed = dynamic(
   () =>
-    import("~/components/maps/widgets/CountryMapPreview").then((m) => ({
-      default: m.CountryMapPreview,
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
     })),
   { ssr: false, loading: () => <div className="bg-muted h-56 animate-pulse rounded-b-xl" /> }
 );

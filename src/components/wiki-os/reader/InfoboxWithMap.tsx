@@ -9,8 +9,8 @@ import { withBasePath } from "~/lib/base-path";
 
 const CountryMapEmbed = dynamic(
   () =>
-    import("~/components/maps/widgets/CountryMapPreview").then((m) => ({
-      default: m.CountryMapPreview,
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
     })),
   {
     ssr: false,
@@ -58,6 +58,7 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
             height="h-48"
             showNeighbors
             showCities
+            interactive
           />
         </div>
       )}

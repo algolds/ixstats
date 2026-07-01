@@ -37,7 +37,6 @@ import { usePointDrag } from "./hooks/usePointDrag";
 
 import { useMapEditorContext } from "~/components/maps/editor/plugins/context";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
-import { useSharedMap } from "~/components/maps/core/SharedMapContext";
 
 import { DrawingToolbar } from "./toolbars/DrawingToolbar";
 import { VertexEditingToolbar } from "./toolbars/VertexEditingToolbar";
@@ -180,7 +179,6 @@ const EditorMap = memo(
     },
     ref
   ) {
-    const { acquireMap } = useSharedMap();
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -525,48 +523,53 @@ const EditorMap = memo(
       }
     }, [isLoaded, theme]);
 
-    // ── Initialize map using global shared map provider ──
+    // ── Initialize a standalone MapLibre instance for the editor ──
     useEffect(() => {
       if (!containerRef.current) return;
-      let released = false;
-      let cleanup: (() => void) | null = null;
 
       const center: [number, number] = countryCentroid
         ? [countryCentroid.lng, countryCentroid.lat]
         : MAP_DEFAULTS.center;
 
-      cleanup = acquireMap("map-editor", {
-        container: containerRef.current,
-        center,
-        zoom: 4,
-        theme,
-        projectionMode: "mercator",
-        onReady: async (map) => {
-          if (released) return;
-          mapRef.current = map;
+      let released = false;
+      let map: MapLibreMap | null = null;
 
-          const mod = await import("maplibre-gl");
-          const maplibregl = (
-            "Map" in mod ? mod : (mod as Record<string, unknown>).default
-          ) as typeof mod;
+      (async () => {
+        const mod = await import("maplibre-gl");
+        const maplibregl = (
+          "Map" in mod ? mod : (mod as Record<string, unknown>).default
+        ) as typeof mod;
+        if (released || !containerRef.current) return;
 
-          // Add control only if not already present
-          const hasNav = map.getContainer().querySelector(".maplibregl-ctrl-group");
-          if (!hasNav) {
-            map.addControl(
-              new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
-              "top-right"
-            );
-          }
+        map = new maplibregl.Map({
+          container: containerRef.current,
+          style: buildBaseStyle(theme) as any,
+          center,
+          zoom: 4,
+          attributionControl: false,
+          dragRotate: false,
+        });
+        mapRef.current = map;
+        if ("setProjection" in map) {
+          (map as any).setProjection({ type: "mercator" });
+        }
+        map.addControl(
+          new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
+          "top-right"
+        );
 
+        map.on("load", () => {
+          if (released || !map) return;
           setIsLoaded(true);
           context.setMap(map);
-        },
+        });
+      })().catch((err) => {
+        console.error("[EditorMap] init error:", err);
       });
 
       return () => {
         released = true;
-        if (cleanup) cleanup();
+        if (map) map.remove();
         mapRef.current = null;
         context.setMap(null);
       };

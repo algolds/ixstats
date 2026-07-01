@@ -42,13 +42,10 @@ import { MapPin } from "lucide-react";
 import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/wiki-embed-shared";
 import dynamic from "next/dynamic";
 
-// Snapshot preview: one shared offscreen WebGL context for ALL map tags in an
-// article (the old per-embed CoordinatesMapEmbed spun a fresh context each and
-// exhausted the browser's pool). Click a preview to promote it to a live map.
 const CoordinatesMapEmbed = dynamic(
   () =>
-    import("~/components/maps/widgets/CoordinatesMapPreview").then((m) => ({
-      default: m.CoordinatesMapPreview,
+    import("~/components/maps/widgets/CoordinatesMapEmbed").then((m) => ({
+      default: m.CoordinatesMapEmbed,
     })),
   {
     ssr: false,

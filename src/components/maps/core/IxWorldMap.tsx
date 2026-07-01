@@ -19,7 +19,6 @@ import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 import { Suspense } from "react";
-import { useSharedMap } from "./SharedMapContext";
 
 // Overlay components + their wiring
 import { OVERLAY_LIST } from "~/lib/overlay-registry";
@@ -159,7 +158,6 @@ const IxWorldMap = memo(
     },
     ref
   ) {
-    const { acquireMap } = useSharedMap();
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -242,12 +240,9 @@ const IxWorldMap = memo(
       map.setStyle(newStyle as any, { diff: true });
     }, [theme, isLoaded, projectionMode]);
 
-    // Initialize MapLibre Map instance using global shared map provider
+    // Initialize a standalone MapLibre instance for the main world map.
     useEffect(() => {
       if (!containerRef.current) return;
-
-      let released = false;
-      let cleanup: (() => void) | null = null;
 
       const rect = containerRef.current.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) {
@@ -255,62 +250,71 @@ const IxWorldMap = memo(
         return;
       }
 
-      cleanup = acquireMap("world-map", {
-        container: containerRef.current,
-        center: initialCenter || MAP_DEFAULTS.center,
-        zoom: initialZoom ?? MAP_DEFAULTS.zoom,
-        theme,
-        projectionMode,
-        onReady: async (map) => {
-          if (released) return;
-          mapRef.current = map;
+      let released = false;
+      let map: MapLibreMap | null = null;
 
-          try {
-            const mod = await import("maplibre-gl");
-            const maplibregl = (
-              "Map" in mod ? mod : (mod as Record<string, unknown>).default
-            ) as typeof mod;
+      (async () => {
+        const mod = await import("maplibre-gl");
+        const maplibregl = (
+          "Map" in mod ? mod : (mod as Record<string, unknown>).default
+        ) as typeof mod;
+        if (released || !containerRef.current) return;
 
-            // Progressive feature loading based on zoom
-            let lastFilterZoom = -1;
-            const dataRef = fullLayerDataRef;
-            map.on("zoomend", () => {
-              const zoom = map.getZoom();
+        map = new maplibregl.Map({
+          container: containerRef.current,
+          style: buildBaseStyle(theme, projectionMode) as any,
+          center: initialCenter || MAP_DEFAULTS.center,
+          zoom: initialZoom ?? MAP_DEFAULTS.zoom,
+          minZoom: MAP_DEFAULTS.minZoom,
+          maxZoom: MAP_DEFAULTS.maxZoom,
+          attributionControl: false,
+          dragRotate: false,
+        });
+        mapRef.current = map;
+        map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
-              const zoomBucket = Math.floor(zoom);
-              if (zoomBucket !== lastFilterZoom) {
-                lastFilterZoom = zoomBucket;
-                for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
-                  const sourceId = `source-${layerType}`;
-                  const source = map.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
-                  const fullData = dataRef.current.get(layerType);
-                  if (!source || !fullData) continue;
-                  const minArea = getMinArea(layerType, zoom);
-                  source.setData(filterByArea(fullData, minArea));
-                }
+        map.on("load", () => {
+          if (released || !map) return;
+
+          // Progressive feature loading based on zoom
+          let lastFilterZoom = -1;
+          const dataRef = fullLayerDataRef;
+          map.on("zoomend", () => {
+            if (!map) return;
+            const zoom = map.getZoom();
+            const zoomBucket = Math.floor(zoom);
+            if (zoomBucket !== lastFilterZoom) {
+              lastFilterZoom = zoomBucket;
+              for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
+                const sourceId = `source-${layerType}`;
+                const source = map.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
+                const fullData = dataRef.current.get(layerType);
+                if (!source || !fullData) continue;
+                const minArea = getMinArea(layerType, zoom);
+                source.setData(filterByArea(fullData, minArea));
               }
-            });
+            }
+          });
 
-            tooltipPopupRef.current = new maplibregl.Popup({
-              closeButton: false,
-              closeOnClick: false,
-              className: "ixmap-feature-tooltip",
-              offset: 12,
-              maxWidth: "220px",
-            });
+          tooltipPopupRef.current = new maplibregl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            className: "ixmap-feature-tooltip",
+            offset: 12,
+            maxWidth: "220px",
+          });
 
-            setIsLoaded(true);
-            onReady?.();
-          } catch (err) {
-            console.error("[IxWorldMap] onReady error:", err);
-            setDebugError(`Load error: ${err instanceof Error ? err.message : String(err)}`);
-          }
-        },
+          setIsLoaded(true);
+          onReady?.();
+        });
+      })().catch((err) => {
+        console.error("[IxWorldMap] init error:", err);
+        setDebugError(`Load error: ${err instanceof Error ? err.message : String(err)}`);
       });
 
       return () => {
         released = true;
-        if (cleanup) cleanup();
+        if (map) map.remove();
         mapRef.current = null;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps

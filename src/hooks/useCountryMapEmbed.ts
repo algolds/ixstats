@@ -19,14 +19,13 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
   const enabled = !!countryId;
 
   // Fetch the unified geographic bundle (contains geometry, neighbors, cities, POIs, subdivisions)
-  const {
-    data: bundle,
-    isLoading: bundleLoading,
-    dataUpdatedAt: bundleUpdatedAt,
-  } = api.countryGeo.getCountryGeoBundle.useQuery({ countryId: countryId! }, { enabled, ...MAP_CACHE });
+  const { data: bundle, isLoading: bundleLoading } = api.countryGeo.getCountryGeoBundle.useQuery(
+    { countryId: countryId! },
+    { enabled, ...MAP_CACHE }
+  );
 
   // Fetch world political layer for neighbor rendering (shared cache with main map)
-  const { data: worldMap, dataUpdatedAt: worldUpdatedAt } = api.geoCore.getWorldMap.useQuery(
+  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
     { layers: ["political"] },
     { enabled, staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 }
   );
@@ -67,8 +66,6 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       // State
       isLoading: bundleLoading,
       hasGeometry: !!bundle?.geometry,
-      // Freshness token — changes when either query refetches (drives snapshot re-render).
-      dataUpdatedAt: Math.max(bundleUpdatedAt ?? 0, worldUpdatedAt ?? 0),
     };
-  }, [bundle, worldMap, bundleLoading, bundleUpdatedAt, worldUpdatedAt]);
+  }, [bundle, worldMap, bundleLoading]);
 }
