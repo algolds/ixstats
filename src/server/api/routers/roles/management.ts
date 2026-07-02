@@ -431,6 +431,13 @@ export const rolesManagementRouter = createTRPCRouter({
           ],
         },
         {
+          name: "beta_tester",
+          displayName: "Beta Tester",
+          description: "Early access to Labs features",
+          level: 90,
+          permissions: [permissionMap["labs.access"]],
+        },
+        {
           name: "user",
           displayName: "Standard User",
           description: "Basic user permissions",

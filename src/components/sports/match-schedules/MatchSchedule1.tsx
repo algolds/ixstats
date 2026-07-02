@@ -29,6 +29,8 @@ export interface ScheduleMatch {
   status: string;
   time?: string;
   date?: string;
+  isRivalry?: boolean;
+  rivalryIntensity?: number;
 }
 
 interface MatchSchedule1Props {
@@ -186,6 +188,14 @@ export default function MatchSchedule1({
                         </span>
                       )}
                     </div>
+                  )}
+                  {match.isRivalry && (
+                    <span
+                      title={`Rivalry match${match.rivalryIntensity ? ` · intensity ${match.rivalryIntensity}` : ""}`}
+                      className="mt-1 flex items-center gap-0.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-1.5 text-[8px] font-black tracking-wider text-rose-400 uppercase"
+                    >
+                      🔥 Rivalry
+                    </span>
                   )}
                 </div>
 

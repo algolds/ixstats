@@ -535,7 +535,30 @@ export const sportsLeaguesRouter = createTRPCRouter({
           orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
         });
 
-        return { type: "fixture", matches };
+        // Flag rivalry fixtures (one query, mapped in memory). Rivalries are
+        // unordered team pairs, so key by sorted id pair.
+        const teamIds = Array.from(
+          new Set(matches.flatMap((m) => [m.homeTeamId, m.awayTeamId]))
+        );
+        const rivalries =
+          teamIds.length > 0
+            ? await (ctx.db as any).sportRivalry.findMany({
+                where: {
+                  OR: [{ team1Id: { in: teamIds } }, { team2Id: { in: teamIds } }],
+                },
+                select: { team1Id: true, team2Id: true, intensity: true },
+              })
+            : [];
+        const rivalryMap = new Map<string, number>();
+        for (const r of rivalries as Array<{ team1Id: string; team2Id: string; intensity: number }>) {
+          rivalryMap.set([r.team1Id, r.team2Id].sort().join("|"), r.intensity);
+        }
+        const withRivalry = matches.map((m) => {
+          const intensity = rivalryMap.get([m.homeTeamId, m.awayTeamId].sort().join("|")) ?? 0;
+          return { ...m, isRivalry: intensity > 0, rivalryIntensity: intensity };
+        });
+
+        return { type: "fixture", matches: withRivalry };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1107,6 +1130,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
     .input(
       z.object({
         matchId: z.string(),
+        force: z.boolean().optional(),
         config: z
           .object({
             provider: z.string().optional(),
@@ -1141,6 +1165,20 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
         if (events.length === 0) {
           return { commentary: [] };
+        }
+
+        // Cache-first: commentary is deterministic per match, so serve the stored
+        // copy for free unless an owner explicitly forces a regenerate. This makes
+        // reloads instant and bounds LLM cost to one call per match.
+        const cached = stats.commentary as string[] | undefined;
+        if (!input.force && cached && cached.length > 0) {
+          return { commentary: cached };
+        }
+
+        // Generating fresh commentary hits a paid LLM — gate it behind auth so
+        // anonymous traffic can only read the cache, never trigger new calls.
+        if (!ctx.auth?.userId) {
+          return { commentary: cached ?? [] };
         }
 
         const { narrateEvents, generateAudioBroadcast } =

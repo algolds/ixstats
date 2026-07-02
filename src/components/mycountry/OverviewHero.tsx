@@ -33,6 +33,7 @@ import { useIssueCount } from "~/hooks/useNationalIssues";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 import { SmartStack, buildAgendaItems } from "./SmartStack";
+import { ChangedSinceChip } from "./ChangedSinceChip";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 
 const MYCOUNTRY_HELP_STEPS: HeroHelpStep[] = [
@@ -563,6 +564,9 @@ export function OverviewHero({
                     )}
                   </Link>
                   <p className="text-muted-foreground text-[10px]">{stats.leader}</p>
+                  <div className="mt-1">
+                    <ChangedSinceChip countryId={countryId} />
+                  </div>
                 </div>
               </div>
 

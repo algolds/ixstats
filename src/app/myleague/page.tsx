@@ -21,6 +21,8 @@ import {
   Flame,
   Calendar,
   Layers,
+  Link2,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { LeagueCreator } from "~/components/myleague/LeagueCreator";
@@ -91,6 +93,15 @@ export default function MyLeaguePage() {
   const [search, setSearch] = useState("");
   const [selectedSport, setSelectedSport] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyInvite = (id: string) => {
+    const url = window.location.origin + withBasePath(`/myleague/${id}`);
+    void navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1500);
+    });
+  };
 
   const { data: leagues, isLoading } = api.sports.getLeagues.useQuery({});
   const { data: featuredId } = api.sports.getFeaturedLeagueId.useQuery();
@@ -429,13 +440,27 @@ export default function MyLeaguePage() {
                           </div>
                         </div>
 
-                        <Button
-                          onClick={() => router.push(withBasePath(`/myleague/${league.id}`))}
-                          className="border-border hover:bg-muted/40 text-foreground mt-4 h-9 w-full cursor-pointer rounded-xl border text-xs font-semibold transition-all"
-                          variant="ghost"
-                        >
-                          Enter League
-                        </Button>
+                        <div className="mt-4 flex items-center gap-2">
+                          <Button
+                            onClick={() => router.push(withBasePath(`/myleague/${league.id}`))}
+                            className="border-border hover:bg-muted/40 text-foreground h-9 flex-1 cursor-pointer rounded-xl border text-xs font-semibold transition-all"
+                            variant="ghost"
+                          >
+                            Enter League
+                          </Button>
+                          <Button
+                            onClick={() => copyInvite(league.id)}
+                            title="Copy invite link"
+                            className="border-border hover:bg-muted/40 text-muted-foreground h-9 w-9 shrink-0 cursor-pointer rounded-xl border p-0 transition-all"
+                            variant="ghost"
+                          >
+                            {copiedId === league.id ? (
+                              <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : (
+                              <Link2 className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </FacetCard>
                   </motion.div>

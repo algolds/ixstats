@@ -6,7 +6,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Download } from "lucide-react";
 
 export interface StandingsRow {
   id: string;
@@ -23,6 +23,34 @@ export interface StandingsRow {
   conference?: string;
   color?: string; // team hex color
   logo?: string | null;
+}
+
+function exportStandingsCsv(title: string, rows: StandingsRow[]) {
+  const header = ["Rank", "Team", "GP", "W", "L", "D", "PF", "PA", "Diff", "Pts"];
+  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const lines = rows.map((r, i) =>
+    [
+      r.rank ?? i + 1,
+      r.teamName ?? r.teamId,
+      r.wins + r.losses + r.draws,
+      r.wins,
+      r.losses,
+      r.draws,
+      r.pointsFor,
+      r.pointsAgainst,
+      r.pointsFor - r.pointsAgainst,
+      r.points,
+    ]
+      .map(esc)
+      .join(",")
+  );
+  const csv = [header.map(esc).join(","), ...lines].join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-standings.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 interface Standings1Props {
@@ -240,8 +268,17 @@ export default function Standings1({
         className
       )}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h3 className="text-foreground text-lg font-extrabold">{title}</h3>
+        <button
+          type="button"
+          onClick={() => exportStandingsCsv(title, standings)}
+          title="Export standings as CSV"
+          className="border-border/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold uppercase transition-colors"
+        >
+          <Download className="h-3 w-3" />
+          CSV
+        </button>
       </div>
 
       <div className="space-y-6">

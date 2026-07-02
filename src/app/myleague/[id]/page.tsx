@@ -1400,6 +1400,8 @@ function ScheduleTab({
       awayColor: m.awayTeam.color ?? undefined,
       homeTeam: { logo: m.homeTeam.logo, wikiSlug: m.homeTeam.wikiSlug },
       awayTeam: { logo: m.awayTeam.logo, wikiSlug: m.awayTeam.wikiSlug },
+      isRivalry: m.isRivalry,
+      rivalryIntensity: m.rivalryIntensity,
     }));
 
     return (

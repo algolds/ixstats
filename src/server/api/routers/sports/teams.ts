@@ -601,6 +601,38 @@ export const sportsTeamsRouter = createTRPCRouter({
         standingsBySeason.set(s.seasonId, list);
       }
 
+      // Last-5 form per team: one query for recent completed matches, grouped
+      // in memory. ponytail: naive global take (fine for a handful of owned
+      // teams); switch to per-team subqueries only if someone owns dozens.
+      const recentMatches = await ctx.db.sportMatch.findMany({
+        where: {
+          status: "completed",
+          OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
+        },
+        select: {
+          homeTeamId: true,
+          awayTeamId: true,
+          homeScore: true,
+          awayScore: true,
+        },
+        orderBy: { resolvedIxTime: "desc" },
+        take: teamIds.length * 10 + 20,
+      });
+      const teamIdSet = new Set(teamIds);
+      const formByTeam = new Map<string, string[]>();
+      for (const m of recentMatches) {
+        for (const teamId of [m.homeTeamId, m.awayTeamId]) {
+          if (!teamIdSet.has(teamId)) continue;
+          const list = formByTeam.get(teamId) ?? [];
+          if (list.length >= 5) continue;
+          const isHome = m.homeTeamId === teamId;
+          const gf = (isHome ? m.homeScore : m.awayScore) ?? 0;
+          const ga = (isHome ? m.awayScore : m.homeScore) ?? 0;
+          list.push(gf > ga ? "W" : gf < ga ? "L" : "D");
+          formByTeam.set(teamId, list);
+        }
+      }
+
       return teams.map((t) => {
         const activeSeason = activeSeasonMap.get(t.leagueId) ?? null;
         let currentStandings = null;
@@ -627,6 +659,7 @@ export const sportsTeamsRouter = createTRPCRouter({
             : null,
           currentStandings,
           championships,
+          form: formByTeam.get(t.id) ?? [],
         };
       });
     } catch (error) {

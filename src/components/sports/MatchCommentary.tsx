@@ -55,7 +55,7 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
   const hasCommentary = commentary && commentary.length > 0;
   const isGenerating = generateCommentaryMutation.isPending;
 
-  const handleGenerate = async (e: React.MouseEvent) => {
+  const handleGenerate = async (e: React.MouseEvent, force = false) => {
     e.stopPropagation();
     let config: any = undefined;
     try {
@@ -73,7 +73,7 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
     } catch (e) {
       console.error("Failed to load AI config from localStorage", e);
     }
-    generateCommentaryMutation.mutate({ matchId, config });
+    generateCommentaryMutation.mutate({ matchId, config, force });
   };
 
   return (
@@ -122,9 +122,20 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
 
       {/* Main timeline trace or generation CTA */}
       <div>
-        <p className="mb-3 text-[9px] font-black tracking-widest text-white/40 uppercase select-none">
-          Live Match Feed
-        </p>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[9px] font-black tracking-widest text-white/40 uppercase select-none">
+            Live Match Feed
+          </p>
+          {hasCommentary && !isGenerating && (
+            <button
+              onClick={(e) => handleGenerate(e, true)}
+              className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-bold text-white/60 transition-colors hover:border-cyan-500/30 hover:text-cyan-300"
+            >
+              <Sparkles className="h-2.5 w-2.5" />
+              Regenerate
+            </button>
+          )}
+        </div>
 
         {trace && trace.length > 0 ? (
           <div className="max-h-64 space-y-2.5 overflow-y-auto pr-1">

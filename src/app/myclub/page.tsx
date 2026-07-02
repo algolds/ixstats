@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
 import { sportCoverUrl } from "~/lib/sports/league-covers";
 import { Trophy, Users, ArrowRight } from "lucide-react";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
@@ -111,6 +112,23 @@ export default function MyClubPage() {
                 >
                   Cap: {((team as any).stadiumCapacity || 5000).toLocaleString()}
                 </Badge>
+                {((team as any).form?.length ?? 0) > 0 && (
+                  <div className="flex items-center gap-1" title="Last 5 results (most recent first)">
+                    {((team as any).form as string[]).map((r, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black text-white shadow-sm",
+                          r === "W" && "bg-emerald-500/80",
+                          r === "L" && "bg-rose-500/80",
+                          r === "D" && "bg-neutral-500/80"
+                        )}
+                      >
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ),
             footer: (

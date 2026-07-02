@@ -30,7 +30,7 @@ the live working set stays here.
 ### MyLeague & MyClub Core Improvements — secure & optimize simulation platform
 | Plan | Priority | Status |
 |------|----------|--------|
-| [064-myleague-myclub-consolidated.md](064-myleague-myclub-consolidated.md) | High | ACTIVE (planning) |
+| [064-myleague-myclub-consolidated.md](064-myleague-myclub-consolidated.md) | High | DONE (verified in code v2) |
 | [065-myleague-emotional-layer.md](065-myleague-emotional-layer.md) | High | DONE |
 
 ### MyCountry Core Loops

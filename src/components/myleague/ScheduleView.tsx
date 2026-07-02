@@ -32,6 +32,8 @@ interface ScheduleViewProps {
     awayColor?: string;
     homeTeam?: { logo?: string | null; wikiSlug?: string | null };
     awayTeam?: { logo?: string | null; wikiSlug?: string | null };
+    isRivalry?: boolean;
+    rivalryIntensity?: number;
   }>;
   archetype?: string;
   onTeamClick?: (teamId: string) => void;
@@ -151,6 +153,8 @@ export function ScheduleView({
       homeScore: m.homeScore,
       awayScore: m.awayScore,
       status: m.status,
+      isRivalry: m.isRivalry,
+      rivalryIntensity: m.rivalryIntensity,
     }));
 
     const completedCount = dayMatches.filter((m) => m.status === "completed").length;
