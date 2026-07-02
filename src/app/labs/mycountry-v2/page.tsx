@@ -68,7 +68,8 @@ const GOAL_CHIPS = ["Cool the housing market", "Modernize the navy", "Court a ne
 
 export default function MyCountryV2Page() {
   const { country: userCountry } = useUserCountry();
-  const { data: countries } = api.countries.getAll.useQuery({ limit: 300 });
+  const { data: countriesData } = api.countries.getAll.useQuery({ limit: 300 });
+  const countries = countriesData?.countries;
   const [countryId, setCountryId] = useState<string | null>(null);
   useEffect(() => {
     if (!countryId) setCountryId((userCountry as any)?.id ?? countries?.[0]?.id ?? null);
