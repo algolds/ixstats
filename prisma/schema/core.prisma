@@ -107,6 +107,7 @@ model Country {
   budgetScenarios             BudgetScenario[]          @relation("CountryBudgetScenarios")
   componentChanges            ComponentChangeLog[]      @relation("CountryComponentChanges")
   changeLogs                  CountryChangeLog[]        @relation("CountryChangeLogs")
+  intents                     Intent[]                  @relation("CountryIntents")
   componentSynergies          ComponentSynergy[]        @relation("CountrySynergies")
   archetypeMatches            CountryArchetypeMatch[]   @relation("CountryArchetypes")
   followers                   CountryFollow[]           @relation("CountryFollowing")

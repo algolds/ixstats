@@ -43,6 +43,7 @@ import { autosaveHistoryRouter } from "./routers/autosaveHistory";
 import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
 import { builderDraftRouter } from "./routers/builderDraft";
 import { onomaRouter } from "./routers/onoma";
+import { intentRouter } from "./routers/intent";
 
 // ─── Economy ─────────────────────────────────────────────────────────────────
 import { economicsRouter } from "./routers/economics";
@@ -196,6 +197,7 @@ export const appRouter = createTRPCRouter({
   quickActions: safeRouter("quickActions", () => quickActionsRouter),
   scheduledChanges: safeRouter("scheduledChanges", () => scheduledChangesRouter),
   nationalIssues: safeRouter("nationalIssues", () => nationalIssuesRouter),
+  intent: safeRouter("intent", () => intentRouter),
 
   // ─── Diplomacy ─────────────────────────────────────────────────────────────
   diplomaticCore: safeRouter("diplomaticCore", () => diplomaticCoreRouter),

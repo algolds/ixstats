@@ -862,3 +862,32 @@ model CountryChangeLog {
   @@map("country_change_logs")
 }
 
+/// Player-initiated Intent (design-bible v2). The proactive twin of NationalIssue.
+/// Packages are assembled server-side from the policy registry + bounded budget
+/// deltas; they NEVER touch core stats (Editor-only). Weekly cooldown + cap.
+model Intent {
+  id            String   @id @default(cuid())
+  countryId     String
+  goal          String                          // player's plain-language goal
+  tier          String                          // "measured" | "moderate" | "extreme" | "custom"
+  category      String                          // classified domain (defense/foreign/fiscal/...)
+  target        String?                         // parsed FP target, if any
+  status        String   @default("active")     // "active" | "completed" | "abandoned"
+  changesJson   String                          // JSON: applied package line-items
+  summary       String?                         // auto-generated prose (ThinkPages draft-ready)
+  parentId      String?                         // tree dependency (bible: no full DAG)
+  cooldownUntil Float?                           // IxTime ms — next intent allowed after this
+  createdIxTime Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  country       Country  @relation("CountryIntents", fields: [countryId], references: [id], onDelete: Cascade)
+  parent        Intent?  @relation("IntentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children      Intent[] @relation("IntentTree")
+
+  @@index([countryId])
+  @@index([status])
+  @@index([parentId])
+  @@map("intents")
+}
+

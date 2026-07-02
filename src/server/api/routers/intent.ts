@@ -1,0 +1,234 @@
+/**
+ * Intent router (design-bible v2, migration plan §1).
+ *
+ * The player-initiated twin of National Issues: state a goal → the government
+ * proposes Measured/Moderate/Extreme packages → commit one → applied through the
+ * CountryEventSpine (bounded stat change + ledger + news). Packages are assembled
+ * server-side and can never touch core stats (Editor-only). Weekly cooldown + cap.
+ */
+
+import { z } from "zod";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import { IxTime } from "~/lib/ixtime";
+import { CountryEventSpine } from "~/lib/country-event-spine";
+import {
+  assemblePackages,
+  weightAcceptance,
+  CATEGORY_TO_BROKER,
+  type Tier,
+  type Category,
+} from "~/lib/intent/assemble";
+import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft-power-brokers";
+import { assertCountryAccess } from "~/server/api/routers/economics/_ownership";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
+const COOLDOWN_MS = WEEK_MS; // decided: weekly cooldown between intents
+const WEEKLY_CAP = 3; // safety ceiling on intents resolved per IxTime-week
+const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
+
+/** Load active Power Brokers for a country (mirrors elections.getPowerBrokers). */
+async function loadBrokers(db: any, countryId: string): Promise<ActiveBroker[]> {
+  const [components, allocations] = await Promise.all([
+    db.governmentComponent.findMany({
+      where: { countryId, isActive: true },
+      select: { componentType: true },
+    }),
+    db.budgetAllocation.findMany({
+      where: { governmentStructure: { countryId }, budgetYear: new Date().getFullYear() },
+      include: { department: { select: { category: true } } },
+    }),
+  ]);
+  const spendByCategory: Record<string, number> = {};
+  for (const a of allocations)
+    spendByCategory[a.department.category] =
+      (spendByCategory[a.department.category] || 0) + a.allocatedPercent;
+  return deriveBrokers(
+    components.map((c: any) => c.componentType),
+    spendByCategory
+  );
+}
+
+/** Re-weight package acceptance by the aligned broker's disposition. */
+function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroker | undefined {
+  const id = CATEGORY_TO_BROKER[category];
+  return id ? brokers.find((b) => b.id === id) : undefined;
+}
+
+async function cooldownStatus(db: any, countryId: string) {
+  const now = IxTime.getCurrentIxTime();
+  const recent = await db.intent.findMany({
+    where: { countryId, createdIxTime: { gte: now - WEEK_MS } },
+    orderBy: { createdIxTime: "desc" },
+    select: { cooldownUntil: true },
+  });
+  const usedThisWeek = recent.length;
+  const active = recent.find((i: any) => i.cooldownUntil && i.cooldownUntil > now);
+  const onCooldown = !!active || usedThisWeek >= WEEKLY_CAP;
+  return {
+    onCooldown,
+    cooldownUntil: active?.cooldownUntil ?? null,
+    usedThisWeek,
+    cap: WEEKLY_CAP,
+    canCommit: !onCooldown,
+  };
+}
+
+export const intentRouter = createTRPCRouter({
+  /** Propose Measured/Moderate/Extreme packages for a plain-language goal. */
+  suggest: publicProcedure
+    .input(z.object({ countryId: z.string(), goal: z.string().min(2).max(200) }))
+    .query(async ({ ctx, input }) => {
+      const { category, target, packages } = assemblePackages(input.goal);
+      const status = await cooldownStatus(ctx.db, input.countryId);
+
+      // broker-weighted acceptance (falls back to tier-based if brokers unavailable)
+      let broker: ActiveBroker | undefined;
+      try {
+        const brokers = await loadBrokers(ctx.db, input.countryId);
+        broker = alignedBroker(brokers, category);
+      } catch {
+        /* ignore — acceptance stays tier-based */
+      }
+      const weighted = packages.map((p) => ({
+        ...p,
+        acceptance: broker
+          ? weightAcceptance(p.acceptance, { brokerUnlocked: broker.unlocked, brokerSatisfied: broker.satisfied })
+          : p.acceptance,
+      }));
+
+      return {
+        goal: input.goal,
+        category,
+        target: target ?? null,
+        foreignNeedsTarget: category === "foreign" && !target,
+        packages: weighted,
+        broker: broker ? { name: broker.name, unlocked: broker.unlocked, satisfied: broker.satisfied } : null,
+        status,
+      };
+    }),
+
+  /** Cooldown / cap status for the country (for UI gating). */
+  getStatus: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => cooldownStatus(ctx.db, input.countryId)),
+
+  /** The dependency tree of intents for a country (flat; UI nests by parentId). */
+  getTree: publicProcedure
+    .input(z.object({ countryId: z.string(), limit: z.number().min(1).max(100).default(50) }))
+    .query(async ({ ctx, input }) => {
+      const intents = await ctx.db.intent.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdIxTime: "desc" },
+        take: input.limit,
+        select: {
+          id: true, goal: true, tier: true, category: true, target: true,
+          status: true, summary: true, parentId: true, createdIxTime: true, createdAt: true,
+        },
+      });
+      return intents;
+    }),
+
+  /** Commit a chosen package: applies it and records the Intent. */
+  commit: protectedProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        goal: z.string().min(2).max(200),
+        tier: z.enum(["measured", "moderate", "extreme"]),
+        parentId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryAccess(ctx, input.countryId);
+
+      const { category, target, packages } = assemblePackages(input.goal);
+      const pkg = packages.find((p) => p.tier === (input.tier as Tier));
+      if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
+
+      // Foreign policy is gated: needs a specific target (Urcea).
+      if (category === "foreign" && !target)
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Foreign-policy intents need a specific target — name who or what this is about.",
+        });
+
+      // Weekly cooldown + cap.
+      const status = await cooldownStatus(ctx.db, input.countryId);
+      if (!status.canCommit) {
+        const until = status.cooldownUntil
+          ? ` Next available around ${IxTime.formatIxTime?.(status.cooldownUntil) ?? new Date(status.cooldownUntil).toISOString()}.`
+          : "";
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `Your government is still executing this week's agenda (${status.usedThisWeek}/${status.cap}).${until}`,
+        });
+      }
+
+      const now = IxTime.getCurrentIxTime();
+
+      // Apply the package through the spine (bounded + audited + narrated).
+      const applied = await CountryEventSpine.recordCountryEvent({
+        db: ctx.db,
+        countryId: input.countryId,
+        sourceType: "decision",
+        description: `Intent (${input.tier}): ${input.goal}`,
+        consequences: pkg.consequences.map((c) => ({
+          targetModel: c.targetModel,
+          targetField: c.targetField,
+          operation: c.operation,
+          value: c.value,
+        })),
+      });
+
+      // Apply structured budget deltas (bounded; never a core stat). Best-effort.
+      const budgetChanges = pkg.changes.filter((c) => c.kind === "budget" && c.deptCategory && c.deltaPercent);
+      for (const bc of budgetChanges) {
+        try {
+          const alloc = await ctx.db.budgetAllocation.findFirst({
+            where: {
+              governmentStructure: { countryId: input.countryId },
+              department: { category: bc.deptCategory! },
+            },
+            // most-recent budget year, then the largest line in that category
+            orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
+          });
+          if (alloc) {
+            const next = Math.max(0, Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!));
+            await ctx.db.budgetAllocation.update({ where: { id: alloc.id }, data: { allocatedPercent: next } });
+          }
+        } catch {
+          /* budget row missing / structure absent — line stays descriptive only */
+        }
+      }
+
+      // Auto-summation prose — ThinkPages draft-ready (push deferred to phase 6).
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { name: true },
+      });
+      const nm = country?.name ?? "The government";
+      const summary =
+        `${nm} pursued "${input.goal}" via a ${input.tier} course: ` +
+        pkg.changes.map((c) => c.label).join("; ") + ".";
+
+      const intent = await ctx.db.intent.create({
+        data: {
+          countryId: input.countryId,
+          goal: input.goal,
+          tier: input.tier,
+          category,
+          target: target ?? null,
+          status: "active",
+          changesJson: JSON.stringify(pkg.changes),
+          summary,
+          parentId: input.parentId ?? null,
+          cooldownUntil: now + COOLDOWN_MS,
+          createdIxTime: now,
+        },
+      });
+
+      return { intent, changes: pkg.changes, applied, summary };
+    }),
+});

@@ -31,6 +31,7 @@ import {
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { useUserCountry } from "~/hooks/useUserCountry";
+import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import {
   Select,
   SelectContent,
@@ -109,14 +110,31 @@ const GOAL_CHIPS = [
   "Develop the coast",
 ];
 
-export default function MyCountryV2Page() {
+// ponytail: shell lives under app/labs for now; relocate to components/mycountry/v2
+// when v2 stabilizes. Both /labs/mycountry-v2 and /mycountry/v2 render it.
+export function MyCountryV2({
+  lockedCountryId,
+  showPicker = true,
+  previewLabel = "live · labs preview",
+}: {
+  lockedCountryId?: string;
+  showPicker?: boolean;
+  previewLabel?: string;
+} = {}) {
   const { country: userCountry } = useUserCountry();
-  const { data: countriesData } = api.countries.getAll.useQuery({ limit: 300 });
+  const { data: countriesData } = api.countries.getAll.useQuery(
+    { limit: 300 },
+    { enabled: showPicker }
+  );
   const countries = countriesData?.countries;
   const [countryId, setCountryId] = useState<string | null>(null);
   useEffect(() => {
+    if (lockedCountryId) {
+      setCountryId(lockedCountryId);
+      return;
+    }
     if (!countryId) setCountryId((userCountry as any)?.id ?? countries?.[0]?.id ?? null);
-  }, [userCountry, countries, countryId]);
+  }, [lockedCountryId, userCountry, countries, countryId]);
 
   const enabled = !!countryId;
   const { data: dash, isLoading: dashLoading } = api.mycountry.getCountryDashboard.useQuery(
@@ -181,15 +199,25 @@ export default function MyCountryV2Page() {
     return [...local, ...live].slice(0, 40);
   }, [feed, local]);
 
-  function declare(goal: string, plan?: string) {
+  const utils = api.useUtils();
+  const [execGoal, setExecGoal] = useState<string | null>(null);
+
+  // briefing rail hands the goal to Executive mode (where the packages live)
+  function handoffToExecutive(goal: string) {
     const g = goal.trim();
     if (!g) return;
-    const body = `The government of ${d.name ?? "the nation"} commits to ${g}${plan ? ` via a ${plan.toLowerCase()} course` : ""}. Ministries begin work; expect the world to push back.`;
+    setExecGoal(g);
+    setMode("executive");
+  }
+
+  // called after a real intent.commit succeeds: optimistic feed + toast + refetch
+  function handleCommitted(res: any) {
+    const body = (res?.summary as string) ?? "Intent committed.";
     setLocal((p) => [
       {
-        id: `local_${Date.now()}`,
+        id: res?.intent?.id ?? `local_${Date.now()}`,
         kind: "decision",
-        title: `Intent: ${g}`,
+        title: `Intent: ${res?.intent?.goal ?? ""}`,
         body,
         timestamp: Date.now(),
       },
@@ -197,6 +225,11 @@ export default function MyCountryV2Page() {
     ]);
     setToast(`◆ In-world: ${body}`);
     setTimeout(() => setToast(null), 4500);
+    void utils.mycountry.getCanonFeed.invalidate();
+    void utils.mycountry.getChangeLog.invalidate();
+    void utils.mycountry.getCountryDashboard.invalidate();
+    void utils.intent.getStatus.invalidate();
+    void utils.intent.getTree.invalidate();
   }
 
   const rawFlag = d.flag as string | undefined;
@@ -216,25 +249,27 @@ export default function MyCountryV2Page() {
           <Landmark className="h-4 w-4 text-amber-500" /> MyCountry{" "}
           <span className="text-amber-500">v2</span>
           <span className="border-border text-muted-foreground ml-2 rounded-full border px-2.5 py-0.5 text-[11px] font-medium">
-            live · labs preview
+            {previewLabel}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={countryId ?? ""} onValueChange={(val) => setCountryId(val || null)}>
-            <SelectTrigger
-              size="sm"
-              className="border-border bg-card/40 text-foreground hover:bg-card/70 h-8 w-fit min-w-[140px] cursor-pointer text-xs focus:border-amber-500/30 focus:ring-amber-500/20"
-            >
-              <SelectValue placeholder="Select Country" />
-            </SelectTrigger>
-            <SelectContent className="border-border bg-popover text-popover-foreground">
-              {(countries ?? []).map((c: any) => (
-                <SelectItem key={c.id} value={c.id} className="text-xs">
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {showPicker && (
+            <Select value={countryId ?? ""} onValueChange={(val) => setCountryId(val || null)}>
+              <SelectTrigger
+                size="sm"
+                className="border-border bg-card/40 text-foreground hover:bg-card/70 h-8 w-fit min-w-[140px] cursor-pointer text-xs focus:border-amber-500/30 focus:ring-amber-500/20"
+              >
+                <SelectValue placeholder="Select Country" />
+              </SelectTrigger>
+              <SelectContent className="border-border bg-popover text-popover-foreground">
+                {(countries ?? []).map((c: any) => (
+                  <SelectItem key={c.id} value={c.id} className="text-xs">
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <div className="border-border bg-card/40 flex rounded-lg border p-0.5 text-xs font-semibold">
             <button
               onClick={() => setMode("briefing")}
@@ -370,7 +405,7 @@ export default function MyCountryV2Page() {
             <div className="space-y-4">
               <FacetCard depth={1} className="p-5">
                 <div className="mb-3 text-sm font-bold">Declare an intent</div>
-                <QuickDeclare onDeclare={declare} />
+                <QuickDeclare onDeclare={handoffToExecutive} />
               </FacetCard>
 
               <FacetCard depth={1} className="p-5">
@@ -419,10 +454,12 @@ export default function MyCountryV2Page() {
         ) : (
           /* EXECUTIVE MODE — the Console (AI-chatbox intent bar) over the same live feed */
           <ExecutiveConsole
+            countryId={countryId}
             name={d.name ?? "your nation"}
             bands={bands}
             posts={posts}
-            onDeclare={declare}
+            initialGoal={execGoal}
+            onCommitted={handleCommitted}
           />
         )}
       </div>
@@ -435,6 +472,11 @@ export default function MyCountryV2Page() {
       )}
     </div>
   );
+}
+
+// labs route: design-iteration view with the country picker
+export default function MyCountryV2Page() {
+  return <MyCountryV2 />;
 }
 
 // ── quick declare (briefing rail) ──────────────────────────────────────────
@@ -465,7 +507,7 @@ function QuickDeclare({ onDeclare }: { onDeclare: (g: string) => void }) {
           }}
           className="flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-amber-500/16 px-3 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/26"
         >
-          <Send className="h-3.5 w-3.5" /> Commit
+          <Send className="h-3.5 w-3.5" /> Explore
         </button>
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -480,7 +522,7 @@ function QuickDeclare({ onDeclare }: { onDeclare: (g: string) => void }) {
         ))}
       </div>
       <div className="text-muted-foreground/80 text-[11px]">
-        Instant commit, cooldown-gated. Deliberation is opt-in.
+        See Measured / Moderate / Extreme options in Executive mode. Weekly cooldown.
       </div>
     </div>
   );
@@ -488,56 +530,76 @@ function QuickDeclare({ onDeclare }: { onDeclare: (g: string) => void }) {
 
 // ── executive console (AI-chatbox) ─────────────────────────────────────────
 function ExecutiveConsole({
+  countryId,
   name,
   bands,
   posts,
-  onDeclare,
+  initialGoal,
+  onCommitted,
 }: {
+  countryId: string | null;
   name: string;
   bands: any[];
   posts: any[];
-  onDeclare: (g: string, plan?: string) => void;
+  initialGoal: string | null;
+  onCommitted: (res: any) => void;
 }) {
-  const [q, setQ] = useState("");
-  const [goal, setGoal] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState(initialGoal ?? "");
+  const [goal, setGoal] = useState<string | null>(initialGoal ?? null);
+  const [err, setErr] = useState<string | null>(null);
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [chainOf, setChainOf] = useState<string | null>(null);
+  const [justCommitted, setJustCommitted] = useState<{ id: string; goal: string } | null>(null);
+  const [policyOpen, setPolicyOpen] = useState(false);
+  useEffect(() => {
+    if (initialGoal) {
+      setQ(initialGoal);
+      setGoal(initialGoal);
+    }
+  }, [initialGoal]);
 
-  function propose(g: string) {
-    if (!g.trim()) return;
-    setBusy(true);
-    setTimeout(() => {
-      setGoal(g.trim());
-      setBusy(false);
-    }, 350);
-  }
-  function commit(plan?: string) {
-    if (goal) {
-      onDeclare(goal, plan);
+  const tree = api.intent.getTree.useQuery({ countryId: countryId ?? "" }, { enabled: !!countryId });
+  // live: the government proposes Measured/Moderate/Extreme packages
+  const suggest = api.intent.suggest.useQuery(
+    { countryId: countryId ?? "", goal: goal ?? "" },
+    { enabled: !!countryId && !!goal && (goal?.trim().length ?? 0) >= 2 }
+  );
+  const commitM = api.intent.commit.useMutation({
+    onSuccess: (res) => {
+      onCommitted(res);
       setGoal(null);
       setQ("");
-    }
+      setParentId(null);
+      setChainOf(null);
+      setJustCommitted({ id: res.intent.id, goal: res.intent.goal });
+    },
+    onError: (e) => setErr(e.message),
+  });
+
+  function propose(g: string) {
+    setErr(null);
+    const t = g.trim();
+    if (t.length >= 2) setGoal(t);
+  }
+  function commitTier(tier: string) {
+    if (!countryId || !goal) return;
+    setErr(null);
+    commitM.mutate({
+      countryId,
+      goal,
+      tier: tier as "measured" | "moderate" | "extreme",
+      parentId: parentId ?? undefined,
+    });
+  }
+  function buildOn(it: { id: string; goal: string }) {
+    setParentId(it.id);
+    setChainOf(it.goal);
+    setJustCommitted(null);
   }
 
-  const PLANS = [
-    {
-      key: "State-led",
-      tone: "bad",
-      note: "Treasury objects",
-      body: "Direct public program. Fast and visible; heavy on capacity and budget.",
-    },
-    {
-      key: "Market-led",
-      tone: "mid",
-      note: "Slower payoff",
-      body: "Incentivize private actors. Cheap; magnates pleased, approval slower.",
-    },
-    {
-      key: "Balanced",
-      tone: "good",
-      note: "Broad support",
-      body: "Targeted mix. Moderate cost and timing, widest coalition.",
-    },
-  ];
+  const data = suggest.data;
+  const status = data?.status;
+  const canCommit = (status?.canCommit ?? true) && !commitM.isPending;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
@@ -567,7 +629,7 @@ function ExecutiveConsole({
               placeholder="Type a goal in plain language…  e.g. make housing affordable"
               className="placeholder:text-muted-foreground/50 flex-1 bg-transparent text-[17px] outline-none"
             />
-            {busy ? (
+            {suggest.isFetching ? (
               <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
             ) : (
               <span className="border-border text-muted-foreground rounded-md border px-2 py-0.5 text-[11px]">
@@ -576,6 +638,43 @@ function ExecutiveConsole({
             )}
           </div>
         </FacetCard>
+
+        {chainOf && (
+          <div className="flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/10 px-3 py-1.5 text-[12px] text-indigo-200">
+            ↳ continuing: <span className="font-semibold">{chainOf}</span>
+            <button
+              onClick={() => {
+                setParentId(null);
+                setChainOf(null);
+              }}
+              className="ml-auto text-indigo-300/70 hover:text-indigo-200"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        {justCommitted && !goal && (
+          <div className="flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-200">
+            ✓ Committed: <span className="font-semibold">{justCommitted.goal}</span>
+            <button
+              onClick={() => buildOn(justCommitted)}
+              className="ml-auto rounded-md border border-emerald-400/40 px-2 py-0.5 font-semibold hover:bg-emerald-500/20"
+            >
+              Build on this →
+            </button>
+          </div>
+        )}
+        {err && (
+          <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">
+            {err}
+          </div>
+        )}
+        {status && !status.canCommit && (
+          <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
+            Your government is executing this week's agenda ({status.usedThisWeek}/{status.cap}).
+            New intents open after the weekly cooldown.
+          </div>
+        )}
 
         {!goal ? (
           <div className="space-y-1.5">
@@ -592,45 +691,99 @@ function ExecutiveConsole({
                   ✦
                 </span>
                 <span className="flex-1 text-[13px] font-medium">{g}</span>
-                <span className="text-muted-foreground text-[10px]">domestic</span>
+                <span className="text-muted-foreground text-[10px]">goal</span>
               </button>
             ))}
+          </div>
+        ) : suggest.isFetching || !data ? (
+          <div className="text-muted-foreground px-1 py-6 text-center text-sm">
+            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-indigo-400" />
+            Your ministries are drawing up options…
           </div>
         ) : (
           <div className="space-y-2">
             <div className="px-1 text-[11px] font-bold tracking-widest text-indigo-300/80 uppercase">
               “{goal}” — your government proposes
+              {data.category && (
+                <span className="text-muted-foreground ml-2 lowercase">
+                  · {data.category}
+                  {data.target ? ` · ${data.target}` : ""}
+                </span>
+              )}
             </div>
-            {PLANS.map((p, i) => (
+            {data.foreignNeedsTarget && (
+              <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
+                Foreign-policy intents need a specific target — name who or what (e.g. “…with Burgundie”).
+              </div>
+            )}
+            {data.packages.map((p: any) => (
               <button
-                key={p.key}
-                onClick={() => commit(p.key)}
-                className="border-border w-full rounded-xl border px-4 py-3 text-left hover:border-indigo-400/50 hover:bg-indigo-500/[0.05]"
+                key={p.tier}
+                disabled={!canCommit}
+                onClick={() => commitTier(p.tier)}
+                className="border-border w-full rounded-xl border px-4 py-3 text-left transition hover:border-indigo-400/50 hover:bg-indigo-500/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[13px] font-bold">
-                    Plan {String.fromCharCode(65 + i)} · {p.key}
-                  </div>
+                  <div className="text-[13px] font-bold">{p.title}</div>
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TONE_CLS[p.tone as Tone]}`}
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TONE_CLS[p.acceptance as Tone]}`}
                   >
-                    {p.note}
+                    {p.acceptance === "good"
+                      ? "Broad support"
+                      : p.acceptance === "mid"
+                        ? "Contested"
+                        : "Hard sell"}
                   </span>
                 </div>
-                <div className="text-muted-foreground mt-1 text-[12px]">{p.body}</div>
+                <div className="text-muted-foreground mt-0.5 text-[12px]">{p.blurb}</div>
+                <ul className="mt-2 space-y-1">
+                  {p.changes.map((c: any, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-[12px]">
+                      <span className="mt-[3px] text-indigo-400">
+                        {c.kind === "budget"
+                          ? "▤"
+                          : c.kind === "policy"
+                            ? "◈"
+                            : c.kind === "foreign"
+                              ? "◇"
+                              : "•"}
+                      </span>
+                      <span className="text-foreground/90">
+                        {c.label}
+                        <span className="text-muted-foreground"> — {c.detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="text-muted-foreground/70 mt-2 text-[10px] tracking-wide uppercase">
+                  {p.risk} · reserves {p.civCapCost} capacity
+                </div>
               </button>
             ))}
-            <button
-              onClick={() => commit()}
-              className="hover:bg-muted flex w-full items-center gap-3 rounded-xl border border-transparent px-3.5 py-2.5 text-left"
-            >
-              <span className="bg-muted grid h-7 w-7 place-items-center rounded-lg text-sm">
-                ⚡
-              </span>
-              <span className="flex-1 text-[13px] font-medium">Just commit — pick for me</span>
-              <span className="text-muted-foreground text-[10px]">instant</span>
-            </button>
+            {data.broker && (
+              <div className="text-muted-foreground/80 px-1 text-[11px]">
+                Acceptance weighted by <span className="text-foreground/80 font-medium">{data.broker.name}</span>
+                {data.broker.unlocked ? (data.broker.satisfied ? " · currently satisfied" : " · currently restless") : " · not a factor here"}.
+              </div>
+            )}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <button
+                onClick={() => setGoal(null)}
+                className="text-muted-foreground hover:text-foreground text-[12px]"
+              >
+                ← no action / rethink
+              </button>
+              <button
+                onClick={() => setPolicyOpen(true)}
+                className="text-[11px] font-medium text-indigo-300/80 hover:text-indigo-200"
+              >
+                Draft your own package →
+              </button>
+            </div>
           </div>
+        )}
+        {countryId && (
+          <PolicyCreatorSheet countryId={countryId} open={policyOpen} onOpenChange={setPolicyOpen} />
         )}
       </div>
 
@@ -643,6 +796,48 @@ function ExecutiveConsole({
               <Band key={b.name} label={b.name} value={b.value} tone={b.tone} />
             ))}
           </div>
+        </FacetCard>
+        <FacetCard depth={1} className="p-5">
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold">
+            <Sparkles className="text-muted-foreground h-4 w-4" /> Your agenda
+          </div>
+          {(tree.data ?? []).length === 0 ? (
+            <div className="text-muted-foreground text-xs">
+              Committed intents and their follow-ups appear here as a dependency tree.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {(tree.data ?? [])
+                .filter(
+                  (it: any) =>
+                    !it.parentId || !(tree.data ?? []).some((x: any) => x.id === it.parentId)
+                )
+                .map((root: any) => (
+                  <div key={root.id}>
+                    <div className="flex items-center gap-2 py-1 text-[12px]">
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${TONE_CLS[root.tier === "measured" ? "good" : root.tier === "moderate" ? "mid" : "bad"]}`}
+                      >
+                        {root.tier}
+                      </span>
+                      <span className="text-foreground/90 flex-1 truncate">{root.goal}</span>
+                      <span className="text-muted-foreground text-[10px]">{root.category}</span>
+                    </div>
+                    {(tree.data ?? [])
+                      .filter((x: any) => x.parentId === root.id)
+                      .map((kid: any) => (
+                        <div key={kid.id} className="ml-3 border-l border-white/10 pl-3">
+                          <div className="flex items-center gap-2 py-1 text-[12px]">
+                            <span className="text-indigo-400">↳</span>
+                            <span className="text-foreground/80 flex-1 truncate">{kid.goal}</span>
+                            <span className="text-muted-foreground text-[10px]">{kid.tier}</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ))}
+            </div>
+          )}
         </FacetCard>
         <FacetCard depth={1} className="p-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-bold">

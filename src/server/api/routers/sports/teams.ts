@@ -100,11 +100,19 @@ export const sportsTeamsRouter = createTRPCRouter({
       try {
         const { id, ...data } = input;
 
-        const team = await ctx.db.sportTeam.findUnique({ where: { id } });
+        const team = await ctx.db.sportTeam.findUnique({
+          where: { id },
+          include: { league: { select: { createdByUserId: true } } },
+        });
         if (!team) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         }
-        if (team.ownerUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
+        // Team owner, the league creator, or a system admin may edit a team.
+        const canEdit =
+          team.ownerUserId === ctx.user.id ||
+          team.league?.createdByUserId === ctx.user.id ||
+          isSystemOwner(ctx.auth.userId);
+        if (!canEdit) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
         }
 

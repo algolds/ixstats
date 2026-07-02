@@ -19,6 +19,9 @@ import { DraftPicksView } from "~/components/myleague/DraftPicksView";
 import MatchDetailModal from "~/components/myleague/MatchDetailModal";
 import { TeamRosterModal } from "~/components/myleague/TeamRosterModal";
 import { LeagueSettingsModal } from "~/components/myleague/LeagueSettingsModal";
+import { TeamSettingsModal } from "~/components/myleague/TeamSettingsModal";
+import { useUser } from "~/context/auth-context";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 import { LeagueSidebarLayout } from "~/components/myleague/LeagueSidebarLayout";
 import Standings from "~/components/sports/standings/Standings1";
 import LatestResults from "~/components/sports/latest-results/LatestResults1";
@@ -122,10 +125,12 @@ function findNextScheduledMatchDayFromSchedule(schedule: any): number | null {
 export default function LeagueDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useUser();
   const id = typeof params.id === "string" ? params.id : "";
   const [tab, setTab] = useState<LeagueSection>("overview");
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editTeamId, setEditTeamId] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -330,6 +335,14 @@ export default function LeagueDetailPage() {
 
   const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
+  // League creator, system owner, or platform staff/admin may manage this league.
+  const canManageLeague =
+    !!user &&
+    (league.createdByUserId === user.id ||
+      isSystemOwner(user.id) ||
+      (typeof user.publicMetadata?.role === "string" &&
+        ["admin", "owner", "staff"].includes(user.publicMetadata.role)));
+
   const heroSection = (
     <div className="space-y-4">
       {/* Navigation & Actions */}
@@ -341,15 +354,17 @@ export default function LeagueDetailPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Leagues Lobby
         </button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSettingsOpen(true)}
-          className="h-8 cursor-pointer border-white/10 bg-white/5 text-xs font-medium hover:bg-white/10 dark:border-white/5"
-        >
-          <Settings className="mr-1.5 h-3.5 w-3.5" />
-          Manage MyLeague
-        </Button>
+        {canManageLeague && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSettingsOpen(true)}
+            className="h-8 cursor-pointer border-white/10 bg-white/5 text-xs font-medium hover:bg-white/10 dark:border-white/5"
+          >
+            <Settings className="mr-1.5 h-3.5 w-3.5" />
+            Manage MyLeague
+          </Button>
+        )}
       </div>
 
       {/* Widescreen Glass HUD Banner */}
@@ -1007,7 +1022,22 @@ export default function LeagueDetailPage() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         onOpenRoster={(teamId) => setActiveTeamId(teamId)}
+        onEditTeam={(teamId) => setEditTeamId(teamId)}
       />
+
+      {editTeamId &&
+        (() => {
+          const t = league.teams?.find((tm) => tm.id === editTeamId);
+          if (!t) return null;
+          return (
+            <TeamSettingsModal
+              team={t}
+              open={!!editTeamId}
+              onOpenChange={(o) => !o && setEditTeamId(null)}
+              onSaved={() => void utils.sports.getLeague.invalidate({ id: league.id })}
+            />
+          );
+        })()}
 
       <MatchDetailModal
         matchId={selectedMatchId}

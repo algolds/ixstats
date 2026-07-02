@@ -62,6 +62,7 @@ interface LeagueSettingsModalProps {
   onOpenChange: (open: boolean) => void;
   onSaved?: () => void;
   onOpenRoster?: (teamId: string) => void;
+  onEditTeam?: (teamId: string) => void;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -73,6 +74,7 @@ export function LeagueSettingsModal({
   onOpenChange,
   onSaved,
   onOpenRoster,
+  onEditTeam,
 }: LeagueSettingsModalProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -613,7 +615,7 @@ export function LeagueSettingsModal({
               {/* 1. Roster Editor */}
               <div className="space-y-2">
                 <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                  Force-Edit Roster
+                  Force-Edit Team
                 </Label>
                 <div className="flex gap-2">
                   <Select value={forceEditTeamId} onValueChange={setForceEditTeamId}>
@@ -634,6 +636,21 @@ export function LeagueSettingsModal({
                     size="sm"
                     disabled={!forceEditTeamId}
                     onClick={() => {
+                      if (forceEditTeamId && onEditTeam) {
+                        onEditTeam(forceEditTeamId);
+                        onOpenChange(false);
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    Rename / Brand
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!forceEditTeamId}
+                    onClick={() => {
                       if (forceEditTeamId && onOpenRoster) {
                         onOpenRoster(forceEditTeamId);
                         onOpenChange(false);
@@ -641,9 +658,12 @@ export function LeagueSettingsModal({
                     }}
                     className="text-xs"
                   >
-                    Open Roster
+                    Roster
                   </Button>
                 </div>
+                <p className="text-muted-foreground text-[10px]">
+                  As league creator you can rename, recolor, and rebrand any team here.
+                </p>
               </div>
 
               {/* 2. Active Season Actions */}
