@@ -3,34 +3,57 @@
 /**
  * MyCountry v2 — labs preview (design-bible v2).
  *
- * Blends the two variants the user liked:
- *  - "The Briefing" (editorial situation-room: AI morning brief + attention model + bands)
- *  - "The Ticker"  (living feed as the main surface: the dashboard IS the stream)
- * ...with a mode toggle to "The Console" as Executive mode (AI-chatbox intent bar).
+ * Composed from the platform's real premium primitives (CountryMapEmbed,
+ * VitalityRings/HealthRing, UnifiedCountryFlag, formatCurrency, Facet glass,
+ * bottom Sheet) so it reads as IxStates — not a generic dashboard.
  *
- * Live data: api.mycountry.getCountryDashboard / getCanonFeed / getChangeLog + useUserCountry.
- * ponytail: map hero uses the live flag as a cover (real map component can mount in the
- * marked slot later — kept out to avoid the map-engine lifecycle in a labs page).
+ * Hero (shared): interactive map (left) · vitality rings + real economy +
+ * "what needs you" + directive launcher (right).
+ * Two layouts to compare (chrome toggle): "Switch" (Brief/Directive) and
+ * "Hub" (4 action-domain tiles). Feed is the spine. Currency is the nation's
+ * own money — never IxCredits (that's Vault/metagame).
+ *
+ * Live data: api.mycountry.getCountryDashboard / getCanonFeed / getChangeLog,
+ * api.intent.* (suggest/commit/getTree/getStatus), api.nationalIssues.*.
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Newspaper,
-  Globe2,
-  Sparkles,
   TerminalSquare,
+  LayoutGrid,
+  Rows3,
   ArrowUpRight,
   ArrowDownRight,
-  CircleDot,
   Command,
-  Send,
   Loader2,
+  Landmark,
+  Handshake,
+  Vote,
+  Coins,
+  ChevronRight,
+  AlertTriangle,
+  Sparkles,
+  Crown,
+  Cog,
+  Star,
+  Shield,
+  Church,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
-import { IxTime } from "~/lib/ixtime";
+import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { cn } from "~/lib/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -39,13 +62,18 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-// ── band helpers (bible §7: bands, never numbers) ──────────────────────────
+const CountryMapEmbed = dynamic(
+  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
+  { ssr: false, loading: () => <div className="bg-muted/40 h-full min-h-[240px] w-full animate-pulse rounded-xl" /> }
+);
+
+// ── bands (bible §7: bands, never numbers) — score drives the ring FILL only ──
 type Tone = "good" | "mid" | "bad" | "fog" | "info";
-function toBand(score: number | null | undefined): { tone: Tone; label: string } {
-  if (score == null || Number.isNaN(score)) return { tone: "fog", label: "Unclear" };
-  if (score >= 66) return { tone: "good", label: "Strong" };
-  if (score >= 40) return { tone: "mid", label: "Holding" };
-  return { tone: "bad", label: "Strained" };
+function toBand(score: number | null | undefined): { tone: Tone; label: string; score: number } {
+  if (score == null || Number.isNaN(score)) return { tone: "fog", label: "Unclear", score: 8 };
+  if (score >= 66) return { tone: "good", label: "Strong", score };
+  if (score >= 40) return { tone: "mid", label: "Holding", score };
+  return { tone: "bad", label: "Strained", score };
 }
 const TONE_CLS: Record<Tone, string> = {
   good: "text-emerald-300 bg-emerald-500/10 border-emerald-400/20",
@@ -54,63 +82,42 @@ const TONE_CLS: Record<Tone, string> = {
   info: "text-blue-300 bg-blue-500/10 border-blue-400/20",
   fog: "text-muted-foreground bg-muted/40 border-border",
 };
-function Band({ label, value, tone }: { label: string; value: string; tone: Tone }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${TONE_CLS[tone]}`}
-    >
-      <CircleDot className={`h-2.5 w-2.5 ${tone === "fog" ? "animate-pulse" : ""}`} />
-      {label}: {value}
-    </span>
-  );
-}
+const RING_COLOR: Record<Tone, string> = {
+  good: "#34d399",
+  mid: "#fbbf24",
+  bad: "#f87171",
+  info: "#60a5fa",
+  fog: "#71717a",
+};
+const DOT_CLS: Record<Tone, string> = {
+  good: "bg-emerald-400",
+  mid: "bg-amber-400",
+  bad: "bg-red-400",
+  info: "bg-blue-400",
+  fog: "bg-zinc-500",
+};
 
-// feed source styling
 function sourceMeta(kind: string) {
   switch (kind) {
     case "decision":
-      return {
-        who: "Government",
-        av: "gov",
-        tone: "text-blue-300 bg-blue-500/12",
-        ring: "from-blue-500 to-amber-600",
-      };
+      return { who: "Government", ring: "from-amber-500 to-yellow-600", glyph: "◉" };
     case "diplomacy":
-      return {
-        who: "World",
-        av: "world",
-        tone: "text-purple-300 bg-purple-500/12",
-        ring: "from-purple-500 to-fuchsia-600",
-      };
+      return { who: "World", ring: "from-purple-500 to-fuchsia-600", glyph: "◇" };
     default:
-      return {
-        who: "Press",
-        av: "press",
-        tone: "text-foreground/90 bg-muted/50",
-        ring: "from-slate-500 to-slate-700",
-      };
+      return { who: "Press", ring: "from-slate-500 to-slate-700", glyph: "▦" };
   }
 }
 function fmtTime(ts: number) {
-  const d = new Date(ts);
   const diff = Date.now() - ts;
   if (diff < 3_600_000) return `${Math.max(1, Math.round(diff / 60000))}m ago`;
   if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  return new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 type LocalPost = { id: string; kind: string; title: string; body: string; timestamp: number };
+const GOAL_CHIPS = ["Cool the housing market", "Modernize the navy", "Court a neighbour as an ally", "Rein in inflation", "Develop the coast"];
 
-const GOAL_CHIPS = [
-  "Cool the housing market",
-  "Modernize the navy",
-  "Court a neighbour as an ally",
-  "Rein in inflation",
-  "Develop the coast",
-];
-
-// ponytail: shell lives under app/labs for now; relocate to components/mycountry/v2
-// when v2 stabilizes. Both /labs/mycountry-v2 and /mycountry/v2 render it.
+// ════════════════════════════════════════════════════════════════════════════
 export function MyCountryV2({
   lockedCountryId,
   showPicker = true,
@@ -121,117 +128,55 @@ export function MyCountryV2({
   previewLabel?: string;
 } = {}) {
   const { country: userCountry } = useUserCountry();
-  const { data: countriesData } = api.countries.getAll.useQuery(
-    { limit: 300 },
-    { enabled: showPicker }
-  );
+  const { data: countriesData } = api.countries.getAll.useQuery({ limit: 300 }, { enabled: showPicker });
   const countries = countriesData?.countries;
   const [countryId, setCountryId] = useState<string | null>(null);
   useEffect(() => {
-    if (lockedCountryId) {
-      setCountryId(lockedCountryId);
-      return;
-    }
+    if (lockedCountryId) return setCountryId(lockedCountryId);
     if (!countryId) setCountryId((userCountry as any)?.id ?? countries?.[0]?.id ?? null);
   }, [lockedCountryId, userCountry, countries, countryId]);
 
   const enabled = !!countryId;
-  const { data: dash, isLoading: dashLoading } = api.mycountry.getCountryDashboard.useQuery(
-    { countryId: countryId!, includeHistory: false },
-    { enabled }
-  );
-  const { data: feed = [] } = api.mycountry.getCanonFeed.useQuery(
-    { countryId: countryId!, limit: 30 },
-    { enabled }
-  );
-  const { data: ledger = [] } = api.mycountry.getChangeLog.useQuery(
-    { countryId: countryId!, limit: 20 },
-    { enabled }
-  );
+  const { data: dash } = api.mycountry.getCountryDashboard.useQuery({ countryId: countryId!, includeHistory: false }, { enabled });
+  const { data: feed = [] } = api.mycountry.getCanonFeed.useQuery({ countryId: countryId!, limit: 30 }, { enabled });
+  const { data: ledger = [] } = api.mycountry.getChangeLog.useQuery({ countryId: countryId!, limit: 20 }, { enabled });
 
-  const [mode, setMode] = useState<"briefing" | "executive">("briefing");
+  const [layout, setLayout] = useState<"switch" | "hub">("switch");
+  const [mode, setMode] = useState<"brief" | "directive">("brief");
   const [local, setLocal] = useState<LocalPost[]>([]);
   const [toast, setToast] = useState<string | null>(null);
-  const [ixYear, setIxYear] = useState<number | null>(null);
-  useEffect(() => {
-    try {
-      setIxYear(new Date(IxTime.getCurrentIxTime()).getFullYear());
-    } catch {
-      /* dateline is decorative — omit if unavailable */
-    }
-  }, []);
-  useEffect(() => {
-    setLocal([]);
-  }, [countryId]); // reset optimistic feed on country switch
+  const [composer, setComposer] = useState<{ open: boolean; goal: string }>({ open: false, goal: "" });
+  useEffect(() => setLocal([]), [countryId]);
 
   const d: any = dash ?? {};
   const bands = useMemo(() => {
-    const mk = (name: string, score: number) => {
+    const mk = (name: string, sub: string, score: number) => {
       const b = toBand(score);
-      return { name, tone: b.tone, value: b.label };
+      return { name, sub, tone: b.tone, value: b.label, score: b.score };
     };
     return [
-      mk("Economy", d.economicVitality),
-      mk("Wellbeing", d.populationWellbeing),
-      mk("Standing", d.diplomaticStanding),
-      mk("Capacity", d.governmentalEfficiency),
-      { name: "Treasury", tone: "fog" as Tone, value: "Unclear" }, // demonstrates Fog of Information
+      mk("Economy", "Output & growth", d.economicVitality),
+      mk("Wellbeing", "The people", d.populationWellbeing),
+      mk("Standing", "Abroad", d.diplomaticStanding),
+      mk("Capacity", "The civil service", d.governmentalEfficiency),
     ];
   }, [d.economicVitality, d.populationWellbeing, d.diplomaticStanding, d.governmentalEfficiency]);
 
-  // synthesize the "AI morning brief" from live bands (no raw numbers)
-  const briefing = useMemo(() => {
-    if (!dash) return null;
-    const strong = bands.filter((b) => b.tone === "good").map((b) => b.name);
-    const weak = bands.filter((b) => b.tone === "bad").map((b) => b.name);
-    const name = d.name ?? "your nation";
-    const lead = strong.length
-      ? `${name}'s ${strong.join(" and ").toLowerCase()} ${strong.length > 1 ? "are" : "is"} strong this session.`
-      : `${name} holds steady this session.`;
-    const worry = weak.length
-      ? `Your attention is wanted on ${weak.join(" and ").toLowerCase()} — the numbers below are shown as evidence, not a scoreboard.`
-      : `No red flags on the desk — a good day to declare something ambitious.`;
-    return { lead, worry };
-  }, [dash, bands, d.name]);
-
-  // merged feed: optimistic local intents first, then live canon
   const posts = useMemo(() => {
-    const live = (feed as any[]).map((f) => ({
-      id: f.id,
-      kind: f.kind,
-      title: f.title,
-      body: "",
-      timestamp: f.timestamp,
-    }));
+    const live = (feed as any[]).map((f) => ({ id: f.id, kind: f.kind, title: f.title, body: "", timestamp: f.timestamp }));
     return [...local, ...live].slice(0, 40);
   }, [feed, local]);
 
   const utils = api.useUtils();
-  const [execGoal, setExecGoal] = useState<string | null>(null);
-
-  // briefing rail hands the goal to Executive mode (where the packages live)
-  function handoffToExecutive(goal: string) {
-    const g = goal.trim();
-    if (!g) return;
-    setExecGoal(g);
-    setMode("executive");
+  function openComposer(goal = "") {
+    setComposer({ open: true, goal });
   }
-
-  // called after a real intent.commit succeeds: optimistic feed + toast + refetch
   function handleCommitted(res: any) {
     const body = (res?.summary as string) ?? "Intent committed.";
-    setLocal((p) => [
-      {
-        id: res?.intent?.id ?? `local_${Date.now()}`,
-        kind: "decision",
-        title: `Intent: ${res?.intent?.goal ?? ""}`,
-        body,
-        timestamp: Date.now(),
-      },
-      ...p,
-    ]);
-    setToast(`◆ In-world: ${body}`);
+    setLocal((p) => [{ id: res?.intent?.id ?? `local_${Date.now()}`, kind: "decision", title: `Intent: ${res?.intent?.goal ?? ""}`, body, timestamp: Date.now() }, ...p]);
+    setToast(body);
     setTimeout(() => setToast(null), 4500);
+    setComposer({ open: false, goal: "" });
     void utils.mycountry.getCanonFeed.invalidate();
     void utils.mycountry.getChangeLog.invalidate();
     void utils.mycountry.getCountryDashboard.invalidate();
@@ -239,291 +184,612 @@ export function MyCountryV2({
     void utils.intent.getTree.invalidate();
   }
 
-  const rawFlag = d.flag as string | undefined;
-  const flag = rawFlag && /^(https?:|\/|data:)/.test(rawFlag) ? rawFlag : undefined; // guard: skip emoji/empty flags
-
   return (
     <div
       className="bg-background text-foreground min-h-screen"
-      style={{
-        backgroundImage:
-          "radial-gradient(1100px 560px at 12% -6%, rgba(202,138,4,0.10), transparent 60%), radial-gradient(900px 500px at 100% 0%, rgba(99,102,241,0.06), transparent 55%)",
-      }}
+      style={{ backgroundImage: "radial-gradient(1200px 600px at 10% -8%, rgba(202,138,4,0.08), transparent 60%), radial-gradient(900px 520px at 100% 0%, rgba(99,102,241,0.05), transparent 55%)" }}
     >
-      {/* Gazette design system — the "State Seal" signature + editorial type.
-          ponytail: scoped style block; graduate to facet/*.css if v2 ships. */}
-      <style>{`
-        .gz-serif { font-family: "Iowan Old Style","Palatino Linotype",Palatino,Georgia,ui-serif,serif; }
-        .gz-mono { font-family: ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace; }
-        .gz-foil { background: linear-gradient(92deg,#a16207,#eab308 42%,#fde68a 56%,#ca8a04); -webkit-background-clip:text; background-clip:text; color:transparent; }
-        .gz-rule { height:1px; background:linear-gradient(90deg,transparent,rgba(234,179,8,.55),rgba(234,179,8,.12),transparent); }
-        .gz-lede::first-letter { float:left; font-size:3.1em; line-height:.8; padding:.06em .12em 0 0; color:#eab308; font-weight:700; font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,ui-serif,serif; }
-        .gz-seal { position:relative; width:64px; height:64px; flex:none; }
-        .gz-seal .gz-ring { position:absolute; inset:0; border-radius:999px; background:conic-gradient(from 0deg,#8a5a06,#eab308,#fde68a,#ca8a04,#8a5a06); box-shadow:0 6px 22px rgba(202,138,4,.28), inset 0 0 0 1px rgba(0,0,0,.5); animation:gz-spin 22s linear infinite; }
-        .gz-seal .gz-disc { position:absolute; inset:5px; border-radius:999px; background-color:#12141a; background-image:var(--gz-flag,none); background-size:cover; background-position:center; box-shadow:inset 0 0 0 1.5px rgba(234,179,8,.55), inset 0 0 12px rgba(0,0,0,.6); display:grid; place-items:center; }
-        .gz-seal .gz-glare { position:absolute; inset:0; border-radius:999px; background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.5),transparent 46%); mix-blend-mode:screen; pointer-events:none; }
-        .gz-stamp { display:inline-flex; align-items:center; gap:4px; font-family:ui-monospace,monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:#eab308; border:1px solid rgba(234,179,8,.45); border-radius:5px; padding:1px 5px; transform:rotate(-3.5deg); }
-        @keyframes gz-spin { to { transform:rotate(360deg); } }
-        @keyframes gz-stampin { from { opacity:0; transform:rotate(-14deg) scale(1.5); } to { opacity:1; transform:rotate(-3.5deg) scale(1); } }
-        .gz-stampin { animation:gz-stampin .32s cubic-bezier(.34,1.56,.64,1); }
-        @media (prefers-reduced-motion: reduce){ .gz-seal .gz-ring{ animation:none; } .gz-stampin{ animation:none; } }
-      `}</style>
+      <style>{SEAL_STYLE}</style>
 
-      {/* Gazette chrome — slim editorial bar */}
+      {/* chrome — layout switcher */}
       <div className="border-border/70 bg-background/70 sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-4 py-2 backdrop-blur-xl">
-        <div className="gz-mono flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em] uppercase">
-          <span className="gz-foil">◉ Gazette of State</span>
-          <span className="border-border/70 text-muted-foreground ml-1 rounded border px-1.5 py-0.5 text-[9px] tracking-[0.1em]">
+        <div className="flex items-center gap-2 text-[13px] font-bold tracking-tight">
+          <Landmark className="h-4 w-4 text-amber-500" /> MyCountry
+          <span className="text-amber-500">v2</span>
+          <span className="border-border/70 text-muted-foreground ml-1 rounded border px-1.5 py-0.5 text-[9px] font-medium tracking-wide">
             {previewLabel}
           </span>
         </div>
         <div className="flex items-center gap-2">
           {showPicker && (
-            <Select value={countryId ?? ""} onValueChange={(val) => setCountryId(val || null)}>
-              <SelectTrigger
-                size="sm"
-                className="border-border bg-card/40 text-foreground hover:bg-card/70 gz-mono h-7 w-fit min-w-[140px] cursor-pointer text-[11px] tracking-wide focus:border-amber-500/30 focus:ring-amber-500/20"
-              >
+            <Select value={countryId ?? ""} onValueChange={(v) => setCountryId(v || null)}>
+              <SelectTrigger size="sm" className="border-border bg-card/40 hover:bg-card/70 h-7 w-fit min-w-[140px] cursor-pointer text-[11px] focus:border-amber-500/30 focus:ring-amber-500/20">
                 <SelectValue placeholder="Select Country" />
               </SelectTrigger>
-              <SelectContent className="border-border bg-popover text-popover-foreground">
+              <SelectContent className="border-border bg-popover">
                 {(countries ?? []).map((c: any) => (
-                  <SelectItem key={c.id} value={c.id} className="text-xs">
-                    {c.name}
-                  </SelectItem>
+                  <SelectItem key={c.id} value={c.id} className="text-xs">{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
-          <div className="border-border/70 bg-card/40 gz-mono flex rounded-md border p-0.5 text-[11px] font-semibold tracking-[0.08em] uppercase">
-            <button
-              onClick={() => setMode("briefing")}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition ${mode === "briefing" ? "bg-amber-500/20 text-amber-300" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              <Newspaper className="h-3.5 w-3.5" /> Brief
-            </button>
-            <button
-              onClick={() => setMode("executive")}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition ${mode === "executive" ? "bg-amber-500/20 text-amber-300" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              <TerminalSquare className="h-3.5 w-3.5" /> Directive
-            </button>
+          <div className="border-border/70 bg-card/40 flex rounded-md border p-0.5 text-[11px] font-semibold">
+            <LayoutBtn active={layout === "switch"} onClick={() => setLayout("switch")} icon={<Rows3 className="h-3.5 w-3.5" />}>Switch</LayoutBtn>
+            <LayoutBtn active={layout === "hub"} onClick={() => setLayout("hub")} icon={<LayoutGrid className="h-3.5 w-3.5" />}>Hub</LayoutBtn>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-4 p-4">
-        {/* MASTHEAD — the hero. State Seal signature + serif nameplate + dateline. */}
-        <FacetContainer
-          variant="mycountry"
-          depth={1}
-          className="facet-texture-paper-grain relative overflow-hidden p-6"
-        >
-          {/* faint flag wash behind the masthead */}
-          {flag && (
-            <img
-              src={flag}
-              alt=""
-              className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-[0.08] blur-lg"
-            />
-          )}
-          <div className="relative flex items-start gap-5">
-            {/* the seal */}
-            <div
-              className="gz-seal mt-0.5"
-              style={{ ["--gz-flag" as any]: flag ? `url("${flag}")` : "none" }}
-            >
-              <div className="gz-ring" />
-              <div className="gz-disc">
-                {!flag && (
-                  <span className="gz-serif text-2xl font-black text-amber-300/90">
-                    {(d.name ?? "?")[0]}
-                  </span>
-                )}
-              </div>
-              <div className="gz-glare" />
-            </div>
-            {/* nameplate */}
-            <div className="min-w-0 flex-1">
-              <div className="gz-mono text-muted-foreground text-[10px] tracking-[0.2em] uppercase">
-                {d.governmentType ?? "Government"} · {d.region ?? "—"}
-              </div>
-              <h1 className="gz-serif mt-1 truncate text-3xl font-bold tracking-tight sm:text-[2.4rem] sm:leading-[1.05]">
-                {dashLoading ? "…" : (d.name ?? "Select a country")}
-              </h1>
-              <div className="gz-mono text-muted-foreground/80 mt-1.5 text-[10px] tracking-[0.14em] uppercase">
-                Under the hand of {d.leader ?? "the government"}
-                {ixYear ? ` · year ${ixYear}` : ""} · {d.economicTier ?? "—"} economy
-              </div>
-            </div>
-          </div>
+      <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-5">
+        <CompositeHero d={d} countryId={countryId} bands={bands} onDeclare={openComposer} />
 
-          <div className="gz-rule my-4" />
-
-          {/* standing ledger strip — the bands, editorial */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <span className="gz-mono text-muted-foreground/70 text-[9px] tracking-[0.2em] uppercase">
-              State of the Nation
-            </span>
-            {bands.map((b: any) => (
-              <div key={b.name} className="flex items-center gap-1.5">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${b.tone === "good" ? "bg-emerald-400" : b.tone === "mid" ? "bg-amber-400" : b.tone === "bad" ? "bg-red-400" : b.tone === "info" ? "bg-blue-400" : "bg-zinc-500"} ${b.tone === "fog" ? "animate-pulse" : ""}`}
-                />
-                <span className="gz-mono text-muted-foreground text-[10px] tracking-wide uppercase">
-                  {b.name}
-                </span>
-                <span className="text-foreground/90 text-[12px] font-semibold">{b.value}</span>
-              </div>
-            ))}
-          </div>
-        </FacetContainer>
-
-        {mode === "briefing" ? (
-          <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
-            {/* LEFT: the living feed, led by the AI brief */}
-            <div className="space-y-4">
-              <FacetCard depth={1} className="facet-texture-paper-grain p-6">
-                <div className="gz-mono mb-3 flex items-center justify-between text-[10px] tracking-[0.2em] uppercase">
-                  <span className="text-amber-400/90">Morning Brief</span>
-                  <span className="text-muted-foreground/70">
-                    {ixYear ? `Year ${ixYear}` : "Executive"} · Dispatch
-                  </span>
-                </div>
-                {briefing ? (
-                  <p className="gz-serif gz-lede text-foreground/90 text-[17px] leading-[1.7]">
-                    <span className="text-foreground font-semibold">{briefing.lead}</span>{" "}
-                    {briefing.worry}
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Compiling the brief…</p>
-                )}
-              </FacetCard>
-
-              <div className="flex items-end justify-between px-1 pt-1">
-                <h2 className="gz-serif text-xl font-bold tracking-tight">Dispatches</h2>
-                <span className="gz-mono text-muted-foreground/70 text-[9px] tracking-[0.16em] uppercase">
-                  Your decrees · the world answers
-                </span>
-              </div>
-
-              {posts.length === 0 && (
-                <FacetCard depth={2} className="text-muted-foreground p-5 text-sm">
-                  No dispatches yet. Issue a directive to begin the record.
-                </FacetCard>
-              )}
-              {posts.map((p: any) => {
-                const m = sourceMeta(p.kind);
-                return (
-                  <FacetCard key={p.id} depth={2} interactive="hover" className="p-4">
-                    <div className="mb-1.5 flex items-center gap-2.5">
-                      <div
-                        className={`grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br ${m.ring} text-sm font-bold text-white`}
-                      >
-                        {p.kind === "decision" ? "◉" : p.kind === "diplomacy" ? "◇" : "▦"}
-                      </div>
-                      <div className="flex-1">
-                        <div className="gz-mono flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
-                          {m.who}
-                          <span className={`rounded px-1.5 py-0.5 text-[8px] tracking-wide ${m.tone}`}>
-                            {p.kind}
-                          </span>
-                        </div>
-                        <div className="gz-mono text-muted-foreground/70 text-[10px] tracking-wide uppercase">
-                          {fmtTime(p.timestamp)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="gz-serif text-foreground text-[15px] leading-snug">{p.title}</div>
-                    {p.body && (
-                      <div className="text-muted-foreground mt-1 text-[13px] leading-relaxed">
-                        {p.body}
-                      </div>
-                    )}
-                  </FacetCard>
-                );
-              })}
-            </div>
-
-            {/* RIGHT: attention + declare + ledger */}
-            <div className="space-y-4">
-              <FacetContainer variant="mycountry" depth={1} className="p-5">
-                <div className="gz-mono mb-1 text-[10px] tracking-[0.2em] text-amber-400/90 uppercase">
-                  The Executive
-                </div>
-                <div className="gz-serif mb-3 text-lg font-bold">Issue a directive</div>
-                <QuickDeclare onDeclare={handoffToExecutive} />
-              </FacetContainer>
-
-              <FacetCard depth={1} className="p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="gz-serif text-lg font-bold">The Record</div>
-                  <span className="gz-mono text-muted-foreground/70 text-[9px] tracking-[0.16em] uppercase">
-                    Sealed &amp; bounded
-                  </span>
-                </div>
-                <div className="border-border bg-card/10 rounded-xl border">
-                  {(ledger as any[]).length === 0 && (
-                    <div className="text-muted-foreground px-3 py-4 text-xs">
-                      No ledger entries yet. Every change lands here with what moved and why.
-                    </div>
-                  )}
-                  {(ledger as any[]).map((l) => {
-                    const up = (l.deltaValue ?? 0) >= 0;
-                    return (
-                      <div
-                        key={l.id}
-                        className="border-border/60 flex items-center gap-2.5 border-b px-3 py-2.5 last:border-0"
-                      >
-                        {l.sourceType === "decision" ? (
-                          <span className="gz-stamp">◉ sealed</span>
-                        ) : (
-                          <span className="bg-card text-muted-foreground gz-mono rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase">
-                            {l.sourceType}
-                          </span>
-                        )}
-                        <span className="text-foreground/80 flex-1 text-[12px]">
-                          {l.description}
-                        </span>
-                        {l.deltaValue != null && (
-                          <span
-                            className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-bold ${up ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300"}`}
-                          >
-                            {up ? (
-                              <ArrowUpRight className="h-3 w-3" />
-                            ) : (
-                              <ArrowDownRight className="h-3 w-3" />
-                            )}
-                            {l.targetField ?? ""}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </FacetCard>
-            </div>
-          </div>
-        ) : (
-          /* EXECUTIVE MODE — the Console (AI-chatbox intent bar) over the same live feed */
-          <ExecutiveConsole
+        {layout === "switch" ? (
+          <SwitchBody
+            d={d}
+            mode={mode}
+            setMode={setMode}
             countryId={countryId}
             name={d.name ?? "your nation"}
             bands={bands}
             posts={posts}
-            initialGoal={execGoal}
+            ledger={ledger as any[]}
             onCommitted={handleCommitted}
+            onDeclare={openComposer}
           />
+        ) : (
+          <HubBody d={d} bands={bands} posts={posts} onDeclare={openComposer} />
         )}
       </div>
 
-      {/* in-world dispatch toast — the seal "stamps" in */}
+      {/* directive composer — bottom sheet */}
+      <Sheet open={composer.open} onOpenChange={(o) => setComposer((c) => ({ ...c, open: o }))}>
+        <SheetContent side="bottom" className="border-border bg-background/95 max-h-[85vh] overflow-y-auto backdrop-blur-xl">
+          <SheetHeader className="mb-2">
+            <SheetTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-amber-500" /> Issue a directive — {d.name ?? "your nation"}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mx-auto max-w-3xl pb-6">
+            {composer.open && countryId && (
+              <IntentComposer countryId={countryId} initialGoal={composer.goal} onCommitted={handleCommitted} />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* in-world toast */}
       {toast && (
-        <div className="gz-stampin border-border bg-secondary fixed bottom-5 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-start gap-2.5 rounded-xl border px-4 py-3 shadow-2xl">
-          <span className="gz-foil mt-0.5 text-base leading-none">◉</span>
-          <span className="gz-serif text-foreground/90 text-[13px] leading-snug">{toast}</span>
+        <div className="border-border bg-secondary animate-in fade-in slide-in-from-bottom-2 fixed bottom-5 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-start gap-2.5 rounded-xl border px-4 py-3 shadow-2xl">
+          <StateSeal flagUrl={d.flag} governmentType={d.governmentType} size={24} showPips={false} className="mt-0.5" />
+          <span className="text-foreground/90 text-[13px] leading-snug">{toast}</span>
         </div>
       )}
+    </div>
+  );
+}
+
+function LayoutBtn({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className={cn("flex items-center gap-1.5 rounded px-2.5 py-1 transition", active ? "bg-amber-500/20 text-amber-300" : "text-muted-foreground hover:text-foreground")}>
+      {icon} {children}
+    </button>
+  );
+}
+
+// ── the State Seal (signature): wax signet · flag field + regime glyph ·
+//    rim pips by tier (living status) · minimal shimmer ─────────────────────
+const SEAL_STYLE = `
+.seal-shimmer::after{content:"";position:absolute;inset:0;border-radius:48% 52% 47% 53% / 52% 47% 53% 48%;background:linear-gradient(115deg,transparent 42%,rgba(255,246,214,0.32) 50%,transparent 58%);mix-blend-mode:screen;opacity:0;animation:sealSheen 7s ease-in-out infinite;pointer-events:none;}
+@keyframes sealSheen{0%,74%,100%{opacity:0;transform:translateX(-28%)}84%{opacity:.85;transform:translateX(28%)}}
+@media (prefers-reduced-motion: reduce){.seal-shimmer::after{animation:none}}
+`;
+function regimeIcon(gt?: string) {
+  const g = (gt ?? "").toLowerCase();
+  if (/monarch|kingdom|empire|imperial|royal|crown|principal|duchy|tsar|sultan/.test(g)) return Crown;
+  if (/theocra|cleric|divine|holy|papal|ecclesi|caliph/.test(g)) return Church;
+  if (/technocr|meritocr|cybernet/.test(g)) return Cog;
+  if (/dictat|authorit|junta|military|autocrac|totalit|despot/.test(g)) return Shield;
+  if (/republic|democr|parliament|president|federa|confedera|commonwealth|council|senate|union/.test(g)) return Star;
+  return Landmark;
+}
+const TIER_PIPS: Record<string, number> = {
+  Impoverished: 1, Developing: 2, Emerging: 2, Developed: 3, Healthy: 3,
+  Advanced: 4, Strong: 4, "Very Strong": 5, Extravagant: 5,
+};
+function StateSeal({ flagUrl, governmentType, tier, size = 76, showPips = true, className }: {
+  flagUrl?: string | null; governmentType?: string; tier?: string; size?: number; showPips?: boolean; className?: string;
+}) {
+  const Glyph = regimeIcon(governmentType);
+  const pips = TIER_PIPS[tier ?? ""] ?? 3;
+  const flag = flagUrl && /^(https?:|\/|data:)/.test(flagUrl) ? flagUrl : undefined;
+  const disc = Math.round(size * 0.64);
+  const waxRadius = "48% 52% 47% 53% / 52% 47% 53% 48%";
+  return (
+    <div className={cn("seal-shimmer relative shrink-0", className)} style={{ width: size, height: size }}>
+      {/* wax body */}
+      <div
+        className="absolute inset-0"
+        style={{
+          borderRadius: waxRadius,
+          background: "radial-gradient(circle at 38% 30%, #e2ad4a, #bd872f 46%, #8a5a1e 78%, #5f3d14)",
+          boxShadow: "inset 0 2px 3px rgba(255,236,190,0.5), inset 0 -4px 8px rgba(58,30,0,0.55), 0 4px 14px rgba(0,0,0,0.45)",
+        }}
+      />
+      {/* flag disc pressed into the wax (signet) */}
+      <div
+        className="absolute grid place-items-center"
+        style={{
+          top: (size - disc) / 2, left: (size - disc) / 2, width: disc, height: disc, borderRadius: "50%",
+          backgroundColor: "#3a2a12",
+          backgroundImage: flag ? `url("${flag}")` : "none",
+          backgroundSize: "cover", backgroundPosition: "center",
+          boxShadow: "inset 0 2px 6px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(95,61,20,0.85)",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle at 40% 35%, rgba(226,173,74,0.14), rgba(95,61,20,0.3))" }} />
+        <Glyph style={{ width: disc * 0.5, height: disc * 0.5, color: "rgba(52,32,6,0.62)", filter: "drop-shadow(0 1px 0 rgba(255,238,196,0.5))" }} />
+      </div>
+      {/* rim pips — living status by economic tier */}
+      {showPips && (
+        <div className="absolute inset-x-0 flex justify-center" style={{ bottom: size * 0.015, gap: size * 0.02 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              style={{ width: size * 0.09, height: size * 0.09, filter: "drop-shadow(0 1px 0 rgba(58,30,0,0.5))" }}
+              className={i < pips ? "fill-amber-100 text-amber-100" : "fill-transparent text-amber-950/50"}
+              strokeWidth={1.5}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── composite hero — map (left) · rings + economy + needs-you + launcher ─────
+function CompositeHero({ d, countryId, bands, onDeclare }: { d: any; countryId: string | null; bands: any[]; onDeclare: (g?: string) => void }) {
+  const rings = bands.map((b) => ({
+    key: b.name,
+    label: b.name,
+    subtitle: b.sub,
+    color: RING_COLOR[b.tone as Tone],
+    value: Math.round(b.score),
+    displayValue: b.value, // the band word — never a raw number
+  }));
+  return (
+    <FacetContainer variant="mycountry" depth={1} className="overflow-hidden p-0">
+      <div className="grid gap-0 lg:grid-cols-[1.05fr_1.35fr]">
+        {/* map */}
+        <div className="relative min-h-[260px] border-b border-white/5 lg:border-b-0 lg:border-r">
+          {countryId ? (
+            <CountryMapEmbed countryId={countryId} height="h-full" interactive className="h-full" />
+          ) : (
+            <div className="bg-muted/40 h-full min-h-[260px] w-full animate-pulse" />
+          )}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end gap-3 bg-gradient-to-t from-black/75 to-transparent p-4">
+            <StateSeal flagUrl={d.flag} governmentType={d.governmentType} tier={d.economicTier} size={78} className="pointer-events-auto" />
+            <div className="pb-1">
+              <div className="text-white/70 text-[10px] font-bold tracking-[0.16em] uppercase">
+                {d.governmentType ?? "Government"} · {d.region ?? "—"}
+              </div>
+              <h1 className="text-xl font-bold tracking-tight text-white drop-shadow">{d.name ?? "Select a country"}</h1>
+              <div className="text-white/60 text-[10px]">{d.economicTier ?? ""} · sealed by the state</div>
+            </div>
+          </div>
+        </div>
+
+        {/* right */}
+        <div className="flex flex-col gap-4 p-5">
+          {/* vitality rings — the platform signature; shows band words, not % */}
+          <VitalityRings rings={rings as any} title="Vitality" variant="horizontal" />
+
+          {/* real economy — the nation's own money */}
+          <div className="grid grid-cols-3 gap-2">
+            <EconStat label="Output" value={formatCurrency(d.currentTotalGdp)} sub={d.economicTier ?? ""} />
+            <EconStat label="Per capita" value={formatCurrency(d.currentGdpPerCapita)} sub={formatPopulation(d.currentPopulation) + " people"} />
+            <EconStat
+              label="Currency"
+              value={d.currency ? `${d.currency}${d.currencySymbol ? ` ${d.currencySymbol}` : ""}` : "—"}
+              sub="national tender"
+            />
+          </div>
+
+          {/* what needs you + launcher */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <NeedsYou countryId={countryId} onDeclare={onDeclare} />
+            <button
+              onClick={() => onDeclare()}
+              className="group border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20 flex flex-col justify-between rounded-xl border p-3.5 text-left transition"
+            >
+              <div className="flex items-center gap-2 text-amber-300">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-[13px] font-bold">Issue a directive</span>
+              </div>
+              <div className="text-muted-foreground mt-2 text-[11px] leading-snug">
+                Tell the government a goal in plain words — it proposes Measured / Moderate / Extreme.
+              </div>
+              <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-amber-300/80 group-hover:text-amber-200">
+                Open composer <ChevronRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </FacetContainer>
+  );
+}
+
+function EconStat({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="border-border/60 bg-white/[0.02] rounded-lg border p-2.5">
+      <div className="text-muted-foreground/70 text-[9px] font-bold tracking-wider uppercase">{label}</div>
+      <div className="text-foreground mt-0.5 truncate text-sm font-bold tabular-nums">{value}</div>
+      <div className="text-muted-foreground/70 truncate text-[10px]">{sub}</div>
+    </div>
+  );
+}
+
+// ── "what needs you" — reactive issues, ranked ───────────────────────────────
+function NeedsYou({ countryId, onDeclare }: { countryId: string | null; onDeclare: (g?: string) => void }) {
+  const { data: issues = [] } = api.nationalIssues.getMyIssues.useQuery(
+    { countryId: countryId!, status: "active" } as any,
+    { enabled: !!countryId, retry: false }
+  );
+  const list = (issues as any[]).slice(0, 3);
+  return (
+    <div className="border-border/60 bg-white/[0.02] rounded-xl border p-3.5">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[12px] font-bold">What needs you</span>
+        <span className={cn("rounded-full px-1.5 py-0.5 text-[9px] font-bold", list.length ? "bg-red-500/15 text-red-300" : "bg-emerald-500/15 text-emerald-300")}>
+          {list.length || "0"}
+        </span>
+      </div>
+      {list.length === 0 ? (
+        <div className="text-muted-foreground text-[11px] leading-snug">Nothing urgent on the desk. A good day to declare something ambitious.</div>
+      ) : (
+        <div className="space-y-1.5">
+          {list.map((i: any) => (
+            <div key={i.id} className="flex items-start gap-1.5 text-[11px]">
+              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-400" />
+              <span className="text-foreground/85 line-clamp-1">{i.title}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── SWITCH layout: Brief (feed spine) / Directive (composer) ─────────────────
+function SwitchBody({ d, mode, setMode, countryId, name, bands, posts, ledger, onCommitted, onDeclare }: any) {
+  return (
+    <>
+      <div className="flex items-center justify-center">
+        <div className="border-border/70 bg-card/40 inline-flex rounded-lg border p-0.5 text-[12px] font-semibold">
+          <LayoutBtn active={mode === "brief"} onClick={() => setMode("brief")} icon={<Newspaper className="h-3.5 w-3.5" />}>Brief</LayoutBtn>
+          <LayoutBtn active={mode === "directive"} onClick={() => setMode("directive")} icon={<TerminalSquare className="h-3.5 w-3.5" />}>Directive</LayoutBtn>
+        </div>
+      </div>
+
+      {mode === "brief" ? (
+        <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+          <div className="space-y-3">
+            <DispatchHeader />
+            <DispatchFeed posts={posts} />
+          </div>
+          <div className="space-y-4">
+            <StandingCard bands={bands} onDeclare={onDeclare} />
+            <RecordCard ledger={ledger} seal={d} />
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+          {countryId && <IntentComposer countryId={countryId} initialGoal="" onCommitted={onCommitted} />}
+          <div className="space-y-4">
+            <StandingCard bands={bands} onDeclare={onDeclare} />
+            <RecordCard ledger={ledger} seal={d} />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── HUB layout: 4 action-domain tiles + feed spine ───────────────────────────
+function HubBody({ d, bands, posts, onDeclare }: any) {
+  const byName = (n: string) => bands.find((b: any) => b.name === n);
+  const tiles = [
+    { key: "executive", name: "Executive", icon: Landmark, color: "from-amber-500 to-yellow-500", band: byName("Capacity"), sub: "Issues, policies, directives", href: "/mycountry/executive" },
+    { key: "diplomacy", name: "Diplomacy", icon: Handshake, color: "from-cyan-500 to-blue-500", band: byName("Standing"), sub: "Relations, embassies, treaties", href: "/mycountry/diplomacy" },
+    { key: "politics", name: "Politics", icon: Vote, color: "from-purple-500 to-fuchsia-500", band: byName("Wellbeing"), sub: "Parties, elections, legislature", href: "/mycountry/politics" },
+    { key: "economy", name: "Economy", icon: Coins, color: "from-emerald-500 to-teal-500", band: byName("Economy"), sub: formatCurrency(d.currentTotalGdp) + " output", href: "/mycountry" },
+  ];
+  return (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {tiles.map((t) => (
+          <a key={t.key} href={t.href} className="group">
+            <FacetCard depth={2} interactive="hover" className="h-full p-4">
+              <div className="flex items-center justify-between">
+                <div className={cn("grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br text-white shadow-sm", t.color)}>
+                  <t.icon className="h-4 w-4" />
+                </div>
+                {t.band && (
+                  <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold", TONE_CLS[t.band.tone as Tone])}>
+                    <span className={cn("h-1.5 w-1.5 rounded-full", DOT_CLS[t.band.tone as Tone])} /> {t.band.value}
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 text-[15px] font-bold">{t.name}</div>
+              <div className="text-muted-foreground truncate text-[11px]">{t.sub}</div>
+              <div className="text-muted-foreground/70 mt-2 flex items-center gap-1 text-[11px] font-medium group-hover:text-amber-300">
+                Open <ChevronRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+              </div>
+            </FacetCard>
+          </a>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+        <div className="space-y-3">
+          <DispatchHeader />
+          <DispatchFeed posts={posts} />
+        </div>
+        <div className="space-y-4">
+          <StandingCard bands={bands} onDeclare={onDeclare} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── shared pieces ────────────────────────────────────────────────────────────
+function DispatchHeader() {
+  return (
+    <div className="flex items-end justify-between px-1 pt-1">
+      <h2 className="text-lg font-bold tracking-tight">The feed</h2>
+      <span className="text-muted-foreground/70 text-[11px]">your decisions become headlines · the world answers</span>
+    </div>
+  );
+}
+
+function DispatchFeed({ posts }: { posts: any[] }) {
+  if (posts.length === 0)
+    return <FacetCard depth={2} className="text-muted-foreground p-5 text-sm">No events yet. Issue a directive to begin the story.</FacetCard>;
+  return (
+    <div className="space-y-3">
+      {posts.map((p: any) => {
+        const m = sourceMeta(p.kind);
+        return (
+          <FacetCard key={p.id} depth={2} interactive="hover" className="p-4">
+            <div className="mb-1.5 flex items-center gap-2.5">
+              <div className={cn("grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br text-sm font-bold text-white", m.ring)}>{m.glyph}</div>
+              <div className="flex-1">
+                <div className="text-[12px] font-semibold">{m.who}</div>
+                <div className="text-muted-foreground/70 text-[11px]">{fmtTime(p.timestamp)}</div>
+              </div>
+            </div>
+            <div className="text-foreground/90 text-[14px] leading-relaxed">{p.title}</div>
+            {p.body && <div className="text-muted-foreground mt-1 text-[13px] leading-relaxed">{p.body}</div>}
+          </FacetCard>
+        );
+      })}
+    </div>
+  );
+}
+
+function StandingCard({ bands, onDeclare }: { bands: any[]; onDeclare: (g?: string) => void }) {
+  return (
+    <FacetCard depth={1} className="p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-bold">National standing</span>
+        <span className="text-muted-foreground/70 text-[10px]">bands, not numbers</span>
+      </div>
+      <div className="space-y-2">
+        {bands.map((b: any) => (
+          <div key={b.name} className="flex items-center gap-2">
+            <span className={cn("h-2 w-2 rounded-full", DOT_CLS[b.tone as Tone], b.tone === "fog" && "animate-pulse")} />
+            <span className="text-foreground/80 flex-1 text-[13px]">{b.name}</span>
+            <span className="text-foreground text-[12px] font-semibold">{b.value}</span>
+          </div>
+        ))}
+      </div>
+      <button onClick={() => onDeclare()} className="border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20 mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border py-2 text-[13px] font-semibold text-amber-300 transition">
+        <Sparkles className="h-3.5 w-3.5" /> Issue a directive
+      </button>
+    </FacetCard>
+  );
+}
+
+function RecordCard({ ledger, seal }: { ledger: any[]; seal?: any }) {
+  return (
+    <FacetCard depth={1} className="p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-bold">The record</span>
+        <span className="text-muted-foreground/70 text-[10px]">bounded &amp; logged</span>
+      </div>
+      <div className="border-border bg-card/10 rounded-xl border">
+        {ledger.length === 0 && <div className="text-muted-foreground px-3 py-4 text-xs">No entries yet. Every change lands here with what moved and why.</div>}
+        {ledger.map((l) => {
+          const up = (l.deltaValue ?? 0) >= 0;
+          return (
+            <div key={l.id} className="border-border/60 flex items-center gap-2.5 border-b px-3 py-2.5 last:border-0">
+              {l.sourceType === "decision" ? (
+                <span className="flex items-center gap-1" title="Sealed by the state">
+                  <StateSeal flagUrl={seal?.flag} governmentType={seal?.governmentType} size={18} showPips={false} />
+                  <span className="text-[8px] font-bold tracking-wide text-amber-500/90 uppercase">sealed</span>
+                </span>
+              ) : (
+                <span className="bg-card text-muted-foreground rounded px-1.5 py-0.5 text-[9px] font-bold uppercase">{l.sourceType}</span>
+              )}
+              <span className="text-foreground/80 flex-1 text-[12px]">{l.description}</span>
+              {l.deltaValue != null && (
+                <span className={cn("flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-bold", up ? "bg-emerald-500/10 text-emerald-300" : "bg-red-500/10 text-red-300")}>
+                  {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {l.targetField ?? ""}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </FacetCard>
+  );
+}
+
+// ── intent composer (shared: bottom sheet + Directive mode) ──────────────────
+function IntentComposer({ countryId, initialGoal, onCommitted }: { countryId: string; initialGoal: string; onCommitted: (res: any) => void }) {
+  const [q, setQ] = useState(initialGoal ?? "");
+  const [goal, setGoal] = useState<string | null>(initialGoal || null);
+  const [err, setErr] = useState<string | null>(null);
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [chainOf, setChainOf] = useState<string | null>(null);
+  const [justCommitted, setJustCommitted] = useState<{ id: string; goal: string } | null>(null);
+  const [policyOpen, setPolicyOpen] = useState(false);
+  useEffect(() => {
+    if (initialGoal) { setQ(initialGoal); setGoal(initialGoal); }
+  }, [initialGoal]);
+
+  const tree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
+  const suggest = api.intent.suggest.useQuery(
+    { countryId, goal: goal ?? "" },
+    { enabled: !!goal && (goal?.trim().length ?? 0) >= 2 }
+  );
+  const commitM = api.intent.commit.useMutation({
+    onSuccess: (res) => { onCommitted(res); setGoal(null); setQ(""); setParentId(null); setChainOf(null); setJustCommitted({ id: res.intent.id, goal: res.intent.goal }); },
+    onError: (e) => setErr(e.message),
+  });
+
+  const propose = (g: string) => { setErr(null); if (g.trim().length >= 2) setGoal(g.trim()); };
+  const commitTier = (tier: string) => { setErr(null); commitM.mutate({ countryId, goal: goal!, tier: tier as any, parentId: parentId ?? undefined }); };
+
+  const data = suggest.data;
+  const status = data?.status;
+  const canCommit = (status?.canCommit ?? true) && !commitM.isPending;
+
+  return (
+    <div className="space-y-3">
+      <FacetContainer variant="mycountry" depth={1} enableRefraction={false} className="p-0">
+        <div className="flex items-center gap-3 p-4">
+          <Command className="h-4 w-4 shrink-0 text-amber-400" />
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") propose(q); }}
+            placeholder="What is your government trying to accomplish?  e.g. make housing affordable"
+            className="placeholder:text-muted-foreground/50 facet-refraction-none flex-1 bg-transparent text-[16px] outline-none"
+          />
+          {suggest.isFetching ? <Loader2 className="h-4 w-4 animate-spin text-amber-400" /> : <span className="border-border text-muted-foreground rounded-md border px-2 py-0.5 text-[11px]">⏎</span>}
+        </div>
+      </FacetContainer>
+
+      {chainOf && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-[12px] text-amber-200">
+          ↳ continuing: <span className="font-semibold">{chainOf}</span>
+          <button onClick={() => { setParentId(null); setChainOf(null); }} className="ml-auto text-amber-300/70 hover:text-amber-200">✕</button>
+        </div>
+      )}
+      {justCommitted && !goal && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-200">
+          ✓ Committed: <span className="font-semibold">{justCommitted.goal}</span>
+          <button onClick={() => { setParentId(justCommitted.id); setChainOf(justCommitted.goal); setJustCommitted(null); }} className="ml-auto rounded-md border border-emerald-400/40 px-2 py-0.5 font-semibold hover:bg-emerald-500/20">Build on this →</button>
+        </div>
+      )}
+      {err && <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">{err}</div>}
+      {status && !status.canCommit && (
+        <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
+          Your government is executing this week's agenda ({status.usedThisWeek}/{status.cap}). New intents open after the weekly cooldown.
+        </div>
+      )}
+
+      {!goal ? (
+        <div className="space-y-1.5">
+          <div className="text-muted-foreground px-1 text-[11px] font-bold tracking-widest uppercase">Suggested — from the state of your nation</div>
+          {GOAL_CHIPS.map((g) => (
+            <button key={g} onClick={() => propose(g)} className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3.5 py-2.5 text-left hover:border-amber-400/30 hover:bg-amber-500/[0.06]">
+              <span className="bg-muted grid h-7 w-7 place-items-center rounded-lg text-sm">✦</span>
+              <span className="flex-1 text-[13px] font-medium">{g}</span>
+              <span className="text-muted-foreground text-[10px]">goal</span>
+            </button>
+          ))}
+        </div>
+      ) : suggest.isFetching || !data ? (
+        <div className="text-muted-foreground px-1 py-6 text-center text-sm">
+          <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-amber-400" /> Your ministries are drawing up options…
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="px-1 text-[11px] font-bold tracking-widest text-amber-300/80 uppercase">
+            “{goal}” — your government proposes
+            {data.category && <span className="text-muted-foreground ml-2 lowercase">· {data.category}{data.target ? ` · ${data.target}` : ""}</span>}
+          </div>
+          {data.foreignNeedsTarget && (
+            <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">Foreign-policy intents need a specific target — name who or what (e.g. “…with Burgundie”).</div>
+          )}
+          {data.packages.map((p: any) => (
+            <button key={p.tier} disabled={!canCommit} onClick={() => commitTier(p.tier)} className="border-border w-full rounded-xl border px-4 py-3 text-left transition hover:border-amber-400/50 hover:bg-amber-500/[0.05] disabled:cursor-not-allowed disabled:opacity-50">
+              <div className="flex items-center justify-between">
+                <div className="text-[13px] font-bold">{p.title}</div>
+                <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold", TONE_CLS[p.acceptance as Tone])}>
+                  {p.acceptance === "good" ? "Broad support" : p.acceptance === "mid" ? "Contested" : "Hard sell"}
+                </span>
+              </div>
+              <div className="text-muted-foreground mt-0.5 text-[12px]">{p.blurb}</div>
+              <ul className="mt-2 space-y-1">
+                {p.changes.map((c: any, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-[12px]">
+                    <span className="mt-[3px] text-amber-400">{c.kind === "budget" ? "▤" : c.kind === "policy" ? "◈" : c.kind === "foreign" ? "◇" : "•"}</span>
+                    <span className="text-foreground/90">{c.label}<span className="text-muted-foreground"> — {c.detail}</span></span>
+                  </li>
+                ))}
+              </ul>
+              <div className="text-muted-foreground/70 mt-2 text-[10px] tracking-wide uppercase">{p.risk} · reserves {p.civCapCost} capacity</div>
+            </button>
+          ))}
+          {data.broker && (
+            <div className="text-muted-foreground/80 px-1 text-[11px]">
+              Acceptance weighted by <span className="text-foreground/80 font-medium">{data.broker.name}</span>
+              {data.broker.unlocked ? (data.broker.satisfied ? " · currently satisfied" : " · currently restless") : " · not a factor here"}.
+            </div>
+          )}
+          <div className="flex items-center justify-between px-1 pt-1">
+            <button onClick={() => setGoal(null)} className="text-muted-foreground hover:text-foreground text-[12px]">← no action / rethink</button>
+            <button onClick={() => setPolicyOpen(true)} className="text-[11px] font-medium text-amber-300/80 hover:text-amber-200">Draft your own package →</button>
+          </div>
+        </div>
+      )}
+
+      {/* agenda / dependency tree */}
+      {(tree.data ?? []).length > 0 && (
+        <div className="border-border/60 mt-1 rounded-xl border p-3.5">
+          <div className="mb-2 text-[12px] font-bold">Your agenda</div>
+          <div className="space-y-1">
+            {(tree.data ?? [])
+              .filter((it: any) => !it.parentId || !(tree.data ?? []).some((x: any) => x.id === it.parentId))
+              .map((root: any) => (
+                <div key={root.id}>
+                  <div className="flex items-center gap-2 py-1 text-[12px]">
+                    <span className={cn("rounded px-1.5 py-0.5 text-[9px] font-bold uppercase", TONE_CLS[root.tier === "measured" ? "good" : root.tier === "moderate" ? "mid" : "bad"])}>{root.tier}</span>
+                    <span className="text-foreground/90 flex-1 truncate">{root.goal}</span>
+                    <span className="text-muted-foreground text-[10px]">{root.category}</span>
+                  </div>
+                  {(tree.data ?? []).filter((x: any) => x.parentId === root.id).map((kid: any) => (
+                    <div key={kid.id} className="ml-3 border-l border-white/10 pl-3">
+                      <div className="flex items-center gap-2 py-1 text-[12px]">
+                        <span className="text-amber-400">↳</span>
+                        <span className="text-foreground/80 flex-1 truncate">{kid.goal}</span>
+                        <span className="text-muted-foreground text-[10px]">{kid.tier}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      <PolicyCreatorSheet countryId={countryId} open={policyOpen} onOpenChange={setPolicyOpen} />
     </div>
   );
 }
@@ -531,386 +797,4 @@ export function MyCountryV2({
 // labs route: design-iteration view with the country picker
 export default function MyCountryV2Page() {
   return <MyCountryV2 />;
-}
-
-// ── quick declare (briefing rail) ──────────────────────────────────────────
-function QuickDeclare({ onDeclare }: { onDeclare: (g: string) => void }) {
-  const [v, setV] = useState("");
-  return (
-    <div className="space-y-3">
-      <div className="text-muted-foreground text-[12px]">
-        What is your government trying to accomplish?
-      </div>
-      <div className="flex gap-2">
-        <input
-          value={v}
-          onChange={(e) => setV(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              onDeclare(v);
-              setV("");
-            }
-          }}
-          placeholder="e.g. Secure the northern sea lanes"
-          className="border-input bg-muted/40 facet-refraction-none flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-amber-500/60"
-        />
-        <button
-          onClick={() => {
-            onDeclare(v);
-            setV("");
-          }}
-          className="flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-amber-500/16 px-3 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/26"
-        >
-          <Send className="h-3.5 w-3.5" /> Explore
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {GOAL_CHIPS.slice(0, 4).map((g) => (
-          <button
-            key={g}
-            onClick={() => onDeclare(g)}
-            className="border-border bg-card/30 text-muted-foreground hover:text-foreground rounded-full border px-2.5 py-1 text-[11px] hover:border-amber-500/50"
-          >
-            {g}
-          </button>
-        ))}
-      </div>
-      <div className="text-muted-foreground/80 text-[11px]">
-        See Measured / Moderate / Extreme options in Executive mode. Weekly cooldown.
-      </div>
-    </div>
-  );
-}
-
-// ── executive console (AI-chatbox) ─────────────────────────────────────────
-function ExecutiveConsole({
-  countryId,
-  name,
-  bands,
-  posts,
-  initialGoal,
-  onCommitted,
-}: {
-  countryId: string | null;
-  name: string;
-  bands: any[];
-  posts: any[];
-  initialGoal: string | null;
-  onCommitted: (res: any) => void;
-}) {
-  const [q, setQ] = useState(initialGoal ?? "");
-  const [goal, setGoal] = useState<string | null>(initialGoal ?? null);
-  const [err, setErr] = useState<string | null>(null);
-  const [parentId, setParentId] = useState<string | null>(null);
-  const [chainOf, setChainOf] = useState<string | null>(null);
-  const [justCommitted, setJustCommitted] = useState<{ id: string; goal: string } | null>(null);
-  const [policyOpen, setPolicyOpen] = useState(false);
-  useEffect(() => {
-    if (initialGoal) {
-      setQ(initialGoal);
-      setGoal(initialGoal);
-    }
-  }, [initialGoal]);
-
-  const tree = api.intent.getTree.useQuery({ countryId: countryId ?? "" }, { enabled: !!countryId });
-  // live: the government proposes Measured/Moderate/Extreme packages
-  const suggest = api.intent.suggest.useQuery(
-    { countryId: countryId ?? "", goal: goal ?? "" },
-    { enabled: !!countryId && !!goal && (goal?.trim().length ?? 0) >= 2 }
-  );
-  const commitM = api.intent.commit.useMutation({
-    onSuccess: (res) => {
-      onCommitted(res);
-      setGoal(null);
-      setQ("");
-      setParentId(null);
-      setChainOf(null);
-      setJustCommitted({ id: res.intent.id, goal: res.intent.goal });
-    },
-    onError: (e) => setErr(e.message),
-  });
-
-  function propose(g: string) {
-    setErr(null);
-    const t = g.trim();
-    if (t.length >= 2) setGoal(t);
-  }
-  function commitTier(tier: string) {
-    if (!countryId || !goal) return;
-    setErr(null);
-    commitM.mutate({
-      countryId,
-      goal,
-      tier: tier as "measured" | "moderate" | "extreme",
-      parentId: parentId ?? undefined,
-    });
-  }
-  function buildOn(it: { id: string; goal: string }) {
-    setParentId(it.id);
-    setChainOf(it.goal);
-    setJustCommitted(null);
-  }
-
-  const data = suggest.data;
-  const status = data?.status;
-  const canCommit = (status?.canCommit ?? true) && !commitM.isPending;
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
-      <div className="space-y-4">
-        <div className="mb-1 text-center">
-          <div className="gz-mono text-[10px] tracking-[0.2em] text-amber-400/90 uppercase">
-            The Executive · {name}
-          </div>
-          <h2 className="gz-serif mt-1 text-2xl font-bold tracking-tight">
-            What are you trying to accomplish?
-          </h2>
-        </div>
-
-        <FacetContainer variant="mycountry" depth={1} enableRefraction={false} className="p-0">
-          <div className="flex items-center gap-3 p-4">
-            <Command className="h-4 w-4 shrink-0 text-amber-400" />
-            <input
-              autoFocus
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") propose(q);
-              }}
-              placeholder="Type a goal in plain language…  e.g. make housing affordable"
-              className="placeholder:text-muted-foreground/50 facet-refraction-none flex-1 bg-transparent text-[17px] outline-none"
-            />
-            {suggest.isFetching ? (
-              <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-            ) : (
-              <span className="border-border text-muted-foreground gz-mono rounded-md border px-2 py-0.5 text-[11px]">
-                ⏎
-              </span>
-            )}
-          </div>
-        </FacetContainer>
-
-        {chainOf && (
-          <div className="flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-[12px] text-amber-200">
-            ↳ continuing: <span className="font-semibold">{chainOf}</span>
-            <button
-              onClick={() => {
-                setParentId(null);
-                setChainOf(null);
-              }}
-              className="ml-auto text-amber-300/70 hover:text-amber-200"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-        {justCommitted && !goal && (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-200">
-            ✓ Committed: <span className="font-semibold">{justCommitted.goal}</span>
-            <button
-              onClick={() => buildOn(justCommitted)}
-              className="ml-auto rounded-md border border-emerald-400/40 px-2 py-0.5 font-semibold hover:bg-emerald-500/20"
-            >
-              Build on this →
-            </button>
-          </div>
-        )}
-        {err && (
-          <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">
-            {err}
-          </div>
-        )}
-        {status && !status.canCommit && (
-          <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
-            Your government is executing this week's agenda ({status.usedThisWeek}/{status.cap}).
-            New intents open after the weekly cooldown.
-          </div>
-        )}
-
-        {!goal ? (
-          <div className="space-y-1.5">
-            <div className="text-muted-foreground px-1 text-[11px] font-bold tracking-widest uppercase">
-              Suggested — from the state of your nation
-            </div>
-            {GOAL_CHIPS.map((g) => (
-              <button
-                key={g}
-                onClick={() => propose(g)}
-                className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3.5 py-2.5 text-left hover:border-amber-400/30 hover:bg-amber-500/[0.06]"
-              >
-                <span className="bg-muted grid h-7 w-7 place-items-center rounded-lg text-sm">
-                  ✦
-                </span>
-                <span className="flex-1 text-[13px] font-medium">{g}</span>
-                <span className="text-muted-foreground text-[10px]">goal</span>
-              </button>
-            ))}
-          </div>
-        ) : suggest.isFetching || !data ? (
-          <div className="text-muted-foreground px-1 py-6 text-center text-sm">
-            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-amber-400" />
-            Your ministries are drawing up options…
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="px-1 text-[11px] font-bold tracking-widest text-amber-300/80 uppercase">
-              “{goal}” — your government proposes
-              {data.category && (
-                <span className="text-muted-foreground ml-2 lowercase">
-                  · {data.category}
-                  {data.target ? ` · ${data.target}` : ""}
-                </span>
-              )}
-            </div>
-            {data.foreignNeedsTarget && (
-              <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
-                Foreign-policy intents need a specific target — name who or what (e.g. “…with Burgundie”).
-              </div>
-            )}
-            {data.packages.map((p: any) => (
-              <button
-                key={p.tier}
-                disabled={!canCommit}
-                onClick={() => commitTier(p.tier)}
-                className="border-border w-full rounded-xl border px-4 py-3 text-left transition hover:border-amber-400/50 hover:bg-amber-500/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-[13px] font-bold">{p.title}</div>
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${TONE_CLS[p.acceptance as Tone]}`}
-                  >
-                    {p.acceptance === "good"
-                      ? "Broad support"
-                      : p.acceptance === "mid"
-                        ? "Contested"
-                        : "Hard sell"}
-                  </span>
-                </div>
-                <div className="text-muted-foreground mt-0.5 text-[12px]">{p.blurb}</div>
-                <ul className="mt-2 space-y-1">
-                  {p.changes.map((c: any, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-[12px]">
-                      <span className="mt-[3px] text-amber-400">
-                        {c.kind === "budget"
-                          ? "▤"
-                          : c.kind === "policy"
-                            ? "◈"
-                            : c.kind === "foreign"
-                              ? "◇"
-                              : "•"}
-                      </span>
-                      <span className="text-foreground/90">
-                        {c.label}
-                        <span className="text-muted-foreground"> — {c.detail}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="text-muted-foreground/70 mt-2 text-[10px] tracking-wide uppercase">
-                  {p.risk} · reserves {p.civCapCost} capacity
-                </div>
-              </button>
-            ))}
-            {data.broker && (
-              <div className="text-muted-foreground/80 px-1 text-[11px]">
-                Acceptance weighted by <span className="text-foreground/80 font-medium">{data.broker.name}</span>
-                {data.broker.unlocked ? (data.broker.satisfied ? " · currently satisfied" : " · currently restless") : " · not a factor here"}.
-              </div>
-            )}
-            <div className="flex items-center justify-between px-1 pt-1">
-              <button
-                onClick={() => setGoal(null)}
-                className="text-muted-foreground hover:text-foreground text-[12px]"
-              >
-                ← no action / rethink
-              </button>
-              <button
-                onClick={() => setPolicyOpen(true)}
-                className="text-[11px] font-medium text-amber-300/80 hover:text-amber-200"
-              >
-                Draft your own package →
-              </button>
-            </div>
-          </div>
-        )}
-        {countryId && (
-          <PolicyCreatorSheet countryId={countryId} open={policyOpen} onOpenChange={setPolicyOpen} />
-        )}
-      </div>
-
-      {/* the record + standing */}
-      <div className="space-y-4">
-        <FacetCard depth={1} className="p-5">
-          <div className="mb-3 text-sm font-bold">National standing</div>
-          <div className="flex flex-wrap gap-2">
-            {bands.map((b: any) => (
-              <Band key={b.name} label={b.name} value={b.value} tone={b.tone} />
-            ))}
-          </div>
-        </FacetCard>
-        <FacetCard depth={1} className="p-5">
-          <div className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <Sparkles className="text-muted-foreground h-4 w-4" /> Your agenda
-          </div>
-          {(tree.data ?? []).length === 0 ? (
-            <div className="text-muted-foreground text-xs">
-              Committed intents and their follow-ups appear here as a dependency tree.
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {(tree.data ?? [])
-                .filter(
-                  (it: any) =>
-                    !it.parentId || !(tree.data ?? []).some((x: any) => x.id === it.parentId)
-                )
-                .map((root: any) => (
-                  <div key={root.id}>
-                    <div className="flex items-center gap-2 py-1 text-[12px]">
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${TONE_CLS[root.tier === "measured" ? "good" : root.tier === "moderate" ? "mid" : "bad"]}`}
-                      >
-                        {root.tier}
-                      </span>
-                      <span className="text-foreground/90 flex-1 truncate">{root.goal}</span>
-                      <span className="text-muted-foreground text-[10px]">{root.category}</span>
-                    </div>
-                    {(tree.data ?? [])
-                      .filter((x: any) => x.parentId === root.id)
-                      .map((kid: any) => (
-                        <div key={kid.id} className="ml-3 border-l border-white/10 pl-3">
-                          <div className="flex items-center gap-2 py-1 text-[12px]">
-                            <span className="text-amber-400">↳</span>
-                            <span className="text-foreground/80 flex-1 truncate">{kid.goal}</span>
-                            <span className="text-muted-foreground text-[10px]">{kid.tier}</span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                ))}
-            </div>
-          )}
-        </FacetCard>
-        <FacetCard depth={1} className="p-5">
-          <div className="mb-3 flex items-center gap-2 text-sm font-bold">
-            <Globe2 className="text-muted-foreground h-4 w-4" /> The record
-          </div>
-          <div className="space-y-3">
-            {posts.slice(0, 8).map((p: any) => (
-              <div key={p.id} className="border-border/60 border-b pb-2.5 last:border-0">
-                <div className="text-muted-foreground text-[10px] tracking-wide uppercase">
-                  {sourceMeta(p.kind).who} · {fmtTime(p.timestamp)}
-                </div>
-                <div className="text-foreground/90 text-[13px]">{p.title}</div>
-              </div>
-            ))}
-            {posts.length === 0 && (
-              <div className="text-muted-foreground text-xs">
-                Commit an intent to write the first entry.
-              </div>
-            )}
-          </div>
-        </FacetCard>
-      </div>
-    </div>
-  );
 }
