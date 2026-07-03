@@ -15,12 +15,10 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Landmark,
   Newspaper,
   Globe2,
   Sparkles,
   TerminalSquare,
-  LayoutGrid,
   ArrowUpRight,
   ArrowDownRight,
   CircleDot,
@@ -29,9 +27,10 @@ import {
   Loader2,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
+import { IxTime } from "~/lib/ixtime";
 import {
   Select,
   SelectContent,
@@ -74,7 +73,7 @@ function sourceMeta(kind: string) {
         who: "Government",
         av: "gov",
         tone: "text-blue-300 bg-blue-500/12",
-        ring: "from-blue-500 to-indigo-600",
+        ring: "from-blue-500 to-amber-600",
       };
     case "diplomacy":
       return {
@@ -153,6 +152,14 @@ export function MyCountryV2({
   const [mode, setMode] = useState<"briefing" | "executive">("briefing");
   const [local, setLocal] = useState<LocalPost[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [ixYear, setIxYear] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      setIxYear(new Date(IxTime.getCurrentIxTime()).getFullYear());
+    } catch {
+      /* dateline is decorative — omit if unavailable */
+    }
+  }, []);
   useEffect(() => {
     setLocal([]);
   }, [countryId]); // reset optimistic feed on country switch
@@ -243,12 +250,30 @@ export function MyCountryV2({
           "radial-gradient(1100px 560px at 12% -6%, rgba(202,138,4,0.10), transparent 60%), radial-gradient(900px 500px at 100% 0%, rgba(99,102,241,0.06), transparent 55%)",
       }}
     >
-      {/* top bar */}
-      <div className="border-border bg-background/70 sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-4 py-2.5 backdrop-blur-xl">
-        <div className="flex items-center gap-2 text-sm font-extrabold tracking-tight">
-          <Landmark className="h-4 w-4 text-amber-500" /> MyCountry{" "}
-          <span className="text-amber-500">v2</span>
-          <span className="border-border text-muted-foreground ml-2 rounded-full border px-2.5 py-0.5 text-[11px] font-medium">
+      {/* Gazette design system — the "State Seal" signature + editorial type.
+          ponytail: scoped style block; graduate to facet/*.css if v2 ships. */}
+      <style>{`
+        .gz-serif { font-family: "Iowan Old Style","Palatino Linotype",Palatino,Georgia,ui-serif,serif; }
+        .gz-mono { font-family: ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace; }
+        .gz-foil { background: linear-gradient(92deg,#a16207,#eab308 42%,#fde68a 56%,#ca8a04); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .gz-rule { height:1px; background:linear-gradient(90deg,transparent,rgba(234,179,8,.55),rgba(234,179,8,.12),transparent); }
+        .gz-lede::first-letter { float:left; font-size:3.1em; line-height:.8; padding:.06em .12em 0 0; color:#eab308; font-weight:700; font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,ui-serif,serif; }
+        .gz-seal { position:relative; width:64px; height:64px; flex:none; }
+        .gz-seal .gz-ring { position:absolute; inset:0; border-radius:999px; background:conic-gradient(from 0deg,#8a5a06,#eab308,#fde68a,#ca8a04,#8a5a06); box-shadow:0 6px 22px rgba(202,138,4,.28), inset 0 0 0 1px rgba(0,0,0,.5); animation:gz-spin 22s linear infinite; }
+        .gz-seal .gz-disc { position:absolute; inset:5px; border-radius:999px; background-color:#12141a; background-image:var(--gz-flag,none); background-size:cover; background-position:center; box-shadow:inset 0 0 0 1.5px rgba(234,179,8,.55), inset 0 0 12px rgba(0,0,0,.6); display:grid; place-items:center; }
+        .gz-seal .gz-glare { position:absolute; inset:0; border-radius:999px; background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.5),transparent 46%); mix-blend-mode:screen; pointer-events:none; }
+        .gz-stamp { display:inline-flex; align-items:center; gap:4px; font-family:ui-monospace,monospace; font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:#eab308; border:1px solid rgba(234,179,8,.45); border-radius:5px; padding:1px 5px; transform:rotate(-3.5deg); }
+        @keyframes gz-spin { to { transform:rotate(360deg); } }
+        @keyframes gz-stampin { from { opacity:0; transform:rotate(-14deg) scale(1.5); } to { opacity:1; transform:rotate(-3.5deg) scale(1); } }
+        .gz-stampin { animation:gz-stampin .32s cubic-bezier(.34,1.56,.64,1); }
+        @media (prefers-reduced-motion: reduce){ .gz-seal .gz-ring{ animation:none; } .gz-stampin{ animation:none; } }
+      `}</style>
+
+      {/* Gazette chrome — slim editorial bar */}
+      <div className="border-border/70 bg-background/70 sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-4 py-2 backdrop-blur-xl">
+        <div className="gz-mono flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em] uppercase">
+          <span className="gz-foil">◉ Gazette of State</span>
+          <span className="border-border/70 text-muted-foreground ml-1 rounded border px-1.5 py-0.5 text-[9px] tracking-[0.1em]">
             {previewLabel}
           </span>
         </div>
@@ -257,7 +282,7 @@ export function MyCountryV2({
             <Select value={countryId ?? ""} onValueChange={(val) => setCountryId(val || null)}>
               <SelectTrigger
                 size="sm"
-                className="border-border bg-card/40 text-foreground hover:bg-card/70 h-8 w-fit min-w-[140px] cursor-pointer text-xs focus:border-amber-500/30 focus:ring-amber-500/20"
+                className="border-border bg-card/40 text-foreground hover:bg-card/70 gz-mono h-7 w-fit min-w-[140px] cursor-pointer text-[11px] tracking-wide focus:border-amber-500/30 focus:ring-amber-500/20"
               >
                 <SelectValue placeholder="Select Country" />
               </SelectTrigger>
@@ -270,127 +295,146 @@ export function MyCountryV2({
               </SelectContent>
             </Select>
           )}
-          <div className="border-border bg-card/40 flex rounded-lg border p-0.5 text-xs font-semibold">
+          <div className="border-border/70 bg-card/40 gz-mono flex rounded-md border p-0.5 text-[11px] font-semibold tracking-[0.08em] uppercase">
             <button
               onClick={() => setMode("briefing")}
-              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 transition ${mode === "briefing" ? "bg-amber-500/20 text-amber-200" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition ${mode === "briefing" ? "bg-amber-500/20 text-amber-300" : "text-muted-foreground hover:text-foreground"}`}
             >
-              <LayoutGrid className="h-3.5 w-3.5" /> Briefing
+              <Newspaper className="h-3.5 w-3.5" /> Brief
             </button>
             <button
               onClick={() => setMode("executive")}
-              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 transition ${mode === "executive" ? "bg-indigo-500/20 text-indigo-200" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex items-center gap-1.5 rounded px-2.5 py-1 transition ${mode === "executive" ? "bg-amber-500/20 text-amber-300" : "text-muted-foreground hover:text-foreground"}`}
             >
-              <TerminalSquare className="h-3.5 w-3.5" /> Executive
+              <TerminalSquare className="h-3.5 w-3.5" /> Directive
             </button>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-6xl space-y-4 p-4">
-        {/* HERO — map/identity (existing mycountry identity) */}
-        <FacetCard depth={1} className="relative overflow-hidden">
+        {/* MASTHEAD — the hero. State Seal signature + serif nameplate + dateline. */}
+        <FacetContainer
+          variant="mycountry"
+          depth={1}
+          className="facet-texture-paper-grain relative overflow-hidden p-6"
+        >
+          {/* faint flag wash behind the masthead */}
           {flag && (
             <img
               src={flag}
               alt=""
-              className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-md"
+              className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-[0.08] blur-lg"
             />
           )}
-          <div className="from-background via-background/70 absolute inset-0 bg-gradient-to-t to-transparent" />
-          <div className="relative flex items-center justify-between gap-4 p-6">
-            <div className="flex items-center gap-4">
-              {flag ? (
-                <img
-                  src={flag}
-                  alt=""
-                  className="border-border-accent h-16 w-24 rounded-md border object-cover shadow-lg"
-                />
-              ) : (
-                <div className="border-border-accent grid h-16 w-24 place-items-center rounded-md border bg-gradient-to-br from-amber-500 to-yellow-600 text-2xl font-black text-zinc-950">
-                  {(d.name ?? "?")[0]}
-                </div>
-              )}
-              <div>
-                <div className="text-muted-foreground text-[11px] font-bold tracking-[0.18em] uppercase">
-                  {d.governmentType ?? "Government"} · {d.region ?? "—"}
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {dashLoading ? "Loading…" : (d.name ?? "Select a country")}
-                </h1>
-                <div className="text-muted-foreground mt-0.5 text-xs">
-                  Led by {d.leader ?? "the government"} · {d.economicTier ?? "—"} economy
-                </div>
+          <div className="relative flex items-start gap-5">
+            {/* the seal */}
+            <div
+              className="gz-seal mt-0.5"
+              style={{ ["--gz-flag" as any]: flag ? `url("${flag}")` : "none" }}
+            >
+              <div className="gz-ring" />
+              <div className="gz-disc">
+                {!flag && (
+                  <span className="gz-serif text-2xl font-black text-amber-300/90">
+                    {(d.name ?? "?")[0]}
+                  </span>
+                )}
+              </div>
+              <div className="gz-glare" />
+            </div>
+            {/* nameplate */}
+            <div className="min-w-0 flex-1">
+              <div className="gz-mono text-muted-foreground text-[10px] tracking-[0.2em] uppercase">
+                {d.governmentType ?? "Government"} · {d.region ?? "—"}
+              </div>
+              <h1 className="gz-serif mt-1 truncate text-3xl font-bold tracking-tight sm:text-[2.4rem] sm:leading-[1.05]">
+                {dashLoading ? "…" : (d.name ?? "Select a country")}
+              </h1>
+              <div className="gz-mono text-muted-foreground/80 mt-1.5 text-[10px] tracking-[0.14em] uppercase">
+                Under the hand of {d.leader ?? "the government"}
+                {ixYear ? ` · year ${ixYear}` : ""} · {d.economicTier ?? "—"} economy
               </div>
             </div>
-            <div className="text-muted-foreground/80 hidden shrink-0 text-right text-[10px] tracking-widest uppercase sm:block">
-              {/* ◍ real IxWorld map hero can mount in this slot */}◍ map hero slot
-            </div>
           </div>
-        </FacetCard>
+
+          <div className="gz-rule my-4" />
+
+          {/* standing ledger strip — the bands, editorial */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <span className="gz-mono text-muted-foreground/70 text-[9px] tracking-[0.2em] uppercase">
+              State of the Nation
+            </span>
+            {bands.map((b: any) => (
+              <div key={b.name} className="flex items-center gap-1.5">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${b.tone === "good" ? "bg-emerald-400" : b.tone === "mid" ? "bg-amber-400" : b.tone === "bad" ? "bg-red-400" : b.tone === "info" ? "bg-blue-400" : "bg-zinc-500"} ${b.tone === "fog" ? "animate-pulse" : ""}`}
+                />
+                <span className="gz-mono text-muted-foreground text-[10px] tracking-wide uppercase">
+                  {b.name}
+                </span>
+                <span className="text-foreground/90 text-[12px] font-semibold">{b.value}</span>
+              </div>
+            ))}
+          </div>
+        </FacetContainer>
 
         {mode === "briefing" ? (
           <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
             {/* LEFT: the living feed, led by the AI brief */}
             <div className="space-y-4">
-              <FacetCard depth={1} className="p-5">
-                <div className="mb-2 flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] text-amber-400/90 uppercase">
-                  <Sparkles className="h-3.5 w-3.5" /> Executive morning brief
+              <FacetCard depth={1} className="facet-texture-paper-grain p-6">
+                <div className="gz-mono mb-3 flex items-center justify-between text-[10px] tracking-[0.2em] uppercase">
+                  <span className="text-amber-400/90">Morning Brief</span>
+                  <span className="text-muted-foreground/70">
+                    {ixYear ? `Year ${ixYear}` : "Executive"} · Dispatch
+                  </span>
                 </div>
                 {briefing ? (
-                  <p className="text-foreground/90 text-[15px] leading-relaxed">
+                  <p className="gz-serif gz-lede text-foreground/90 text-[17px] leading-[1.7]">
                     <span className="text-foreground font-semibold">{briefing.lead}</span>{" "}
                     {briefing.worry}
                   </p>
                 ) : (
-                  <p className="text-muted-foreground text-sm">Compiling briefing…</p>
+                  <p className="text-muted-foreground text-sm">Compiling the brief…</p>
                 )}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {bands.map((b: any) => (
-                    <Band key={b.name} label={b.name} value={b.value} tone={b.tone} />
-                  ))}
-                </div>
               </FacetCard>
 
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2 text-sm font-bold">
-                  <Newspaper className="text-muted-foreground h-4 w-4" /> The feed
-                </div>
-                <span className="text-muted-foreground/80 text-[11px]">
-                  your decisions become headlines · the world answers
+              <div className="flex items-end justify-between px-1 pt-1">
+                <h2 className="gz-serif text-xl font-bold tracking-tight">Dispatches</h2>
+                <span className="gz-mono text-muted-foreground/70 text-[9px] tracking-[0.16em] uppercase">
+                  Your decrees · the world answers
                 </span>
               </div>
 
               {posts.length === 0 && (
                 <FacetCard depth={2} className="text-muted-foreground p-5 text-sm">
-                  No canon events yet for this nation. Declare an intent below to start the story.
+                  No dispatches yet. Issue a directive to begin the record.
                 </FacetCard>
               )}
               {posts.map((p: any) => {
                 const m = sourceMeta(p.kind);
                 return (
-                  <FacetCard key={p.id} depth={2} className="p-4">
+                  <FacetCard key={p.id} depth={2} interactive="hover" className="p-4">
                     <div className="mb-1.5 flex items-center gap-2.5">
                       <div
                         className={`grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br ${m.ring} text-sm font-bold text-white`}
                       >
-                        {p.kind === "decision" ? "◈" : p.kind === "diplomacy" ? "◇" : "▦"}
+                        {p.kind === "decision" ? "◉" : p.kind === "diplomacy" ? "◇" : "▦"}
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 text-sm font-semibold">
-                          {m.who}{" "}
-                          <span
-                            className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase ${m.tone}`}
-                          >
+                        <div className="gz-mono flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                          {m.who}
+                          <span className={`rounded px-1.5 py-0.5 text-[8px] tracking-wide ${m.tone}`}>
                             {p.kind}
                           </span>
                         </div>
-                        <div className="text-muted-foreground/80 text-[11px]">
+                        <div className="gz-mono text-muted-foreground/70 text-[10px] tracking-wide uppercase">
                           {fmtTime(p.timestamp)}
                         </div>
                       </div>
                     </div>
-                    <div className="text-foreground/90 text-[14px] leading-relaxed">{p.title}</div>
+                    <div className="gz-serif text-foreground text-[15px] leading-snug">{p.title}</div>
                     {p.body && (
                       <div className="text-muted-foreground mt-1 text-[13px] leading-relaxed">
                         {p.body}
@@ -403,15 +447,20 @@ export function MyCountryV2({
 
             {/* RIGHT: attention + declare + ledger */}
             <div className="space-y-4">
-              <FacetCard depth={1} className="p-5">
-                <div className="mb-3 text-sm font-bold">Declare an intent</div>
+              <FacetContainer variant="mycountry" depth={1} className="p-5">
+                <div className="gz-mono mb-1 text-[10px] tracking-[0.2em] text-amber-400/90 uppercase">
+                  The Executive
+                </div>
+                <div className="gz-serif mb-3 text-lg font-bold">Issue a directive</div>
                 <QuickDeclare onDeclare={handoffToExecutive} />
-              </FacetCard>
+              </FacetContainer>
 
               <FacetCard depth={1} className="p-5">
                 <div className="mb-3 flex items-center justify-between">
-                  <div className="text-sm font-bold">What changed — the record</div>
-                  <span className="text-muted-foreground/80 text-[10px]">bounded &amp; logged</span>
+                  <div className="gz-serif text-lg font-bold">The Record</div>
+                  <span className="gz-mono text-muted-foreground/70 text-[9px] tracking-[0.16em] uppercase">
+                    Sealed &amp; bounded
+                  </span>
                 </div>
                 <div className="border-border bg-card/10 rounded-xl border">
                   {(ledger as any[]).length === 0 && (
@@ -426,9 +475,13 @@ export function MyCountryV2({
                         key={l.id}
                         className="border-border/60 flex items-center gap-2.5 border-b px-3 py-2.5 last:border-0"
                       >
-                        <span className="bg-card text-muted-foreground rounded px-1.5 py-0.5 text-[9px] font-bold uppercase">
-                          {l.sourceType}
-                        </span>
+                        {l.sourceType === "decision" ? (
+                          <span className="gz-stamp">◉ sealed</span>
+                        ) : (
+                          <span className="bg-card text-muted-foreground gz-mono rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wide uppercase">
+                            {l.sourceType}
+                          </span>
+                        )}
                         <span className="text-foreground/80 flex-1 text-[12px]">
                           {l.description}
                         </span>
@@ -464,10 +517,11 @@ export function MyCountryV2({
         )}
       </div>
 
-      {/* in-world toast */}
+      {/* in-world dispatch toast — the seal "stamps" in */}
       {toast && (
-        <div className="border-border bg-secondary fixed bottom-5 left-1/2 z-50 max-w-lg -translate-x-1/2 rounded-xl border px-4 py-3 text-sm shadow-2xl">
-          <span className="font-semibold text-amber-400">{toast}</span>
+        <div className="gz-stampin border-border bg-secondary fixed bottom-5 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-start gap-2.5 rounded-xl border px-4 py-3 shadow-2xl">
+          <span className="gz-foil mt-0.5 text-base leading-none">◉</span>
+          <span className="gz-serif text-foreground/90 text-[13px] leading-snug">{toast}</span>
         </div>
       )}
     </div>
@@ -498,7 +552,7 @@ function QuickDeclare({ onDeclare }: { onDeclare: (g: string) => void }) {
             }
           }}
           placeholder="e.g. Secure the northern sea lanes"
-          className="border-input bg-muted/40 flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-amber-500/60"
+          className="border-input bg-muted/40 facet-refraction-none flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:border-amber-500/60"
         />
         <button
           onClick={() => {
@@ -605,20 +659,17 @@ function ExecutiveConsole({
     <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
       <div className="space-y-4">
         <div className="mb-1 text-center">
-          <div className="text-[11px] font-bold tracking-[0.18em] text-indigo-300/80 uppercase">
-            Executive mode · {name}
+          <div className="gz-mono text-[10px] tracking-[0.2em] text-amber-400/90 uppercase">
+            The Executive · {name}
           </div>
-          <h2
-            className="mt-1 text-xl font-bold tracking-tight"
-            style={{ fontFamily: "Iowan Old Style, Palatino Linotype, Georgia, serif" }}
-          >
+          <h2 className="gz-serif mt-1 text-2xl font-bold tracking-tight">
             What are you trying to accomplish?
           </h2>
         </div>
 
-        <FacetCard depth={1} className="p-0" variant="base">
+        <FacetContainer variant="mycountry" depth={1} enableRefraction={false} className="p-0">
           <div className="flex items-center gap-3 p-4">
-            <Command className="h-4 w-4 shrink-0 text-indigo-400" />
+            <Command className="h-4 w-4 shrink-0 text-amber-400" />
             <input
               autoFocus
               value={q}
@@ -627,27 +678,27 @@ function ExecutiveConsole({
                 if (e.key === "Enter") propose(q);
               }}
               placeholder="Type a goal in plain language…  e.g. make housing affordable"
-              className="placeholder:text-muted-foreground/50 flex-1 bg-transparent text-[17px] outline-none"
+              className="placeholder:text-muted-foreground/50 facet-refraction-none flex-1 bg-transparent text-[17px] outline-none"
             />
             {suggest.isFetching ? (
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
+              <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
             ) : (
-              <span className="border-border text-muted-foreground rounded-md border px-2 py-0.5 text-[11px]">
+              <span className="border-border text-muted-foreground gz-mono rounded-md border px-2 py-0.5 text-[11px]">
                 ⏎
               </span>
             )}
           </div>
-        </FacetCard>
+        </FacetContainer>
 
         {chainOf && (
-          <div className="flex items-center gap-2 rounded-lg border border-indigo-400/30 bg-indigo-500/10 px-3 py-1.5 text-[12px] text-indigo-200">
+          <div className="flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-1.5 text-[12px] text-amber-200">
             ↳ continuing: <span className="font-semibold">{chainOf}</span>
             <button
               onClick={() => {
                 setParentId(null);
                 setChainOf(null);
               }}
-              className="ml-auto text-indigo-300/70 hover:text-indigo-200"
+              className="ml-auto text-amber-300/70 hover:text-amber-200"
             >
               ✕
             </button>
@@ -685,7 +736,7 @@ function ExecutiveConsole({
               <button
                 key={g}
                 onClick={() => propose(g)}
-                className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3.5 py-2.5 text-left hover:border-indigo-400/30 hover:bg-indigo-500/[0.06]"
+                className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3.5 py-2.5 text-left hover:border-amber-400/30 hover:bg-amber-500/[0.06]"
               >
                 <span className="bg-muted grid h-7 w-7 place-items-center rounded-lg text-sm">
                   ✦
@@ -697,12 +748,12 @@ function ExecutiveConsole({
           </div>
         ) : suggest.isFetching || !data ? (
           <div className="text-muted-foreground px-1 py-6 text-center text-sm">
-            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-indigo-400" />
+            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-amber-400" />
             Your ministries are drawing up options…
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="px-1 text-[11px] font-bold tracking-widest text-indigo-300/80 uppercase">
+            <div className="px-1 text-[11px] font-bold tracking-widest text-amber-300/80 uppercase">
               “{goal}” — your government proposes
               {data.category && (
                 <span className="text-muted-foreground ml-2 lowercase">
@@ -721,7 +772,7 @@ function ExecutiveConsole({
                 key={p.tier}
                 disabled={!canCommit}
                 onClick={() => commitTier(p.tier)}
-                className="border-border w-full rounded-xl border px-4 py-3 text-left transition hover:border-indigo-400/50 hover:bg-indigo-500/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-border w-full rounded-xl border px-4 py-3 text-left transition hover:border-amber-400/50 hover:bg-amber-500/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-[13px] font-bold">{p.title}</div>
@@ -739,7 +790,7 @@ function ExecutiveConsole({
                 <ul className="mt-2 space-y-1">
                   {p.changes.map((c: any, i: number) => (
                     <li key={i} className="flex items-start gap-2 text-[12px]">
-                      <span className="mt-[3px] text-indigo-400">
+                      <span className="mt-[3px] text-amber-400">
                         {c.kind === "budget"
                           ? "▤"
                           : c.kind === "policy"
@@ -775,7 +826,7 @@ function ExecutiveConsole({
               </button>
               <button
                 onClick={() => setPolicyOpen(true)}
-                className="text-[11px] font-medium text-indigo-300/80 hover:text-indigo-200"
+                className="text-[11px] font-medium text-amber-300/80 hover:text-amber-200"
               >
                 Draft your own package →
               </button>
@@ -828,7 +879,7 @@ function ExecutiveConsole({
                       .map((kid: any) => (
                         <div key={kid.id} className="ml-3 border-l border-white/10 pl-3">
                           <div className="flex items-center gap-2 py-1 text-[12px]">
-                            <span className="text-indigo-400">↳</span>
+                            <span className="text-amber-400">↳</span>
                             <span className="text-foreground/80 flex-1 truncate">{kid.goal}</span>
                             <span className="text-muted-foreground text-[10px]">{kid.tier}</span>
                           </div>

@@ -6,6 +6,7 @@
   },
   "enabledPlugins": {
     "ponytail@ponytail": true,
-    "improve@improve": true
+    "improve@improve": true,
+    "frontend-design@claude-plugins-official": true
   }
 }
