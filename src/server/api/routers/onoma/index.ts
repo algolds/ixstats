@@ -12,5 +12,19 @@ import { mergeRouters } from "~/server/api/trpc";
 import { onomaCoreRouter } from "./core";
 import { onomaHistoryRouter } from "./history";
 import { onomaBatchRouter } from "./batch";
+import { onomaMarketplaceRouter } from "./marketplace";
+import { onomaEtymologyRouter } from "./etymology";
+import { onomaSyntaxRouter } from "./syntax";
+import { onomaWritingRouter } from "./writing";
+import { onomaLoanwordsRouter } from "./loanwords";
 
-export const onomaRouter = mergeRouters(onomaCoreRouter, onomaHistoryRouter, onomaBatchRouter);
+export const onomaRouter = mergeRouters(
+  onomaCoreRouter,
+  onomaHistoryRouter,
+  onomaBatchRouter,
+  onomaMarketplaceRouter,
+  onomaEtymologyRouter,
+  onomaSyntaxRouter,
+  onomaWritingRouter,
+  onomaLoanwordsRouter
+);

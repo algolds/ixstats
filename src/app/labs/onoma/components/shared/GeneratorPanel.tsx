@@ -12,7 +12,6 @@ import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { cn } from "~/lib/utils";
 import {
   Select,
   SelectContent,

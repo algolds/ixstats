@@ -59,3 +59,189 @@ model GenerationFavorite {
   @@index([userId, createdAt])
   @@map("generation_favorite")
 }
+
+model LanguagePack {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  countryId       String?  @map("country_id")
+  name            String
+  slug            String   @unique
+  description     String?  @db.Text
+  culturalFamily  String?  @map("cultural_family")
+  visibility      String   @default("draft") // draft | public | unlisted
+  forkCount       Int      @default(0) @map("fork_count")
+  cloneCount      Int      @default(0) @map("clone_count")
+  ratingAvg       Float    @default(0) @map("rating_avg")
+  ratingCount     Int      @default(0) @map("rating_count")
+  tags            String[] @default([])
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user       User                  @relation("UserLanguagePacks", fields: [userId], references: [id], onDelete: Cascade)
+  country    Country?              @relation("CountryLanguagePacks", fields: [countryId], references: [id])
+  versions   LanguagePackVersion[]
+  reviews    LanguagePackReview[]
+  forks      LanguagePackFork[]    @relation("ForkedPacks")
+  forkedFrom LanguagePackFork?     @relation("SourcePack")
+
+  // Child features (linkable to packs)
+  writingSystems WritingSystem[]
+  grammars       GrammarProfile[]
+  etymologyRoots EtymologyRoot[]
+  loanwordSources LoanwordContact[]    @relation("LoanwordSources")
+  loanwordTargets LoanwordContact[]    @relation("LoanwordTargets")
+
+  @@index([userId])
+  @@index([visibility, ratingAvg])
+  @@index([culturalFamily])
+  @@map("language_pack")
+}
+
+model LanguagePackVersion {
+  id                String   @id @default(cuid())
+  packId            String   @map("pack_id")
+  version           Int      @default(1)
+  phonologyRules    Json?    @map("phonology_rules")
+  morphologyRules   Json?    @map("morphology_rules")
+  orthographyRules  Json?    @map("orthography_rules")
+  namingConventions Json?    @map("naming_conventions")
+  dictionaries      Json?    // array of { name, category, values[] }
+  sampleOutputs     Json?    @map("sample_outputs")
+  changelog         String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  pack LanguagePack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, version])
+  @@map("language_pack_version")
+}
+
+model LanguagePackReview {
+  id        String   @id @default(cuid())
+  packId    String   @map("pack_id")
+  userId    String   @map("user_id")
+  rating    Int      // 1-5
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  pack LanguagePack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  user User         @relation("UserPackReviews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, userId])
+  @@map("language_pack_review")
+}
+
+model LanguagePackFork {
+  id           String   @id @default(cuid())
+  sourcePackId String   @unique @map("source_pack_id")
+  forkedPackId String   @unique @map("forked_pack_id")
+  forkedAt     DateTime @default(now()) @map("forked_at")
+
+  sourcePack LanguagePack @relation("SourcePack", fields: [sourcePackId], references: [id], onDelete: Cascade)
+  forkedPack LanguagePack @relation("ForkedPacks", fields: [forkedPackId], references: [id], onDelete: Cascade)
+
+  @@map("language_pack_fork")
+}
+
+model EtymologyRoot {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  languagePackId  String?  @map("language_pack_id")
+  root            String   
+  meaning         String   
+  ipa             String?  
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation("UserEtymologyRoots", fields: [userId], references: [id], onDelete: Cascade)
+  languagePack LanguagePack? @relation(fields: [languagePackId], references: [id])
+  derivations  EtymologyDerivation[] @relation("RootDerivations")
+
+  @@index([userId])
+  @@map("etymology_root")
+}
+
+model EtymologyDerivation {
+  id              String   @id @default(cuid())
+  rootId          String   @map("root_id")
+  parentId        String?  @map("parent_id") 
+  word            String   
+  meaning         String   
+  ipa             String?
+  derivationType  String   // prefix | suffix | compound | semantic-shift | reduplication
+  morphemeAdded   String?  @map("morpheme_added") 
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  root     EtymologyRoot        @relation("RootDerivations", fields: [rootId], references: [id], onDelete: Cascade)
+  parent   EtymologyDerivation? @relation("DerivationChildren", fields: [parentId], references: [id])
+  children EtymologyDerivation[] @relation("DerivationChildren")
+
+  @@index([rootId])
+  @@map("etymology_derivation")
+}
+
+model GrammarProfile {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  languagePackId  String?  @map("language_pack_id")
+  name            String
+  wordOrder       String   @default("SVO") // SVO | SOV | VSO | VOS | OVS | OSV
+  caseSystem      Json     @default("{}") // { nominative: suffix, accusative: suffix, ... }
+  verbConjugation Json     @default("{}") // tense-based verb suffixes
+  articles        Json     @default("{}") // definite, indefinite particles
+  numberSystem    Json     @default("{}") // singular vs plural markings
+  adjectiveOrder  String   @default("before") // before | after noun
+  negation        Json     @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation("UserGrammars", fields: [userId], references: [id], onDelete: Cascade)
+  languagePack LanguagePack? @relation(fields: [languagePackId], references: [id])
+
+  @@index([userId])
+  @@map("grammar_profile")
+}
+
+model WritingSystem {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  languagePackId  String?  @map("language_pack_id")
+  name            String
+  scriptType      String   @default("alphabet") // alphabet | syllabary | abjad | logographic
+  direction       String   @default("ltr") // ltr | rtl | ttb
+  glyphs          Json     @default("[]") // array of { id, phoneme, svgPath, unicode? }
+  ligatures       Json     @default("[]") // array of { sequence, svgPath }
+  baselineOffset  Float    @default(0) @map("baseline_offset")
+  glyphSize       Float    @default(32) @map("glyph_size")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation("UserWritingSystems", fields: [userId], references: [id], onDelete: Cascade)
+  languagePack LanguagePack? @relation(fields: [languagePackId], references: [id])
+
+  @@index([userId])
+  @@map("writing_system")
+}
+
+model LoanwordContact {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  sourcePackId    String   @map("source_pack_id")
+  targetPackId    String   @map("target_pack_id")
+  domain          String   // military | trade | religious | academic | general
+  intensity       Float    @default(0.3) 
+  adaptationRules Json     @default("{}") @map("adaptation_rules") // replacements rules
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user       User         @relation("UserLoanwordContacts", fields: [userId], references: [id], onDelete: Cascade)
+  sourcePack LanguagePack @relation("LoanwordSources", fields: [sourcePackId], references: [id], onDelete: Cascade)
+  targetPack LanguagePack @relation("LoanwordTargets", fields: [targetPackId], references: [id], onDelete: Cascade)
+
+  @@unique([sourcePackId, targetPackId, domain])
+  @@index([userId])
+  @@map("loanword_contact")
+}

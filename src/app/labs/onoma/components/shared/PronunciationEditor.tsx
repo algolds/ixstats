@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/shared/PronunciationEditor.tsx
 // Onoma Custom Studio Workshop — Pronunciation Editor Component
 
-import { X, RotateCcw, Volume2, Loader2 } from "lucide-react";
+import { X, RotateCcw, Volume2 } from "lucide-react";
 import {
   Select,
   SelectContent,

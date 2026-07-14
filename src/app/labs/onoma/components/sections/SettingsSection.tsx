@@ -6,13 +6,11 @@
 import { useState, useEffect } from "react";
 import {
   Volume2,
-  Mic,
   RotateCcw,
   Sliders,
   Download,
   Upload,
   Trash2,
-  Check,
   AlertTriangle,
   Loader2,
   RefreshCw,
@@ -28,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";

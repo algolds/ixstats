@@ -182,6 +182,7 @@ model Country {
   realm                       Realm?                        @relation("RealmCountries", fields: [realmId], references: [id])
   realmId                     String                        @default("default")
   nameBankEntries             NameBank[]                    @relation("CountryNameBank")
+  languagePacks               LanguagePack[]                @relation("CountryLanguagePacks")
 
   @@index([name])
   @@index([economicTier])
@@ -261,6 +262,12 @@ model User {
   nameBankEntries     NameBank[]               @relation("UserNameBank")
   generationEvents    GenerationEvent[]        @relation("UserGenerationEvents")
   generationFavorites GenerationFavorite[]     @relation("UserGenerationFavorites")
+  languagePacks       LanguagePack[]           @relation("UserLanguagePacks")
+  languagePackReviews LanguagePackReview[]     @relation("UserPackReviews")
+  etymologyRoots      EtymologyRoot[]          @relation("UserEtymologyRoots")
+  grammarProfiles     GrammarProfile[]         @relation("UserGrammars")
+  writingSystems      WritingSystem[]          @relation("UserWritingSystems")
+  loanwordContacts    LoanwordContact[]        @relation("UserLoanwordContacts")
 
   @@index([clerkUserId])
   @@index([countryId])

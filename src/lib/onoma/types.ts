@@ -163,6 +163,11 @@ export type OnomaSection =
   | "history"
   | "batch"
   | "compare"
+  | "marketplace"
+  | "etymology"
+  | "syntax"
+  | "writing"
+  | "loanwords"
   | "studio"
   | "bank"
   | "settings";
@@ -237,6 +242,41 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     icon: "GitCompare",
     description: "Side-by-side linguistic profile comparator",
     path: "/labs/onoma/compare",
+  },
+  {
+    id: "marketplace",
+    label: "Marketplace",
+    icon: "ShoppingBag",
+    description: "Discover, review, and fork community conlangs",
+    path: "/labs/onoma/marketplace",
+  },
+  {
+    id: "etymology",
+    label: "Etymological Web",
+    icon: "Network",
+    description: "Track semantic derivations and word roots",
+    path: "/labs/onoma/etymology",
+  },
+  {
+    id: "syntax",
+    label: "Syntax & Sentence",
+    icon: "SlidersHorizontal",
+    description: "Build translation templates and word order rules",
+    path: "/labs/onoma/syntax",
+  },
+  {
+    id: "writing",
+    label: "Writing System",
+    icon: "Feather",
+    description: "Design custom stroke glyphs and script vectors",
+    path: "/labs/onoma/writing",
+  },
+  {
+    id: "loanwords",
+    label: "Loanword Registry",
+    icon: "Languages",
+    description: "Manage contact language vocabulary borrowings",
+    path: "/labs/onoma/loanwords",
   },
   {
     id: "studio",

@@ -3,7 +3,6 @@
 // src/app/labs/onoma/components/shared/AdvancedConlangSettings.tsx
 // Onoma Custom Studio Workshop — Advanced Generator Settings Component
 
-import { SlidersHorizontal } from "lucide-react";
 import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
 import {
   Select,

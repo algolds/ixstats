@@ -16,7 +16,6 @@ import {
   Compass,
   MapPin,
   Users,
-  Shield,
   Building2,
   Globe,
   Clock,
@@ -30,6 +29,9 @@ import {
   Network,
   FileDown,
   GitCompare,
+  ShoppingBag,
+  Feather,
+  Languages,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
@@ -47,6 +49,11 @@ import SettingsSection from "./sections/SettingsSection";
 import HistorySection from "./sections/HistorySection";
 import BatchSection from "./sections/BatchSection";
 import ComparatorSection from "./sections/ComparatorSection";
+import MarketplaceSection from "./sections/MarketplaceSection";
+import EtymologySection from "./sections/EtymologySection";
+import SyntaxSection from "./sections/SyntaxSection";
+import WritingSection from "./sections/WritingSection";
+import LoanwordsSection from "./sections/LoanwordsSection";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
 
 const SECTION_TITLES: Record<OnomaSection, string> = {
@@ -59,6 +66,11 @@ const SECTION_TITLES: Record<OnomaSection, string> = {
   history: "History",
   batch: "Batch",
   compare: "Compare",
+  marketplace: "Marketplace",
+  etymology: "Etymology",
+  syntax: "Syntax",
+  writing: "Writing System",
+  loanwords: "Loanwords",
   studio: "Studio",
   bank: "Stash",
   settings: "Settings",
@@ -86,6 +98,11 @@ const SECTION_COLORS: Record<OnomaSection, string> = {
   history: "#f59e0b",
   batch: "#10b981",
   compare: "#8b5cf6",
+  marketplace: "#f97316",
+  etymology: "#a855f7",
+  syntax: "#d946ef",
+  writing: "#10b981",
+  loanwords: "#06b6d4",
   studio: "#ec4899",
   bank: "#6366f1",
   settings: "#0091ff",
@@ -179,6 +196,61 @@ const ONOMA_TABS = [
       "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400 shadow-[inset_0_1px_0_rgba(139,92,246,0.15)]",
     activeTextClassName: "text-violet-600 dark:text-violet-400",
     activeIconClassName: "text-violet-500 dark:text-violet-400",
+  },
+  {
+    id: "marketplace",
+    label: "Marketplace",
+    icon: ShoppingBag,
+    themeColor: "#f97316",
+    glowClassName: "bg-orange-500/20 dark:bg-orange-500/10",
+    activeIndicatorClassName:
+      "bg-orange-500/5 border-orange-500/20 text-orange-600 dark:text-orange-400 shadow-[inset_0_1px_0_rgba(249,115,22,0.15)]",
+    activeTextClassName: "text-orange-600 dark:text-orange-400",
+    activeIconClassName: "text-orange-500 dark:text-orange-400",
+  },
+  {
+    id: "etymology",
+    label: "Etymology",
+    icon: Network,
+    themeColor: "#a855f7",
+    glowClassName: "bg-purple-500/20 dark:bg-purple-500/10",
+    activeIndicatorClassName:
+      "bg-purple-500/5 border-purple-500/20 text-purple-600 dark:text-purple-400 shadow-[inset_0_1px_0_rgba(168,85,247,0.15)]",
+    activeTextClassName: "text-purple-600 dark:text-purple-400",
+    activeIconClassName: "text-purple-500 dark:text-purple-400",
+  },
+  {
+    id: "syntax",
+    label: "Syntax",
+    icon: SlidersHorizontal,
+    themeColor: "#d946ef",
+    glowClassName: "bg-fuchsia-500/20 dark:bg-fuchsia-500/10",
+    activeIndicatorClassName:
+      "bg-fuchsia-500/5 border-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 shadow-[inset_0_1px_0_rgba(217,70,239,0.15)]",
+    activeTextClassName: "text-fuchsia-600 dark:text-fuchsia-400",
+    activeIconClassName: "text-fuchsia-500 dark:text-fuchsia-400",
+  },
+  {
+    id: "writing",
+    label: "Writing",
+    icon: Feather,
+    themeColor: "#10b981",
+    glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
+    activeIndicatorClassName:
+      "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
+    activeTextClassName: "text-emerald-600 dark:text-emerald-400",
+    activeIconClassName: "text-emerald-500 dark:text-emerald-400",
+  },
+  {
+    id: "loanwords",
+    label: "Loanwords",
+    icon: Languages,
+    themeColor: "#06b6d4",
+    glowClassName: "bg-cyan-500/20 dark:bg-cyan-500/10",
+    activeIndicatorClassName:
+      "bg-cyan-500/5 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 shadow-[inset_0_1px_0_rgba(6,182,212,0.15)]",
+    activeTextClassName: "text-cyan-600 dark:text-cyan-400",
+    activeIconClassName: "text-cyan-500 dark:text-cyan-400",
   },
 ];
 
@@ -451,6 +523,16 @@ export function OnomaRouter() {
         return <BatchSection />;
       case "compare":
         return <ComparatorSection />;
+      case "marketplace":
+        return <MarketplaceSection />;
+      case "etymology":
+        return <EtymologySection />;
+      case "syntax":
+        return <SyntaxSection />;
+      case "writing":
+        return <WritingSection />;
+      case "loanwords":
+        return <LoanwordsSection />;
       case "studio":
         return (
           <StudioSection
