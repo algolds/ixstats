@@ -139,6 +139,8 @@ export function useOnomaGenerator() {
 
   // tRPC mutation to log activity when names are generated
   const logActivityMutation = api.onoma.logGeneration.useMutation();
+  const logHistoryMutation = api.onoma.logEvent.useMutation();
+  const sessionIdRef = useRef(typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15));
 
   // Lazy-load the prebuilt lexicon dictionary for the active category.
   const lexiconCat = mapCategoryForLexicon(category, subType);
@@ -366,6 +368,19 @@ export function useOnomaGenerator() {
           category: category,
         })
         .catch((err) => console.error("Failed to log generation activity:", err));
+
+      // Also log to generation history with full name list
+      logHistoryMutation
+        .mutateAsync({
+          sessionId: sessionIdRef.current,
+          names: results,
+          category,
+          culturalProfile: culture,
+          trainingMode: includeWorldData ? "ixworld" : "preset",
+          parameters: options as any,
+          count: results.length,
+        })
+        .catch((err) => console.error("Failed to log generation history:", err));
     }
 
     return results;

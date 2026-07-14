@@ -23,3 +23,39 @@ model NameBank {
   @@index([countryId])
   @@map("name_bank")
 }
+
+model GenerationEvent {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  sessionId       String   @map("session_id")
+  names           String[]
+  category        String
+  culturalProfile String?  @map("cultural_profile")
+  trainingMode    String   @map("training_mode")
+  parameters      Json
+  count           Int
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user      User                @relation("UserGenerationEvents", fields: [userId], references: [id], onDelete: Cascade)
+  favorites GenerationFavorite[]
+
+  @@index([userId, createdAt])
+  @@index([sessionId])
+  @@map("generation_event")
+}
+
+model GenerationFavorite {
+  id        String   @id @default(cuid())
+  eventId   String   @map("event_id")
+  userId    String   @map("user_id")
+  name      String
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event GenerationEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User            @relation("UserGenerationFavorites", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId, name])
+  @@index([userId, createdAt])
+  @@map("generation_favorite")
+}

@@ -160,6 +160,9 @@ export type OnomaSection =
   | "military"
   | "organizations"
   | "culture"
+  | "history"
+  | "batch"
+  | "compare"
   | "studio"
   | "bank"
   | "settings";
@@ -213,6 +216,27 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     icon: "Globe",
     description: "Ethnic groups, tribes, languages",
     path: "/labs/onoma/culture",
+  },
+  {
+    id: "history",
+    label: "History",
+    icon: "Clock",
+    description: "Generation timeline & favorites",
+    path: "/labs/onoma/history",
+  },
+  {
+    id: "batch",
+    label: "Batch",
+    icon: "FileDown",
+    description: "Bulk generation & export workbench",
+    path: "/labs/onoma/batch",
+  },
+  {
+    id: "compare",
+    label: "Compare",
+    icon: "GitCompare",
+    description: "Side-by-side linguistic profile comparator",
+    path: "/labs/onoma/compare",
   },
   {
     id: "studio",

@@ -19,6 +19,7 @@ import {
   Shield,
   Building2,
   Globe,
+  Clock,
   Wrench,
   Bookmark,
   HelpCircle,
@@ -27,6 +28,8 @@ import {
   BookOpen,
   AudioLines,
   Network,
+  FileDown,
+  GitCompare,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
@@ -41,6 +44,9 @@ import CultureSection from "./sections/CultureSection";
 import StudioSection from "./sections/StudioSection";
 import StashSection from "./sections/StashSection";
 import SettingsSection from "./sections/SettingsSection";
+import HistorySection from "./sections/HistorySection";
+import BatchSection from "./sections/BatchSection";
+import ComparatorSection from "./sections/ComparatorSection";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
 
 const SECTION_TITLES: Record<OnomaSection, string> = {
@@ -50,6 +56,9 @@ const SECTION_TITLES: Record<OnomaSection, string> = {
   military: "Military",
   organizations: "Organizations",
   culture: "Culture",
+  history: "History",
+  batch: "Batch",
+  compare: "Compare",
   studio: "Studio",
   bank: "Stash",
   settings: "Settings",
@@ -74,6 +83,9 @@ const SECTION_COLORS: Record<OnomaSection, string> = {
   military: "#ef4444",
   organizations: "#f59e0b",
   culture: "#06b6d4",
+  history: "#f59e0b",
+  batch: "#10b981",
+  compare: "#8b5cf6",
   studio: "#ec4899",
   bank: "#6366f1",
   settings: "#0091ff",
@@ -134,6 +146,39 @@ const ONOMA_TABS = [
       "bg-cyan-500/5 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 shadow-[inset_0_1px_0_rgba(6,182,212,0.15)]",
     activeTextClassName: "text-cyan-600 dark:text-cyan-400",
     activeIconClassName: "text-cyan-500 dark:text-cyan-400",
+  },
+  {
+    id: "history",
+    label: "History",
+    icon: Clock,
+    themeColor: "#f59e0b",
+    glowClassName: "bg-amber-500/20 dark:bg-amber-500/10",
+    activeIndicatorClassName:
+      "bg-amber-500/5 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]",
+    activeTextClassName: "text-amber-600 dark:text-amber-400",
+    activeIconClassName: "text-amber-500 dark:text-amber-400",
+  },
+  {
+    id: "batch",
+    label: "Batch",
+    icon: FileDown,
+    themeColor: "#10b981",
+    glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
+    activeIndicatorClassName:
+      "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
+    activeTextClassName: "text-emerald-600 dark:text-emerald-400",
+    activeIconClassName: "text-emerald-500 dark:text-emerald-400",
+  },
+  {
+    id: "compare",
+    label: "Compare",
+    icon: GitCompare,
+    themeColor: "#8b5cf6",
+    glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
+    activeIndicatorClassName:
+      "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400 shadow-[inset_0_1px_0_rgba(139,92,246,0.15)]",
+    activeTextClassName: "text-violet-600 dark:text-violet-400",
+    activeIconClassName: "text-violet-500 dark:text-violet-400",
   },
 ];
 
@@ -400,6 +445,12 @@ export function OnomaRouter() {
         return <OrganizationsSection />;
       case "culture":
         return <CultureSection />;
+      case "history":
+        return <HistorySection />;
+      case "batch":
+        return <BatchSection />;
+      case "compare":
+        return <ComparatorSection />;
       case "studio":
         return (
           <StudioSection

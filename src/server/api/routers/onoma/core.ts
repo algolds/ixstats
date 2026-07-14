@@ -36,7 +36,7 @@ const KOKORO_FALLBACK_VOICES = [
   "bm_lewis",
 ];
 
-export const onomaRouter = createTRPCRouter({
+export const onomaCoreRouter = createTRPCRouter({
   /**
    * Fetch the saved names or dictionaries for the authenticated user from the global Stash system.
    */
