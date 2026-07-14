@@ -18,7 +18,6 @@ import {
   Users,
   Building2,
   Globe,
-  Clock,
   Wrench,
   Bookmark,
   HelpCircle,
@@ -28,9 +27,7 @@ import {
   AudioLines,
   Network,
   FileDown,
-  GitCompare,
   ShoppingBag,
-  Feather,
   Languages,
 } from "lucide-react";
 import { api } from "~/trpc/react";
@@ -46,14 +43,7 @@ import CultureSection from "./sections/CultureSection";
 import StudioSection from "./sections/StudioSection";
 import StashSection from "./sections/StashSection";
 import SettingsSection from "./sections/SettingsSection";
-import HistorySection from "./sections/HistorySection";
-import BatchSection from "./sections/BatchSection";
-import ComparatorSection from "./sections/ComparatorSection";
 import MarketplaceSection from "./sections/MarketplaceSection";
-import EtymologySection from "./sections/EtymologySection";
-import SyntaxSection from "./sections/SyntaxSection";
-import WritingSection from "./sections/WritingSection";
-import LoanwordsSection from "./sections/LoanwordsSection";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
 
 const SECTION_TITLES: Record<OnomaSection, string> = {
@@ -71,6 +61,7 @@ const SECTION_TITLES: Record<OnomaSection, string> = {
   syntax: "Syntax",
   writing: "Writing System",
   loanwords: "Loanwords",
+  linguistics: "Linguistics",
   studio: "Studio",
   bank: "Stash",
   settings: "Settings",
@@ -86,7 +77,9 @@ const studioSubTabLabel = (t: StudioSubTab) =>
         ? "Name Sets"
         : t === "phonology"
           ? "IPA Studio"
-          : "Lexicon Dictionary";
+          : t === "batch"
+            ? "Batch Generator"
+            : "Lexicon Dictionary";
 
 const SECTION_COLORS: Record<OnomaSection, string> = {
   overview: "#0091ff",
@@ -103,6 +96,7 @@ const SECTION_COLORS: Record<OnomaSection, string> = {
   syntax: "#d946ef",
   writing: "#10b981",
   loanwords: "#06b6d4",
+  linguistics: "#8b5cf6",
   studio: "#ec4899",
   bank: "#6366f1",
   settings: "#0091ff",
@@ -165,31 +159,9 @@ const ONOMA_TABS = [
     activeIconClassName: "text-cyan-500 dark:text-cyan-400",
   },
   {
-    id: "history",
-    label: "History",
-    icon: Clock,
-    themeColor: "#f59e0b",
-    glowClassName: "bg-amber-500/20 dark:bg-amber-500/10",
-    activeIndicatorClassName:
-      "bg-amber-500/5 border-amber-500/20 text-amber-600 dark:text-amber-400 shadow-[inset_0_1px_0_rgba(245,158,11,0.15)]",
-    activeTextClassName: "text-amber-600 dark:text-amber-400",
-    activeIconClassName: "text-amber-500 dark:text-amber-400",
-  },
-  {
-    id: "batch",
-    label: "Batch",
-    icon: FileDown,
-    themeColor: "#10b981",
-    glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
-    activeIndicatorClassName:
-      "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
-    activeTextClassName: "text-emerald-600 dark:text-emerald-400",
-    activeIconClassName: "text-emerald-500 dark:text-emerald-400",
-  },
-  {
-    id: "compare",
-    label: "Compare",
-    icon: GitCompare,
+    id: "linguistics",
+    label: "Linguistics",
+    icon: Languages,
     themeColor: "#8b5cf6",
     glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
     activeIndicatorClassName:
@@ -207,50 +179,6 @@ const ONOMA_TABS = [
       "bg-orange-500/5 border-orange-500/20 text-orange-600 dark:text-orange-400 shadow-[inset_0_1px_0_rgba(249,115,22,0.15)]",
     activeTextClassName: "text-orange-600 dark:text-orange-400",
     activeIconClassName: "text-orange-500 dark:text-orange-400",
-  },
-  {
-    id: "etymology",
-    label: "Etymology",
-    icon: Network,
-    themeColor: "#a855f7",
-    glowClassName: "bg-purple-500/20 dark:bg-purple-500/10",
-    activeIndicatorClassName:
-      "bg-purple-500/5 border-purple-500/20 text-purple-600 dark:text-purple-400 shadow-[inset_0_1px_0_rgba(168,85,247,0.15)]",
-    activeTextClassName: "text-purple-600 dark:text-purple-400",
-    activeIconClassName: "text-purple-500 dark:text-purple-400",
-  },
-  {
-    id: "syntax",
-    label: "Syntax",
-    icon: SlidersHorizontal,
-    themeColor: "#d946ef",
-    glowClassName: "bg-fuchsia-500/20 dark:bg-fuchsia-500/10",
-    activeIndicatorClassName:
-      "bg-fuchsia-500/5 border-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 shadow-[inset_0_1px_0_rgba(217,70,239,0.15)]",
-    activeTextClassName: "text-fuchsia-600 dark:text-fuchsia-400",
-    activeIconClassName: "text-fuchsia-500 dark:text-fuchsia-400",
-  },
-  {
-    id: "writing",
-    label: "Writing",
-    icon: Feather,
-    themeColor: "#10b981",
-    glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
-    activeIndicatorClassName:
-      "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
-    activeTextClassName: "text-emerald-600 dark:text-emerald-400",
-    activeIconClassName: "text-emerald-500 dark:text-emerald-400",
-  },
-  {
-    id: "loanwords",
-    label: "Loanwords",
-    icon: Languages,
-    themeColor: "#06b6d4",
-    glowClassName: "bg-cyan-500/20 dark:bg-cyan-500/10",
-    activeIndicatorClassName:
-      "bg-cyan-500/5 border-cyan-500/20 text-cyan-600 dark:text-cyan-400 shadow-[inset_0_1px_0_rgba(6,182,212,0.15)]",
-    activeTextClassName: "text-cyan-600 dark:text-cyan-400",
-    activeIconClassName: "text-cyan-500 dark:text-cyan-400",
   },
 ];
 
@@ -390,6 +318,28 @@ export function OnomaRouter() {
         activeTextClassName: "text-violet-600 dark:text-violet-400",
         activeIconClassName: "text-violet-500 dark:text-violet-400",
       },
+      {
+        id: "batch",
+        label: "Batch Generator",
+        icon: FileDown,
+        themeColor: "#10b981",
+        glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
+        activeIndicatorClassName:
+          "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
+        activeTextClassName: "text-emerald-600 dark:text-emerald-400",
+        activeIconClassName: "text-emerald-500 dark:text-emerald-400",
+      },
+      {
+        id: "linguistics",
+        label: "Linguistics Suite",
+        icon: Languages,
+        themeColor: "#8b5cf6",
+        glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
+        activeIndicatorClassName:
+          "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400 shadow-[inset_0_1px_0_rgba(139,92,246,0.15)]",
+        activeTextClassName: "text-violet-600 dark:text-violet-400",
+        activeIconClassName: "text-violet-500 dark:text-violet-400",
+      },
     ],
     [lexiconCount]
   );
@@ -518,21 +468,27 @@ export function OnomaRouter() {
       case "culture":
         return <CultureSection />;
       case "history":
-        return <HistorySection />;
-      case "batch":
-        return <BatchSection />;
+        return <StashSection onLoadToStudio={handleLoadToStudio} />;
+      case "linguistics":
       case "compare":
-        return <ComparatorSection />;
+      case "etymology":
+      case "syntax":
+      case "writing":
+      case "loanwords":
+        return (
+          <StudioSection
+            activeSubTab="linguistics"
+            setActiveSubTab={setActiveSubTab}
+            initialWords={studioInitialWords}
+            initialTitle={studioInitialTitle}
+            onClearInitial={() => {
+              setStudioInitialWords(undefined);
+              setStudioInitialTitle(undefined);
+            }}
+          />
+        );
       case "marketplace":
         return <MarketplaceSection />;
-      case "etymology":
-        return <EtymologySection />;
-      case "syntax":
-        return <SyntaxSection />;
-      case "writing":
-        return <WritingSection />;
-      case "loanwords":
-        return <LoanwordsSection />;
       case "studio":
         return (
           <StudioSection

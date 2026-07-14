@@ -5,15 +5,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Clock,
-  Star,
-  ChevronDown,
-  BarChart3,
-  RefreshCw,
-  Copy,
-  Check,
-} from "lucide-react";
+import { Clock, Star, ChevronDown, BarChart3, RefreshCw, Copy, Check } from "lucide-react";
 import { FacetMaterial } from "~/components/facet-ui";
 import { useOnomaHistory } from "~/hooks/useOnomaHistory";
 
@@ -44,7 +36,7 @@ function groupByDate(events: HistoryEvent[]): Map<string, HistoryEvent[]> {
   return groups;
 }
 
-export default function HistorySection() {
+export default function HistorySection({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const {
     events,
     stats,
@@ -93,14 +85,16 @@ export default function HistorySection() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Generation History
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Every name you&apos;ve generated, searchable and replayable.
-          </p>
-        </div>
+        {!hideHeader ? (
+          <div>
+            <h2 className="text-foreground text-xl font-bold tracking-tight">Generation History</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Every name you&apos;ve generated, searchable and replayable.
+            </p>
+          </div>
+        ) : (
+          <div />
+        )}
         <button
           onClick={() => setShowStats(!showStats)}
           className="border-border/40 bg-secondary/20 text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 active:scale-95 dark:hover:text-amber-400"
@@ -119,7 +113,7 @@ export default function HistorySection() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <FacetMaterial material="satin" className="border-amber-500/20 border p-4">
+            <FacetMaterial material="satin" className="border border-amber-500/20 p-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-amber-500">
@@ -217,16 +211,14 @@ export default function HistorySection() {
         <div className="space-y-6">
           {Array.from(grouped.entries()).map(([dateKey, dayEvents]) => (
             <div key={dateKey}>
-              <h3 className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wider">
+              <h3 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
                 {dateKey}
               </h3>
               <div className="space-y-2">
                 {dayEvents.map((event) => {
                   const isExpanded = expandedEvents.has(event.id);
                   const names = event.names ?? [];
-                  const favoriteNames = new Set(
-                    (event.favorites ?? []).map((f) => f.name)
-                  );
+                  const favoriteNames = new Set((event.favorites ?? []).map((f) => f.name));
 
                   return (
                     <FacetMaterial
@@ -280,7 +272,7 @@ export default function HistorySection() {
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="border-border/20 border-t px-3 pb-3 pt-2">
+                            <div className="border-border/20 border-t px-3 pt-2 pb-3">
                               <div className="flex flex-wrap gap-1.5">
                                 {names.map((name, idx) => {
                                   const isFav = favoriteNames.has(name);
@@ -338,7 +330,7 @@ export default function HistorySection() {
               <button
                 onClick={() => loadMore()}
                 disabled={isLoadingMore}
-                className="border-border/40 bg-secondary/20 text-muted-foreground cursor-pointer rounded-lg border px-4 py-2 text-sm transition-all hover:bg-secondary/40 active:scale-95"
+                className="border-border/40 bg-secondary/20 text-muted-foreground hover:bg-secondary/40 cursor-pointer rounded-lg border px-4 py-2 text-sm transition-all active:scale-95"
               >
                 {isLoadingMore ? "Loading..." : "Load More"}
               </button>

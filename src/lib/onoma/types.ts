@@ -104,11 +104,7 @@ export type SpeciesPreset =
  * Group/organization preset identifiers.
  */
 export type GroupPreset =
-  | "religious-order"
-  | "military-unit"
-  | "covert-organization"
-  | "academic-institution"
-  | "guild";
+  "religious-order" | "military-unit" | "covert-organization" | "academic-institution" | "guild";
 
 /**
  * Descriptor for a generator preset shown in the UI.
@@ -168,6 +164,7 @@ export type OnomaSection =
   | "syntax"
   | "writing"
   | "loanwords"
+  | "linguistics"
   | "studio"
   | "bank"
   | "settings";
@@ -223,60 +220,11 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     path: "/labs/onoma/culture",
   },
   {
-    id: "history",
-    label: "History",
-    icon: "Clock",
-    description: "Generation timeline & favorites",
-    path: "/labs/onoma/history",
-  },
-  {
-    id: "batch",
-    label: "Batch",
-    icon: "FileDown",
-    description: "Bulk generation & export workbench",
-    path: "/labs/onoma/batch",
-  },
-  {
-    id: "compare",
-    label: "Compare",
-    icon: "GitCompare",
-    description: "Side-by-side linguistic profile comparator",
-    path: "/labs/onoma/compare",
-  },
-  {
     id: "marketplace",
     label: "Marketplace",
     icon: "ShoppingBag",
     description: "Discover, review, and fork community conlangs",
     path: "/labs/onoma/marketplace",
-  },
-  {
-    id: "etymology",
-    label: "Etymological Web",
-    icon: "Network",
-    description: "Track semantic derivations and word roots",
-    path: "/labs/onoma/etymology",
-  },
-  {
-    id: "syntax",
-    label: "Syntax & Sentence",
-    icon: "SlidersHorizontal",
-    description: "Build translation templates and word order rules",
-    path: "/labs/onoma/syntax",
-  },
-  {
-    id: "writing",
-    label: "Writing System",
-    icon: "Feather",
-    description: "Design custom stroke glyphs and script vectors",
-    path: "/labs/onoma/writing",
-  },
-  {
-    id: "loanwords",
-    label: "Loanword Registry",
-    icon: "Languages",
-    description: "Manage contact language vocabulary borrowings",
-    path: "/labs/onoma/loanwords",
   },
   {
     id: "studio",
@@ -307,6 +255,20 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
 export function getSectionFromPathname(pathname: string): OnomaSection {
   const segment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
   const baseSegment = segment.split("/")[0];
+
+  // Backward compatibility & routing for conlang features now inside Studio
+  if (
+    ["etymology", "syntax", "writing", "loanwords", "compare", "linguistics"].includes(baseSegment)
+  ) {
+    return "studio";
+  }
+  if (baseSegment === "history") {
+    return "bank";
+  }
+  if (baseSegment === "batch") {
+    return "studio";
+  }
+
   const match = ONOMA_NAV_ITEMS.find(
     (item) => item.path === `/labs/onoma${baseSegment ? `/${baseSegment}` : ""}`
   );
@@ -314,7 +276,8 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
 }
 
 /** Studio workspace sub-tabs. */
-export type StudioSubTab = "workshop" | "visualizer" | "namesets" | "lexicon" | "phonology";
+export type StudioSubTab =
+  "workshop" | "visualizer" | "namesets" | "lexicon" | "phonology" | "batch" | "linguistics";
 
 /**
  * Helper to get studio sub-tab from a pathname.
@@ -326,5 +289,22 @@ export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   if (subsegment === "namesets") return "namesets";
   if (subsegment === "lexicon") return "lexicon";
   if (subsegment === "phonology") return "phonology";
+  if (subsegment === "batch") return "batch";
+  if (subsegment === "linguistics") return "linguistics";
+
+  // Backward compatibility for old conlang URLs
+  const parts = pathname.split("/labs/onoma/")[1]?.split("/") || [];
+  const rootSegment = parts[0] || "";
+  if (
+    ["etymology", "syntax", "writing", "loanwords", "compare", "linguistics"].includes(rootSegment)
+  ) {
+    return "linguistics";
+  }
+
+  // Backward compatibility for old /labs/onoma/batch URL
+  if (pathname.includes("/labs/onoma/batch")) {
+    return "batch";
+  }
+
   return "workshop";
 }

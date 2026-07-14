@@ -9,6 +9,8 @@ import { StudioNameSets } from "./studio/StudioNameSets";
 import { StudioLexicon } from "./studio/StudioLexicon";
 import { StudioPhonology } from "./studio/StudioPhonology";
 import { StudioVisualizer } from "./studio/StudioVisualizer";
+import BatchSection from "../sections/BatchSection";
+import LinguisticsSection from "./LinguisticsSection";
 import { api } from "~/trpc/react";
 import { applyFlanking } from "~/lib/onoma/branding-utils";
 import type { StudioSubTab } from "~/lib/onoma/types";
@@ -67,6 +69,10 @@ export function StudioSection({
         <StudioNameSets />
       ) : currentSubTab === "phonology" ? (
         <StudioPhonology />
+      ) : currentSubTab === "batch" ? (
+        <BatchSection />
+      ) : currentSubTab === "linguistics" ? (
+        <LinguisticsSection />
       ) : (
         <StudioLexicon state={state} />
       )}
