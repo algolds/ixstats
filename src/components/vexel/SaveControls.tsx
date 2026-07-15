@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
 import ExportDialog from "./ExportDialog";
+import { FacetMaterial } from "~/components/facet-ui";
 
 export default function SaveControls() {
   const { composition, achievementId, isDirty, setInitialState, markSaved } = useVexelEditor();
@@ -107,104 +108,115 @@ export default function SaveControls() {
   };
 
   return (
-    <div className="mb-6 flex shrink-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-white/5 bg-zinc-900/60 p-4 text-xs text-zinc-300 backdrop-blur-md">
-      <div className="flex flex-1 flex-wrap items-center gap-4">
-        {/* Title Input */}
-        <div className="flex min-w-[150px] flex-col gap-1">
-          <span className="text-[10px] font-bold text-zinc-500 uppercase">Arms Title</span>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-200 focus:border-amber-500 focus:outline-none"
-          />
-        </div>
+    <FacetMaterial
+      material="satin"
+      className="mb-6 shrink-0 overflow-hidden rounded-xl border border-white/10"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 text-xs text-zinc-300">
+        <div className="flex flex-1 flex-wrap items-center gap-4">
+          {/* Title Input */}
+          <div className="flex min-w-[150px] flex-col gap-1">
+            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+              Arms Title
+            </span>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-200 focus:border-amber-500 focus:outline-none"
+            />
+          </div>
 
-        {/* Subject Type */}
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-zinc-500 uppercase">Subject Type</span>
-          <select
-            value={subjectType}
-            onChange={(e) => {
-              setSubjectType(e.target.value as any);
-              setSubjectId(null);
-            }}
-            className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:outline-none"
-          >
-            <option value="CHARACTER">Character</option>
-            <option value="COUNTRY">Country</option>
-            <option value="INSTITUTION">Institution</option>
-            <option value="DYNASTY">Dynasty</option>
-          </select>
-        </div>
-
-        {/* Subject Association (Conditional) */}
-        {subjectType === "COUNTRY" && (
-          <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase">Select Country</span>
+          {/* Subject Type */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+              Subject Type
+            </span>
             <select
-              value={subjectId || ""}
-              onChange={(e) => setSubjectId(e.target.value || null)}
+              value={subjectType}
+              onChange={(e) => {
+                setSubjectType(e.target.value as any);
+                setSubjectId(null);
+              }}
               className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:outline-none"
             >
-              <option value="">Choose Country...</option>
-              {countries.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              <option value="CHARACTER">Character</option>
+              <option value="COUNTRY">Country</option>
+              <option value="INSTITUTION">Institution</option>
+              <option value="DYNASTY">Dynasty</option>
             </select>
           </div>
-        )}
-      </div>
 
-      {/* Buttons */}
-      <div className="flex items-center gap-2">
-        {/* Attach Button (Country only) */}
-        {subjectType === "COUNTRY" && achievementId && subjectId && (
+          {/* Subject Association (Conditional) */}
+          {subjectType === "COUNTRY" && (
+            <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
+              <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+                Select Country
+              </span>
+              <select
+                value={subjectId || ""}
+                onChange={(e) => setSubjectId(e.target.value || null)}
+                className="rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:outline-none"
+              >
+                <option value="">Choose Country...</option>
+                {countries.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Attach Button (Country only) */}
+          {subjectType === "COUNTRY" && achievementId && subjectId && (
+            <button
+              onClick={handleAttach}
+              disabled={attachMutation.isPending}
+              className="h-9 rounded-lg bg-indigo-600 px-4 font-bold text-zinc-100 transition-all hover:bg-indigo-700 disabled:bg-zinc-800"
+            >
+              {attachMutation.isPending ? "Attaching..." : "🔗 Attach to Map"}
+            </button>
+          )}
+
+          {/* Publish Button */}
+          {achievementId && (
+            <button
+              onClick={handlePublishToggle}
+              disabled={isPublishing}
+              className={`h-9 rounded-lg px-4 font-bold transition-all ${
+                currentAchievement?.isPublished
+                  ? "border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                  : "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+              }`}
+            >
+              {currentAchievement?.isPublished ? "Unpublish" : "📢 Publish"}
+            </button>
+          )}
+
+          {/* Save Button */}
           <button
-            onClick={handleAttach}
-            disabled={attachMutation.isPending}
-            className="h-9 rounded-lg bg-indigo-600 px-4 font-bold text-zinc-100 transition-all hover:bg-indigo-700 disabled:bg-zinc-800"
+            onClick={handleSave}
+            disabled={saveMutation.isPending}
+            className="h-9 rounded-lg bg-amber-500 px-4 font-bold text-zinc-950 transition-all hover:bg-amber-600 disabled:bg-zinc-800"
           >
-            {attachMutation.isPending ? "Attaching..." : "🔗 Attach to Map"}
+            {saveMutation.isPending ? "Saving..." : "💾 Save Changes"}
           </button>
-        )}
 
-        {/* Publish Button */}
-        {achievementId && (
+          {/* Export Button */}
           <button
-            onClick={handlePublishToggle}
-            disabled={isPublishing}
-            className={`h-9 rounded-lg px-4 font-bold transition-all ${
-              currentAchievement?.isPublished
-                ? "border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                : "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-            }`}
+            onClick={() => setIsExportOpen(true)}
+            className="h-9 rounded-lg border border-white/10 px-4 font-bold text-zinc-300 transition-all hover:bg-white/5"
           >
-            {currentAchievement?.isPublished ? "Unpublish" : "📢 Publish"}
+            📤 Export
           </button>
-        )}
+        </div>
 
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          disabled={saveMutation.isPending}
-          className="h-9 rounded-lg bg-amber-500 px-4 font-bold text-zinc-950 transition-all hover:bg-amber-600 disabled:bg-zinc-800"
-        >
-          {saveMutation.isPending ? "Saving..." : "💾 Save Changes"}
-        </button>
-
-        {/* Export Button */}
-        <button
-          onClick={() => setIsExportOpen(true)}
-          className="h-9 rounded-lg border border-white/10 px-4 font-bold text-zinc-300 transition-all hover:bg-white/5"
-        >
-          📤 Export
-        </button>
+        {isExportOpen && <ExportDialog onClose={() => setIsExportOpen(false)} />}
       </div>
-
-      {isExportOpen && <ExportDialog onClose={() => setIsExportOpen(false)} />}
-    </div>
+    </FacetMaterial>
   );
 }
