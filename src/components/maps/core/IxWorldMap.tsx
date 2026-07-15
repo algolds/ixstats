@@ -29,6 +29,7 @@ import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
+import { useGeoWorker } from "~/hooks/useGeoWorker";
 
 import { getMinArea, filterByArea, PROGRESSIVE_THRESHOLDS } from "./utils/map-core-helpers";
 
@@ -160,6 +161,9 @@ const IxWorldMap = memo(
     ref
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const { filterByArea: workerFilterByArea } = useGeoWorker();
+    const workerFilterRef = useRef(workerFilterByArea);
+    workerFilterRef.current = workerFilterByArea;
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [debugError, setDebugError] = useState<string | null>(null);
@@ -278,6 +282,8 @@ const IxWorldMap = memo(
             const zoomBucket = Math.floor(zoom);
             if (zoomBucket !== lastFilterZoom) {
               lastFilterZoom = zoomBucket;
+              
+              const updates: Promise<{ sourceId: string; data: FeatureCollection }>[] = [];
               for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
                 const sourceId = `source-${layerType}`;
                 const source = map.getSource(sourceId) as
@@ -285,7 +291,24 @@ const IxWorldMap = memo(
                   | undefined;
                 const fullData = dataRef.current.get(layerType);
                 if (!source || !fullData) continue;
-                source.setData(filterByArea(fullData, getMinArea(layerType, zoom)));
+                
+                updates.push(
+                  workerFilterRef.current(fullData, getMinArea(layerType, zoom))
+                    .then((filtered) => ({ sourceId, data: filtered }))
+                );
+              }
+
+              if (updates.length > 0) {
+                void Promise.all(updates).then((results) => {
+                  requestAnimationFrame(() => {
+                    for (const { sourceId, data } of results) {
+                      const source = map.getSource(sourceId) as
+                        | import("maplibre-gl").GeoJSONSource
+                        | undefined;
+                      if (source) source.setData(data);
+                    }
+                  });
+                });
               }
             }
           };
@@ -351,12 +374,14 @@ const IxWorldMap = memo(
             {OVERLAY_LIST.map((def) => {
               const Component = def.component;
               if (!Component || !def.renderProps) return null;
+              const isVisible = overlayVisibility?.[def.id] ?? false;
+              if (!isVisible) return null; // Only mount when visible
               const data = overlayData?.[def.id];
               if (data === undefined || data === null) return null;
               const props = def.renderProps({
                 map: mapRef.current,
                 data,
-                visible: overlayVisibility?.[def.id] ?? false,
+                visible: true,
                 onRouteClick: onRouteClick ? (id) => onRouteClick(id) : undefined,
               });
               if (!props) return null;

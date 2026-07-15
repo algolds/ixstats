@@ -36,6 +36,14 @@ export function useMapState({
   clearPin,
 }: UseMapStateProps) {
   const utils = api.useUtils();
+  const hoverDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    return () => {
+      if (hoverDebounceRef.current) clearTimeout(hoverDebounceRef.current);
+    };
+  }, []);
+
   const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<HoveredCountry | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<SelectedFeature | null>(null);
@@ -127,23 +135,29 @@ export function useMapState({
   const handleCountryHover = useCallback(
     (country: HoveredCountry | null) => {
       setHoveredCountry(country);
-      if (!country) return;
-      if (country.displayName) {
-        const wikiOpts = { staleTime: 24 * 60 * 60_000 };
-        void utils.countries.getWikiRichIntro.prefetch(
-          { countryName: country.displayName },
-          wikiOpts
-        );
-        const opts = { staleTime: 10 * 60_000 };
-        if (country.countryId) {
-          void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
-          void utils.geoCore.getNeighbors.prefetch({ countryId: country.countryId }, opts);
-          void utils.geoSovereignty.getCountrySovereignty.prefetch(
-            { countryId: country.countryId },
-            opts
-          );
-        }
+      if (hoverDebounceRef.current) {
+        clearTimeout(hoverDebounceRef.current);
+        hoverDebounceRef.current = undefined;
       }
+      if (!country) return;
+      hoverDebounceRef.current = setTimeout(() => {
+        if (country.displayName) {
+          const wikiOpts = { staleTime: 24 * 60 * 60_000 };
+          void utils.countries.getWikiRichIntro.prefetch(
+            { countryName: country.displayName },
+            wikiOpts
+          );
+          const opts = { staleTime: 10 * 60_000 };
+          if (country.countryId) {
+            void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
+            void utils.geoCore.getNeighbors.prefetch({ countryId: country.countryId }, opts);
+            void utils.geoSovereignty.getCountrySovereignty.prefetch(
+              { countryId: country.countryId },
+              opts
+            );
+          }
+        }
+      }, 200);
     },
     [utils]
   );

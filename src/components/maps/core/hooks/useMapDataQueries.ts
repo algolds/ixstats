@@ -18,6 +18,7 @@ interface UseMapDataQueriesProps {
   setSelectedCountry: (country: SelectedCountry | null) => void;
   onCountrySelect?: (country: SelectedCountry | null) => void;
   selectedCountry: SelectedCountry | null;
+  userCountryId: string | null;
 }
 
 export function useMapDataQueries({
@@ -32,17 +33,8 @@ export function useMapDataQueries({
   setSelectedCountry,
   onCountrySelect,
   selectedCountry,
+  userCountryId,
 }: UseMapDataQueriesProps) {
-  // 1. Fetch user's profile
-  const { data: userProfile, isLoading: isProfileLoading } = api.users.getProfile.useQuery(
-    undefined,
-    {
-      staleTime: 5 * 60_000,
-      retry: false,
-    }
-  );
-  const userCountryId = userProfile?.countryId ?? null;
-
   // 2. Fetch Map Data Batched
   const {
     mapLayers,
@@ -59,18 +51,20 @@ export function useMapDataQueries({
     api.geoFeatures.getAllStoryPins.useQuery(undefined, {
       staleTime: 5 * 60_000,
       gcTime: 30 * 60_000,
+      enabled: mapEngineReady,
     });
   const { data: mapLabelsGeoJson, isLoading: isMapLabelsLoading } =
     api.geoFeatures.getAllMapLabels.useQuery(undefined, {
       staleTime: 5 * 60_000,
       gcTime: 30 * 60_000,
+      enabled: mapEngineReady,
     });
 
   // 4. Top-25 countries
   const { data: topCountryNames, isLoading: isTopCountriesLoading } =
     api.countries.getTopCountriesByImportance.useQuery(
       { limit: 25 },
-      { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+      { staleTime: 5 * 60_000, gcTime: 30 * 60_000, enabled: mapEngineReady }
     );
 
   // 5. Deep link country geometry
@@ -82,10 +76,6 @@ export function useMapDataQueries({
 
   const isPreloading =
     isLoading ||
-    isProfileLoading ||
-    isStoryPinsLoading ||
-    isMapLabelsLoading ||
-    isTopCountriesLoading ||
     (!!initialCountryId && isInitialGeoLoading);
 
   // 6. Map Load Timeout detection

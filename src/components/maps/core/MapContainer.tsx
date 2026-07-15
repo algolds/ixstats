@@ -5,7 +5,7 @@
  * for the IxWorldMap component. Fetches GeoJSON data via tRPC.
  */
 
-import { useRef, useMemo, useCallback, useState, useEffect } from "react";
+import { useRef, useMemo, useCallback, useState, useEffect, useDeferredValue } from "react";
 import dynamic from "next/dynamic";
 import { useIsAdmin } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
@@ -13,6 +13,8 @@ import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { MapControls } from "./MapControls";
+import { MapControlsFAB } from "./MapControlsFAB";
+import { useIsMobile } from "~/hooks/useIsMobile";
 import { CountryInfoPanel } from "./CountryInfoPanel";
 import { FeatureInfoPanel } from "./FeatureInfoPanel";
 import { StoryPinModal } from "./StoryPinModal";
@@ -89,6 +91,7 @@ export function MapContainer({
   disableCountrySelect = false,
 }: MapContainerProps) {
   const isAdmin = useIsAdmin();
+  const isMobile = useIsMobile();
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
   const measureToolRef = useRef<{ toggle: () => void }>(null);
@@ -202,7 +205,10 @@ export function MapContainer({
     setSelectedCountry,
     onCountrySelect,
     selectedCountry,
+    userCountryId,
   });
+
+  const deferredOverlayData = useDeferredValue(overlayData);
 
   // 1.5 Hook: Tour & Demo Mode State Machine
   const {
@@ -341,29 +347,45 @@ export function MapContainer({
         onZoomChange={setCurrentZoom}
         initialCenter={initialCenter}
         initialZoom={initialZoom}
-        overlayData={overlayData}
+        overlayData={deferredOverlayData}
         onRouteClick={(id) => setSelectedRouteId(id)}
       />
 
       {/* Layer controls + tools toolbar */}
       {showControls && tourState === "idle" && (
-        <MapControls
-          visibleLayers={controlledVisibleLayers ?? visibleLayers}
-          onToggleLayer={onToggleLayer ?? toggleLayer}
-          overlayVisibility={overlayVisibility}
-          onToggleOverlay={toggleOverlay}
-          labelsVisible={labelsVisible}
-          onToggleLabels={toggleLabels}
-          isMeasuring={isMeasuring}
-          onToggleMeasure={() => measureToolRef.current?.toggle()}
-          isPinActive={isPinToolActive}
-          onTogglePin={togglePinTool}
-          toolsVisible={toolsVisible}
-          canEdit={hideEditButtons || isEditing || isWorldEditing ? false : !!userCountryId}
-          onEditMap={handleOpenMyEditorWithUser}
-          showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
-          onOpenWorldEditor={handleOpenWorldEditor}
-        />
+        isMobile ? (
+          <MapControlsFAB
+            visibleLayers={controlledVisibleLayers ?? visibleLayers}
+            onToggleLayer={onToggleLayer ?? toggleLayer}
+            overlayVisibility={overlayVisibility}
+            onToggleOverlay={toggleOverlay}
+            labelsVisible={labelsVisible}
+            onToggleLabels={toggleLabels}
+            isMeasuring={isMeasuring}
+            onToggleMeasure={() => measureToolRef.current?.toggle()}
+            isPinActive={isPinToolActive}
+            onTogglePin={togglePinTool}
+            toolsVisible={toolsVisible}
+          />
+        ) : (
+          <MapControls
+            visibleLayers={controlledVisibleLayers ?? visibleLayers}
+            onToggleLayer={onToggleLayer ?? toggleLayer}
+            overlayVisibility={overlayVisibility}
+            onToggleOverlay={toggleOverlay}
+            labelsVisible={labelsVisible}
+            onToggleLabels={toggleLabels}
+            isMeasuring={isMeasuring}
+            onToggleMeasure={() => measureToolRef.current?.toggle()}
+            isPinActive={isPinToolActive}
+            onTogglePin={togglePinTool}
+            toolsVisible={toolsVisible}
+            canEdit={hideEditButtons || isEditing || isWorldEditing ? false : !!userCountryId}
+            onEditMap={handleOpenMyEditorWithUser}
+            showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
+            onOpenWorldEditor={handleOpenWorldEditor}
+          />
+        )
       )}
 
       {/* MeasureTool */}
