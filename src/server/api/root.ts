@@ -124,6 +124,7 @@ import { wikiCacheRouter } from "./routers/wikiCache";
 import { wikiImporterRouter } from "./routers/wikiImporter";
 import { lorewardsRouter } from "./routers/lorewards";
 import { commonsRouter } from "./routers/commons";
+import { heraldryRouter } from "./routers/heraldry";
 import { blurbsRouter } from "./routers/blurbs";
 
 // ─── Social ──────────────────────────────────────────────────────────────────
@@ -255,6 +256,7 @@ export const appRouter = createTRPCRouter({
   wikiImporter: safeRouter("wikiImporter", () => wikiImporterRouter),
   lorewards: safeRouter("lorewards", () => lorewardsRouter),
   commons: safeRouter("commons", () => commonsRouter),
+  heraldry: safeRouter("heraldry", () => heraldryRouter),
   blurbs: safeRouter("blurbs", () => blurbsRouter),
 
   // ─── Social ────────────────────────────────────────────────────────────────

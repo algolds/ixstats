@@ -277,6 +277,10 @@ const createPrismaClient = () => {
     "SportRookieClass",
     "SportTeamSeason",
     "SportSeasonRecord",
+    // Vexel Heraldry System
+    "HeraldryAchievement",
+    "HeraldryCharge",
+    "HeraldryRevision",
   ]);
 
   // In read-only mode, extend the client to block write operations
