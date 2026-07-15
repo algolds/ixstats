@@ -2,34 +2,82 @@
 
 export type TinctureMetal = "or" | "argent";
 export type TinctureColour = "gules" | "azure" | "vert" | "purpure" | "sable";
-export type TinctureFur = "ermine" | "vair" | "counter-ermine" | "counter-vair" | "erminois" | "pean";
+export type TinctureFur =
+  "ermine" | "vair" | "counter-ermine" | "counter-vair" | "erminois" | "pean";
 export type TinctureStain = "tenne" | "sanguine" | "murrey";
 export type Tincture = TinctureMetal | TinctureColour | TinctureFur | TinctureStain;
 
 export type TinctureKind = "metal" | "colour" | "fur" | "stain";
 
 export type Division =
-  | "plain" | "per-pale" | "per-fess" | "per-bend" | "per-bend-sinister"
-  | "quarterly" | "gyronny" | "per-saltire" | "per-chevron"
-  | "tierced-in-pale" | "tierced-in-fess"
-  | "barry" | "paly" | "bendy" | "checky" | "lozengy" | "chevronny";
+  | "plain"
+  | "per-pale"
+  | "per-fess"
+  | "per-bend"
+  | "per-bend-sinister"
+  | "quarterly"
+  | "gyronny"
+  | "per-saltire"
+  | "per-chevron"
+  | "tierced-in-pale"
+  | "tierced-in-fess"
+  | "barry"
+  | "paly"
+  | "bendy"
+  | "checky"
+  | "lozengy"
+  | "chevronny";
 
 export type LineStyle =
-  | "straight" | "engrailed" | "invected" | "wavy" | "nebuly"
-  | "indented" | "dancetty" | "embattled" | "dovetailed"
-  | "potenty" | "raguly" | "urdy";
+  | "straight"
+  | "engrailed"
+  | "invected"
+  | "wavy"
+  | "nebuly"
+  | "indented"
+  | "dancetty"
+  | "embattled"
+  | "dovetailed"
+  | "potenty"
+  | "raguly"
+  | "urdy";
 
 export type OrdinaryType =
-  | "chief" | "fess" | "pale" | "bend" | "bend-sinister"
-  | "chevron" | "saltire" | "cross" | "bordure" | "canton"
-  | "pile" | "orle" | "tressure" | "pall" | "gyron" | "lozenge-ordinary";
+  | "chief"
+  | "fess"
+  | "pale"
+  | "bend"
+  | "bend-sinister"
+  | "chevron"
+  | "saltire"
+  | "cross"
+  | "bordure"
+  | "canton"
+  | "pile"
+  | "orle"
+  | "tressure"
+  | "pall"
+  | "gyron"
+  | "lozenge-ordinary";
 
-export type ShieldShape = "heater" | "kite" | "round" | "lozenge" | "oval" | "renaissance" | "pointed";
+export type ShieldShape =
+  "heater" | "kite" | "round" | "lozenge" | "oval" | "renaissance" | "pointed";
 
 export type Attitude =
-  | "rampant" | "passant" | "sejant" | "couchant" | "dormant"
-  | "salient" | "statant" | "guardant" | "reguardant"
-  | "displayed" | "rising" | "volant" | "naiant" | "hauriant";
+  | "rampant"
+  | "passant"
+  | "sejant"
+  | "couchant"
+  | "dormant"
+  | "salient"
+  | "statant"
+  | "guardant"
+  | "reguardant"
+  | "displayed"
+  | "rising"
+  | "volant"
+  | "naiant"
+  | "hauriant";
 
 export type HelmType = "great-helm" | "tilting-helm" | "barrel-helm" | "open-faced-helm";
 export type HelmFacing = "affronte" | "dexter" | "sinister";

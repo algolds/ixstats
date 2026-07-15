@@ -1,52 +1,115 @@
 import { z } from "zod/v4";
 
 export const tinctureSchema = z.enum([
-  "or", "argent",
-  "gules", "azure", "vert", "purpure", "sable",
-  "ermine", "vair", "counter-ermine", "counter-vair", "erminois", "pean",
-  "tenne", "sanguine", "murrey"
+  "or",
+  "argent",
+  "gules",
+  "azure",
+  "vert",
+  "purpure",
+  "sable",
+  "ermine",
+  "vair",
+  "counter-ermine",
+  "counter-vair",
+  "erminois",
+  "pean",
+  "tenne",
+  "sanguine",
+  "murrey",
 ]);
 
 export const divisionSchema = z.enum([
-  "plain", "per-pale", "per-fess", "per-bend", "per-bend-sinister",
-  "quarterly", "gyronny", "per-saltire", "per-chevron",
-  "tierced-in-pale", "tierced-in-fess",
-  "barry", "paly", "bendy", "checky", "lozengy", "chevronny"
+  "plain",
+  "per-pale",
+  "per-fess",
+  "per-bend",
+  "per-bend-sinister",
+  "quarterly",
+  "gyronny",
+  "per-saltire",
+  "per-chevron",
+  "tierced-in-pale",
+  "tierced-in-fess",
+  "barry",
+  "paly",
+  "bendy",
+  "checky",
+  "lozengy",
+  "chevronny",
 ]);
 
 export const lineStyleSchema = z.enum([
-  "straight", "engrailed", "invected", "wavy", "nebuly",
-  "indented", "dancetty", "embattled", "dovetailed",
-  "potenty", "raguly", "urdy"
+  "straight",
+  "engrailed",
+  "invected",
+  "wavy",
+  "nebuly",
+  "indented",
+  "dancetty",
+  "embattled",
+  "dovetailed",
+  "potenty",
+  "raguly",
+  "urdy",
 ]);
 
 export const ordinaryTypeSchema = z.enum([
-  "chief", "fess", "pale", "bend", "bend-sinister",
-  "chevron", "saltire", "cross", "bordure", "canton",
-  "pile", "orle", "tressure", "pall", "gyron", "lozenge-ordinary"
+  "chief",
+  "fess",
+  "pale",
+  "bend",
+  "bend-sinister",
+  "chevron",
+  "saltire",
+  "cross",
+  "bordure",
+  "canton",
+  "pile",
+  "orle",
+  "tressure",
+  "pall",
+  "gyron",
+  "lozenge-ordinary",
 ]);
 
 export const shieldShapeSchema = z.enum([
-  "heater", "kite", "round", "lozenge", "oval", "renaissance", "pointed"
+  "heater",
+  "kite",
+  "round",
+  "lozenge",
+  "oval",
+  "renaissance",
+  "pointed",
 ]);
 
 export const attitudeSchema = z.enum([
-  "rampant", "passant", "sejant", "couchant", "dormant",
-  "salient", "statant", "guardant", "reguardant",
-  "displayed", "rising", "volant", "naiant", "hauriant"
+  "rampant",
+  "passant",
+  "sejant",
+  "couchant",
+  "dormant",
+  "salient",
+  "statant",
+  "guardant",
+  "reguardant",
+  "displayed",
+  "rising",
+  "volant",
+  "naiant",
+  "hauriant",
 ]);
 
 export const helmTypeSchema = z.enum([
-  "great-helm", "tilting-helm", "barrel-helm", "open-faced-helm"
+  "great-helm",
+  "tilting-helm",
+  "barrel-helm",
+  "open-faced-helm",
 ]);
 
-export const helmFacingSchema = z.enum([
-  "affronte", "dexter", "sinister"
-]);
+export const helmFacingSchema = z.enum(["affronte", "dexter", "sinister"]);
 
-export const mottoPositionSchema = z.enum([
-  "above", "below"
-]);
+export const mottoPositionSchema = z.enum(["above", "below"]);
 
 export const chargeRefSchema = z.object({
   chargeId: z.string().uuid().or(z.string().min(1)),
@@ -109,10 +172,12 @@ export const externalOrnamentsSchema = z.object({
   helm: helmConfigSchema.optional(),
   crest: crestConfigSchema.optional(),
   mantling: mantlingConfigSchema.optional(),
-  supporters: z.object({
-    dexter: supporterConfigSchema,
-    sinister: supporterConfigSchema,
-  }).optional(),
+  supporters: z
+    .object({
+      dexter: supporterConfigSchema,
+      sinister: supporterConfigSchema,
+    })
+    .optional(),
   compartment: z.string().optional(),
   motto: mottoConfigSchema.optional(),
 });
