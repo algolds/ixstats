@@ -2,20 +2,29 @@
 
 import React, { useEffect } from "react";
 import { VexelEditorProvider, useVexelEditor } from "./VexelEditorProvider";
-import { api } from "~/utils/api";
+import { api } from "~/trpc/react";
 import type { HeraldryComposition } from "~/lib/heraldry";
+
+import LayerPanel from "./panels/LayerPanel";
+import PropertiesPanel from "./panels/PropertiesPanel";
+import ChargeLibraryPanel from "./panels/ChargeLibraryPanel";
+import CommonsBrowserPanel from "./panels/CommonsBrowserPanel";
+import PreviewPanel from "./panels/PreviewPanel";
+import BlazonPanel from "./panels/BlazonPanel";
+import ValidationPanel from "./panels/ValidationPanel";
 
 interface VexelEditorProps {
   achievementId?: string;
 }
 
 function EditorShell() {
-  const { blazon, validationWarnings, isDirty, achievementId } = useVexelEditor();
+  const { isDirty, achievementId } = useVexelEditor();
+  const [isCommonsOpen, setIsCommonsOpen] = React.useState(false);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-zinc-100">
+    <div className="flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-zinc-100 relative">
       {/* Top Navbar */}
-      <header className="flex h-14 items-center justify-between border-b border-white/10 bg-zinc-900/60 px-6 backdrop-blur-md">
+      <header className="flex h-14 items-center justify-between border-b border-white/10 bg-zinc-900/60 px-6 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold tracking-wider text-amber-500">🛡️ VEXEL</span>
           <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400">
@@ -36,66 +45,39 @@ function EditorShell() {
         </div>
       </header>
 
-      {/* Main Grid */}
-      <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
-        {/* Left Sidebar: Layers */}
-        <aside className="overflow-y-auto border-r border-white/10 bg-zinc-900/40 p-4">
-          <h2 className="mb-4 text-xs font-bold tracking-widest text-zinc-400 uppercase">Layers</h2>
-          <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-xs text-zinc-500">
-            Layer Panel Placeholder
-          </div>
-        </aside>
+      {/* Main Layout Area */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Main Grid */}
+        <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
+          {/* Left Sidebar: Layers */}
+          <aside className="overflow-y-auto border-r border-white/10 bg-zinc-900/40 p-4">
+            <LayerPanel />
+          </aside>
 
-        {/* Center Canvas: Preview */}
-        <main className="flex flex-col overflow-hidden bg-zinc-900/10 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xs font-bold tracking-widest text-zinc-400 uppercase">Preview</h2>
-          </div>
+          {/* Center Canvas: Preview / Audit */}
+          <main className="flex flex-col overflow-y-auto bg-zinc-900/10 p-6 space-y-6">
+            <PreviewPanel />
+            <BlazonPanel />
+            <ValidationPanel />
+          </main>
 
-          {/* Shield Canvas Container */}
-          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/40 shadow-inner backdrop-blur-md">
-            <div className="text-center text-xs text-zinc-500">
-              Shield Preview Canvas Placeholder
-            </div>
-          </div>
+          {/* Right Sidebar: Properties & Charge Library */}
+          <aside className="flex flex-col gap-6 overflow-y-auto border-l border-white/10 bg-zinc-900/40 p-4">
+            <PropertiesPanel />
+            <ChargeLibraryPanel onOpenCommons={() => setIsCommonsOpen(true)} />
+          </aside>
+        </div>
 
-          {/* Blazon Output Card */}
-          <div className="mt-4 rounded-xl border border-white/10 bg-zinc-900/60 p-4 backdrop-blur-md">
-            <h3 className="mb-2 text-xs font-bold tracking-widest text-amber-500 uppercase">
-              Blazon
-            </h3>
-            <p className="font-serif text-sm leading-relaxed text-zinc-300 italic">
-              {blazon || "No arms rendered."}
-            </p>
-          </div>
-        </main>
-
-        {/* Right Sidebar: Properties / Tools */}
-        <aside className="flex flex-col gap-6 overflow-y-auto border-l border-white/10 bg-zinc-900/40 p-4">
-          <div>
-            <h2 className="mb-4 text-xs font-bold tracking-widest text-zinc-400 uppercase">
-              Properties
-            </h2>
-            <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-xs text-zinc-500">
-              Properties Panel Placeholder
-            </div>
-          </div>
-
-          <div>
-            <h2 className="mb-4 text-xs font-bold tracking-widest text-zinc-400 uppercase">
-              Charge Library
-            </h2>
-            <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-xs text-zinc-500">
-              Charge Library Placeholder
-            </div>
-          </div>
-        </aside>
+        {/* Wikimedia Commons slide-over */}
+        {isCommonsOpen && (
+          <CommonsBrowserPanel onClose={() => setIsCommonsOpen(false)} />
+        )}
       </div>
 
       {/* Bottom Status Bar */}
-      <footer className="flex h-8 items-center justify-between border-t border-white/10 bg-zinc-900/80 px-6 text-[10px] text-zinc-500">
+      <footer className="flex h-8 items-center justify-between border-t border-white/10 bg-zinc-900/80 px-6 text-[10px] text-zinc-500 shrink-0">
         <div>{achievementId ? `Editing: ${achievementId}` : "New Design Draft"}</div>
-        <div>Warnings: {validationWarnings.length}</div>
+        <div>IxStates Vexel Engine v1.0.0</div>
       </footer>
     </div>
   );
