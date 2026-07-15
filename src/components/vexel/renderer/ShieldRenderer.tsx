@@ -32,6 +32,7 @@ export default function ShieldRenderer({
 
   return (
     <svg
+      id="vexel-shield-canvas"
       viewBox="0 0 1000 1000"
       width={width}
       height={height}

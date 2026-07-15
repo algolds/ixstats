@@ -64,6 +64,23 @@ export function VexelEditorProvider({ children }: { children: ReactNode }) {
     setBlazon(textBlazon);
   }, [composition]);
 
+  // Load draft from sessionStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const draft = sessionStorage.getItem("vexel-draft");
+      if (draft) {
+        try {
+          const parsed = JSON.parse(draft) as HeraldryComposition;
+          setComposition(parsed);
+          setIsDirty(true);
+          sessionStorage.removeItem("vexel-draft");
+        } catch (e) {
+          console.error("Failed to parse vexel-draft", e);
+        }
+      }
+    }
+  }, []);
+
   const setInitialState = (comp: HeraldryComposition, id: string | null) => {
     setComposition(comp);
     setAchievementId(id);

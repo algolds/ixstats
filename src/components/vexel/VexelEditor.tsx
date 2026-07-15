@@ -12,6 +12,7 @@ import CommonsBrowserPanel from "./panels/CommonsBrowserPanel";
 import PreviewPanel from "./panels/PreviewPanel";
 import BlazonPanel from "./panels/BlazonPanel";
 import ValidationPanel from "./panels/ValidationPanel";
+import SaveControls from "./SaveControls";
 
 interface VexelEditorProps {
   achievementId?: string;
@@ -22,9 +23,9 @@ function EditorShell() {
   const [isCommonsOpen, setIsCommonsOpen] = React.useState(false);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-zinc-100 relative">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-zinc-100">
       {/* Top Navbar */}
-      <header className="flex h-14 items-center justify-between border-b border-white/10 bg-zinc-900/60 px-6 backdrop-blur-md shrink-0">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-zinc-900/60 px-6 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold tracking-wider text-amber-500">🛡️ VEXEL</span>
           <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400">
@@ -46,7 +47,7 @@ function EditorShell() {
       </header>
 
       {/* Main Layout Area */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="relative flex flex-1 overflow-hidden">
         {/* Main Grid */}
         <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
           {/* Left Sidebar: Layers */}
@@ -55,10 +56,13 @@ function EditorShell() {
           </aside>
 
           {/* Center Canvas: Preview / Audit */}
-          <main className="flex flex-col overflow-y-auto bg-zinc-900/10 p-6 space-y-6">
-            <PreviewPanel />
-            <BlazonPanel />
-            <ValidationPanel />
+          <main className="flex flex-col space-y-0 overflow-y-auto bg-zinc-900/10 p-6">
+            <SaveControls />
+            <div className="mt-4 space-y-6">
+              <PreviewPanel />
+              <BlazonPanel />
+              <ValidationPanel />
+            </div>
           </main>
 
           {/* Right Sidebar: Properties & Charge Library */}
@@ -69,13 +73,11 @@ function EditorShell() {
         </div>
 
         {/* Wikimedia Commons slide-over */}
-        {isCommonsOpen && (
-          <CommonsBrowserPanel onClose={() => setIsCommonsOpen(false)} />
-        )}
+        {isCommonsOpen && <CommonsBrowserPanel onClose={() => setIsCommonsOpen(false)} />}
       </div>
 
       {/* Bottom Status Bar */}
-      <footer className="flex h-8 items-center justify-between border-t border-white/10 bg-zinc-900/80 px-6 text-[10px] text-zinc-500 shrink-0">
+      <footer className="flex h-8 shrink-0 items-center justify-between border-t border-white/10 bg-zinc-900/80 px-6 text-[10px] text-zinc-500">
         <div>{achievementId ? `Editing: ${achievementId}` : "New Design Draft"}</div>
         <div>IxStates Vexel Engine v1.0.0</div>
       </footer>

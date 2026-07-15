@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { compositionSchema } from "~/lib/heraldry/composition-schema";
 import { validateComposition } from "~/lib/heraldry/validation";
 import { generateBlazon } from "~/lib/heraldry/blazon";
+import { generateRandomComposition } from "~/lib/heraldry/generator";
 
 export const heraldryQueriesRouter = createTRPCRouter({
   getAchievement: publicProcedure
@@ -165,5 +166,27 @@ export const heraldryQueriesRouter = createTRPCRouter({
         where: { achievementId: input.achievementId },
         orderBy: { createdAt: "desc" },
       });
+    }),
+
+  generateRandom: publicProcedure
+    .input(
+      z.object({
+        count: z.number().min(1).max(12).default(6),
+        options: z
+          .object({
+            cultureGroup: z.string().optional(),
+            religion: z.string().optional(),
+            governmentType: z.string().optional(),
+            nationalColors: z.array(z.string()).optional(),
+          })
+          .optional(),
+      })
+    )
+    .query(({ input }) => {
+      const results = [];
+      for (let i = 0; i < input.count; i++) {
+        results.push(generateRandomComposition(input.options));
+      }
+      return results;
     }),
 });
