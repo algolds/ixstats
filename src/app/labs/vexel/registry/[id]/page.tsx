@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
+import AchievementDetail from "~/components/vexel/registry/AchievementDetail";
 
 interface VexelRegistryDetailPageProps {
   params: Promise<{ id: string }>;
@@ -11,23 +12,28 @@ export default function VexelRegistryDetailPage({ params }: VexelRegistryDetailP
   const { id } = use(params);
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-8 text-zinc-100">
-      <div className="mx-auto max-w-4xl">
-        <header className="mb-8 flex items-center gap-4 border-b border-white/10 pb-6">
+    <div className="min-h-screen bg-zinc-950 p-8 text-zinc-100 font-sans">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-8 flex items-center justify-between border-b border-white/10 pb-6">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/labs/vexel/registry"
+              className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+            >
+              &larr; Back to Registry
+            </Link>
+            <div className="h-4 w-px bg-white/10" />
+            <h1 className="text-xl font-bold tracking-wider text-amber-500">🛡️ Roll of Arms</h1>
+          </div>
           <Link
-            href="/labs/vexel/registry"
-            className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+            href="/labs/vexel"
+            className="rounded-lg bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-zinc-950 transition-all animate-pulse"
           >
-            &larr; Back to Registry
+            Create Your Own
           </Link>
-          <div className="h-4 w-px bg-white/10" />
-          <h1 className="text-xl font-semibold text-zinc-300">Arms Detail</h1>
         </header>
 
-        <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-12 text-center backdrop-blur-md">
-          <p className="mb-2 text-zinc-400">Displaying Achievement: {id}</p>
-          <span className="text-xs text-zinc-600">Task 7 will render the detailed layout.</span>
-        </div>
+        <AchievementDetail achievementId={id} />
       </div>
     </div>
   );
