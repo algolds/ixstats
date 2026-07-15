@@ -31,10 +31,11 @@ import { UpgradeTeaser } from "./premium/UpgradeTeaser";
 
 interface MyCountryTabSystemProps {
   variant?: "unified" | "standard" | "premium";
+  v2?: boolean;
 }
 
-function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystemProps) {
-  const { activeTab, tabDirection, handleTabChange } = useMyCountryNavigation();
+function MyCountryTabSystemComponent({ variant = "unified", v2 = false }: MyCountryTabSystemProps) {
+  const { activeTab, tabDirection, handleTabChange } = useMyCountryNavigation(v2);
   const {
     country,
     economyData,
@@ -64,21 +65,24 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
         activeTab={activeTab}
         onChangeAction={handleTabChange}
         govComponentCount={govComponentCount}
+        v2={v2}
       />
 
       {/* Animated tab content wrapper */}
       <AnimatedTabContent activeTab={activeTab} direction={tabDirection} mode="slide">
         {/* Overview Tab — single unified card */}
-        <TabsContent value="overview" className="space-y-2" id="overview">
-          <OverviewTab
-            country={country}
-            wikiIntro={wikiIntro}
-            wikiImages={wikiImages}
-            wikiLoading={wikiLoading}
-            metricView={metricView}
-            setMetricViewAction={setMetricView}
-          />
-        </TabsContent>
+        {!v2 && (
+          <TabsContent value="overview" className="space-y-2" id="overview">
+            <OverviewTab
+              country={country}
+              wikiIntro={wikiIntro}
+              wikiImages={wikiImages}
+              wikiLoading={wikiLoading}
+              metricView={metricView}
+              setMetricViewAction={setMetricView}
+            />
+          </TabsContent>
+        )}
 
         {/* Economy Tab (with internal Economy/Labor toggle) */}
         <TabsContent value="economy" className="space-y-4" id="economy">

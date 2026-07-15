@@ -22,6 +22,8 @@ interface SectionShellProps {
   notifications?: Partial<Record<string, number>>;
   /** The section's primary content (War Room canvas or tabs). */
   children: ReactNode;
+  v2?: boolean;
+  onIssueDirective?: () => void;
 }
 
 /**
@@ -37,6 +39,8 @@ export function SectionShell({
   onNavigate,
   notifications,
   children,
+  v2 = false,
+  onIssueDirective,
 }: SectionShellProps) {
   const { country } = useCountryData();
   const [heroCollapsed, setHeroCollapsed] = useState(false);
@@ -63,6 +67,8 @@ export function SectionShell({
         onCollapsedChange={setHeroCollapsed}
         countryId={country.id}
         onNavigate={onNavigate}
+        v2={v2}
+        onIssueDirective={onIssueDirective}
       />
     ) : null);
 

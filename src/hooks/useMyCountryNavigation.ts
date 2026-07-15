@@ -38,8 +38,9 @@ export interface UseMyCountryNavigationResult {
   handleTabChange: (newTab: string) => void;
 }
 
-export function useMyCountryNavigation(): UseMyCountryNavigationResult {
-  const [activeTab, setActiveTab] = useState("overview");
+export function useMyCountryNavigation(v2 = false): UseMyCountryNavigationResult {
+  const defaultTab = v2 ? "economy" : "overview";
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [tabDirection, setTabDirection] = useState(0);
 
   // Handle tab change with direction tracking
@@ -61,8 +62,10 @@ export function useMyCountryNavigation(): UseMyCountryNavigationResult {
     const handleHashChange = () => {
       let hash = window.location.hash.replace("#", "");
       if (hash === "labor") hash = "economy"; // Labor is now a sub-view of Economy
-      if (hash && VALID_TABS.includes(hash)) {
+      if (hash && VALID_TABS.includes(hash) && !(v2 && hash === "overview")) {
         setActiveTab(hash);
+      } else if (v2 && (!hash || hash === "overview")) {
+        setActiveTab("economy");
       }
     };
 
@@ -75,7 +78,7 @@ export function useMyCountryNavigation(): UseMyCountryNavigationResult {
     return () => {
       window.removeEventListener("hashchange", handleHashChange);
     };
-  }, []);
+  }, [v2]);
 
   return { activeTab, tabDirection, handleTabChange };
 }

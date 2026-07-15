@@ -13,6 +13,7 @@ import {
   Clock,
   Edit3,
   Eye,
+  Sparkles,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -28,7 +29,7 @@ import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
 import { usePremium } from "~/hooks/usePremium";
-import { useCountryData } from "./primitives";
+import { useCountryData, StateSeal } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
@@ -76,7 +77,11 @@ interface OverviewHeroProps {
   onCollapsedChange: (collapsed: boolean) => void;
   countryId: string;
   onNavigate?: (section: MyCountrySection) => void;
+  v2?: boolean;
+  onIssueDirective?: (goal?: string) => void;
 }
+
+
 
 // ── Normalize growth rates that may be stored as raw decimals ──
 function normalizeGrowth(value: number | null | undefined): number {
@@ -204,12 +209,14 @@ export function OverviewHero({
   onCollapsedChange,
   countryId,
   onNavigate,
+  v2 = false,
+  onIssueDirective,
 }: OverviewHeroProps) {
+  const { country } = useCountryData();
   const { isPremium } = usePremium();
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
   const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
 
-  const { country } = useCountryData();
   const hasCountry = !!countryId && countryId.trim() !== "";
 
   // ── Section-specific data ──
@@ -396,16 +403,27 @@ export function OverviewHero({
         <TextureOverlay texture="paperGrain" opacity={0.09} />
 
         <div className="relative z-10 flex items-center gap-3">
-          <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
-            <div className="flex items-center justify-center overflow-hidden rounded-sm">
-              <UnifiedCountryFlag
-                showTooltip={false}
-                countryName={stats.countryName}
-                size="md"
-                className="shrink-0"
-              />
-            </div>
-          </AvatarGlow>
+          {v2 ? (
+            <StateSeal
+              flagUrl={country.flag}
+              governmentType={stats.governmentType}
+              tier={stats.economicTier}
+              size={36}
+              showPips={false}
+              className="shrink-0"
+            />
+          ) : (
+            <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
+              <div className="flex items-center justify-center overflow-hidden rounded-sm">
+                <UnifiedCountryFlag
+                  showTooltip={false}
+                  countryName={stats.countryName}
+                  size="md"
+                  className="shrink-0"
+                />
+              </div>
+            </AvatarGlow>
+          )}
           <div>
             <span className="text-foreground text-sm font-bold">
               {stats.countryName.replace(/_/g, " ")}
@@ -474,7 +492,7 @@ export function OverviewHero({
       </button>
 
       <div className="relative z-10 grid gap-4 p-4 pt-3 md:grid-cols-5">
-        <div className="border-border/30 flex h-[250px] flex-col overflow-hidden rounded-xl border md:col-span-3 md:h-full md:min-h-[300px]">
+        <div className="border-border/30 flex h-[250px] flex-col overflow-hidden rounded-xl border md:col-span-3 md:h-[320px]">
           <CountryMapEmbed
             countryId={countryId}
             height="h-full"
@@ -487,7 +505,7 @@ export function OverviewHero({
           />
         </div>
 
-        <div className="relative z-10 flex h-full flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
+        <div className="relative z-10 flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 md:h-[320px] dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
           <div className="flex h-full flex-col justify-between">
             {/* Header */}
             <div>
@@ -540,16 +558,26 @@ export function OverviewHero({
               </div>
 
               <div className="mb-2.5 flex items-center gap-2.5">
-                <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
-                  <div className="flex items-center justify-center overflow-hidden rounded-sm">
-                    <UnifiedCountryFlag
-                      showTooltip={false}
-                      countryName={stats.countryName}
-                      size="lg"
-                      className="shrink-0"
-                    />
-                  </div>
-                </AvatarGlow>
+                {v2 ? (
+                  <StateSeal
+                    flagUrl={country.flag}
+                    governmentType={stats.governmentType}
+                    tier={stats.economicTier}
+                    size={72}
+                    showPips={true}
+                  />
+                ) : (
+                  <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
+                    <div className="flex items-center justify-center overflow-hidden rounded-sm">
+                      <UnifiedCountryFlag
+                        showTooltip={false}
+                        countryName={stats.countryName}
+                        size="lg"
+                        className="shrink-0"
+                      />
+                    </div>
+                  </AvatarGlow>
+                )}
                 <div>
                   <Link
                     href={createUrl(`/countries/${stats.slug}`)}
@@ -571,8 +599,19 @@ export function OverviewHero({
               </div>
 
               {/* Action Button Row */}
-              <div className="mt-3 mb-3.5 flex gap-2">
-                <Link href={createUrl("/mycountry/editor")} className="flex-1">
+              <div className="mt-3 mb-3.5 flex flex-wrap gap-2">
+                {v2 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => onIssueDirective?.()}
+                    className="h-8 flex-1 min-w-[100px] cursor-pointer gap-1 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Directive
+                  </Button>
+                )}
+                <Link href={createUrl("/mycountry/editor")} className="flex-1 min-w-[100px]">
                   <Button
                     variant="default"
                     size="sm"
@@ -582,7 +621,7 @@ export function OverviewHero({
                     Edit Country
                   </Button>
                 </Link>
-                <Link href={createUrl(`/countries/${stats.slug}`)} className="flex-1">
+                <Link href={createUrl(`/countries/${stats.slug}`)} className="flex-1 min-w-[100px]">
                   <Button
                     variant="outline"
                     size="sm"
@@ -593,6 +632,8 @@ export function OverviewHero({
                   </Button>
                 </Link>
               </div>
+
+
 
               {/* Apple-style Daily Agenda Widget */}
               <div className="mt-2 mb-3">

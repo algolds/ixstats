@@ -29,6 +29,8 @@ import { DynamicCountryHeader } from "~/components/countries/DynamicCountryHeade
 import { PublicVitalityRings } from "~/components/countries/PublicVitalityRings";
 import { CountryProfileInfoBox } from "~/components/countries/CountryProfileInfoBox";
 import { PublicExecutiveOverview } from "~/components/countries/PublicExecutiveOverview";
+import { CountryDataProvider } from "~/components/mycountry/primitives";
+import { MyCountryTabSystem } from "~/components/mycountry/MyCountryTabSystem";
 
 interface CountryProfilePageProps {
   params: Promise<{ slug?: string; id?: string }>;
@@ -177,6 +179,14 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
           <div className="space-y-8 lg:col-span-3">
             {/* Public Executive Overview */}
             <PublicExecutiveOverview country={country} currentIxTime={currentIxTime} />
+
+            {/* National Statistics & Performance Indicators */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold tracking-tight">National Statistics & Performance</h3>
+              <CountryDataProvider userId={user?.id || ""} countryId={country.id}>
+                <MyCountryTabSystem variant="unified" />
+              </CountryDataProvider>
+            </div>
 
             {/* Additional Sections */}
             {country.analytics &&

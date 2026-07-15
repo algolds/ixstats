@@ -13,12 +13,16 @@ interface EnhancedExecutiveContentProps {
   activeSection?: MyCountrySection;
   onNavigate?: (section: MyCountrySection) => void;
   notifications?: Partial<Record<string, number>>;
+  v2?: boolean;
+  onIssueDirective?: () => void;
 }
 
 export function EnhancedExecutiveContent({
   activeSection,
   onNavigate,
   notifications,
+  v2 = false,
+  onIssueDirective,
 }: EnhancedExecutiveContentProps) {
   const { country, isLoading } = useCountryData();
   const { total: issueCount } = useIssueCount(country?.id);
@@ -49,6 +53,8 @@ export function EnhancedExecutiveContent({
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}
+      v2={v2}
+      onIssueDirective={onIssueDirective}
     >
       {!isGuided && (
         <CrossPillarBanner section="executive" countryId={country.id} onNavigate={onNavigate} />

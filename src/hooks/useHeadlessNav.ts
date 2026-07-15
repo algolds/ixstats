@@ -8,11 +8,12 @@ import { useEffect, useRef, useState } from "react";
  * - Wheel down hides it.
  * - Touch drag-up at the top reveals the nav, drag-down hides it.
  */
-export function useHeadlessNav() {
+export function useHeadlessNav(active = true) {
   const [showNav, setShowNav] = useState(false);
   const touchStartY = useRef(0);
 
   useEffect(() => {
+    if (!active) return;
     const isAtTop = () => window.scrollY <= 0;
 
     const handleWheel = (e: WheelEvent) => {

@@ -16,6 +16,7 @@ import { isStandaloneClient } from "~/lib/standalone-detection";
 
 import { contextualMenus, getContextKey } from "~/lib/navigation-config";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
+import { useHeadlessNav } from "~/hooks/useHeadlessNav";
 import { useResponsiveNav } from "~/hooks/useResponsiveNav";
 import { useNavigationItems } from "~/hooks/useNavigationItems";
 import { NavigationBar } from "~/components/navigation/NavigationBar";
@@ -28,6 +29,24 @@ export function Navigation() {
     normalizedPathname.startsWith("/wiki/") ||
     normalizedPathname.startsWith("/wiki/") ||
     normalizedPathname.startsWith("/blurbs");
+
+  const isCriticalPage = useMemo(() => {
+    const criticalPrefixes = [
+      "/dashboard",
+      "/vault",
+      "/mycountry",
+      "/admin",
+      "/messages",
+      "/forum",
+      "/sign-in",
+      "/sign-up",
+      "/setup",
+    ];
+    if (normalizedPathname === "/" || normalizedPathname === "") return true;
+    return criticalPrefixes.some((prefix) => normalizedPathname.startsWith(prefix));
+  }, [normalizedPathname]);
+
+  const { showNav } = useHeadlessNav(!isCriticalPage);
   const { user, isLoaded } = useUser();
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const { scrollY, isSticky } = useNavigationScroll();
@@ -118,6 +137,8 @@ export function Navigation() {
   return (
     <>
       <nav
+        data-headless-nav={!isCriticalPage ? true : undefined}
+        data-show-nav={!isCriticalPage ? showNav : undefined}
         className={`navigation-bar relative z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
           isWikiPage
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"

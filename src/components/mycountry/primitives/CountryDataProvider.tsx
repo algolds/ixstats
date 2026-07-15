@@ -30,9 +30,10 @@ const CountryDataContext = createContext<CountryDataContextValue | undefined>(un
 interface CountryDataProviderProps {
   children: ReactNode;
   userId: string;
+  countryId?: string;
 }
 
-export function CountryDataProvider({ children, userId }: CountryDataProviderProps) {
+export function CountryDataProvider({ children, userId, countryId }: CountryDataProviderProps) {
   // Dev mode: allow viewing any country
   const { viewCountryId, isViewingOtherCountry } = useDevCountryView();
   // Demo mode: override with demo country for system owners
@@ -46,7 +47,8 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
 
   // Demo mode takes priority, then dev view, then user's actual country
   const effectiveCountryId =
-    isDemoActive && demoCountryId ? demoCountryId : (viewCountryId ?? userProfile?.countryId ?? "");
+    countryId ||
+    (isDemoActive && demoCountryId ? demoCountryId : (viewCountryId ?? userProfile?.countryId ?? ""));
 
   const {
     data: country,

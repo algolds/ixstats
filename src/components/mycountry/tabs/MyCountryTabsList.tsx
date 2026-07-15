@@ -18,10 +18,12 @@ export function MyCountryTabsList({
   activeTab,
   onChangeAction,
   govComponentCount,
+  v2 = false,
 }: {
   activeTab: string;
   onChangeAction: (value: string) => void;
   govComponentCount: number;
+  v2?: boolean;
 }) {
   const govBadge = govComponentCount === 0 ? 1 : 0; // Needs setup
 
@@ -96,10 +98,12 @@ export function MyCountryTabsList({
     },
   ];
 
+  const resolvedTabs = v2 ? tabs.filter((t) => t.id !== "overview") : tabs;
+
   return (
     <div className="overflow-x-auto p-0.5">
       <FacetTabs
-        tabs={tabs}
+        tabs={resolvedTabs}
         activeTab={activeTab}
         onChange={onChangeAction}
         tone="mycountry"
