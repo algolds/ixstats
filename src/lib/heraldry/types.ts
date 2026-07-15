@@ -169,3 +169,32 @@ export interface ValidationWarning {
   message: string;
   elementPath?: string; // e.g. "shield.charges[0]"
 }
+
+// --- Layout ---
+
+export interface LayoutElement {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+}
+
+export interface LayoutResult {
+  shield: { x: number; y: number; width: number; height: number };
+  charges: LayoutElement[];
+  ordinaries: LayoutElement[];
+  externals: {
+    helm?: LayoutElement;
+    crest?: LayoutElement;
+    mantling?: LayoutElement;
+    supporters?: {
+      dexter: LayoutElement;
+      sinister: LayoutElement;
+    };
+    motto?: LayoutElement;
+    compartment?: LayoutElement;
+  };
+}
+

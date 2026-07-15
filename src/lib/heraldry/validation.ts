@@ -26,12 +26,12 @@ export function validateComposition(comp: HeraldryComposition): ValidationWarnin
 
   // Helper to check rule of tincture conflict
   const hasRoTConflict = (itemTincture: string): boolean => {
-    const itemKind = TINCTURE_KIND[itemTincture as any];
+    const itemKind = TINCTURE_KIND[itemTincture as import("./types").Tincture];
     if (!itemKind || itemKind === "fur") return false;
 
     // Check against all underlying field tinctures
     for (const fTinc of fieldTinctures) {
-      const fKind = TINCTURE_KIND[fTinc as any];
+      const fKind = TINCTURE_KIND[fTinc as import("./types").Tincture];
       if (!fKind || fKind === "fur") continue;
 
       // Conflict: metal on metal or colour on colour (treat stains as colours)
