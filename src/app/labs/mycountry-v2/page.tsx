@@ -40,6 +40,9 @@ import {
   Star,
   Shield,
   Church,
+  DollarSign,
+  Users,
+  Building,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
@@ -348,14 +351,23 @@ function StateSeal({ flagUrl, governmentType, tier, size = 76, showPips = true, 
 
 // ── composite hero — map (left) · rings + economy + needs-you + launcher ─────
 function CompositeHero({ d, countryId, bands, onDeclare }: { d: any; countryId: string | null; bands: any[]; onDeclare: (g?: string) => void }) {
-  const rings = bands.map((b) => ({
-    key: b.name,
-    label: b.name,
-    subtitle: b.sub,
-    color: RING_COLOR[b.tone as Tone],
-    value: Math.round(b.score),
-    displayValue: b.value, // the band word — never a raw number
-  }));
+  const rings = bands.map((b) => {
+    let icon = Shield;
+    if (b.name === "Economy") icon = DollarSign;
+    else if (b.name === "Wellbeing") icon = Users;
+    else if (b.name === "Standing") icon = Shield;
+    else if (b.name === "Capacity") icon = Building;
+
+    return {
+      key: b.name,
+      label: b.name,
+      subtitle: b.sub,
+      color: RING_COLOR[b.tone as Tone],
+      value: Math.round(b.score),
+      displayValue: b.value, // the band word — never a raw number
+      icon,
+    };
+  });
   return (
     <FacetContainer variant="mycountry" depth={1} className="overflow-hidden p-0">
       <div className="grid gap-0 lg:grid-cols-[1.05fr_1.35fr]">

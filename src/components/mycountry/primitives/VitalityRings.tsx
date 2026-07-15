@@ -117,7 +117,7 @@ export function VitalityRings({
           />
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-1.5">
-              <Icon className="h-3 w-3" style={{ color: ring.color }} />
+              {Icon && <Icon className="h-3 w-3" style={{ color: ring.color }} />}
               <span className="text-xs font-medium">{ring.label}</span>
             </div>
             <div className="text-muted-foreground text-xs">{ring.subtitle}</div>
@@ -156,7 +156,7 @@ export function VitalityRings({
           />
           <div className="flex-1">
             <div className="mb-1 flex items-center gap-2">
-              <Icon className="h-4 w-4" style={{ color: ring.color }} />
+              {Icon && <Icon className="h-4 w-4" style={{ color: ring.color }} />}
               <span className="font-medium">{ring.label}</span>
             </div>
             <div className="text-muted-foreground text-sm">{display}</div>
@@ -192,7 +192,7 @@ export function VitalityRings({
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: ring.color }} />
+            {Icon && <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: ring.color }} />}
             <span className="truncate text-xs font-semibold">{ring.label}</span>
           </div>
           <div className="mt-0.5 text-sm font-bold" style={{ color: ring.color }}>
