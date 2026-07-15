@@ -1,0 +1,98 @@
+// IxStates — Heraldry / Vexel models
+
+enum HeraldrySubjectType {
+  COUNTRY
+  CHARACTER
+  INSTITUTION
+  DYNASTY
+}
+
+enum ChargeCategory {
+  ANIMALS
+  BIRDS
+  MYTHICAL_CREATURES
+  FISH
+  INSECTS
+  PLANTS
+  TREES
+  FLOWERS
+  CELESTIAL
+  WEAPONS
+  BUILDINGS
+  CROWNS
+  RELIGIOUS
+  MARITIME
+  AGRICULTURAL
+  GEOMETRIC
+  HUMAN_FIGURES
+  OBJECTS
+  LETTERS
+  NUMBERS
+  IXNAY_SPECIFIC
+  MISCELLANEOUS
+}
+
+enum ChargeSource {
+  COMMONS
+  CUSTOM
+  BUNDLED
+}
+
+model HeraldryAchievement {
+  id                 String               @id @default(uuid())
+  ownerId            String
+  subjectType        HeraldrySubjectType
+  subjectId          String?
+  title              String
+  compositionData    Json
+  generatedBlazon    String               @default("")
+  svgData            String?              @db.Text
+  thumbnailUrl       String?
+  largeUrl           String?
+  validationWarnings Json?
+  isPublished        Boolean              @default(false)
+  publishedAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  revisions          HeraldryRevision[]
+
+  @@index([ownerId])
+  @@index([subjectType, subjectId])
+  @@index([isPublished])
+}
+
+model HeraldryCharge {
+  id                  String         @id @default(uuid())
+  name                String
+  category            ChargeCategory
+  subcategory         String?
+  keywords            String[]
+  svgData             String         @db.Text
+  supportsRecoloring  Boolean        @default(true)
+  supportsMirroring   Boolean        @default(true)
+  supportsAttitudes   Boolean        @default(false)
+  attitudes           String[]
+  defaultScale        Float          @default(1.0)
+  source              ChargeSource
+  sourceUrl           String?
+  author              String?
+  license             String
+  importedAt          DateTime       @default(now())
+
+  @@index([category])
+  @@index([source])
+}
+
+model HeraldryRevision {
+  id              String   @id @default(uuid())
+  achievementId   String
+  compositionData Json
+  generatedBlazon String   @default("")
+  revisionNote    String?
+  createdAt       DateTime @default(now())
+
+  achievement     HeraldryAchievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@index([achievementId])
+}

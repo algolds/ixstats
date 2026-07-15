@@ -1,0 +1,182 @@
+import type {
+  Tincture,
+  TinctureKind,
+  Division,
+  LineStyle,
+  OrdinaryType,
+  Attitude,
+  ShieldShape,
+  HelmType,
+} from "./types";
+
+export const TINCTURE_HEX: Record<Tincture, string> = {
+  or: "#FFD700",
+  argent: "#F0F0F0",
+  gules: "#CF171F",
+  azure: "#0F47AF",
+  vert: "#1E8449",
+  purpure: "#7B2D8B",
+  sable: "#1C1C1C",
+  tenne: "#CD7F32",
+  sanguine: "#8B0000",
+  murrey: "#8C004B",
+  // furs (custom SVG patterns or base color representation)
+  ermine: "#FFFFFF",
+  vair: "#0F47AF",
+  "counter-ermine": "#1C1C1C",
+  "counter-vair": "#1C1C1C",
+  erminois: "#FFD700",
+  pean: "#1C1C1C",
+};
+
+export const TINCTURE_KIND: Record<Tincture, TinctureKind> = {
+  or: "metal",
+  argent: "metal",
+  gules: "colour",
+  azure: "colour",
+  vert: "colour",
+  purpure: "colour",
+  sable: "colour",
+  tenne: "stain",
+  sanguine: "stain",
+  murrey: "stain",
+  ermine: "fur",
+  vair: "fur",
+  "counter-ermine": "fur",
+  "counter-vair": "fur",
+  erminois: "fur",
+  pean: "fur",
+};
+
+export const DIVISION_SECTIONS_COUNT: Record<Division, number> = {
+  plain: 1,
+  "per-pale": 2,
+  "per-fess": 2,
+  "per-bend": 2,
+  "per-bend-sinister": 2,
+  quarterly: 4,
+  gyronny: 8,
+  "per-saltire": 4,
+  "per-chevron": 2,
+  "tierced-in-pale": 3,
+  "tierced-in-fess": 3,
+  barry: 6,
+  paly: 6,
+  bendy: 6,
+  checky: 2, // alternated, but usually needs 2 tinctures
+  lozengy: 2, // alternated, needs 2 tinctures
+  chevronny: 6,
+};
+
+export const DIVISIONS: { value: Division; label: string }[] = [
+  { value: "plain", label: "Plain (Single Color)" },
+  { value: "per-pale", label: "Per Pale (Split Vertically)" },
+  { value: "per-fess", label: "Per Fess (Split Horizontally)" },
+  { value: "per-bend", label: "Per Bend (Split Diagonally)" },
+  { value: "per-bend-sinister", label: "Per Bend Sinister (Split Diagonally Inverse)" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "gyronny", label: "Gyronny (8 Sections)" },
+  { value: "per-saltire", label: "Per Saltire (X Split)" },
+  { value: "per-chevron", label: "Per Chevron" },
+  { value: "tierced-in-pale", label: "Tierced in Pale (3 vertical blocks)" },
+  { value: "tierced-in-fess", label: "Tierced in Fess (3 horizontal blocks)" },
+  { value: "barry", label: "Barry (Horizontal Stripes)" },
+  { value: "paly", label: "Paly (Vertical Stripes)" },
+  { value: "bendy", label: "Bendy (Diagonal Stripes)" },
+  { value: "checky", label: "Checky (Checkerboard)" },
+  { value: "lozengy", label: "Lozengy (Diamond Grid)" },
+  { value: "chevronny", label: "Chevronny" },
+];
+
+export const ORDINARIES: { value: OrdinaryType; label: string }[] = [
+  { value: "chief", label: "Chief (Top Bar)" },
+  { value: "fess", label: "Fess (Center Horizontal Bar)" },
+  { value: "pale", label: "Pale (Center Vertical Bar)" },
+  { value: "bend", label: "Bend (Diagonal Bar)" },
+  { value: "bend-sinister", label: "Bend Sinister (Diagonal Bar Inverse)" },
+  { value: "chevron", label: "Chevron" },
+  { value: "saltire", label: "Saltire (X Cross)" },
+  { value: "cross", label: "Cross" },
+  { value: "bordure", label: "Bordure (Border Frame)" },
+  { value: "canton", label: "Canton (Top-Left Box)" },
+  { value: "pile", label: "Pile (Downward Triangle)" },
+  { value: "orle", label: "Orle (Inner Border)" },
+  { value: "tressure", label: "Tressure" },
+  { value: "pall", label: "Pall (Y Shape)" },
+  { value: "gyron", label: "Gyron" },
+  { value: "lozenge-ordinary", label: "Lozenge" },
+];
+
+export const LINE_STYLES: { value: LineStyle; label: string }[] = [
+  { value: "straight", label: "Straight" },
+  { value: "engrailed", label: "Engrailed" },
+  { value: "invected", label: "Invected" },
+  { value: "wavy", label: "Wavy" },
+  { value: "nebuly", label: "Nebuly" },
+  { value: "indented", label: "Indented" },
+  { value: "dancetty", label: "Dancetty" },
+  { value: "embattled", label: "Embattled" },
+  { value: "dovetailed", label: "Dovetailed" },
+  { value: "potenty", label: "Potenty" },
+  { value: "raguly", label: "Raguly" },
+  { value: "urdy", label: "Urdy" },
+];
+
+export const ATTITUDES: { value: Attitude; label: string }[] = [
+  { value: "rampant", label: "Rampant (Rearing)" },
+  { value: "passant", label: "Passant (Walking)" },
+  { value: "sejant", label: "Sejant (Sitting)" },
+  { value: "couchant", label: "Couchant (Lying down)" },
+  { value: "dormant", label: "Dormant (Sleeping)" },
+  { value: "salient", label: "Salient (Leaping)" },
+  { value: "statant", label: "Statant (Standing)" },
+  { value: "guardant", label: "Guardant (Facing Observer)" },
+  { value: "reguardant", label: "Reguardant (Facing Backward)" },
+  { value: "displayed", label: "Displayed (Wings Spread)" },
+  { value: "rising", label: "Rising (Preparing to Fly)" },
+  { value: "volant", label: "Volant (Flying)" },
+  { value: "naiant", label: "Naiant (Swimming horizontally)" },
+  { value: "hauriant", label: "Hauriant (Swimming vertically)" },
+];
+
+export const SHIELD_SHAPES: { value: ShieldShape; label: string }[] = [
+  { value: "heater", label: "Heater (Classical)" },
+  { value: "kite", label: "Kite (Norman)" },
+  { value: "round", label: "Round (Roundel)" },
+  { value: "lozenge", label: "Lozenge (Diamond)" },
+  { value: "oval", label: "Oval" },
+  { value: "renaissance", label: "Renaissance (Ornate)" },
+  { value: "pointed", label: "Pointed (Spanish)" },
+];
+
+export const HELM_TYPES: { value: HelmType; label: string }[] = [
+  { value: "great-helm", label: "Great Helm" },
+  { value: "tilting-helm", label: "Tilting Helm" },
+  { value: "barrel-helm", label: "Barrel Helm" },
+  { value: "open-faced-helm", label: "Open-Faced Helm" },
+];
+
+export const CHARGE_CATEGORIES = [
+  { value: "ANIMALS", label: "Animals" },
+  { value: "BIRDS", label: "Birds" },
+  { value: "MYTHICAL_CREATURES", label: "Mythical Creatures" },
+  { value: "FISH", label: "Fish" },
+  { value: "INSECTS", label: "Insects" },
+  { value: "PLANTS", label: "Plants" },
+  { value: "TREES", label: "Trees" },
+  { value: "FLOWERS", label: "Flowers" },
+  { value: "CELESTIAL", label: "Celestial" },
+  { value: "WEAPONS", label: "Weapons" },
+  { value: "BUILDINGS", label: "Buildings" },
+  { value: "CROWNS", label: "Crowns" },
+  { value: "RELIGIOUS", label: "Religious" },
+  { value: "MARITIME", label: "Maritime" },
+  { value: "AGRICULTURAL", label: "Agricultural" },
+  { value: "GEOMETRIC", label: "Geometric Patterns" },
+  { value: "HUMAN_FIGURES", label: "Human Figures" },
+  { value: "OBJECTS", label: "Objects" },
+  { value: "LETTERS", label: "Letters" },
+  { value: "NUMBERS", label: "Numbers" },
+  { value: "IXNAY_SPECIFIC", label: "Ixnay Specific" },
+  { value: "MISCELLANEOUS", label: "Miscellaneous" },
+] as const;
