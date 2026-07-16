@@ -112,7 +112,7 @@ export function GlassButton({
     <motion.button
       className={cn(
         // Base styles
-        "relative overflow-hidden rounded-xl border transition-all duration-200",
+        "relative overflow-hidden rounded-xl border transition-colors duration-200",
         "focus:ring-2 focus:ring-[var(--color-warning)]/50 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none",
 
         // Size
@@ -192,9 +192,9 @@ export function GlassButton({
         style={{
           background: `radial-gradient(circle at center, ${variantStyle.highlight.split(" ")[0].replace("from-", "")} 0%, transparent 70%)`,
         }}
-        initial={{ scale: 0, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0 }}
         whileHover={{ scale: 1, opacity: 0.3 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
       />
     </motion.button>
   );

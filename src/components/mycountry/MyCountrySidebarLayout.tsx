@@ -110,7 +110,7 @@ export function MyCountrySidebarLayout({
             {/* Content panel with thin glowing top border & shadow theme */}
             <div
               className={cn(
-                "rounded-t-xl border-t-2 pt-2 transition-all duration-500 ease-in-out",
+                "rounded-t-xl border-t-2 pt-2 transition-[border-color,box-shadow] duration-200 ease-out",
                 theme.borderClass,
                 theme.shadowClass
               )}

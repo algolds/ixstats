@@ -45,6 +45,14 @@ the live working set stays here.
 | [055-policy-treasury-debits.md](archive/055-policy-treasury-debits.md) | background cron deducting active policy maintenance costs from budget | DONE (Verified) |
 | [056-proactive-policies-reactive-issues.md](056-proactive-policies-reactive-issues.md) | Proactive Policies & Reactive Issues Integration (Risk, Origin, CivCap) | ACTIVE (planning) |
 
+### Animation & Craft Polish
+| Plan | Scope | Status |
+|------|-------|--------|
+| [057-glass-button-performance-origin.md](057-glass-button-performance-origin.md) | Resolve double-transition conflicts and scale(0) ripple on GlassButton | DONE |
+| [058-sidebar-layout-navigation-transition.md](058-sidebar-layout-navigation-transition.md) | Optimize sidebar layout navigation panel transition to 200ms ease-out | DONE |
+| [059-enhanced-tooltip-transform-origin.md](059-enhanced-tooltip-transform-origin.md) | Dynamic transform origin for EnhancedTooltip based on relative coordinates | DONE |
+| [060-intent-composer-press-responsiveness.md](060-intent-composer-press-responsiveness.md) | Increase active press depth scale to 0.97 and target transition properties | DONE |
+
 ### Public Preview
 | Plan | Scope | Status |
 |------|-------|--------|

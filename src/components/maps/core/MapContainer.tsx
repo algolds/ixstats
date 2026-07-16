@@ -405,6 +405,10 @@ export function MapContainer({
           onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
           onSearchResult={handleSearchResult}
           onOpenWelcome={() => setIsWelcomeOpen(true)}
+          visibleLayers={controlledVisibleLayers ?? visibleLayers}
+          onToggleLayer={onToggleLayer ?? toggleLayer}
+          overlayVisibility={overlayVisibility}
+          onToggleOverlay={toggleOverlay}
         />
       )}
 

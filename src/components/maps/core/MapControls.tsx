@@ -97,7 +97,14 @@ export function MapControls({
     !!overlayVisibility && ANALYTICS_OVERLAYS.some((item) => overlayVisibility[item.key]);
 
   return (
-    <div ref={containerRef} className="absolute top-16 left-3 z-10 sm:top-3">
+    <div
+      ref={containerRef}
+      className="absolute top-16 left-3 z-10 sm:top-3"
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+    >
       {/* Icon button row */}
       <div className="flex items-center gap-1">
         {/* Layers */}

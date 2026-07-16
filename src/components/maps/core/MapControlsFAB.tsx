@@ -144,6 +144,10 @@ export function MapControlsFAB({
         opacity: isHidden ? 0 : 1,
         pointerEvents: isHidden ? "none" : "auto",
       }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
     >
       {/* Active panel (bottom sheet style) */}
       {activePanel && (

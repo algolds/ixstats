@@ -51,7 +51,6 @@ export function IntentComposer({
     }
   }, [initialGoal]);
 
-  const tree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
   const suggest = api.intent.suggest.useQuery(
     { countryId, goal: goal ?? "" },
     { enabled: !!goal && typeof goal === "string" && goal.trim().length >= 2 }
@@ -166,11 +165,11 @@ export function IntentComposer({
             <button
               key={g}
               onClick={() => propose(g)}
-              className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3.5 py-2.5 text-left hover:border-amber-400/30 hover:bg-amber-500/[0.06]"
+              className="flex w-full items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 text-left hover:border-amber-500/20 hover:bg-amber-500/[0.04] transition-[border-color,background-color,transform] duration-150 ease-out active:scale-[0.97] cursor-pointer"
             >
-              <span className="bg-muted grid h-7 w-7 place-items-center rounded-lg text-sm">✦</span>
-              <span className="flex-1 text-[13px] font-medium">{g}</span>
-              <span className="text-muted-foreground text-[10px]">goal</span>
+              <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 grid h-7 w-7 place-items-center rounded-lg text-xs font-bold shadow-sm">✦</span>
+              <span className="flex-1 text-[13px] font-medium text-foreground/90">{g}</span>
+              <span className="text-muted-foreground/60 text-[9px] font-bold uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded border border-white/5">goal</span>
             </button>
           ))}
         </div>
@@ -180,7 +179,7 @@ export function IntentComposer({
           drawing up options…
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <div className="px-1 text-[11px] font-bold tracking-widest text-amber-300/80 uppercase">
             “{goal}” — your government proposes
             {data.category && (
@@ -203,13 +202,13 @@ export function IntentComposer({
               key={p.tier}
               disabled={!canCommit}
               onClick={() => commitTier(p.tier)}
-              className="border-border w-full rounded-xl border px-4 py-3 text-left transition hover:border-amber-400/50 hover:bg-amber-500/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-white/5 bg-white/[0.02] hover:border-amber-500/30 hover:bg-amber-500/[0.04] w-full rounded-xl border px-4 py-3.5 text-left transition-[border-color,background-color,transform] duration-150 ease-out active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-lg"
             >
               <div className="flex items-center justify-between">
-                <div className="text-[13px] font-bold">{p.title}</div>
+                <div className="text-[13px] font-bold text-foreground/90">{p.title}</div>
                 <span
                   className={cn(
-                    "rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                    "rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
                     TONE_CLS[p.acceptance as Tone]
                   )}
                 >
@@ -220,95 +219,50 @@ export function IntentComposer({
                       : "Hard sell"}
                 </span>
               </div>
-              <div className="text-muted-foreground mt-0.5 text-[12px]">{p.blurb}</div>
-              <ul className="mt-2 space-y-1">
+              <div className="text-muted-foreground mt-1 text-[11px] leading-relaxed">{p.blurb}</div>
+              <ul className="mt-2.5 space-y-1.5 border-t border-white/5 pt-2.5">
                 {p.changes.map((c: any, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-[12px]">
-                    <span className="mt-[3px] text-amber-400">
+                  <li key={i} className="flex items-start gap-2 text-[11px]">
+                    <span className="mt-[2px] text-xs font-bold text-amber-500">
                       {c.kind === "budget" ? "▤" : c.kind === "policy" ? "◈" : c.kind === "foreign" ? "◇" : "•"}
                     </span>
-                    <span className="text-foreground/90">
+                    <span className="text-foreground/80 leading-normal">
                       {c.label}
-                      <span className="text-muted-foreground"> — {c.detail}</span>
+                      <span className="text-muted-foreground/60"> — {c.detail}</span>
                     </span>
                   </li>
                 ))}
               </ul>
-              <div className="text-muted-foreground/70 mt-2 text-[10px] tracking-wide uppercase">
-                {p.risk} · reserves {p.civCapCost} capacity
+              <div className="text-muted-foreground/60 mt-3 text-[9px] font-bold tracking-wider uppercase border-t border-white/5 pt-2 flex justify-between items-center">
+                <span>{p.risk}</span>
+                <span>reserves {p.civCapCost} capacity</span>
               </div>
             </button>
           ))}
 
           {data.broker && (
-            <div className="text-muted-foreground/80 px-1 text-[11px]">
+            <div className="text-muted-foreground/80 px-1 text-[10px]">
               Acceptance weighted by{" "}
-              <span className="text-foreground/80 font-medium">{data.broker.name}</span>
+              <span className="text-foreground/80 font-semibold">{data.broker.name}</span>
               {data.broker.unlocked
                 ? data.broker.satisfied
-                  ? " · currently satisfied"
-                  : " · currently restless"
-                : " · not a factor here"}
+                  ? " · satisfied"
+                  : " · restless"
+                : " · not factor"}
               .
             </div>
           )}
 
-          <div className="flex items-center justify-between px-1 pt-1">
-            <button onClick={() => setGoal(null)} className="text-muted-foreground hover:text-foreground text-[12px]">
-              ← no action / rethink
+          <div className="flex items-center justify-between px-1 pt-1.5">
+            <button onClick={() => setGoal(null)} className="text-muted-foreground hover:text-foreground text-[11px] transition-colors">
+              ← rethink goal
             </button>
             <button
               onClick={() => setPolicyOpen(true)}
-              className="text-[11px] font-medium text-amber-300/80 hover:text-amber-200"
+              className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors"
             >
-              Draft your own package →
+              Draft custom package →
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* agenda / dependency tree */}
-      {(tree.data ?? []).length > 0 && (
-        <div className="border-border/60 mt-1 rounded-xl border p-3.5">
-          <div className="mb-2 text-[12px] font-bold">Your agenda</div>
-          <div className="space-y-1">
-            {(tree.data ?? [])
-              .filter(
-                (it: any) => !it.parentId || !(tree.data ?? []).some((x: any) => x.id === it.parentId)
-              )
-              .map((root: any) => (
-                <div key={root.id}>
-                  <div className="flex items-center gap-2 py-1 text-[12px]">
-                    <span
-                      className={cn(
-                        "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase",
-                        TONE_CLS[
-                          root.tier === "measured"
-                            ? "good"
-                            : root.tier === "moderate"
-                              ? "mid"
-                              : "bad"
-                        ]
-                      )}
-                    >
-                      {root.tier}
-                    </span>
-                    <span className="text-foreground/90 flex-1 truncate">{root.goal}</span>
-                    <span className="text-muted-foreground text-[10px]">{root.category}</span>
-                  </div>
-                  {(tree.data ?? [])
-                    .filter((x: any) => x.parentId === root.id)
-                    .map((kid: any) => (
-                      <div key={kid.id} className="ml-3 border-l border-white/10 pl-3">
-                        <div className="flex items-center gap-2 py-1 text-[12px]">
-                          <span className="text-amber-400">↳</span>
-                          <span className="text-foreground/80 flex-1 truncate">{kid.goal}</span>
-                          <span className="text-muted-foreground text-[10px]">{kid.tier}</span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ))}
           </div>
         </div>
       )}

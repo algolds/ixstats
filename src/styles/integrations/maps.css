@@ -94,3 +94,20 @@
   color: #9ca3af;
   background: #374151;
 }
+
+/* Lock page scroll and bounce on maps pages to prevent page-level movement on touch/drag */
+html:has([data-maps-page]),
+body:has([data-maps-page]) {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  overscroll-behavior: none !important;
+}
+
+/* Ensure maps container handles touch/drag gestures correctly */
+[data-maps-page] {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+

@@ -183,6 +183,16 @@ export function EnhancedTooltip({
             left: coordinates.x,
             top: coordinates.y,
             zIndex,
+            transformOrigin:
+              tooltipPosition === "top"
+                ? "bottom center"
+                : tooltipPosition === "bottom"
+                  ? "top center"
+                  : tooltipPosition === "left"
+                    ? "right center"
+                    : tooltipPosition === "right"
+                      ? "left center"
+                      : "center",
           }}
         >
           {/* Arrow */}

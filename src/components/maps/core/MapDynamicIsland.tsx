@@ -20,14 +20,16 @@ import { AnimatePresence, motion } from "motion/react";
 import { Search, X, Globe, Loader2, MessageCircle, Bell, HelpCircle } from "lucide-react";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "~/lib/base-path";
-import type { ProjectionMode } from "~/lib/map-config";
+import type { ProjectionMode, MapLayerType } from "~/lib/map-config";
 import { cn } from "~/lib/utils";
 import { useIsMobile } from "~/hooks/useIsMobile";
+import type { OverlayVisibility } from "./IxWorldMap";
 
 // Extracted state hook, components, and helper utilities
 import { useDynamicIslandState } from "./hooks/useDynamicIslandState";
 import { AuthSection } from "./components/AuthSection";
 import { MapSettingsPopover } from "./components/MapSettingsPopover";
+import { MapLayersPopover } from "./components/MapLayersPopover";
 import { TYPE_META, SPRING, SPRING_SOFT, FlagIcon } from "./utils/dynamic-island-helpers";
 
 // ---------------------------------------------------------------------------
@@ -48,6 +50,10 @@ interface MapDynamicIslandProps {
   onProjectionChange: (mode: ProjectionMode) => void;
   onSearchResult: (result: MapSearchResult) => void;
   onOpenWelcome?: () => void;
+  visibleLayers: Set<MapLayerType>;
+  onToggleLayer: (layer: MapLayerType) => void;
+  overlayVisibility?: OverlayVisibility;
+  onToggleOverlay?: (key: keyof OverlayVisibility) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +65,10 @@ export function MapDynamicIsland({
   onProjectionChange,
   onSearchResult,
   onOpenWelcome,
+  visibleLayers,
+  onToggleLayer,
+  overlayVisibility,
+  onToggleOverlay,
 }: MapDynamicIslandProps) {
   const isMobile = useIsMobile();
   const {
@@ -182,6 +192,13 @@ export function MapDynamicIsland({
                 </span>
               </button>
             )}
+
+            <MapLayersPopover
+              visibleLayers={visibleLayers}
+              onToggleLayer={onToggleLayer}
+              overlayVisibility={overlayVisibility}
+              onToggleOverlay={onToggleOverlay}
+            />
 
             <MapSettingsPopover
               projectionMode={projectionMode}
@@ -388,6 +405,14 @@ export function MapDynamicIsland({
                   </button>
                 )}
 
+                {/* Layers */}
+                <MapLayersPopover
+                  visibleLayers={visibleLayers}
+                  onToggleLayer={onToggleLayer}
+                  overlayVisibility={overlayVisibility}
+                  onToggleOverlay={onToggleOverlay}
+                />
+
                 {/* Settings */}
                 <MapSettingsPopover
                   projectionMode={projectionMode}
@@ -411,6 +436,8 @@ export function MapDynamicIsland({
       className="absolute top-3 left-1/2 z-[var(--z-floating)] -translate-x-1/2"
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
     >
       {isMobile ? mobilePill : desktopPill}
 
