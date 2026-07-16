@@ -66,7 +66,9 @@ export function SectorMetrics({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
           label="GDP Distribution"
-          value={`${totalGDP.toFixed(1)}%`}
+          value={totalGDP}
+          unit="%"
+          precision={1}
           icon={PieChart}
           sectionId="sectors"
           trend={gdpValid ? "up" : "down"}
@@ -76,7 +78,9 @@ export function SectorMetrics({
         />
         <MetricCard
           label="Employment Distribution"
-          value={`${totalEmployment.toFixed(1)}%`}
+          value={totalEmployment}
+          unit="%"
+          precision={1}
           icon={Users}
           sectionId="sectors"
           trend={employmentValid ? "up" : "down"}
@@ -96,7 +100,8 @@ export function SectorMetrics({
         />
         <MetricCard
           label="Avg Productivity"
-          value={averageProductivity.toFixed(0)}
+          value={averageProductivity}
+          precision={0}
           icon={TrendingUp}
           sectionId="sectors"
           trend="neutral"

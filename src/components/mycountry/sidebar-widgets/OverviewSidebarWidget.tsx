@@ -10,12 +10,19 @@ interface OverviewSidebarWidgetProps {
   countryId: string;
 }
 
-function sourceMeta(kind: string) {
-  switch (kind) {
+function sourceMeta(item: any) {
+  switch (item.kind) {
     case "decision":
       return { who: "Government", gradient: "from-amber-500 to-yellow-600", glyph: "◉" };
     case "diplomacy":
       return { who: "World", gradient: "from-purple-500 to-fuchsia-600", glyph: "◇" };
+    case "ledger":
+      const isUp = (item.deltaValue ?? 0) >= 0;
+      return {
+        who: `Ledger · ${item.sourceType || "Action"}`,
+        gradient: isUp ? "from-emerald-500 to-teal-600" : "from-red-500 to-rose-600",
+        glyph: "▤",
+      };
     default:
       return { who: "Press", gradient: "from-slate-500 to-slate-700", glyph: "▦" };
   }
@@ -107,7 +114,10 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
 
         {!isLoading &&
           canonItems?.map((item: any) => {
-            const meta = sourceMeta(item.kind);
+            const meta = sourceMeta(item);
+            const isLedger = item.kind === "ledger";
+            const isUp = (item.deltaValue ?? 0) >= 0;
+
             return (
               <FacetCard
                 key={item.id}
@@ -126,7 +136,21 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
                     {meta.glyph}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold text-foreground/80">{meta.who}</div>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="text-[10px] font-bold text-foreground/80 truncate">{meta.who}</div>
+                      {isLedger && item.targetField && (
+                        <span
+                          className={cn(
+                            "text-[8px] font-extrabold uppercase px-1 rounded-sm border shrink-0",
+                            isUp
+                              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
+                              : "bg-red-500/15 text-red-400 border-red-500/20"
+                          )}
+                        >
+                          {isUp ? "+" : ""}{item.deltaValue} {item.targetField}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[8px] text-muted-foreground/60 font-semibold">
                       {fmtTime(item.timestamp)}
                     </div>

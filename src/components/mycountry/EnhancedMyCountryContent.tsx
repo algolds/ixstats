@@ -1,6 +1,5 @@
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useCountryData, SectionShell } from "./primitives";
@@ -24,6 +23,8 @@ import { cn } from "~/lib/utils";
 
 import { FacetCard } from "~/components/ui/facet-container";
 import { IxTime } from "~/lib/ixtime";
+import { HealthRing } from "~/components/ui/health-ring";
+import { createVitalityRingsFromCountry } from "./primitives/tabs/VitalityRingsDisplay";
 
 interface EnhancedMyCountryContentProps {
   variant?: "unified" | "standard" | "premium";
@@ -268,6 +269,35 @@ function AgendaTree({
   );
 }
 
+function CompactVitalityRingsCard({ country }: { country: any }) {
+  const rings = createVitalityRingsFromCountry(country);
+  return (
+    <FacetCard depth={1} interactive="hover" className="p-5 flex flex-col gap-4 bg-card/30 backdrop-blur-md">
+      <div>
+        <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">National Vitality</h4>
+        <p className="text-muted-foreground text-[10px] mt-0.5">Core indicators of your state's health and efficiency.</p>
+      </div>
+      <div className="flex items-center justify-around gap-4 py-2 border-t border-white/5 mt-1">
+        {rings.map((ring) => (
+          <div key={ring.id} className="flex flex-col items-center gap-1.5 text-center">
+            <HealthRing
+              value={ring.value}
+              size={64}
+              color={ring.color}
+              label={ring.label}
+              tooltip={ring.description}
+            />
+            <div>
+              <div className="text-[10px] font-bold text-foreground/90">{ring.value}%</div>
+              <div className="text-muted-foreground/60 text-[8px] font-bold uppercase tracking-wider">{ring.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </FacetCard>
+  );
+}
+
 export function EnhancedMyCountryContent({
   variant = "unified",
   activeSection,
@@ -278,6 +308,7 @@ export function EnhancedMyCountryContent({
 }: EnhancedMyCountryContentProps) {
   const { country, isLoading } = useCountryData();
   const { activeTab } = useMyCountryNavigation();
+  const [agendaViewMode, setAgendaViewMode] = useState<"widgets" | "stack">("widgets");
 
   const { data: geoBundle, isLoading: isGeoLoading } = api.countryGeo.getCountryGeoBundle.useQuery(
     { countryId: country?.id || "" },
@@ -314,14 +345,26 @@ export function EnhancedMyCountryContent({
       hero={activeTab === "geography" ? geographyHero : undefined}
       v2={v2}
       onIssueDirective={onIssueDirective}
+      agendaViewMode={agendaViewMode}
+      onAgendaViewModeChange={setAgendaViewMode}
     >
       {/* New-player onboarding — self-hides once established */}
       {country?.id && <SetupChecklist countryId={country.id} onNavigate={onNavigate} />}
 
       {v2 ? (
         <div className="space-y-4">
-          <NeedsYou countryId={country.id} onDeclare={onIssueDirective || (() => {})} />
-          <AgendaTree countryId={country.id} onIssueDirective={onIssueDirective} />
+          {agendaViewMode === "widgets" ? (
+            <>
+              <NeedsYou countryId={country.id} onDeclare={onIssueDirective || (() => {})} />
+              <AgendaTree countryId={country.id} onIssueDirective={onIssueDirective} />
+            </>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <NeedsYou countryId={country.id} onDeclare={onIssueDirective || (() => {})} />
+              <AgendaTree countryId={country.id} onIssueDirective={onIssueDirective} />
+            </div>
+          )}
+          <CompactVitalityRingsCard country={country} />
         </div>
       ) : (
         /* Economy, Labor, Government, Geography tabs */

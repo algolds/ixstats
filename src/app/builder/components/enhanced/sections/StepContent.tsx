@@ -1,8 +1,6 @@
 "use client";
 
 import React, { memo } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { useBuilderContext } from "../context/BuilderStateContext";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 
 interface StepContentProps {
@@ -18,30 +16,16 @@ interface StepContentProps {
  * - Step-specific theming
  */
 export const StepContent = memo(function StepContent({ children }: StepContentProps) {
-  const { builderState } = useBuilderContext();
-
-  // Link card transitions strictly to main step changes to prevent inner tab flashing
-  const navKey = builderState.step;
-
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={navKey}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
-        className="mx-auto max-w-6xl"
+    <div className="mx-auto max-w-6xl">
+      <CutoutCard
+        className="border-border/30 bg-card/75 overflow-hidden rounded-[24px] backdrop-blur-md"
+        texture="dots"
+        textureOpacity={0.03}
+        trackPointerHover={false}
       >
-        <CutoutCard
-          className="border-border/30 bg-card/75 overflow-hidden rounded-[24px] backdrop-blur-md"
-          texture="dots"
-          textureOpacity={0.03}
-          trackPointerHover={false}
-        >
-          <CutoutCardContent className="bg-transparent p-6 sm:p-8">{children}</CutoutCardContent>
-        </CutoutCard>
-      </motion.div>
-    </AnimatePresence>
+        <CutoutCardContent className="bg-transparent p-6 sm:p-8">{children}</CutoutCardContent>
+      </CutoutCard>
+    </div>
   );
 });

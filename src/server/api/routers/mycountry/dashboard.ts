@@ -224,7 +224,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
     .query(async ({ input }) => {
       try {
         const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const [effects, events, decisions] = await Promise.all([
+        const [effects, events, decisions, logs] = await Promise.all([
           db.storytellerEffect.findMany({
             where: { countryId: input.countryId, ixTimeTimestamp: { gte: since } },
             orderBy: { ixTimeTimestamp: "desc" },
@@ -248,14 +248,30 @@ export const myCountryDashboardRouter = createTRPCRouter({
             take: input.limit,
             select: { id: true, title: true, domain: true, respondedAt: true, updatedAt: true },
           }),
+          db.countryChangeLog.findMany({
+            where: { countryId: input.countryId },
+            orderBy: { createdAt: "desc" },
+            take: input.limit,
+            select: {
+              id: true,
+              description: true,
+              deltaValue: true,
+              targetField: true,
+              sourceType: true,
+              createdAt: true,
+            },
+          }),
         ]);
 
         type CanonFeedItem = {
           id: string;
-          kind: "effect" | "diplomacy" | "decision";
+          kind: "effect" | "diplomacy" | "decision" | "ledger";
           title: string;
           category: string;
           timestamp: number;
+          deltaValue?: number | null;
+          targetField?: string | null;
+          sourceType?: string | null;
         };
         const items: CanonFeedItem[] = [
           ...effects.map((e) => ({
@@ -278,6 +294,16 @@ export const myCountryDashboardRouter = createTRPCRouter({
             title: n.title,
             category: "governance",
             timestamp: (n.respondedAt ?? n.updatedAt).getTime(),
+          })),
+          ...logs.map((l) => ({
+            id: `log_${l.id}`,
+            kind: "ledger" as const,
+            title: l.description,
+            category: "ledger",
+            timestamp: l.createdAt.getTime(),
+            deltaValue: l.deltaValue,
+            targetField: l.targetField,
+            sourceType: l.sourceType,
           })),
         ];
 

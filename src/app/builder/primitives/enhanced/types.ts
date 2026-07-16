@@ -99,6 +99,7 @@ export interface MetricCardProps {
   texture?: string;
   textureOpacity?: number;
   tooltip?: string;
+  precision?: number;
 }
 
 export interface AnimationConfig {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -29,7 +29,7 @@ import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
 import { usePremium } from "~/hooks/usePremium";
-import { useCountryData, StateSeal } from "./primitives";
+import { useCountryData } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
@@ -79,6 +79,8 @@ interface OverviewHeroProps {
   onNavigate?: (section: MyCountrySection) => void;
   v2?: boolean;
   onIssueDirective?: (goal?: string) => void;
+  agendaViewMode?: "widgets" | "stack";
+  onAgendaViewModeChange?: (mode: "widgets" | "stack") => void;
 }
 
 
@@ -211,6 +213,8 @@ export function OverviewHero({
   onNavigate,
   v2 = false,
   onIssueDirective,
+  agendaViewMode = "widgets",
+  onAgendaViewModeChange,
 }: OverviewHeroProps) {
   const { country } = useCountryData();
   const { isPremium } = usePremium();
@@ -307,7 +311,7 @@ export function OverviewHero({
 
   // ── Daily Agenda States and Items ──
   const { totalUnread: messageUnreadCount = 0 } = useMessageUnreadCount();
-  const [agendaViewMode, setAgendaViewMode] = useState<"widgets" | "stack">("widgets");
+  // Lifted agendaViewMode state to parent props
 
   const pendingElections =
     elections?.filter(
@@ -403,27 +407,16 @@ export function OverviewHero({
         <TextureOverlay texture="paperGrain" opacity={0.09} />
 
         <div className="relative z-10 flex items-center gap-3">
-          {v2 ? (
-            <StateSeal
-              flagUrl={country.flag}
-              governmentType={stats.governmentType}
-              tier={stats.economicTier}
-              size={36}
-              showPips={false}
-              className="shrink-0"
-            />
-          ) : (
-            <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
-              <div className="flex items-center justify-center overflow-hidden rounded-sm">
-                <UnifiedCountryFlag
-                  showTooltip={false}
-                  countryName={stats.countryName}
-                  size="md"
-                  className="shrink-0"
-                />
-              </div>
-            </AvatarGlow>
-          )}
+          <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
+            <div className="flex items-center justify-center overflow-hidden rounded-sm">
+              <UnifiedCountryFlag
+                showTooltip={false}
+                countryName={stats.countryName}
+                size="md"
+                className="shrink-0"
+              />
+            </div>
+          </AvatarGlow>
           <div>
             <span className="text-foreground text-sm font-bold">
               {stats.countryName.replace(/_/g, " ")}
@@ -539,7 +532,7 @@ export function OverviewHero({
                   />
                   <button
                     onClick={() =>
-                      setAgendaViewMode((v) => (v === "widgets" ? "stack" : "widgets"))
+                      onAgendaViewModeChange?.(agendaViewMode === "widgets" ? "stack" : "widgets")
                     }
                     title={
                       agendaViewMode === "widgets"
@@ -550,23 +543,16 @@ export function OverviewHero({
                   >
                     <Layers className="h-3 w-3" />
                   </button>
-                  <div className="flex items-center gap-1 rounded border border-emerald-500/10 bg-emerald-500/5 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400/90">
-                    <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
-                    <span>ONLINE</span>
-                  </div>
+                  <Link
+                    href={createUrl(`/countries/${stats.slug}`)}
+                    className="flex items-center gap-1 rounded border border-white/5 bg-white/[0.03] hover:bg-white/[0.08] px-2 py-0.5 text-[9px] font-bold text-foreground/80 transition-all active:scale-95 shadow-sm"
+                  >
+                    View Profile
+                  </Link>
                 </div>
               </div>
 
               <div className="mb-2.5 flex items-center gap-2.5">
-                {v2 ? (
-                  <StateSeal
-                    flagUrl={country.flag}
-                    governmentType={stats.governmentType}
-                    tier={stats.economicTier}
-                    size={72}
-                    showPips={true}
-                  />
-                ) : (
                   <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
                     <div className="flex items-center justify-center overflow-hidden rounded-sm">
                       <UnifiedCountryFlag
@@ -577,7 +563,6 @@ export function OverviewHero({
                       />
                     </div>
                   </AvatarGlow>
-                )}
                 <div>
                   <Link
                     href={createUrl(`/countries/${stats.slug}`)}

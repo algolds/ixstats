@@ -1232,7 +1232,7 @@ export function useBuilderState(
   // Autosave state to localStorage with ref to prevent infinite loops
   const builderStateRef = useRef(builderState);
   builderStateRef.current = builderState;
-  const prevBuilderStateRef = useRef(builderState);
+  const lastSavedStateRef = useRef<BuilderState | null>(null);
 
   // Server-draft (create-mode) coordination refs.
   // localHadDataRef: the on-device localStorage restore found a draft (it wins).
@@ -1250,11 +1250,12 @@ export function useBuilderState(
     (Array.isArray(s.completedSteps) && s.completedSteps.length > 0);
 
   useEffect(() => {
-    // Skip save if state hasn't actually changed (prevents unnecessary JSON.stringify)
-    if (isEqual(prevBuilderStateRef.current, builderState)) return;
-    prevBuilderStateRef.current = builderState;
-
     const saveState = async () => {
+      const currentState = builderStateRef.current;
+      // Skip save if state hasn't actually changed (prevents unnecessary JSON.stringify)
+      if (isEqual(lastSavedStateRef.current, currentState)) return;
+      lastSavedStateRef.current = currentState;
+
       setIsAutoSaving(true);
       try {
         // Use country-specific keys in edit mode
@@ -1263,7 +1264,7 @@ export function useBuilderState(
         const savedKey =
           mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
 
-        const stateSaved = safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
+        const stateSaved = safeSetItemSync(stateKey, JSON.stringify(currentState));
         const now = new Date();
         const timestampSaved = safeSetItemSync(savedKey, now.toISOString());
 
@@ -1275,7 +1276,7 @@ export function useBuilderState(
           );
           // Try fallback to sessionStorage
           try {
-            sessionStorage.setItem(stateKey, JSON.stringify(builderStateRef.current));
+            sessionStorage.setItem(stateKey, JSON.stringify(currentState));
             sessionStorage.setItem(savedKey, now.toISOString());
             console.log("[BuilderState] Fallback to sessionStorage successful");
           } catch (sessionError) {

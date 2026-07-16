@@ -25,6 +25,7 @@ export function MetricCard({
   texture,
   textureOpacity,
   tooltip,
+  precision,
 }: MetricCardProps) {
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
 
@@ -35,7 +36,7 @@ export function MetricCard({
   // Animated value for smooth number transitions with fast response
   const animatedValue = useFormattedAnimatedValue(
     numericValue,
-    isNumeric ? undefined : () => safeValue.toString(),
+    isNumeric && precision !== undefined ? (val) => val.toFixed(precision) : undefined,
     { enabled: true, duration: 400, easing: "easeOut", delay: 0 } // Fast animation config
   );
 

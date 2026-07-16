@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import debounce from "lodash/debounce";
 import { motion } from "motion/react";
+import NumberFlow from "@number-flow/react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { EnhancedInputProps } from "./types";
@@ -194,17 +195,13 @@ export function SliderWithDirectInput({
             <div className="flex items-center gap-2">
               {showValue && (
                 <motion.div className="text-foreground flex items-center gap-1 text-sm font-semibold">
-                  <span>
-                    {!isNaN(parseFloat(localValue))
-                      ? Number((parseFloat(localValue) || 0).toFixed(precision)).toLocaleString(
-                          undefined,
-                          {
-                            minimumFractionDigits: precision,
-                            maximumFractionDigits: precision,
-                          }
-                        )
-                      : "0"}
-                  </span>
+                  <NumberFlow
+                    value={!isNaN(parseFloat(localValue)) ? parseFloat(localValue) : 0}
+                    format={{
+                      minimumFractionDigits: precision,
+                      maximumFractionDigits: precision,
+                    }}
+                  />
                   {unit && <span className="text-muted-foreground">{unit}</span>}
                 </motion.div>
               )}

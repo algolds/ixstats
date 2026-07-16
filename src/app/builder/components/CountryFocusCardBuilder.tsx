@@ -78,30 +78,21 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
           animate={
             isHovered
               ? {
-                  scale: 1.08,
-                  y: -10,
+                  scale: 1.05,
+                  y: -8,
                   rotateZ: 0.5,
-                  rotateY: 0.5,
                 }
               : {
                   scale: 1,
                   y: 0,
                   rotateZ: 0,
-                  rotateY: 0,
                 }
           }
-          transition={
-            isHovered
-              ? {
-                  type: "spring",
-                  stiffness: 150,
-                  damping: 20,
-                }
-              : {
-                  duration: 0.1,
-                  ease: "easeInOut",
-                }
-          }
+          transition={{
+            type: "spring",
+            stiffness: 260,
+            damping: 26,
+          }}
         >
           <div
             className={cn(
@@ -139,17 +130,9 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                 isHovered ? "opacity-100" : "opacity-0"
               )}
             >
-              <motion.div
-                animate={{
-                  scale: isHovered ? 1.05 : 1,
-                  opacity: isHovered ? 0.9 : 1,
-                }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              >
-                <span className="text-xl font-medium text-white antialiased [text-shadow:0_0_10px_rgba(255,255,255,0.3)] md:text-2xl">
-                  {country.name}
-                </span>
-              </motion.div>
+              <span className="text-xl font-medium text-white antialiased [text-shadow:0_0_10px_rgba(255,255,255,0.3)] md:text-2xl">
+                {country.name}
+              </span>
             </div>
 
             {/* Always Visible Country Name */}

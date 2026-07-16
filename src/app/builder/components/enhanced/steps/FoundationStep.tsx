@@ -48,6 +48,28 @@ const HISTORICAL_ARCHETYPE_IDS = [
   "chinese-ming-dynasty",
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.04,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease: [0.23, 1, 0.32, 1],
+    },
+  },
+};
+
 interface FoundationStepProps {
   countries: RealCountryData[];
   isLoadingCountries: boolean;
@@ -323,7 +345,12 @@ export function FoundationStep({
           <p className="text-sm text-zinc-400">Decoding faction templates...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
           {visibleArchetypes.map((arch) => {
             const IconComponent = getArchetypeIcon(arch.id);
             const isSelected = localSelectedArchetype?.id === arch.id;
@@ -332,6 +359,7 @@ export function FoundationStep({
             return (
               <motion.div
                 key={arch.id}
+                variants={itemVariants}
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => setLocalSelectedArchetype(arch)}
@@ -497,7 +525,7 @@ export function FoundationStep({
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* Sentinel for infinite loading - always rendered so observer ref is attached, hidden visually when done/loading */}

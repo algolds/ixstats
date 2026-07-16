@@ -138,9 +138,14 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                 <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
                   {/* Step number / completion indicator */}
                   {completed && !active ? (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                    <motion.span
+                      initial={{ scale: 0, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500"
+                    >
                       <Check className="h-3 w-3" />
-                    </span>
+                    </motion.span>
                   ) : (
                     <span
                       className={cn(

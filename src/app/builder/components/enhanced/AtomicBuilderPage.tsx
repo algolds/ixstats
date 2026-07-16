@@ -188,10 +188,11 @@ function AtomicBuilderPageInner({
   // Update economic inputs when government components change
   // Phase 2 fix: Replaced JSON.stringify with isEqual for performance
   useEffect(() => {
+    if (builderState.governmentComponents === lastProcessedGovComponentsRef.current) return;
     if (builderState.economicInputs && builderState.governmentComponents.length > 0) {
       // Only update if government components actually changed (using deep comparison)
       if (!isEqual(builderState.governmentComponents, lastProcessedGovComponentsRef.current)) {
-        lastProcessedGovComponentsRef.current = [...builderState.governmentComponents];
+        lastProcessedGovComponentsRef.current = builderState.governmentComponents;
 
         const updatedInputs = { ...builderState.economicInputs };
 
@@ -229,6 +230,7 @@ function AtomicBuilderPageInner({
   // Phase 2 fix: Replaced JSON.stringify with isEqual for performance
   useEffect(() => {
     const govStructure = builderState.governmentStructure;
+    if (govStructure === lastProcessedGovStructureRef.current) return;
     if (govStructure && builderState.economicInputs) {
       // Only update if government structure actually changed (using deep comparison)
       if (!isEqual(govStructure, lastProcessedGovStructureRef.current)) {
@@ -671,14 +673,7 @@ function AtomicBuilderPageInner({
       {/* Main Content Area with Animations */}
       {builderState.step === "foundation" && !isEditMode ? (
         // Foundation step is rendered without StepContent wrapper (only in create mode)
-        <motion.div
-          key="foundation"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <div className="flex min-h-0 flex-1 flex-col">
           <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
             <StepRenderer
               countries={countries}
@@ -689,7 +684,7 @@ function AtomicBuilderPageInner({
               onGovernmentStructureSave={handleGovernmentStructureSave}
             />
           </Suspense>
-        </motion.div>
+        </div>
       ) : (
         // All other steps are wrapped in StepContent
         <StepContent>

@@ -24,6 +24,8 @@ interface SectionShellProps {
   children: ReactNode;
   v2?: boolean;
   onIssueDirective?: () => void;
+  agendaViewMode?: "widgets" | "stack";
+  onAgendaViewModeChange?: (mode: "widgets" | "stack") => void;
 }
 
 /**
@@ -41,6 +43,8 @@ export function SectionShell({
   children,
   v2 = false,
   onIssueDirective,
+  agendaViewMode,
+  onAgendaViewModeChange,
 }: SectionShellProps) {
   const { country } = useCountryData();
   const [heroCollapsed, setHeroCollapsed] = useState(false);
@@ -69,6 +73,8 @@ export function SectionShell({
         onNavigate={onNavigate}
         v2={v2}
         onIssueDirective={onIssueDirective}
+        agendaViewMode={agendaViewMode}
+        onAgendaViewModeChange={onAgendaViewModeChange}
       />
     ) : null);
 

@@ -177,7 +177,7 @@ export function LaborEmploymentTab({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Total Workforce"
-          value={derivedMetrics.laborForceSize.toLocaleString()}
+          value={derivedMetrics.laborForceSize}
           icon={Users}
           sectionId="labor"
           trend="neutral"
@@ -186,7 +186,9 @@ export function LaborEmploymentTab({
         />
         <MetricCard
           label="Unemployment Rate"
-          value={`${economyBuilder.laborMarket.unemploymentRate.toFixed(1)}%`}
+          value={economyBuilder.laborMarket.unemploymentRate}
+          unit="%"
+          precision={1}
           icon={economyBuilder.laborMarket.unemploymentRate < 5 ? TrendingUp : TrendingDown}
           sectionId="labor"
           trend={economyBuilder.laborMarket.unemploymentRate < 5 ? "up" : "down"}
@@ -195,7 +197,9 @@ export function LaborEmploymentTab({
         />
         <MetricCard
           label="Participation Rate"
-          value={`${economyBuilder.laborMarket.laborForceParticipationRate.toFixed(1)}%`}
+          value={economyBuilder.laborMarket.laborForceParticipationRate}
+          unit="%"
+          precision={1}
           icon={Users}
           sectionId="labor"
           trend={economyBuilder.laborMarket.laborForceParticipationRate > 65 ? "up" : "neutral"}
@@ -204,7 +208,9 @@ export function LaborEmploymentTab({
         />
         <MetricCard
           label="Avg Workweek"
-          value={`${economyBuilder.laborMarket.averageWorkweekHours.toFixed(1)} hrs`}
+          value={economyBuilder.laborMarket.averageWorkweekHours}
+          unit=" hrs"
+          precision={1}
           icon={TrendingDown}
           sectionId="labor"
           trend="neutral"
