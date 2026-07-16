@@ -139,7 +139,7 @@ git config core.autocrlf input
 ```
 
 ### Step 2 — Fetch Gitignored Configuration Files
-Since environment and tooling configuration files are excluded from git tracking, copy them over SSH from the VPS:
+Since environment, editor settings, sub-project TypeScript definitions, and tooling configuration files are excluded from git tracking, copy them over SSH from the VPS:
 ```bash
 cd ~/projects/ixstats
 
@@ -152,8 +152,12 @@ scp ixwiki:"/ixwiki/public/projects/ixstats/.env.local.dev" .
 scp ixwiki:"/ixwiki/public/projects/ixstats/docker-compose.yml" .
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/docker" .
 
-# Copy sibling JS/TS toolchain configs
-scp ixwiki:"/ixwiki/public/projects/ixstats/{prisma.config.ts,c15t-backend.config.ts,next.config.js,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml,opencode.json}" .
+# Copy sibling JS/TS toolchain configs, sub-project tsconfigs, and lockfiles
+scp ixwiki:"/ixwiki/public/projects/ixstats/{prisma.config.ts,c15t-backend.config.ts,next.config.js,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml,opencode.json,skills-lock.json}" .
+scp ixwiki:"/ixwiki/public/projects/ixstats/tsconfig.*.json" .
+
+# Copy editor workspace settings
+scp -r ixwiki:"/ixwiki/public/projects/ixstats/.vscode" .
 ```
 
 ---
