@@ -600,14 +600,15 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
               )}
             </div>
 
-            {/* Filters Toggle Button */}
             <button
               onClick={() => filter.toggleFilters()}
               className={cn(
                 "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border backdrop-blur-md transition-all duration-200",
                 filter.showFilters
                   ? "border-amber-500/50 bg-amber-500/25 text-amber-500 shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)] dark:border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-400"
-                  : "border-black/15 bg-white/70 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 dark:border-white/15 dark:bg-black/70 dark:text-zinc-400 dark:hover:bg-zinc-900/60 dark:hover:text-white"
+                  : filter.selectedArchetypes && filter.selectedArchetypes.length > 0
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                    : "border-black/15 bg-white/70 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 dark:border-white/15 dark:bg-black/70 dark:text-zinc-400 dark:hover:bg-zinc-900/60 dark:hover:text-white"
               )}
               title="Filter by Archetypes"
             >
@@ -642,7 +643,9 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
                           "flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-semibold transition-all",
                           isCatActive
                             ? "border-amber-400/50 bg-amber-500/15 text-white"
-                            : "border-zinc-800 bg-zinc-900/20 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                            : selectedInCategory.length > 0
+                              ? "border-amber-500/30 bg-amber-500/5 text-amber-300 hover:border-amber-500/50 hover:bg-amber-500/10"
+                              : "border-zinc-800 bg-zinc-900/20 text-zinc-400 hover:border-zinc-700 hover:text-white"
                         )}
                       >
                         <span>{cat.name}</span>

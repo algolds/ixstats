@@ -16,15 +16,6 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
-  Heart,
-  Landmark,
-  Crown,
-  Coins,
-  Eye,
-  Users,
-  Zap,
-  Factory,
-  Receipt,
   AlertCircle,
   AlertTriangle,
   Info,
@@ -32,45 +23,8 @@ import {
 import type { BuilderSection } from "../lib/builder-theme";
 import type { BuilderAlertResult } from "../lib/builder-alerts";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import { TAX_SYSTEM_TEMP_DISABLED } from "~/app/builder/constants";
 import { scrollToField } from "../components/enhanced/tabs/utils/validation";
-import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 
-// Sub-navigation theme styles mapping
-const SUBNAV_THEME_STYLES: Record<
-  string,
-  {
-    active: string;
-    inactive: string;
-    iconActive: string;
-    iconInactive: string;
-  }
-> = {
-  identity: {
-    active: "bg-teal-500/15 text-teal-400 font-bold",
-    inactive: "text-foreground/50 hover:text-foreground/80 hover:bg-white/6",
-    iconActive: "text-teal-400",
-    iconInactive: "text-foreground/30",
-  },
-  government: {
-    active: "bg-cyan-500/15 text-cyan-400 font-bold",
-    inactive: "text-foreground/50 hover:text-foreground/80 hover:bg-white/6",
-    iconActive: "text-cyan-400",
-    iconInactive: "text-foreground/30",
-  },
-  economics: {
-    active: "bg-emerald-500/15 text-emerald-400 font-bold",
-    inactive: "text-foreground/50 hover:text-foreground/80 hover:bg-white/6",
-    iconActive: "text-emerald-400",
-    iconInactive: "text-foreground/30",
-  },
-  default: {
-    active: "bg-amber-500/15 text-amber-400 font-bold",
-    inactive: "text-foreground/50 hover:text-foreground/80 hover:bg-white/6",
-    iconActive: "text-amber-400",
-    iconInactive: "text-foreground/30",
-  },
-};
 
 // Section icon map
 const SECTION_ICONS: Record<BuilderSection, React.ComponentType<{ className?: string }>> = {
@@ -125,147 +79,6 @@ export function BuilderNotchBar({
 
   const state = useBuilderContext();
 
-  const subTabs = useMemo(() => {
-    if (activeSection === "identity") {
-      const tabs = [];
-      tabs.push({
-        id: "archetype",
-        label: "Archetype/Preset",
-        icon: Globe,
-        isActive: (st: any) =>
-          (st.builderState.activeIdentitySubTab || "archetype") === "archetype",
-        onClick: (st: any) =>
-          st.setBuilderState((prev: any) => ({
-            ...prev,
-            activeIdentitySubTab: "archetype",
-          })),
-        isGreyed: true,
-      });
-      tabs.push(
-        {
-          id: "basic",
-          label: "Basic Info",
-          icon: Globe,
-          isActive: (st: any) => st.builderState.activeIdentitySubTab === "basic",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({
-              ...prev,
-              activeIdentitySubTab: "basic",
-            })),
-        },
-        {
-          id: "culture",
-          label: "Culture",
-          icon: Heart,
-          isActive: (st: any) => st.builderState.activeIdentitySubTab === "culture",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({
-              ...prev,
-              activeIdentitySubTab: "culture",
-            })),
-        },
-        {
-          id: "technical",
-          label: "Technical",
-          icon: Landmark,
-          isActive: (st: any) => st.builderState.activeIdentitySubTab === "technical",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({
-              ...prev,
-              activeIdentitySubTab: "technical",
-            })),
-        }
-      );
-      return tabs;
-    }
-    if (activeSection === "government") {
-      return [
-        {
-          id: "components",
-          label: "Components",
-          icon: Crown,
-          isActive: (st: any) =>
-            (st.builderState.activeGovernmentTab || "components") === "components",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "components" })),
-        },
-        {
-          id: "structure",
-          label: "Departments",
-          icon: Users,
-          isActive: (st: any) => st.builderState.activeGovernmentTab === "structure",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "structure" })),
-        },
-        {
-          id: "spending",
-          label: "Budget",
-          icon: Coins,
-          isActive: (st: any) => st.builderState.activeGovernmentTab === "spending",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "spending" })),
-        },
-        {
-          id: "preview",
-          label: "Policies",
-          icon: Eye,
-          isActive: (st: any) => st.builderState.activeGovernmentTab === "preview",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeGovernmentTab: "preview" })),
-        },
-      ];
-    }
-    if (activeSection === "economics") {
-      return [
-        {
-          id: "components",
-          label: "Components",
-          icon: Zap,
-          isActive: (st: any) =>
-            (st.builderState.activeEconomicsTab || "components") === "components",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "components" })),
-        },
-        {
-          id: "sectors",
-          label: "Sectors",
-          icon: Factory,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "sectors",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "sectors" })),
-        },
-        {
-          id: "labor",
-          label: "Labor Market",
-          icon: Users,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "labor",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "labor" })),
-        },
-        {
-          id: "demographics",
-          label: "Demographics",
-          icon: Globe,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "demographics",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "demographics" })),
-        },
-        {
-          id: "tax",
-          label: "Tax System",
-          icon: Receipt,
-          isActive: (st: any) => st.builderState.activeEconomicsTab === "tax",
-          onClick: (st: any) =>
-            st.setBuilderState((prev: any) => ({ ...prev, activeEconomicsTab: "tax" })),
-          // When the global TAX_SYSTEM_TEMP_DISABLED flag is true, mark this subtab as disabled
-          disabled: TAX_SYSTEM_TEMP_DISABLED,
-        },
-        // Per-economy preview/fiscal subtabs removed — moved to global Preview step
-      ];
-    }
-    return [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection, mode]);
 
   const steps = useMemo(() => {
     if (activeSection === "import") {
@@ -281,41 +94,54 @@ export function BuilderNotchBar({
     mode === "edit" ? activeSection === "identity" : activeSection === "foundation";
 
   const isOnPreview = activeSection === "preview";
-  const { isSticky } = useNavigationScroll();
   const containerRef = useRef<HTMLDivElement>(null);
   const handleScrollRef = useRef<() => void>(() => {});
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAtBottomState, setIsAtBottomState] = useState(false);
+  const lastScrollYRef = useRef(0);
 
   const handleScroll = () => {
     const container = containerRef.current;
     if (!container) return;
 
+    const currentScrollY = window.scrollY;
     const isAtBottom =
-      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 15;
+      window.innerHeight + currentScrollY >= document.documentElement.scrollHeight - 15;
 
-    // ponytail: when the section has sub-tabs, never play the hide-and-flank
-    // dance — the flanking buttons only replace the main nav, so hiding the
-    // notch would strand the subnav row (its only home) off-screen.
-    if (!isSticky || subTabs.length > 0) {
+    // Detect scroll direction (with minor threshold to avoid micro-scroll jitter)
+    let direction = "up";
+    if (Math.abs(currentScrollY - lastScrollYRef.current) > 5) {
+      direction = currentScrollY > lastScrollYRef.current ? "down" : "up";
+      lastScrollYRef.current = currentScrollY;
+    }
+
+    const isAtTop = currentScrollY < 60;
+
+    if (isAtTop) {
       container.style.transform = "translateY(0px)";
       container.style.opacity = "1";
       container.style.visibility = "visible";
       setIsScrolled(false);
       setIsAtBottomState(false);
     } else if (isAtBottom) {
-      setIsScrolled(true);
-      setIsAtBottomState(true);
       container.style.transform = "translateY(0px)";
       container.style.opacity = "1";
       container.style.visibility = "visible";
-    } else {
-      const height = container.offsetHeight || 60;
-      container.style.transform = `translateY(${-height - 20}px)`;
-      container.style.opacity = "0";
-      container.style.visibility = "hidden";
       setIsScrolled(true);
+      setIsAtBottomState(true);
+    } else {
       setIsAtBottomState(false);
+      setIsScrolled(true);
+      if (direction === "down") {
+        const height = container.offsetHeight || 60;
+        container.style.transform = `translateY(${-height - 20}px)`;
+        container.style.opacity = "0";
+        container.style.visibility = "hidden";
+      } else {
+        container.style.transform = "translateY(0px)";
+        container.style.opacity = "1";
+        container.style.visibility = "visible";
+      }
     }
   };
 
@@ -571,68 +397,7 @@ export function BuilderNotchBar({
                     )}
                   </div>
 
-                  {/* Subnav row */}
-                  <AnimatePresence initial={false}>
-                    {subTabs.length > 0 && (
-                      <motion.div
-                        key="subnav-row"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 350, damping: 26 }}
-                        className="w-full overflow-hidden border-t border-white/10 px-0.5 pt-1.5 pb-0.5"
-                      >
-                        <div className="flex flex-wrap items-center justify-center gap-1">
-                          {subTabs.map((subTab) => {
-                            const isActive = subTab.isActive(state);
-                            const Icon = subTab.icon;
-                            const activeStyle =
-                              SUBNAV_THEME_STYLES[activeSection] || SUBNAV_THEME_STYLES.default;
-                            const isDisabled = !!(subTab as any).disabled;
-                            const isGreyed = !!(subTab as any).isGreyed;
 
-                            return (
-                              <button
-                                key={subTab.id}
-                                onClick={() => !isDisabled && subTab.onClick(state)}
-                                disabled={isDisabled}
-                                className={cn(
-                                  "relative flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1 text-[10px] font-semibold transition-all duration-200",
-                                  isActive
-                                    ? isGreyed
-                                      ? "text-foreground/45 bg-white/5 font-bold"
-                                      : activeStyle.active
-                                    : isDisabled
-                                      ? "text-muted-foreground/30 cursor-not-allowed opacity-50"
-                                      : isGreyed
-                                        ? "text-foreground/25 hover:text-foreground/50 hover:bg-white/5"
-                                        : activeStyle.inactive
-                                )}
-                              >
-                                {Icon && (
-                                  <Icon
-                                    className={cn(
-                                      "h-3 w-3",
-                                      isActive
-                                        ? isGreyed
-                                          ? "text-foreground/35"
-                                          : activeStyle.iconActive
-                                        : isDisabled
-                                          ? "text-muted-foreground/25"
-                                          : isGreyed
-                                            ? "text-foreground/20"
-                                            : activeStyle.iconInactive
-                                    )}
-                                  />
-                                )}
-                                <PreText whiteSpace="nowrap">{subTab.label}</PreText>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
 
                   {/* Alert Panel (expandable) */}
                   <AnimatePresence initial={false}>

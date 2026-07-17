@@ -201,7 +201,6 @@ export function NationalIdentitySection({
           activeTab={activeTab}
           onTabChange={setActiveTab}
           sectionTheme="identity"
-          hideTabList
         >
           {activeTab === "archetype" && (
             <div className="space-y-6">

@@ -1064,7 +1064,6 @@ export function EconomyBuilderPage({
           activeTab={currentTab}
           onTabChange={(tabId) => onTabChange?.(tabId)}
           sectionTheme="economics"
-          hideTabList
         >
           {currentTab === "components" && (
             <div className="space-y-6">

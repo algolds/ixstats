@@ -370,7 +370,7 @@ export function FoundationStep({
                     cutoutCardSurfaceClassName,
                     "flex h-full flex-col justify-between overflow-hidden border transition-all duration-300",
                     isSelected
-                      ? "border-blue-500 bg-blue-500/[0.02] shadow-[0_0_20px_rgba(59,130,246,0.15)]"
+                      ? "border-blue-500 bg-blue-500/5 dark:bg-blue-500/10 shadow-[0_0_25px_rgba(59,130,246,0.25)] ring-1 ring-blue-500/50"
                       : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700/80"
                   )}
                   texture="dots"

@@ -169,7 +169,6 @@ export function GovernmentStep({
         activeTab={activeTab}
         onTabChange={onTabChange}
         sectionTheme="government"
-        hideTabList
       >
         {activeTab === "components" && (
           <div className="space-y-6">

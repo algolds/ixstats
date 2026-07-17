@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
-import { Globe } from "lucide-react";
+import { Globe, Check } from "lucide-react";
 
 export interface CountryCardData {
   id: string;
@@ -96,15 +96,23 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         >
           <div
             className={cn(
-              "glass-floating glass-refraction glass-interactive relative h-full w-full overflow-hidden rounded-xl border border-black/5 transition-all duration-500 ease-out dark:border-white/10",
+              "glass-floating glass-refraction glass-interactive relative h-full w-full overflow-hidden rounded-xl border transition-all duration-500 ease-out",
               isHovered
                 ? "shadow-2xl shadow-black/25 brightness-105 saturate-110 backdrop-blur-md dark:shadow-black/60"
                 : "shadow-md shadow-black/10 dark:shadow-black/35",
               (softSelectedCountryId === country.originalId ||
-                softSelectedCountryId === country.id) &&
-                "shadow-2xl ring-2 shadow-blue-500/20 ring-blue-400/60 ring-offset-2 ring-offset-black/20"
+                softSelectedCountryId === country.id)
+                ? "border-blue-500 dark:border-blue-400 bg-blue-500/10 shadow-2xl shadow-blue-500/20 ring-2 ring-blue-400/60"
+                : "border-black/5 dark:border-white/10"
             )}
           >
+            {/* Selected Checkmark Badge */}
+            {(softSelectedCountryId === country.originalId ||
+              softSelectedCountryId === country.id) && (
+              <div className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white shadow-md shadow-blue-500/25 ring-2 ring-white/20">
+                <Check className="h-3.5 w-3.5 stroke-[3]" />
+              </div>
+            )}
             {/* Flag Background */}
             {showFlag ? (
               <img
