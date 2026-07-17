@@ -180,6 +180,11 @@ else
 fi
 echo ""
 
+# Set default port if not configured
+if [ -z "${PORT+x}" ] || [ -z "$PORT" ]; then
+    PORT="3550"
+fi
+
 # Stop any existing process on the target port to avoid EADDRINUSE
 if [ -n "$PORT" ]; then
     echo "Stopping any existing process on port $PORT..."
