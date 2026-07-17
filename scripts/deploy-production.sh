@@ -145,7 +145,7 @@ bun run db:generate
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
-bun run db:migrate:deploy
+bun run db:push:force
 
 # Check if sync was successful
 if [ $? -eq 0 ]; then
