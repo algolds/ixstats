@@ -15,6 +15,9 @@ if [ "${NODE_ENV:-}" = "production" ] && [ -f "$PROJECT_ROOT/.env.production" ];
     # shellcheck disable=SC1090
     set -a
     source "$PROJECT_ROOT/.env.production"
+    if [ -f "$PROJECT_ROOT/.env.production.local" ]; then
+        source "$PROJECT_ROOT/.env.production.local"
+    fi
     set +a
 fi
 
