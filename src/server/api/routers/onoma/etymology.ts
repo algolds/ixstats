@@ -10,9 +10,11 @@ export const onomaEtymologyRouter = createTRPCRouter({
    */
   listRoots: protectedProcedure
     .input(
-      z.object({
-        languagePackId: z.string().optional(),
-      }).optional()
+      z
+        .object({
+          languagePackId: z.string().optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
@@ -63,7 +65,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
-      
+
       // Ensure ownership
       const root = await ctx.db.etymologyRoot.findFirst({
         where: { id: input.id, userId },

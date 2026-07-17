@@ -25,10 +25,9 @@ export function useGeoWorker() {
     if (typeof Worker === "undefined") return;
 
     try {
-      const worker = new Worker(
-        new URL("../lib/maps/geo-worker.ts", import.meta.url),
-        { type: "module" },
-      );
+      const worker = new Worker(new URL("../lib/maps/geo-worker.ts", import.meta.url), {
+        type: "module",
+      });
 
       worker.onmessage = (e: MessageEvent) => {
         const { id, result } = e.data;
@@ -83,7 +82,7 @@ export function useGeoWorker() {
         worker.postMessage({ type: "FILTER_BY_AREA", id, data, minArea });
       });
     },
-    [],
+    []
   );
 
   return { filterByArea };

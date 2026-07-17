@@ -82,7 +82,9 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
                 style={{ backgroundColor: country.fillColor }}
               />
             )}
-            <h3 className="text-foreground truncate text-base font-semibold">{state.displayName}</h3>
+            <h3 className="text-foreground truncate text-base font-semibold">
+              {state.displayName}
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -109,10 +111,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
 
       {/* Mobile View */}
       {isMobile && (
-        <SnapBottomSheet
-          onClose={onClose}
-          peekContent={<CountryPeekContent state={state} />}
-        >
+        <SnapBottomSheet onClose={onClose} peekContent={<CountryPeekContent state={state} />}>
           <CountryInfoContent
             country={country}
             state={state}

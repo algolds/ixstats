@@ -10,9 +10,11 @@ export const onomaSyntaxRouter = createTRPCRouter({
    */
   listProfiles: protectedProcedure
     .input(
-      z.object({
-        languagePackId: z.string().optional(),
-      }).optional()
+      z
+        .object({
+          languagePackId: z.string().optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
@@ -251,9 +253,13 @@ export const onomaSyntaxRouter = createTRPCRouter({
         compiledText: finalSentence,
         steps: [
           `Dictionary lookup completed.`,
-          `Subject phrase: "${subjectPhrase}" (Nominative case: "${profile.caseSystem?.nominative || 'none'}", Plural: ${sentence.subjectPlural ? `"${profile.numberSystem?.plural || 'none'}"` : "no"}).`,
-          sentence.object ? `Object phrase: "${objectPhrase}" (Accusative case: "${profile.caseSystem?.accusative || 'none'}", Plural: ${sentence.objectPlural ? `"${profile.numberSystem?.plural || 'none'}"` : "no"}).` : `No object specified.`,
-          sentence.verb ? `Verb phrase: "${verbPhrase}" conjugated for ${sentence.verbTense} tense (Suffix: "${profile.verbConjugation?.[sentence.verbTense] || 'none'}").` : `No verb specified.`,
+          `Subject phrase: "${subjectPhrase}" (Nominative case: "${profile.caseSystem?.nominative || "none"}", Plural: ${sentence.subjectPlural ? `"${profile.numberSystem?.plural || "none"}"` : "no"}).`,
+          sentence.object
+            ? `Object phrase: "${objectPhrase}" (Accusative case: "${profile.caseSystem?.accusative || "none"}", Plural: ${sentence.objectPlural ? `"${profile.numberSystem?.plural || "none"}"` : "no"}).`
+            : `No object specified.`,
+          sentence.verb
+            ? `Verb phrase: "${verbPhrase}" conjugated for ${sentence.verbTense} tense (Suffix: "${profile.verbConjugation?.[sentence.verbTense] || "none"}").`
+            : `No verb specified.`,
           `Word order pattern: ${order} applied to produce final clause.`,
         ].filter(Boolean),
       };

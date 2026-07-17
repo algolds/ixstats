@@ -96,7 +96,10 @@ export default function BatchSection() {
   // Results & UI state
   const [results, setResults] = useState<BatchNameResult[]>([]);
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
-  const [sorting, setSorting] = useState<{ column: keyof BatchNameResult; direction: "asc" | "desc" }>({
+  const [sorting, setSorting] = useState<{
+    column: keyof BatchNameResult;
+    direction: "asc" | "desc";
+  }>({
     column: "perplexity",
     direction: "desc",
   });
@@ -329,8 +332,8 @@ export default function BatchSection() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
       {/* Parameters Panel */}
       <div className="space-y-4 lg:col-span-4">
-        <div className="flex items-center justify-between pb-2 border-b border-border/40">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="border-border/40 flex items-center justify-between border-b pb-2">
+          <h3 className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
             Batch Setup
           </h3>
         </div>
@@ -338,14 +341,14 @@ export default function BatchSection() {
         <div className="space-y-3">
           {/* Category */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Name Category</label>
+            <label className="text-muted-foreground text-xs font-semibold">Name Category</label>
             <select
               value={category}
               onChange={(e) => {
                 setCategory(e.target.value);
                 setSubType("generic");
               }}
-              className="w-full px-3 py-2 border rounded-lg bg-background/50 border-border/40 text-foreground text-sm"
+              className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -358,11 +361,13 @@ export default function BatchSection() {
           {/* Subtype (Conditional) */}
           {getSubTypes().length > 0 && (
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted-foreground">Template / Sub-type</label>
+              <label className="text-muted-foreground text-xs font-semibold">
+                Template / Sub-type
+              </label>
               <select
                 value={subType}
                 onChange={(e) => setSubType(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg bg-background/50 border-border/40 text-foreground text-sm"
+                className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
               >
                 {getSubTypes().map((sub) => (
                   <option key={sub.value} value={sub.value}>
@@ -375,11 +380,11 @@ export default function BatchSection() {
 
           {/* Cultural Profile */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Linguistic Family</label>
+            <label className="text-muted-foreground text-xs font-semibold">Linguistic Family</label>
             <select
               value={profile}
               onChange={(e) => setProfile(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg bg-background/50 border-border/40 text-foreground text-sm"
+              className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
             >
               {PROFILES.map((prof) => (
                 <option key={prof.value} value={prof.value}>
@@ -391,14 +396,16 @@ export default function BatchSection() {
 
           {/* Training Mode */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Markov Training Mode</label>
-            <div className="grid grid-cols-3 gap-1 p-1 border rounded-lg bg-background/30 border-border/40">
+            <label className="text-muted-foreground text-xs font-semibold">
+              Markov Training Mode
+            </label>
+            <div className="bg-background/30 border-border/40 grid grid-cols-3 gap-1 rounded-lg border p-1">
               {(["preset", "lexicon", "ixworld"] as const).map((mode) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => setTrainingMode(mode)}
-                  className={`py-1 text-[11px] font-bold rounded capitalize cursor-pointer transition-all ${
+                  className={`cursor-pointer rounded py-1 text-[11px] font-bold capitalize transition-all ${
                     trainingMode === mode
                       ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       : "text-muted-foreground hover:text-foreground hover:bg-background/20"
@@ -412,9 +419,9 @@ export default function BatchSection() {
 
           {/* Count Slider */}
           <div className="space-y-1">
-            <div className="flex justify-between text-xs font-semibold text-muted-foreground">
+            <div className="text-muted-foreground flex justify-between text-xs font-semibold">
               <span>Names Count</span>
-              <span className="font-mono text-amber-500 font-bold">{count}</span>
+              <span className="font-mono font-bold text-amber-500">{count}</span>
             </div>
             <input
               type="range"
@@ -423,73 +430,77 @@ export default function BatchSection() {
               step={10}
               value={count}
               onChange={(e) => setCount(Number(e.target.value))}
-              className="w-full accent-amber-500 cursor-pointer"
+              className="w-full cursor-pointer accent-amber-500"
             />
           </div>
 
           {/* Expandable Advanced Options */}
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 text-xs font-bold transition-colors"
           >
             <Sliders className="h-3 w-3" />
             <span>{showAdvanced ? "Hide" : "Show"} Advanced Options</span>
-            {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {showAdvanced ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
           </button>
 
           {showAdvanced && (
-            <div className="p-3 border rounded-lg bg-secondary/10 border-border/30 space-y-3">
+            <div className="bg-secondary/10 border-border/30 space-y-3 rounded-lg border p-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">Min Length</label>
+                  <label className="text-muted-foreground text-[10px] font-bold">Min Length</label>
                   <input
                     type="number"
                     value={minLength}
                     onChange={(e) => setMinLength(Number(e.target.value))}
-                    className="w-full px-2 py-1 text-xs border rounded bg-background/50 border-border/40 text-foreground"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">Max Length</label>
+                  <label className="text-muted-foreground text-[10px] font-bold">Max Length</label>
                   <input
                     type="number"
                     value={maxLength}
                     onChange={(e) => setMaxLength(Number(e.target.value))}
-                    className="w-full px-2 py-1 text-xs border rounded bg-background/50 border-border/40 text-foreground"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">Starts With</label>
+                  <label className="text-muted-foreground text-[10px] font-bold">Starts With</label>
                   <input
                     type="text"
                     value={startsWith}
                     onChange={(e) => setStartsWith(e.target.value)}
                     placeholder="e.g. Ka"
-                    className="w-full px-2 py-1 text-xs border rounded bg-background/50 border-border/40 text-foreground"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">Ends With</label>
+                  <label className="text-muted-foreground text-[10px] font-bold">Ends With</label>
                   <input
                     type="text"
                     value={endsWith}
                     onChange={(e) => setEndsWith(e.target.value)}
                     placeholder="e.g. an"
-                    className="w-full px-2 py-1 text-xs border rounded bg-background/50 border-border/40 text-foreground"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                <label className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-bold">
                   <input
                     type="checkbox"
                     checked={allowDoubleLetters}
                     onChange={(e) => setAllowDoubleLetters(e.target.checked)}
-                    className="accent-amber-500 rounded"
+                    className="rounded accent-amber-500"
                   />
                   Allow Double Letters (aa, ll, ss)
                 </label>
@@ -497,21 +508,25 @@ export default function BatchSection() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">Max Consonant Cluster</label>
+                  <label className="text-muted-foreground text-[10px] font-bold">
+                    Max Consonant Cluster
+                  </label>
                   <input
                     type="number"
                     value={maxConsonantCluster}
                     onChange={(e) => setMaxConsonantCluster(Number(e.target.value))}
-                    className="w-full px-2 py-1 text-xs border rounded bg-background/50 border-border/40 text-foreground"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground">Max Vowel Cluster</label>
+                  <label className="text-muted-foreground text-[10px] font-bold">
+                    Max Vowel Cluster
+                  </label>
                   <input
                     type="number"
                     value={maxVowelCluster}
                     onChange={(e) => setMaxVowelCluster(Number(e.target.value))}
-                    className="w-full px-2 py-1 text-xs border rounded bg-background/50 border-border/40 text-foreground"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                   />
                 </div>
               </div>
@@ -522,7 +537,7 @@ export default function BatchSection() {
           <button
             onClick={handleGenerate}
             disabled={batchMutation.isPending}
-            className="w-full flex cursor-pointer items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-amber-600 active:scale-95 disabled:scale-100 disabled:opacity-50"
           >
             {batchMutation.isPending ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -536,8 +551,8 @@ export default function BatchSection() {
 
       {/* Generation Results Panel */}
       <div className="space-y-4 lg:col-span-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border/40">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="border-border/40 flex flex-col gap-3 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
             Workbench & Output
           </h3>
 
@@ -547,21 +562,21 @@ export default function BatchSection() {
               <button
                 onClick={handleBulkSave}
                 disabled={selectedNames.size === 0}
-                className="flex items-center gap-1 border border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground rounded-lg px-2.5 py-1 text-xs font-semibold cursor-pointer transition-all disabled:opacity-30 active:scale-95"
+                className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95 disabled:opacity-30"
               >
                 <Bookmark className="h-3.5 w-3.5" />
                 <span>Save Selected ({selectedNames.size})</span>
               </button>
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-1 border border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground rounded-lg px-2.5 py-1 text-xs font-semibold cursor-pointer transition-all active:scale-95"
+                className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
               >
                 <FileDown className="h-3.5 w-3.5" />
                 <span>CSV</span>
               </button>
               <button
                 onClick={handleExportJSON}
-                className="flex items-center gap-1 border border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground rounded-lg px-2.5 py-1 text-xs font-semibold cursor-pointer transition-all active:scale-95"
+                className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
               >
                 <FileDown className="h-3.5 w-3.5" />
                 <span>JSON</span>
@@ -571,19 +586,19 @@ export default function BatchSection() {
         </div>
 
         {results.length === 0 ? (
-          <FacetMaterial material="satin" className="border border-border/20 p-12 text-center">
-            <Wand2 className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-4 animate-pulse" />
-            <p className="text-sm text-muted-foreground">
+          <FacetMaterial material="satin" className="border-border/20 border p-12 text-center">
+            <Wand2 className="text-muted-foreground mx-auto mb-4 h-12 w-12 animate-pulse opacity-30" />
+            <p className="text-muted-foreground text-sm">
               Select your parameters on the left and click "Assemble Batch" to fill this workbench.
             </p>
           </FacetMaterial>
         ) : (
           <div className="space-y-4">
             {/* Summary statistics bar */}
-            <div className="grid grid-cols-3 gap-2 p-3 border border-border/20 rounded-lg bg-secondary/5 text-center text-xs">
+            <div className="border-border/20 bg-secondary/5 grid grid-cols-3 gap-2 rounded-lg border p-3 text-center text-xs">
               <div>
                 <span className="text-muted-foreground block">Total Count</span>
-                <span className="font-bold text-foreground">{results.length}</span>
+                <span className="text-foreground font-bold">{results.length}</span>
               </div>
               <div>
                 <span className="text-muted-foreground block">Unique Yield</span>
@@ -591,7 +606,7 @@ export default function BatchSection() {
               </div>
               <div>
                 <span className="text-muted-foreground block">Avg Naturalness</span>
-                <span className="font-bold text-foreground">{avgPerplexity}%</span>
+                <span className="text-foreground font-bold">{avgPerplexity}%</span>
               </div>
             </div>
 
@@ -602,16 +617,16 @@ export default function BatchSection() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search generated name..."
-                className="flex-1 px-3 py-1.5 border rounded-lg bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-amber-500/50"
+                className="bg-background/50 border-border/40 text-foreground flex-1 rounded-lg border px-3 py-1.5 text-xs focus:border-amber-500/50 focus:outline-none"
               />
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap">
+                <span className="text-muted-foreground text-[10px] font-bold whitespace-nowrap">
                   Min Naturalness:
                 </span>
                 <select
                   value={perplexityFilter}
                   onChange={(e) => setPerplexityFilter(Number(e.target.value))}
-                  className="px-2 py-1.5 border rounded-lg bg-background/50 border-border/40 text-foreground text-xs"
+                  className="bg-background/50 border-border/40 text-foreground rounded-lg border px-2 py-1.5 text-xs"
                 >
                   <option value={0}>Any Score</option>
                   <option value={30}>&gt;= 30%</option>
@@ -623,53 +638,62 @@ export default function BatchSection() {
             </div>
 
             {/* Output table */}
-            <div className="border border-border/20 rounded-lg overflow-hidden bg-background/30 shadow-inner">
-              <div className="max-h-[500px] overflow-y-auto scrollbar-thin">
+            <div className="border-border/20 bg-background/30 overflow-hidden rounded-lg border shadow-inner">
+              <div className="max-h-[500px] scrollbar-thin overflow-y-auto">
                 <table className="w-full border-collapse text-left text-xs">
-                  <thead className="bg-secondary/40 text-muted-foreground font-semibold sticky top-0 border-b border-border/20 select-none">
+                  <thead className="bg-secondary/40 text-muted-foreground border-border/20 sticky top-0 border-b font-semibold select-none">
                     <tr>
-                      <th className="p-3 w-10 text-center">
+                      <th className="w-10 p-3 text-center">
                         <input
                           type="checkbox"
-                          checked={selectedNames.size === filteredResults.length && filteredResults.length > 0}
+                          checked={
+                            selectedNames.size === filteredResults.length &&
+                            filteredResults.length > 0
+                          }
                           onChange={handleSelectAll}
-                          className="accent-amber-500 cursor-pointer rounded"
+                          className="cursor-pointer rounded accent-amber-500"
                         />
                       </th>
                       <th
-                        className="p-3 cursor-pointer hover:text-foreground transition-colors"
+                        className="hover:text-foreground cursor-pointer p-3 transition-colors"
                         onClick={() => handleSort("name")}
                       >
-                        Name {sorting.column === "name" && (sorting.direction === "asc" ? "▲" : "▼")}
+                        Name{" "}
+                        {sorting.column === "name" && (sorting.direction === "asc" ? "▲" : "▼")}
                       </th>
                       <th
-                        className="p-3 cursor-pointer hover:text-foreground transition-colors"
+                        className="hover:text-foreground cursor-pointer p-3 transition-colors"
                         onClick={() => handleSort("ipa")}
                       >
-                        IPA Pronunciation {sorting.column === "ipa" && (sorting.direction === "asc" ? "▲" : "▼")}
+                        IPA Pronunciation{" "}
+                        {sorting.column === "ipa" && (sorting.direction === "asc" ? "▲" : "▼")}
                       </th>
                       <th
-                        className="p-3 text-center cursor-pointer hover:text-foreground transition-colors"
+                        className="hover:text-foreground cursor-pointer p-3 text-center transition-colors"
                         onClick={() => handleSort("syllables")}
                       >
-                        Syllables {sorting.column === "syllables" && (sorting.direction === "asc" ? "▲" : "▼")}
+                        Syllables{" "}
+                        {sorting.column === "syllables" &&
+                          (sorting.direction === "asc" ? "▲" : "▼")}
                       </th>
                       <th
-                        className="p-3 text-center cursor-pointer hover:text-foreground transition-colors"
+                        className="hover:text-foreground cursor-pointer p-3 text-center transition-colors"
                         onClick={() => handleSort("perplexity")}
                       >
-                        Naturalness {sorting.column === "perplexity" && (sorting.direction === "asc" ? "▲" : "▼")}
+                        Naturalness{" "}
+                        {sorting.column === "perplexity" &&
+                          (sorting.direction === "asc" ? "▲" : "▼")}
                       </th>
-                      <th className="p-3 w-16 text-center">Play</th>
+                      <th className="w-16 p-3 text-center">Play</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/10">
+                  <tbody className="divide-border/10 divide-y">
                     {filteredResults.map((item) => {
                       const isChecked = selectedNames.has(item.name);
                       return (
                         <tr
                           key={item.name}
-                          className="hover:bg-secondary/10 transition-colors cursor-pointer"
+                          className="hover:bg-secondary/10 cursor-pointer transition-colors"
                           onClick={() => handleSelectName(item.name)}
                         >
                           <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -677,15 +701,17 @@ export default function BatchSection() {
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => handleSelectName(item.name)}
-                              className="accent-amber-500 cursor-pointer rounded"
+                              className="cursor-pointer rounded accent-amber-500"
                             />
                           </td>
-                          <td className="p-3 font-semibold text-foreground">{item.name}</td>
-                          <td className="p-3 text-muted-foreground font-mono">{item.ipa}</td>
-                          <td className="p-3 text-center text-muted-foreground">{item.syllables}</td>
+                          <td className="text-foreground p-3 font-semibold">{item.name}</td>
+                          <td className="text-muted-foreground p-3 font-mono">{item.ipa}</td>
+                          <td className="text-muted-foreground p-3 text-center">
+                            {item.syllables}
+                          </td>
                           <td className="p-3 text-center">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
                                 item.perplexity >= 70
                                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                                   : item.perplexity >= 45
@@ -699,7 +725,7 @@ export default function BatchSection() {
                           <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => playName(item.name, item.ipa)}
-                              className="p-1 hover:bg-secondary/40 text-muted-foreground hover:text-amber-500 rounded cursor-pointer transition-colors active:scale-90"
+                              className="hover:bg-secondary/40 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500 active:scale-90"
                               title="Pronounce Name"
                             >
                               <Volume2 className="h-3.5 w-3.5" />

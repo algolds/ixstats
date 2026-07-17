@@ -10,9 +10,11 @@ export const onomaWritingRouter = createTRPCRouter({
    */
   listSystems: protectedProcedure
     .input(
-      z.object({
-        languagePackId: z.string().optional(),
-      }).optional()
+      z
+        .object({
+          languagePackId: z.string().optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;

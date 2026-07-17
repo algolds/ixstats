@@ -537,9 +537,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
         // Flag rivalry fixtures (one query, mapped in memory). Rivalries are
         // unordered team pairs, so key by sorted id pair.
-        const teamIds = Array.from(
-          new Set(matches.flatMap((m) => [m.homeTeamId, m.awayTeamId]))
-        );
+        const teamIds = Array.from(new Set(matches.flatMap((m) => [m.homeTeamId, m.awayTeamId])));
         const rivalries =
           teamIds.length > 0
             ? await (ctx.db as any).sportRivalry.findMany({
@@ -550,7 +548,11 @@ export const sportsLeaguesRouter = createTRPCRouter({
               })
             : [];
         const rivalryMap = new Map<string, number>();
-        for (const r of rivalries as Array<{ team1Id: string; team2Id: string; intensity: number }>) {
+        for (const r of rivalries as Array<{
+          team1Id: string;
+          team2Id: string;
+          intensity: number;
+        }>) {
           rivalryMap.set([r.team1Id, r.team2Id].sort().join("|"), r.intensity);
         }
         const withRivalry = matches.map((m) => {

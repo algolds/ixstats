@@ -12,7 +12,7 @@ export default function VexelRegistryDetailPage({ params }: VexelRegistryDetailP
   const { id } = use(params);
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-8 text-zinc-100 font-sans">
+    <div className="min-h-screen bg-zinc-950 p-8 font-sans text-zinc-100">
       <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex items-center justify-between border-b border-white/10 pb-6">
           <div className="flex items-center gap-4">
@@ -27,7 +27,7 @@ export default function VexelRegistryDetailPage({ params }: VexelRegistryDetailP
           </div>
           <Link
             href="/labs/vexel"
-            className="rounded-lg bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-zinc-950 transition-all animate-pulse"
+            className="animate-pulse rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-all hover:bg-amber-600"
           >
             Create Your Own
           </Link>

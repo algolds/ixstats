@@ -50,9 +50,7 @@ export function exportToCSV(names: ExportNameItem[], filename = "onoma-batch.csv
     item.length,
   ]);
 
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map(escapeCSVCell).join(","))
-    .join("\r\n");
+  const csvContent = [headers, ...rows].map((row) => row.map(escapeCSVCell).join(",")).join("\r\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   triggerBlobDownload(blob, filename);

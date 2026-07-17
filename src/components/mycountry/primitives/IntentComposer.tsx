@@ -31,11 +31,7 @@ interface IntentComposerProps {
   onCommitted: (res: any) => void;
 }
 
-export function IntentComposer({
-  countryId,
-  initialGoal = "",
-  onCommitted,
-}: IntentComposerProps) {
+export function IntentComposer({ countryId, initialGoal = "", onCommitted }: IntentComposerProps) {
   const [q, setQ] = useState(initialGoal);
   const [goal, setGoal] = useState<string | null>(initialGoal || null);
   const [err, setErr] = useState<string | null>(null);
@@ -55,7 +51,7 @@ export function IntentComposer({
     { countryId, goal: goal ?? "" },
     { enabled: !!goal && typeof goal === "string" && goal.trim().length >= 2 }
   );
-  
+
   const commitM = api.intent.commit.useMutation({
     onSuccess: (res) => {
       onCommitted(res);
@@ -165,18 +161,22 @@ export function IntentComposer({
             <button
               key={g}
               onClick={() => propose(g)}
-              className="flex w-full items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 text-left hover:border-amber-500/20 hover:bg-amber-500/[0.04] transition-[border-color,background-color,transform] duration-150 ease-out active:scale-[0.97] cursor-pointer"
+              className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 text-left transition-[border-color,background-color,transform] duration-150 ease-out hover:border-amber-500/20 hover:bg-amber-500/[0.04] active:scale-[0.97]"
             >
-              <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 grid h-7 w-7 place-items-center rounded-lg text-xs font-bold shadow-sm">✦</span>
-              <span className="flex-1 text-[13px] font-medium text-foreground/90">{g}</span>
-              <span className="text-muted-foreground/60 text-[9px] font-bold uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded border border-white/5">goal</span>
+              <span className="grid h-7 w-7 place-items-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-xs font-bold text-amber-400 shadow-sm">
+                ✦
+              </span>
+              <span className="text-foreground/90 flex-1 text-[13px] font-medium">{g}</span>
+              <span className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                goal
+              </span>
             </button>
           ))}
         </div>
       ) : suggest.isFetching || !data ? (
         <div className="text-muted-foreground px-1 py-6 text-center text-sm">
-          <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-amber-400" /> Your ministries are
-          drawing up options…
+          <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-amber-400" /> Your ministries
+          are drawing up options…
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -189,7 +189,7 @@ export function IntentComposer({
               </span>
             )}
           </div>
-          
+
           {data.foreignNeedsTarget && (
             <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
               Foreign-policy intents need a specific target — name who or what (e.g. “…with
@@ -202,13 +202,13 @@ export function IntentComposer({
               key={p.tier}
               disabled={!canCommit}
               onClick={() => commitTier(p.tier)}
-              className="border-white/5 bg-white/[0.02] hover:border-amber-500/30 hover:bg-amber-500/[0.04] w-full rounded-xl border px-4 py-3.5 text-left transition-[border-color,background-color,transform] duration-150 ease-out active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-lg"
+              className="w-full cursor-pointer rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3.5 text-left shadow-lg transition-[border-color,background-color,transform] duration-150 ease-out hover:border-amber-500/30 hover:bg-amber-500/[0.04] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <div className="flex items-center justify-between">
-                <div className="text-[13px] font-bold text-foreground/90">{p.title}</div>
+                <div className="text-foreground/90 text-[13px] font-bold">{p.title}</div>
                 <span
                   className={cn(
-                    "rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                    "rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase",
                     TONE_CLS[p.acceptance as Tone]
                   )}
                 >
@@ -219,12 +219,20 @@ export function IntentComposer({
                       : "Hard sell"}
                 </span>
               </div>
-              <div className="text-muted-foreground mt-1 text-[11px] leading-relaxed">{p.blurb}</div>
+              <div className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+                {p.blurb}
+              </div>
               <ul className="mt-2.5 space-y-1.5 border-t border-white/5 pt-2.5">
                 {p.changes.map((c: any, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-[11px]">
                     <span className="mt-[2px] text-xs font-bold text-amber-500">
-                      {c.kind === "budget" ? "▤" : c.kind === "policy" ? "◈" : c.kind === "foreign" ? "◇" : "•"}
+                      {c.kind === "budget"
+                        ? "▤"
+                        : c.kind === "policy"
+                          ? "◈"
+                          : c.kind === "foreign"
+                            ? "◇"
+                            : "•"}
                     </span>
                     <span className="text-foreground/80 leading-normal">
                       {c.label}
@@ -233,7 +241,7 @@ export function IntentComposer({
                   </li>
                 ))}
               </ul>
-              <div className="text-muted-foreground/60 mt-3 text-[9px] font-bold tracking-wider uppercase border-t border-white/5 pt-2 flex justify-between items-center">
+              <div className="text-muted-foreground/60 mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[9px] font-bold tracking-wider uppercase">
                 <span>{p.risk}</span>
                 <span>reserves {p.civCapCost} capacity</span>
               </div>
@@ -254,12 +262,15 @@ export function IntentComposer({
           )}
 
           <div className="flex items-center justify-between px-1 pt-1.5">
-            <button onClick={() => setGoal(null)} className="text-muted-foreground hover:text-foreground text-[11px] transition-colors">
+            <button
+              onClick={() => setGoal(null)}
+              className="text-muted-foreground hover:text-foreground text-[11px] transition-colors"
+            >
               ← rethink goal
             </button>
             <button
               onClick={() => setPolicyOpen(true)}
-              className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+              className="text-[11px] font-semibold text-amber-400 transition-colors hover:text-amber-300"
             >
               Draft custom package →
             </button>

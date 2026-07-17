@@ -48,7 +48,9 @@ export function CountryDataProvider({ children, userId, countryId }: CountryData
   // Demo mode takes priority, then dev view, then user's actual country
   const effectiveCountryId =
     countryId ||
-    (isDemoActive && demoCountryId ? demoCountryId : (viewCountryId ?? userProfile?.countryId ?? ""));
+    (isDemoActive && demoCountryId
+      ? demoCountryId
+      : (viewCountryId ?? userProfile?.countryId ?? ""));
 
   const {
     data: country,

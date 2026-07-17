@@ -21,7 +21,7 @@ const GeoProfileContent = dynamic(
         <div className="border-muted-foreground/20 h-5 w-5 animate-spin rounded-full border-2 border-t-emerald-500" />
       </div>
     ),
-  },
+  }
 );
 
 type PanelState = ReturnType<typeof useCountryInfoPanelState>;
@@ -137,11 +137,7 @@ export function CountryInfoContent({
 }
 
 /** Compact peek content for the mobile bottom sheet. */
-export function CountryPeekContent({
-  state,
-}: {
-  state: PanelState;
-}) {
+export function CountryPeekContent({ state }: { state: PanelState }) {
   return (
     <div className="flex items-center gap-3">
       {/* Flag */}
@@ -157,9 +153,7 @@ export function CountryPeekContent({
 
       {/* Name + stats */}
       <div className="min-w-0 flex-1">
-        <h3 className="text-foreground truncate text-sm font-semibold">
-          {state.displayName}
-        </h3>
+        <h3 className="text-foreground truncate text-sm font-semibold">{state.displayName}</h3>
         {state.summary && (
           <div className="text-muted-foreground flex gap-3 text-xs">
             <span>GDP: {formatCompact(state.summary.gdp)}</span>

@@ -282,7 +282,7 @@ const IxWorldMap = memo(
             const zoomBucket = Math.floor(zoom);
             if (zoomBucket !== lastFilterZoom) {
               lastFilterZoom = zoomBucket;
-              
+
               const updates: Promise<{ sourceId: string; data: FeatureCollection }>[] = [];
               for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
                 const sourceId = `source-${layerType}`;
@@ -291,9 +291,10 @@ const IxWorldMap = memo(
                   | undefined;
                 const fullData = dataRef.current.get(layerType);
                 if (!source || !fullData) continue;
-                
+
                 updates.push(
-                  workerFilterRef.current(fullData, getMinArea(layerType, zoom))
+                  workerFilterRef
+                    .current(fullData, getMinArea(layerType, zoom))
                     .then((filtered) => ({ sourceId, data: filtered }))
                 );
               }

@@ -250,7 +250,8 @@ export const onomaMarketplaceRouter = createTRPCRouter({
         select: { rating: true },
       });
 
-      const avg = reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length;
+      const avg =
+        reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length;
 
       await ctx.db.languagePack.update({
         where: { id: input.packId },

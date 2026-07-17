@@ -1090,7 +1090,6 @@ function ArticlePreviewCard({
       <div className="bg-muted/30 relative h-32 w-full overflow-hidden">
         {article.artwork ? (
           // External wiki image URLs — raw <img> avoids next/image domain config.
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={proxyCardArtwork(article.artwork)}
             alt={article.title}

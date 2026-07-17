@@ -8,18 +8,17 @@ export const onomaLoanwordsRouter = createTRPCRouter({
   /**
    * List all loanword contacts for the current user.
    */
-  listContacts: protectedProcedure
-    .query(async ({ ctx }) => {
-      const userId = ctx.auth.userId;
-      return ctx.db.loanwordContact.findMany({
-        where: { userId },
-        include: {
-          sourcePack: true,
-          targetPack: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
-    }),
+  listContacts: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.auth.userId;
+    return ctx.db.loanwordContact.findMany({
+      where: { userId },
+      include: {
+        sourcePack: true,
+        targetPack: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }),
 
   /**
    * Save (create or update) a loanword contact relation.

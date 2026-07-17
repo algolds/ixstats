@@ -140,7 +140,11 @@ export function useOnomaGenerator() {
   // tRPC mutation to log activity when names are generated
   const logActivityMutation = api.onoma.logGeneration.useMutation();
   const logHistoryMutation = api.onoma.logEvent.useMutation();
-  const sessionIdRef = useRef(typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15));
+  const sessionIdRef = useRef(
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).substring(2, 15)
+  );
 
   // Lazy-load the prebuilt lexicon dictionary for the active category.
   const lexiconCat = mapCategoryForLexicon(category, subType);

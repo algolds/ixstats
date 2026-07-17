@@ -39,23 +39,22 @@ function formatPopulation(n: number | null | undefined): string {
 
 function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
   const isCity = feature.featureType === "city" || feature.featureType === "capital";
-  const typeLabel = feature.featureType === "capital" 
-    ? "Capital" 
-    : feature.featureType === "city" 
-      ? (feature.cityType || "City") 
-      : feature.featureType === "storyPin" 
-        ? "Story Pin" 
-        : (feature.category || "POI");
+  const typeLabel =
+    feature.featureType === "capital"
+      ? "Capital"
+      : feature.featureType === "city"
+        ? feature.cityType || "City"
+        : feature.featureType === "storyPin"
+          ? "Story Pin"
+          : feature.category || "POI";
 
   return (
     <div className="flex items-center gap-3">
-      <div className="bg-blue-50 dark:bg-blue-900/30 flex h-10 w-10 items-center justify-center rounded-full text-blue-500">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900/30">
         <MapPin className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="text-foreground truncate text-sm font-semibold">
-          {feature.name}
-        </h3>
+        <h3 className="text-foreground truncate text-sm font-semibold">{feature.name}</h3>
         <div className="text-muted-foreground flex gap-2 text-xs">
           <span className="capitalize">{typeLabel}</span>
           <span>•</span>
@@ -130,7 +129,10 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
       )}
 
       {/* Body */}
-      <div className="overflow-y-auto p-4" style={{ maxHeight: isMobile ? "100%" : "calc(100% - 56px)" }}>
+      <div
+        className="overflow-y-auto p-4"
+        style={{ maxHeight: isMobile ? "100%" : "calc(100% - 56px)" }}
+      >
         {/* Wiki intro loading skeleton */}
         {wikiLoading && feature.wikiPageTitle && (
           <div className="mb-3 space-y-1.5">
@@ -151,7 +153,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
         {/* City population */}
         {isCity && feature.population != null && (
-          <div className="bg-muted rounded-lg px-3 py-2 mb-3">
+          <div className="bg-muted mb-3 rounded-lg px-3 py-2">
             <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
               <Users className="h-3 w-3" />
               Population
@@ -164,7 +166,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
         {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
-          <div className="bg-muted rounded-lg px-3 py-2 mb-3">
+          <div className="bg-muted mb-3 rounded-lg px-3 py-2">
             <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
               Description
             </div>
@@ -174,7 +176,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
         {/* Story Pin details */}
         {isStoryPin && (
-          <div className="space-y-2 mb-3">
+          <div className="mb-3 space-y-2">
             {(feature.ixTimeYear || feature.eraLabel) && (
               <div className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2 dark:bg-purple-900/20">
                 <Calendar className="h-3.5 w-3.5 text-purple-600" />
@@ -253,10 +255,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
       {/* Mobile: Snap bottom sheet */}
       {isMobile && (
-        <SnapBottomSheet
-          onClose={onClose}
-          peekContent={<FeaturePeekContent feature={feature} />}
-        >
+        <SnapBottomSheet onClose={onClose} peekContent={<FeaturePeekContent feature={feature} />}>
           {panelContent}
         </SnapBottomSheet>
       )}

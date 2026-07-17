@@ -96,12 +96,21 @@ describe("formatThinkPagesEmbed", () => {
       sportEmoji: "⚽",
       matchDay: 15,
       results: [
-        { home: { name: "Urcea", id: "club1" }, away: { name: "Gaelia", id: "club2" }, homeScore: 2, awayScore: 1 },
-        { home: { name: "Apaturia" }, away: { name: "Daxia" }, homeScore: 0, awayScore: 3, isUpset: true },
+        {
+          home: { name: "Urcea", id: "club1" },
+          away: { name: "Gaelia", id: "club2" },
+          homeScore: 2,
+          awayScore: 1,
+        },
+        {
+          home: { name: "Apaturia" },
+          away: { name: "Daxia" },
+          homeScore: 0,
+          awayScore: 3,
+          isUpset: true,
+        },
       ],
-      movers: [
-        { name: "Daxia", id: "club3", oldRank: 7, newRank: 4 },
-      ],
+      movers: [{ name: "Daxia", id: "club3", oldRank: 7, newRank: 4 }],
       llmSummary: "A thrilling matchday with a big upset.",
     };
     const post = {
@@ -109,7 +118,7 @@ describe("formatThinkPagesEmbed", () => {
       content: `<!-- sports-bulletin:${JSON.stringify(sportsData)} -->\nSome text fallback`,
       ixTimeTimestamp: new Date("2026-07-16T20:00:00.000Z"),
     };
-    
+
     const embeds = formatThinkPagesEmbed(post, account);
     expect(embeds.length).toBe(1);
     expect(embeds[0].title).toBe("⚽ Urcea Premier League — Matchday 15");

@@ -94,7 +94,10 @@ export const intentRouter = createTRPCRouter({
       const weighted = packages.map((p) => ({
         ...p,
         acceptance: broker
-          ? weightAcceptance(p.acceptance, { brokerUnlocked: broker.unlocked, brokerSatisfied: broker.satisfied })
+          ? weightAcceptance(p.acceptance, {
+              brokerUnlocked: broker.unlocked,
+              brokerSatisfied: broker.satisfied,
+            })
           : p.acceptance,
       }));
 
@@ -104,7 +107,9 @@ export const intentRouter = createTRPCRouter({
         target: target ?? null,
         foreignNeedsTarget: category === "foreign" && !target,
         packages: weighted,
-        broker: broker ? { name: broker.name, unlocked: broker.unlocked, satisfied: broker.satisfied } : null,
+        broker: broker
+          ? { name: broker.name, unlocked: broker.unlocked, satisfied: broker.satisfied }
+          : null,
         status,
       };
     }),
@@ -123,8 +128,16 @@ export const intentRouter = createTRPCRouter({
         orderBy: { createdIxTime: "desc" },
         take: input.limit,
         select: {
-          id: true, goal: true, tier: true, category: true, target: true,
-          status: true, summary: true, parentId: true, createdIxTime: true, createdAt: true,
+          id: true,
+          goal: true,
+          tier: true,
+          category: true,
+          target: true,
+          status: true,
+          summary: true,
+          parentId: true,
+          createdIxTime: true,
+          createdAt: true,
         },
       });
       return intents;
@@ -151,7 +164,8 @@ export const intentRouter = createTRPCRouter({
       if (category === "foreign" && !target)
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Foreign-policy intents need a specific target — name who or what this is about.",
+          message:
+            "Foreign-policy intents need a specific target — name who or what this is about.",
         });
 
       // Weekly cooldown + cap.
@@ -183,7 +197,9 @@ export const intentRouter = createTRPCRouter({
       });
 
       // Apply structured budget deltas (bounded; never a core stat). Best-effort.
-      const budgetChanges = pkg.changes.filter((c) => c.kind === "budget" && c.deptCategory && c.deltaPercent);
+      const budgetChanges = pkg.changes.filter(
+        (c) => c.kind === "budget" && c.deptCategory && c.deltaPercent
+      );
       for (const bc of budgetChanges) {
         try {
           const alloc = await ctx.db.budgetAllocation.findFirst({
@@ -195,8 +211,14 @@ export const intentRouter = createTRPCRouter({
             orderBy: [{ budgetYear: "desc" }, { allocatedPercent: "desc" }],
           });
           if (alloc) {
-            const next = Math.max(0, Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!));
-            await ctx.db.budgetAllocation.update({ where: { id: alloc.id }, data: { allocatedPercent: next } });
+            const next = Math.max(
+              0,
+              Math.min(BUDGET_PCT_MAX, alloc.allocatedPercent + bc.deltaPercent!)
+            );
+            await ctx.db.budgetAllocation.update({
+              where: { id: alloc.id },
+              data: { allocatedPercent: next },
+            });
           }
         } catch {
           /* budget row missing / structure absent — line stays descriptive only */
@@ -211,7 +233,8 @@ export const intentRouter = createTRPCRouter({
       const nm = country?.name ?? "The government";
       const summary =
         `${nm} pursued "${input.goal}" via a ${input.tier} course: ` +
-        pkg.changes.map((c) => c.label).join("; ") + ".";
+        pkg.changes.map((c) => c.label).join("; ") +
+        ".";
 
       const intent = await ctx.db.intent.create({
         data: {

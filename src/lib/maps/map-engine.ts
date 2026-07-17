@@ -145,7 +145,14 @@ function ensureRole(role: MapRole, opts: AcquireOpts): RoleState {
 
 function applyInteractivity(map: any, interactive?: boolean) {
   if (interactive === undefined) return;
-  const handlers = ["boxZoom", "doubleClickZoom", "dragPan", "keyboard", "scrollZoom", "touchZoomRotate"];
+  const handlers = [
+    "boxZoom",
+    "doubleClickZoom",
+    "dragPan",
+    "keyboard",
+    "scrollZoom",
+    "touchZoomRotate",
+  ];
   for (const h of handlers) {
     if (map[h]) interactive ? map[h].enable() : map[h].disable();
   }

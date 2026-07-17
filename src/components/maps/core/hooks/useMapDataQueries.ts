@@ -74,9 +74,7 @@ export function useMapDataQueries({
       { enabled: !!initialCountryId, staleTime: 30 * 60_000 }
     );
 
-  const isPreloading =
-    isLoading ||
-    (!!initialCountryId && isInitialGeoLoading);
+  const isPreloading = isLoading || (!!initialCountryId && isInitialGeoLoading);
 
   // 6. Map Load Timeout detection
   useEffect(() => {

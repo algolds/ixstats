@@ -56,10 +56,10 @@ export function getAllProfileSeeds(profile: CulturalProfile): string[] {
  */
 export function calculateJaccardSimilarity(setA: Set<string>, setB: Set<string>): number {
   if (setA.size === 0 && setB.size === 0) return 1.0;
-  
+
   const intersection = new Set([...setA].filter((x) => setB.has(x)));
   const union = new Set([...setA, ...setB]);
-  
+
   return intersection.size / union.size;
 }
 
@@ -113,7 +113,10 @@ export interface ComparisonResult {
 /**
  * Compares two linguistic profiles across multiple dimensions and returns a detailed analysis.
  */
-export function compareProfiles(profileA: CulturalProfile, profileB: CulturalProfile): ComparisonResult {
+export function compareProfiles(
+  profileA: CulturalProfile,
+  profileB: CulturalProfile
+): ComparisonResult {
   const phonemesA = getPhonemeInventory(profileA);
   const phonemesB = getPhonemeInventory(profileB);
 

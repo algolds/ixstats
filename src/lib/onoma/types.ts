@@ -104,7 +104,11 @@ export type SpeciesPreset =
  * Group/organization preset identifiers.
  */
 export type GroupPreset =
-  "religious-order" | "military-unit" | "covert-organization" | "academic-institution" | "guild";
+  | "religious-order"
+  | "military-unit"
+  | "covert-organization"
+  | "academic-institution"
+  | "guild";
 
 /**
  * Descriptor for a generator preset shown in the UI.
@@ -277,7 +281,13 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
 
 /** Studio workspace sub-tabs. */
 export type StudioSubTab =
-  "workshop" | "visualizer" | "namesets" | "lexicon" | "phonology" | "batch" | "linguistics";
+  | "workshop"
+  | "visualizer"
+  | "namesets"
+  | "lexicon"
+  | "phonology"
+  | "batch"
+  | "linguistics";
 
 /**
  * Helper to get studio sub-tab from a pathname.

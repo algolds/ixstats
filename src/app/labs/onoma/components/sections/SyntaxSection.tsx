@@ -242,41 +242,44 @@ export default function SyntaxSection() {
           Syntax & Sentence Builder
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Define case systems, verb conjugations, and word orders, then watch them compile in real-time.
+          Define case systems, verb conjugations, and word orders, then watch them compile in
+          real-time.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Profiles & Rule Configuration */}
-        <div className="lg:col-span-5 space-y-4">
-          <FacetMaterial material="satin" className="border border-border/20 p-4 space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-border/10">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+        <div className="space-y-4 lg:col-span-5">
+          <FacetMaterial material="satin" className="border-border/20 space-y-4 border p-4">
+            <div className="border-border/10 flex items-center justify-between border-b pb-2">
+              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <SlidersHorizontal className="h-4 w-4 text-amber-500" />
                 Grammar Profiles
               </h3>
               <button
                 onClick={() => setSelectedProfileId(null)}
-                className="text-[10px] text-amber-500 hover:text-amber-400 font-bold cursor-pointer"
+                className="cursor-pointer text-[10px] font-bold text-amber-500 hover:text-amber-400"
               >
                 + New Profile
               </button>
             </div>
 
             {listLoading ? (
-              <div className="text-xs text-muted-foreground">Loading profiles...</div>
+              <div className="text-muted-foreground text-xs">Loading profiles...</div>
             ) : profiles?.length === 0 ? (
-              <div className="text-xs text-muted-foreground italic">No profiles saved yet. Use form below to save.</div>
+              <div className="text-muted-foreground text-xs italic">
+                No profiles saved yet. Use form below to save.
+              </div>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {profiles?.map((p: any) => (
                   <button
                     key={p.id}
                     onClick={() => setSelectedProfileId(p.id)}
-                    className={`px-3 py-1.5 rounded text-xs transition-colors border ${
+                    className={`rounded border px-3 py-1.5 text-xs transition-colors ${
                       selectedProfileId === p.id
-                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                        : "hover:bg-secondary/15 border-transparent text-foreground"
+                        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                        : "hover:bg-secondary/15 text-foreground border-transparent"
                     }`}
                   >
                     {p.name}
@@ -287,17 +290,17 @@ export default function SyntaxSection() {
           </FacetMaterial>
 
           {/* Configuration Form */}
-          <FacetMaterial material="satin" className="border border-border/20 p-4">
+          <FacetMaterial material="satin" className="border-border/20 border p-4">
             <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              <div className="flex items-center justify-between">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
                   Profile Settings
                 </h4>
                 {selectedProfileId && (
                   <button
                     type="button"
                     onClick={() => deleteProfileMutation.mutate({ id: selectedProfileId })}
-                    className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-1 text-xs text-red-400 hover:text-red-300"
                   >
                     <Trash2 className="h-3 w-3" /> Delete
                   </button>
@@ -305,24 +308,28 @@ export default function SyntaxSection() {
               </div>
 
               <div>
-                <label className="block text-[10px] text-muted-foreground font-medium mb-1">Profile Name</label>
+                <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                  Profile Name
+                </label>
                 <input
                   type="text"
                   required
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
-                  className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-amber-500/50"
+                  className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-amber-500/50 focus:outline-none"
                 />
               </div>
 
               {/* Basic Word Order / Adjective Order */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">Clause Word Order</label>
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                    Clause Word Order
+                  </label>
                   <select
                     value={wordOrder}
                     onChange={(e) => setWordOrder(e.target.value)}
-                    className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
                   >
                     <option value="SVO">SVO (e.g. English)</option>
                     <option value="SOV">SOV (e.g. Japanese)</option>
@@ -333,11 +340,13 @@ export default function SyntaxSection() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">Adjective Order</label>
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                    Adjective Order
+                  </label>
                   <select
                     value={adjectiveOrder}
                     onChange={(e) => setAdjectiveOrder(e.target.value)}
-                    className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
                   >
                     <option value="before">Before Noun (quick dog)</option>
                     <option value="after">After Noun (dog quick)</option>
@@ -346,108 +355,118 @@ export default function SyntaxSection() {
               </div>
 
               {/* Case System */}
-              <div className="border-t border-border/10 pt-3 space-y-2">
-                <h5 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="border-border/10 space-y-2 border-t pt-3">
+                <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                   Case Suffixes
                 </h5>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Nominative (Subj)</label>
+                    <label className="text-muted-foreground block text-[9px]">
+                      Nominative (Subj)
+                    </label>
                     <input
                       type="text"
                       value={nomSuffix}
                       onChange={(e) => setNomSuffix(e.target.value)}
                       placeholder="none"
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Accusative (Obj)</label>
+                    <label className="text-muted-foreground block text-[9px]">
+                      Accusative (Obj)
+                    </label>
                     <input
                       type="text"
                       value={accSuffix}
                       onChange={(e) => setAccSuffix(e.target.value)}
                       placeholder="-m"
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Genitive (Poss)</label>
+                    <label className="text-muted-foreground block text-[9px]">
+                      Genitive (Poss)
+                    </label>
                     <input
                       type="text"
                       value={genSuffix}
                       onChange={(e) => setGenSuffix(e.target.value)}
                       placeholder="-s"
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Verb Tenses */}
-              <div className="border-t border-border/10 pt-3 space-y-2">
-                <h5 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="border-border/10 space-y-2 border-t pt-3">
+                <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                   Verb Conjugation Suffixes
                 </h5>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Past Tense</label>
+                    <label className="text-muted-foreground block text-[9px]">Past Tense</label>
                     <input
                       type="text"
                       value={pastSuffix}
                       onChange={(e) => setPastSuffix(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Present Tense</label>
+                    <label className="text-muted-foreground block text-[9px]">Present Tense</label>
                     <input
                       type="text"
                       value={presSuffix}
                       onChange={(e) => setPresSuffix(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Future Tense</label>
+                    <label className="text-muted-foreground block text-[9px]">Future Tense</label>
                     <input
                       type="text"
                       value={futSuffix}
                       onChange={(e) => setFutSuffix(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Articles & Numbers */}
-              <div className="border-t border-border/10 pt-3 space-y-2">
+              <div className="border-border/10 space-y-2 border-t pt-3">
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Def. Article ("the")</label>
+                    <label className="text-muted-foreground block text-[9px]">
+                      Def. Article ("the")
+                    </label>
                     <input
                       type="text"
                       value={defArticle}
                       onChange={(e) => setDefArticle(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Indef. Article ("a")</label>
+                    <label className="text-muted-foreground block text-[9px]">
+                      Indef. Article ("a")
+                    </label>
                     <input
                       type="text"
                       value={indefArticle}
                       onChange={(e) => setIndefArticle(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Plural Marker</label>
+                    <label className="text-muted-foreground block text-[9px]">Plural Marker</label>
                     <input
                       type="text"
                       value={pluralSuffix}
                       onChange={(e) => setPluralSuffix(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -456,7 +475,7 @@ export default function SyntaxSection() {
               <button
                 type="submit"
                 disabled={saveProfileMutation.isPending}
-                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-lg text-xs cursor-pointer active:scale-95 transition-all"
+                className="w-full cursor-pointer rounded-lg bg-amber-500 py-2 text-xs font-bold text-white transition-all hover:bg-amber-600 active:scale-95"
               >
                 Save Grammar Profile
               </button>
@@ -465,25 +484,27 @@ export default function SyntaxSection() {
         </div>
 
         {/* Right Column: Sentence Builder Workspace */}
-        <div className="lg:col-span-7 space-y-4">
-          <FacetMaterial material="satin" className="border border-amber-500/20 p-4 space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Cpu className="h-4 w-4 text-amber-500 animate-pulse" />
+        <div className="space-y-4 lg:col-span-7">
+          <FacetMaterial material="satin" className="space-y-4 border border-amber-500/20 p-4">
+            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+              <Cpu className="h-4 w-4 animate-pulse text-amber-500" />
               Live Sentence Compiler Workspace
             </h3>
 
             {/* Translation Output Box */}
-            <div className="p-4 rounded-lg bg-black/40 border border-border/10 space-y-2">
-              <span className="text-[10px] text-muted-foreground font-mono uppercase">Compiled Output:</span>
-              <div className="text-lg font-bold text-amber-400 min-h-8">
+            <div className="border-border/10 space-y-2 rounded-lg border bg-black/40 p-4">
+              <span className="text-muted-foreground font-mono text-[10px] uppercase">
+                Compiled Output:
+              </span>
+              <div className="min-h-8 text-lg font-bold text-amber-400">
                 {compileMutation.data?.compiledText || "..."}
               </div>
             </div>
 
             {/* Compilation Steps */}
             {compileMutation.data?.steps && (
-              <div className="space-y-1 bg-secondary/5 p-3 border border-border/5 rounded text-[11px] text-muted-foreground font-mono">
-                <div className="font-bold text-foreground mb-1">Compilation Steps:</div>
+              <div className="bg-secondary/5 border-border/5 text-muted-foreground space-y-1 rounded border p-3 font-mono text-[11px]">
+                <div className="text-foreground mb-1 font-bold">Compilation Steps:</div>
                 {compileMutation.data.steps.map((step: any, idx: number) => (
                   <div key={idx} className="flex items-center gap-1.5">
                     <ArrowRight className="h-3 w-3 text-amber-500" />
@@ -494,17 +515,19 @@ export default function SyntaxSection() {
             )}
 
             {/* Phrase Config Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/10 pt-4">
+            <div className="border-border/10 grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
               {/* Subject Phrase */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Subject Phrase</h4>
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Subject Phrase
+                </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Noun</label>
+                    <label className="text-muted-foreground block text-[9px]">Noun</label>
                     <select
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                     >
                       {Object.keys(dictionary).map((k) => (
                         <option key={k} value={k}>
@@ -514,11 +537,11 @@ export default function SyntaxSection() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Adjective</label>
+                    <label className="text-muted-foreground block text-[9px]">Adjective</label>
                     <select
                       value={subjectAdjective}
                       onChange={(e) => setSubjectAdjective(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                     >
                       <option value="">(None)</option>
                       {Object.keys(dictionary).map((k) => (
@@ -531,7 +554,7 @@ export default function SyntaxSection() {
                 </div>
 
                 <div className="flex gap-4 pt-1">
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
                       checked={subjectPlural}
@@ -540,7 +563,7 @@ export default function SyntaxSection() {
                     />
                     Plural Subject
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
                       checked={subjectDefinite}
@@ -554,14 +577,16 @@ export default function SyntaxSection() {
 
               {/* Verb & Object Phrase */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Action & Object</h4>
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Action & Object
+                </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Verb</label>
+                    <label className="text-muted-foreground block text-[9px]">Verb</label>
                     <select
                       value={verb}
                       onChange={(e) => setVerb(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                     >
                       <option value="">(Intransitive - No Verb)</option>
                       {Object.keys(dictionary).map((k) => (
@@ -572,11 +597,11 @@ export default function SyntaxSection() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Tense</label>
+                    <label className="text-muted-foreground block text-[9px]">Tense</label>
                     <select
                       value={verbTense}
                       onChange={(e) => setVerbTense(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                     >
                       <option value="present">Present Tense</option>
                       <option value="past">Past Tense</option>
@@ -587,11 +612,11 @@ export default function SyntaxSection() {
 
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Direct Object</label>
+                    <label className="text-muted-foreground block text-[9px]">Direct Object</label>
                     <select
                       value={object}
                       onChange={(e) => setObject(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                     >
                       <option value="">(None)</option>
                       {Object.keys(dictionary).map((k) => (
@@ -602,11 +627,13 @@ export default function SyntaxSection() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[9px] text-muted-foreground">Object Adjective</label>
+                    <label className="text-muted-foreground block text-[9px]">
+                      Object Adjective
+                    </label>
                     <select
                       value={objectAdjective}
                       onChange={(e) => setObjectAdjective(e.target.value)}
-                      className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                      className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
                     >
                       <option value="">(None)</option>
                       {Object.keys(dictionary).map((k) => (
@@ -619,7 +646,7 @@ export default function SyntaxSection() {
                 </div>
 
                 <div className="flex gap-4 pt-1">
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
                       checked={objectPlural}
@@ -628,7 +655,7 @@ export default function SyntaxSection() {
                     />
                     Plural Object
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
                       checked={objectDefinite}
@@ -643,9 +670,9 @@ export default function SyntaxSection() {
           </FacetMaterial>
 
           {/* Lexicon Dictionary */}
-          <FacetMaterial material="satin" className="border border-border/20 p-4 space-y-4">
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
+          <FacetMaterial material="satin" className="border-border/20 space-y-4 border p-4">
+            <h3 className="text-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
+              <FileText className="text-muted-foreground h-4 w-4" />
               Translation Dictionary
             </h3>
 
@@ -656,7 +683,7 @@ export default function SyntaxSection() {
                 value={newDictKey}
                 onChange={(e) => setNewDictKey(e.target.value)}
                 placeholder="English (e.g. wolf)"
-                className="px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                className="bg-background/50 border-border/40 text-foreground rounded border px-2 py-1 text-xs"
               />
               <input
                 type="text"
@@ -664,29 +691,29 @@ export default function SyntaxSection() {
                 value={newDictVal}
                 onChange={(e) => setNewDictVal(e.target.value)}
                 placeholder="Conlang translation"
-                className="px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                className="bg-background/50 border-border/40 text-foreground rounded border px-2 py-1 text-xs"
               />
               <button
                 type="submit"
-                className="bg-secondary/35 hover:bg-secondary/50 text-foreground text-xs font-bold rounded cursor-pointer"
+                className="bg-secondary/35 hover:bg-secondary/50 text-foreground cursor-pointer rounded text-xs font-bold"
               >
                 Add Translation
               </button>
             </form>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-36 overflow-y-auto pr-1 scrollbar-thin">
+            <div className="grid max-h-36 scrollbar-thin grid-cols-2 gap-2 overflow-y-auto pr-1 md:grid-cols-4">
               {Object.entries(dictionary).map(([key, val]) => (
                 <div
                   key={key}
-                  className="flex justify-between items-center px-2 py-1 rounded bg-secondary/10 border border-border/5 text-xs"
+                  className="bg-secondary/10 border-border/5 flex items-center justify-between rounded border px-2 py-1 text-xs"
                 >
-                  <span className="font-mono text-muted-foreground truncate mr-1">
+                  <span className="text-muted-foreground mr-1 truncate font-mono">
                     {key} <span className="text-[10px] text-amber-500">→</span> {val}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleRemoveFromDict(key)}
-                    className="text-red-400 hover:text-red-300 text-[10px]"
+                    className="text-[10px] text-red-400 hover:text-red-300"
                   >
                     ×
                   </button>

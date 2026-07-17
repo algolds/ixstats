@@ -43,7 +43,7 @@ export function MapLayersPopover({
       <PopoverContent
         side="bottom"
         align="end"
-        className="glass-none border-border bg-popover mt-2 w-60 max-h-[80vh] overflow-y-auto rounded-2xl border p-3 shadow-2xl z-[100060]"
+        className="glass-none border-border bg-popover z-[100060] mt-2 max-h-[80vh] w-60 overflow-y-auto rounded-2xl border p-3 shadow-2xl"
         sideOffset={8}
       >
         <PanelSection title="Map Layers">
@@ -67,10 +67,7 @@ export function MapLayersPopover({
                 onChange={() => onToggleOverlay(item.key)}
               />
             ))}
-            <ToggleAllRow
-              overlayVisibility={overlayVisibility}
-              onToggleOverlay={onToggleOverlay}
-            />
+            <ToggleAllRow overlayVisibility={overlayVisibility} onToggleOverlay={onToggleOverlay} />
           </PanelSection>
         )}
 
@@ -89,14 +86,16 @@ export function MapLayersPopover({
 
         {visibleLayers.has("climate") && (
           <PanelSection title="Climate Zones">
-            <div className="max-h-32 overflow-y-auto pr-1 space-y-1">
+            <div className="max-h-32 space-y-1 overflow-y-auto pr-1">
               {getClimateLegend().map((entry) => (
                 <div key={entry.code} className="flex items-center gap-2 py-0.5">
                   <span
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-black/10 dark:border-white/10"
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-foreground text-[11px] font-medium leading-none">{entry.label}</span>
+                  <span className="text-foreground text-[11px] leading-none font-medium">
+                    {entry.label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -137,7 +136,7 @@ function CheckboxRow({
         onChange={onChange}
         className="border-border h-3.5 w-3.5 rounded text-blue-500 focus:ring-blue-500"
       />
-      <span className="text-foreground text-[12px] font-medium leading-none">{label}</span>
+      <span className="text-foreground text-[12px] leading-none font-medium">{label}</span>
     </label>
   );
 }
@@ -164,14 +163,14 @@ function ToggleAllRow({
   return (
     <button
       onClick={handleToggleAll}
-      className="hover:bg-accent border-border mt-1 flex w-full cursor-pointer items-center gap-2 rounded-lg border-t pt-1.5 px-2 py-1.5 text-left transition-colors"
+      className="hover:bg-accent border-border mt-1 flex w-full cursor-pointer items-center gap-2 rounded-lg border-t px-2 py-1.5 pt-1.5 text-left transition-colors"
     >
       {anyFeatureOn ? (
         <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
       ) : (
         <Eye className="text-muted-foreground h-3.5 w-3.5" />
       )}
-      <span className="text-foreground text-[12px] font-medium leading-none">
+      <span className="text-foreground text-[12px] leading-none font-medium">
         {anyFeatureOn ? "Hide All Markers" : "Show All Markers"}
       </span>
     </button>

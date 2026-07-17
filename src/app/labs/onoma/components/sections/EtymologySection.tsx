@@ -180,54 +180,64 @@ export default function EtymologySection() {
     const hasChildren = node.children.length > 0;
 
     return (
-      <div className="ml-4 border-l border-border/20 pl-4 mt-2">
-        <div className="flex items-start gap-2 group">
+      <div className="border-border/20 mt-2 ml-4 border-l pl-4">
+        <div className="group flex items-start gap-2">
           <div className="mt-1 flex items-center justify-center">
             {hasChildren ? (
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                {isOpen ? (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
               </button>
             ) : (
-              <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground opacity-55" />
+              <CornerDownRight className="text-muted-foreground h-3.5 w-3.5 opacity-55" />
             )}
           </div>
 
-          <div className="flex-1 p-2.5 rounded bg-secondary/5 border border-border/10 hover:border-violet-500/20 hover:bg-secondary/10 transition-colors">
-            <div className="flex justify-between items-start">
+          <div className="bg-secondary/5 border-border/10 hover:bg-secondary/10 flex-1 rounded border p-2.5 transition-colors hover:border-violet-500/20">
+            <div className="flex items-start justify-between">
               <div>
-                <span className="font-bold text-foreground">{node.word}</span>
-                {node.ipa && <span className="text-[10px] text-muted-foreground ml-2">/{node.ipa}/</span>}
-                <span className="ml-2 text-xs text-violet-400 font-medium px-1.5 py-0.5 rounded bg-violet-500/10 capitalize">
+                <span className="text-foreground font-bold">{node.word}</span>
+                {node.ipa && (
+                  <span className="text-muted-foreground ml-2 text-[10px]">/{node.ipa}/</span>
+                )}
+                <span className="ml-2 rounded bg-violet-500/10 px-1.5 py-0.5 text-xs font-medium text-violet-400 capitalize">
                   {node.derivationType}
                 </span>
                 {node.morphemeAdded && (
-                  <span className="ml-1 text-[10px] text-muted-foreground font-mono">
+                  <span className="text-muted-foreground ml-1 font-mono text-[10px]">
                     ({node.morphemeAdded})
                   </span>
                 )}
               </div>
-              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 transition-opacity">
+              <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
                 <button
                   onClick={() => setAddingToParentId(node.id)}
                   title="Add child derivation"
-                  className="p-1 hover:bg-violet-500/20 text-violet-400 rounded cursor-pointer"
+                  className="cursor-pointer rounded p-1 text-violet-400 hover:bg-violet-500/20"
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => deleteDerivMutation.mutate({ id: node.id })}
                   title="Delete derivation"
-                  className="p-1 hover:bg-red-500/20 text-red-400 rounded cursor-pointer"
+                  className="cursor-pointer rounded p-1 text-red-400 hover:bg-red-500/20"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{node.meaning}</p>
-            {node.notes && <p className="text-[10px] text-muted-foreground/80 mt-1 italic border-t border-border/5 pt-1">{node.notes}</p>}
+            <p className="text-muted-foreground mt-0.5 text-xs">{node.meaning}</p>
+            {node.notes && (
+              <p className="text-muted-foreground/80 border-border/5 mt-1 border-t pt-1 text-[10px] italic">
+                {node.notes}
+              </p>
+            )}
           </div>
         </div>
 
@@ -248,27 +258,28 @@ export default function EtymologySection() {
       <div>
         <h2 className="text-foreground text-xl font-bold tracking-tight">Etymological Web</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Track word roots, prefixes/suffixes, semantic shifts, and construct a morphological derivation tree.
+          Track word roots, prefixes/suffixes, semantic shifts, and construct a morphological
+          derivation tree.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Roots & Creation */}
-        <div className="lg:col-span-4 space-y-4">
-          <FacetMaterial material="satin" className="border border-border/20 p-4 space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+        <div className="space-y-4 lg:col-span-4">
+          <FacetMaterial material="satin" className="border-border/20 space-y-4 border p-4">
+            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Network className="h-4 w-4 text-violet-500" />
               Roots Directory
             </h3>
 
             {rootsLoading ? (
-              <div className="text-center py-4 text-xs text-muted-foreground">Loading roots...</div>
+              <div className="text-muted-foreground py-4 text-center text-xs">Loading roots...</div>
             ) : roots?.length === 0 ? (
-              <div className="text-center py-4 text-xs text-muted-foreground italic">
+              <div className="text-muted-foreground py-4 text-center text-xs italic">
                 No roots created yet.
               </div>
             ) : (
-              <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
+              <div className="max-h-60 scrollbar-thin space-y-1.5 overflow-y-auto pr-1">
                 {roots?.map((r: any) => (
                   <button
                     key={r.id}
@@ -276,17 +287,19 @@ export default function EtymologySection() {
                       setSelectedRootId(r.id);
                       setAddingToParentId(null);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded text-xs transition-colors flex justify-between items-center ${
+                    className={`flex w-full items-center justify-between rounded px-3 py-2 text-left text-xs transition-colors ${
                       selectedRootId === r.id
-                        ? "bg-violet-500/10 text-violet-400 border border-violet-500/30"
-                        : "hover:bg-secondary/15 border border-transparent text-foreground"
+                        ? "border border-violet-500/30 bg-violet-500/10 text-violet-400"
+                        : "hover:bg-secondary/15 text-foreground border border-transparent"
                     }`}
                   >
                     <div>
                       <span className="font-semibold">{r.root}</span>
-                      {r.ipa && <span className="text-[10px] text-muted-foreground ml-2">/{r.ipa}/</span>}
+                      {r.ipa && (
+                        <span className="text-muted-foreground ml-2 text-[10px]">/{r.ipa}/</span>
+                      )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground italic truncate max-w-[120px]">
+                    <span className="text-muted-foreground max-w-[120px] truncate text-[10px] italic">
                       {r.meaning}
                     </span>
                   </button>
@@ -296,58 +309,66 @@ export default function EtymologySection() {
           </FacetMaterial>
 
           {/* Add New Root Form */}
-          <FacetMaterial material="satin" className="border border-border/20 p-4">
+          <FacetMaterial material="satin" className="border-border/20 border p-4">
             <form onSubmit={handleCreateRoot} className="space-y-3">
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
                 Create New Root Word
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">Root Grapheme</label>
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                    Root Grapheme
+                  </label>
                   <input
                     type="text"
                     required
                     value={newRootWord}
                     onChange={(e) => setNewRootWord(e.target.value)}
                     placeholder="e.g. log-"
-                    className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-violet-500/50"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">IPA (Optional)</label>
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                    IPA (Optional)
+                  </label>
                   <input
                     type="text"
                     value={newRootIpa}
                     onChange={(e) => setNewRootIpa(e.target.value)}
                     placeholder="e.g. lɔɡ"
-                    className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-violet-500/50"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] text-muted-foreground font-medium mb-1">English Meaning</label>
+                <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                  English Meaning
+                </label>
                 <input
                   type="text"
                   required
                   value={newRootMeaning}
                   onChange={(e) => setNewRootMeaning(e.target.value)}
                   placeholder="e.g. word, reason, speech"
-                  className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-violet-500/50"
+                  className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-muted-foreground font-medium mb-1">Historical Notes</label>
+                <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                  Historical Notes
+                </label>
                 <textarea
                   value={newRootNotes}
                   onChange={(e) => setNewRootNotes(e.target.value)}
                   placeholder="Cognates, sound shifts, Proto-Conlang origin..."
-                  className="w-full px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs h-12 focus:outline-none"
+                  className="bg-background/50 border-border/40 text-foreground h-12 w-full rounded border px-2 py-1 text-xs focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
                 disabled={createRootMutation.isPending}
-                className="w-full flex items-center justify-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold py-1.5 rounded text-xs cursor-pointer active:scale-95 transition-all"
+                className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-violet-600 py-1.5 text-xs font-bold text-white transition-all hover:bg-violet-700 active:scale-95"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Root Word
@@ -357,22 +378,26 @@ export default function EtymologySection() {
         </div>
 
         {/* Right Column: Tree & Derivation adding */}
-        <div className="lg:col-span-8 space-y-4">
+        <div className="space-y-4 lg:col-span-8">
           {activeRoot ? (
             <div className="space-y-4">
               {/* Root Details Header */}
               <FacetMaterial material="satin" className="border border-violet-500/20 p-4">
-                <div className="flex justify-between items-start">
+                <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-extrabold text-foreground flex items-baseline gap-2">
+                    <h3 className="text-foreground flex items-baseline gap-2 text-lg font-extrabold">
                       {activeRoot.root}
                       {activeRoot.ipa && (
-                        <span className="text-xs text-muted-foreground font-normal">/{activeRoot.ipa}/</span>
+                        <span className="text-muted-foreground text-xs font-normal">
+                          /{activeRoot.ipa}/
+                        </span>
                       )}
                     </h3>
-                    <p className="text-sm text-violet-400 font-medium mt-0.5">{activeRoot.meaning}</p>
+                    <p className="mt-0.5 text-sm font-medium text-violet-400">
+                      {activeRoot.meaning}
+                    </p>
                     {activeRoot.notes && (
-                      <p className="text-xs text-muted-foreground mt-2 max-w-xl whitespace-pre-line italic">
+                      <p className="text-muted-foreground mt-2 max-w-xl text-xs whitespace-pre-line italic">
                         {activeRoot.notes}
                       </p>
                     )}
@@ -383,7 +408,7 @@ export default function EtymologySection() {
                         deleteRootMutation.mutate({ id: activeRoot.id });
                       }
                     }}
-                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-bold border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 px-2 py-1 rounded cursor-pointer"
+                    className="flex cursor-pointer items-center gap-1 rounded border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete Root
@@ -392,15 +417,18 @@ export default function EtymologySection() {
               </FacetMaterial>
 
               {/* Derivations Tree Graph */}
-              <FacetMaterial material="satin" className="border border-border/20 p-4 space-y-4 relative min-h-[300px]">
-                <div className="flex justify-between items-center pb-2 border-b border-border/10">
-                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <GitFork className="h-4 w-4 text-violet-500Rotate" />
+              <FacetMaterial
+                material="satin"
+                className="border-border/20 relative min-h-[300px] space-y-4 border p-4"
+              >
+                <div className="border-border/10 flex items-center justify-between border-b pb-2">
+                  <h4 className="text-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                    <GitFork className="text-violet-500Rotate h-4 w-4" />
                     Derivation Tree Graph
                   </h4>
                   <button
                     onClick={() => setAddingToParentId(null)}
-                    className="text-[10px] flex items-center gap-1 text-violet-400 hover:text-violet-300 font-bold border border-violet-500/20 bg-violet-500/5 px-2 py-1 rounded cursor-pointer"
+                    className="flex cursor-pointer items-center gap-1 rounded border border-violet-500/20 bg-violet-500/5 px-2 py-1 text-[10px] font-bold text-violet-400 hover:text-violet-300"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Direct Derivation
@@ -408,20 +436,26 @@ export default function EtymologySection() {
                 </div>
 
                 {derivLoading ? (
-                  <div className="text-center py-12 text-xs text-muted-foreground">Loading tree...</div>
+                  <div className="text-muted-foreground py-12 text-center text-xs">
+                    Loading tree...
+                  </div>
                 ) : derivationTree.length === 0 ? (
-                  <div className="text-center py-12 text-xs text-muted-foreground italic">
+                  <div className="text-muted-foreground py-12 text-center text-xs italic">
                     No derived terms yet. Use the buttons or form below to branch out.
                   </div>
                 ) : (
                   <div className="space-y-2 select-none">
-                    <div className="p-2 bg-violet-500/5 border border-violet-500/20 rounded inline-block">
+                    <div className="inline-block rounded border border-violet-500/20 bg-violet-500/5 p-2">
                       <span className="font-bold text-violet-400">{activeRoot.root}</span>
-                      <span className="text-[10px] text-muted-foreground ml-2">/{activeRoot.ipa}/</span>
-                      <span className="text-xs text-muted-foreground block">{activeRoot.meaning}</span>
+                      <span className="text-muted-foreground ml-2 text-[10px]">
+                        /{activeRoot.ipa}/
+                      </span>
+                      <span className="text-muted-foreground block text-xs">
+                        {activeRoot.meaning}
+                      </span>
                     </div>
 
-                    <div className="pl-4 border-l border-violet-500/10 space-y-2">
+                    <div className="space-y-2 border-l border-violet-500/10 pl-4">
                       {derivationTree.map((node) => (
                         <RenderNode key={node.id} node={node} />
                       ))}
@@ -431,48 +465,55 @@ export default function EtymologySection() {
               </FacetMaterial>
 
               {/* Form to Add Derivation */}
-              <FacetMaterial material="satin" className="border border-border/20 p-4">
+              <FacetMaterial material="satin" className="border-border/20 border p-4">
                 <form onSubmit={handleAddDerivation} className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
                       Add Derivation
                     </h4>
-                    <span className="text-[10px] text-muted-foreground font-medium bg-secondary/30 px-2 py-0.5 rounded">
+                    <span className="text-muted-foreground bg-secondary/30 rounded px-2 py-0.5 text-[10px] font-medium">
                       Parent:{" "}
                       {addingToParentId
-                        ? derivData?.derivations.find((d: any) => d.id === addingToParentId)?.word || "Unknown"
+                        ? derivData?.derivations.find((d: any) => d.id === addingToParentId)
+                            ?.word || "Unknown"
                         : `Root (${activeRoot.root})`}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                     <div>
-                      <label className="block text-[10px] text-muted-foreground font-medium mb-1">Derived Grapheme</label>
+                      <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                        Derived Grapheme
+                      </label>
                       <input
                         type="text"
                         required
                         value={newDerivWord}
                         onChange={(e) => setNewDerivWord(e.target.value)}
                         placeholder="e.g. biology"
-                        className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-violet-500/50"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-muted-foreground font-medium mb-1">IPA (Optional)</label>
+                      <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                        IPA (Optional)
+                      </label>
                       <input
                         type="text"
                         value={newDerivIpa}
                         onChange={(e) => setNewDerivIpa(e.target.value)}
                         placeholder="e.g. baɪˈɒlədʒi"
-                        className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-violet-500/50"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-muted-foreground font-medium mb-1">Derivation Type</label>
+                      <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                        Derivation Type
+                      </label>
                       <select
                         value={newDerivType}
                         onChange={(e) => setNewDerivType(e.target.value)}
-                        className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
                       >
                         <option value="prefix">Prefixation (Affix)</option>
                         <option value="suffix">Suffixation (Affix)</option>
@@ -482,47 +523,53 @@ export default function EtymologySection() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] text-muted-foreground font-medium mb-1">Morpheme (Optional)</label>
+                      <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                        Morpheme (Optional)
+                      </label>
                       <input
                         type="text"
                         value={newDerivMorpheme}
                         onChange={(e) => setNewDerivMorpheme(e.target.value)}
                         placeholder="e.g. -ology"
-                        className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none focus:border-violet-500/50"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:border-violet-500/50 focus:outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] text-muted-foreground font-medium mb-1">English Meaning</label>
+                      <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                        English Meaning
+                      </label>
                       <input
                         type="text"
                         required
                         value={newDerivMeaning}
                         onChange={(e) => setNewDerivMeaning(e.target.value)}
                         placeholder="e.g. study of life"
-                        className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-muted-foreground font-medium mb-1">Notes / Sound Shifts (Optional)</label>
+                      <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                        Notes / Sound Shifts (Optional)
+                      </label>
                       <input
                         type="text"
                         value={newDerivNotes}
                         onChange={(e) => setNewDerivNotes(e.target.value)}
                         placeholder="e.g. assimilation of g + o"
-                        className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                        className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex justify-end gap-2">
                     {addingToParentId && (
                       <button
                         type="button"
                         onClick={() => setAddingToParentId(null)}
-                        className="border border-border/40 hover:bg-secondary/20 text-foreground text-xs px-4 py-1.5 rounded font-bold cursor-pointer"
+                        className="border-border/40 hover:bg-secondary/20 text-foreground cursor-pointer rounded border px-4 py-1.5 text-xs font-bold"
                       >
                         Cancel Parent Link
                       </button>
@@ -530,7 +577,7 @@ export default function EtymologySection() {
                     <button
                       type="submit"
                       disabled={addDerivMutation.isPending}
-                      className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-6 py-1.5 rounded font-bold cursor-pointer transition-all active:scale-95"
+                      className="cursor-pointer rounded bg-violet-600 px-6 py-1.5 text-xs font-bold text-white transition-all hover:bg-violet-700 active:scale-95"
                     >
                       Create Derivation
                     </button>
@@ -541,12 +588,13 @@ export default function EtymologySection() {
           ) : (
             <FacetMaterial
               material="satin"
-              className="h-full border border-border/20 flex flex-col items-center justify-center p-12 text-center"
+              className="border-border/20 flex h-full flex-col items-center justify-center border p-12 text-center"
             >
-              <Network className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
-              <h4 className="text-sm font-bold text-foreground">No Root Selected</h4>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                Select an etymology root word from the directory on the left or create a new one to begin building the derivation tree.
+              <Network className="text-muted-foreground mb-4 h-16 w-16 opacity-20" />
+              <h4 className="text-foreground text-sm font-bold">No Root Selected</h4>
+              <p className="text-muted-foreground mt-1 max-w-sm text-xs">
+                Select an etymology root word from the directory on the left or create a new one to
+                begin building the derivation tree.
               </p>
             </FacetMaterial>
           )}

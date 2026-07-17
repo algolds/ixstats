@@ -297,7 +297,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           className={cn(
             "flex h-full flex-col justify-between gap-4 rounded-xl border p-5 transition-all duration-300",
             isSelected
-              ? "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50"
+              ? "border-emerald-500 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50 dark:bg-emerald-500/10"
               : "border-border bg-card/40 hover:border-emerald-500/30 hover:bg-emerald-500/[0.01] hover:shadow-lg hover:shadow-emerald-500/5 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/[0.03]"
           )}
         >

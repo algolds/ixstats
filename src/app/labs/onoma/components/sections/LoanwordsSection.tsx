@@ -189,54 +189,57 @@ export default function LoanwordsSection() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-foreground text-xl font-bold tracking-tight flex items-center gap-2">
+        <h2 className="text-foreground flex items-center gap-2 text-xl font-bold tracking-tight">
           <Languages className="h-5 w-5 text-emerald-500" />
           Loanword & Contact Registry
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Map contact history between conlangs and simulate vocabulary borrowing with phonetic adaptation rules.
+          Map contact history between conlangs and simulate vocabulary borrowing with phonetic
+          adaptation rules.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Contact Links Registry */}
-        <div className="lg:col-span-5 space-y-4">
-          <FacetMaterial material="satin" className="border border-border/20 p-4 space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-border/10">
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+        <div className="space-y-4 lg:col-span-5">
+          <FacetMaterial material="satin" className="border-border/20 space-y-4 border p-4">
+            <div className="border-border/10 flex items-center justify-between border-b pb-2">
+              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <ArrowRightLeft className="h-4 w-4 text-emerald-500" />
                 Contact Registry Links
               </h3>
               <button
                 onClick={() => setSelectedContactId(null)}
-                className="text-[10px] text-emerald-500 hover:text-emerald-400 font-bold cursor-pointer"
+                className="cursor-pointer text-[10px] font-bold text-emerald-500 hover:text-emerald-400"
               >
                 + New Contact
               </button>
             </div>
 
             {contactsLoading ? (
-              <div className="text-xs text-muted-foreground">Loading contacts...</div>
+              <div className="text-muted-foreground text-xs">Loading contacts...</div>
             ) : contacts?.length === 0 ? (
-              <div className="text-xs text-muted-foreground italic">No contact mappings created yet.</div>
+              <div className="text-muted-foreground text-xs italic">
+                No contact mappings created yet.
+              </div>
             ) : (
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+              <div className="max-h-48 scrollbar-thin space-y-1.5 overflow-y-auto pr-1">
                 {contacts?.map((c: any) => (
                   <button
                     key={c.id}
                     onClick={() => setSelectedContactId(c.id)}
-                    className={`w-full text-left px-3 py-2 rounded text-xs transition-colors flex justify-between items-center border ${
+                    className={`flex w-full items-center justify-between rounded border px-3 py-2 text-left text-xs transition-colors ${
                       selectedContactId === c.id
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                        : "hover:bg-secondary/15 border-transparent text-foreground"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        : "hover:bg-secondary/15 text-foreground border-transparent"
                     }`}
                   >
                     <div>
                       <span className="font-semibold">{c.sourcePack.name}</span>
-                      <span className="mx-2 text-muted-foreground">→</span>
+                      <span className="text-muted-foreground mx-2">→</span>
                       <span className="font-semibold">{c.targetPack.name}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground capitalize bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    <span className="text-muted-foreground rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] capitalize">
                       {c.domain}
                     </span>
                   </button>
@@ -246,17 +249,17 @@ export default function LoanwordsSection() {
           </FacetMaterial>
 
           {/* Form to configure Contact Registry */}
-          <FacetMaterial material="satin" className="border border-border/20 p-4">
+          <FacetMaterial material="satin" className="border-border/20 border p-4">
             <form onSubmit={handleSaveContact} className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              <div className="flex items-center justify-between">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
                   Contact Configuration
                 </h4>
                 {selectedContactId && (
                   <button
                     type="button"
                     onClick={() => deleteContactMutation.mutate({ id: selectedContactId })}
-                    className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-1 text-xs text-red-400 hover:text-red-300"
                   >
                     <Trash2 className="h-3 w-3" /> Delete
                   </button>
@@ -266,12 +269,14 @@ export default function LoanwordsSection() {
               {/* Source Conlang */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">Source Conlang (L1)</label>
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                    Source Conlang (L1)
+                  </label>
                   <select
                     value={sourcePackId}
                     onChange={(e) => setSourcePackId(e.target.value)}
                     required
-                    className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
                   >
                     <option value="">(Select Source)</option>
                     {packsData?.packs?.map((p: any) => (
@@ -282,12 +287,14 @@ export default function LoanwordsSection() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">Target Conlang (L2)</label>
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                    Target Conlang (L2)
+                  </label>
                   <select
                     value={targetPackId}
                     onChange={(e) => setTargetPackId(e.target.value)}
                     required
-                    className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
                   >
                     <option value="">(Select Target)</option>
                     {packsData?.packs?.map((p: any) => (
@@ -302,11 +309,13 @@ export default function LoanwordsSection() {
               {/* Domain & Intensity */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">Contact Domain</label>
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                    Contact Domain
+                  </label>
                   <select
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    className="w-full px-2 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs"
+                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs"
                   >
                     <option value="trade">Trade & Commerce</option>
                     <option value="military">Military & War</option>
@@ -316,7 +325,7 @@ export default function LoanwordsSection() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-muted-foreground font-medium mb-1">
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
                     Borrowing Intensity: {Math.round(intensity * 100)}%
                   </label>
                   <input
@@ -326,20 +335,20 @@ export default function LoanwordsSection() {
                     step="0.05"
                     value={intensity}
                     onChange={(e) => setIntensity(Number(e.target.value))}
-                    className="w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-secondary/50 accent-emerald-500 mt-2"
+                    className="bg-secondary/50 mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-lg accent-emerald-500"
                   />
                 </div>
               </div>
 
               {/* Adaptation Rules */}
-              <div className="border-t border-border/10 pt-3 space-y-3">
-                <h5 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="border-border/10 space-y-3 border-t pt-3">
+                <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                   Phonological Adaptation Rules
                 </h5>
 
                 {/* Syllable Coda Adaptations */}
                 <div className="flex gap-4">
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
                       checked={codaDrop}
@@ -348,7 +357,7 @@ export default function LoanwordsSection() {
                     />
                     Coda Drop (Drop final C)
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
                       checked={vowelEpenthesis}
@@ -364,7 +373,7 @@ export default function LoanwordsSection() {
                       value={epentheticVowel}
                       onChange={(e) => setEpentheticVowel(e.target.value)}
                       placeholder="a"
-                      className="w-8 text-center border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground w-8 rounded border text-center font-mono text-xs"
                     />
                   )}
                 </div>
@@ -377,35 +386,35 @@ export default function LoanwordsSection() {
                       placeholder="From (e.g. ph)"
                       value={newFrom}
                       onChange={(e) => setNewFrom(e.target.value)}
-                      className="flex-1 px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground flex-1 rounded border px-2 py-1 font-mono text-xs"
                     />
                     <input
                       type="text"
                       placeholder="To (e.g. p)"
                       value={newTo}
                       onChange={(e) => setNewTo(e.target.value)}
-                      className="flex-1 px-2 py-1 border rounded bg-background/50 border-border/40 text-foreground text-xs font-mono"
+                      className="bg-background/50 border-border/40 text-foreground flex-1 rounded border px-2 py-1 font-mono text-xs"
                     />
                     <button
                       type="button"
                       onClick={handleAddShift}
-                      className="bg-secondary/40 hover:bg-secondary/60 text-foreground px-3 py-1 rounded text-xs font-bold"
+                      className="bg-secondary/40 hover:bg-secondary/60 text-foreground rounded px-3 py-1 text-xs font-bold"
                     >
                       Add Rule
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1 scrollbar-thin">
+                  <div className="flex max-h-24 scrollbar-thin flex-wrap gap-1.5 overflow-y-auto pr-1">
                     {soundShifts.map((shift, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-secondary/10 border border-border/10 text-xs font-mono"
+                        className="bg-secondary/10 border-border/10 inline-flex items-center gap-1.5 rounded border px-2 py-0.5 font-mono text-xs"
                       >
                         {shift.from} → {shift.to || "∅"}
                         <button
                           type="button"
                           onClick={() => handleRemoveShift(idx)}
-                          className="text-red-400 hover:text-red-300 font-bold"
+                          className="font-bold text-red-400 hover:text-red-300"
                         >
                           ×
                         </button>
@@ -418,7 +427,7 @@ export default function LoanwordsSection() {
               <button
                 type="submit"
                 disabled={saveContactMutation.isPending}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs cursor-pointer active:scale-95 transition-all"
+                className="w-full cursor-pointer rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white transition-all hover:bg-emerald-700 active:scale-95"
               >
                 Save Contact Configuration
               </button>
@@ -427,53 +436,51 @@ export default function LoanwordsSection() {
         </div>
 
         {/* Right Column: Loanword Adaptation Simulator Sandbox */}
-        <div className="lg:col-span-7 space-y-4">
-          <FacetMaterial material="satin" className="border border-emerald-500/20 p-4 space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="h-4.5 w-4.5 text-emerald-500 animate-pulse" />
+        <div className="space-y-4 lg:col-span-7">
+          <FacetMaterial material="satin" className="space-y-4 border border-emerald-500/20 p-4">
+            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+              <Sparkles className="h-4.5 w-4.5 animate-pulse text-emerald-500" />
               Adaptation Simulator Sandbox
             </h3>
 
             {/* Simulated Words Output Grid */}
-            <div className="border border-border/15 rounded-lg bg-black/40 overflow-hidden">
-              <div className="grid grid-cols-12 gap-2 bg-secondary/15 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/10">
+            <div className="border-border/15 overflow-hidden rounded-lg border bg-black/40">
+              <div className="bg-secondary/15 text-muted-foreground border-border/10 grid grid-cols-12 gap-2 border-b px-4 py-2 text-[10px] font-bold tracking-wider uppercase">
                 <span className="col-span-4">Source Word</span>
                 <span className="col-span-4">Adaptation Rules</span>
                 <span className="col-span-4">Adapted Loanword</span>
               </div>
 
               {borrowMutation.data?.results && borrowMutation.data.results.length > 0 ? (
-                <div className="divide-y divide-border/5 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+                <div className="divide-border/5 max-h-72 scrollbar-thin divide-y overflow-y-auto pr-1">
                   {borrowMutation.data.results.map((res: any, idx: number) => (
                     <div
                       key={idx}
-                      className="grid grid-cols-12 gap-2 px-4 py-3 text-xs hover:bg-secondary/5 transition-colors items-center"
+                      className="hover:bg-secondary/5 grid grid-cols-12 items-center gap-2 px-4 py-3 text-xs transition-colors"
                     >
                       <div className="col-span-4 flex flex-col">
-                        <span className="font-bold text-foreground">{res.original}</span>
-                        <span className="text-[10px] text-muted-foreground italic truncate">
+                        <span className="text-foreground font-bold">{res.original}</span>
+                        <span className="text-muted-foreground truncate text-[10px] italic">
                           {res.meaning}
                         </span>
                       </div>
-                      <div className="col-span-4 flex flex-col gap-0.5 text-[10px] text-muted-foreground font-mono">
+                      <div className="text-muted-foreground col-span-4 flex flex-col gap-0.5 font-mono text-[10px]">
                         {soundShifts.some((s) => res.original.includes(s.from)) && (
                           <span className="text-emerald-400">✓ Sound Shifts applied</span>
                         )}
-                        {codaDrop && (
-                          <span className="text-amber-400">✓ Coda Dropped</span>
-                        )}
+                        {codaDrop && <span className="text-amber-400">✓ Coda Dropped</span>}
                         {vowelEpenthesis && (
                           <span className="text-blue-400">✓ Epenthesis (+{epentheticVowel})</span>
                         )}
                       </div>
-                      <div className="col-span-4 flex justify-between items-center">
-                        <span className="font-extrabold text-emerald-400 text-sm">
+                      <div className="col-span-4 flex items-center justify-between">
+                        <span className="text-sm font-extrabold text-emerald-400">
                           {res.borrowed || res.original}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleRemoveTestWord(idx)}
-                          className="text-red-400 hover:text-red-300 text-xs p-1 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                          className="cursor-pointer p-1 text-xs text-red-400 opacity-0 transition-opacity hover:text-red-300 hover:opacity-100"
                         >
                           Delete
                         </button>
@@ -482,15 +489,15 @@ export default function LoanwordsSection() {
                   ))}
                 </div>
               ) : (
-                <div className="p-8 text-center text-xs text-muted-foreground italic">
+                <div className="text-muted-foreground p-8 text-center text-xs italic">
                   No source words added to simulate. Add some below.
                 </div>
               )}
             </div>
 
             {/* Add Custom Word to Sandbox Form */}
-            <form onSubmit={handleAddTestWord} className="border-t border-border/10 pt-4 space-y-3">
-              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <form onSubmit={handleAddTestWord} className="border-border/10 space-y-3 border-t pt-4">
+              <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
                 Add Source Word to Simulator
               </h4>
               <div className="grid grid-cols-2 gap-2">
@@ -500,7 +507,7 @@ export default function LoanwordsSection() {
                   placeholder="Source Word (e.g. centaur)"
                   value={newTestWord}
                   onChange={(e) => setNewTestWord(e.target.value)}
-                  className="px-2.5 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                  className="bg-background/50 border-border/40 text-foreground rounded border px-2.5 py-1.5 text-xs focus:outline-none"
                 />
                 <input
                   type="text"
@@ -508,12 +515,12 @@ export default function LoanwordsSection() {
                   placeholder="English Meaning"
                   value={newTestMeaning}
                   onChange={(e) => setNewTestMeaning(e.target.value)}
-                  className="px-2.5 py-1.5 border rounded bg-background/50 border-border/40 text-foreground text-xs focus:outline-none"
+                  className="bg-background/50 border-border/40 text-foreground rounded border px-2.5 py-1.5 text-xs focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 rounded text-xs cursor-pointer active:scale-95 transition-all"
+                className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-emerald-600 py-1.5 text-xs font-bold text-white transition-all hover:bg-emerald-700 active:scale-95"
               >
                 <Plus className="h-3.5 w-3.5" /> Add to Simulation
               </button>

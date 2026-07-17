@@ -352,8 +352,9 @@ export function MapContainer({
       />
 
       {/* Layer controls + tools toolbar */}
-      {showControls && tourState === "idle" && (
-        isMobile ? (
+      {showControls &&
+        tourState === "idle" &&
+        (isMobile ? (
           <MapControlsFAB
             visibleLayers={controlledVisibleLayers ?? visibleLayers}
             onToggleLayer={onToggleLayer ?? toggleLayer}
@@ -385,8 +386,7 @@ export function MapContainer({
             showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
             onOpenWorldEditor={handleOpenWorldEditor}
           />
-        )
-      )}
+        ))}
 
       {/* MeasureTool */}
       {toolsVisible && (

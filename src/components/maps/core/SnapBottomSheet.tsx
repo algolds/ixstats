@@ -38,7 +38,7 @@ function getSnapY(
   windowHeight: number,
   peekHeight: number,
   halfHeight: string,
-  fullHeight: string,
+  fullHeight: string
 ): number {
   switch (snap) {
     case "dismissed":
@@ -64,7 +64,7 @@ function findClosestSnap(
   windowHeight: number,
   peekHeight: number,
   halfHeight: string,
-  fullHeight: string,
+  fullHeight: string
 ): SnapPosition {
   // Fast swipe overrides position
   if (velocity > VELOCITY_THRESHOLD) return "dismissed";
@@ -161,7 +161,7 @@ export function SnapBottomSheet({
       startTranslateRef.current = translateY ?? currentSnapY;
       velocityTracker.current = [{ t: Date.now(), y: touch.clientY }];
     },
-    [snap, translateY, currentSnapY],
+    [snap, translateY, currentSnapY]
   );
 
   const handleTouchMove = useCallback(
@@ -174,14 +174,14 @@ export function SnapBottomSheet({
       const delta = touch.clientY - startYRef.current;
       const newY = Math.max(
         getSnapY("full", windowHeight, peekHeight, halfHeight, fullHeight),
-        startTranslateRef.current + delta,
+        startTranslateRef.current + delta
       );
       setTranslateY(newY);
 
       velocityTracker.current.push({ t: Date.now(), y: touch.clientY });
       if (velocityTracker.current.length > 5) velocityTracker.current.shift();
     },
-    [windowHeight, peekHeight, halfHeight, fullHeight],
+    [windowHeight, peekHeight, halfHeight, fullHeight]
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -198,7 +198,7 @@ export function SnapBottomSheet({
       windowHeight,
       peekHeight,
       halfHeight,
-      fullHeight,
+      fullHeight
     );
 
     setSnap(nextSnap);
@@ -243,7 +243,7 @@ export function SnapBottomSheet({
         {/* Drag handle */}
         <div
           data-drag-handle
-          className="flex cursor-grab flex-col items-center pb-1 pt-3 active:cursor-grabbing"
+          className="flex cursor-grab flex-col items-center pt-3 pb-1 active:cursor-grabbing"
           style={{ minHeight: `${DRAG_HANDLE_HEIGHT}px` }}
         >
           <div className="bg-border h-1 w-10 rounded-full" />

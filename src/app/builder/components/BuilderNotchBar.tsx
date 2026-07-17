@@ -25,7 +25,6 @@ import type { BuilderAlertResult } from "../lib/builder-alerts";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
 import { scrollToField } from "../components/enhanced/tabs/utils/validation";
 
-
 // Section icon map
 const SECTION_ICONS: Record<BuilderSection, React.ComponentType<{ className?: string }>> = {
   foundation: Globe,
@@ -78,7 +77,6 @@ export function BuilderNotchBar({
   const [alertPanelOpen, setAlertPanelOpen] = useState(false);
 
   const state = useBuilderContext();
-
 
   const steps = useMemo(() => {
     if (activeSection === "import") {
@@ -396,8 +394,6 @@ export function BuilderNotchBar({
                       </button>
                     )}
                   </div>
-
-
 
                   {/* Alert Panel (expandable) */}
                   <AnimatePresence initial={false}>

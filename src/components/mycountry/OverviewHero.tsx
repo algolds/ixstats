@@ -29,7 +29,10 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
 import { usePremium } from "~/hooks/usePremium";
 import { useCountryData } from "./primitives";
-import { QuickVitalityRings, createVitalityRingsFromCountry } from "./primitives/tabs/VitalityRingsDisplay";
+import {
+  QuickVitalityRings,
+  createVitalityRingsFromCountry,
+} from "./primitives/tabs/VitalityRingsDisplay";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
@@ -82,8 +85,6 @@ interface OverviewHeroProps {
   agendaViewMode?: "widgets" | "stack";
   onAgendaViewModeChange?: (mode: "widgets" | "stack") => void;
 }
-
-
 
 // ── Normalize growth rates that may be stored as raw decimals ──
 function normalizeGrowth(value: number | null | undefined): number {
@@ -498,7 +499,7 @@ export function OverviewHero({
           />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 md:min-h-[320px] md:h-auto pb-4 dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
+        <div className="relative z-10 flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 pb-4 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 md:h-auto md:min-h-[320px] dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
           <div className="flex h-full flex-col justify-between">
             {/* Header */}
             <div>
@@ -545,7 +546,7 @@ export function OverviewHero({
                   </button>
                   <Link
                     href={createUrl(`/countries/${stats.slug}`)}
-                    className="flex items-center gap-1 rounded border border-white/5 bg-white/[0.03] hover:bg-white/[0.08] px-2 py-0.5 text-[9px] font-bold text-foreground/80 transition-all active:scale-95 shadow-sm"
+                    className="text-foreground/80 flex items-center gap-1 rounded border border-white/5 bg-white/[0.03] px-2 py-0.5 text-[9px] font-bold shadow-sm transition-all hover:bg-white/[0.08] active:scale-95"
                   >
                     View Profile
                   </Link>
@@ -553,16 +554,16 @@ export function OverviewHero({
               </div>
 
               <div className="mb-2.5 flex items-center gap-2.5">
-                  <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
-                    <div className="flex items-center justify-center overflow-hidden rounded-sm">
-                      <UnifiedCountryFlag
-                        showTooltip={false}
-                        countryName={stats.countryName}
-                        size="lg"
-                        className="shrink-0"
-                      />
-                    </div>
-                  </AvatarGlow>
+                <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-sm">
+                  <div className="flex items-center justify-center overflow-hidden rounded-sm">
+                    <UnifiedCountryFlag
+                      showTooltip={false}
+                      countryName={stats.countryName}
+                      size="lg"
+                      className="shrink-0"
+                    />
+                  </div>
+                </AvatarGlow>
                 <div>
                   <Link
                     href={createUrl(`/countries/${stats.slug}`)}
@@ -590,13 +591,13 @@ export function OverviewHero({
                     variant="default"
                     size="sm"
                     onClick={() => onIssueDirective?.()}
-                    className="h-8 flex-1 min-w-[100px] cursor-pointer gap-1 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+                    className="h-8 min-w-[100px] flex-1 cursor-pointer gap-1 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     Directive
                   </Button>
                 )}
-                <Link href={createUrl("/mycountry/editor")} className="flex-1 min-w-[100px]">
+                <Link href={createUrl("/mycountry/editor")} className="min-w-[100px] flex-1">
                   <Button
                     variant="default"
                     size="sm"
@@ -607,8 +608,6 @@ export function OverviewHero({
                   </Button>
                 </Link>
               </div>
-
-
 
               {/* Apple-style Daily Agenda Widget */}
               <div className="mt-2 mb-3">
@@ -679,7 +678,7 @@ export function OverviewHero({
 
               {/* Vitality Rings Display */}
               {hasCountry && country && (
-                <div className="mt-1 mb-2.5 flex items-center justify-between border-t border-white/5 pt-2.5 select-none shrink-0">
+                <div className="mt-1 mb-2.5 flex shrink-0 items-center justify-between border-t border-white/5 pt-2.5 select-none">
                   <span className="text-muted-foreground/60 text-[8px] font-extrabold tracking-wider uppercase">
                     Vitality Index
                   </span>

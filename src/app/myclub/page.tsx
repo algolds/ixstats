@@ -113,7 +113,10 @@ export default function MyClubPage() {
                   Cap: {((team as any).stadiumCapacity || 5000).toLocaleString()}
                 </Badge>
                 {((team as any).form?.length ?? 0) > 0 && (
-                  <div className="flex items-center gap-1" title="Last 5 results (most recent first)">
+                  <div
+                    className="flex items-center gap-1"
+                    title="Last 5 results (most recent first)"
+                  >
                     {((team as any).form as string[]).map((r, i) => (
                       <span
                         key={i}

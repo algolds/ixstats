@@ -216,10 +216,10 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
                 setActiveTab("results");
               }}
               className={cn(
-                "rounded-md px-3 py-1 font-medium transition-all duration-200 cursor-pointer",
+                "cursor-pointer rounded-md px-3 py-1 font-medium transition-all duration-200",
                 activeTab === "results"
-                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+                  ? "border border-amber-500/25 bg-amber-500/15 text-amber-300"
+                  : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               )}
             >
               📅 Matches
@@ -232,10 +232,10 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
                 setActiveTab("movers");
               }}
               className={cn(
-                "rounded-md px-3 py-1 font-medium transition-all duration-200 cursor-pointer",
+                "cursor-pointer rounded-md px-3 py-1 font-medium transition-all duration-200",
                 activeTab === "movers"
-                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+                  ? "border border-amber-500/25 bg-amber-500/15 text-amber-300"
+                  : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               )}
             >
               📈 Movers ({data.movers?.length})
@@ -248,10 +248,10 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
                 setActiveTab("summary");
               }}
               className={cn(
-                "rounded-md px-3 py-1 font-medium transition-all duration-200 cursor-pointer",
+                "cursor-pointer rounded-md px-3 py-1 font-medium transition-all duration-200",
                 activeTab === "summary"
-                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+                  ? "border border-amber-500/25 bg-amber-500/15 text-amber-300"
+                  : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               )}
             >
               📝 Summary
@@ -262,7 +262,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
 
       {/* Results Tab Content */}
       {activeTab === "results" && hasResults && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-black/10">
+        <div className="grid grid-cols-1 gap-2 bg-black/10 p-3 md:grid-cols-2">
           {data.results!.map((r, i) => {
             const homeWon = r.homeScore > r.awayScore;
             const awayWon = r.awayScore > r.homeScore;
@@ -270,15 +270,15 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
               <div
                 key={i}
                 className={cn(
-                  "flex items-center justify-between gap-3 px-3 py-2 text-slate-200 transition-all rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04]",
+                  "flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-slate-200 transition-all hover:border-white/10 hover:bg-white/[0.04]",
                   r.isUpset && "border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-500/30"
                 )}
               >
-                <div className="flex-1 min-w-0 flex items-center justify-end text-right">
+                <div className="flex min-w-0 flex-1 items-center justify-end text-right">
                   <TeamName team={r.home} won={homeWon} align="right" />
                 </div>
-                
-                <div className="flex items-center gap-1 font-mono text-[14px] font-bold tabular-nums px-2 py-0.5 rounded bg-black/30 border border-white/5">
+
+                <div className="flex items-center gap-1 rounded border border-white/5 bg-black/30 px-2 py-0.5 font-mono text-[14px] font-bold tabular-nums">
                   <span className={homeWon ? "text-amber-400" : "text-slate-400"}>
                     {r.homeScore}
                   </span>
@@ -288,10 +288,13 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
                   </span>
                 </div>
 
-                <div className="flex-1 min-w-0 flex items-center justify-start text-left gap-1.5">
+                <div className="flex min-w-0 flex-1 items-center justify-start gap-1.5 text-left">
                   <TeamName team={r.away} won={awayWon} align="left" />
                   {r.isUpset && (
-                    <span className="text-[11px] animate-pulse cursor-help" title="Upset of the day">
+                    <span
+                      className="animate-pulse cursor-help text-[11px]"
+                      title="Upset of the day"
+                    >
                       ⭐
                     </span>
                   )}
@@ -304,21 +307,21 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
 
       {/* Movers Tab Content */}
       {activeTab === "movers" && hasMovers && (
-        <div className="flex flex-col gap-2 p-3 bg-black/10">
-          <span className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase px-1">
+        <div className="flex flex-col gap-2 bg-black/10 p-3">
+          <span className="px-1 text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
             Table Movers
           </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {data.movers!.map((m, i) => {
               const up = m.newRank < m.oldRank;
               const Icon = up ? TrendingUp : TrendingDown;
               const body = (
                 <div
                   className={cn(
-                    "flex items-center justify-between border px-3 py-2 text-[13px] font-medium transition-all duration-200 hover:scale-[1.01] rounded-lg bg-white/[0.01]",
+                    "flex items-center justify-between rounded-lg border bg-white/[0.01] px-3 py-2 text-[13px] font-medium transition-all duration-200 hover:scale-[1.01]",
                     up
-                      ? "border-emerald-500/10 bg-emerald-500/[0.02] text-emerald-300 hover:bg-emerald-500/[0.05] hover:border-emerald-500/20"
-                      : "border-rose-500/10 bg-rose-500/[0.02] text-rose-300 hover:bg-rose-500/[0.05] hover:border-rose-500/20"
+                      ? "border-emerald-500/10 bg-emerald-500/[0.02] text-emerald-300 hover:border-emerald-500/20 hover:bg-emerald-500/[0.05]"
+                      : "border-rose-500/10 bg-rose-500/[0.02] text-rose-300 hover:border-rose-500/20 hover:bg-rose-500/[0.05]"
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -326,7 +329,8 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
                     <span>{m.name}</span>
                   </div>
                   <span className="text-[12px] text-slate-400">
-                    {ordinal(m.oldRank)} → <strong className="text-white">{ordinal(m.newRank)}</strong>
+                    {ordinal(m.oldRank)} →{" "}
+                    <strong className="text-white">{ordinal(m.newRank)}</strong>
                   </span>
                 </div>
               );
@@ -344,11 +348,11 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
 
       {/* Commentary Tab Content */}
       {activeTab === "summary" && hasSummary && (
-        <div className="p-4 bg-black/10">
+        <div className="bg-black/10 p-4">
           <span className="mb-2 block text-[11px] font-semibold tracking-wide text-amber-400 uppercase">
             Matchday Narration
           </span>
-          <p className="text-[14px] leading-relaxed text-slate-300 italic border-l-2 border-amber-500/30 pl-3">
+          <p className="border-l-2 border-amber-500/30 pl-3 text-[14px] leading-relaxed text-slate-300 italic">
             {data.llmSummary}
           </p>
         </div>

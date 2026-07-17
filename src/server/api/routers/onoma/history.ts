@@ -103,10 +103,7 @@ export const onomaHistoryRouter = createTRPCRouter({
       }),
     ]);
 
-    const totalNames = categoryBreakdown.reduce(
-      (sum, group) => sum + (group._sum.count ?? 0),
-      0
-    );
+    const totalNames = categoryBreakdown.reduce((sum, group) => sum + (group._sum.count ?? 0), 0);
 
     return {
       totalEvents,

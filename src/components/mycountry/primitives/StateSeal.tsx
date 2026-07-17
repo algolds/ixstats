@@ -27,11 +27,17 @@ export const SEAL_STYLE = `
 
 export function regimeIcon(gt?: string) {
   const g = (gt ?? "").toLowerCase();
-  if (/monarch|kingdom|empire|imperial|royal|crown|principal|duchy|tsar|sultan/.test(g)) return Crown;
+  if (/monarch|kingdom|empire|imperial|royal|crown|principal|duchy|tsar|sultan/.test(g))
+    return Crown;
   if (/theocra|cleric|divine|holy|papal|ecclesi|caliph/.test(g)) return Church;
   if (/technocr|meritocr|cybernet/.test(g)) return Cog;
   if (/dictat|authorit|junta|military|autocrac|totalit|despot/.test(g)) return Shield;
-  if (/republic|democr|parliament|president|federa|confedera|commonwealth|council|senate|union/.test(g)) return Star;
+  if (
+    /republic|democr|parliament|president|federa|confedera|commonwealth|council|senate|union/.test(
+      g
+    )
+  )
+    return Star;
   return Landmark;
 }
 
@@ -81,8 +87,10 @@ export function StateSeal({
         className="absolute inset-0"
         style={{
           borderRadius: waxRadius,
-          background: "radial-gradient(circle at 38% 30%, #e2ad4a, #bd872f 46%, #8a5a1e 78%, #5f3d14)",
-          boxShadow: "inset 0 2px 3px rgba(255,236,190,0.5), inset 0 -4px 8px rgba(58,30,0,0.55), 0 4px 14px rgba(0,0,0,0.45)",
+          background:
+            "radial-gradient(circle at 38% 30%, #e2ad4a, #bd872f 46%, #8a5a1e 78%, #5f3d14)",
+          boxShadow:
+            "inset 0 2px 3px rgba(255,236,190,0.5), inset 0 -4px 8px rgba(58,30,0,0.55), 0 4px 14px rgba(0,0,0,0.45)",
         }}
       />
       {/* flag disc pressed into the wax (signet) */}
@@ -103,7 +111,10 @@ export function StateSeal({
       >
         <div
           className="pointer-events-none absolute inset-0 rounded-full"
-          style={{ background: "radial-gradient(circle at 40% 35%, rgba(226,173,74,0.14), rgba(95,61,20,0.3))" }}
+          style={{
+            background:
+              "radial-gradient(circle at 40% 35%, rgba(226,173,74,0.14), rgba(95,61,20,0.3))",
+          }}
         />
         <Glyph
           style={{
@@ -128,7 +139,9 @@ export function StateSeal({
                 height: size * 0.09,
                 filter: "drop-shadow(0 1px 0 rgba(58,30,0,0.5))",
               }}
-              className={i < pips ? "fill-amber-100 text-amber-100" : "fill-transparent text-amber-950/50"}
+              className={
+                i < pips ? "fill-amber-100 text-amber-100" : "fill-transparent text-amber-950/50"
+              }
               strokeWidth={1.5}
             />
           ))}

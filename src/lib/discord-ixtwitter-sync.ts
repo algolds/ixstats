@@ -909,17 +909,19 @@ export function formatThinkPagesEmbed(
       if (sports.results && sports.results.length > 0) {
         description = formatCodeBlockTable(sports.results);
       }
-      
+
       if (sports.movers && sports.movers.length > 0) {
         fields.push({
           name: "📈 Table Movers",
-          value: sports.movers.map((m) => {
-            const up = m.newRank < m.oldRank;
-            const arrow = up ? "▲" : "▼";
-            const diff = m.oldRank - m.newRank;
-            const sign = diff > 0 ? "+" : "";
-            return `${arrow} **${m.name}** (${sign}${diff} spots, ${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
-          }).join("\n"),
+          value: sports.movers
+            .map((m) => {
+              const up = m.newRank < m.oldRank;
+              const arrow = up ? "▲" : "▼";
+              const diff = m.oldRank - m.newRank;
+              const sign = diff > 0 ? "+" : "";
+              return `${arrow} **${m.name}** (${sign}${diff} spots, ${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
+            })
+            .join("\n"),
           inline: false,
         });
       }
@@ -933,7 +935,7 @@ export function formatThinkPagesEmbed(
       }
     }
 
-    const leagueUrl = sports.league.id 
+    const leagueUrl = sports.league.id
       ? `${APP_URL}${CLEAN_BASE_PATH}/myleague/${sports.league.id}`
       : url;
 
@@ -961,7 +963,7 @@ export function formatThinkPagesEmbed(
           icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
         },
         timestamp,
-      }
+      },
     ];
 
     if (mediaUrls && mediaUrls.length > 0) {

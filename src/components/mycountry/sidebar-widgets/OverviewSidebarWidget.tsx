@@ -74,10 +74,10 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
         {stats.map((s) => (
           <div
             key={s.label}
-            className="bg-white/[0.02] border border-white/5 rounded-xl p-2 text-center shadow-inner"
+            className="rounded-xl border border-white/5 bg-white/[0.02] p-2 text-center shadow-inner"
           >
             <div className="text-sm font-black text-amber-500">{s.value}</div>
-            <div className="text-muted-foreground/60 text-[9px] font-bold uppercase tracking-wider mt-0.5">
+            <div className="text-muted-foreground/60 mt-0.5 text-[9px] font-bold tracking-wider uppercase">
               {s.label}
             </div>
           </div>
@@ -87,27 +87,28 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
       {/* Feed Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          <span className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
             News Feed
           </span>
         </div>
         {!isLoading && (
-          <Badge variant="outline" className="px-1.5 py-0 text-[9px] font-bold text-muted-foreground/60">
+          <Badge
+            variant="outline"
+            className="text-muted-foreground/60 px-1.5 py-0 text-[9px] font-bold"
+          >
             {canonItems?.length ?? 0}
           </Badge>
         )}
       </div>
 
       {/* Scrollable Feed List */}
-      <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
+      <div className="max-h-[460px] scrollbar-thin space-y-2.5 overflow-y-auto pr-1">
         {isLoading && (
-          <div className="py-8 text-center text-xs text-muted-foreground">
-            Loading news feed...
-          </div>
+          <div className="text-muted-foreground py-8 text-center text-xs">Loading news feed...</div>
         )}
 
         {!isLoading && (!canonItems || canonItems.length === 0) && (
-          <div className="text-muted-foreground py-8 text-center text-xs bg-white/[0.01] rounded-xl border border-dashed border-white/5">
+          <div className="text-muted-foreground rounded-xl border border-dashed border-white/5 bg-white/[0.01] py-8 text-center text-xs">
             No recent activity. Execute actions to generate news.
           </div>
         )}
@@ -123,35 +124,38 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
                 key={item.id}
                 depth={2}
                 interactive="hover"
-                className="p-3 bg-white/[0.01] border-white/5 hover:border-white/10 shadow-md transition-all rounded-xl"
+                className="rounded-xl border-white/5 bg-white/[0.01] p-3 shadow-md transition-all hover:border-white/10"
               >
-                <div className="flex items-center gap-2 mb-2">
+                <div className="mb-2 flex items-center gap-2">
                   {/* Visual Circle/Glyph indicator */}
                   <div
                     className={cn(
-                      "grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-br text-[10px] font-black text-white shrink-0 shadow-sm",
+                      "grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-gradient-to-br text-[10px] font-black text-white shadow-sm",
                       meta.gradient
                     )}
                   >
                     {meta.glyph}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <div className="text-[10px] font-bold text-foreground/80 truncate">{meta.who}</div>
+                      <div className="text-foreground/80 truncate text-[10px] font-bold">
+                        {meta.who}
+                      </div>
                       {isLedger && item.targetField && (
                         <span
                           className={cn(
-                            "text-[8px] font-extrabold uppercase px-1 rounded-sm border shrink-0",
+                            "shrink-0 rounded-sm border px-1 text-[8px] font-extrabold uppercase",
                             isUp
-                              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
-                              : "bg-red-500/15 text-red-400 border-red-500/20"
+                              ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-400"
+                              : "border-red-500/20 bg-red-500/15 text-red-400"
                           )}
                         >
-                          {isUp ? "+" : ""}{item.deltaValue} {item.targetField}
+                          {isUp ? "+" : ""}
+                          {item.deltaValue} {item.targetField}
                         </span>
                       )}
                     </div>
-                    <div className="text-[8px] text-muted-foreground/60 font-semibold">
+                    <div className="text-muted-foreground/60 text-[8px] font-semibold">
                       {fmtTime(item.timestamp)}
                     </div>
                   </div>

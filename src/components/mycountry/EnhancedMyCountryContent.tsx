@@ -75,16 +75,22 @@ function NeedsYou({
   countryId: string;
   onDeclare: (title?: string) => void;
 }) {
-  const { data } = api.nationalIssues.getMyIssues.useQuery(
-    { countryId, status: "active" } as any,
-    { enabled: !!countryId, retry: false }
-  );
+  const { data } = api.nationalIssues.getMyIssues.useQuery({ countryId, status: "active" } as any, {
+    enabled: !!countryId,
+    retry: false,
+  });
   const list = (data?.issues ?? []).slice(0, 3);
   return (
-    <FacetCard depth={1} interactive="hover" className="p-5 flex flex-col gap-4 bg-card/30 backdrop-blur-md">
+    <FacetCard
+      depth={1}
+      interactive="hover"
+      className="bg-card/30 flex flex-col gap-4 p-5 backdrop-blur-md"
+    >
       <div>
         <h4 className="text-xs font-bold tracking-widest text-red-500 uppercase">Needs You</h4>
-        <p className="text-muted-foreground text-[10px] mt-0.5">Critical national matters requiring executive attention.</p>
+        <p className="text-muted-foreground mt-0.5 text-[10px]">
+          Critical national matters requiring executive attention.
+        </p>
       </div>
       <div className="space-y-3">
         {list.map((i: any) => {
@@ -96,36 +102,45 @@ function NeedsYou({
               key={i.id}
               onClick={() => onDeclare(i.title)}
               className={cn(
-                "flex w-full items-start gap-4 rounded-xl border p-4 text-left transition-all active:scale-[0.99] cursor-pointer shadow-lg",
+                "flex w-full cursor-pointer items-start gap-4 rounded-xl border p-4 text-left shadow-lg transition-all active:scale-[0.99]",
                 isUrgent
-                  ? "border-red-500/25 bg-red-500/5 hover:bg-red-500/10 border-l-4 border-l-red-500 shadow-red-500/5"
-                  : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05] border-l-4 border-l-blue-500"
+                  ? "border-l-4 border-red-500/25 border-l-red-500 bg-red-500/5 shadow-red-500/5 hover:bg-red-500/10"
+                  : "border-l-4 border-white/10 border-l-blue-500 bg-white/[0.02] hover:bg-white/[0.05]"
               )}
             >
-              <span className={cn("text-lg mt-0.5", isUrgent && "animate-pulse")}>🚨</span>
-              <div className="flex-1 min-w-0">
+              <span className={cn("mt-0.5 text-lg", isUrgent && "animate-pulse")}>🚨</span>
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-[13px] font-bold text-foreground/90 leading-tight truncate">{i.title}</div>
+                  <div className="text-foreground/90 truncate text-[13px] leading-tight font-bold">
+                    {i.title}
+                  </div>
                   <span
                     className={cn(
-                      "shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
-                      SEVERITY_BADGE[i.severity as keyof typeof SEVERITY_BADGE] || SEVERITY_BADGE.medium
+                      "shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase",
+                      SEVERITY_BADGE[i.severity as keyof typeof SEVERITY_BADGE] ||
+                        SEVERITY_BADGE.medium
                     )}
                   >
                     {i.severity}
                   </span>
                 </div>
-                <div className="text-muted-foreground line-clamp-2 text-[11px] mt-1.5 leading-relaxed">{i.description || i.headline}</div>
+                <div className="text-muted-foreground mt-1.5 line-clamp-2 text-[11px] leading-relaxed">
+                  {i.description || i.headline}
+                </div>
                 {deadline && (
                   <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-semibold">
-                    <Clock className={cn("h-3 w-3", isUrgent ? "text-red-400" : "text-muted-foreground")} />
-                    <span className={cn(isUrgent ? "text-red-400 animate-pulse" : "text-muted-foreground")}>
+                    <Clock
+                      className={cn("h-3 w-3", isUrgent ? "text-red-400" : "text-muted-foreground")}
+                    />
+                    <span
+                      className={cn(
+                        isUrgent ? "animate-pulse text-red-400" : "text-muted-foreground"
+                      )}
+                    >
                       {deadline.text}
                     </span>
                     <span className="text-muted-foreground/40">•</span>
-                    <span className="text-muted-foreground/70">
-                      {deadline.inWorldDate}
-                    </span>
+                    <span className="text-muted-foreground/70">{deadline.inWorldDate}</span>
                   </div>
                 )}
               </div>
@@ -133,7 +148,7 @@ function NeedsYou({
           );
         })}
         {list.length === 0 && (
-          <div className="text-muted-foreground py-6 text-center text-xs bg-white/[0.01] rounded-xl border border-dashed border-white/5">
+          <div className="text-muted-foreground rounded-xl border border-dashed border-white/5 bg-white/[0.01] py-6 text-center text-xs">
             All clear, leader.
           </div>
         )}
@@ -172,18 +187,26 @@ function AgendaTree({
 
   if ((tree.data ?? []).length === 0) {
     return (
-      <FacetCard depth={1} interactive="hover" className="p-5 flex flex-col gap-4 bg-card/30 backdrop-blur-md text-center">
+      <FacetCard
+        depth={1}
+        interactive="hover"
+        className="bg-card/30 flex flex-col gap-4 p-5 text-center backdrop-blur-md"
+      >
         <div>
-          <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">Your Agenda</h4>
-          <p className="text-muted-foreground text-[10px] mt-0.5">Your current active plans, directives, and goals.</p>
+          <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">
+            Your Agenda
+          </h4>
+          <p className="text-muted-foreground mt-0.5 text-[10px]">
+            Your current active plans, directives, and goals.
+          </p>
         </div>
-        <div className="py-8 bg-white/[0.01] rounded-xl border border-dashed border-white/5">
-          <p className="text-muted-foreground text-xs max-w-sm mx-auto mb-4">
+        <div className="rounded-xl border border-dashed border-white/5 bg-white/[0.01] py-8">
+          <p className="text-muted-foreground mx-auto mb-4 max-w-sm text-xs">
             Committed intents and their follow-ups will appear here as a dependency tree.
           </p>
           <button
             onClick={() => onIssueDirective?.()}
-            className="text-xs font-bold text-amber-500 hover:underline cursor-pointer"
+            className="cursor-pointer text-xs font-bold text-amber-500 hover:underline"
           >
             Issue your first directive →
           </button>
@@ -197,57 +220,86 @@ function AgendaTree({
   );
 
   return (
-    <FacetCard depth={1} interactive="hover" className="p-5 flex flex-col gap-4 bg-card/30 backdrop-blur-md">
+    <FacetCard
+      depth={1}
+      interactive="hover"
+      className="bg-card/30 flex flex-col gap-4 p-5 backdrop-blur-md"
+    >
       <div>
         <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">Your Agenda</h4>
-        <p className="text-muted-foreground text-[10px] mt-0.5">Your current active plans, directives, and goals.</p>
+        <p className="text-muted-foreground mt-0.5 text-[10px]">
+          Your current active plans, directives, and goals.
+        </p>
       </div>
       <div className="space-y-4">
         {rootIntents.map((root: any) => {
           const children = (tree.data ?? []).filter((x: any) => x.parentId === root.id);
           const hasChildren = children.length > 0;
-          const toneKey = root.tier === "measured" ? "good" : root.tier === "moderate" ? "mid" : "bad";
+          const toneKey =
+            root.tier === "measured" ? "good" : root.tier === "moderate" ? "mid" : "bad";
           const trackColor = TIER_LINE_COLOR[root.tier] || "bg-white/10";
 
           return (
-            <div key={root.id} className="relative rounded-xl border border-white/5 bg-white/[0.01] p-4">
+            <div
+              key={root.id}
+              className="relative rounded-xl border border-white/5 bg-white/[0.01] p-4"
+            >
               {/* Root Row */}
               <div className="flex items-center gap-3 text-sm">
                 <span
                   className={cn(
-                    "rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                    "rounded-full border px-2.5 py-0.5 text-[9px] font-bold tracking-wider uppercase",
                     TONE_CLS[toneKey]
                   )}
                 >
                   {root.tier}
                 </span>
-                <span className="text-foreground/90 flex-1 truncate font-semibold leading-tight">{root.goal}</span>
-                <span className="text-muted-foreground/60 text-[10px] font-medium capitalize bg-white/5 px-2 py-0.5 rounded border border-white/5 shrink-0">
+                <span className="text-foreground/90 flex-1 truncate leading-tight font-semibold">
+                  {root.goal}
+                </span>
+                <span className="text-muted-foreground/60 shrink-0 rounded border border-white/5 bg-white/5 px-2 py-0.5 text-[10px] font-medium capitalize">
                   {root.category}
                 </span>
               </div>
 
               {/* Children Sub-Tree */}
               {hasChildren && (
-                <div className="relative ml-6 mt-4 pl-5">
+                <div className="relative mt-4 ml-6 pl-5">
                   {/* Vertical Connect Track */}
-                  <div className={cn("absolute left-0 top-1 bottom-4 w-[2px] rounded-full", trackColor)} />
+                  <div
+                    className={cn(
+                      "absolute top-1 bottom-4 left-0 w-[2px] rounded-full",
+                      trackColor
+                    )}
+                  />
 
                   <div className="space-y-3.5">
                     {children.map((kid: any) => {
                       const kidStatus = kid.status?.toLowerCase() || "active";
                       return (
-                        <div key={kid.id} className="relative flex items-center justify-between gap-3 text-xs">
+                        <div
+                          key={kid.id}
+                          className="relative flex items-center justify-between gap-3 text-xs"
+                        >
                           {/* Horizontal Connect Connector Line */}
-                          <div className={cn("absolute left-[-20px] top-1/2 -translate-y-1/2 w-4 h-[2px]", trackColor)} />
-                          
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-amber-400/70 font-bold leading-none select-none">↳</span>
-                            <span className="text-foreground/80 truncate font-medium">{kid.goal}</span>
+                          <div
+                            className={cn(
+                              "absolute top-1/2 left-[-20px] h-[2px] w-4 -translate-y-1/2",
+                              trackColor
+                            )}
+                          />
+
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="leading-none font-bold text-amber-400/70 select-none">
+                              ↳
+                            </span>
+                            <span className="text-foreground/80 truncate font-medium">
+                              {kid.goal}
+                            </span>
                           </div>
                           <span
                             className={cn(
-                              "rounded-full border px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider shrink-0",
+                              "shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-bold tracking-wider uppercase",
                               STATUS_BADGE_STYLE[kidStatus] || STATUS_BADGE_STYLE.active
                             )}
                           >
@@ -266,8 +318,6 @@ function AgendaTree({
     </FacetCard>
   );
 }
-
-
 
 export function EnhancedMyCountryContent({
   variant = "unified",
@@ -330,7 +380,7 @@ export function EnhancedMyCountryContent({
               <AgendaTree countryId={country.id} onIssueDirective={onIssueDirective} />
             </>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <NeedsYou countryId={country.id} onDeclare={onIssueDirective || (() => {})} />
               <AgendaTree countryId={country.id} onIssueDirective={onIssueDirective} />
             </div>

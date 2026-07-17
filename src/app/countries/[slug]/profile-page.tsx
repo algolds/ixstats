@@ -182,7 +182,9 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
 
             {/* National Statistics & Performance Indicators */}
             <div className="space-y-4">
-              <h3 className="text-xl font-bold tracking-tight">National Statistics & Performance</h3>
+              <h3 className="text-xl font-bold tracking-tight">
+                National Statistics & Performance
+              </h3>
               <CountryDataProvider userId={user?.id || ""} countryId={country.id}>
                 <MyCountryTabSystem variant="unified" />
               </CountryDataProvider>

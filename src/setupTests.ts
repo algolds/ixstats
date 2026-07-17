@@ -11,4 +11,11 @@ if (typeof (globalThis as { fetch?: unknown }).fetch === "undefined") {
   if (fetchModule.Headers) g.Headers = fetchModule.Headers;
 }
 
+jest.mock("@number-flow/react", () => {
+  return {
+    __esModule: true,
+    default: ({ value }: { value: number }) => value,
+  };
+});
+
 export {};

@@ -10,10 +10,7 @@ import { BackgroundImageTexture } from "~/components/ui/bg-image-texture";
  */
 export default function BuilderLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      data-builder-headless
-      className="relative min-h-screen"
-    >
+    <div data-builder-headless className="relative min-h-screen">
       <BackgroundImageTexture
         variant="groovepaper"
         opacity={0.08}
@@ -23,4 +20,3 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
     </div>
   );
 }
-

@@ -93,22 +93,25 @@ export const onomaBatchRouter = createTRPCRouter({
         selectedSuffix: z.string().optional(),
         customSuffix: z.string().optional(),
         order: z.number().min(1).max(5).default(2),
-        options: z.object({
-          minLength: z.number().optional(),
-          maxLength: z.number().optional(),
-          startsWith: z.string().optional(),
-          endsWith: z.string().optional(),
-          contains: z.string().optional(),
-          excludes: z.string().optional(),
-          allowDuplicates: z.boolean().optional(),
-          maxConsonantCluster: z.number().optional(),
-          maxVowelCluster: z.number().optional(),
-          allowDoubleLetters: z.boolean().optional(),
-          minSyllables: z.number().optional(),
-          maxSyllables: z.number().optional(),
-          mustEndWithVowel: z.boolean().optional(),
-          mustEndWithConsonant: z.boolean().optional(),
-        }).optional().default({}),
+        options: z
+          .object({
+            minLength: z.number().optional(),
+            maxLength: z.number().optional(),
+            startsWith: z.string().optional(),
+            endsWith: z.string().optional(),
+            contains: z.string().optional(),
+            excludes: z.string().optional(),
+            allowDuplicates: z.boolean().optional(),
+            maxConsonantCluster: z.number().optional(),
+            maxVowelCluster: z.number().optional(),
+            allowDoubleLetters: z.boolean().optional(),
+            minSyllables: z.number().optional(),
+            maxSyllables: z.number().optional(),
+            mustEndWithVowel: z.boolean().optional(),
+            mustEndWithConsonant: z.boolean().optional(),
+          })
+          .optional()
+          .default({}),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -162,10 +165,16 @@ export const onomaBatchRouter = createTRPCRouter({
           const cities = await ctx.db.city.findMany({ select: { name: true }, take: 200 });
           worldSeeds.push(...cities.map((c) => c.name));
         } else if (trainingCategory === "province") {
-          const subdivisions = await ctx.db.subdivision.findMany({ select: { name: true }, take: 150 });
+          const subdivisions = await ctx.db.subdivision.findMany({
+            select: { name: true },
+            take: 150,
+          });
           worldSeeds.push(...subdivisions.map((s) => s.name));
         } else {
-          const officials = await ctx.db.governmentOfficial.findMany({ select: { name: true }, take: 150 });
+          const officials = await ctx.db.governmentOfficial.findMany({
+            select: { name: true },
+            take: 150,
+          });
           worldSeeds.push(...officials.map((o) => o.name));
         }
       }
@@ -227,33 +236,64 @@ export const onomaBatchRouter = createTRPCRouter({
           else if (input.subType === "demon") name = generateDemonName();
           else if (input.subType === "angel") name = generateAngelName(input.gender);
         } else if (category === "organization" && input.subType && input.subType !== "generic") {
-          if (input.subType === "mystic-order") name = generateMysticOrderName(characterChain, genOptions);
-          else if (input.subType === "military-unit") name = generateMilitaryUnitName(characterChain, genOptions);
-          else if (input.subType === "covert-org") name = generateCovertOrgName(characterChain, genOptions);
+          if (input.subType === "mystic-order")
+            name = generateMysticOrderName(characterChain, genOptions);
+          else if (input.subType === "military-unit")
+            name = generateMilitaryUnitName(characterChain, genOptions);
+          else if (input.subType === "covert-org")
+            name = generateCovertOrgName(characterChain, genOptions);
           else if (input.subType === "tavern") name = generateTavernName(genOptions);
-          else if (input.subType === "business-company") name = generateBusinessCompanyName(characterChain, genOptions);
-          else if (input.subType === "academic-institution") name = generateAcademicInstitutionName(characterChain, genOptions);
-          else if (input.subType === "political-party") name = generatePoliticalPartyName(characterChain, genOptions);
-          else if (input.subType === "government-agency") name = generateGovernmentAgencyName(characterChain, genOptions);
-          else if (input.subType === "media-outlet") name = generateMediaOutletName(characterChain, genOptions);
-          else if (input.subType === "ngo-foundation") name = generateNgoName(characterChain, genOptions);
-          else if (input.subType === "religious-order") name = generateReligiousOrderName(characterChain, genOptions);
+          else if (input.subType === "business-company")
+            name = generateBusinessCompanyName(characterChain, genOptions);
+          else if (input.subType === "academic-institution")
+            name = generateAcademicInstitutionName(characterChain, genOptions);
+          else if (input.subType === "political-party")
+            name = generatePoliticalPartyName(characterChain, genOptions);
+          else if (input.subType === "government-agency")
+            name = generateGovernmentAgencyName(characterChain, genOptions);
+          else if (input.subType === "media-outlet")
+            name = generateMediaOutletName(characterChain, genOptions);
+          else if (input.subType === "ngo-foundation")
+            name = generateNgoName(characterChain, genOptions);
+          else if (input.subType === "religious-order")
+            name = generateReligiousOrderName(characterChain, genOptions);
         } else if (category === "military" && input.subType && input.subType !== "generic") {
-          if (input.subType === "military-unit") name = generateMilitaryUnitName(characterChain, genOptions);
-          else if (input.subType === "mercenary-band") name = generateMercenaryBandName(characterChain, genOptions);
+          if (input.subType === "military-unit")
+            name = generateMilitaryUnitName(characterChain, genOptions);
+          else if (input.subType === "mercenary-band")
+            name = generateMercenaryBandName(characterChain, genOptions);
         } else if (category === "dynasty" && input.subType && input.subType !== "generic") {
           if (input.subType === "fantasy-syllable") name = generateFantasySyllableName();
-          else if (input.subType === "noble-surname") name = generateNobleSurname(culture, characterChain, genOptions);
+          else if (input.subType === "noble-surname")
+            name = generateNobleSurname(culture, characterChain, genOptions);
         } else if (category === "city" && input.subType === "settlement-colony") {
-          const base = characterChain.generate(genOptions) || syllableChain.generate(genOptions) || generateFantasySyllableName();
+          const base =
+            characterChain.generate(genOptions) ||
+            syllableChain.generate(genOptions) ||
+            generateFantasySyllableName();
           const d3 = Math.floor(Math.random() * 3);
           const capitalized = MarkovChain.capitalize(base);
           if (d3 === 0) name = `New ${capitalized}`;
           else if (d3 === 1) name = `Port ${capitalized}`;
           else name = `${capitalized} Colony`;
         } else if (category === "geography" && input.subType === "natural-landmark") {
-          const base = characterChain.generate(genOptions) || syllableChain.generate(genOptions) || generateFantasySyllableName();
-          const suffixes = ["River", "Valley", "Mount", "Bay", "Lake", "Ridge", "Coast", "Canyon", "Forest", "Peak", "Hills"];
+          const base =
+            characterChain.generate(genOptions) ||
+            syllableChain.generate(genOptions) ||
+            generateFantasySyllableName();
+          const suffixes = [
+            "River",
+            "Valley",
+            "Mount",
+            "Bay",
+            "Lake",
+            "Ridge",
+            "Coast",
+            "Canyon",
+            "Forest",
+            "Peak",
+            "Hills",
+          ];
           const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
           name = `${MarkovChain.capitalize(base)} ${suffix}`;
         }
@@ -273,7 +313,10 @@ export const onomaBatchRouter = createTRPCRouter({
           }
 
           let suffixStr = "";
-          if ((category === "organization" || category === "country" || category === "province") && input.selectedSuffix) {
+          if (
+            (category === "organization" || category === "country" || category === "province") &&
+            input.selectedSuffix
+          ) {
             if (input.selectedSuffix === "custom") {
               suffixStr = input.customSuffix ? " " + input.customSuffix.trim() : "";
             } else {
@@ -282,7 +325,7 @@ export const onomaBatchRouter = createTRPCRouter({
           }
 
           const fullName = prefixStr + name + suffixStr;
-          
+
           if (generatedSet.has(fullName)) continue;
           generatedSet.add(fullName);
 

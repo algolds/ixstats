@@ -120,7 +120,7 @@ export function MapControlsFAB({
           break;
       }
     },
-    [onToggleLabels, onToggleMeasure, onTogglePin],
+    [onToggleLabels, onToggleMeasure, onTogglePin]
   );
 
   const actions = [
@@ -151,7 +151,7 @@ export function MapControlsFAB({
     >
       {/* Active panel (bottom sheet style) */}
       {activePanel && (
-        <div className="bg-card mb-3 w-56 rounded-2xl p-3 shadow-xl border border-white/10">
+        <div className="bg-card mb-3 w-56 rounded-2xl border border-white/10 p-3 shadow-xl">
           <div className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-wider uppercase">
             {activePanel === "layers" ? "Map Layers" : "Analytics"}
           </div>
@@ -207,7 +207,7 @@ export function MapControlsFAB({
               <button
                 key={action.key}
                 onClick={() => handleAction(action.key)}
-                className="bg-card text-foreground flex items-center gap-2 rounded-full px-4 shadow-lg transition-transform active:scale-95 border border-white/10"
+                className="bg-card text-foreground flex items-center gap-2 rounded-full border border-white/10 px-4 shadow-lg transition-transform active:scale-95"
                 style={{ minHeight: "44px" }}
               >
                 <span className="text-sm font-medium">{action.label}</span>
@@ -242,7 +242,10 @@ function ToggleRow({
   onChange: () => void;
 }) {
   return (
-    <label className="hover:bg-accent flex cursor-pointer items-center justify-between rounded-lg px-2 transition-colors" style={{ minHeight: "44px" }}>
+    <label
+      className="hover:bg-accent flex cursor-pointer items-center justify-between rounded-lg px-2 transition-colors"
+      style={{ minHeight: "44px" }}
+    >
       <span className="text-foreground text-sm">{label}</span>
       <div
         className={`relative h-6 w-11 rounded-full transition-colors ${

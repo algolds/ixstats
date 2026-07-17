@@ -173,9 +173,7 @@ export function MapDynamicIsland({
             {user && totalUnread > 0 && (
               <button
                 onClick={() =>
-                  router.push(
-                    messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence"
-                  )
+                  router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                 }
                 className={cn(
                   "relative shrink-0 rounded-full p-1 transition-all duration-300",
@@ -359,9 +357,7 @@ export function MapDynamicIsland({
                 {user && totalUnread > 0 && (
                   <button
                     onClick={() =>
-                      router.push(
-                        messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence"
-                      )
+                      router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
                     }
                     className={cn(
                       "relative shrink-0 rounded-full p-1 transition-all duration-300",
@@ -444,7 +440,7 @@ export function MapDynamicIsland({
       {/* ── Search Results Dropdown ── */}
       {isMobile ? (
         showResults && (
-          <div className="bg-card mt-2 max-h-80 overflow-y-auto rounded-2xl py-1 shadow-2xl border border-white/10 w-[calc(100vw-24px)]">
+          <div className="bg-card mt-2 max-h-80 w-[calc(100vw-24px)] overflow-y-auto rounded-2xl border border-white/10 py-1 shadow-2xl">
             {searchLoading && !hasResults && (
               <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin" />
