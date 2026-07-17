@@ -180,6 +180,15 @@ else
 fi
 echo ""
 
+# Stop any existing process on the target port to avoid EADDRINUSE
+if [ -n "$PORT" ]; then
+    echo "Stopping any existing process on port $PORT..."
+    PID=$(lsof -t -i:"$PORT" 2>/dev/null || true)
+    if [ -n "$PID" ]; then
+        kill -9 $PID 2>/dev/null || true
+    fi
+fi
+
 # Start the production server
 echo "🚀 Starting production server..."
 echo "   The application will be available at: https://ixwiki.com$BASE_PATH"
