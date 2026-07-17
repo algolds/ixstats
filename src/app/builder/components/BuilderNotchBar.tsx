@@ -155,6 +155,19 @@ export function BuilderNotchBar({
     };
   }, []);
 
+  // Reset scroll and container translation back to top whenever the wizard section changes
+  useEffect(() => {
+    lastScrollYRef.current = 0;
+    const container = containerRef.current;
+    if (container) {
+      container.style.transform = "translateY(0px)";
+      container.style.opacity = "1";
+      container.style.visibility = "visible";
+    }
+    setIsScrolled(false);
+    setIsAtBottomState(false);
+  }, [activeSection]);
+
   // Sync scroll translation immediately after every render
   useEffect(() => {
     handleScrollRef.current();

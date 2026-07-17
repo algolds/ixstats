@@ -114,16 +114,17 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
     });
   }, [archetypes, searchQuery, complexityFilter, activeTab]);
 
-  const handleApplyArchetype = () => {
-    if (!selectedArchetype) return;
+  const handleApplyArchetype = (archetypeToApply?: EconomicArchetype) => {
+    const target = archetypeToApply || selectedArchetype;
+    if (!target) return;
 
     setIsLoading(true);
     try {
       // Get archetype ID (prefer id over key for database tracking)
-      const archetypeId = (selectedArchetype as any).id || selectedArchetype.id;
+      const archetypeId = (target as any).id || target.id;
 
       // Apply archetype to current state
-      onArchetypeApplied?.(currentState as any, archetypeId, selectedArchetype);
+      onArchetypeApplied?.(currentState as any, archetypeId, target);
 
       // Show success message
       setIsDetailsOpen(false);
@@ -348,14 +349,21 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             {showSelectButton && (
               <Button
                 onClick={() => {
-                  setSelectedArchetype(archetype);
-                  handleApplyArchetype();
+                  if (!isSelected) {
+                    handleApplyArchetype(archetype);
+                  }
                 }}
-                className="h-8 flex-1 cursor-pointer bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                disabled={isSelected}
+                className={cn(
+                  "h-8 flex-1 cursor-pointer text-xs font-semibold transition-all",
+                  isSelected
+                    ? "bg-emerald-600/15 text-emerald-400 border border-emerald-500/30 cursor-default hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                )}
                 size="sm"
               >
-                <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
-                Select
+                <CheckCircle className={cn("mr-1.5 h-3.5 w-3.5", isSelected ? "text-emerald-400" : "text-white")} />
+                {isSelected ? "Selected" : "Select"}
               </Button>
             )}
             <Button
@@ -378,6 +386,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
   const renderArchetypeDetails = () => {
     if (!selectedArchetype) return null;
+    const isGloballySelected = currentState?.selectedArchetypeId === selectedArchetype.id;
 
     return (
       <div className="text-foreground space-y-6">
@@ -395,14 +404,24 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             </div>
           </div>
           <Button
-            onClick={handleApplyArchetype}
-            disabled={isLoading}
-            className="flex h-11 w-full shrink-0 cursor-pointer items-center gap-2 self-center bg-emerald-600 px-6 font-semibold text-white shadow-lg shadow-emerald-500/10 hover:bg-emerald-700 lg:w-auto dark:bg-emerald-500 dark:hover:bg-emerald-600"
+            onClick={() => handleApplyArchetype(selectedArchetype)}
+            disabled={isLoading || isGloballySelected}
+            className={cn(
+              "flex h-11 w-full shrink-0 cursor-pointer items-center gap-2 self-center px-6 font-semibold shadow-lg transition-all lg:w-auto",
+              isGloballySelected
+                ? "bg-emerald-600/15 text-emerald-400 border border-emerald-500/30 cursor-default hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
+                : "bg-emerald-600 text-white shadow-emerald-500/10 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+            )}
           >
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span>Applying Preset...</span>
+              </>
+            ) : isGloballySelected ? (
+              <>
+                <CheckCircle className="h-4 w-4 text-emerald-400" />
+                <span>Preset Applied</span>
               </>
             ) : (
               <>
@@ -762,13 +781,13 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             value="modern"
             className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
-            Economy Presets
+            Modern Archetypes
           </TabsTrigger>
           <TabsTrigger
             value="historical"
             className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-all data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
           >
-            Government Presets
+            Historical Archetypes
           </TabsTrigger>
         </TabsList>
 
