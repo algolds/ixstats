@@ -12,7 +12,6 @@ import {
   Briefcase,
   Clock,
   Edit3,
-  Eye,
   Sparkles,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
@@ -30,6 +29,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
 import { usePremium } from "~/hooks/usePremium";
 import { useCountryData } from "./primitives";
+import { QuickVitalityRings, createVitalityRingsFromCountry } from "./primitives/tabs/VitalityRingsDisplay";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
@@ -498,7 +498,7 @@ export function OverviewHero({
           />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 md:h-[320px] dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
+        <div className="relative z-10 flex flex-col justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 shadow-[0_0_15px_rgba(245,158,11,0.05)] backdrop-blur-md md:col-span-2 md:min-h-[320px] md:h-auto pb-4 dark:border-amber-500/30 dark:bg-amber-950/[0.18] dark:shadow-[0_0_20px_rgba(245,158,11,0.07)]">
           <div className="flex h-full flex-col justify-between">
             {/* Header */}
             <div>
@@ -606,16 +606,6 @@ export function OverviewHero({
                     Edit Country
                   </Button>
                 </Link>
-                <Link href={createUrl(`/countries/${stats.slug}`)} className="flex-1 min-w-[100px]">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-full cursor-pointer gap-1.5 border-white/10 text-xs font-bold transition-all hover:bg-white/10 hover:text-white active:scale-[0.98]"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    View Profile
-                  </Button>
-                </Link>
               </div>
 
 
@@ -686,6 +676,20 @@ export function OverviewHero({
                   <SmartStack items={agendaItems} onResolve={(section) => onNavigate?.(section)} />
                 )}
               </div>
+
+              {/* Vitality Rings Display */}
+              {hasCountry && country && (
+                <div className="mt-1 mb-2.5 flex items-center justify-between border-t border-white/5 pt-2.5 select-none shrink-0">
+                  <span className="text-muted-foreground/60 text-[8px] font-extrabold tracking-wider uppercase">
+                    Vitality Index
+                  </span>
+                  <QuickVitalityRings
+                    rings={createVitalityRingsFromCountry(country)}
+                    size="sm"
+                    className="gap-1.5"
+                  />
+                </div>
+              )}
 
               {/* Civil Service Capacity + Rollout Queue */}
               <CivilServiceWidget
