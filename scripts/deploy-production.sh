@@ -188,6 +188,7 @@ fi
 # Stop any existing process on the target port to avoid EADDRINUSE
 if [ -n "$PORT" ]; then
     echo "Stopping any existing process on port $PORT..."
+    fuser -k "$PORT"/tcp 2>/dev/null || true
     PID=$(lsof -t -i:"$PORT" 2>/dev/null || true)
     if [ -n "$PID" ]; then
         kill -9 $PID 2>/dev/null || true
