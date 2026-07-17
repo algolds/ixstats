@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card } from "~/components/ui/card";
@@ -44,6 +45,7 @@ function TeamName({
  * markdown wall-of-text with an organized score table + table movers + deep links.
  */
 export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
+  const [activeTab, setActiveTab] = useState<"results" | "movers" | "summary">("results");
   // Champion Crowned Layout
   if (data.isChampionBulletin) {
     return (
@@ -179,6 +181,10 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
   }
 
   // Default Matchday Results Layout
+  const hasResults = !!(data.results && data.results.length > 0);
+  const hasMovers = !!(data.movers && data.movers.length > 0);
+  const hasSummary = !!data.llmSummary;
+
   return (
     <Card className="glass-hierarchy-child mt-2 overflow-hidden border-white/10 bg-slate-950/20 p-0 shadow-md backdrop-blur-md transition-all duration-300 hover:border-white/15">
       {/* Header */}
@@ -200,80 +206,152 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
         </span>
       </div>
 
-      {/* Results table */}
-      {data.results && data.results.length > 0 && (
-        <div className="divide-y divide-white/5 bg-black/10">
-          {data.results.map((r, i) => {
+      {/* Tabs Selector */}
+      {(hasMovers || hasSummary) && (
+        <div className="flex gap-1.5 border-b border-white/5 bg-black/25 px-4 py-1.5 text-[13px]">
+          {hasResults && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab("results");
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 font-medium transition-all duration-200 cursor-pointer",
+                activeTab === "results"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+              )}
+            >
+              📅 Matches
+            </button>
+          )}
+          {hasMovers && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab("movers");
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 font-medium transition-all duration-200 cursor-pointer",
+                activeTab === "movers"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+              )}
+            >
+              📈 Movers ({data.movers?.length})
+            </button>
+          )}
+          {hasSummary && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab("summary");
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 font-medium transition-all duration-200 cursor-pointer",
+                activeTab === "summary"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+              )}
+            >
+              📝 Summary
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Results Tab Content */}
+      {activeTab === "results" && hasResults && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-black/10">
+          {data.results!.map((r, i) => {
             const homeWon = r.homeScore > r.awayScore;
             const awayWon = r.awayScore > r.homeScore;
             return (
               <div
                 key={i}
-                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 text-slate-200 transition-colors hover:bg-white/[0.02]"
+                className={cn(
+                  "flex items-center justify-between gap-3 px-3 py-2 text-slate-200 transition-all rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04]",
+                  r.isUpset && "border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-500/30"
+                )}
               >
-                <TeamName team={r.home} won={homeWon} align="right" />
-                <div className="flex items-center gap-1.5 font-mono text-[15px] font-semibold tabular-nums">
-                  <span className={homeWon ? "font-bold text-amber-400" : "text-slate-400"}>
+                <div className="flex-1 min-w-0 flex items-center justify-end text-right">
+                  <TeamName team={r.home} won={homeWon} align="right" />
+                </div>
+                
+                <div className="flex items-center gap-1 font-mono text-[14px] font-bold tabular-nums px-2 py-0.5 rounded bg-black/30 border border-white/5">
+                  <span className={homeWon ? "text-amber-400" : "text-slate-400"}>
                     {r.homeScore}
                   </span>
                   <span className="text-slate-600">–</span>
-                  <span className={awayWon ? "font-bold text-amber-400" : "text-slate-400"}>
+                  <span className={awayWon ? "text-amber-400" : "text-slate-400"}>
                     {r.awayScore}
                   </span>
+                </div>
+
+                <div className="flex-1 min-w-0 flex items-center justify-start text-left gap-1.5">
+                  <TeamName team={r.away} won={awayWon} align="left" />
                   {r.isUpset && (
-                    <span className="ml-0.5 text-[11px]" title="Upset of the day">
+                    <span className="text-[11px] animate-pulse cursor-help" title="Upset of the day">
                       ⭐
                     </span>
                   )}
                 </div>
-                <TeamName team={r.away} won={awayWon} align="left" />
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Table movers */}
-      {data.movers && data.movers.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-white/10 bg-white/[0.02] px-4 py-2.5">
-          <span className="mr-1 text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
+      {/* Movers Tab Content */}
+      {activeTab === "movers" && hasMovers && (
+        <div className="flex flex-col gap-2 p-3 bg-black/10">
+          <span className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase px-1">
             Table Movers
           </span>
-          {data.movers.map((m, i) => {
-            const up = m.newRank < m.oldRank;
-            const Icon = up ? TrendingUp : TrendingDown;
-            const body = (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium transition-all duration-200 hover:scale-[1.02]",
-                  up
-                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-                    : "border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
-                )}
-              >
-                <Icon className="h-3 w-3" />
-                {m.name}{" "}
-                <span className="text-[11px] text-slate-400">
-                  ({ordinal(m.oldRank)} → {ordinal(m.newRank)})
-                </span>
-              </span>
-            );
-            return m.id ? (
-              <Link key={i} href={`/myclub/${m.id}`} onClick={(e) => e.stopPropagation()}>
-                {body}
-              </Link>
-            ) : (
-              <span key={i}>{body}</span>
-            );
-          })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {data.movers!.map((m, i) => {
+              const up = m.newRank < m.oldRank;
+              const Icon = up ? TrendingUp : TrendingDown;
+              const body = (
+                <div
+                  className={cn(
+                    "flex items-center justify-between border px-3 py-2 text-[13px] font-medium transition-all duration-200 hover:scale-[1.01] rounded-lg bg-white/[0.01]",
+                    up
+                      ? "border-emerald-500/10 bg-emerald-500/[0.02] text-emerald-300 hover:bg-emerald-500/[0.05] hover:border-emerald-500/20"
+                      : "border-rose-500/10 bg-rose-500/[0.02] text-rose-300 hover:bg-rose-500/[0.05] hover:border-rose-500/20"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    <span>{m.name}</span>
+                  </div>
+                  <span className="text-[12px] text-slate-400">
+                    {ordinal(m.oldRank)} → <strong className="text-white">{ordinal(m.newRank)}</strong>
+                  </span>
+                </div>
+              );
+              return m.id ? (
+                <Link key={i} href={`/myclub/${m.id}`} onClick={(e) => e.stopPropagation()}>
+                  {body}
+                </Link>
+              ) : (
+                <div key={i}>{body}</div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* LLM narration */}
-      {data.llmSummary && (
-        <p className="border-t border-white/10 bg-white/[0.01] px-4 py-2.5 text-[14px] leading-relaxed text-slate-300 italic">
-          {data.llmSummary}
-        </p>
+      {/* Commentary Tab Content */}
+      {activeTab === "summary" && hasSummary && (
+        <div className="p-4 bg-black/10">
+          <span className="mb-2 block text-[11px] font-semibold tracking-wide text-amber-400 uppercase">
+            Matchday Narration
+          </span>
+          <p className="text-[14px] leading-relaxed text-slate-300 italic border-l-2 border-amber-500/30 pl-3">
+            {data.llmSummary}
+          </p>
+        </div>
       )}
     </Card>
   );

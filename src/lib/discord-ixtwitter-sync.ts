@@ -14,6 +14,8 @@ import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 import { DOMParser } from "@xmldom/xmldom";
 import { buildDiscordPollObject } from "~/lib/discord-poll";
+import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
+import { cleanPostContent } from "~/lib/thinkpages-discord-feed";
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
 // IxTwitter is one-way (Discord → feed only). The dedicated ThinkPages channel handles feed → Discord.
@@ -825,6 +827,25 @@ export function mapThinkpagesReactionToDiscord(reactionType: string): string {
   }
 }
 
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
+}
+
+function formatCodeBlockTable(results: any[]): string {
+  if (!results || results.length === 0) return "";
+  const maxHomeLen = Math.max(...results.map((r) => String(r.home?.name || "").length), 10);
+  const lines = results.map((r) => {
+    const home = String(r.home?.name || "").padEnd(maxHomeLen, " ");
+    const score = `${r.homeScore} - ${r.awayScore}`;
+    const away = String(r.away?.name || "");
+    const upsetMarker = r.isUpset ? "  [Upset ⭐]" : "";
+    return `${home}  ${score}  ${away}${upsetMarker}`;
+  });
+  return `\`\`\`\n${lines.join("\n")}\n\`\`\``;
+}
+
 export function formatThinkPagesEmbed(
   post: { id: string; content: string; ixTimeTimestamp?: Date | string },
   account: {
@@ -849,9 +870,118 @@ export function formatThinkPagesEmbed(
     ? new Date(post.ixTimeTimestamp).toISOString()
     : new Date().toISOString();
 
+  // Try to parse sports bulletin
+  const sports = parseSportsBulletin(post.content);
+  if (sports && sports.league && sports.league.name) {
+    let embedColor = 0xf59e0b; // default gold/yellow
+    if (sports.isPlayoffBulletin) {
+      embedColor = 0x06b6d4; // cyan
+    } else {
+      const emoji = sports.sportEmoji;
+      if (emoji === "⚽") embedColor = 0x22c55e;
+      else if (emoji === "🏀") embedColor = 0xf97316;
+      else if (emoji === "🏒") embedColor = 0x38bdf8;
+      else if (emoji === "🏈") embedColor = 0x8b5cf6;
+    }
+
+    let title = `${sports.sportEmoji} ${sports.league.name}`;
+    if (sports.isChampionBulletin) {
+      title = `🏆 ${sports.league.name} CHAMPION CROWNED!`;
+    } else if (sports.isPlayoffBulletin) {
+      title = `${sports.sportEmoji} ${sports.league.name} Playoff ${sports.roundName} Results`;
+    } else if (sports.matchDay) {
+      title = `${sports.sportEmoji} ${sports.league.name} — Matchday ${sports.matchDay}`;
+    }
+
+    let description = "";
+    const fields: any[] = [];
+
+    if (sports.isChampionBulletin) {
+      description = `Congratulations to **${sports.championName}** for winning the championship!`;
+      if (sports.llmSummary) {
+        fields.push({
+          name: "📝 Season Summary",
+          value: `*${sports.llmSummary}*`,
+          inline: false,
+        });
+      }
+    } else {
+      if (sports.results && sports.results.length > 0) {
+        description = formatCodeBlockTable(sports.results);
+      }
+      
+      if (sports.movers && sports.movers.length > 0) {
+        fields.push({
+          name: "📈 Table Movers",
+          value: sports.movers.map((m) => {
+            const up = m.newRank < m.oldRank;
+            const arrow = up ? "▲" : "▼";
+            const diff = m.oldRank - m.newRank;
+            const sign = diff > 0 ? "+" : "";
+            return `${arrow} **${m.name}** (${sign}${diff} spots, ${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
+          }).join("\n"),
+          inline: false,
+        });
+      }
+
+      if (sports.llmSummary) {
+        fields.push({
+          name: "📝 Summary",
+          value: `*${sports.llmSummary}*`,
+          inline: false,
+        });
+      }
+    }
+
+    const leagueUrl = sports.league.id 
+      ? `${APP_URL}${CLEAN_BASE_PATH}/myleague/${sports.league.id}`
+      : url;
+
+    // Append direct link back to league page
+    if (description) {
+      description += `\n🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
+    } else {
+      description = `🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
+    }
+
+    const embeds: any[] = [
+      {
+        url: leagueUrl,
+        author: {
+          name: authorName,
+          icon_url: avatarUrl,
+          url,
+        },
+        title,
+        description,
+        fields,
+        color: embedColor,
+        footer: {
+          text: "ThinkPages · Shared via IxStates",
+          icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
+        },
+        timestamp,
+      }
+    ];
+
+    if (mediaUrls && mediaUrls.length > 0) {
+      const urls = mediaUrls.map((u) => (u.startsWith("http") ? u : `${APP_URL}${u}`));
+      embeds[0].image = { url: urls[0] };
+      for (let i = 1; i < urls.length; i++) {
+        embeds.push({
+          url: leagueUrl,
+          image: { url: urls[i] },
+        });
+      }
+    }
+
+    return embeds;
+  }
+
+  // Fallback to normal posts
   const embedColor = 0x9835ff;
 
-  let description = htmlToDiscordMarkdown(post.content);
+  let description = htmlToDiscordMarkdown(cleanPostContent(post.content));
   if (description.length > 4000) {
     description = description.slice(0, 3997) + "...";
   }

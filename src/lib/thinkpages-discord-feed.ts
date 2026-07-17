@@ -235,7 +235,7 @@ export async function mirrorThinkPagesPostToDiscordFeed(
     const embeds = formatThinkPagesEmbed(
       {
         id: post.id,
-        content: cleanPostContent(post.content),
+        content: post.content,
         ixTimeTimestamp: post.ixTimeTimestamp,
       },
       {

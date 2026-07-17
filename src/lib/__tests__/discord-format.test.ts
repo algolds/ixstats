@@ -1,8 +1,4 @@
-/**
- * Tests for htmlToDiscordMarkdown - HTML to Discord Markdown formatter
- */
-
-import { htmlToDiscordMarkdown } from "../discord-ixtwitter-sync";
+import { htmlToDiscordMarkdown, formatThinkPagesEmbed } from "../discord-ixtwitter-sync";
 
 describe("htmlToDiscordMarkdown", () => {
   test("strips standard paragraph tags and trims whitespace", () => {
@@ -71,5 +67,59 @@ describe("htmlToDiscordMarkdown", () => {
 
   test("gracefully handles invalid HTML or unclosed tags via fallback", () => {
     expect(htmlToDiscordMarkdown("<p>incomplete <strong>bold tag")).toBe("incomplete **bold tag**");
+  });
+});
+
+describe("formatThinkPagesEmbed", () => {
+  const account = {
+    displayName: "SportsNews",
+    username: "sportsnews",
+    verified: true,
+    profileImageUrl: "/logo.png",
+  };
+
+  test("formats normal posts as normal embeds and strips bulletin comments", () => {
+    const post = {
+      id: "post123",
+      content: "<!-- sports-bulletin:{} --><p>Hello world!</p>",
+      ixTimeTimestamp: new Date("2026-07-16T20:00:00.000Z"),
+    };
+    const embeds = formatThinkPagesEmbed(post, account);
+    expect(embeds.length).toBe(1);
+    expect(embeds[0].description).toBe("Hello world!");
+    expect(embeds[0].color).toBe(0x9835ff);
+  });
+
+  test("formats matchday sports bulletins as rich structured embeds", () => {
+    const sportsData = {
+      league: { id: "league123", name: "Urcea Premier League" },
+      sportEmoji: "⚽",
+      matchDay: 15,
+      results: [
+        { home: { name: "Urcea", id: "club1" }, away: { name: "Gaelia", id: "club2" }, homeScore: 2, awayScore: 1 },
+        { home: { name: "Apaturia" }, away: { name: "Daxia" }, homeScore: 0, awayScore: 3, isUpset: true },
+      ],
+      movers: [
+        { name: "Daxia", id: "club3", oldRank: 7, newRank: 4 },
+      ],
+      llmSummary: "A thrilling matchday with a big upset.",
+    };
+    const post = {
+      id: "post456",
+      content: `<!-- sports-bulletin:${JSON.stringify(sportsData)} -->\nSome text fallback`,
+      ixTimeTimestamp: new Date("2026-07-16T20:00:00.000Z"),
+    };
+    
+    const embeds = formatThinkPagesEmbed(post, account);
+    expect(embeds.length).toBe(1);
+    expect(embeds[0].title).toBe("⚽ Urcea Premier League — Matchday 15");
+    expect(embeds[0].color).toBe(0x22c55e); // Green for soccer emoji
+    expect(embeds[0].description).toContain("Urcea       2 - 1  Gaelia");
+    expect(embeds[0].description).toContain("Apaturia    0 - 3  Daxia  [Upset ⭐]");
+    expect(embeds[0].fields.length).toBe(2);
+    expect(embeds[0].fields[0].name).toBe("📈 Table Movers");
+    expect(embeds[0].fields[0].value).toContain("▲ **Daxia** (+3 spots, 7th → 4th)");
+    expect(embeds[0].fields[1].name).toBe("📝 Summary");
+    expect(embeds[0].fields[1].value).toBe("*A thrilling matchday with a big upset.*");
   });
 });
