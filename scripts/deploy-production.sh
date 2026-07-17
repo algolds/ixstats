@@ -35,13 +35,17 @@ fi
 # Set production environment
 export NODE_ENV=production
 
-# Load production environment variables
 if [ -f ".env.production" ]; then
     echo "📄 Loading production environment variables..."
-    export $(grep -v '^#' .env.production | xargs)
+    export $(grep -v '^#' .env.production | grep -v '^\s*$' | xargs 2>/dev/null)
 else
     echo "❌ Error: .env.production file not found"
     exit 1
+fi
+
+if [ -f ".env.production.local" ]; then
+    echo "🔐 Loading production secrets from .env.production.local..."
+    export $(grep -v '^#' .env.production.local | grep -v '^\s*$' | xargs 2>/dev/null)
 fi
 
 # Ensure base path variables are present before build/start so chunks map correctly.
