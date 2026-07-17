@@ -167,6 +167,18 @@ else
     exit 1
 fi
 
+# Build and deploy the IxWorld standalone maps app
+echo "🗺️ Building and deploying IxWorld standalone maps..."
+if [ -f "./scripts/deploy-ixworld.sh" ]; then
+    ./scripts/deploy-ixworld.sh
+fi
+
+# Reload standalone PM2 processes (cron, websockets, sync)
+echo "🔄 Reloading PM2 processes (cron, websockets, sync)..."
+if command -v pm2 &> /dev/null; then
+    pm2 startOrReload ecosystem.config.cjs --update-env --silent || true
+fi
+
 # Display production configuration
 echo ""
 echo "🎯 Production Configuration:"
