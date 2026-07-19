@@ -119,6 +119,15 @@ export const intentRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => cooldownStatus(ctx.db, input.countryId)),
 
+  /** Get a single intent by ID. */
+  getIntent: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.intent.findUnique({
+        where: { id: input.id },
+      });
+    }),
+
   /** The dependency tree of intents for a country (flat; UI nests by parentId). */
   getTree: publicProcedure
     .input(z.object({ countryId: z.string(), limit: z.number().min(1).max(100).default(50) }))
@@ -149,16 +158,16 @@ export const intentRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         goal: z.string().min(2).max(200),
-        tier: z.enum(["measured", "moderate", "extreme"]),
+        tier: z.enum(["proposed", "measured", "moderate", "extreme"]),
         parentId: z.string().optional(),
+        intentId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryAccess(ctx, input.countryId);
 
       const { category, target, packages } = assemblePackages(input.goal);
-      const pkg = packages.find((p) => p.tier === (input.tier as Tier));
-      if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
+      const now = IxTime.getCurrentIxTime();
 
       // Foreign policy is gated: needs a specific target (Urcea).
       if (category === "foreign" && !target)
@@ -167,6 +176,29 @@ export const intentRouter = createTRPCRouter({
           message:
             "Foreign-policy intents need a specific target — name who or what this is about.",
         });
+
+      // Handle "proposed" status creation
+      if (input.tier === "proposed") {
+        const intent = await ctx.db.intent.create({
+          data: {
+            countryId: input.countryId,
+            goal: input.goal,
+            tier: "proposed",
+            category,
+            target: target ?? null,
+            status: "proposed",
+            changesJson: "[]",
+            summary: `Proposed Goal: ${input.goal}`,
+            parentId: input.parentId ?? null,
+            cooldownUntil: null,
+            createdIxTime: now,
+          },
+        });
+        return { intent, changes: [], summary: intent.summary };
+      }
+
+      const pkg = packages.find((p) => p.tier === (input.tier as Tier));
+      if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
 
       // Weekly cooldown + cap.
       const status = await cooldownStatus(ctx.db, input.countryId);
@@ -179,8 +211,6 @@ export const intentRouter = createTRPCRouter({
           message: `Your government is still executing this week's agenda (${status.usedThisWeek}/${status.cap}).${until}`,
         });
       }
-
-      const now = IxTime.getCurrentIxTime();
 
       // Apply the package through the spine (bounded + audited + narrated).
       const applied = await CountryEventSpine.recordCountryEvent({
@@ -236,21 +266,38 @@ export const intentRouter = createTRPCRouter({
         pkg.changes.map((c) => c.label).join("; ") +
         ".";
 
-      const intent = await ctx.db.intent.create({
-        data: {
-          countryId: input.countryId,
-          goal: input.goal,
-          tier: input.tier,
-          category,
-          target: target ?? null,
-          status: "active",
-          changesJson: JSON.stringify(pkg.changes),
-          summary,
-          parentId: input.parentId ?? null,
-          cooldownUntil: now + COOLDOWN_MS,
-          createdIxTime: now,
-        },
-      });
+      let intent;
+      if (input.intentId) {
+        // Upgrade existing proposed intent to active
+        intent = await ctx.db.intent.update({
+          where: { id: input.intentId },
+          data: {
+            tier: input.tier,
+            status: "active",
+            changesJson: JSON.stringify(pkg.changes),
+            summary,
+            cooldownUntil: now + COOLDOWN_MS,
+            createdIxTime: now,
+          },
+        });
+      } else {
+        // Create new active intent directly
+        intent = await ctx.db.intent.create({
+          data: {
+            countryId: input.countryId,
+            goal: input.goal,
+            tier: input.tier,
+            category,
+            target: target ?? null,
+            status: "active",
+            changesJson: JSON.stringify(pkg.changes),
+            summary,
+            parentId: input.parentId ?? null,
+            cooldownUntil: now + COOLDOWN_MS,
+            createdIxTime: now,
+          },
+        });
+      }
 
       return { intent, changes: pkg.changes, applied, summary };
     }),

@@ -61,6 +61,7 @@ export function MeetingScheduler({
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [meetingType, setMeetingType] = useState<"cabinet" | "bilateral">("cabinet");
   const [targetCountryId, setTargetCountryId] = useState<string>("");
+  const [linkedIntentId, setLinkedIntentId] = useState<string>("");
 
   // Agenda and UI state
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
@@ -71,6 +72,15 @@ export function MeetingScheduler({
     { limit: 100 },
     { enabled: open }
   );
+
+  const { data: intents } = api.intent.getTree.useQuery(
+    { countryId },
+    { enabled: open }
+  );
+
+  const proposedIntents = React.useMemo(() => {
+    return (intents ?? []).filter((i: any) => i.status === "proposed");
+  }, [intents]);
 
   const { data: officials, isLoading: officialsLoading } = api.quickActions.getOfficials.useQuery(
     { countryId, activeOnly: true },
@@ -284,6 +294,7 @@ export function MeetingScheduler({
         scheduledDate: new Date(scheduledIxTime),
         duration,
         scheduledIxTime,
+        intentId: linkedIntentId && linkedIntentId !== "none" ? linkedIntentId : undefined,
       });
 
       const attendancePromises =
@@ -319,6 +330,7 @@ export function MeetingScheduler({
             priority: "medium",
             linkedIssueId: item.linkedIssueId,
             linkedPolicyId: item.linkedPolicyId,
+            linkedIntentId: item.linkedIntentId,
           })
         ),
         ...attendancePromises,
@@ -341,6 +353,7 @@ export function MeetingScheduler({
       setDescription("");
       setAgendaItems([]);
       setSelectedOfficials([]);
+      setLinkedIntentId("");
     } catch (error: any) {
       notify.error("Failed to schedule meeting", error?.message);
     } finally {
@@ -534,6 +547,52 @@ export function MeetingScheduler({
                       rows={2}
                     />
                   </div>
+
+                  {proposedIntents.length > 0 && (
+                    <div>
+                      <Label htmlFor="intent-select" className="text-xs">
+                        Link to Proposed Intent
+                      </Label>
+                      <Select
+                        value={linkedIntentId}
+                        onValueChange={(val) => {
+                          setLinkedIntentId(val);
+                          if (val === "none") {
+                            setTitle("");
+                            setAgendaItems([]);
+                          } else {
+                            const selected = proposedIntents.find((i: any) => i.id === val);
+                            if (selected) {
+                              setTitle(`Deliberate Intent: ${selected.goal}`);
+                              setAgendaItems([
+                                {
+                                  title: `Deliberate: ${selected.goal}`,
+                                  description: `Evaluate and commit Measured, Moderate, or Extreme packages for "${selected.goal}".`,
+                                  duration: 30,
+                                  category: selected.category || "governance",
+                                  tags: ["intent"],
+                                  presenter: "Cabinet President",
+                                  linkedIntentId: selected.id,
+                                },
+                              ]);
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select proposed intent to deliberate..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None (Routine Session)</SelectItem>
+                          {proposedIntents.map((intent: any) => (
+                            <SelectItem key={intent.id} value={intent.id}>
+                              {intent.goal} ({intent.category})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Scheduling Date presets */}

@@ -110,6 +110,8 @@ export interface CountrySnapshot {
   // Active policies & settings
   activePoliciesList: string[];
   policySettings: Record<string, Record<string, number>>;
+  activeIntents: string[];
+  activeIntentCategories: string[];
 }
 
 export type TriggerCondition =
@@ -360,6 +362,7 @@ export class NationalIssuesEngine {
       econComps,
       taxComps,
       activePolicies,
+      activeIntents,
     ] = await Promise.all([
       (db as any).embassy.count({
         where: {
@@ -397,6 +400,10 @@ export class NationalIssuesEngine {
       (db as any).policy.findMany({
         where: { countryId, status: "active" },
         select: { id: true, name: true, calculatedEffects: true },
+      }),
+      (db as any).intent.findMany({
+        where: { countryId, status: "active" },
+        select: { goal: true, category: true },
       }),
     ]);
 
@@ -523,6 +530,8 @@ export class NationalIssuesEngine {
       currentIxMonth: ixDate.getMonth() + 1,
       activePoliciesList,
       policySettings,
+      activeIntents: activeIntents.map((i: any) => i.goal),
+      activeIntentCategories: activeIntents.map((i: any) => i.category),
     };
   }
 
@@ -872,6 +881,11 @@ export class NationalIssuesEngine {
         // Calculate base probability from urgency
         let probability = template.baseUrgency / 100;
 
+        // Apply dynamic multiplier if category matches an active intent category
+        if (snapshot.activeIntentCategories.includes(template.category)) {
+          probability *= 2.0;
+        }
+
         // Apply NPC personality modifiers
         if (personalityAssignment?.personality && template.personalityModifiers) {
           try {
@@ -899,11 +913,50 @@ export class NationalIssuesEngine {
       // Instantiate issues
       // Resolve random variables once per evaluation to keep consistent within an issue
       const sharedVars: Record<string, string> = {};
+      // Resolve target country statistics for foreign/diplomatic issues
+      let targetCountryRecord: any = null;
+      try {
+        const activeIntentsWithTarget = await (db as any).intent.findMany({
+          where: { countryId, status: "active", target: { not: null } },
+          select: { target: true },
+        });
+        if (activeIntentsWithTarget.length > 0 && activeIntentsWithTarget[0]?.target) {
+          const targetName = activeIntentsWithTarget[0].target;
+          targetCountryRecord = await (db as any).country.findFirst({
+            where: { name: { mode: "insensitive", equals: targetName } },
+            select: { name: true, leader: true, currentGdpPerCapita: true, continent: true },
+          });
+        }
+        if (!targetCountryRecord) {
+          const otherCountries = await (db as any).country.findMany({
+            where: { id: { not: countryId } },
+            select: { name: true, leader: true, currentGdpPerCapita: true, continent: true },
+            take: 20,
+          });
+          if (otherCountries.length > 0) {
+            targetCountryRecord = otherCountries[Math.floor(Math.random() * otherCountries.length)];
+          }
+        }
+      } catch (err) {
+        console.warn("[IssuesEngine] Failed to resolve target country record:", err);
+      }
 
       for (const candidate of selected) {
         try {
           // Each issue gets its own random variable set for variety
           const issueVars = { ...sharedVars };
+
+          if (targetCountryRecord) {
+            issueVars.targetCountryName = targetCountryRecord.name;
+            issueVars.targetCountryLeader = targetCountryRecord.leader || "the Foreign Leader";
+            issueVars.targetCountryGdpPerCapita = formatCurrency(targetCountryRecord.currentGdpPerCapita);
+            issueVars.targetCountryContinent = targetCountryRecord.continent || "the region";
+          } else {
+            issueVars.targetCountryName = "a neighboring state";
+            issueVars.targetCountryLeader = "the Foreign Leader";
+            issueVars.targetCountryGdpPerCapita = "$30,000";
+            issueVars.targetCountryContinent = "the region";
+          }
 
           const renderedTitle = this.substituteVariables(
             candidate.template.title,

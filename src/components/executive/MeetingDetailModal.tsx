@@ -67,6 +67,42 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
     { enabled: !!meetingId }
   );
 
+  const { data: intent } = api.intent.getIntent.useQuery(
+    { id: meeting?.intentId || "" },
+    { enabled: !!meeting?.intentId }
+  );
+
+  const { data: suggestion, isLoading: suggestionsLoading } = api.intent.suggest.useQuery(
+    { countryId: meeting?.countryId || "", goal: intent?.goal || "" },
+    { enabled: !!meeting?.countryId && !!intent?.goal && intent.status === "proposed" }
+  );
+
+  const commitIntentMutation = api.intent.commit.useMutation({
+    onSuccess: async (res) => {
+      try {
+        await recordDecisionMutation.mutateAsync({
+          meetingId: meeting!.id,
+          title: `Committed Intent: ${intent!.goal} (${res.intent.tier})`,
+          description: res.summary,
+          decisionType: "strategic",
+          targetModel: "Intent",
+          targetField: "status",
+          operation: "set",
+          value: 1,
+        });
+        await completeMutation.mutateAsync({
+          meetingId: meeting!.id,
+          notes: `Deliberation complete. Rulers committed to the ${res.intent.tier} package course for goal: "${intent!.goal}".`,
+        });
+      } catch (err: any) {
+        notify.error(`Failed to record decision: ${err.message}`);
+      }
+    },
+    onError: (err) => {
+      notify.error(`Failed to commit intent: ${err.message}`);
+    },
+  });
+
   const completeMutation = api.quickActions.completeMeeting.useMutation({
     onSuccess: () => {
       notify.success("Cabinet meeting completed successfully!");
@@ -199,6 +235,82 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
             )}
 
             <Separator className="border-white/5" />
+
+            {/* V2 Intent Deliberation Section */}
+            {intent && intent.status === "proposed" && meeting.status !== "completed" && (
+              <div className="space-y-4 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 dark:bg-amber-500/10">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500">
+                    Cabinet Deliberation: {intent.goal}
+                  </h3>
+                </div>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Your cabinet ministries have prepared three policy execution packages. Select one course of action to commit resources, set the national policy active, and conclude this session.
+                </p>
+
+                {suggestionsLoading ? (
+                  <div className="space-y-2 py-4">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                ) : suggestion?.packages ? (
+                  <div className="flex flex-col gap-3">
+                    {suggestion.packages.map((pkg) => {
+                      const isPending = commitIntentMutation.isPending && commitIntentMutation.variables?.tier === pkg.tier;
+                      return (
+                        <div
+                          key={pkg.tier}
+                          className="flex flex-col items-start gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3 text-left transition-[border-color,background-color,transform] duration-150 ease-out hover:border-amber-500/20 hover:bg-amber-500/[0.04] active:scale-[0.98] shadow-sm relative overflow-hidden"
+                        >
+                          <div className="flex w-full items-center justify-between">
+                            <div>
+                              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                                {pkg.tier} course
+                              </span>
+                              <span className="ml-2 text-[10px] text-muted-foreground font-semibold">
+                                Accept: {pkg.acceptance}%
+                              </span>
+                            </div>
+                            <Button
+                              size="xs"
+                              disabled={commitIntentMutation.isPending}
+                              onClick={() => {
+                                commitIntentMutation.mutate({
+                                  countryId: meeting.countryId,
+                                  goal: intent.goal,
+                                  tier: pkg.tier as any,
+                                  intentId: intent.id,
+                                });
+                              }}
+                              className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] h-6 px-3.5 cursor-pointer rounded"
+                            >
+                              {isPending ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "Authorize"
+                              )}
+                            </Button>
+                          </div>
+                          
+                          <div className="space-y-1 w-full">
+                            {pkg.changes.map((change: any, i: number) => (
+                              <div key={i} className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground">
+                                <span className="text-amber-500">✦</span>
+                                <span>{change.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-red-400">Failed to load deliberation packages.</p>
+                )}
+              </div>
+            )}
 
             {/* Agenda Items */}
             {meeting.agendaItems && meeting.agendaItems.length > 0 && (
@@ -635,7 +747,8 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
               </div>
             ) : (
               meeting.status !== "completed" &&
-              meeting.status !== "cancelled" && (
+              meeting.status !== "cancelled" &&
+              !(intent && intent.status === "proposed") && (
                 <Button
                   size="sm"
                   className="mb-2 w-full bg-emerald-600 font-medium text-white hover:bg-emerald-700"

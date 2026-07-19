@@ -20,15 +20,17 @@ export const meetingsMeetingsRouter = createTRPCRouter({
         description: z.string().optional(),
         duration: z.number().optional(),
         scheduledIxTime: z.number().optional(),
+        intentId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { targetCountryId, ...rest } = input;
+      const { targetCountryId, intentId, ...rest } = input;
       const status = targetCountryId ? "pending" : "scheduled";
       const meeting = await ctx.db.cabinetMeeting.create({
         data: {
           ...rest,
           targetCountryId,
+          intentId,
           status,
         },
       });

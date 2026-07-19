@@ -248,6 +248,30 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
             </button>
           ))}
 
+          {/* Propose for Deliberation Card (V2 Cabinet Integration) */}
+          <button
+            onClick={() => {
+              setErr(null);
+              commitM.mutate({
+                countryId,
+                goal: goal!,
+                tier: "proposed",
+                parentId: parentId ?? undefined,
+              });
+            }}
+            className="w-full cursor-pointer rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 px-4 py-3.5 text-left transition-[border-color,background-color,transform] duration-150 ease-out hover:border-amber-500/50 hover:bg-amber-500/10 active:scale-[0.97]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-amber-300 text-[13px] font-bold">Propose as Cabinet Goal</div>
+              <span className="rounded-full bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 uppercase">
+                Schedule meeting
+              </span>
+            </div>
+            <div className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+              Add this goal to the national proposed agenda list. This allows scheduling a dedicated cabinet meeting session to deliberate and select a ministry package. (Bypasses active weekly cooldown).
+            </div>
+          </button>
+
           {data.broker && (
             <div className="text-muted-foreground/80 px-1 text-[10px]">
               Acceptance weighted by{" "}
