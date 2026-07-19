@@ -42,28 +42,28 @@ import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-moda
 
 const MYCOUNTRY_HELP_STEPS: HeroHelpStep[] = [
   {
-    title: "Welcome to MyCountry",
-    body: "This is your nation's command suite. Everything you need to run your country lives here — your daily agenda, government, diplomacy, intelligence, and defense.",
+    title: "Welcome to MyCountry V2",
+    body: "Steer your nation from the executive desk. Propose bold intents, schedule cabinet deliberations, respond to dynamic national issues, and inspect the living ledger feed.",
   },
   {
-    title: "Executive",
-    body: "Hold cabinet meetings, enact and review policies, and work through your daily agenda. This is where you make the decisions that move your nation.",
+    title: "Declare Player Intents",
+    body: "Use the Intent Composer to state plain-language goals. You can commit options immediately (active), or choose 'Propose as Cabinet Goal' to defer to a formal meeting.",
   },
   {
-    title: "Resolve national issues",
-    body: "Issues surface problems facing your nation. Address them from the Executive/Intelligence views — resolving them improves stability and your vitality scores.",
+    title: "Convene & Deliberate Meetings",
+    body: "Schedule cabinet sessions for proposed intents. Opening a scheduled meeting presents Measured, Moderate, and Extreme ministry options—authorizing one commits budget lines, active policies, and completes the session.",
   },
   {
-    title: "Diplomacy & Intelligence",
-    body: "Manage embassies and relations under Diplomacy. Check the Intelligence tab for your vitality index, briefings, and alerts about what needs attention.",
+    title: "National Issues & Resistance",
+    body: "Active intents generate thematic national issues with 2.0x probability. Diplomatic/foreign affairs issues dynamically load actual neighbor and target country leaders, GDPs, and regions from the database.",
   },
   {
-    title: "Defense",
-    body: "Review and build your military and internal security posture from the Defense section.",
+    title: "The Living Ledger & Vitality",
+    body: "Every decision or issue outcome goes through the event spine. Changes print immediately to the News Feed as ledger audits, steering the compact Vitality Rings in your header.",
   },
   {
-    title: "Edit your nation",
-    body: "Use the editor to update your country's identity, government, economy, and tax system. Changes autosave as you go — no save button hunting required.",
+    title: "Diplomacy, Defense & Map Editor",
+    body: "Manage embassies, build military readiness, or launch the Map Editor to claim territory and layout borders dynamically. Everything updates in real time.",
   },
 ];
 
@@ -92,6 +92,14 @@ function normalizeGrowth(value: number | null | undefined): number {
   let v = value;
   while (Math.abs(v) > 50) v /= 100;
   return Math.min(20, Math.max(-20, v));
+}
+
+// ── Format number compactly (e.g. Millions/Billions) ──
+function formatCompact(num: number): string {
+  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+  return num.toLocaleString();
 }
 
 // ── Format an IxTime-domain rollout duration (ms) as a short countdown label ──
@@ -486,7 +494,7 @@ export function OverviewHero({
       </button>
 
       <div className="relative z-10 grid gap-4 p-4 pt-3 md:grid-cols-5">
-        <div className="border-border/30 flex h-[250px] flex-col overflow-hidden rounded-xl border md:col-span-3 md:h-[320px]">
+        <div className="border-border/30 flex h-[250px] flex-col overflow-hidden rounded-xl border md:col-span-3 md:h-full md:min-h-[320px]">
           <CountryMapEmbed
             countryId={countryId}
             height="h-full"
@@ -679,9 +687,10 @@ export function OverviewHero({
               {/* Vitality Rings Display */}
               {hasCountry && country && (
                 <div className="mt-1 mb-2.5 flex shrink-0 items-center justify-between border-t border-white/5 pt-2.5 select-none">
-                  <span className="text-muted-foreground/60 text-[8px] font-extrabold tracking-wider uppercase">
-                    Vitality Index
-                  </span>
+                  <div className="flex flex-col items-start text-[9px] font-extrabold tracking-wider uppercase text-muted-foreground/60 leading-tight">
+                    <span>Pop: {formatCompact(stats.population)}</span>
+                    <span>GDP: ${formatCompact(stats.currentTotalGdp)}</span>
+                  </div>
                   <QuickVitalityRings
                     rings={createVitalityRingsFromCountry(country)}
                     size="sm"

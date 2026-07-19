@@ -24,26 +24,31 @@ export default function ExecutiveArticle() {
           <div className="space-y-4">
             <div>
               <h4 className="flex items-center gap-2 font-semibold">
-                <Bell className="h-4 w-4 text-amber-600" />
-                National Issues
+                <Target className="h-4 w-4 text-rose-600" />
+                The Intent Engine
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Your inbox of events — situations that come up because of how your nation is doing.
-                Each one offers a few ways to respond, and your choice has real consequences for
-                your economy, your people, your standing abroad, and your security. Handling them
-                earns IxCredits, and the riskier calls pay a little more.
+                State your plain-language goals using the Intent Composer. You can authorize a package directly to run it immediately, or click <strong>Propose as Cabinet Goal</strong> to schedule a deliberation session with your ministers, bypassing active weekly cooldowns.
               </p>
             </div>
 
             <div>
               <h4 className="flex items-center gap-2 font-semibold">
                 <Calendar className="h-4 w-4 text-purple-600" />
-                Meetings &amp; Decisions
+                Cabinet Meetings &amp; Deliberation
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Call cabinet meetings, set the agenda, and record what gets decided. Turn decisions
-                into action items with owners and deadlines so nothing falls through the cracks —
-                and so your nation&rsquo;s history has a paper trail.
+                Convene scheduled cabinet meetings to address proposed intents. Opening a session lets you select between three ministry courses (Measured, Moderate, or Extreme) to commit resources, adjust department budgets, activate policies, and complete the meeting in one click.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="flex items-center gap-2 font-semibold">
+                <Bell className="h-4 w-4 text-amber-600" />
+                National Issues &amp; Resistance
+              </h4>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Active intents generate thematic national issues with 2.0x probability, representing resistance or support from your nation's groups. Diplomatic and foreign issues dynamically pull actual neighbor leaders, regions, and GDP stats directly from the database.
               </p>
             </div>
 
@@ -53,30 +58,7 @@ export default function ExecutiveArticle() {
                 Policies &amp; Strategy
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Draft and enact policies across every part of government. Keep them organized by
-                area, set priorities, and track each one from idea to law. For the long game, lay
-                out strategic plans with milestones you can watch progress against.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="flex items-center gap-2 font-semibold">
-                <Target className="h-4 w-4 text-rose-600" />
-                Big Actions
-              </h4>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                When you&rsquo;re ready to make a real move, nine national actions are at your
-                command: a <strong>stimulus package</strong>, <strong>population incentives</strong>
-                , <strong>tax changes</strong>, a <strong>diplomatic mission</strong>, an{" "}
-                <strong>emergency response</strong>, <strong>budget reallocation</strong>, an{" "}
-                <strong>infrastructure project</strong>, <strong>education reform</strong>, and{" "}
-                <strong>healthcare investment</strong>.
-              </p>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Each one costs from your national budget, then ripples through your economy and
-                stability — and writes a fresh headline in your nation&rsquo;s story so you can see
-                how it landed. Big actions need time to take effect, so you can&rsquo;t spam them;
-                pick your moments.
+                Track active policies and draft custom strategies across every ministry. Custom strategies automatically scale their capacity cost and volatility risk based on selected priorities.
               </p>
             </div>
           </div>

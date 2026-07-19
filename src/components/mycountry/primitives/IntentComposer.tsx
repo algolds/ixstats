@@ -52,6 +52,13 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
     { enabled: !!goal && typeof goal === "string" && goal.trim().length >= 2 }
   );
 
+  React.useEffect(() => {
+    if (suggest.error) {
+      setErr(suggest.error.message);
+      setGoal(null);
+    }
+  }, [suggest.error]);
+
   const commitM = api.intent.commit.useMutation({
     onSuccess: (res) => {
       onCommitted(res);

@@ -180,7 +180,7 @@ export function weightAcceptance(
 
 export function classifyGoal(goal: string): { category: Category; target?: string } {
   const g = goal.toLowerCase();
-  let best: Category = "economy";
+  let best: Category | null = null;
   let bestHits = 0;
   for (const cat of Object.keys(KEYWORDS) as Category[]) {
     const hits = KEYWORDS[cat].filter((k) => g.includes(k)).length;
@@ -189,12 +189,24 @@ export function classifyGoal(goal: string): { category: Category; target?: strin
       best = cat;
     }
   }
+
   // foreign target: "with Burgundie", "against Karth", "ally with X"
   const m = goal.match(/\b(?:with|against|toward|to)\s+([A-Z][A-Za-z'\- ]{2,30})/);
   const target = m?.[1]?.trim();
-  if (target && (best === "foreign" || /war|ally|treaty|ties|relations/.test(g)))
+
+  // If a target exists and looks like a foreign relation phrase, classify as foreign affairs
+  if (target && (/war|ally|treaty|ties|relations/.test(g) || g.includes("embassy"))) {
     return { category: "foreign", target };
-  return { category: best, target: best === "foreign" ? target : undefined };
+  }
+
+  if (bestHits === 0 && !target) {
+    throw new Error(
+      "Goal not recognized. Please use standard policy keywords (e.g. tax, budget, military, ally, treaty, jobs, trade, crime, police, health, education)."
+    );
+  }
+
+  const category = best ?? "economy";
+  return { category, target: category === "foreign" ? target : undefined };
 }
 
 // ── category recipe: one budget line, one policy, and which fields move ─────
