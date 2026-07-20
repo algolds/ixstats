@@ -7,6 +7,7 @@
  * - Consistent user creation logic across the application
  */
 
+import { clerkClient } from "@clerk/nextjs/server";
 import type { PrismaClient, User, Role } from "@prisma/client";
 import { SYSTEM_OWNER_IDS, isSystemOwner } from "./system-owner-constants";
 
@@ -48,6 +49,30 @@ export class UserManagementService {
       // User doesn't exist - create with proper role assignment
       console.log(`[UserManagementService] Creating new user: ${clerkUserId}`);
 
+      // Fetch metadata from Clerk if keys are available
+      let reservedNationName: string | undefined = undefined;
+      const hasClerkKeys = Boolean(
+        process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+      );
+
+      if (hasClerkKeys) {
+        try {
+          const client = await clerkClient();
+          const clerkUser = await client.users.getUser(clerkUserId);
+          if (clerkUser?.publicMetadata?.reservedNationName) {
+            reservedNationName = String(clerkUser.publicMetadata.reservedNationName);
+            console.log(
+              `[UserManagementService] Clerk reserved nation name detected: ${reservedNationName} for user ${clerkUserId}`
+            );
+          }
+        } catch (clerkError) {
+          console.error(
+            "[UserManagementService] Failed to fetch user metadata from Clerk:",
+            clerkError
+          );
+        }
+      }
+
       // Use transaction to prevent race conditions during creation
       return await this.db.$transaction(async (tx) => {
         // Double-check user doesn't exist (race condition protection)
@@ -87,6 +112,30 @@ export class UserManagementService {
             role: true,
           },
         });
+
+        if (reservedNationName) {
+          try {
+            await tx.nSVerification.create({
+              data: {
+                id: `nsv_waitlist_${Date.now()}_${newUser.id}`,
+                userId: newUser.id,
+                nationName: reservedNationName,
+                verificationCode: "WAITLIST_PRE_VERIFIED",
+                verified: true,
+                verifiedAt: new Date(),
+                expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+              },
+            });
+            console.log(
+              `[UserManagementService] Pre-verified NationStates nation ${reservedNationName} for user ${clerkUserId}`
+            );
+          } catch (verifyError) {
+            console.error(
+              "[UserManagementService] Failed to auto-create NSVerification:",
+              verifyError
+            );
+          }
+        }
 
         console.log(
           `[UserManagementService] Created user: ${clerkUserId}, role: ${newUser.role?.name || "NO_ROLE"}, isSystemOwner: ${isSystemOwnerUser}`

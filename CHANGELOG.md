@@ -10,9 +10,49 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+## [1.2.6 Ogma (Beta)] - 2026-07-20
+
+### Added
+
+- **Clerk Waitlist & Onboarding Integration**:
+  - Integrated Clerk's backend SDK (`clerkClient`) in `UserManagementService` to read `publicMetadata.reservedNationName` from waitlisted or invited users.
+  - Automatically create a pre-verified `NSVerification` record for the user during signup, bypassing post-signup verification steps.
+  - Added a new `inviteUserToBypassWaitlist` admin procedure in [users.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/admin/users.ts) to invite VIP users with pre-seeded nation metadata.
+  - Built a beautiful glassmorphic splash dashboard ([WaitlistDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/WaitlistDashboardSection.tsx)) for waitlisted users, featuring queue status cards, priority release indicators, and onboarding checklists.
+- **Unified NationStates Card Valuation & Sync Consolidation**:
+  - Consolidated the card valuation logic into `computeCardValue` inside [card-valuation.ts](file:///home/jxsig/projects/ixstats/src/lib/card-valuation.ts), replacing multiple duplicate processing helper functions.
+  - Created a unified `ns-sync-processor.ts` helper service to handle nation deck imports and region syncs.
+  - Cleaned up duplicate processor copies across `sync.ts`, `cards.ts`, `decks.ts`, and `verification.ts` routers.
+  - Updated `refreshCardValues` to apply unified card values.
+- **Intent Composer & Cabinet Deliberation**:
+  - Implemented cabinet deliberation workflows for proposed intents in meeting detail modals.
+  - Added Intent Composer validation rules and updated help documentation.
+- **Sports Matchday tabbed layouts**:
+  - Redesigned sports matchday cards as tabbed layout and mirrored them as rich Discord embeds.
+- **Map Layer and Overlay Controls**:
+  - Added map layer controls, subdivision layer details, and custom overlay filters.
+- **Conlang Studio Advanced Constraints**:
+  - Modularized conlang overview panels and dictionary cards.
+  - Added advanced conlang parameters like strict cvTemplate orthography and CC cluster toggles.
+
+### Refactored / Optimized
+
+- **UI Performance & Sheen State**:
+  - Optimized UI interactions by offloading sheen state animation parameters to CSS custom properties.
+  - Centralized CountryOverviewPanel to use the modular MyCountryTabSystem.
+  - Migrated user ID lookup to use `ctx.user.id` and flattened the onoma router structure.
+  - Refactored the builder UI by removing redundant sub-navigation tabs and adding selection feedback.
+  - Optimized builder performance with refined transition curves and memoized state comparisons.
+  - Migrated VitalityRings to the main OverviewHero section and deleted the legacy CompactVitalityRingsCard.
+- **Deployment & VPS Production Pipeline**:
+  - Configured `deploy-production.sh` to load `.env.production.local` properly and use `db:push:force` to prevent schema migration deadlocks.
+  - Cleaned up port conflicts by using `fuser -k` on active port listeners before starting Next.js.
+  - Replaced obsolete db:sync scripts with direct prisma updates.
+
 ## [1.1.13 Ogma (Alpha)] - 2026-06-29
 
 ### Added
+
 - **Shared Map Instance & WebGL Context Conservation**:
   - **Single Shared Canvas**: Implemented [SharedMapContext.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/SharedMapContext.tsx) and registered `SharedMapProvider` globally to reuse a single persistent MapLibre instance across `/maps`, the map editor, and all dashboard/mycountry country widgets.
   - **Slot-Based Dom Re-parenting**: Replaced standalone map instances in `IxWorldMap.tsx`, `EditorMap.tsx`, and `useCountryMapEmbedLayers.ts` with slot-based acquisition (`acquireMap`) and dynamic canvas container re-parenting.
@@ -23,15 +63,17 @@ capability integer. Each release entry below lists which components advanced and
   - **Flicker-Free Zoom Transitions**: Configured TanStack Query `placeholderData` in `useMapDataBatched.ts` to return the previous successful data during loading transitions, keeping existing layers on screen while fetching background details.
 
 ### Fixed
+
 - **Flicker & Blank Canvas Race Condition on Map Reclaiming**: Wrapped the slot-based view setup and `onReady` callbacks inside `SharedMapContext.tsx` to wait until MapLibre completes style load transitions (`style.load`). This prevents race conditions where components attempted to call `map.addSource` or `map.addLayer` before style updates finished loading, which triggered fatal exceptions and left the canvas blank.
 
 ## [1.1.12 Ogma (Alpha)] - 2026-06-29
 
 ### Added
+
 - **Proactive Policies & Reactive National Issues Integration (MyCountry System v6 & Government System v5)**:
   - **Dynamic Policy Attributes & Derivation**: Custom policies now automatically derive `riskRating` (Stable/Volatile/High-Risk) and `civCapCost` (5 to 25 CivCap) based on their `priority` selection (Low/Medium/High/Critical). Predefined decretals retain their registry presets.
   - **Reactive Upkeep & Maintenance Discounts**: Policies launched from `"crisis_response"` or `"broker_request"` origins automatically receive a **25% Civil Capacity upkeep discount** and a **15% maintenance cost discount** (also recalculated dynamically on custom policy priority updates).
-  - **Policies Information Fog**: Introduced a "Fog of Information" layer. If Civil Service Capacity is over-extended or Government Efficiency is low (<45%), estimated preview values and active metrics are qualitatively masked (e.g. *"Mild Positive"*, *"Strong Negative"*) instead of displaying precise figures.
+  - **Policies Information Fog**: Introduced a "Fog of Information" layer. If Civil Service Capacity is over-extended or Government Efficiency is low (<45%), estimated preview values and active metrics are qualitatively masked (e.g. _"Mild Positive"_, _"Strong Negative"_) instead of displaying precise figures.
   - **Active Department Presence Verification**: Integrated active department categories validation. Custom policies require an active matching department in Politics (e.g., Department of Defense for defense policies) to be drafted, submitted, or activated; otherwise, warnings are shown and submission is disabled.
   - **Issue Delegation Upkeeps**: Added a temporary Civil Capacity cost (`-15 CivCap` for 5 game days post-dismissal) to delegated issues, and blocked delegation entirely on Urgent/Crisis/High-severity issues.
   - **Risky Choices & Party Platform Alignment**: Integrated a 40% failure gamble chance on "Red/Risky" response choices inside `national-issues-consequences.ts` (dropping Stability and Approval on failure) and added coalition party support polling boosts (+3.0%) for choices aligned with their platform.
@@ -40,6 +82,7 @@ capability integer. Each release entry below lists which components advanced and
 ## [1.1.11 Ogma (Alpha)] - 2026-06-29
 
 ### Added
+
 - **MyCountry Decisions-to-Effects Bridge & Agenda Management (MyCountry System v5)**:
   - **Cabinet Meetings Finalization Flow**: Added a **Complete & Finalize Meeting** dialog flow in [MeetingDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/MeetingDetailModal.tsx) to submit final notes and transition cabinet meetings to completed.
   - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in [meetings.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/quickactions/meetings.ts) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
@@ -53,6 +96,7 @@ capability integer. Each release entry below lists which components advanced and
 ## [1.1.10 Ogma (Alpha)] - 2026-06-29
 
 ### Added
+
 - **Map Geography Report & Analyzer (Atlas Engine v3)**:
   - **Named Feature Toolbar & Shortcuts**: Integrated Peaks (shortcut `K`, icon `Mountain`), Rivers (shortcut `Y`, icon `Waves`), and Lakes (shortcut `J`, icon `Droplet`) toolbar items via their respective editor plugins ([PointPlacementPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/PointPlacementPlugin.ts), [RouteEditPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/RouteEditPlugin.ts), [SubdivisionDrawPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/SubdivisionDrawPlugin.ts)).
   - **Drawing & Placement Canvas Integration**: Updated [EditorMap.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/editor/EditorMap.tsx), [useSubdivisionDraw.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionDraw.ts), and [useMapEditor.ts](file:///home/jxsig/projects/ixstats/src/hooks/useMapEditor.ts) to support polygon drawing for Lakes, click placement coordinates for Peaks, and route waypoints path construction for Rivers.
@@ -64,6 +108,7 @@ capability integer. Each release entry below lists which components advanced and
 ## [1.1.9 Ogma (Alpha)] - 2026-06-29
 
 ### Added
+
 - **Shared-Edge Topology Editor (Atlas Engine v3, Builder System v2)**:
   - **Pure Topology Engine**: Added [topology-engine.ts](file:///home/jxsig/projects/ixstats/src/lib/topology-engine.ts) containing pure geometric spatial indexing functions (`vkey`, `buildTopologyIndex`, `cascadeMoveVertex`) to allow dragging a shared boundary vertex to propagate dynamically to neighbor subdivisions in O(1) time.
   - **Live Client-Side Drag Cascades**: Connected the topology index to [useSubdivisionVertexEdit.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts) to update neighbor boundaries visually on MapLibre in real-time as the user drags shared vertices.
@@ -73,6 +118,7 @@ capability integer. Each release entry below lists which components advanced and
 ## [1.1.8 Ogma (Alpha)] - 2026-06-29
 
 ### Added
+
 - **Halo Onboarding Walkthrough & On-Page Tour Launch**:
   - **First-Time User Onboarding Invitation**: Built a session-guarded hook inside [HaloTourContext.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourContext.tsx) that automatically triggers a friendly iOS-style toast invitation banner in the Halo when a new user lands on `/dashboard` or `/mycountry` pages.
   - **On-Page Guided Tour**: Clicking "Take Tour" launches the guided tour directly on the active page without requiring redirects.
@@ -94,7 +140,7 @@ capability integer. Each release entry below lists which components advanced and
   - **Name Result Card Refinement**: Split the complex card component, extracting `PronunciationEditor` (IPA/Kokoro editor panel) and `LinguisticProfile` (stats display, categories, cultures badge).
   - **Stash Section Tab Separation**: Extracted `ImportStashPanel` (raw inputs importer) and `SavedDictionaryCard` (collapsible dictionaries list), leaving `StashSection` clean and performant.
   - **Studio Lexicon Dictionary Modularization**: Extracted `LexiconAnalysis` (entropy parser and n-gram lists) and `LexiconDefinitionForm` (etymological entry form fields).
-  - **Studio Advanced Phonotactics & Constraints Drawer**: Added togglable advanced parameters directly into the conlang studio's `StudioWorkshop` view: Syllable count limit sliders, strict `cvTemplate` orthography parser, and AppleSwitch options mapping for *Must End With Vowel*, *Must End With Consonant*, *No Initial CC Clusters*, and *No Final CC Clusters*.
+  - **Studio Advanced Phonotactics & Constraints Drawer**: Added togglable advanced parameters directly into the conlang studio's `StudioWorkshop` view: Syllable count limit sliders, strict `cvTemplate` orthography parser, and AppleSwitch options mapping for _Must End With Vowel_, _Must End With Consonant_, _No Initial CC Clusters_, and _No Final CC Clusters_.
 - **Rename Almanac to Calendar & Complications Upgrade**:
   - **Calendar Rebrand**: Renamed all code representations of the global `Almanac` to `Calendar` (`statecraft-calendar.ts`, `CalendarView.tsx`, `CalendarLiveDIPlugin.tsx`, layout bindings) for clarity.
   - **iOS-style Live Complications**: Added **Term Progress** (tracked against upcoming scheduled elections) and **Next Event** calendar count complications to the expanded complications layout.
@@ -105,7 +151,7 @@ capability integer. Each release entry below lists which components advanced and
   - **Cache Telemetry Benchmark Harness**: Ported the cache diagnostics tool (`cache-test.ts`) from legacy node-redis to standard `ioredis` arguments and options with custom retry timeouts.
   - **Memory Pressure Cache Invalidation**: Exposed memory clearing functions (`clearTrpcMemoryCache()`, `clearAllMediaWikiCaches()`) in the system optimizer to drop maps under high RAM usage and prevent OOM restarts.
 - **Project Onoma — Naming Conventions, Wikipedia Extraction, & UI/UX Upgrades (Onoma System v3)**:
-  - **Modular Naming Convention Presets**: Implemented in-world presets for conworld naming conventions: *Hendalarskara (4-name)*, *Caphirian Quadranomial*, *Urcean Tria Nomina*, *Yonderian Noble/Peasantry*, and *Khunyer Reversed* (Surname first, e.g. *Szabolcs Anton*). Supports custom suffix rules (e.g. Hendalarsk `-són`/`-toschter`/`-kind` matronymics/patronymics based on rolled name gender), prefixing rules, and slot locking.
+  - **Modular Naming Convention Presets**: Implemented in-world presets for conworld naming conventions: _Hendalarskara (4-name)_, _Caphirian Quadranomial_, _Urcean Tria Nomina_, _Yonderian Noble/Peasantry_, and _Khunyer Reversed_ (Surname first, e.g. _Szabolcs Anton_). Supports custom suffix rules (e.g. Hendalarsk `-són`/`-toschter`/`-kind` matronymics/patronymics based on rolled name gender), prefixing rules, and slot locking.
   - **Comprehensive Wiki & Wikipedia API Extraction**: Expanded the dictionary compilation pipeline (`extract-lexicon.ts`) to track more templates (e.g. `Infobox_city`, `Infobox_town`, `Infobox_noble`, `Infobox_biography`, `Infobox_character`, `Infobox_business`, `Infobox_football_club`). Integrated English Wikipedia (`en.wikipedia.org`) with a 3,000-page cap per template, pulling **129,685 raw entries** (99,721 clean) overall. Hardened User-Agent settings with contact details and 429 rate limit sleeps to respect Wikipedia API limits.
   - **Interactive Grapheme Mapper & IPA Soundboard**: Added a click-to-preview soundboard inside the IPA Studio rule mapper allowing users to audition conlang phonemes before confirming rule maps.
   - **NumberFlow Batch Selectors**: Replaced batch count dropdowns with custom buttons that increment/decrement the generated batch by 5, animated smoothly via `NumberFlowDisplay` in the Name Sets and Workshop generator tabs.
@@ -114,7 +160,7 @@ capability integer. Each release entry below lists which components advanced and
 - **Project Onoma — Culture & Linguistic Family Overhaul (Onoma System v2 → v3)**:
   - **5 new linguistic families** — Persian/Iranian, Turkic/Central Asian, African/Sub-Saharan, Indic/South Asian, and Uralic/Finno-Ugric — bringing the total to **13**. Each ships full 10-category curated seed blocks (`cultural-profiles.ts`), grapheme→IPA rule tables (`phonology.ts`), and culture-data floors, and is selectable in the generator, IPA Studio, and admin panels.
   - **Hybrid families exposed**: the six curated compound buckets (`Celtic + Germanic`, `Celtic + Latin`, etc.) that previously only fired in "Any" mode are now selectable from the culture dropdown.
-  - **Per-family phonotactics (`FAMILY_PHONOTACTICS`)**: generation now applies a per-family consonant-cluster floor (Austronesian/East-Asian stay open-syllable CV, Slavic tolerates dense clusters, etc.) under the user's advanced options, so families differ by *structure*, not just word lists.
+  - **Per-family phonotactics (`FAMILY_PHONOTACTICS`)**: generation now applies a per-family consonant-cluster floor (Austronesian/East-Asian stay open-syllable CV, Slavic tolerates dense clusters, etc.) under the user's advanced options, so families differ by _structure_, not just word lists.
   - **Richer culture dictionaries**: culture lexicons now merge real wiki data (ixwiki + iiwiki + althistory) with a much larger curated `PUBLIC_SEEDS` floor — Sports 78→320, Cuisine 127→277, Architecture 122→587, Ethnicities 150→1,105 entries. Each Culture subtype Markov-generates new names from its own per-category dictionary.
   - **New civic Organization presets**: Political Party, Government Ministry/Agency, News/Media Outlet, NGO/Foundation, and Religious Order/Church (`group-generator.ts`), complementing the existing fantasy/commercial set.
 - **IxMedia Subsystem (Phase 1 Foundation)**:
@@ -139,6 +185,7 @@ capability integer. Each release entry below lists which components advanced and
   - **Interactive Transcript (`TranscriptViewer.tsx`)**: Implemented a scroll-safe segment visualizer that highlights the active speaking block and centers the view without thrashing the user's manual scroll.
 
 ### Changed
+
 - **Diplomatic Relations Strength Percentage Labels**:
   - **Granular 9-Tier Verbal Labels**: Replaced raw percentage (`%`) displays of relationship strength with a 9-tier "Warm & Descriptive" status labeling system (`Deep Alliance`, `Strongly Allied`, `Warmly Friendly`, `Cordial`, `Neutral`, `Strained`, `Tense`, `Bitterly Hostile`, `Cold War`) mapped from relationship strength (`0-100`).
   - **Comprehensive UI Application**: Integrated the status labels into the diplomacy overview metrics, average strength cards, War Room sidebar panel stats, and individual relationship list items across [DiplomacyOverview.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomacyOverview.tsx), [EmbassiesAndRelationsPanel.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/EmbassiesAndRelationsPanel.tsx), [DiplomacyWarRoom.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomacyWarRoom.tsx), and [DiplomaticRelationsList.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomaticRelationsList.tsx).
@@ -162,6 +209,7 @@ capability integer. Each release entry below lists which components advanced and
   - Resolved `currentIndex` tracking bugs and delegate detachment states in `MediaContext.tsx`.
 
 ### Fixed
+
 - **ThinkPages Relative Link Formatting**:
   - **Markdown Link Parsing**: Corrected the link-masking regex in [text-formatter.ts](file:///home/jxsig/projects/ixstats/src/lib/text-formatter.ts) to parse relative links (starting with `/`) and apply the production `basePath` wrapper `/projects/ixstates`.
   - **Newline Preservation**: Fixed plain-text formatting in `formatContentEnhanced` to replace raw newlines with HTML `<br />` tags to avoid single-line collapsing.
@@ -179,16 +227,17 @@ capability integer. Each release entry below lists which components advanced and
   - **Editor Preference Sync**: Resolved race conditions in the wiki edit page loading flow by deferring page prefill template parsing until URL query parameter parsing and preferred editor preference are fully synced.
   - **Publish Button Layout**: Fixed circular toolbar class overlaps on the Save & Publish buttons, replacing them with theme-compliant rectangular button bounds.
 
-
 ## [1.1.6 Ogma (Alpha)] - 2026-06-27
 
 ### Fixed
+
 - **WikiOS Full-Article Narrator**: Swapped the fallback speech endpoint to `/v1/audio/speech` (OpenAI-compatible standard) instead of `/api/v1/audio/speech` when the active engine is `kokoro-fastapi`. This resolves the `404 Not Found` API errors and prevents the narrator from falling back to the browser's native robotic voice.
 - **Onoma Custom Studio Dictionary**: Expanded the dictionary input parsing in [useStudioState.ts](file:///ixwiki/public/projects/ixstats/src/app/labs/onoma/hooks/useStudioState.ts) to split lists using space delimiters (`/[\s,]+/`), enabling support for conlang dictionaries separated by spaces, commas, or linebreaks.
 
 ## [1.1.5 Ogma (Alpha)] - 2026-06-27
 
 ### Added
+
 - **Project Onoma — Phoneme-Level Speech Synthesis & Studio Customization (Onoma System v2)**:
   - **Phoneme-Native API Synthesis Route**: Re-engineered the `/api/onoma/tts` endpoint to read configured `engine` and `fastApiUrl` values. If the engine is set to `kokoro-fastapi` and an IPA translation is present, it normalizes and cleans the transcription and sends it to `/dev/generate_from_phonemes` for direct high-fidelity speech synthesis.
   - **Fallback-Safe Audio Degradation**: Implemented standard try/catch logic surrounding the fastapi engine pipeline. If fastapi is unconfigured or encounters a network error / non-2xx status, it falls back to the `kokoro-web` `/api/v1/audio/speech` endpoint (using respelled English syllable chunks) so pronunciation never fails completely.
@@ -204,6 +253,7 @@ capability integer. Each release entry below lists which components advanced and
   - **Dynamic Island (Halo) Timeline & Scrubber Sync**: Connected the audio narrator state to the expanded Dynamic Island [WikiView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/WikiView.tsx) and compact [WikiDIPlugin.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/plugins/WikiDIPlugin.tsx) to render bouncing equalizer soundwaves, quick play/pause icons, audio control toolbars, and jump audio playback directly when dragging the playhead or clicking section ticks.
 
 ### Fixed
+
 - **Onoma Voice & WikiOS Narrator Stability & Theme Polish**:
   - **Dynamic Theme Compliance**: Updated narrator player container, buttons, selects, and text styles in [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx) to be theme-compliant across Light, Dark, and Sepia modes.
   - **React Rules of Hooks Fix**: Re-ordered React queries, state, and effect hook calls to run unconditionally before early return statements in [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx), resolving runtime hydration and rendering errors.
@@ -214,6 +264,7 @@ capability integer. Each release entry below lists which components advanced and
 ## [1.1.4 Ogma (Alpha)] - 2026-06-26
 
 ### Added
+
 - **Project Onoma — Production Speech Synthesis Infrastructure**:
   - **Browser Native SpeechSynthesis**: Implemented `speakBrowserNative` in [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
   - **Phonetic IPA Spelling Translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
@@ -223,6 +274,7 @@ capability integer. Each release entry below lists which components advanced and
   - **Environment Templates**: Added the `KOKORO_API_KEY` environment placeholder to [.env.example](file:///home/jxsig/projects/ixstats/.env.example).
 
 ### Changed
+
 - **Global Navigation & Halo Settings Integration**:
   - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in [useNavigationItems.ts](file:///home/jxsig/projects/ixstats/src/hooks/useNavigationItems.ts).
   - Integrated the Admin Panel link into the Halo (Dynamic Island) settings overlay [SettingsView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/SettingsView.tsx), restricted to signed-in administrators (`isAdmin && isSignedIn`).
@@ -230,6 +282,7 @@ capability integer. Each release entry below lists which components advanced and
 ## [1.1.3 Ogma (Alpha)] - 2026-06-26
 
 ### Added
+
 - **Project Onoma — Linguistic Synthesis Lab & Custom Studio Rebuild (Onoma System v1)**:
   - **Apple-Style Glassmorphic Redesign (Phase 20)**: Replaced the tall vertical watermark in [OverviewSection.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/OverviewSection.tsx) with a floating `28x28` Apple-style glass squircle (`rounded-[22%]`, `backdrop-blur-xl`, border edge highlights) containing the rotating DNA double helix.
   - **Symmetric Squircle Key Badges (Phase 20)**: Redesigned the [OnomaDoubleHelixIcon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/OnomaDoubleHelixIcon.tsx) to a `200x200` square aspect ratio with thicker backbone curves (`4.5px`/`4.0px`) and 5 rungs, embedding symbols inside solid, elevated squircle keycaps (`26x26px`, `rx=7`, `key-shadow` drop shadow) for perfect visibility.
@@ -290,7 +343,6 @@ capability integer. Each release entry below lists which components advanced and
   - **Provider-Based Dynamic Loader**: Developed the dynamic `<CosmeticParticles>` React component using code-splitting (`ssr: false`) and v4's `<ParticlesProvider>` context architecture.
   - **Glow & Frame Overlays**: Replaced static style declarations with dynamic particle flows in `NeonFrameOverlay.tsx` (for card frame bounds) and `AvatarGlow.tsx` (for profile avatar backgrounds).
   - **System Seeder Purge**: Removed the purchasable "Imperial Gold Glow" from `seed-vault-items.ts` and automated its database removal, setting it instead as the default active fallback glow for all administrators and system owners (`role.level <= 10`).
-
 
 - **MyCountry Policy Strategy Rework**:
   - **Predefined Strategy Registry**: Built a code-defined catalog of policy decretals (`universal-basic-income`, `border-tariffs`, `surveillance-oversight`) in `src/lib/policies/registry.ts` with custom template fallback mappers.

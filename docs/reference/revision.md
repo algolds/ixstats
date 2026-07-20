@@ -1,7 +1,7 @@
 # IxStates Versioning & Release Architecture
 
 **Status:** Draft v2
-**Last Updated:** June 2026
+**Last Updated:** July 2026
 
 ---
 
@@ -33,10 +33,10 @@ A component earns an independent version only if it can **ship and break indepen
 
 The components with independent versions are:
 
-* **Apps** — IxWorld, WikiOS, IxVault
-* **Engines** (internal simulation cores) — MyCountry, Concord, Atlas
-* **UI / Feature Systems** — MyCountry, Builder, ThinkPages, Achievements, Stash, Repository, Halo, Onoma
-* **Design system** — Facet
+- **Apps** — IxWorld, WikiOS, IxVault
+- **Engines** (internal simulation cores) — MyCountry, Concord, Atlas
+- **UI / Feature Systems** — MyCountry, Builder, ThinkPages, Achievements, Stash, Repository, Halo, Onoma
+- **Design system** — Facet
 
 Each evolves independently. A major **Concord** release does not require a major **WikiOS** release.
 
@@ -44,10 +44,10 @@ Each evolves independently. A major **Concord** release does not require a major
 
 These inherit the platform version (they do not carry their own number):
 
-* **IxForum** — folded into the platform version until it is promoted to an App
-* **Platform Utilities** — IxTime, IxnayID
-* **Experimental / Labs** — Vexel, Strata, Dynas, Nomora (carry a `preview` label only)
-* **Navigation Hubs** — Dashboard, Explore/Countries, Feed
+- **IxForum** — folded into the platform version until it is promoted to an App
+- **Platform Utilities** — IxTime, IxnayID
+- **Experimental / Labs** — Vexel, Strata, Dynas, Nomora (carry a `preview` label only)
+- **Navigation Hubs** — Dashboard, Explore/Countries, Feed
 
 > **Note:** "IxWiki" is retired as a component name — it was only our name for the wiki, which is the **WikiOS** app. "Canvas" is not a top-level component; it is a **WikiOS sub-system** that carries a sub-version under WikiOS.
 
@@ -60,23 +60,23 @@ Platform versions are treated as platform epochs.
 Example:
 
 ```text
-IxStates 1.1 Ogma
+IxStates 1.2 Ogma
 IxStates 2.0 Seshat
 IxStates 3.0 Thoth
 ```
 
 Platform versions represent major architectural and ecosystem milestones:
 
-* New application architecture
-* Core platform rewrites
-* Fundamental data-model changes
-* Major ecosystem expansion
+- New application architecture
+- Core platform rewrites
+- Fundamental data-model changes
+- Major ecosystem expansion
 
 Platform versions should be rare.
 
 Expected cadence:
 
-* 12–36 months
+- 12–36 months
 
 ---
 
@@ -141,11 +141,11 @@ Example:
 
 Platform-wide architectural shifts:
 
-* New rendering architecture
-* New API architecture
-* New persistence layer
-* Major platform redesign
-* Cross-system infrastructure rewrite
+- New rendering architecture
+- New API architecture
+- New persistence layer
+- Major platform redesign
+- Cross-system infrastructure rewrite
 
 ```text
 1.0 → 2.0
@@ -155,10 +155,10 @@ Platform-wide architectural shifts:
 
 Significant platform improvements:
 
-* New integrated app
-* Major subsystem overhaul
-* Significant feature expansion
-* Large refactor
+- New integrated app
+- Major subsystem overhaul
+- Significant feature expansion
+- Large refactor
 
 ```text
 1.2 → 1.3
@@ -166,10 +166,10 @@ Significant platform improvements:
 
 ## Patch Versions
 
-* Bug fixes
-* Performance improvements
-* Small enhancements
-* Stability updates
+- Bug fixes
+- Performance improvements
+- Small enhancements
+- Stability updates
 
 ```text
 1.3.1 → 1.3.2
@@ -198,9 +198,9 @@ Apps are integrated products with their own brand identity that ship and break i
 
 Apps:
 
-* **IxWorld** (maps)
-* **WikiOS** (wiki software — also powers the IxWiki content)
-* **IxVault** (wallet / economy / trading cards)
+- **IxWorld** (maps)
+- **WikiOS** (wiki software — also powers the IxWiki content)
+- **IxVault** (wallet / economy / trading cards)
 
 ```text
 IxStates 1.0 Ogma
@@ -218,11 +218,11 @@ IxVault 1
 
 Engines are **internal-only** simulation cores. They are surfaced in the Developer panel, not in public-facing footers. There are three, derived from the platform's calculation/simulation code.
 
-| Engine | Scope | What it simulates |
-|---|---|---|
-| **MyCountry** | Nation (per-country, deterministic) | Economy (tier/growth, projections), Fiscal (tax/budget/passive income), Atomic Government (synergy/conflict), Vitality & Stability (scoring, power tier), National Issues (decisions/consequences), Security & Defense calc, per-nation Intelligence analysis |
-| **Concord** | World (cross-nation, time-driven, living) | Time/Tick (IxTime + cron orchestration), Diplomacy & NPCs (Markov relationship evolution, personality archetypes, cultural exchange), Crises & World Events, Intelligence broadcast, global rankings & cross-nation effects |
-| **Atlas** | Foundation (spatial) | World generation (procedural/Voronoi pipeline), Geography analytics (geo-math, climate, terrain modifiers), Map pipeline (SVG/PNG → GeoJSON), Transport networks, Province import — **powers the IxWorld app** |
+| Engine        | Scope                                     | What it simulates                                                                                                                                                                                                                                             |
+| ------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **MyCountry** | Nation (per-country, deterministic)       | Economy (tier/growth, projections), Fiscal (tax/budget/passive income), Atomic Government (synergy/conflict), Vitality & Stability (scoring, power tier), National Issues (decisions/consequences), Security & Defense calc, per-nation Intelligence analysis |
+| **Concord**   | World (cross-nation, time-driven, living) | Time/Tick (IxTime + cron orchestration), Diplomacy & NPCs (Markov relationship evolution, personality archetypes, cultural exchange), Crises & World Events, Intelligence broadcast, global rankings & cross-nation effects                                   |
+| **Atlas**     | Foundation (spatial)                      | World generation (procedural/Voronoi pipeline), Geography analytics (geo-math, climate, terrain modifiers), Map pipeline (SVG/PNG → GeoJSON), Transport networks, Province import — **powers the IxWorld app**                                                |
 
 ```text
 MyCountry Engine 1
@@ -240,14 +240,14 @@ User-facing systems within the platform, independent from the engines that power
 
 Systems:
 
-* **MyCountry** (public-facing executive command UI)
-* **Builder** (nation creation wizard)
-* **ThinkPages** (social — feed, groups, messages)
-* **Achievements** (incl. LoreWards)
-* **Stash** (save-for-later wiki articles; formerly LoreStash)
-* **Repository** (WikiOS Commons image explorer)
-* **Halo** (global contextual overlay; formerly "Dynamic Island")
-* **Onoma** (name generation and linguistic dictionary studio)
+- **MyCountry** (public-facing executive command UI)
+- **Builder** (nation creation wizard)
+- **ThinkPages** (social — feed, groups, messages)
+- **Achievements** (incl. LoreWards)
+- **Stash** (save-for-later wiki articles; formerly LoreStash)
+- **Repository** (WikiOS Commons image explorer)
+- **Halo** (global contextual overlay; formerly "Dynamic Island")
+- **Onoma** (name generation and linguistic dictionary studio)
 
 ```text
 MyCountry 1
@@ -263,7 +263,7 @@ System versions represent capability evolution.
 
 ## Design System Versioning
 
-* **Facet** — the glass / refraction / depth design language used across every surface (formerly "Glass Physics").
+- **Facet** — the glass / refraction / depth design language used across every surface (formerly "Glass Physics").
 
 ```text
 Facet 1
@@ -309,9 +309,9 @@ Build: 8f4e3b1
 
 Sources (in order of preference):
 
-* Git SHA
-* CI build number
-* Deployment timestamp
+- Git SHA
+- CI build number
+- Deployment timestamp
 
 The build identifier is the authoritative source of truth for "exactly what is deployed." It is generated at build time into `src/lib/buildVersion.generated.ts` by `scripts/write-build-version.js` (the `prebuild` hook).
 
@@ -322,16 +322,16 @@ The build identifier is the authoritative source of truth for "exactly what is d
 ## Footer
 
 ```text
-IxStates 1.1 Ogma
-Alpha
+IxStates 1.2 Ogma
+Beta
 Build 8f4e3b1
 ```
 
 ## About Page
 
 ```text
-IxStates 1.1 Ogma
-Channel: Alpha
+IxStates 1.2 Ogma
+Channel: Beta
 
 IxWorld 1.2
 WikiOS 1
@@ -392,10 +392,10 @@ The registry is a structured object rather than flat constants:
 export const VERSIONS = {
   platform: {
     major: 1,
-    minor: 1,
-    patch: 0,
+    minor: 2,
+    patch: 6,
     release: "Ogma",
-    channel: "Alpha",
+    channel: "Beta",
   },
 
   apps: {
@@ -406,8 +406,8 @@ export const VERSIONS = {
 
   engines: {
     mycountry: 2, // nation-scoped deterministic sim
-    concord: 2,   // living-world sim (time, diplomacy, crises, NPCs)
-    atlas: 2,     // spatial foundation (worldgen, geo, maps) — powers IxWorld
+    concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
+    atlas: 2, // spatial foundation (worldgen, geo, maps) — powers IxWorld
   },
 
   systems: {
@@ -449,10 +449,10 @@ There is **one aggregated** `CHANGELOG.md` (Keep a Changelog format), organized 
 
 Release names are permanent epochs; future epochs are reserved but unscheduled.
 
-| Epoch | Status | Theme focus |
-|---|---|---|
-| **1.1 Ogma** | Current (Alpha) | Executive/diplomacy canon track, map overlays, Defense/Politics panels, adjacency graph |
-| **2.0 Seshat** | Reserved | TBD — likely real-time simulation depth, advanced economies |
-| **3.0 Thoth** | Reserved | TBD — large-scale diplomacy, AI-assisted systems |
+| Epoch          | Status         | Theme focus                                                                                                  |
+| -------------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| **1.2 Ogma**   | Current (Beta) | Executive/diplomacy canon track, map overlays, Defense/Politics panels, adjacency graph, waitlist onboarding |
+| **2.0 Seshat** | Reserved       | TBD — likely real-time simulation depth, advanced economies                                                  |
+| **3.0 Thoth**  | Reserved       | TBD — large-scale diplomacy, AI-assisted systems                                                             |
 
 Future releases TBD.
