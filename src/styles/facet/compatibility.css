@@ -38,7 +38,7 @@
   border: 1px solid var(--facet-border-1);
   background: var(--facet-bg-1);
   box-shadow: var(--facet-shadow-1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .glass-surface {
@@ -48,7 +48,7 @@
   border: 1px solid var(--facet-border-1);
   background: var(--facet-bg-1);
   box-shadow: var(--facet-shadow-1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-surface);
 }
 
@@ -59,7 +59,7 @@
   border: 1px solid var(--facet-border-2);
   background: var(--facet-bg-2);
   box-shadow: var(--facet-shadow-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
 }
 
@@ -70,7 +70,7 @@
   border: 1px solid var(--facet-border-3);
   background: var(--facet-bg-3);
   box-shadow: var(--facet-shadow-3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-overlay);
 }
 
@@ -81,7 +81,7 @@
   border: 1px solid var(--facet-border-1);
   background: var(--facet-bg-1);
   box-shadow: var(--facet-shadow-1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-surface);
   transform: translateZ(0);
 }
@@ -93,7 +93,7 @@
   border: 1px solid var(--facet-border-2);
   background: var(--facet-bg-2);
   box-shadow: var(--facet-shadow-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
   transform: translateZ(10px);
 }
@@ -105,7 +105,7 @@
   border: 1px solid var(--facet-border-3);
   background: var(--facet-bg-3);
   box-shadow: var(--facet-shadow-3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-overlay);
   transform: translateZ(20px);
 }
@@ -113,7 +113,7 @@
 .glass-depth-4 {
   position: relative;
   border: 1px solid var(--facet-border-4);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-modal);
   transform: translateZ(30px);
   backdrop-filter: blur(var(--blur-intense)) saturate(220%);
@@ -127,7 +127,7 @@
   filter: blur(4px) saturate(120%) contrast(0.9);
   backdrop-filter: blur(6px) contrast(0.85) brightness(0.95);
   -webkit-backdrop-filter: blur(6px) contrast(0.85) brightness(0.95);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .glass-hierarchy-parent {
@@ -153,7 +153,7 @@
   position: relative;
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 0.5rem;
@@ -196,7 +196,7 @@
   backdrop-filter: blur(var(--blur-intense)) saturate(200%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-tooltip);
   background-color: hsl(var(--popover));
   background-image: linear-gradient(
@@ -215,7 +215,7 @@
   backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
   background-color: hsl(var(--card));
   background-image: linear-gradient(
     135deg,
@@ -232,7 +232,7 @@
   position: relative;
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
   border: 1px solid rgba(202, 138, 4, 0.3);
   background: linear-gradient(
@@ -251,7 +251,7 @@
   position: relative;
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
   border: 1px solid rgba(37, 99, 235, 0.3);
   background: linear-gradient(
@@ -270,7 +270,7 @@
   position: relative;
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
   border: 1px solid rgba(79, 70, 229, 0.3);
   background: linear-gradient(
@@ -289,7 +289,7 @@
   position: relative;
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
   border: 1px solid rgba(220, 38, 38, 0.3);
   background: linear-gradient(
@@ -308,7 +308,7 @@
   position: relative;
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
   border: 1px solid rgba(16, 185, 129, 0.3);
   background: linear-gradient(
@@ -325,7 +325,7 @@
 
 .glass-interactive {
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .glass-interactive:hover {
@@ -345,7 +345,7 @@
   backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-surface);
   background: linear-gradient(
     135deg,
@@ -358,7 +358,7 @@
   position: relative;
   border: 1px solid var(--facet-border-2);
   background: var(--facet-bg-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-floating);
   box-shadow: var(--facet-shadow-2);
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
@@ -368,7 +368,7 @@
 .command-palette-glass {
   position: relative;
   border: 1px solid var(--facet-border-3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-overlay);
   background: var(--facet-bg-3);
   box-shadow: var(--facet-shadow-3);
@@ -380,7 +380,7 @@
   position: relative;
   border: 1px solid var(--facet-border-2);
   background: var(--facet-bg-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: var(--z-depth-navigation);
   box-shadow: var(--facet-shadow-2);
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);

@@ -38,6 +38,7 @@ import { isEqual } from "lodash";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 // Economy Builder Components
+import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { EconomicWelcomeModal } from "~/components/economy/atomic";
@@ -436,9 +437,14 @@ export function EconomyBuilderPage({
     return persistedEconomyBuilder?.selectedAtomicComponents || propsSelectedComponents;
   });
 
+  const { viewMode } = useBuilderFilter();
+
   // Resolve current tab with backward compatibility for legacy tab values
   const currentTab = useMemo(() => {
     const raw = activeTab || "components";
+    if (viewMode === "standard" && (raw === "labor" || raw === "demographics" || raw === "tax")) {
+      return "components";
+    }
     if (
       ["components", "sectors", "labor", "demographics", "fiscal", "tax", "preview"].includes(raw)
     ) {
@@ -452,7 +458,7 @@ export function EconomyBuilderPage({
       exemptions: "tax",
     };
     return legacyMap[raw] || "components";
-  }, [activeTab]);
+  }, [activeTab, viewMode]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -1035,15 +1041,21 @@ export function EconomyBuilderPage({
     };
   }, [economicHealthMetrics, economyBuilder.laborMarket, selectedComponents]);
 
-  // Tab Definitions - Following GovernmentBuilder pattern with granular tabs
-  const tabs: TabDefinition[] = [
-    { id: "components", label: "Components", icon: Zap },
-    { id: "sectors", label: "Sectors", icon: Factory },
-    { id: "labor", label: "Labor Market", icon: Users },
-    { id: "demographics", label: "Demographics", icon: Globe },
-    { id: "tax", label: "Tax System", icon: Receipt },
-    // Per-economy preview removed — core preview lives in BuilderPreviewStep
-  ];
+  // Tab Definitions - Following GovernmentBuilder pattern with tab filtering in Standard Mode
+  const tabs = useMemo<TabDefinition[]>(() => {
+    const list = [
+      { id: "components", label: "Components", icon: Zap },
+      { id: "sectors", label: "Sectors", icon: Factory },
+    ];
+    if (viewMode === "expert") {
+      list.push(
+        { id: "labor", label: "Labor Market", icon: Users },
+        { id: "demographics", label: "Demographics", icon: Globe },
+        { id: "tax", label: "Tax System", icon: Receipt }
+      );
+    }
+    return list;
+  }, [viewMode]);
 
   return (
     <div className={`mx-auto max-w-7xl space-y-6 pb-12 ${className}`}>

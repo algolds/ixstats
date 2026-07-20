@@ -17,6 +17,7 @@ import {
   Activity,
   Zap,
   Info,
+  Lightbulb,
 } from "lucide-react";
 import type { ComponentType } from "~/types/government";
 import {
@@ -230,10 +231,11 @@ export function AtomicEconomicEffectivenessPanel({
                 <AlertTriangle className="h-4 w-4" />
                 Economic Warnings
               </h4>
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {recommendations.warnings.map((warning: any, index: number) => (
-                  <li key={index} className="rounded bg-yellow-50 p-2 text-sm text-yellow-700">
-                    ⚠ {warning}
+                  <li key={index} className="flex items-start gap-2 rounded bg-yellow-50 p-2 text-sm text-yellow-700">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-yellow-600" />
+                    <span>{warning}</span>
                   </li>
                 ))}
               </ul>
@@ -246,10 +248,11 @@ export function AtomicEconomicEffectivenessPanel({
                 <Zap className="h-4 w-4" />
                 Economic Opportunities
               </h4>
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {recommendations.opportunities.map((opportunity: any, index: number) => (
-                  <li key={index} className="rounded bg-green-50 p-2 text-sm text-green-700">
-                    💡 {opportunity}
+                  <li key={index} className="flex items-start gap-2 rounded bg-green-50 p-2 text-sm text-green-700">
+                    <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-green-600" />
+                    <span>{opportunity}</span>
                   </li>
                 ))}
               </ul>

@@ -45,13 +45,6 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
     const internalRef = React.useRef<HTMLDivElement>(null);
     const resolvedRef = (ref as React.RefObject<HTMLDivElement>) || internalRef;
 
-    const [pointerState, setPointerState] = React.useState({
-      x: "50%",
-      y: "50%",
-      offsetX: "0px",
-      offsetY: "0px",
-    });
-
     React.useEffect(() => {
       if (!lightInteraction) return;
 
@@ -85,12 +78,10 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
           const clampX = Math.max(-maxDisplacement, Math.min(maxDisplacement, diffX));
           const clampY = Math.max(-maxDisplacement, Math.min(maxDisplacement, diffY));
 
-          setPointerState({
-            x: `${pctX.toFixed(2)}%`,
-            y: `${pctY.toFixed(2)}%`,
-            offsetX: `${clampX.toFixed(1)}px`,
-            offsetY: `${clampY.toFixed(1)}px`,
-          });
+          element.style.setProperty("--pointer-x", `${pctX.toFixed(2)}%`);
+          element.style.setProperty("--pointer-y", `${pctY.toFixed(2)}%`);
+          element.style.setProperty("--pointer-offset-x", `${clampX.toFixed(1)}px`);
+          element.style.setProperty("--pointer-offset-y", `${clampY.toFixed(1)}px`);
         });
       };
 
@@ -98,12 +89,10 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
         cancelAnimationFrame(frameId);
         // Softly animate back to center
         frameId = requestAnimationFrame(() => {
-          setPointerState({
-            x: "50%",
-            y: "50%",
-            offsetX: "0px",
-            offsetY: "0px",
-          });
+          element.style.setProperty("--pointer-x", "50%");
+          element.style.setProperty("--pointer-y", "50%");
+          element.style.setProperty("--pointer-offset-x", "0px");
+          element.style.setProperty("--pointer-offset-y", "0px");
         });
       };
 
@@ -123,10 +112,10 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
     // Build dynamic inline variables driving CSS styles (radial sheens, shadow offsets)
     const combinedStyle: React.CSSProperties = {
       ...style,
-      "--pointer-x": pointerState.x,
-      "--pointer-y": pointerState.y,
-      "--pointer-offset-x": pointerState.offsetX,
-      "--pointer-offset-y": pointerState.offsetY,
+      "--pointer-x": "50%",
+      "--pointer-y": "50%",
+      "--pointer-offset-x": "0px",
+      "--pointer-offset-y": "0px",
     } as React.CSSProperties;
 
     return (

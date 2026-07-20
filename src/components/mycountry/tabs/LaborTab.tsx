@@ -103,9 +103,9 @@ export function LaborTab({
                     workforce: v.workforce === "participation" ? "count" : "participation",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.workforce === "participation"
                     ? "Participation Rate"
                     : "Total Workforce"}
@@ -147,9 +147,9 @@ export function LaborTab({
                     employment: v.employment === "employed" ? "unemployed" : "employed",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
                 </p>
                 <div
@@ -202,9 +202,9 @@ export function LaborTab({
                     compensation: v.compensation === "minimum" ? "average" : "minimum",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}
                 </p>
                 <div

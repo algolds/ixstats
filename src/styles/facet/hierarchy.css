@@ -28,7 +28,10 @@
   position: relative;
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+              box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1),
+              background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+              border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 0.5rem;

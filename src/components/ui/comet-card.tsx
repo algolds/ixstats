@@ -60,8 +60,8 @@ export const CometCard = ({
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseXSpring = useSpring(x);
-  const mouseYSpring = useSpring(y);
+  const mouseXSpring = useSpring(x, { stiffness: 240, damping: 24 });
+  const mouseYSpring = useSpring(y, { stiffness: 240, damping: 24 });
 
   const rotateX = useTransform(
     mouseYSpring,
@@ -90,8 +90,8 @@ export const CometCard = ({
 
   const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.9) 10%, rgba(255, 255, 255, 0.75) 20%, rgba(255, 255, 255, 0) 80%)`;
 
-  // Holographic rainbow shimmer background
-  const holographicBackground = useMotionTemplate`linear-gradient(${glareX}deg, rgba(255, 0, 0, ${holographicIntensity * 0.3}) 0%, rgba(255, 127, 0, ${holographicIntensity * 0.3}) 14%, rgba(255, 255, 0, ${holographicIntensity * 0.3}) 28%, rgba(0, 255, 0, ${holographicIntensity * 0.3}) 42%, rgba(0, 0, 255, ${holographicIntensity * 0.3}) 57%, rgba(75, 0, 130, ${holographicIntensity * 0.3}) 71%, rgba(148, 0, 211, ${holographicIntensity * 0.3}) 85%, rgba(255, 0, 0, ${holographicIntensity * 0.3}) 100%)`;
+  // Holographic silver-teal shimmer background (soft light-interference glare)
+  const holographicBackground = useMotionTemplate`linear-gradient(${glareX}deg, rgba(200, 235, 255, ${holographicIntensity * 0.15}) 0%, rgba(215, 200, 255, ${holographicIntensity * 0.12}) 30%, rgba(185, 250, 230, ${holographicIntensity * 0.15}) 70%, rgba(200, 235, 255, ${holographicIntensity * 0.15}) 100%)`;
 
   // Glass physics shadow configuration
   const glassPhysicsShadows: Record<"parent" | "child" | "interactive" | "modal", string> = {

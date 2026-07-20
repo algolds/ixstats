@@ -98,7 +98,7 @@ export function HaloTourTooltip() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 350, damping: 26 }}
             className={cn(
-              "pointer-events-auto fixed z-[10002] transition-all duration-500 ease-in-out",
+              "pointer-events-auto fixed z-[10002]",
               isExpandedStep
                 ? "top-[320px] left-1/2 w-[340px] -translate-x-1/2 lg:top-[220px] lg:left-[calc(50%+250px)] lg:w-[320px] lg:translate-x-0 lg:translate-y-0"
                 : "top-1/2 left-1/2 w-[350px] -translate-x-1/2 -translate-y-1/2"

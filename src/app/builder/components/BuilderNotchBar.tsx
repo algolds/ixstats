@@ -23,6 +23,7 @@ import {
 import type { BuilderSection } from "../lib/builder-theme";
 import type { BuilderAlertResult } from "../lib/builder-alerts";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
+import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { scrollToField } from "../components/enhanced/tabs/utils/validation";
 
 // Section icon map
@@ -77,6 +78,7 @@ export function BuilderNotchBar({
   const [alertPanelOpen, setAlertPanelOpen] = useState(false);
 
   const state = useBuilderContext();
+  const { viewMode, setViewMode } = useBuilderFilter();
 
   const steps = useMemo(() => {
     if (activeSection === "import") {
@@ -361,6 +363,37 @@ export function BuilderNotchBar({
                         <span>OK</span>
                       </div>
                     )}
+
+                    {/* Divider */}
+                    <div className="h-4 w-px shrink-0 bg-white/10" />
+
+                    {/* ViewMode toggle: Standard / Expert */}
+                    <div className="flex h-7 items-center rounded-xl bg-white/5 p-0.5 shrink-0 border border-white/5 gap-0.5">
+                      <button
+                        onClick={() => setViewMode("standard")}
+                        className={cn(
+                          "rounded-[9px] px-2 py-0.5 text-[9px] font-bold transition-all",
+                          viewMode === "standard"
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/20 shadow-sm"
+                            : "text-foreground/45 hover:text-foreground hover:bg-white/5"
+                        )}
+                        type="button"
+                      >
+                        Standard
+                      </button>
+                      <button
+                        onClick={() => setViewMode("expert")}
+                        className={cn(
+                          "rounded-[9px] px-2 py-0.5 text-[9px] font-bold transition-all",
+                          viewMode === "expert"
+                            ? "bg-amber-500/20 text-amber-400 border border-amber-500/20 shadow-sm"
+                            : "text-foreground/45 hover:text-foreground hover:bg-white/5"
+                        )}
+                        type="button"
+                      >
+                        Expert
+                      </button>
+                    </div>
 
                     {/* Divider */}
                     <div className="h-4 w-px shrink-0 bg-white/10" />

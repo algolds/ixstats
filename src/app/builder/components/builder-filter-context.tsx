@@ -31,6 +31,8 @@ interface BuilderFilterState {
   setWelcomeModalOpen: (v: boolean) => void;
   diExpansionTrigger: number;
   triggerDIExpansion: () => void;
+  viewMode: "standard" | "expert";
+  setViewMode: (v: "standard" | "expert") => void;
 }
 
 const BuilderFilterCtx = createContext<BuilderFilterState | null>(null);
@@ -53,6 +55,7 @@ export function BuilderFilterProvider({
   const [previewWidgetHeight, setPreviewWidgetHeight] = useState<number>(82);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
   const [diExpansionTrigger, setDiExpansionTrigger] = useState(0);
+  const [viewMode, setViewMode] = useState<"standard" | "expert">("standard");
   const confirmHandlerRef = useRef<(() => void) | null>(null);
 
   // Auto-open guide on first visit disabled
@@ -106,6 +109,8 @@ export function BuilderFilterProvider({
         setWelcomeModalOpen,
         diExpansionTrigger,
         triggerDIExpansion,
+        viewMode,
+        setViewMode,
       }}
     >
       {children}

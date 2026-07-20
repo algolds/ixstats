@@ -20,6 +20,8 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
 import { Switch } from "~/components/ui/switch";
 import { getPopulationTierFromPopulation } from "~/types/ixstats";
+import { useBuilderFilter } from "../components/builder-filter-context";
+import { InlineHelpIcon } from "~/components/ui/help-icon";
 
 interface CoreIndicatorsSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
@@ -42,6 +44,7 @@ export function CoreIndicatorsSection({
 }: CoreIndicatorsSectionProps) {
   const isEditMode = mode === "edit";
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
+  const { viewMode } = useBuilderFilter();
 
   // Safe defaults
   const safeInputs = inputs || {
@@ -133,6 +136,10 @@ export function CoreIndicatorsSection({
               <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <Users className="h-5 w-5 text-amber-400" />
                 Target Population Scale
+                <InlineHelpIcon
+                  title="Target Population Scale"
+                  content="Set the total number of citizens in your nation. A higher population expands your workforce and tax base but increases demand for infrastructure and services."
+                />
               </h3>
             </div>
             <GlassCardContent className="space-y-4 p-6">
@@ -175,6 +182,10 @@ export function CoreIndicatorsSection({
               <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <DollarSign className="h-5 w-5 text-amber-400" />
                 Initial GDP per Capita Strength
+                <InlineHelpIcon
+                  title="GDP per Capita"
+                  content="The average economic production per citizen, representing the wealth and productivity standard of your nation. Higher values mean a wealthier base."
+                />
               </h3>
             </div>
             <GlassCardContent className="space-y-4 p-6">
@@ -212,97 +223,157 @@ export function CoreIndicatorsSection({
           </GlassCard>
 
           {/* Tax Revenue Projection Card */}
-          <GlassCard depth="base" className="border-border/40">
-            <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
-                <Percent className="h-5 w-5 text-amber-400" />
-                Tax Revenue Projection
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-[11px]">Customize</span>
-                <Switch
-                  checked={isTaxCustom}
-                  onCheckedChange={(checked) => {
-                    setIsTaxCustom(checked);
-                    if (!checked) {
-                      onInputsChange({
-                        ...safeInputs,
-                        fiscalSystem: {
-                          ...(safeInputs.fiscalSystem || {}),
-                          taxRevenueGDPPercent: defaultTaxRate,
-                          governmentRevenueTotal:
-                            (sanitizedCoreIndicators.totalPopulation *
-                              sanitizedCoreIndicators.gdpPerCapita *
-                              defaultTaxRate) /
-                            100,
-                          taxRevenuePerCapita:
-                            (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
-                        },
-                      });
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            <GlassCardContent className="space-y-4 p-6">
-              {isTaxCustom ? (
-                <>
-                  <SliderWithDirectInput
-                    label=""
-                    description="Target tax revenue as a percentage of gross domestic product."
-                    value={inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20}
-                    onChange={(value) => {
-                      const taxRate = sanitizeNumber(
-                        value,
-                        inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20
-                      );
-                      const clamped = Math.max(5, Math.min(50, taxRate));
-                      onInputsChange({
-                        ...safeInputs,
-                        fiscalSystem: {
-                          ...(safeInputs.fiscalSystem || {}),
-                          taxRevenueGDPPercent: clamped,
-                          governmentRevenueTotal:
-                            (sanitizedCoreIndicators.totalPopulation *
-                              sanitizedCoreIndicators.gdpPerCapita *
-                              clamped) /
-                            100,
-                          taxRevenuePerCapita:
-                            (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
-                        },
-                      });
-                    }}
-                    min={5}
-                    max={50}
-                    step={0.5}
-                    unit="%"
-                    sectionId="core"
-                    showValue={true}
-                    defaultMode="slider"
-                    allowModeToggle={true}
+          {viewMode === "expert" ? (
+            <GlassCard depth="base" className="border-border/40">
+              <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                  <Percent className="h-5 w-5 text-amber-400" />
+                  Tax Revenue Projection
+                  <InlineHelpIcon
+                    title="Tax Revenue Projection"
+                    content="The percentage of GDP collected as tax revenue by the government. The default flat tax rate is inherited from your foundation country's baseline."
                   />
-                  <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
-                    <span>Min: 5%</span>
-                    <span>
-                      Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%
-                    </span>
-                    <span>Max: 50%</span>
-                  </div>
-                </>
-              ) : (
-                <div className="py-4 text-center">
-                  <p className="text-muted-foreground text-xs leading-normal">
-                    Using default flat tax revenue projection of{" "}
-                    <strong className="text-foreground">{defaultTaxRate.toFixed(1)}%</strong> of
-                    GDP.
-                  </p>
-                  <p className="mt-1 text-[10px] text-zinc-500">
-                    Toggle Customize to adjust target tax revenue rates.
-                  </p>
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-[11px]">Customize</span>
+                  <Switch
+                    checked={isTaxCustom}
+                    onCheckedChange={(checked) => {
+                      setIsTaxCustom(checked);
+                      if (!checked) {
+                        onInputsChange({
+                          ...safeInputs,
+                          fiscalSystem: {
+                            ...(safeInputs.fiscalSystem || {}),
+                            taxRevenueGDPPercent: defaultTaxRate,
+                            governmentRevenueTotal:
+                              (sanitizedCoreIndicators.totalPopulation *
+                                sanitizedCoreIndicators.gdpPerCapita *
+                                defaultTaxRate) /
+                              100,
+                            taxRevenuePerCapita:
+                              (sanitizedCoreIndicators.gdpPerCapita * defaultTaxRate) / 100,
+                          },
+                        });
+                      }
+                    }}
+                  />
                 </div>
-              )}
-            </GlassCardContent>
-          </GlassCard>
+              </div>
+              <GlassCardContent className="space-y-4 p-6">
+                {isTaxCustom ? (
+                  <>
+                    <SliderWithDirectInput
+                      label=""
+                      description="Target tax revenue as a percentage of gross domestic product."
+                      value={inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20}
+                      onChange={(value) => {
+                        const taxRate = sanitizeNumber(
+                          value,
+                          inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20
+                        );
+                        const clamped = Math.max(5, Math.min(50, taxRate));
+                        onInputsChange({
+                          ...safeInputs,
+                          fiscalSystem: {
+                            ...(safeInputs.fiscalSystem || {}),
+                            taxRevenueGDPPercent: clamped,
+                            governmentRevenueTotal:
+                              (sanitizedCoreIndicators.totalPopulation *
+                                sanitizedCoreIndicators.gdpPerCapita *
+                                clamped) /
+                              100,
+                            taxRevenuePerCapita:
+                              (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                          },
+                        });
+                      }}
+                      min={5}
+                      max={50}
+                      step={0.5}
+                      unit="%"
+                      sectionId="core"
+                      showValue={true}
+                      defaultMode="slider"
+                      allowModeToggle={true}
+                    />
+                    <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
+                      <span>Min: 5%</span>
+                      <span>
+                        Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%
+                      </span>
+                      <span>Max: 50%</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="py-4 text-center">
+                    <p className="text-muted-foreground text-xs leading-normal">
+                      Using default flat tax revenue projection of{" "}
+                      <strong className="text-foreground">{defaultTaxRate.toFixed(1)}%</strong> of
+                      GDP.
+                    </p>
+                    <p className="mt-1 text-[10px] text-zinc-500">
+                      Toggle Customize to adjust target tax revenue rates.
+                    </p>
+                  </div>
+                )}
+              </GlassCardContent>
+            </GlassCard>
+          ) : (
+            <GlassCard depth="base" className="border-border/40">
+              <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+                <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                  <Percent className="h-5 w-5 text-amber-400" />
+                  Average Tax Rate
+                  <InlineHelpIcon
+                    title="Average Tax Rate"
+                    content="The percentage of GDP collected by the government. Higher tax rates fund public services but can limit private economic growth."
+                  />
+                </h3>
+              </div>
+              <GlassCardContent className="space-y-4 p-6">
+                <SliderWithDirectInput
+                  label=""
+                  description="Average rate of tax collected from the national economy."
+                  value={inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20}
+                  onChange={(value) => {
+                    const taxRate = sanitizeNumber(
+                      value,
+                      inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20
+                    );
+                    const clamped = Math.max(5, Math.min(50, taxRate));
+                    onInputsChange({
+                      ...safeInputs,
+                      fiscalSystem: {
+                        ...(safeInputs.fiscalSystem || {}),
+                        taxRevenueGDPPercent: clamped,
+                        governmentRevenueTotal:
+                          (sanitizedCoreIndicators.totalPopulation *
+                            sanitizedCoreIndicators.gdpPerCapita *
+                            clamped) /
+                          100,
+                        taxRevenuePerCapita:
+                          (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                      },
+                    });
+                  }}
+                  min={5}
+                  max={50}
+                  step={0.5}
+                  unit="%"
+                  sectionId="core"
+                  showValue={true}
+                  defaultMode="slider"
+                  allowModeToggle={true}
+                />
+                <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
+                  <span>Min: 5%</span>
+                  <span>Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%</span>
+                  <span>Max: 50%</span>
+                </div>
+              </GlassCardContent>
+            </GlassCard>
+          )}
         </div>
 
         {/* Emergent Outcome Card (1/3 width) */}
@@ -381,8 +452,12 @@ export function CoreIndicatorsSection({
               </div>
             </div>
             <div>
-              <div className="text-foreground text-2xl font-bold">
+              <div className="text-foreground text-2xl font-bold flex items-center gap-1.5">
                 {sanitizedCoreIndicators.totalPopulation.toLocaleString()}
+                <InlineHelpIcon
+                  title="Population Scale"
+                  content="Your nation's current citizen count. Drives labor force calculations and domestic service requirements."
+                />
               </div>
               <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 Population (Tier {populationTier})
@@ -404,8 +479,12 @@ export function CoreIndicatorsSection({
               </div>
             </div>
             <div>
-              <div className="text-foreground text-2xl font-bold">
+              <div className="text-foreground text-2xl font-bold flex items-center gap-1.5">
                 ${sanitizedCoreIndicators.gdpPerCapita.toLocaleString()}
+                <InlineHelpIcon
+                  title="GDP per Capita"
+                  content="Average economic production value per citizen. A general proxy for quality of life and development level."
+                />
               </div>
               <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 GDP per Capita ({economicTier})
@@ -427,8 +506,12 @@ export function CoreIndicatorsSection({
               </div>
             </div>
             <div>
-              <div className="text-foreground text-2xl font-bold">
+              <div className="text-foreground text-2xl font-bold flex items-center gap-1.5">
                 {formatCurrency(sanitizedCoreIndicators.nominalGDP)}
+                <InlineHelpIcon
+                  title="Nominal GDP"
+                  content="Total gross economic production. Formed strictly by multiplying Population by GDP per Capita."
+                />
               </div>
               <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 Nominal GDP

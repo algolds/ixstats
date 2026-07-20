@@ -40,6 +40,7 @@ import { AtomicGovernmentComponents } from "~/components/government/atoms/Atomic
 import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
 import { AtomicWelcomeModal } from "~/components/government/atomic";
 import { computeGovernmentWarnings } from "../government-preview/governmentWarnings";
+import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 
 interface GovernmentStepProps {
   economicInputs: EconomicInputs;
@@ -144,6 +145,110 @@ export function GovernmentStep({
   }, [governmentStructure, economicInputs]);
 
   const gdpCapWarning = warnings.gdpCapWarning;
+  const { viewMode } = useBuilderFilter();
+
+  // Auto-allocate standard departments if empty in standard mode
+  useEffect(() => {
+    if (viewMode === "standard" && (!governmentStructure.departments || governmentStructure.departments.length === 0)) {
+      const totalBudget = governmentStructure.structure?.totalBudget || (economicInputs?.coreIndicators?.nominalGDP || 1000000000) * 0.35;
+      const defaultDepts = [
+        {
+          name: "Department of Finance",
+          shortName: "Finance",
+          category: "administrative",
+          description: "Manages state treasury, revenue collection, and economic planning.",
+          minister: "Finance Minister",
+          ministerTitle: "Minister",
+          headquarters: "Capital City",
+          established: "2026",
+          employeeCount: 1500,
+          icon: "Coins",
+          color: "#eab308",
+          priority: 80,
+          isActive: true,
+          functions: ["Treasury", "Taxation", "Economic Planning"],
+        },
+        {
+          name: "Department of Social Services",
+          shortName: "Social Services",
+          category: "social",
+          description: "Administers social welfare, public pensions, and community support.",
+          minister: "Minister of Social Services",
+          ministerTitle: "Minister",
+          headquarters: "Capital City",
+          established: "2026",
+          employeeCount: 3000,
+          icon: "Users",
+          color: "#3b82f6",
+          priority: 70,
+          isActive: true,
+          functions: ["Social Security", "Pensions", "Welfare"],
+        },
+        {
+          name: "Department of Health",
+          shortName: "Health",
+          category: "social",
+          description: "Oversees public health, medical facilities, and sanitation.",
+          minister: "Health Minister",
+          ministerTitle: "Minister",
+          headquarters: "Capital City",
+          established: "2026",
+          employeeCount: 5000,
+          icon: "Activity",
+          color: "#10b981",
+          priority: 90,
+          isActive: true,
+          functions: ["Public Health", "Medical Care"],
+        },
+        {
+          name: "Department of Education",
+          shortName: "Education",
+          category: "social",
+          description: "Directs national education curriculum, schools, and research funding.",
+          minister: "Education Minister",
+          ministerTitle: "Minister",
+          headquarters: "Capital City",
+          established: "2026",
+          employeeCount: 4500,
+          icon: "BookOpen",
+          color: "#a855f7",
+          priority: 85,
+          isActive: true,
+          functions: ["Schools", "Curriculum", "Universities"],
+        },
+        {
+          name: "Department of Infrastructure",
+          shortName: "Infrastructure",
+          category: "administrative",
+          description: "Maintains national transit networks, utilities, and public works.",
+          minister: "Infrastructure Minister",
+          ministerTitle: "Minister",
+          headquarters: "Capital City",
+          established: "2026",
+          employeeCount: 2500,
+          icon: "Building2",
+          color: "#f97316",
+          priority: 60,
+          isActive: true,
+          functions: ["Transport", "Utilities", "Public Works"],
+        },
+      ];
+
+      const defaultAllocations = [
+        { departmentId: "0", allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
+        { departmentId: "1", allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
+        { departmentId: "2", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
+        { departmentId: "3", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
+        { departmentId: "4", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
+      ];
+
+      onGovernmentStructureChange({
+        ...governmentStructure,
+        departments: defaultDepts,
+        budgetAllocations: defaultAllocations,
+      });
+    }
+  }, [viewMode, governmentStructure, economicInputs, onGovernmentStructureChange]);
 
   // Selected component objects for the selected list sidebar
   const _selectedComponentObjects = useMemo(() => {
@@ -152,14 +257,25 @@ export function GovernmentStep({
       .filter((comp) => comp !== undefined);
   }, [governmentComponents]);
 
-  const tabs: TabDefinition[] = [
-    { id: "components", label: "Components", icon: Crown },
-    { id: "structure", label: "Departments", icon: Users },
-    { id: "spending", label: "Budget", icon: Coins },
-    { id: "preview", label: "Policies", icon: Eye },
-  ];
+  const tabs = useMemo<TabDefinition[]>(() => {
+    const list = [{ id: "components", label: "Components", icon: Crown }];
+    if (viewMode === "expert") {
+      list.push(
+        { id: "structure", label: "Departments", icon: Users },
+        { id: "spending", label: "Budget", icon: Coins }
+      );
+    }
+    list.push({ id: "preview", label: "Policies", icon: Eye });
+    return list;
+  }, [viewMode]);
 
-  const activeTab = activeGovernmentTab || "components";
+  const activeTab = useMemo(() => {
+    const rawTab = activeGovernmentTab || "components";
+    if (viewMode === "standard" && (rawTab === "structure" || rawTab === "spending")) {
+      return "components";
+    }
+    return rawTab;
+  }, [activeGovernmentTab, viewMode]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-12">

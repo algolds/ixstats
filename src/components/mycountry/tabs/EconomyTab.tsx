@@ -104,9 +104,9 @@ export function EconomyTab({
                     economyGdp: v.economyGdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </p>
                 <div
@@ -168,9 +168,9 @@ export function EconomyTab({
                     fiscal: v.fiscal === "balance" ? "revenue" : "balance",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
                 </p>
                 <div
@@ -216,9 +216,9 @@ export function EconomyTab({
                     trade: v.trade === "imports" ? "exports" : "imports",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
                 </p>
                 <div

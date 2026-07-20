@@ -196,7 +196,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ type: "spring", duration: 0.3 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className={cn(
             "relative max-h-[90vh] w-full max-w-6xl overflow-hidden",
             "bg-background/95 border-border/50 rounded-2xl border shadow-2xl backdrop-blur-xl",

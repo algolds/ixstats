@@ -49,9 +49,9 @@ export function OverviewTab({
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -98,9 +98,9 @@ export function OverviewTab({
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
-                className="rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -146,13 +146,13 @@ export function OverviewTab({
                     : undefined
                 }
                 className={cn(
-                  "rounded-xl bg-white/40 p-3 text-left transition-all dark:bg-white/[0.04]",
+                  "rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 dark:bg-white/[0.02]",
                   country.areaSqMi &&
                     country.landArea &&
-                    "cursor-pointer hover:bg-white/60 active:scale-[0.98] dark:hover:bg-white/[0.07]"
+                    "cursor-pointer hover:bg-bg-accent/10 dark:hover:bg-white/[0.05]"
                 )}
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   Land Area
                 </p>
                 <p className="text-foreground mt-0.5 text-lg font-bold tracking-tight">
@@ -261,11 +261,11 @@ export function OverviewTab({
                     return (
                       <div
                         key={f.key}
-                        className="flex items-center gap-2 rounded-lg bg-white/40 px-3 py-2 dark:bg-white/[0.04]"
+                        className="flex items-center gap-2 rounded-lg border border-border-secondary/20 bg-bg-accent/5 px-3 py-2 dark:bg-white/[0.02]"
                       >
                         <FieldIcon className={cn("h-3.5 w-3.5 shrink-0", f.color)} />
                         <div className="min-w-0">
-                          <p className="text-muted-foreground/60 text-[9px] tracking-wider uppercase">
+                          <p className="text-muted-foreground/70 text-[9px] tracking-wide uppercase">
                             {f.label}
                           </p>
                           <p className="text-foreground truncate text-xs font-semibold">

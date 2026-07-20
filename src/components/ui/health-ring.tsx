@@ -272,7 +272,7 @@ export const HealthRing: React.FC<HealthRingProps> = ({
         )}
 
         {/* Main animated progress circle with liquid movement */}
-        <circle
+        <motion.circle
           cx={validSize / 2}
           cy={validSize / 2}
           r={radius}
@@ -281,28 +281,21 @@ export const HealthRing: React.FC<HealthRingProps> = ({
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          strokeDashoffset={_animatedOffset}
           style={{
             filter: hovered
               ? `drop-shadow(0 0 16px ${color}) drop-shadow(0 0 32px rgba(${rgb.r},${rgb.g},${rgb.b},0.5))`
               : `drop-shadow(0 0 8px ${color})`,
-            transition: "stroke-dashoffset 1s ease-in-out, filter 0.3s",
+            transition: "filter 0.3s",
           }}
         >
-          <animate
-            attributeName="stroke-dashoffset"
-            from={circumference}
-            to={offset}
-            dur="1.5s"
-            fill="freeze"
-          />
           <animate
             attributeName="stroke-width"
             values={`${stroke};${stroke + 1};${stroke}`}
             dur="2s"
             repeatCount="indefinite"
           />
-        </circle>
+        </motion.circle>
 
         {/* Additional shimmer effect */}
         <circle

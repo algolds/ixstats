@@ -75,11 +75,11 @@ function FacetTabTrigger({
   updateSheenFromEvent,
 }: FacetTabTriggerProps) {
   const tabColor = useTransform([springX, springWidth], ([x, width]) => {
-    if (!tab.themeColor) return "rgba(100, 116, 139, 0.65)";
+    if (!tab.themeColor) return "rgba(100, 116, 139, 0.85)";
 
     const center = (x as number) + (width as number) / 2;
     const tabBound = bounds[tab.id];
-    if (!tabBound) return "rgba(100, 116, 139, 0.65)";
+    if (!tabBound) return "rgba(100, 116, 139, 0.85)";
 
     const tabCenter = tabBound.left + tabBound.width / 2;
     const distance = Math.abs(center - tabCenter);
@@ -293,9 +293,6 @@ export function FacetTabs({
   const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.08));
   const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.22));
 
-  // Track relative pointer coordinates for the frosted satin sheen highlight
-  const [sheenPos, setSheenPos] = React.useState({ x: "50%", y: "50%", active: false });
-
   const updateSheenFromEvent = (e: React.PointerEvent) => {
     const container = containerRef.current;
     if (!container) return;
@@ -309,16 +306,17 @@ export function FacetTabs({
       const relativeX = ((pointerX - indicatorLeft) / indicatorWidth) * 100;
       const relativeY = (pointerY / rect.height) * 100;
 
-      setSheenPos({
-        x: `${Math.max(0, Math.min(100, relativeX)).toFixed(1)}%`,
-        y: `${Math.max(0, Math.min(100, relativeY)).toFixed(1)}%`,
-        active: true,
-      });
+      container.style.setProperty("--sheen-x", `${Math.max(0, Math.min(100, relativeX)).toFixed(1)}%`);
+      container.style.setProperty("--sheen-y", `${Math.max(0, Math.min(100, relativeY)).toFixed(1)}%`);
+      container.style.setProperty("--sheen-active", "1");
     }
   };
 
   const handlePointerLeave = () => {
-    setSheenPos((prev) => ({ ...prev, active: false }));
+    const container = containerRef.current;
+    if (container) {
+      container.style.setProperty("--sheen-active", "0");
+    }
   };
 
   return (
@@ -333,6 +331,11 @@ export function FacetTabs({
         metrics.container,
         className
       )}
+      style={{
+        "--sheen-x": "50%",
+        "--sheen-y": "50%",
+        "--sheen-active": "0",
+      } as React.CSSProperties}
     >
       {/* 1. Underlying background color & raw sheens (Z-0) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
@@ -399,18 +402,14 @@ export function FacetTabs({
           )}
         >
           {/* Frosted Satin Sheen Overlay (follows pointer relative to indicator bounds) */}
-          {sheenPos.active && (
-            <div
-              className="pointer-events-none absolute inset-0 transition-opacity duration-700 ease-out"
-              style={{
-                background: `radial-gradient(circle 130px at var(--sheen-x, 50%) var(--sheen-y, 50%), rgba(255, 255, 255, 0.14) 0%, transparent 100%)`,
-                mixBlendMode: "overlay",
-                // Combine custom properties for coordinates
-                ["--sheen-x" as any]: sheenPos.x,
-                ["--sheen-y" as any]: sheenPos.y,
-              }}
-            />
-          )}
+          <div
+            className="pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out"
+            style={{
+              background: `radial-gradient(circle 130px at var(--sheen-x, 50%) var(--sheen-y, 50%), rgba(255, 255, 255, 0.14) 0%, transparent 100%)`,
+              mixBlendMode: "overlay",
+              opacity: "var(--sheen-active, 0)",
+            }}
+          />
         </motion.div>
       )}
 

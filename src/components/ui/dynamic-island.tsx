@@ -12,9 +12,9 @@ import React, {
 } from "react";
 import { AnimatePresence, motion, useWillChange } from "motion/react";
 
-// Spring physics — Apple-style morph: crisp snap with weighted settle
-const stiffness = 450;
-const damping = 32;
+// Spring physics — Apple-style morph: critically damped settle to prevent layout text-jitter
+const stiffness = 400;
+const damping = 36;
 const mass = 0.8; // lighter mass = faster acceleration into target shape
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
 const MAX_HEIGHT_MOBILE_MASSIVE = 700;
@@ -241,7 +241,7 @@ interface DynamicIslandProviderProps {
   initialAnimation?: Array<{ size: SizePresets; delay: number }>;
 }
 
-const DynamicIslandProvider: React.FC<DynamicIslandProviderProps> = ({
+const HaloProvider: React.FC<DynamicIslandProviderProps> = ({
   children,
   initialSize = SIZE_PRESETS.DEFAULT,
   initialAnimation = [],
@@ -296,16 +296,16 @@ const DynamicIslandProvider: React.FC<DynamicIslandProviderProps> = ({
   return <BlobContext.Provider value={contextValue}>{children}</BlobContext.Provider>;
 };
 
-const useDynamicIslandSize = () => {
+const useHaloSize = () => {
   const context = useContext(BlobContext);
   if (!context) {
-    throw new Error("useDynamicIslandSize must be used within a DynamicIslandProvider");
+    throw new Error("useHaloSize must be used within a HaloProvider");
   }
   return context;
 };
 
 const useScheduledAnimations = (animations: Array<{ size: SizePresets; delay: number }>) => {
-  const { scheduleAnimation } = useDynamicIslandSize();
+  const { scheduleAnimation } = useHaloSize();
   const animationsRef = useRef(animations);
 
   useEffect(() => {
@@ -313,7 +313,7 @@ const useScheduledAnimations = (animations: Array<{ size: SizePresets; delay: nu
   }, [scheduleAnimation]);
 };
 
-const DynamicIslandContainer = ({ children }: { children: ReactNode }) => {
+const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
   return (
     <div className="z-[10000] flex h-full w-full items-center justify-center bg-transparent">
       {children}
@@ -321,7 +321,7 @@ const DynamicIslandContainer = ({ children }: { children: ReactNode }) => {
   );
 };
 
-const DynamicIsland = ({ children, id, ...props }: { children: ReactNode; id: string }) => {
+const Halo = ({ children, id, ...props }: { children: ReactNode; id: string }) => {
   const willChange = useWillChange();
   const [screenSize, setScreenSize] = useState("desktop");
   const [mounted, setMounted] = useState(false);
@@ -376,20 +376,20 @@ const DynamicIsland = ({ children, id, ...props }: { children: ReactNode; id: st
 
   if (!mounted) {
     return (
-      <DynamicIslandContainer>
+      <HaloOuterWrapper>
         <div className="bg-card/95 border-border relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center backdrop-blur-xl will-change-transform">
           {children}
         </div>
-      </DynamicIslandContainer>
+      </HaloOuterWrapper>
     );
   }
 
   return (
-    <DynamicIslandContainer>
+    <HaloOuterWrapper>
       <DynamicIslandContent id={id} willChange={willChange} screenSize={screenSize} {...props}>
         {children}
       </DynamicIslandContent>
-    </DynamicIslandContainer>
+    </HaloOuterWrapper>
   );
 };
 
@@ -484,7 +484,7 @@ const DynamicIslandContent = ({
   screenSize: string;
   [key: string]: any;
 }) => {
-  const { state, presets } = useDynamicIslandSize();
+  const { state, presets } = useHaloSize();
   const currentSize = presets[state.size] ?? DynamicIslandSizePresets.default;
   const isCompact = isCompactSize(state.size);
 
@@ -693,7 +693,7 @@ type DynamicContainerProps = {
   children?: React.ReactNode;
 };
 
-const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
+const HaloContainer = ({ className, children }: DynamicContainerProps) => {
   const willChange = useWillChange();
 
   return (
@@ -792,27 +792,25 @@ const DynamicDescription = ({ className, children }: MotionProps) => {
   );
 };
 
-// ──────────────────────────────────────────────────────────────────────────
-/* HALO BRAND ALIAS EXPORTS */
-// ──────────────────────────────────────────────────────────────────────────
-
 /** @deprecated Use Halo instead */
-export const Halo = DynamicIsland;
+export const DynamicIsland = Halo;
 
 /** @deprecated Use useHaloSize instead */
-export const useHaloSize = useDynamicIslandSize;
+export const useDynamicIslandSize = useHaloSize;
 
 /** @deprecated Use HaloProvider instead */
-export const HaloProvider = DynamicIslandProvider;
+export const DynamicIslandProvider = HaloProvider;
 
 /** @deprecated Use HaloContainer instead */
-export const HaloContainer = DynamicContainer;
+export const DynamicContainer = HaloContainer;
 
 export {
-  DynamicContainer,
+  Halo,
+  HaloContainer,
+  HaloProvider,
+  useHaloSize,
   DynamicTitle,
   DynamicDescription,
-  DynamicIsland,
   SIZE_PRESETS,
   stiffness,
   damping,
@@ -820,9 +818,7 @@ export {
   DynamicDiv,
   DynamicIslandSizePresets,
   BlobContext,
-  useDynamicIslandSize,
   useScheduledAnimations,
-  DynamicIslandProvider,
 };
 
-export default DynamicIsland;
+export default Halo;

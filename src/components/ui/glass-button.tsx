@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 
-interface GlassButtonProps extends Omit<
+interface FacetButtonProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   | "onDragEnd"
   | "onDragStart"
@@ -93,7 +93,7 @@ const depthStyles = {
   },
 };
 
-export function GlassButton({
+export function FacetButton({
   variant = "neutral",
   size = "md",
   depth = "medium",
@@ -103,7 +103,7 @@ export function GlassButton({
   className,
   disabled,
   ...props
-}: GlassButtonProps) {
+}: FacetButtonProps) {
   const variantStyle = variantStyles[variant];
   const sizeStyle = sizeStyles[size];
   const depthStyle = depthStyles[depth];
@@ -135,15 +135,14 @@ export function GlassButton({
 
         // Disabled state
         disabled && "cursor-not-allowed opacity-50",
-        !disabled && "hover:scale-[1.02] active:scale-[0.98]",
 
-        // Pressed state
-        pressed && "scale-[0.98] shadow-inner",
+        // Pressed state shadow (scale is driven by spring whileTap below)
+        pressed && "shadow-inner",
 
         className
       )}
-      whileHover={!disabled ? { y: -1 } : {}}
-      whileTap={!disabled ? { y: 1 } : {}}
+      whileHover={!disabled ? { y: -1, scale: 1.02 } : {}}
+      whileTap={!disabled ? { y: 1, scale: 0.98 } : {}}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       disabled={disabled}
       {...props}
@@ -200,14 +199,19 @@ export function GlassButton({
   );
 }
 
+/** @deprecated Use FacetButton instead */
+export const GlassButton = FacetButton;
+
+export interface GlassButtonProps extends FacetButtonProps {}
+
 // Specialized button variants
-export function MyCountryButton(props: Omit<GlassButtonProps, "variant">) {
-  return <GlassButton variant="primary" glow {...props} />;
+export function MyCountryButton(props: Omit<FacetButtonProps, "variant">) {
+  return <FacetButton variant="primary" glow {...props} />;
 }
 
-export function ImportButton(props: Omit<GlassButtonProps, "variant" | "glow">) {
+export function ImportButton(props: Omit<FacetButtonProps, "variant" | "glow">) {
   return (
-    <GlassButton
+    <FacetButton
       variant="neutral"
       className={cn(
         "hover:border-[var(--color-warning)]/50 hover:bg-[var(--color-warning)]/10",

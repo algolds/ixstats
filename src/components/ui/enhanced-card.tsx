@@ -39,9 +39,9 @@ export function EnhancedCard({
 
   const hoverClasses = {
     none: "",
-    lift: "hover:-translate-y-1 transition-all duration-300",
-    glow: "hover:shadow-lg transition-all duration-300",
-    scale: "hover:scale-[1.02] transition-all duration-300",
+    lift: "hover:-translate-y-1 transition-transform duration-200 ease-out",
+    glow: "hover:shadow-lg transition-shadow duration-200 ease-out",
+    scale: "hover:scale-[1.02] transition-transform duration-200 ease-out",
   };
 
   const glowClasses = {

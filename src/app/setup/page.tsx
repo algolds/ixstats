@@ -67,6 +67,39 @@ const setupIntroSteps = [
       alt: "Setup Options",
     },
   },
+  {
+    title: "Understanding IxTime",
+    short_description: "The 2x Speed World Simulator Clock",
+    full_description:
+      "Time in the nation simulator progresses at a rate of 2x real-world speed. This means one month of in-game simulation completes every 15 real days. Plan your budget, department projects, and diplomatic agreements with this progression rate in mind.",
+    media: {
+      type: "image" as const,
+      src: "/images/ixtime-overview.png",
+      alt: "IxTime Clock",
+    },
+  },
+  {
+    title: "Connected Accounts via IxnayID",
+    short_description: "Your single sign-on key for all sub-services",
+    full_description:
+      "IxnayID is our unified secure authentication gateway. It links your country profile across our wiki network, interactive maps, and systems. Ensure your profile connections are correctly authenticated in your Account settings.",
+    media: {
+      type: "image" as const,
+      src: "/images/ixnayid-connections.png",
+      alt: "IxnayID Connection",
+    },
+  },
+  {
+    title: "The Vault & IxCredits",
+    short_description: "Powering the global player economy",
+    full_description:
+      "Every nation interacts with the Vault. IxCredits are the premium currency used for trade, trading card pack purchases, and marketplace transactions. Earn credits daily through passive growth, high stability index, or successful trade treaties.",
+    media: {
+      type: "image" as const,
+      src: "/images/vault-credits.png",
+      alt: "IxCredits and Vault",
+    },
+  },
 ];
 
 export default function SetupPage() {

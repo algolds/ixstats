@@ -79,6 +79,14 @@ const helpSections: HelpSection[] = [
         tags: ["time", "basics", "world"],
       },
       {
+        id: "ixnayid",
+        title: "Unified Identity (IxnayID)",
+        description:
+          "Connect your simulator country profile with the community wiki and interactive maps.",
+        path: "/help/getting-started/ixnayid",
+        tags: ["ixnayid", "identity", "authentication", "sso", "basics"],
+      },
+      {
         id: "navigation",
         title: "Finding Your Way Around",
         description: "Where everything lives, plus a few shortcuts to get around fast.",

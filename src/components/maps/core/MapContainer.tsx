@@ -7,7 +7,7 @@
 
 import { useRef, useMemo, useCallback, useState, useEffect, useDeferredValue } from "react";
 import dynamic from "next/dynamic";
-import { useIsAdmin } from "~/hooks/usePermissions";
+import { useIsAdmin, useIsStaff } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
@@ -91,6 +91,8 @@ export function MapContainer({
   disableCountrySelect = false,
 }: MapContainerProps) {
   const isAdmin = useIsAdmin();
+  const isStaff = useIsStaff();
+  const [showGatekeepingWarning, setShowGatekeepingWarning] = useState(true);
   const isMobile = useIsMobile();
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
@@ -529,6 +531,33 @@ export function MapContainer({
       {/* Historical timeline scrubber (read-only) */}
       {showControls && tourState === "idle" && (
         <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />
+      )}
+
+      {/* Maps Private Beta Alert Banner for Non-Staff */}
+      {!isStaff && showGatekeepingWarning && (
+        <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-all duration-300">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex gap-2.5">
+              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-bold text-amber-500">
+                ⚠️
+              </span>
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-amber-500">Maps Private Beta</h4>
+                <p className="text-[10px] leading-relaxed text-zinc-300">
+                  External country integration and interactive plotting are under active development. You can freely explore the world map, topography, and other nations, but adding your own borders or claiming territory is not yet open to external players.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowGatekeepingWarning(false)}
+              className="text-zinc-400 hover:text-white transition-colors text-[10px] font-bold p-0.5"
+              title="Dismiss warning"
+              type="button"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
 
       {/* WebGL/Loading Error Fallback Overlay */}

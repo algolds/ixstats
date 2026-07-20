@@ -107,9 +107,9 @@ export function GovernmentTab({
                     structure: v.structure === "government" ? "state" : "government",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.structure === "government" ? "Head of Government" : "Head of State"}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -143,9 +143,9 @@ export function GovernmentTab({
                     budget: v.budget === "percentage" ? "spending" : "percentage",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.budget === "percentage" ? "Spending % of GDP" : "Total Spending"}
                 </p>
                 <div
@@ -189,9 +189,9 @@ export function GovernmentTab({
                     debt: v.debt === "ratio" ? "total" : "ratio",
                   }))
                 }
-                className="cursor-pointer rounded-xl bg-white/40 p-3 text-left transition-all hover:bg-white/60 active:scale-[0.98] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
-                <p className="text-muted-foreground/70 text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.debt === "ratio" ? "Debt to GDP Ratio" : "Total Public Debt"}
                 </p>
                 <div
